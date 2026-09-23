@@ -7,7 +7,7 @@
     <title>@yield('title', 'Sign In - Restaurant Management System')</title>
 
     <!-- Custom RMS Stylesheet -->
-    <link rel="stylesheet" href="{{ asset('assets/css/styles.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/styles.css') }}?v={{ time() }}">
 
     <!-- Phosphor Icons -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>

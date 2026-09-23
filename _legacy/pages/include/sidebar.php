@@ -52,12 +52,13 @@ elseif (in_array($currentPage, $creditsPages)) $activeModule = 'credits';
     <!-- Left Rail -->
     <div class="sidebar-rail">
         <div class="rail-header">
-            <a href="<?= BASE_URL ?>index.php" class="brand-logo<?= $currentPage === 'index.php' ? ' active' : '' ?>" title="Dashboard">
+            <a href="<?= BASE_URL ?>index.php" class="brand-logo" title="Restaurant Management System">
                 <i class="ph ph-fork-knife"></i>
             </a>
         </div>
         
         <nav class="rail-nav">
+            <a href="<?= BASE_URL ?>index.php" class="rail-item<?= $currentPage === 'index.php' ? ' active' : '' ?>" data-title="Home" title="Home"><i class="ph ph-house"></i></a>
             <a href="#" class="rail-item<?= $activeModule === 'hr' ? ' active' : '' ?>" data-title="HR Operations" data-target="submenu-hr"><i class="ph ph-users-three"></i></a>
             <a href="#" class="rail-item<?= $activeModule === 'sales' ? ' active' : '' ?>" data-title="Sales Operations" data-target="submenu-sales"><i class="ph ph-chart-line-up"></i></a>
             <a href="#" class="rail-item<?= $activeModule === 'inventory' ? ' active' : '' ?>" data-title="Inventory Operations" data-target="submenu-inventory"><i class="ph ph-package"></i></a>

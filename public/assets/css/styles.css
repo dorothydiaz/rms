@@ -32,19 +32,15 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(148, 163, 184, 0.45) transparent;
+    scrollbar-width: none;
 }
 
-*:hover {
-    scrollbar-color: rgba(100, 116, 139, 0.65) transparent;
-}
-
-/* Global Custom Scrollbars (Chrome, Edge, Safari, Opera) */
+/* Global Custom Scrollbars */
 ::-webkit-scrollbar,
 *::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 0px;
+    height: 0px;
+    display: none;
 }
 
 ::-webkit-scrollbar-track,
@@ -54,19 +50,56 @@
 
 ::-webkit-scrollbar-thumb,
 *::-webkit-scrollbar-thumb {
-    background: rgba(148, 163, 184, 0.4);
-    border-radius: 9999px;
-    transition: background 0.2s ease;
+    background: transparent;
 }
 
 ::-webkit-scrollbar-thumb:hover,
 *::-webkit-scrollbar-thumb:hover {
-    background: rgba(100, 116, 139, 0.7);
+    background: transparent;
 }
 
 ::-webkit-scrollbar-thumb:active,
 *::-webkit-scrollbar-thumb:active {
-    background: rgba(71, 85, 105, 0.9);
+    background: transparent;
+}
+
+/* Ensure Sidebar, Rail, and All Sub-Panels Never Render Gray Scrollbars */
+.sidebar,
+.sidebar *,
+.sidebar-rail,
+.sidebar-rail *,
+.sidebar-panel,
+.sidebar-panel *,
+.panel-content,
+.panel-content * {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+}
+
+.sidebar::-webkit-scrollbar,
+.sidebar *::-webkit-scrollbar,
+.sidebar-rail::-webkit-scrollbar,
+.sidebar-rail *::-webkit-scrollbar,
+.sidebar-panel::-webkit-scrollbar,
+.sidebar-panel *::-webkit-scrollbar,
+.panel-content::-webkit-scrollbar,
+.panel-content *::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    background: transparent !important;
+}
+
+.sidebar::-webkit-scrollbar-thumb,
+.sidebar *::-webkit-scrollbar-thumb,
+.sidebar-rail::-webkit-scrollbar-thumb,
+.sidebar-rail *::-webkit-scrollbar-thumb,
+.sidebar-panel::-webkit-scrollbar-thumb,
+.sidebar-panel *::-webkit-scrollbar-thumb,
+.panel-content::-webkit-scrollbar-thumb,
+.panel-content *::-webkit-scrollbar-thumb {
+    display: none !important;
+    background: transparent !important;
 }
 
 ::-webkit-scrollbar-button,
@@ -163,14 +196,13 @@ a {
     padding: 16px 0;
     background-color: transparent;
     z-index: 10;
-    overflow-y: auto;
-    overflow-x: hidden;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
+    overflow: visible;
 }
 
 .sidebar-rail::-webkit-scrollbar {
-    width: 4px;
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
 }
 
 .sidebar-rail::-webkit-scrollbar-track {
@@ -178,8 +210,7 @@ a {
 }
 
 .sidebar-rail::-webkit-scrollbar-thumb {
-    background: rgba(148, 163, 184, 0.35);
-    border-radius: 9999px;
+    background: transparent !important;
 }
 
 .rail-header {
@@ -204,8 +235,8 @@ a {
 }
 
 .sidebar-toggle-btn:hover {
-    color: var(--text-primary);
-    background-color: #f1f5f9;
+    color: #9333ea;
+    background-color: rgba(168, 85, 247, 0.1);
 }
 
 .brand-logo {
@@ -259,36 +290,25 @@ a {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.rail-item::after {
-    content: attr(data-title);
-    position: absolute;
-    left: 100%;
-    margin-left: 12px;
-    background-color: var(--bg-logo);
-    color: var(--text-logo);
-    padding: 6px 12px;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 500;
-    white-space: nowrap;
-    opacity: 0;
-    visibility: hidden;
-    transform: translateX(-10px);
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: 100;
-    pointer-events: none;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+.rail-item::after,
+.rail-item::before,
+.rail-item:hover::after,
+.rail-item:hover::before {
+    display: none !important;
+    content: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    height: 0 !important;
 }
 
-.rail-item:hover::after {
-    opacity: 1;
-    visibility: visible;
-    transform: translateX(0);
+.rail-item:not(.active):hover {
+    background: linear-gradient(135deg, rgba(236, 72, 153, 0.08) 0%, rgba(168, 85, 247, 0.14) 100%);
+    border: 1px solid rgba(168, 85, 247, 0.25);
+    color: #9333ea;
 }
 
 .rail-item:hover {
-    background-color: #f1f5f9;
-    color: var(--text-primary);
     transform: scale(1.1);
 }
 
@@ -490,36 +510,31 @@ a {
     display: inline-block;
 }
 
-/* Custom Scrollbar for Sidebar Panel Content */
+/* Clean Hidden Scrollbar for Sidebar Panel Content (Fully scrollable without gray hover bar) */
 .panel-content {
-    scrollbar-width: thin;
-    scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
 }
 
 .panel-content:hover {
-    scrollbar-color: rgba(100, 116, 139, 0.65) transparent;
+    scrollbar-width: none !important;
 }
 
 .panel-content::-webkit-scrollbar {
-    width: 5px;
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    background: transparent !important;
 }
 
 .panel-content::-webkit-scrollbar-track {
-    background: transparent;
+    background: transparent !important;
 }
 
-.panel-content::-webkit-scrollbar-thumb {
-    background: rgba(148, 163, 184, 0.35);
-    border-radius: 9999px;
-    transition: background 0.2s ease;
-}
-
-.panel-content:hover::-webkit-scrollbar-thumb {
-    background: rgba(148, 163, 184, 0.6);
-}
-
+.panel-content::-webkit-scrollbar-thumb,
+.panel-content:hover::-webkit-scrollbar-thumb,
 .panel-content::-webkit-scrollbar-thumb:hover {
-    background: rgba(100, 116, 139, 0.85);
+    background: transparent !important;
 }
 
 .panel-content::-webkit-scrollbar-button {
@@ -538,7 +553,7 @@ a {
 .sub-nav-item {
     position: relative;
     z-index: 1;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .nav-item {
@@ -617,7 +632,7 @@ a {
     background: linear-gradient(135deg, rgba(236, 72, 153, 0.08) 0%, rgba(168, 85, 247, 0.14) 100%);
     border-color: rgba(168, 85, 247, 0.28);
     box-shadow: 0 4px 14px rgba(168, 85, 247, 0.10);
-    transform: translateX(5px);
+    transform: translateX(4px);
 }
 
 .nav-item-group:hover .nav-item {
@@ -667,7 +682,7 @@ a {
     background: linear-gradient(135deg, rgba(236, 72, 153, 0.22) 0%, rgba(168, 85, 247, 0.30) 100%) !important;
     border-color: rgba(168, 85, 247, 0.55) !important;
     box-shadow: 0 6px 22px rgba(168, 85, 247, 0.28), inset 0 1px 2px rgba(255, 255, 255, 0.9) !important;
-    transform: translateX(5px) !important;
+    transform: translateX(4px) !important;
 }
 
 .nav-item.active:hover::before,
@@ -750,7 +765,9 @@ a {
     flex-direction: column;
     gap: 4px;
     padding-left: 16px;
+    padding-right: 8px;
     margin-left: 24px;
+    margin-right: 2px;
     border-left: 2px solid #f1f5f9;
     margin-top: 0;
     max-height: 0;
@@ -759,8 +776,9 @@ a {
 }
 
 .sub-nav.expanded {
-    max-height: 300px;
+    max-height: 600px;
     margin-top: 4px;
+    overflow: visible;
 }
 
 .sub-nav-item {
@@ -795,7 +813,7 @@ a {
     color: #0f172a;
     font-weight: 600;
     box-shadow: 0 4px 14px rgba(168, 85, 247, 0.10);
-    transform: translateX(5px);
+    transform: translateX(4px);
 }
 
 .sub-nav-item:not(.active):hover i {
@@ -804,7 +822,7 @@ a {
 }
 
 .sub-nav-item.active:hover {
-    transform: translateX(5px) !important;
+    transform: translateX(4px) !important;
 }
 
 .badge {
