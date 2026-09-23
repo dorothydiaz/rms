@@ -21,7 +21,9 @@ require_once __DIR__ . '/config/db.php';
         <!-- Main Content -->
         <main class="main-content">
             <header class="main-header">
-                <h1>Analytics Dashboard</h1>
+                <div class="header-left">
+                    <?php include ROOT_PATH . 'pages/include/breadcrumbs.php'; ?>
+                </div>
                 <div class="header-actions">
                     <button class="icon-btn notification-btn" title="Notifications">
                         <i class="ph ph-bell"></i>

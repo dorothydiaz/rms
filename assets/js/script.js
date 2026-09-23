@@ -22,7 +22,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const toggleBtn = document.querySelector('.sidebar-toggle-btn');
     if (toggleBtn) {
         toggleBtn.onclick = () => {
-            sidebar.classList.toggle('collapsed');
+            const isNowCollapsed = sidebar.classList.toggle('collapsed');
+            try {
+                localStorage.setItem('rms_sidebar_collapsed', isNowCollapsed ? 'true' : 'false');
+            } catch (e) {}
         };
     }
 
@@ -49,8 +52,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 submenus.forEach(menu => menu.classList.remove('active'));
                 const targetMenu = document.getElementById(targetId);
                 if (targetMenu) {
-                    targetMenu.classList.remove('active');
-                    void targetMenu.offsetWidth; // Restart CSS animation
                     targetMenu.classList.add('active');
                 }
             }
@@ -79,4 +80,73 @@ document.addEventListener('DOMContentLoaded', () => {
             };
         }
     });
+
+    // Breadcrumb Dropdown Navigation Switcher
+    const dropdownTriggers = document.querySelectorAll('.breadcrumb-dropdown-btn, .breadcrumb-dropdown-toggle');
+    
+    dropdownTriggers.forEach(triggerBtn => {
+        triggerBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const container = triggerBtn.closest('.breadcrumb-dropdown-container');
+            if (!container) return;
+            
+            const wasOpen = container.classList.contains('open');
+            // Close any other open dropdowns first
+            document.querySelectorAll('.breadcrumb-dropdown-container.open').forEach(c => {
+                if (c !== container) {
+                    c.classList.remove('open');
+                    const btn = c.querySelector('.breadcrumb-dropdown-btn, .breadcrumb-dropdown-toggle');
+                    if (btn) btn.setAttribute('aria-expanded', 'false');
+                }
+            });
+            
+            // Toggle current
+            container.classList.toggle('open', !wasOpen);
+            triggerBtn.setAttribute('aria-expanded', String(!wasOpen));
+        });
+    });
+
+    // Close breadcrumb dropdowns on click outside or Escape
+    function closeAllBreadcrumbDropdowns() {
+        document.querySelectorAll('.breadcrumb-dropdown-container.open').forEach(c => {
+            c.classList.remove('open');
+            const btn = c.querySelector('.breadcrumb-dropdown-btn, .breadcrumb-dropdown-toggle');
+            if (btn) btn.setAttribute('aria-expanded', 'false');
+        });
+    }
+
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.breadcrumb-dropdown-container')) {
+            closeAllBreadcrumbDropdowns();
+        }
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closeAllBreadcrumbDropdowns();
+        }
+    });
+
+    // Ensure clicking breadcrumbs never opens or interacts with sidebar
+    const breadcrumbNav = document.querySelector('.breadcrumb-nav');
+    if (breadcrumbNav) {
+        breadcrumbNav.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (sidebar && sidebar.classList.contains('open')) {
+                sidebar.classList.remove('open');
+                if (overlay) overlay.classList.remove('active');
+            }
+        });
+    }
+
+    // Whenever navigating via breadcrumbs, ensure sidebar stays collapsed on destination page
+    document.querySelectorAll('.breadcrumb-nav a, .breadcrumb-dropdown-menu a').forEach(link => {
+        link.addEventListener('click', () => {
+            try {
+                localStorage.setItem('rms_sidebar_collapsed', 'true');
+            } catch (e) {}
+        });
+    });
 });
+

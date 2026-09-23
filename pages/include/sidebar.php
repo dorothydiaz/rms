@@ -25,7 +25,20 @@ elseif (in_array($currentPage, $creditsPages)) $activeModule = 'credits';
 <!-- Overlay for mobile sidebar -->
 <div class="sidebar-overlay"></div>
 <!-- Sidebar Container -->
-<aside class="sidebar<?= $currentPage === 'index.php' ? ' collapsed' : '' ?>">
+<aside id="app-sidebar" class="sidebar<?= $currentPage === 'index.php' ? ' collapsed' : '' ?>">
+    <script>
+        (function() {
+            try {
+                var sb = document.getElementById('app-sidebar');
+                var state = localStorage.getItem('rms_sidebar_collapsed');
+                if (state === 'true') {
+                    sb.classList.add('collapsed');
+                } else if (state === 'false') {
+                    sb.classList.remove('collapsed');
+                }
+            } catch(e) {}
+        })();
+    </script>
     <!-- Left Rail -->
     <div class="sidebar-rail">
         <div class="rail-header">

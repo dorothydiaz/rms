@@ -5,6 +5,10 @@ if (!defined('BASE_URL')) {
     define('BASE_URL', '/rms/');
 }
 
+if (!defined('ROOT_PATH')) {
+    define('ROOT_PATH', dirname(__DIR__) . DIRECTORY_SEPARATOR);
+}
+
 $db_host = 'localhost';
 $db_user = 'root';
 $db_pass = '';
