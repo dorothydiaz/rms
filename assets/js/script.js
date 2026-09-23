@@ -4,26 +4,34 @@ document.addEventListener('DOMContentLoaded', () => {
     const sidebar = document.querySelector('.sidebar');
     const overlay = document.querySelector('.sidebar-overlay');
 
+    if (!sidebar) return;
+
     function toggleSidebar() {
         sidebar.classList.toggle('open');
-        overlay.classList.toggle('active');
+        if (overlay) overlay.classList.toggle('active');
     }
 
-    mobileMenuBtn.addEventListener('click', toggleSidebar);
-    overlay.addEventListener('click', toggleSidebar);
+    if (mobileMenuBtn) {
+        mobileMenuBtn.onclick = toggleSidebar;
+    }
+    if (overlay) {
+        overlay.onclick = toggleSidebar;
+    }
 
     // Desktop Sidebar Collapse Toggle
     const toggleBtn = document.querySelector('.sidebar-toggle-btn');
-    toggleBtn.addEventListener('click', () => {
-        sidebar.classList.toggle('collapsed');
-    });
+    if (toggleBtn) {
+        toggleBtn.onclick = () => {
+            sidebar.classList.toggle('collapsed');
+        };
+    }
 
     // Submenu switching
     const railItems = document.querySelectorAll('.rail-item[data-target]');
     const submenus = document.querySelectorAll('.submenu');
 
     railItems.forEach(item => {
-        item.addEventListener('click', (e) => {
+        item.onclick = (e) => {
             e.preventDefault();
             
             // Uncollapse if collapsed
@@ -41,18 +49,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 submenus.forEach(menu => menu.classList.remove('active'));
                 const targetMenu = document.getElementById(targetId);
                 if (targetMenu) {
+                    targetMenu.classList.remove('active');
+                    void targetMenu.offsetWidth; // Restart CSS animation
                     targetMenu.classList.add('active');
                 }
             }
-        });
+        };
     });
 
-    // Dropdown Toggles (e.g., Posts)
+    // Dropdown Toggles (Accordion expansion)
     const dropdownGroups = document.querySelectorAll('.nav-item-group');
     dropdownGroups.forEach(group => {
         const subNav = group.nextElementSibling;
         if (subNav && subNav.classList.contains('sub-nav')) {
-            group.addEventListener('click', (e) => {
+            group.onclick = (e) => {
                 e.preventDefault();
                 subNav.classList.toggle('expanded');
                 
@@ -66,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         btnIcon.classList.replace('ph-caret-up', 'ph-caret-down');
                     }
                 }
-            });
+            };
         }
     });
 });
