@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=League+Spartan:wght@300;400;500;600;700;800;900&family=Outfit:wght@500;600;700;800&family=Poppins:wght@300;400;500;600;700&display=swap');
+
 :root {
     /* Colors */
     --bg-main: transparent;
@@ -23,7 +25,7 @@
     
     /* Typography */
     --font-family: 'Poppins', sans-serif;
-    --font-heading: 'Outfit', sans-serif;
+    --font-heading: 'Poppins', sans-serif;
 }
 
 * {
