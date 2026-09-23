@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurant Management System Dashboard</title>
+    <link rel="stylesheet" href="assets/css/styles.css">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Overlay for mobile sidebar -->
+        <div class="sidebar-overlay"></div>
+        <!-- Sidebar Container -->
+        <aside class="sidebar collapsed">
+            <!-- Left Rail -->
+            <div class="sidebar-rail">
+                <div class="rail-header">
+                    <div class="brand-logo">
+                        <i class="ph ph-fork-knife"></i>
+                    </div>
+                </div>
+                
+                <nav class="rail-nav">
+                    <a href="index.html" class="rail-item active" data-title="Home"><i class="ph ph-house"></i></a>
+                    <a href="#" class="rail-item" data-title="HR Operations" data-target="submenu-hr"><i class="ph ph-users-three"></i></a>
+                    <a href="#" class="rail-item" data-title="Sales Operations" data-target="submenu-sales"><i class="ph ph-chart-line-up"></i></a>
+                    <a href="#" class="rail-item" data-title="Inventory Operations" data-target="submenu-inventory"><i class="ph ph-package"></i></a>
+                    <a href="#" class="rail-item" data-title="Purchase Operations" data-target="submenu-purchase"><i class="ph ph-shopping-cart"></i></a>
+                    <a href="#" class="rail-item" data-title="Business Config" data-target="submenu-config"><i class="ph ph-storefront"></i></a>
+                </nav>
+                
+                <div class="rail-footer">
+                    <a href="#" class="rail-item" data-title="Credits" data-target="submenu-credits"><i class="ph ph-info"></i></a>
+                </div>
+            </div>
+
+            <!-- Right Panel -->
+            <div class="sidebar-panel">
+                <div class="panel-header">
+                    <div class="workspace-selector">
+                        <div class="workspace-icon">
+                            <i class="ph ph-storefront"></i>
+                        </div>
+                        <div class="workspace-info">
+                            <span class="workspace-name">Restaurant Name</span>
+                        </div>
+                        <div class="sidebar-toggle-btn" title="Toggle Sidebar">
+                            <i class="ph ph-caret-left"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- HR Operations -->
+                <div id="submenu-hr" class="panel-content submenu">
+                    <div class="nav-section">
+                        <a href="/pages/hr/hr-dashboard.html" class="nav-item">
+                            <i class="ph ph-chart-bar"></i>
+                            <span>HR Dashboard</span>
+                        </a>
+                    </div>
+                    <div class="nav-section">
+                        <div class="nav-item-group">
+                            <a href="#" class="nav-item">
+                                <i class="ph ph-users"></i>
+                                <span>Employee Management</span>
+                            </a>
+                            <button class="add-btn"><i class="ph ph-plus"></i></button>
+                        </div>
+                        <div class="sub-nav">
+                            <a href="" class="sub-nav-item"><span>Employee</span></a>
+                            <a href="" class="sub-nav-item"><span>Users & Authentication</span></a>
+                        </div>
+                    </div>
+                    <div class="nav-section">
+                        <div class="nav-item-group">
+                            <a href="#" class="nav-item">
+                                <i class="ph ph-wallet"></i>
+                                <span>Payroll</span>
+                            </a>
+                            <button class="add-btn"><i class="ph ph-plus"></i></button>
+                        </div>
+                        <div class="sub-nav">
+                            <a href="" class="sub-nav-item"><span>Attendance Schedule</span></a>
+                            <a href="" class="sub-nav-item"><span>Attendance Check IN /OUT</span></a>
+                            <a href="" class="sub-nav-item"><span>Employee Leave / Time Request</span></a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sales Operations -->
+                <div id="submenu-sales" class="panel-content submenu">
+                    <div class="nav-section">
+                        <a href="" class="nav-item">
+                            <i class="ph ph-chart-line-up"></i>
+                            <span>Sales Dashboard</span>
+                        </a>
+                    </div>
+                    <div class="nav-section">
+                        <div class="nav-item-group">
+                            <a href="#" class="nav-item">
+                                <i class="ph ph-currency-dollar"></i>
+                                <span>Sales Management</span>
+                            </a>
+                            <button class="add-btn"><i class="ph ph-plus"></i></button>
+                        </div>
+                        <div class="sub-nav">
+                            <a href="" class="sub-nav-item"><span>Daily Sales Report</span></a>
+                            <a href="" class="sub-nav-item"><span>Payment Report</span></a>
+                            <a href="" class="sub-nav-item"><span>Reconciliations</span></a>
+                        </div>
+                    </div>
+                    <div class="nav-section">
+                        <div class="nav-item-group">
+                            <a href="#" class="nav-item">
+                                <i class="ph ph-tag"></i>
+                                <span>Promotion Management</span>
+                            </a>
+                            <button class="add-btn"><i class="ph ph-plus"></i></button>
+                        </div>
+                        <div class="sub-nav">
+                            <a href="" class="sub-nav-item"><span>Discount Configuration</span></a>
+                            <a href="" class="sub-nav-item"><span>Voucher Configuration</span></a>
+                            <a href="" class="sub-nav-item"><span>Bundle Promotions</span></a>
+                        </div>
+                    </div>
+                    <div class="nav-section">
+                        <div class="nav-item-group">
+                            <a href="#" class="nav-item">
+                                <i class="ph ph-address-book"></i>
+                                <span>Customer Relation Mgt.</span>
+                            </a>
+                            <button class="add-btn"><i class="ph ph-plus"></i></button>
+                        </div>
+                        <div class="sub-nav">
+                            <a href="" class="sub-nav-item"><span>Customer Masterlist</span></a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Inventory Operations -->
+                <div id="submenu-inventory" class="panel-content submenu">
+                    <div class="nav-section">
+                        <a href="" class="nav-item">
+                            <i class="ph ph-chart-bar"></i>
+                            <span>Inventory Dashboard</span>
+                        </a>
+                    </div>
+                    <div class="nav-section">
+                        <div class="nav-item-group">
+                            <a href="#" class="nav-item">
+                                <i class="ph ph-package"></i>
+                                <span>Inventory Management</span>
+                            </a>
+                            <button class="add-btn"><i class="ph ph-plus"></i></button>
+                        </div>
+                        <div class="sub-nav">
+                            <a href="" class="sub-nav-item"><span>Stocks Overview</span></a>
+                            <a href="" class="sub-nav-item"><span>Beg Balance</span></a>
+                            <a href="" class="sub-nav-item"><span>Stock In / Receiving</span></a>
+                            <a href="" class="sub-nav-item"><span>Stock Out / Usage</span></a>
+                            <a href="" class="sub-nav-item"><span>Stock Adjustment</span></a>
+                            <a href="" class="sub-nav-item"><span>Waste & Expiry</span></a>
+                        </div>
+                    </div>
+                    <div class="nav-section">
+                        <div class="nav-item-group">
+                            <a href="#" class="nav-item">
+                                <i class="ph ph-pizza"></i>
+                                <span>Product Management</span>
+                            </a>
+                            <button class="add-btn"><i class="ph ph-plus"></i></button>
+                        </div>
+                        <div class="sub-nav">
+                            <a href="" class="sub-nav-item"><span>Product / Categories</span></a>
+                            <a href="" class="sub-nav-item"><span>Recipe / Menu Management</span></a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Purchase Operations -->
+                <div id="submenu-purchase" class="panel-content submenu">
+                    <div class="nav-section">
+                        <a href="" class="nav-item">
+                            <i class="ph ph-chart-bar"></i>
+                            <span>Purchase Dashboard</span>
+                        </a>
+                    </div>
+                    <div class="nav-section">
+                        <div class="nav-item-group">
+                            <a href="#" class="nav-item">
+                                <i class="ph ph-shopping-cart"></i>
+                                <span>Purchase Management</span>
+                            </a>
+                            <button class="add-btn"><i class="ph ph-plus"></i></button>
+                        </div>
+                        <div class="sub-nav">
+                            <a href="" class="sub-nav-item"><span>Request for Quotations</span></a>
+                            <a href="" class="sub-nav-item"><span>Purchase Orders</span></a>
+                        </div>
+                    </div>
+                    <div class="nav-section">
+                        <div class="nav-item-group">
+                            <a href="#" class="nav-item">
+                                <i class="ph ph-truck"></i>
+                                <span>Vendor Management</span>
+                            </a>
+                            <button class="add-btn"><i class="ph ph-plus"></i></button>
+                        </div>
+                        <div class="sub-nav">
+                            <a href="" class="sub-nav-item"><span>Vendor Masterlist</span></a>
+                            <a href="" class="sub-nav-item"><span>Vendor Bills</span></a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Business Configuration -->
+                <div id="submenu-config" class="panel-content submenu">
+                    <div class="nav-section">
+                        <a href="" class="nav-item">
+                            <i class="ph ph-storefront"></i>
+                            <span>Business Settings</span>
+                        </a>
+                        <a href="" class="nav-item">
+                            <i class="ph ph-user-gear"></i>
+                            <span>Account Settings</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Credits -->
+                <div id="submenu-credits" class="panel-content submenu">
+                    <div class="nav-section">
+                        <a href="" class="nav-item">
+                            <i class="ph ph-headset"></i>
+                            <span>Tickets / Help Desk</span>
+                        </a>
+                        <a href="" class="nav-item">
+                            <i class="ph ph-code"></i>
+                            <span>Developers</span>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="panel-footer">
+                    <div class="user-profile">
+                        <div class="user-avatar-icon">
+                            <i class="ph ph-user"></i>
+                        </div>
+                        <div class="user-info">
+                            <span class="user-name">Dorothy Diaz</span>
+                            <span class="user-role">Manager</span>
+                        </div>
+                        <a href="#" class="logout-btn" title="Logout">
+                            <i class="ph ph-sign-out"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="main-header">
+                <h1>Analytics Dashboard</h1>
+                <div class="header-actions">
+                    <button class="icon-btn notification-btn" title="Notifications">
+                        <i class="ph ph-bell"></i>
+                    </button>
+                    <button class="mobile-menu-btn">
+                        <i class="ph ph-list"></i>
+                    </button>
+                </div>
+            </header>
+            <div class="content-area">
+                <p>Main dashboard content goes here.</p>
+            </div>
+        </main>
+    </div>
+    <script src="assets/js/script.js"></script>
+</body>
+</html>
