@@ -30,12 +30,16 @@ elseif (in_array($currentPage, $creditsPages)) $activeModule = 'credits';
         (function() {
             try {
                 var sb = document.getElementById('app-sidebar');
-                var state = localStorage.getItem('rms_sidebar_collapsed');
-                if (state === 'true') {
+                <?php if ($currentPage === 'index.php'): ?>
                     sb.classList.add('collapsed');
-                } else if (state === 'false') {
-                    sb.classList.remove('collapsed');
-                }
+                <?php else: ?>
+                    var state = localStorage.getItem('rms_sidebar_collapsed');
+                    if (state === 'true') {
+                        sb.classList.add('collapsed');
+                    } else if (state === 'false') {
+                        sb.classList.remove('collapsed');
+                    }
+                <?php endif; ?>
             } catch(e) {}
         })();
     </script>
@@ -70,9 +74,6 @@ elseif (in_array($currentPage, $creditsPages)) $activeModule = 'credits';
                 </div>
                 <div class="workspace-info">
                     <span class="workspace-name">Restaurant Name</span>
-                </div>
-                <div class="sidebar-toggle-btn" title="Toggle Sidebar">
-                    <i class="ph ph-caret-left"></i>
                 </div>
             </div>
         </div>

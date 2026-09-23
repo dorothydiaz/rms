@@ -227,43 +227,19 @@ if (!$currentPageItem) {
 }
 ?>
 
-<nav class="breadcrumb-nav" aria-label="Breadcrumb navigation">
-    <ol class="breadcrumb-list">
-        <!-- Root: Home / Dashboard -->
-        <li class="breadcrumb-item breadcrumb-dropdown-container">
-            <a href="<?= BASE_URL ?>index.php" class="breadcrumb-link breadcrumb-home" title="Go to Dashboard">
-                <i class="ph ph-house"></i>
-                <span class="breadcrumb-text">Dashboard</span>
-            </a>
-            <button type="button" class="breadcrumb-dropdown-toggle" aria-label="Module Quick Switch" title="Quick Switch Module">
-                <i class="ph ph-caret-down"></i>
-            </button>
-            <div class="breadcrumb-dropdown-menu">
-                <div class="dropdown-header">Jump to Module</div>
-                <a href="<?= BASE_URL ?>index.php" class="dropdown-item<?= $currentPage === 'index.php' ? ' active' : '' ?>">
-                    <i class="ph ph-house"></i>
-                    <span class="dropdown-item-text">Analytics Dashboard</span>
-                    <?php if ($currentPage === 'index.php'): ?><span class="dropdown-badge">Current</span><?php endif; ?>
-                </a>
-                <?php foreach ($moduleRegistry as $mKey => $mInfo): ?>
-                    <a href="<?= $mInfo['dashboard_url'] ?>" class="dropdown-item<?= $currentModuleKey === $mKey ? ' active' : '' ?>">
-                        <i class="ph <?= $mInfo['icon'] ?>"></i>
-                        <span class="dropdown-item-text"><?= htmlspecialchars($mInfo['title']) ?></span>
-                        <?php if ($currentModuleKey === $mKey): ?><span class="dropdown-badge">Active</span><?php endif; ?>
-                    </a>
-                <?php endforeach; ?>
-            </div>
-        </li>
+<button type="button" class="sidebar-toggle-btn header-sidebar-toggle" data-tooltip="Toggle Sidebar" aria-label="Toggle Sidebar">
+    <i class="ph ph-list"></i>
+</button>
 
-        <?php if ($currentModule): ?>
-            <li class="breadcrumb-separator" aria-hidden="true">
-                <i class="ph ph-caret-right"></i>
-            </li>
-
-            <!-- Module Crumb (Unified Dropdown Button) -->
+<div class="breadcrumb-header-block">
+    <h1 class="page-header-title"><?= htmlspecialchars($currentPageItem['title']) ?></h1>
+    
+    <?php if ($currentModule): ?>
+    <nav class="breadcrumb-nav" aria-label="Breadcrumb navigation">
+        <ol class="breadcrumb-list">
+            <!-- Module Crumb -->
             <li class="breadcrumb-item breadcrumb-dropdown-container">
-                <button type="button" class="breadcrumb-dropdown-btn" aria-haspopup="true" aria-expanded="false" title="Click to view all <?= htmlspecialchars($currentModule['title']) ?> sections">
-                    <i class="ph <?= $currentModule['icon'] ?>"></i>
+                <button type="button" class="breadcrumb-btn" aria-haspopup="true" aria-expanded="false" title="<?= htmlspecialchars($currentModule['title']) ?>">
                     <span class="breadcrumb-text"><?= htmlspecialchars($currentModule['title']) ?></span>
                     <i class="ph ph-caret-down dropdown-arrow"></i>
                 </button>
@@ -281,65 +257,46 @@ if (!$currentPageItem) {
                     <?php endforeach; ?>
                 </div>
             </li>
-        <?php endif; ?>
 
-        <?php if ($currentSection && $currentSectionKey !== 'overview'): ?>
-            <li class="breadcrumb-separator" aria-hidden="true">
-                <i class="ph ph-caret-right"></i>
-            </li>
+            <?php if ($currentSection && $currentSectionKey !== 'overview'): ?>
+                <li class="breadcrumb-separator" aria-hidden="true">
+                    <i class="ph ph-caret-right"></i>
+                </li>
 
-            <!-- Section Crumb (Unified Dropdown Button) -->
-            <li class="breadcrumb-item breadcrumb-dropdown-container">
-                <button type="button" class="breadcrumb-dropdown-btn" aria-haspopup="true" aria-expanded="false" title="Click to view pages in <?= htmlspecialchars($currentSection['title']) ?>">
-                    <?php if (!empty($currentSection['icon'])): ?>
-                        <i class="ph <?= $currentSection['icon'] ?>"></i>
-                    <?php endif; ?>
-                    <span class="breadcrumb-text"><?= htmlspecialchars($currentSection['title']) ?></span>
-                    <i class="ph ph-caret-down dropdown-arrow"></i>
-                </button>
-                <div class="breadcrumb-dropdown-menu">
-                    <div class="dropdown-header">Pages in <?= htmlspecialchars($currentSection['title']) ?></div>
-                    <?php foreach ($currentSection['items'] as $sItem): ?>
-                        <a href="<?= $sItem['url'] ?>" class="dropdown-item<?= $currentPage === $sItem['file'] ? ' active' : '' ?>">
-                            <i class="ph <?= !empty($sItem['icon']) ? $sItem['icon'] : 'ph-file-text' ?>"></i>
-                            <span class="dropdown-item-text"><?= htmlspecialchars($sItem['title']) ?></span>
-                            <?php if ($currentPage === $sItem['file']): ?>
-                                <span class="dropdown-badge">Current</span>
-                            <?php endif; ?>
-                        </a>
-                    <?php endforeach; ?>
-
-                    <?php if (count($currentModule['sections']) > 1): ?>
-                        <div class="dropdown-divider"></div>
-                        <div class="dropdown-header">Other <?= htmlspecialchars($currentModule['title']) ?> Sections</div>
-                        <?php foreach ($currentModule['sections'] as $otherKey => $otherSec): ?>
-                            <?php if ($otherKey !== $currentSectionKey): ?>
-                                <a href="<?= $otherSec['url'] ?>" class="dropdown-item secondary">
-                                    <i class="ph <?= !empty($otherSec['icon']) ? $otherSec['icon'] : 'ph-folder' ?>"></i>
-                                    <span class="dropdown-item-text"><?= htmlspecialchars($otherSec['title']) ?></span>
-                                </a>
-                            <?php endif; ?>
+                <!-- Section Crumb -->
+                <li class="breadcrumb-item breadcrumb-dropdown-container">
+                    <button type="button" class="breadcrumb-btn" aria-haspopup="true" aria-expanded="false" title="<?= htmlspecialchars($currentSection['title']) ?>">
+                        <span class="breadcrumb-text"><?= htmlspecialchars($currentSection['title']) ?></span>
+                        <i class="ph ph-caret-down dropdown-arrow"></i>
+                    </button>
+                    <div class="breadcrumb-dropdown-menu">
+                        <div class="dropdown-header">Pages in <?= htmlspecialchars($currentSection['title']) ?></div>
+                        <?php foreach ($currentSection['items'] as $sItem): ?>
+                            <a href="<?= $sItem['url'] ?>" class="dropdown-item<?= $currentPage === $sItem['file'] ? ' active' : '' ?>">
+                                <i class="ph <?= !empty($sItem['icon']) ? $sItem['icon'] : 'ph-file-text' ?>"></i>
+                                <span class="dropdown-item-text"><?= htmlspecialchars($sItem['title']) ?></span>
+                                <?php if ($currentPage === $sItem['file']): ?>
+                                    <span class="dropdown-badge">Current</span>
+                                <?php endif; ?>
+                            </a>
                         <?php endforeach; ?>
-                    <?php endif; ?>
-                </div>
-            </li>
-        <?php endif; ?>
 
-        <!-- Active Page Title (Final Crumb) -->
-        <?php if ($currentPage !== 'index.php'): ?>
-            <li class="breadcrumb-separator" aria-hidden="true">
-                <i class="ph ph-caret-right"></i>
-            </li>
-            <li class="breadcrumb-item current" aria-current="page">
-                <h1 class="breadcrumb-current-title"><?= htmlspecialchars($currentPageItem['title']) ?></h1>
-            </li>
-        <?php else: ?>
-            <li class="breadcrumb-separator" aria-hidden="true">
-                <i class="ph ph-caret-right"></i>
-            </li>
-            <li class="breadcrumb-item current" aria-current="page">
-                <h1 class="breadcrumb-current-title">Analytics Dashboard</h1>
-            </li>
-        <?php endif; ?>
-    </ol>
-</nav>
+                        <?php if (count($currentModule['sections']) > 1): ?>
+                            <div class="dropdown-divider"></div>
+                            <div class="dropdown-header">Other <?= htmlspecialchars($currentModule['title']) ?> Sections</div>
+                            <?php foreach ($currentModule['sections'] as $otherKey => $otherSec): ?>
+                                <?php if ($otherKey !== $currentSectionKey): ?>
+                                    <a href="<?= $otherSec['url'] ?>" class="dropdown-item secondary">
+                                        <i class="ph <?= !empty($otherSec['icon']) ? $otherSec['icon'] : 'ph-folder' ?>"></i>
+                                        <span class="dropdown-item-text"><?= htmlspecialchars($otherSec['title']) ?></span>
+                                    </a>
+                                <?php endif; ?>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </div>
+                </li>
+            <?php endif; ?>
+        </ol>
+    </nav>
+    <?php endif; ?>
+</div>

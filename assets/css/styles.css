@@ -253,7 +253,7 @@ a {
 .workspace-selector {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-start;
     gap: 12px;
     width: 100%;
     cursor: default;
@@ -293,34 +293,6 @@ a {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-}
-
-.workspace-selector .sidebar-toggle-btn {
-    color: #ffffff;
-    background-color: rgba(255, 255, 255, 0.18);
-    width: 32px;
-    height: 32px;
-    padding: 0;
-    border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.35);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    flex-shrink: 0;
-    margin-left: auto;
-    cursor: pointer;
-}
-
-.workspace-selector .sidebar-toggle-btn:hover {
-    background-color: rgba(255, 255, 255, 0.35);
-    border-color: rgba(255, 255, 255, 0.6);
-    color: #ffffff;
-    transform: scale(1.06);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .panel-content {
@@ -628,14 +600,15 @@ a {
 }
 
 .main-header {
-    height: 64px;
+    min-height: 64px;
+    height: auto;
     border-bottom: var(--glass-border);
     background-color: rgba(255, 255, 255, 0.45);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     display: flex;
     align-items: center;
-    padding: 0 24px;
+    padding: 10px 24px;
     justify-content: space-between;
     position: relative;
     z-index: 50;
@@ -645,11 +618,130 @@ a {
 .header-left {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 20px;
     flex: 1;
     min-width: 0;
     overflow: visible;
     position: relative;
+}
+
+/* Header Sidebar Collapse Toggle Button - Modern Glassmorphic */
+.header-sidebar-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    border: 1px solid rgba(168, 85, 247, 0.22);
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.12) 0%, rgba(236, 72, 153, 0.12) 100%);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    color: #9333ea;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 2px 8px rgba(168, 85, 247, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.6);
+    flex-shrink: 0;
+    position: relative;
+}
+
+.header-sidebar-toggle i {
+    background: linear-gradient(135deg, #9333ea 0%, #ec4899 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: inline-block;
+    transition: transform 0.2s ease;
+    font-size: 16px;
+}
+
+.header-sidebar-toggle:hover {
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.22) 0%, rgba(236, 72, 153, 0.22) 100%);
+    border-color: rgba(168, 85, 247, 0.4);
+    box-shadow: 0 4px 14px rgba(168, 85, 247, 0.18), inset 0 1px 1px rgba(255, 255, 255, 0.8);
+    transform: translateY(-1px);
+}
+
+.header-sidebar-toggle:hover i {
+    transform: scale(1.1);
+}
+
+.header-sidebar-toggle:active {
+    transform: scale(0.95);
+}
+
+/* Custom Tooltip for Header Sidebar Toggle */
+.header-sidebar-toggle::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    top: calc(100% + 7px);
+    left: 50%;
+    transform: translateX(-50%) translateY(-4px);
+    background: rgba(15, 23, 42, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    color: #ffffff;
+    font-family: var(--font-family);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    padding: 4px 9px;
+    border-radius: 6px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.18s cubic-bezier(0.16, 1, 0.3, 1), transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.18s;
+    box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.3), 0 4px 8px -2px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    z-index: 10000;
+}
+
+/* Tooltip Caret Arrow */
+.header-sidebar-toggle::before {
+    content: '';
+    position: absolute;
+    top: calc(100% + 2px);
+    left: 50%;
+    transform: translateX(-50%) translateY(-4px);
+    border-width: 0 4.5px 5px 4.5px;
+    border-style: solid;
+    border-color: transparent transparent rgba(15, 23, 42, 0.92) transparent;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.18s cubic-bezier(0.16, 1, 0.3, 1), transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.18s;
+    z-index: 10001;
+}
+
+.header-sidebar-toggle:hover::after,
+.header-sidebar-toggle:hover::before {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* Breadcrumb Header Block - Stacked Layout (Page Title on Top, Breadcrumbs Underneath) */
+.breadcrumb-header-block {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 1px;
+    min-width: 0;
+}
+
+.page-header-title {
+    font-family: var(--font-heading);
+    font-size: 16px;
+    font-weight: 700;
+    margin: 0;
+    padding: 0;
+    line-height: 1.25;
+    letter-spacing: -0.015em;
+    background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: inline-block;
 }
 
 /* Breadcrumb Styles - Modern Glassmorphism */
@@ -658,7 +750,7 @@ a {
     align-items: center;
     overflow: visible;
     position: relative;
-    padding: 2px 0;
+    padding: 0;
     max-width: 100%;
 }
 
@@ -666,7 +758,7 @@ a {
     display: flex;
     align-items: center;
     list-style: none;
-    gap: 6px;
+    gap: 2px;
     margin: 0;
     padding: 0;
     white-space: nowrap;
@@ -676,174 +768,119 @@ a {
     display: inline-flex;
     align-items: center;
     position: relative;
-    font-size: 13.5px;
+    font-size: 11.5px;
 }
 
-/* Home / Direct Link - Frosted Glass Capsule */
+/* Clean Inline Text Breadcrumb Navigation */
+.breadcrumb-btn,
 .breadcrumb-link {
     display: inline-flex;
     align-items: center;
-    gap: 7px;
-    padding: 6px 13px;
-    border-radius: 10px;
-    color: var(--text-secondary);
+    gap: 2px;
+    padding: 1px 3px;
+    border-radius: 5px;
+    color: #64748b;
+    font-family: var(--font-family);
+    font-size: 11.5px;
     font-weight: 500;
     text-decoration: none;
-    background: rgba(255, 255, 255, 0.45);
-    backdrop-filter: blur(16px) saturate(180%);
-    -webkit-backdrop-filter: blur(16px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.75);
-    box-shadow: 0 4px 16px 0 rgba(31, 38, 135, 0.05), inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.95);
-    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    background: transparent;
+    border: 1px solid transparent;
+    cursor: pointer;
+    outline: none;
+    transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.breadcrumb-link i {
-    font-size: 16px;
-    color: #64748b;
-    transition: transform 0.2s ease, color 0.2s ease;
-}
-
-.breadcrumb-link:hover {
-    background: rgba(255, 255, 255, 0.85);
-    color: #4f46e5;
-    border-color: rgba(255, 255, 255, 1);
-    box-shadow: 0 8px 24px 0 rgba(99, 102, 241, 0.15), 0 2px 6px 0 rgba(99, 102, 241, 0.08), inset 0 1px 1.5px 0 #ffffff;
-    transform: translateY(-1px);
-}
-
-.breadcrumb-link:hover i {
-    color: #4f46e5;
-    transform: scale(1.1);
-}
-
-/* Unified Dropdown Button (Module & Section Pills) - Frosted Glass Capsule */
 .breadcrumb-dropdown-btn {
     display: inline-flex;
     align-items: center;
-    gap: 7px;
-    padding: 6px 13px;
-    border-radius: 10px;
-    background: rgba(255, 255, 255, 0.45);
-    backdrop-filter: blur(16px) saturate(180%);
-    -webkit-backdrop-filter: blur(16px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.75);
-    color: #334155;
+    gap: 2px;
+    padding: 1px 3px;
+    border-radius: 5px;
+    color: #64748b;
     font-family: var(--font-family);
-    font-size: 13px;
+    font-size: 11.5px;
     font-weight: 500;
+    background: transparent;
+    border: 1px solid transparent;
     cursor: pointer;
-    box-shadow: 0 4px 16px 0 rgba(31, 38, 135, 0.05), inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.95);
-    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-    user-select: none;
     outline: none;
+    transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.breadcrumb-dropdown-btn i:first-child {
-    font-size: 16px;
-    color: #6366f1;
-    transition: transform 0.2s ease, color 0.2s ease;
-}
-
-.breadcrumb-dropdown-btn .dropdown-arrow {
-    font-size: 11px;
-    color: #94a3b8;
-    margin-left: 2px;
-    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s ease;
-}
-
-.breadcrumb-dropdown-btn:hover,
-.breadcrumb-dropdown-container.open .breadcrumb-dropdown-btn {
-    background: rgba(255, 255, 255, 0.85);
-    color: #4f46e5;
-    border-color: rgba(255, 255, 255, 1);
-    box-shadow: 0 8px 24px 0 rgba(99, 102, 241, 0.15), 0 2px 6px 0 rgba(99, 102, 241, 0.08), inset 0 1px 1.5px 0 #ffffff;
-    transform: translateY(-1px);
-}
-
-.breadcrumb-dropdown-btn:hover .dropdown-arrow,
-.breadcrumb-dropdown-container.open .dropdown-arrow {
-    transform: rotate(180deg);
-    color: #4f46e5;
-}
-
-.breadcrumb-dropdown-btn:hover i:first-child {
-    transform: scale(1.1);
-}
-
-/* Standalone Toggle Button */
-.breadcrumb-dropdown-toggle {
+/* Caret hidden by default, smoothly reveals on hover or when open */
+.dropdown-arrow {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
-    width: 24px;
-    height: 28px;
-    border-radius: 8px;
-    border: 1px solid transparent;
-    background: transparent;
+    font-size: 9px;
     color: #94a3b8;
-    cursor: pointer;
-    margin-left: -2px;
-    padding: 0;
-    transition: all 0.2s ease;
+    opacity: 0;
+    width: 0;
+    margin-left: 0;
+    overflow: hidden;
+    transform: scale(0.6);
+    transition: opacity 0.2s ease, width 0.2s ease, margin 0.2s ease, transform 0.2s ease, color 0.2s ease;
 }
 
-.breadcrumb-dropdown-toggle:hover,
-.breadcrumb-dropdown-container.open .breadcrumb-dropdown-toggle {
-    background: rgba(255, 255, 255, 0.8);
+/* Hover or Clicked / Open State - subtle frosted highlight and revealed arrow */
+.breadcrumb-dropdown-container:hover .breadcrumb-btn,
+.breadcrumb-dropdown-container:hover .breadcrumb-dropdown-btn,
+.breadcrumb-btn:hover,
+.breadcrumb-link:hover,
+.breadcrumb-dropdown-container.open .breadcrumb-btn,
+.breadcrumb-dropdown-container.open .breadcrumb-dropdown-btn {
+    background: rgba(255, 255, 255, 0.7);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border-color: rgba(255, 255, 255, 0.9);
     color: #4f46e5;
-    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.08);
 }
 
-.breadcrumb-dropdown-container.open .breadcrumb-dropdown-toggle i {
-    transform: rotate(180deg);
+.breadcrumb-dropdown-container:hover .dropdown-arrow,
+.breadcrumb-dropdown-container.open .dropdown-arrow {
+    opacity: 1;
+    width: 10px;
+    margin-left: 2px;
+    transform: scale(1);
+    color: #4f46e5;
 }
 
-.breadcrumb-dropdown-toggle i {
-    font-size: 11px;
-    transition: transform 0.2s ease;
+.breadcrumb-dropdown-container.open .dropdown-arrow {
+    transform: scale(1) rotate(180deg);
 }
 
-/* Separator - Sleek Subtle Caret */
+/* Standalone Toggle Button (if present) */
+.breadcrumb-dropdown-toggle {
+    display: none;
+}
+
+/* Separator - Clean Subtle Chevron */
 .breadcrumb-separator {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     color: #94a3b8;
-    font-size: 11px;
-    margin: 0 2px;
+    font-size: 9.5px;
+    margin: 0 1px;
     user-select: none;
-    opacity: 0.7;
-    transition: opacity 0.2s ease;
+    opacity: 0.85;
 }
 
-/* Active Page Title Crumb - Neutral Frosted Glass Capsule with Gradient Text */
+/* Active Page Title Crumb - Pure Text with Purple-to-Pink Gradient */
 .breadcrumb-item.current {
     display: inline-flex;
     align-items: center;
-    padding: 6px 14px;
-    border-radius: 10px;
-    background: rgba(255, 255, 255, 0.45);
-    backdrop-filter: blur(16px) saturate(180%);
-    -webkit-backdrop-filter: blur(16px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.75);
-    box-shadow: 0 4px 16px 0 rgba(31, 38, 135, 0.05), inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.95);
-    transition: all 0.25s ease;
-}
-
-.breadcrumb-item.current:hover {
-    background: rgba(255, 255, 255, 0.85);
-    border-color: rgba(255, 255, 255, 1);
-    box-shadow: 0 8px 24px 0 rgba(31, 38, 135, 0.08), inset 0 1px 1.5px 0 #ffffff;
-    transform: translateY(-1px);
+    padding: 2px 4px;
+    background: transparent;
+    border: none;
+    box-shadow: none;
 }
 
 .breadcrumb-current-title {
     font-family: var(--font-heading);
-    font-size: 14.5px;
-    font-weight: 700;
+    font-size: 13.5px;
+    font-weight: 600;
     margin: 0;
     padding: 0;
     letter-spacing: -0.01em;
@@ -856,30 +893,50 @@ a {
 /* Floating Breadcrumb Dropdown Menu - Deep Frosted Glassmorphism */
 .breadcrumb-dropdown-menu {
     position: absolute;
-    top: calc(100% + 8px);
+    top: calc(100% + 4px);
     left: 0;
-    min-width: 255px;
-    max-height: 440px;
+    min-width: 220px;
+    max-height: 380px;
     overflow-y: auto;
-    background: rgba(255, 255, 255, 0.90);
+    background: rgba(255, 255, 255, 0.92);
     backdrop-filter: blur(32px) saturate(200%);
     -webkit-backdrop-filter: blur(32px) saturate(200%);
     border: 1px solid rgba(255, 255, 255, 0.95);
     box-shadow: 
-        0 24px 48px -12px rgba(15, 23, 42, 0.16),
-        0 8px 24px -4px rgba(99, 102, 241, 0.08),
+        0 20px 40px -12px rgba(15, 23, 42, 0.14),
+        0 6px 18px -4px rgba(99, 102, 241, 0.08),
         inset 0 1.5px 2px 0 rgba(255, 255, 255, 0.95);
-    border-radius: 16px;
-    padding: 8px;
+    border-radius: 12px;
+    padding: 6px;
     z-index: 99999;
     opacity: 0;
     visibility: hidden;
-    transform: translateY(-8px) scale(0.97);
+    transform: translateY(-5px) scale(0.98);
     transform-origin: top left;
-    transition: opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1), transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.22s;
+    transition: opacity 0.18s cubic-bezier(0.16, 1, 0.3, 1), transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.18s;
     pointer-events: none;
 }
 
+/* Expanded invisible hover bridge to ensure seamless cursor transition from crumb text to dropdown items */
+.breadcrumb-dropdown-menu::before {
+    content: '';
+    position: absolute;
+    top: -12px;
+    left: -15px;
+    right: -15px;
+    height: 16px;
+    background: transparent;
+    pointer-events: auto;
+}
+
+/* Also add safe hover zone on the container */
+.breadcrumb-dropdown-container {
+    position: relative;
+    padding-bottom: 2px;
+}
+
+/* Show when hovered OR when clicked (open) */
+.breadcrumb-dropdown-container:hover .breadcrumb-dropdown-menu,
 .breadcrumb-dropdown-container.open .breadcrumb-dropdown-menu {
     opacity: 1;
     visibility: visible;
@@ -888,20 +945,20 @@ a {
 }
 
 .dropdown-header {
-    font-size: 10px;
+    font-size: 9px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.07em;
     color: #64748b;
-    padding: 7px 12px 4px;
+    padding: 5px 9px 3px;
 }
 
 .dropdown-section-title {
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 600;
     color: #475569;
-    padding: 8px 12px 3px;
-    margin-top: 6px;
+    padding: 6px 9px 2px;
+    margin-top: 4px;
     border-top: 1px solid rgba(255, 255, 255, 0.6);
 }
 
@@ -909,16 +966,16 @@ a {
     height: 1px;
     background: rgba(0, 0, 0, 0.05);
     border-bottom: 1px solid rgba(255, 255, 255, 0.6);
-    margin: 6px 4px;
+    margin: 4px 3px;
 }
 
 .breadcrumb-dropdown-menu .dropdown-item {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 8px 12px;
-    border-radius: 10px;
-    font-size: 13px;
+    gap: 8px;
+    padding: 6px 9px;
+    border-radius: 8px;
+    font-size: 11.5px;
     color: var(--text-primary);
     text-decoration: none;
     border: 1px solid transparent;
@@ -927,7 +984,7 @@ a {
 }
 
 .breadcrumb-dropdown-menu .dropdown-item i {
-    font-size: 16px;
+    font-size: 14px;
     color: #64748b;
     transition: color 0.15s ease, transform 0.15s ease;
 }
@@ -939,20 +996,20 @@ a {
 
 .breadcrumb-dropdown-menu .dropdown-item.secondary {
     color: var(--text-secondary);
-    font-size: 12.5px;
+    font-size: 11px;
 }
 
 .breadcrumb-dropdown-menu .dropdown-item:hover {
     background: rgba(255, 255, 255, 0.85);
     border-color: rgba(255, 255, 255, 0.95);
     color: #4f46e5;
-    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1), inset 0 1px 1px #ffffff;
-    transform: translateX(3px);
+    box-shadow: 0 3px 10px rgba(99, 102, 241, 0.1), inset 0 1px 1px #ffffff;
+    transform: translateX(2px);
 }
 
 .breadcrumb-dropdown-menu .dropdown-item:hover i {
     color: #4f46e5;
-    transform: scale(1.1);
+    transform: scale(1.08);
 }
 
 .breadcrumb-dropdown-menu .dropdown-item.active {
@@ -968,9 +1025,9 @@ a {
 }
 
 .dropdown-badge {
-    font-size: 9.5px;
-    padding: 2.5px 8px;
-    border-radius: 12px;
+    font-size: 8.5px;
+    padding: 2px 6px;
+    border-radius: 10px;
     background: linear-gradient(135deg, rgba(99, 102, 241, 0.18), rgba(168, 85, 247, 0.18));
     border: 1px solid rgba(99, 102, 241, 0.3);
     color: #4338ca;

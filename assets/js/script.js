@@ -18,16 +18,18 @@ document.addEventListener('DOMContentLoaded', () => {
         overlay.onclick = toggleSidebar;
     }
 
-    // Desktop Sidebar Collapse Toggle
-    const toggleBtn = document.querySelector('.sidebar-toggle-btn');
-    if (toggleBtn) {
-        toggleBtn.onclick = () => {
+    // Desktop & Header Sidebar Collapse Toggle
+    const toggleBtns = document.querySelectorAll('.sidebar-toggle-btn');
+    toggleBtns.forEach(btn => {
+        btn.onclick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
             const isNowCollapsed = sidebar.classList.toggle('collapsed');
             try {
                 localStorage.setItem('rms_sidebar_collapsed', isNowCollapsed ? 'true' : 'false');
-            } catch (e) {}
+            } catch (err) {}
         };
-    }
+    });
 
     // Submenu switching
     const railItems = document.querySelectorAll('.rail-item[data-target]');
@@ -84,9 +86,38 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Breadcrumb Dropdown Navigation Switcher
-    const dropdownTriggers = document.querySelectorAll('.breadcrumb-dropdown-btn, .breadcrumb-dropdown-toggle');
+    // Breadcrumb Dropdown Navigation Switcher (Hover & Click Support)
+    const dropdownContainers = document.querySelectorAll('.breadcrumb-dropdown-container');
+    const dropdownTriggers = document.querySelectorAll('.breadcrumb-btn, .breadcrumb-dropdown-btn, .breadcrumb-dropdown-toggle');
     
+    dropdownContainers.forEach(container => {
+        let hoverTimer = null;
+
+        // Hover support with grace period so moving mouse into menu is seamless
+        container.addEventListener('mouseenter', () => {
+            if (hoverTimer) clearTimeout(hoverTimer);
+            // Close other open dropdowns
+            dropdownContainers.forEach(other => {
+                if (other !== container && other.classList.contains('open')) {
+                    other.classList.remove('open');
+                    const otherBtn = other.querySelector('.breadcrumb-btn, .breadcrumb-dropdown-btn, .breadcrumb-dropdown-toggle');
+                    if (otherBtn) otherBtn.setAttribute('aria-expanded', 'false');
+                }
+            });
+            container.classList.add('open');
+            const btn = container.querySelector('.breadcrumb-btn, .breadcrumb-dropdown-btn, .breadcrumb-dropdown-toggle');
+            if (btn) btn.setAttribute('aria-expanded', 'true');
+        });
+
+        container.addEventListener('mouseleave', () => {
+            hoverTimer = setTimeout(() => {
+                container.classList.remove('open');
+                const btn = container.querySelector('.breadcrumb-btn, .breadcrumb-dropdown-btn, .breadcrumb-dropdown-toggle');
+                if (btn) btn.setAttribute('aria-expanded', 'false');
+            }, 250); // 250ms grace buffer allows smooth diagonal cursor movement
+        });
+    });
+
     dropdownTriggers.forEach(triggerBtn => {
         triggerBtn.addEventListener('click', (e) => {
             e.preventDefault();
@@ -94,19 +125,26 @@ document.addEventListener('DOMContentLoaded', () => {
             const container = triggerBtn.closest('.breadcrumb-dropdown-container');
             if (!container) return;
             
+            // If already open (e.g. from hover), keep it locked open
             const wasOpen = container.classList.contains('open');
+            
             // Close any other open dropdowns first
-            document.querySelectorAll('.breadcrumb-dropdown-container.open').forEach(c => {
+            dropdownContainers.forEach(c => {
                 if (c !== container) {
                     c.classList.remove('open');
-                    const btn = c.querySelector('.breadcrumb-dropdown-btn, .breadcrumb-dropdown-toggle');
+                    const btn = c.querySelector('.breadcrumb-btn, .breadcrumb-dropdown-btn, .breadcrumb-dropdown-toggle');
                     if (btn) btn.setAttribute('aria-expanded', 'false');
                 }
             });
             
-            // Toggle current
-            container.classList.toggle('open', !wasOpen);
-            triggerBtn.setAttribute('aria-expanded', String(!wasOpen));
+            if (wasOpen) {
+                // If it was already opened, a click locks it open (or user can click outside to close)
+                container.classList.add('open');
+                triggerBtn.setAttribute('aria-expanded', 'true');
+            } else {
+                container.classList.add('open');
+                triggerBtn.setAttribute('aria-expanded', 'true');
+            }
         });
     });
 
@@ -114,7 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function closeAllBreadcrumbDropdowns() {
         document.querySelectorAll('.breadcrumb-dropdown-container.open').forEach(c => {
             c.classList.remove('open');
-            const btn = c.querySelector('.breadcrumb-dropdown-btn, .breadcrumb-dropdown-toggle');
+            const btn = c.querySelector('.breadcrumb-btn, .breadcrumb-dropdown-btn, .breadcrumb-dropdown-toggle');
             if (btn) btn.setAttribute('aria-expanded', 'false');
         });
     }
@@ -135,7 +173,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const breadcrumbNav = document.querySelector('.breadcrumb-nav');
     if (breadcrumbNav) {
         breadcrumbNav.addEventListener('click', (e) => {
-            e.stopPropagation();
+            // Do not stop propagation if an anchor link is being clicked
+            if (!e.target.closest('a')) {
+                e.stopPropagation();
+            }
             if (sidebar && sidebar.classList.contains('open')) {
                 sidebar.classList.remove('open');
                 if (overlay) overlay.classList.remove('active');
@@ -156,14 +197,22 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Sidebar navigation link clicked -> sidebar remains opened
+        // Sidebar navigation link clicked
         const sidebarLink = e.target.closest('.sidebar a[href]');
         if (sidebarLink) {
             const href = sidebarLink.getAttribute('href');
             if (href && href !== '#' && !href.startsWith('javascript:')) {
-                try {
-                    localStorage.setItem('rms_sidebar_collapsed', 'false');
-                } catch (err) {}
+                // If navigating to Home / index.php, Home has no sub-menu so collapse sidebar
+                if (href.endsWith('index.php') || href.endsWith('/rms/') || href.endsWith('/rms') || href === '/') {
+                    try {
+                        localStorage.setItem('rms_sidebar_collapsed', 'true');
+                    } catch (err) {}
+                    if (sidebar) sidebar.classList.add('collapsed');
+                } else {
+                    try {
+                        localStorage.setItem('rms_sidebar_collapsed', 'false');
+                    } catch (err) {}
+                }
             }
         }
     }, true);
