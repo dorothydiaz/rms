@@ -41,6 +41,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (sidebar.classList.contains('collapsed')) {
                 sidebar.classList.remove('collapsed');
             }
+            try {
+                localStorage.setItem('rms_sidebar_collapsed', 'false');
+            } catch (err) {}
 
             // Update active state on rail items
             document.querySelectorAll('.rail-item').forEach(ri => ri.classList.remove('active'));
@@ -140,13 +143,43 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Whenever navigating via breadcrumbs, ensure sidebar stays collapsed on destination page
-    document.querySelectorAll('.breadcrumb-nav a, .breadcrumb-dropdown-menu a').forEach(link => {
-        link.addEventListener('click', () => {
+    // Deterministic Navigation Handlers:
+    // 1) Breadcrumbs navigation -> sidebar must remain closed (collapsed)
+    // 2) Sidebar navigation -> sidebar must remain opened (uncollapsed)
+    document.addEventListener('click', (e) => {
+        // Breadcrumb navigation link clicked -> sidebar remains closed
+        const breadcrumbLink = e.target.closest('.breadcrumb-nav a, .breadcrumb-dropdown-menu a');
+        if (breadcrumbLink) {
             try {
                 localStorage.setItem('rms_sidebar_collapsed', 'true');
-            } catch (e) {}
-        });
+            } catch (err) {}
+            return;
+        }
+
+        // Sidebar navigation link clicked -> sidebar remains opened
+        const sidebarLink = e.target.closest('.sidebar a[href]');
+        if (sidebarLink) {
+            const href = sidebarLink.getAttribute('href');
+            if (href && href !== '#' && !href.startsWith('javascript:')) {
+                try {
+                    localStorage.setItem('rms_sidebar_collapsed', 'false');
+                } catch (err) {}
+            }
+        }
+    }, true);
+
+    // Sync state on back/forward cache navigation
+    window.addEventListener('pageshow', () => {
+        try {
+            const state = localStorage.getItem('rms_sidebar_collapsed');
+            if (sidebar && state !== null) {
+                if (state === 'true') {
+                    sidebar.classList.add('collapsed');
+                } else if (state === 'false') {
+                    sidebar.classList.remove('collapsed');
+                }
+            }
+        } catch (err) {}
     });
 });
 
