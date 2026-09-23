@@ -236,9 +236,10 @@ $isInitiallyCollapsed = ($currentPage === 'index.php');
 <script>
     (function() {
         try {
+            var isHome = <?= $currentPage === 'index.php' ? 'true' : 'false' ?>;
             var state = localStorage.getItem('rms_sidebar_collapsed');
-            var isCol = (state === 'true' || (state === null && <?= $currentPage === 'index.php' ? 'true' : 'false' ?>));
-            if (state === 'false') isCol = false;
+            var isCol = isHome || (state === 'true');
+            if (!isHome && state === 'false') isCol = false;
             var btn = document.querySelector('.header-sidebar-toggle');
             if (btn) {
                 var icon = btn.querySelector('i');

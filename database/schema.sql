@@ -24,3 +24,15 @@ CREATE TABLE IF NOT EXISTS `settings` (
     `setting_value` TEXT,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Security & Brute-Force Rate Limiting Table
+CREATE TABLE IF NOT EXISTS `login_attempts` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `ip_address` VARCHAR(45) NOT NULL,
+    `identity` VARCHAR(100) NOT NULL,
+    `attempted_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `is_successful` TINYINT(1) DEFAULT 0,
+    INDEX `idx_ip_attempted` (`ip_address`, `attempted_at`),
+    INDEX `idx_identity_attempted` (`identity`, `attempted_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+

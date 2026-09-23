@@ -4,6 +4,11 @@ if (!defined('BASE_URL')) {
     define('BASE_URL', '/rms/');
 }
 
+require_once __DIR__ . '/../../config/auth.php';
+$loggedInUser = current_user();
+$userFullName = $loggedInUser ? $loggedInUser['full_name'] : 'Dorothy Diaz';
+$userRole = $loggedInUser ? $loggedInUser['role'] : 'Manager';
+
 $currentPage = basename($_SERVER['PHP_SELF']);
 
 // Determine active module section
@@ -32,6 +37,7 @@ elseif (in_array($currentPage, $creditsPages)) $activeModule = 'credits';
                 var sb = document.getElementById('app-sidebar');
                 <?php if ($currentPage === 'index.php'): ?>
                     sb.classList.add('collapsed');
+                    try { localStorage.setItem('rms_sidebar_collapsed', 'true'); } catch(e) {}
                 <?php else: ?>
                     var state = localStorage.getItem('rms_sidebar_collapsed');
                     if (state === 'true') {
@@ -46,13 +52,12 @@ elseif (in_array($currentPage, $creditsPages)) $activeModule = 'credits';
     <!-- Left Rail -->
     <div class="sidebar-rail">
         <div class="rail-header">
-            <div class="brand-logo">
+            <a href="<?= BASE_URL ?>index.php" class="brand-logo<?= $currentPage === 'index.php' ? ' active' : '' ?>" title="Dashboard">
                 <i class="ph ph-fork-knife"></i>
-            </div>
+            </a>
         </div>
         
         <nav class="rail-nav">
-            <a href="<?= BASE_URL ?>index.php" class="rail-item<?= $currentPage === 'index.php' ? ' active' : '' ?>" data-title="Home"><i class="ph ph-house"></i></a>
             <a href="#" class="rail-item<?= $activeModule === 'hr' ? ' active' : '' ?>" data-title="HR Operations" data-target="submenu-hr"><i class="ph ph-users-three"></i></a>
             <a href="#" class="rail-item<?= $activeModule === 'sales' ? ' active' : '' ?>" data-title="Sales Operations" data-target="submenu-sales"><i class="ph ph-chart-line-up"></i></a>
             <a href="#" class="rail-item<?= $activeModule === 'inventory' ? ' active' : '' ?>" data-title="Inventory Operations" data-target="submenu-inventory"><i class="ph ph-package"></i></a>
@@ -293,10 +298,10 @@ elseif (in_array($currentPage, $creditsPages)) $activeModule = 'credits';
                     <i class="ph ph-user"></i>
                 </div>
                 <div class="user-info">
-                    <span class="user-name">Dorothy Diaz</span>
-                    <span class="user-role">Manager</span>
+                    <span class="user-name"><?= htmlspecialchars($userFullName) ?></span>
+                    <span class="user-role"><?= htmlspecialchars($userRole) ?></span>
                 </div>
-                <a href="#" class="logout-btn" title="Logout">
+                <a href="<?= BASE_URL ?>logout.php" class="logout-btn" title="Sign Out">
                     <i class="ph ph-sign-out"></i>
                 </a>
             </div>
