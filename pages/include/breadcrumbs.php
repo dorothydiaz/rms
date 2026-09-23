@@ -257,9 +257,8 @@ $isInitiallyCollapsed = ($currentPage === 'index.php');
         <ol class="breadcrumb-list">
             <!-- Module Crumb -->
             <li class="breadcrumb-item breadcrumb-dropdown-container">
-                <button type="button" class="breadcrumb-btn" aria-haspopup="true" aria-expanded="false" title="<?= htmlspecialchars($currentModule['title']) ?>">
+                <button type="button" class="breadcrumb-btn" aria-haspopup="true" aria-expanded="false">
                     <span class="breadcrumb-text"><?= htmlspecialchars($currentModule['title']) ?></span>
-                    <i class="ph ph-caret-down dropdown-arrow"></i>
                 </button>
                 <div class="breadcrumb-dropdown-menu">
                     <div class="dropdown-header"><?= htmlspecialchars($currentModule['title']) ?> Pages</div>
@@ -283,9 +282,8 @@ $isInitiallyCollapsed = ($currentPage === 'index.php');
 
                 <!-- Section Crumb -->
                 <li class="breadcrumb-item breadcrumb-dropdown-container">
-                    <button type="button" class="breadcrumb-btn" aria-haspopup="true" aria-expanded="false" title="<?= htmlspecialchars($currentSection['title']) ?>">
+                    <button type="button" class="breadcrumb-btn" aria-haspopup="true" aria-expanded="false">
                         <span class="breadcrumb-text"><?= htmlspecialchars($currentSection['title']) ?></span>
-                        <i class="ph ph-caret-down dropdown-arrow"></i>
                     </button>
                     <div class="breadcrumb-dropdown-menu">
                         <div class="dropdown-header">Pages in <?= htmlspecialchars($currentSection['title']) ?></div>
