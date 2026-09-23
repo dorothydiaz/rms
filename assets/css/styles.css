@@ -30,6 +30,53 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(148, 163, 184, 0.45) transparent;
+}
+
+*:hover {
+    scrollbar-color: rgba(100, 116, 139, 0.65) transparent;
+}
+
+/* Global Custom Scrollbars (Chrome, Edge, Safari, Opera) */
+::-webkit-scrollbar,
+*::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track,
+*::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb,
+*::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.4);
+    border-radius: 9999px;
+    transition: background 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover,
+*::-webkit-scrollbar-thumb:hover {
+    background: rgba(100, 116, 139, 0.7);
+}
+
+::-webkit-scrollbar-thumb:active,
+*::-webkit-scrollbar-thumb:active {
+    background: rgba(71, 85, 105, 0.9);
+}
+
+::-webkit-scrollbar-button,
+*::-webkit-scrollbar-button {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+}
+
+::-webkit-scrollbar-corner,
+*::-webkit-scrollbar-corner {
+    background: transparent;
 }
 
 body {
@@ -114,6 +161,23 @@ a {
     padding: 16px 0;
     background-color: transparent;
     z-index: 10;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
+}
+
+.sidebar-rail::-webkit-scrollbar {
+    width: 4px;
+}
+
+.sidebar-rail::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sidebar-rail::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.35);
+    border-radius: 9999px;
 }
 
 .rail-header {
@@ -411,13 +475,42 @@ a {
     display: inline-block;
 }
 
-/* Hide scrollbar for panel content */
-.panel-content::-webkit-scrollbar {
-    display: none;
-}
+/* Custom Scrollbar for Sidebar Panel Content */
 .panel-content {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
+}
+
+.panel-content:hover {
+    scrollbar-color: rgba(100, 116, 139, 0.65) transparent;
+}
+
+.panel-content::-webkit-scrollbar {
+    width: 5px;
+}
+
+.panel-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.panel-content::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.35);
+    border-radius: 9999px;
+    transition: background 0.2s ease;
+}
+
+.panel-content:hover::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.6);
+}
+
+.panel-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(100, 116, 139, 0.85);
+}
+
+.panel-content::-webkit-scrollbar-button {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
 }
 
 .nav-section {
