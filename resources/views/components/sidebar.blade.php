@@ -77,39 +77,165 @@
             <div class="submenu-header">
                 <span class="submenu-title">HR Operations</span>
             </div>
+
+            <!-- 1. Dashboard -->
             <div class="nav-section">
                 <a href="{{ route('hr.dashboard') }}" class="nav-item{{ request()->routeIs('hr.dashboard') ? ' active' : '' }}">
-                    <i class="ph ph-chart-bar"></i>
+                    <i class="ph ph-chart-pie-slice"></i>
                     <span>HR Dashboard</span>
                 </a>
             </div>
+
+            <!-- 2. People -->
             <div class="nav-section">
-                @php $empActive = request()->routeIs('hr.employee', 'hr.users-auth'); @endphp
+                @php $peopleActive = request()->routeIs('hr.people.*', 'hr.employee'); @endphp
                 <div class="nav-item-group">
-                    <a href="#" class="nav-item">
+                    <a href="{{ route('hr.people.employees') }}" class="nav-item{{ $peopleActive ? ' active' : '' }}">
                         <i class="ph ph-users"></i>
-                        <span>Employee Management</span>
+                        <span>People</span>
                     </a>
-                    <button class="add-btn"><i class="ph {{ $empActive ? 'ph-minus' : 'ph-plus' }}"></i></button>
+                    <button class="add-btn"><i class="ph {{ $peopleActive ? 'ph-minus' : 'ph-plus' }}"></i></button>
                 </div>
-                <div class="sub-nav{{ $empActive ? ' expanded' : '' }}">
-                    <a href="{{ route('hr.employee') }}" class="sub-nav-item{{ request()->routeIs('hr.employee') ? ' active' : '' }}"><span>Employee</span></a>
-                    <a href="{{ route('hr.users-auth') }}" class="sub-nav-item{{ request()->routeIs('hr.users-auth') ? ' active' : '' }}"><span>Users & Authentication</span></a>
+                <div class="sub-nav{{ $peopleActive ? ' expanded' : '' }}">
+                    <a href="{{ route('hr.people.employees') }}" class="sub-nav-item{{ request()->routeIs('hr.people.employees*', 'hr.employee') ? ' active' : '' }}"><span>Employees</span></a>
+                    <a href="{{ route('hr.people.departments') }}" class="sub-nav-item{{ request()->routeIs('hr.people.departments*') ? ' active' : '' }}"><span>Departments</span></a>
+                    <a href="{{ route('hr.people.positions') }}" class="sub-nav-item{{ request()->routeIs('hr.people.positions*') ? ' active' : '' }}"><span>Positions</span></a>
+                    <a href="{{ route('hr.people.branches') }}" class="sub-nav-item{{ request()->routeIs('hr.people.branches*') ? ' active' : '' }}"><span>Branches</span></a>
+                    <a href="{{ route('hr.people.documents') }}" class="sub-nav-item{{ request()->routeIs('hr.people.documents*') ? ' active' : '' }}"><span>Documents</span></a>
                 </div>
             </div>
+
+            <!-- 3. Recruitment -->
             <div class="nav-section">
-                @php $payrollActive = request()->routeIs('hr.attendance-schedule', 'hr.attendance-checkin', 'hr.employee-leave'); @endphp
+                @php $recActive = request()->routeIs('hr.recruitment.*'); @endphp
                 <div class="nav-item-group">
-                    <a href="#" class="nav-item">
+                    <a href="{{ route('hr.recruitment.vacancies') }}" class="nav-item{{ $recActive ? ' active' : '' }}">
+                        <i class="ph ph-user-plus"></i>
+                        <span>Recruitment</span>
+                    </a>
+                    <button class="add-btn"><i class="ph {{ $recActive ? 'ph-minus' : 'ph-plus' }}"></i></button>
+                </div>
+                <div class="sub-nav{{ $recActive ? ' expanded' : '' }}">
+                    <a href="{{ route('hr.recruitment.vacancies') }}" class="sub-nav-item{{ request()->routeIs('hr.recruitment.vacancies*') ? ' active' : '' }}"><span>Job Vacancies</span></a>
+                    <a href="{{ route('hr.recruitment.applicants') }}" class="sub-nav-item{{ request()->routeIs('hr.recruitment.applicants*') ? ' active' : '' }}"><span>Applicants</span></a>
+                    <a href="{{ route('hr.recruitment.interviews') }}" class="sub-nav-item{{ request()->routeIs('hr.recruitment.interviews*') ? ' active' : '' }}"><span>Interviews</span></a>
+                </div>
+            </div>
+
+            <!-- 4. Attendance -->
+            <div class="nav-section">
+                @php $attActive = request()->routeIs('hr.attendance.*', 'hr.attendance-schedule', 'hr.attendance-checkin'); @endphp
+                <div class="nav-item-group">
+                    <a href="{{ route('hr.attendance.timekeeping') }}" class="nav-item{{ $attActive ? ' active' : '' }}">
+                        <i class="ph ph-clock"></i>
+                        <span>Attendance</span>
+                    </a>
+                    <button class="add-btn"><i class="ph {{ $attActive ? 'ph-minus' : 'ph-plus' }}"></i></button>
+                </div>
+                <div class="sub-nav{{ $attActive ? ' expanded' : '' }}">
+                    <a href="{{ route('hr.attendance.timekeeping') }}" class="sub-nav-item{{ request()->routeIs('hr.attendance.timekeeping*', 'hr.attendance-checkin') ? ' active' : '' }}"><span>Timekeeping</span></a>
+                    <a href="{{ route('hr.attendance.dtr') }}" class="sub-nav-item{{ request()->routeIs('hr.attendance.dtr*') ? ' active' : '' }}"><span>DTR</span></a>
+                    <a href="{{ route('hr.attendance.schedules') }}" class="sub-nav-item{{ request()->routeIs('hr.attendance.schedules*', 'hr.attendance-schedule') ? ' active' : '' }}"><span>Schedules</span></a>
+                    <a href="{{ route('hr.attendance.overtime') }}" class="sub-nav-item{{ request()->routeIs('hr.attendance.overtime*') ? ' active' : '' }}"><span>Overtime</span></a>
+                    <a href="{{ route('hr.attendance.corrections') }}" class="sub-nav-item{{ request()->routeIs('hr.attendance.corrections*') ? ' active' : '' }}"><span>Attendance Corrections</span></a>
+                </div>
+            </div>
+
+            <!-- 5. Leave & Absence -->
+            <div class="nav-section">
+                @php $leaveActive = request()->routeIs('hr.leave.*', 'hr.employee-leave'); @endphp
+                <div class="nav-item-group">
+                    <a href="{{ route('hr.leave.requests') }}" class="nav-item{{ $leaveActive ? ' active' : '' }}">
+                        <i class="ph ph-calendar-blank"></i>
+                        <span>Leave & Absence</span>
+                    </a>
+                    <button class="add-btn"><i class="ph {{ $leaveActive ? 'ph-minus' : 'ph-plus' }}"></i></button>
+                </div>
+                <div class="sub-nav{{ $leaveActive ? ' expanded' : '' }}">
+                    <a href="{{ route('hr.leave.requests') }}" class="sub-nav-item{{ request()->routeIs('hr.leave.requests*', 'hr.employee-leave') ? ' active' : '' }}"><span>Leave Requests</span></a>
+                    <a href="{{ route('hr.leave.types') }}" class="sub-nav-item{{ request()->routeIs('hr.leave.types*') ? ' active' : '' }}"><span>Leave Types</span></a>
+                    <a href="{{ route('hr.leave.credits') }}" class="sub-nav-item{{ request()->routeIs('hr.leave.credits*') ? ' active' : '' }}"><span>Leave Credits</span></a>
+                    <a href="{{ route('hr.leave.reports') }}" class="sub-nav-item{{ request()->routeIs('hr.leave.reports*') ? ' active' : '' }}"><span>Leave Reports</span></a>
+                </div>
+            </div>
+
+            <!-- 6. Payroll -->
+            <div class="nav-section">
+                @php $payrollActive = request()->routeIs('hr.payroll.*'); @endphp
+                <div class="nav-item-group">
+                    <a href="{{ route('hr.payroll.register') }}" class="nav-item{{ $payrollActive ? ' active' : '' }}">
                         <i class="ph ph-wallet"></i>
                         <span>Payroll</span>
                     </a>
                     <button class="add-btn"><i class="ph {{ $payrollActive ? 'ph-minus' : 'ph-plus' }}"></i></button>
                 </div>
                 <div class="sub-nav{{ $payrollActive ? ' expanded' : '' }}">
-                    <a href="{{ route('hr.attendance-schedule') }}" class="sub-nav-item{{ request()->routeIs('hr.attendance-schedule') ? ' active' : '' }}"><span>Attendance Schedule</span></a>
-                    <a href="{{ route('hr.attendance-checkin') }}" class="sub-nav-item{{ request()->routeIs('hr.attendance-checkin') ? ' active' : '' }}"><span>Attendance Check IN /OUT</span></a>
-                    <a href="{{ route('hr.employee-leave') }}" class="sub-nav-item{{ request()->routeIs('hr.employee-leave') ? ' active' : '' }}"><span>Employee Leave / Time Request</span></a>
+                    <a href="{{ route('hr.payroll.periods') }}" class="sub-nav-item{{ request()->routeIs('hr.payroll.periods*') ? ' active' : '' }}"><span>Payroll Periods</span></a>
+                    <a href="{{ route('hr.payroll.process') }}" class="sub-nav-item{{ request()->routeIs('hr.payroll.process*') ? ' active' : '' }}"><span>Process Payroll</span></a>
+                    <a href="{{ route('hr.payroll.register') }}" class="sub-nav-item{{ request()->routeIs('hr.payroll.register*') ? ' active' : '' }}"><span>Payroll Register</span></a>
+                    <a href="{{ route('hr.payroll.payslips') }}" class="sub-nav-item{{ request()->routeIs('hr.payroll.payslips*') ? ' active' : '' }}"><span>Payslips</span></a>
+                    <a href="{{ route('hr.payroll.statutory-rules') }}" class="sub-nav-item{{ request()->routeIs('hr.payroll.statutory-rules*') ? ' active' : '' }}"><span>Statutory Rules</span></a>
+                </div>
+            </div>
+
+            <!-- 7. Performance -->
+            <div class="nav-section">
+                @php $perfActive = request()->routeIs('hr.performance.*'); @endphp
+                <div class="nav-item-group">
+                    <a href="{{ route('hr.performance.evaluations') }}" class="nav-item{{ $perfActive ? ' active' : '' }}">
+                        <i class="ph ph-star"></i>
+                        <span>Performance</span>
+                    </a>
+                    <button class="add-btn"><i class="ph {{ $perfActive ? 'ph-minus' : 'ph-plus' }}"></i></button>
+                </div>
+                <div class="sub-nav{{ $perfActive ? ' expanded' : '' }}">
+                    <a href="{{ route('hr.performance.periods') }}" class="sub-nav-item{{ request()->routeIs('hr.performance.periods*') ? ' active' : '' }}"><span>Evaluation Periods</span></a>
+                    <a href="{{ route('hr.performance.criteria') }}" class="sub-nav-item{{ request()->routeIs('hr.performance.criteria*') ? ' active' : '' }}"><span>Criteria</span></a>
+                    <a href="{{ route('hr.performance.evaluations') }}" class="sub-nav-item{{ request()->routeIs('hr.performance.evaluations*') ? ' active' : '' }}"><span>Evaluations</span></a>
+                    <a href="{{ route('hr.performance.reports') }}" class="sub-nav-item{{ request()->routeIs('hr.performance.reports*') ? ' active' : '' }}"><span>Performance Reports</span></a>
+                </div>
+            </div>
+
+            <!-- 8. Training -->
+            <div class="nav-section">
+                @php $trainingActive = request()->routeIs('hr.training.*'); @endphp
+                <div class="nav-item-group">
+                    <a href="{{ route('hr.training.programs') }}" class="nav-item{{ $trainingActive ? ' active' : '' }}">
+                        <i class="ph ph-graduation-cap"></i>
+                        <span>Training</span>
+                    </a>
+                    <button class="add-btn"><i class="ph {{ $trainingActive ? 'ph-minus' : 'ph-plus' }}"></i></button>
+                </div>
+                <div class="sub-nav{{ $trainingActive ? ' expanded' : '' }}">
+                    <a href="{{ route('hr.training.programs') }}" class="sub-nav-item{{ request()->routeIs('hr.training.programs*') ? ' active' : '' }}"><span>Training Programs</span></a>
+                    <a href="{{ route('hr.training.records') }}" class="sub-nav-item{{ request()->routeIs('hr.training.records*') ? ' active' : '' }}"><span>Training Records</span></a>
+                    <a href="{{ route('hr.training.reports') }}" class="sub-nav-item{{ request()->routeIs('hr.training.reports*') ? ' active' : '' }}"><span>Training Reports</span></a>
+                </div>
+            </div>
+
+            <!-- 9. Reports -->
+            <div class="nav-section">
+                <a href="{{ route('hr.reports.index') }}" class="nav-item{{ request()->routeIs('hr.reports.*') ? ' active' : '' }}">
+                    <i class="ph ph-file-text"></i>
+                    <span>Reports</span>
+                </a>
+            </div>
+
+            <!-- 10. Administration -->
+            <div class="nav-section">
+                @php $adminActive = request()->routeIs('hr.admin.*', 'hr.users-auth'); @endphp
+                <div class="nav-item-group">
+                    <a href="{{ route('hr.admin.users') }}" class="nav-item{{ $adminActive ? ' active' : '' }}">
+                        <i class="ph ph-shield-check"></i>
+                        <span>Administration</span>
+                    </a>
+                    <button class="add-btn"><i class="ph {{ $adminActive ? 'ph-minus' : 'ph-plus' }}"></i></button>
+                </div>
+                <div class="sub-nav{{ $adminActive ? ' expanded' : '' }}">
+                    <a href="{{ route('hr.admin.users') }}" class="sub-nav-item{{ request()->routeIs('hr.admin.users*', 'hr.users-auth') ? ' active' : '' }}"><span>Users</span></a>
+                    <a href="{{ route('hr.admin.roles') }}" class="sub-nav-item{{ request()->routeIs('hr.admin.roles*') ? ' active' : '' }}"><span>Roles & Permissions</span></a>
+                    <a href="{{ route('hr.admin.settings') }}" class="sub-nav-item{{ request()->routeIs('hr.admin.settings*') ? ' active' : '' }}"><span>System Settings</span></a>
+                    <a href="{{ route('hr.admin.audit-logs') }}" class="sub-nav-item{{ request()->routeIs('hr.admin.audit-logs*') ? ' active' : '' }}"><span>Audit Logs</span></a>
                 </div>
             </div>
         </div>
