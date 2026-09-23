@@ -227,9 +227,27 @@ if (!$currentPageItem) {
 }
 ?>
 
-<button type="button" class="sidebar-toggle-btn header-sidebar-toggle" data-tooltip="Toggle Sidebar" aria-label="Toggle Sidebar">
-    <i class="ph ph-list"></i>
+<?php
+$isInitiallyCollapsed = ($currentPage === 'index.php');
+?>
+<button type="button" class="sidebar-toggle-btn header-sidebar-toggle" data-tooltip="<?= $isInitiallyCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar' ?>" aria-label="Toggle Sidebar">
+    <i class="ph <?= $isInitiallyCollapsed ? 'ph-list' : 'ph-caret-left' ?>"></i>
 </button>
+<script>
+    (function() {
+        try {
+            var state = localStorage.getItem('rms_sidebar_collapsed');
+            var isCol = (state === 'true' || (state === null && <?= $currentPage === 'index.php' ? 'true' : 'false' ?>));
+            if (state === 'false') isCol = false;
+            var btn = document.querySelector('.header-sidebar-toggle');
+            if (btn) {
+                var icon = btn.querySelector('i');
+                if (icon) icon.className = isCol ? 'ph ph-list' : 'ph ph-caret-left';
+                btn.setAttribute('data-tooltip', isCol ? 'Expand Sidebar' : 'Collapse Sidebar');
+            }
+        } catch(e) {}
+    })();
+</script>
 
 <div class="breadcrumb-header-block">
     <h1 class="page-header-title"><?= htmlspecialchars($currentPageItem['title']) ?></h1>

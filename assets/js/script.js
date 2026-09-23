@@ -18,6 +18,33 @@ document.addEventListener('DOMContentLoaded', () => {
         overlay.onclick = toggleSidebar;
     }
 
+    // Dynamic Sidebar Toggle Icon & Tooltip Synchronizer
+    function updateSidebarToggleIcon() {
+        const headerToggle = document.querySelector('.header-sidebar-toggle');
+        if (!headerToggle) return;
+        
+        const isCollapsed = sidebar.classList.contains('collapsed');
+        const icon = headerToggle.querySelector('i');
+        
+        if (isCollapsed) {
+            // Closed/collapsed state -> show menu icon to expand
+            if (icon && !icon.classList.contains('ph-list')) {
+                icon.className = 'ph ph-list';
+            }
+            headerToggle.setAttribute('data-tooltip', 'Expand Sidebar');
+            headerToggle.setAttribute('aria-expanded', 'false');
+            headerToggle.classList.add('collapsed-state');
+        } else {
+            // Open/expanded state -> show left caret to collapse
+            if (icon && !icon.classList.contains('ph-caret-left')) {
+                icon.className = 'ph ph-caret-left';
+            }
+            headerToggle.setAttribute('data-tooltip', 'Collapse Sidebar');
+            headerToggle.setAttribute('aria-expanded', 'true');
+            headerToggle.classList.remove('collapsed-state');
+        }
+    }
+
     // Desktop & Header Sidebar Collapse Toggle
     const toggleBtns = document.querySelectorAll('.sidebar-toggle-btn');
     toggleBtns.forEach(btn => {
@@ -28,8 +55,23 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 localStorage.setItem('rms_sidebar_collapsed', isNowCollapsed ? 'true' : 'false');
             } catch (err) {}
+            updateSidebarToggleIcon();
         };
     });
+
+    // Observe sidebar class mutations for reliable state sync across any trigger
+    const sidebarObserver = new MutationObserver((mutations) => {
+        for (const mutation of mutations) {
+            if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                updateSidebarToggleIcon();
+                break;
+            }
+        }
+    });
+    sidebarObserver.observe(sidebar, { attributes: true, attributeFilter: ['class'] });
+
+    // Initial sync on DOM ready
+    updateSidebarToggleIcon();
 
     // Submenu switching
     const railItems = document.querySelectorAll('.rail-item[data-target]');
