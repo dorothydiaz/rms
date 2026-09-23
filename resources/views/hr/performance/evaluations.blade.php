@@ -129,16 +129,16 @@
                     </div>
                 </div>
 
-                <div style="margin-top: 16px; margin-bottom: 8px; font-weight: 600; color: #e2e8f0; font-size: 14px;">
+                <div style="margin-top: 16px; margin-bottom: 8px; font-weight: 700; color: #1e293b; font-size: 13.5px;">
                     Restaurant Competencies & Standards Rating (1 = Poor, 5 = Excellent):
                 </div>
 
-                <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 12px; max-height: 280px; overflow-y: auto;">
+                <div style="background: rgba(255, 255, 255, 0.65); border: 1px solid rgba(168, 85, 247, 0.22); border-radius: 12px; padding: 14px; max-height: 280px; overflow-y: auto; box-shadow: inset 0 1px 3px rgba(0,0,0,0.02);">
                     @foreach($criteria as $crit)
-                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(168, 85, 247, 0.1);">
                             <div>
-                                <strong style="font-size: 13px; color: #f1f5f9;">{{ $crit->name }}</strong>
-                                <div style="font-size: 11px; color: #94a3b8;">{{ $crit->description }}</div>
+                                <strong style="font-size: 13px; color: #0f172a;">{{ $crit->name }}</strong>
+                                <div style="font-size: 11px; color: #64748b;">{{ $crit->description }}</div>
                             </div>
                             <div style="display: flex; gap: 8px; align-items: center;">
                                 <select name="ratings[{{ $crit->id }}]" class="hr-select" style="width: 80px;" required>

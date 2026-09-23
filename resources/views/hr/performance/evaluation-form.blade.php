@@ -27,50 +27,50 @@
     <!-- Left Column: Employee & Summary -->
     <div>
         <div class="hr-card" style="margin-bottom: 24px;">
-            <h3 style="font-size: 16px; font-weight: 600; color: #fff; margin-bottom: 16px;">
-                <i class="ph ph-user"></i> Employee Information
+            <h3 style="font-size: 16px; font-weight: 700; color: #0f172a; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                <i class="ph ph-user" style="color: #9333ea;"></i> Employee Information
             </h3>
             <div style="display: flex; flex-direction: column; gap: 12px; font-size: 13px;">
                 <div>
-                    <span style="color: #94a3b8;">Full Name:</span>
-                    <strong style="color: #f1f5f9; margin-left: 8px;">{{ $evaluation->employee->full_name }}</strong>
+                    <span style="color: #64748b;">Full Name:</span>
+                    <strong style="color: #0f172a; margin-left: 8px;">{{ $evaluation->employee->full_name }}</strong>
                 </div>
                 <div>
-                    <span style="color: #94a3b8;">Employee ID:</span>
-                    <span style="color: #f1f5f9; margin-left: 8px;">{{ $evaluation->employee->employee_number }}</span>
+                    <span style="color: #64748b;">Employee ID:</span>
+                    <span style="color: #0f172a; margin-left: 8px; font-family: monospace;">{{ $evaluation->employee->employee_number }}</span>
                 </div>
                 <div>
-                    <span style="color: #94a3b8;">Department:</span>
-                    <span style="color: #f1f5f9; margin-left: 8px;">{{ $evaluation->employee->department->name ?? 'N/A' }}</span>
+                    <span style="color: #64748b;">Department:</span>
+                    <span style="color: #0f172a; margin-left: 8px;">{{ $evaluation->employee->department->name ?? 'N/A' }}</span>
                 </div>
                 <div>
-                    <span style="color: #94a3b8;">Position:</span>
-                    <span style="color: #f1f5f9; margin-left: 8px;">{{ $evaluation->employee->position->name ?? 'N/A' }}</span>
+                    <span style="color: #64748b;">Position:</span>
+                    <span style="color: #0f172a; margin-left: 8px;">{{ $evaluation->employee->position->name ?? 'N/A' }}</span>
                 </div>
                 <div>
-                    <span style="color: #94a3b8;">Employment Status:</span>
+                    <span style="color: #64748b;">Employment Status:</span>
                     <span class="hr-badge hr-badge-success" style="margin-left: 8px;">{{ $evaluation->employee->employment_status }}</span>
                 </div>
             </div>
         </div>
 
         <div class="hr-card">
-            <h3 style="font-size: 16px; font-weight: 600; color: #fff; margin-bottom: 16px;">
-                <i class="ph ph-gauge"></i> Score Overview
+            <h3 style="font-size: 16px; font-weight: 700; color: #0f172a; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                <i class="ph ph-gauge" style="color: #9333ea;"></i> Score Overview
             </h3>
             <div style="text-align: center; padding: 20px 0;">
                 <div style="font-size: 42px; font-weight: 800; color: {{ $evaluation->overall_score >= 4.0 ? '#10b981' : ($evaluation->overall_score >= 3.0 ? '#f59e0b' : '#ef4444') }};">
                     {{ number_format($evaluation->overall_score, 2) }}
                 </div>
-                <div style="color: #94a3b8; font-size: 13px; margin-top: 4px;">Out of 5.00 Maximum</div>
+                <div style="color: #64748b; font-size: 13px; margin-top: 4px; font-weight: 600;">Out of 5.00 Maximum</div>
             </div>
-            <div style="margin-top: 16px; border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 16px; font-size: 13px;">
-                <div style="margin-bottom: 8px;"><strong>Recommendation:</strong></div>
-                <p style="color: #cbd5e1; background: rgba(15, 23, 42, 0.5); padding: 10px; border-radius: 6px;">
+            <div style="margin-top: 16px; border-top: 1px solid rgba(168, 85, 247, 0.12); padding-top: 16px; font-size: 13px;">
+                <div style="margin-bottom: 8px; color: #475569;"><strong>Recommendation:</strong></div>
+                <p style="color: #1e293b; background: rgba(255, 255, 255, 0.7); border: 1px solid rgba(168, 85, 247, 0.2); padding: 12px; border-radius: 10px;">
                     {{ $evaluation->recommendation ?: 'No specific recommendation provided.' }}
                 </p>
-                <div style="margin-top: 12px; margin-bottom: 8px;"><strong>Manager Comments:</strong></div>
-                <p style="color: #cbd5e1; background: rgba(15, 23, 42, 0.5); padding: 10px; border-radius: 6px;">
+                <div style="margin-top: 12px; margin-bottom: 8px; color: #475569;"><strong>Manager Comments:</strong></div>
+                <p style="color: #1e293b; background: rgba(255, 255, 255, 0.7); border: 1px solid rgba(168, 85, 247, 0.2); padding: 12px; border-radius: 10px;">
                     {{ $evaluation->manager_comments ?: 'No comments recorded.' }}
                 </p>
             </div>
@@ -80,9 +80,9 @@
     <!-- Right Column: Criteria Ratings Breakdown -->
     <div>
         <div class="hr-table-card">
-            <div style="padding: 16px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
-                <h3 style="font-size: 16px; font-weight: 600; color: #fff; margin: 0;">
-                    <i class="ph ph-list-numbers"></i> Competency Criteria Ratings
+            <div class="hr-table-header">
+                <h3 class="hr-table-title">
+                    <i class="ph ph-list-numbers" style="color: #9333ea;"></i> Competency Criteria Ratings
                 </h3>
             </div>
             <div class="hr-table-wrapper">

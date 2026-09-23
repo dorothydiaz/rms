@@ -11,27 +11,111 @@
                 'overview' => [
                     'title' => 'HR Overview',
                     'url' => route('hr.dashboard'),
+                    'icon' => 'ph-chart-bar',
                     'items' => [
-                        ['title' => 'HR Dashboard', 'url' => route('hr.dashboard'), 'icon' => 'ph-chart-bar', 'route' => 'hr.dashboard']
+                        ['title' => 'HR Dashboard', 'url' => route('hr.dashboard'), 'icon' => 'ph-chart-pie-slice', 'route' => 'hr.dashboard']
                     ]
                 ],
-                'employee' => [
-                    'title' => 'Employee Management',
-                    'url' => route('hr.employee'),
+                'people' => [
+                    'title' => 'People Administration',
+                    'url' => route('hr.people.employees'),
                     'icon' => 'ph-users',
                     'items' => [
-                        ['title' => 'Employee Masterlist', 'url' => route('hr.employee'), 'icon' => 'ph-user-list', 'route' => 'hr.employee'],
-                        ['title' => 'Users & Authentication', 'url' => route('hr.users-auth'), 'icon' => 'ph-lock-key', 'route' => 'hr.users-auth']
+                        ['title' => 'Employees Directory', 'url' => route('hr.people.employees'), 'icon' => 'ph-user-list', 'route' => 'hr.people.employees'],
+                        ['title' => 'Departments', 'url' => route('hr.people.departments'), 'icon' => 'ph-tree-structure', 'route' => 'hr.people.departments'],
+                        ['title' => 'Positions', 'url' => route('hr.people.positions'), 'icon' => 'ph-identification-card', 'route' => 'hr.people.positions'],
+                        ['title' => 'Branches', 'url' => route('hr.people.branches'), 'icon' => 'ph-storefront', 'route' => 'hr.people.branches'],
+                        ['title' => 'Documents Repository', 'url' => route('hr.people.documents'), 'icon' => 'ph-folder-simple-user', 'route' => 'hr.people.documents'],
+                        ['title' => 'Employee Masterlist (Legacy)', 'url' => route('hr.employee'), 'icon' => 'ph-users', 'route' => 'hr.employee'],
+                    ]
+                ],
+                'recruitment' => [
+                    'title' => 'Recruitment',
+                    'url' => route('hr.recruitment.vacancies'),
+                    'icon' => 'ph-user-plus',
+                    'items' => [
+                        ['title' => 'Job Vacancies', 'url' => route('hr.recruitment.vacancies'), 'icon' => 'ph-briefcase', 'route' => 'hr.recruitment.vacancies'],
+                        ['title' => 'Applicants Pipeline', 'url' => route('hr.recruitment.applicants'), 'icon' => 'ph-user-focus', 'route' => 'hr.recruitment.applicants'],
+                        ['title' => 'Interview Evaluations', 'url' => route('hr.recruitment.interviews'), 'icon' => 'ph-chat-circle-dots', 'route' => 'hr.recruitment.interviews'],
+                    ]
+                ],
+                'attendance' => [
+                    'title' => 'Attendance & Timekeeping',
+                    'url' => route('hr.attendance.timekeeping'),
+                    'icon' => 'ph-clock',
+                    'items' => [
+                        ['title' => 'Timekeeping Punch', 'url' => route('hr.attendance.timekeeping'), 'icon' => 'ph-fingerprint', 'route' => 'hr.attendance.timekeeping'],
+                        ['title' => 'Daily Time Record (DTR)', 'url' => route('hr.attendance.dtr'), 'icon' => 'ph-calendar-check', 'route' => 'hr.attendance.dtr'],
+                        ['title' => 'Work Schedules', 'url' => route('hr.attendance.schedules'), 'icon' => 'ph-calendar', 'route' => 'hr.attendance.schedules'],
+                        ['title' => 'Overtime Requests', 'url' => route('hr.attendance.overtime'), 'icon' => 'ph-clock-countdown', 'route' => 'hr.attendance.overtime'],
+                        ['title' => 'Attendance Corrections', 'url' => route('hr.attendance.corrections'), 'icon' => 'ph-clock-afternoon', 'route' => 'hr.attendance.corrections'],
+                        ['title' => 'Check-in (Legacy)', 'url' => route('hr.attendance-checkin'), 'icon' => 'ph-clock', 'route' => 'hr.attendance-checkin'],
+                        ['title' => 'Schedule (Legacy)', 'url' => route('hr.attendance-schedule'), 'icon' => 'ph-calendar', 'route' => 'hr.attendance-schedule'],
+                    ]
+                ],
+                'leave' => [
+                    'title' => 'Leave & Absence',
+                    'url' => route('hr.leave.requests'),
+                    'icon' => 'ph-calendar-blank',
+                    'items' => [
+                        ['title' => 'Leave Requests', 'url' => route('hr.leave.requests'), 'icon' => 'ph-calendar-plus', 'route' => 'hr.leave.requests'],
+                        ['title' => 'Leave Types', 'url' => route('hr.leave.types'), 'icon' => 'ph-list-checks', 'route' => 'hr.leave.types'],
+                        ['title' => 'Leave Credits', 'url' => route('hr.leave.credits'), 'icon' => 'ph-coins', 'route' => 'hr.leave.credits'],
+                        ['title' => 'Leave Reports', 'url' => route('hr.leave.reports'), 'icon' => 'ph-chart-pie', 'route' => 'hr.leave.reports'],
+                        ['title' => 'Leave Portal (Legacy)', 'url' => route('hr.employee-leave'), 'icon' => 'ph-calendar-x', 'route' => 'hr.employee-leave'],
                     ]
                 ],
                 'payroll' => [
-                    'title' => 'Payroll',
-                    'url' => route('hr.attendance-schedule'),
+                    'title' => 'Payroll & Statutory',
+                    'url' => route('hr.payroll.register'),
                     'icon' => 'ph-wallet',
                     'items' => [
-                        ['title' => 'Attendance Schedule', 'url' => route('hr.attendance-schedule'), 'icon' => 'ph-calendar-check', 'route' => 'hr.attendance-schedule'],
-                        ['title' => 'Attendance Check IN / OUT', 'url' => route('hr.attendance-checkin'), 'icon' => 'ph-clock-user', 'route' => 'hr.attendance-checkin'],
-                        ['title' => 'Employee Leave / Time Request', 'url' => route('hr.employee-leave'), 'icon' => 'ph-calendar-x', 'route' => 'hr.employee-leave']
+                        ['title' => 'Payroll Periods', 'url' => route('hr.payroll.periods'), 'icon' => 'ph-calendar-dots', 'route' => 'hr.payroll.periods'],
+                        ['title' => 'Process Payroll', 'url' => route('hr.payroll.process'), 'icon' => 'ph-calculator', 'route' => 'hr.payroll.process'],
+                        ['title' => 'Payroll Register', 'url' => route('hr.payroll.register'), 'icon' => 'ph-receipt', 'route' => 'hr.payroll.register'],
+                        ['title' => 'Employee Payslips', 'url' => route('hr.payroll.payslips'), 'icon' => 'ph-file-text', 'route' => 'hr.payroll.payslips'],
+                        ['title' => 'Statutory Contribution Rules', 'url' => route('hr.payroll.statutory-rules'), 'icon' => 'ph-sliders-horizontal', 'route' => 'hr.payroll.statutory-rules'],
+                    ]
+                ],
+                'performance' => [
+                    'title' => 'Performance',
+                    'url' => route('hr.performance.evaluations'),
+                    'icon' => 'ph-star',
+                    'items' => [
+                        ['title' => 'Evaluation Periods', 'url' => route('hr.performance.periods'), 'icon' => 'ph-calendar-check', 'route' => 'hr.performance.periods'],
+                        ['title' => 'Competency Criteria', 'url' => route('hr.performance.criteria'), 'icon' => 'ph-list-numbers', 'route' => 'hr.performance.criteria'],
+                        ['title' => 'Staff Evaluations', 'url' => route('hr.performance.evaluations'), 'icon' => 'ph-chart-line-up', 'route' => 'hr.performance.evaluations'],
+                        ['title' => 'Performance Reports', 'url' => route('hr.performance.reports'), 'icon' => 'ph-chart-polar', 'route' => 'hr.performance.reports'],
+                    ]
+                ],
+                'training' => [
+                    'title' => 'Training & Development',
+                    'url' => route('hr.training.programs'),
+                    'icon' => 'ph-graduation-cap',
+                    'items' => [
+                        ['title' => 'Training Programs', 'url' => route('hr.training.programs'), 'icon' => 'ph-books', 'route' => 'hr.training.programs'],
+                        ['title' => 'Training Records', 'url' => route('hr.training.records'), 'icon' => 'ph-certificate', 'route' => 'hr.training.records'],
+                        ['title' => 'Training Reports', 'url' => route('hr.training.reports'), 'icon' => 'ph-chart-donut', 'route' => 'hr.training.reports'],
+                    ]
+                ],
+                'reports' => [
+                    'title' => 'HR Reports Center',
+                    'url' => route('hr.reports.index'),
+                    'icon' => 'ph-file-text',
+                    'items' => [
+                        ['title' => 'Reports & CSV Export', 'url' => route('hr.reports.index'), 'icon' => 'ph-download-simple', 'route' => 'hr.reports.index'],
+                    ]
+                ],
+                'admin' => [
+                    'title' => 'Administration & Security',
+                    'url' => route('hr.admin.users'),
+                    'icon' => 'ph-shield-check',
+                    'items' => [
+                        ['title' => 'User Accounts', 'url' => route('hr.admin.users'), 'icon' => 'ph-users-three', 'route' => 'hr.admin.users'],
+                        ['title' => 'Roles & Permissions', 'url' => route('hr.admin.roles'), 'icon' => 'ph-key', 'route' => 'hr.admin.roles'],
+                        ['title' => 'System Settings', 'url' => route('hr.admin.settings'), 'icon' => 'ph-gear', 'route' => 'hr.admin.settings'],
+                        ['title' => 'Audit Logs', 'url' => route('hr.admin.audit-logs'), 'icon' => 'ph-shield-check', 'route' => 'hr.admin.audit-logs'],
+                        ['title' => 'Users Auth (Legacy)', 'url' => route('hr.users-auth'), 'icon' => 'ph-lock', 'route' => 'hr.users-auth'],
                     ]
                 ]
             ]
@@ -244,18 +328,18 @@
         <ol class="breadcrumb-list">
             <!-- Module Crumb -->
             <li class="breadcrumb-item breadcrumb-dropdown-container">
-                <button type="button" class="breadcrumb-btn" aria-haspopup="true" aria-expanded="false">
+                <button type="button" class="breadcrumb-btn breadcrumb-pill-btn" aria-haspopup="true" aria-expanded="false">
                     <span class="breadcrumb-text">{{ $currentModule['title'] }}</span>
                 </button>
                 <div class="breadcrumb-dropdown-menu">
-                    <div class="dropdown-header">{{ $currentModule['title'] }} Pages</div>
+                    <div class="dropdown-header">{{ strtoupper($currentModule['title']) }} PAGES</div>
                     @foreach ($currentModule['sections'] as $sKey => $sInfo)
                         <div class="dropdown-section-title">{{ $sInfo['title'] }}</div>
                         @foreach ($sInfo['items'] as $subItem)
                             <a href="{{ $subItem['url'] }}" class="dropdown-item{{ $currentRouteName === $subItem['route'] ? ' active' : '' }}">
                                 <i class="ph {{ $subItem['icon'] ?? 'ph-circle' }}"></i>
                                 <span class="dropdown-item-text">{{ $subItem['title'] }}</span>
-                                @if ($currentRouteName === $subItem['route'])<span class="dropdown-badge">Current</span>@endif
+                                @if ($currentRouteName === $subItem['route'])<span class="dropdown-badge">CURRENT</span>@endif
                             </a>
                         @endforeach
                     @endforeach
@@ -269,7 +353,7 @@
 
                 <!-- Section Crumb -->
                 <li class="breadcrumb-item breadcrumb-dropdown-container">
-                    <button type="button" class="breadcrumb-btn" aria-haspopup="true" aria-expanded="false">
+                    <button type="button" class="breadcrumb-btn breadcrumb-plain-btn" aria-haspopup="true" aria-expanded="false">
                         <span class="breadcrumb-text">{{ $currentSection['title'] }}</span>
                     </button>
                     <div class="breadcrumb-dropdown-menu">
@@ -279,7 +363,7 @@
                                 <i class="ph {{ $sItem['icon'] ?? 'ph-file-text' }}"></i>
                                 <span class="dropdown-item-text">{{ $sItem['title'] }}</span>
                                 @if ($currentRouteName === $sItem['route'])
-                                    <span class="dropdown-badge">Current</span>
+                                    <span class="dropdown-badge">CURRENT</span>
                                 @endif
                             </a>
                         @endforeach

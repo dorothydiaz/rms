@@ -40,22 +40,22 @@
     <!-- Left Rail -->
     <div class="sidebar-rail">
         <div class="rail-header">
-            <a href="{{ route('dashboard') }}" class="brand-logo" title="Restaurant Management System">
+            <a href="{{ route('dashboard') }}" class="brand-logo" data-tooltip="RMS Dashboard">
                 <i class="ph ph-fork-knife"></i>
             </a>
         </div>
         
         <nav class="rail-nav">
-            <a href="{{ route('dashboard') }}" class="rail-item{{ $isHome ? ' active' : '' }}" data-title="Home" title="Home"><i class="ph ph-house"></i></a>
-            <a href="#" class="rail-item{{ $activeModule === 'hr' ? ' active' : '' }}" data-title="HR Operations" data-target="submenu-hr"><i class="ph ph-users-three"></i></a>
-            <a href="#" class="rail-item{{ $activeModule === 'sales' ? ' active' : '' }}" data-title="Sales Operations" data-target="submenu-sales"><i class="ph ph-chart-line-up"></i></a>
-            <a href="#" class="rail-item{{ $activeModule === 'inventory' ? ' active' : '' }}" data-title="Inventory Operations" data-target="submenu-inventory"><i class="ph ph-package"></i></a>
-            <a href="#" class="rail-item{{ $activeModule === 'purchase' ? ' active' : '' }}" data-title="Purchase Operations" data-target="submenu-purchase"><i class="ph ph-shopping-cart"></i></a>
-            <a href="#" class="rail-item{{ $activeModule === 'config' ? ' active' : '' }}" data-title="Business Config" data-target="submenu-config"><i class="ph ph-storefront"></i></a>
+            <a href="{{ route('dashboard') }}" class="rail-item{{ $isHome ? ' active' : '' }}" data-tooltip="Home" data-title="Home"><i class="ph ph-house"></i></a>
+            <a href="#" class="rail-item{{ $activeModule === 'hr' ? ' active' : '' }}" data-tooltip="HR Operations" data-title="HR Operations" data-target="submenu-hr"><i class="ph ph-users-three"></i></a>
+            <a href="#" class="rail-item{{ $activeModule === 'sales' ? ' active' : '' }}" data-tooltip="Sales Operations" data-title="Sales Operations" data-target="submenu-sales"><i class="ph ph-chart-line-up"></i></a>
+            <a href="#" class="rail-item{{ $activeModule === 'inventory' ? ' active' : '' }}" data-tooltip="Inventory Operations" data-title="Inventory Operations" data-target="submenu-inventory"><i class="ph ph-package"></i></a>
+            <a href="#" class="rail-item{{ $activeModule === 'purchase' ? ' active' : '' }}" data-tooltip="Purchase Operations" data-title="Purchase Operations" data-target="submenu-purchase"><i class="ph ph-shopping-cart"></i></a>
+            <a href="#" class="rail-item{{ $activeModule === 'config' ? ' active' : '' }}" data-tooltip="Business Config" data-title="Business Config" data-target="submenu-config"><i class="ph ph-storefront"></i></a>
         </nav>
         
         <div class="rail-footer">
-            <a href="#" class="rail-item{{ $activeModule === 'credits' ? ' active' : '' }}" data-title="Credits" data-target="submenu-credits"><i class="ph ph-info"></i></a>
+            <a href="#" class="rail-item{{ $activeModule === 'credits' ? ' active' : '' }}" data-tooltip="Credits" data-title="Credits" data-target="submenu-credits"><i class="ph ph-info"></i></a>
         </div>
     </div>
 
@@ -427,7 +427,7 @@
                 </div>
                 <form method="POST" action="{{ route('logout') }}" id="sidebarLogoutForm" style="display:inline;">
                     @csrf
-                    <button type="submit" class="logout-btn" title="Sign Out" aria-label="Sign Out" style="background:none;border:none;cursor:pointer;padding:0;">
+                    <button type="submit" class="logout-btn" data-tooltip="Sign Out" aria-label="Sign Out" style="background:none;border:none;cursor:pointer;padding:0;">
                         <i class="ph ph-sign-out"></i>
                     </button>
                 </form>

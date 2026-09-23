@@ -242,8 +242,8 @@
         <form id="resetPasswordForm" method="POST" action="">
             @csrf
             <div class="hr-modal-body">
-                <p style="color: #cbd5e1; font-size: 13px; margin-bottom: 16px;">
-                    Resetting password for user: <strong id="reset_username_label" style="color: #fff;"></strong>
+                <p style="color: #475569; font-size: 13px; margin-bottom: 16px;">
+                    Resetting password for user: <strong id="reset_username_label" style="color: #0f172a;"></strong>
                 </p>
                 <div class="hr-form-group">
                     <label class="hr-form-label">New Password *</label>

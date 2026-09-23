@@ -78,7 +78,7 @@
                                 <span style="color: #94a3b8;">—</span>
                             @endif
                         </td>
-                        <td style="color: #cbd5e1; font-size: 12px;">{{ $rec->remarks ?: '—' }}</td>
+                        <td style="color: #64748b; font-size: 12px;">{{ $rec->remarks ?: '—' }}</td>
                     </tr>
                 @empty
                     <tr>

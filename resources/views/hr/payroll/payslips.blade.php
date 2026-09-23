@@ -37,7 +37,7 @@
                 <span class="hr-badge hr-badge-purple" style="font-family: monospace;">{{ $slip->employee?->employee_id }}</span>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: rgba(248, 250, 252, 0.9); padding: 12px; border-radius: 10px; font-size: 12px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: rgba(255, 255, 255, 0.7); border: 1px solid rgba(168, 85, 247, 0.12); padding: 12px; border-radius: 10px; font-size: 12px;">
                 <div>
                     <span style="color: #64748b; display: block;">Gross Pay:</span>
                     <strong style="color: #0f172a; font-size: 13px;">₱{{ number_format($slip->gross_pay, 2) }}</strong>
@@ -46,7 +46,7 @@
                     <span style="color: #64748b; display: block;">Deductions:</span>
                     <strong style="color: #ef4444; font-size: 13px;">-₱{{ number_format($slip->total_deductions, 2) }}</strong>
                 </div>
-                <div style="grid-column: 1 / -1; border-top: 1px dashed #cbd5e1; padding-top: 8px; display: flex; justify-content: space-between; align-items: center;">
+                <div style="grid-column: 1 / -1; border-top: 1px dashed rgba(168, 85, 247, 0.25); padding-top: 8px; display: flex; justify-content: space-between; align-items: center;">
                     <span style="font-weight: 700; color: #475569;">Take Home Net Pay:</span>
                     <strong style="color: #059669; font-size: 16px;">₱{{ number_format($slip->net_pay, 2) }}</strong>
                 </div>
