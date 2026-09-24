@@ -374,5 +374,390 @@ document.addEventListener('DOMContentLoaded', () => {
             headerDateSpan.textContent = dateStr;
         } catch (e) {}
     }
+
+    // ============================================================
+    // UNIVERSAL CUSTOM GLASSMORPHIC CALENDAR (85% Transparency)
+    // ============================================================
+    function initCustomDatePickers() {
+        const dateInputs = document.querySelectorAll('input[type="date"]:not(.no-custom-datepicker)');
+        
+        let calendarPopup = document.getElementById('hrGlobalCalendarPopup');
+        if (!calendarPopup) {
+            calendarPopup = document.createElement('div');
+            calendarPopup.id = 'hrGlobalCalendarPopup';
+            calendarPopup.className = 'hr-custom-calendar-popup';
+            document.body.appendChild(calendarPopup);
+        }
+
+        let activeInput = null;
+        let viewDate = new Date();
+        let selectedDate = null;
+
+        const monthNames = [
+            'January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December'
+        ];
+
+        function renderCalendar() {
+            const year = viewDate.getFullYear();
+            const month = viewDate.getMonth();
+
+            const firstDayIndex = new Date(year, month, 1).getDay(); // 0 = Sun
+            const lastDayDate = new Date(year, month + 1, 0).getDate();
+            const prevMonthLastDate = new Date(year, month, 0).getDate();
+
+            const today = new Date();
+            const isCurrentMonthView = today.getFullYear() === year && today.getMonth() === month;
+
+            let daysHtml = '';
+
+            // Previous month filler days
+            for (let i = firstDayIndex - 1; i >= 0; i--) {
+                const dayNum = prevMonthLastDate - i;
+                daysHtml += `<div class="hr-cal-day-cell other-month" data-action="prev-month-day" data-day="${dayNum}">${dayNum}</div>`;
+            }
+
+            // Current month days
+            for (let d = 1; d <= lastDayDate; d++) {
+                const isToday = isCurrentMonthView && today.getDate() === d;
+                const isSelected = selectedDate && 
+                                   selectedDate.getFullYear() === year && 
+                                   selectedDate.getMonth() === month && 
+                                   selectedDate.getDate() === d;
+
+                const classes = ['hr-cal-day-cell', 'current-month'];
+                if (isToday) classes.push('today');
+                if (isSelected) classes.push('selected');
+
+                daysHtml += `<div class="${classes.join(' ')}" data-day="${d}">${d}</div>`;
+            }
+
+            // Next month filler days (fill up to complete weeks)
+            const totalRendered = firstDayIndex + lastDayDate;
+            const nextMonthDays = (totalRendered % 7 === 0) ? 0 : 7 - (totalRendered % 7);
+            for (let n = 1; n <= nextMonthDays; n++) {
+                daysHtml += `<div class="hr-cal-day-cell other-month" data-action="next-month-day" data-day="${n}">${n}</div>`;
+            }
+
+            calendarPopup.innerHTML = `
+                <div class="hr-cal-header">
+                    <div class="hr-cal-title-wrap">
+                        <span class="hr-cal-month">${monthNames[month]}</span>
+                        <span class="hr-cal-year">${year}</span>
+                        <i class="ph ph-caret-down" style="font-size: 11px; color: #8b5cf6;"></i>
+                    </div>
+                    <div class="hr-cal-nav">
+                        <button type="button" class="hr-cal-nav-btn prev" title="Previous Month">
+                            <i class="ph ph-arrow-up"></i>
+                        </button>
+                        <button type="button" class="hr-cal-nav-btn next" title="Next Month">
+                            <i class="ph ph-arrow-down"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="hr-cal-weekdays">
+                    <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
+                </div>
+                <div class="hr-cal-days-grid">
+                    ${daysHtml}
+                </div>
+                <div class="hr-cal-footer">
+                    <button type="button" class="hr-cal-action-btn clear-btn">Clear</button>
+                    <button type="button" class="hr-cal-action-btn today-btn">Today</button>
+                </div>
+            `;
+
+            // Month navigation
+            calendarPopup.querySelector('.hr-cal-nav-btn.prev').onclick = (e) => {
+                e.stopPropagation();
+                viewDate.setMonth(viewDate.getMonth() - 1);
+                renderCalendar();
+            };
+
+            calendarPopup.querySelector('.hr-cal-nav-btn.next').onclick = (e) => {
+                e.stopPropagation();
+                viewDate.setMonth(viewDate.getMonth() + 1);
+                renderCalendar();
+            };
+
+            calendarPopup.querySelector('.clear-btn').onclick = (e) => {
+                e.stopPropagation();
+                if (activeInput) {
+                    activeInput.value = '';
+                    activeInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    activeInput.dispatchEvent(new Event('change', { bubbles: true }));
+                    if (typeof activeInput.onchange === 'function') {
+                        activeInput.onchange();
+                    }
+                }
+                closeCalendar();
+            };
+
+            calendarPopup.querySelector('.today-btn').onclick = (e) => {
+                e.stopPropagation();
+                const now = new Date();
+                selectDateAndClose(now.getFullYear(), now.getMonth(), now.getDate());
+            };
+
+            calendarPopup.querySelectorAll('.hr-cal-day-cell').forEach(cell => {
+                cell.onclick = (e) => {
+                    e.stopPropagation();
+                    const day = parseInt(cell.getAttribute('data-day'));
+                    const action = cell.getAttribute('data-action');
+                    if (action === 'prev-month-day') {
+                        viewDate.setMonth(viewDate.getMonth() - 1);
+                        selectDateAndClose(viewDate.getFullYear(), viewDate.getMonth(), day);
+                    } else if (action === 'next-month-day') {
+                        viewDate.setMonth(viewDate.getMonth() + 1);
+                        selectDateAndClose(viewDate.getFullYear(), viewDate.getMonth(), day);
+                    } else {
+                        selectDateAndClose(year, month, day);
+                    }
+                };
+            });
+        }
+
+        function selectDateAndClose(y, m, d) {
+            if (!activeInput) return;
+            const mm = String(m + 1).padStart(2, '0');
+            const dd = String(d).padStart(2, '0');
+            const valStr = `${y}-${mm}-${dd}`;
+
+            activeInput.value = valStr;
+            activeInput.dispatchEvent(new Event('input', { bubbles: true }));
+            activeInput.dispatchEvent(new Event('change', { bubbles: true }));
+            if (typeof activeInput.onchange === 'function') {
+                activeInput.onchange();
+            }
+            closeCalendar();
+        }
+
+        function openCalendar(input) {
+            activeInput = input;
+            const currentVal = input.value;
+            if (currentVal && /^\d{4}-\d{2}-\d{2}$/.test(currentVal)) {
+                const parts = currentVal.split('-');
+                selectedDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+                viewDate = new Date(selectedDate);
+            } else {
+                selectedDate = null;
+                viewDate = new Date();
+            }
+
+            renderCalendar();
+
+            // Position popup relative to input
+            const rect = input.getBoundingClientRect();
+            calendarPopup.classList.add('show');
+
+            const popupWidth = 280;
+            let left = rect.left + window.scrollX;
+            let top = rect.bottom + window.scrollY + 6;
+
+            if (left + popupWidth > window.innerWidth - 10) {
+                left = window.innerWidth - popupWidth - 14;
+            }
+            if (left < 10) left = 10;
+
+            calendarPopup.style.left = `${left}px`;
+            calendarPopup.style.top = `${top}px`;
+        }
+
+        function closeCalendar() {
+            calendarPopup.classList.remove('show');
+            activeInput = null;
+        }
+
+        dateInputs.forEach(input => {
+            if (input.dataset.customPickerInit) return;
+            input.dataset.customPickerInit = 'true';
+
+            // Convert to text with readonly to prevent native OS calendar popup
+            input.type = 'text';
+            input.readOnly = true;
+            input.style.cursor = 'pointer';
+
+            const wrap = document.createElement('div');
+            wrap.className = 'hr-custom-date-wrap';
+            input.parentNode.insertBefore(wrap, input);
+            wrap.appendChild(input);
+
+            const calIcon = document.createElement('i');
+            calIcon.className = 'ph ph-calendar-blank hr-custom-date-icon';
+            wrap.appendChild(calIcon);
+
+            wrap.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (activeInput === input && calendarPopup.classList.contains('show')) {
+                    closeCalendar();
+                } else {
+                    openCalendar(input);
+                }
+            });
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!calendarPopup.contains(e.target) && (!activeInput || !activeInput.closest('.hr-custom-date-wrap') || !activeInput.closest('.hr-custom-date-wrap').contains(e.target))) {
+                closeCalendar();
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeCalendar();
+            }
+        });
+    }
+
+    // ============================================================
+    // UNIVERSAL CUSTOM GLASSMORPHIC DROPDOWN (85% Transparency)
+    // ============================================================
+    function initCustomSelects() {
+        const selects = document.querySelectorAll('select.hr-select, select.form-select, .hr-filter-form select, .hr-per-page-select');
+
+        selects.forEach(select => {
+            if (select.dataset.customSelectInit) return;
+            select.dataset.customSelectInit = 'true';
+
+            // Hide native select from view but keep accessible in form
+            select.style.position = 'absolute';
+            select.style.opacity = '0';
+            select.style.pointerEvents = 'none';
+            select.style.width = '0';
+            select.style.height = '0';
+            select.style.margin = '0';
+            select.style.padding = '0';
+            select.style.border = 'none';
+
+            // Create custom wrapper
+            const wrap = document.createElement('div');
+            wrap.className = 'hr-custom-select-wrap';
+            select.parentNode.insertBefore(wrap, select);
+            wrap.appendChild(select);
+
+            // Trigger button
+            const trigger = document.createElement('div');
+            trigger.className = 'hr-custom-select-trigger';
+            trigger.setAttribute('tabindex', '0');
+            trigger.setAttribute('role', 'button');
+            trigger.setAttribute('aria-haspopup', 'listbox');
+
+            const triggerText = document.createElement('span');
+            triggerText.className = 'hr-select-trigger-text';
+
+            const chevron = document.createElement('i');
+            chevron.className = 'ph ph-caret-down hr-select-chevron';
+
+            trigger.appendChild(triggerText);
+            trigger.appendChild(chevron);
+            wrap.appendChild(trigger);
+
+            // Custom Menu
+            const menu = document.createElement('div');
+            menu.className = 'hr-custom-select-menu';
+            menu.setAttribute('role', 'listbox');
+            wrap.appendChild(menu);
+
+            function updateOptions() {
+                menu.innerHTML = '';
+                const options = Array.from(select.options);
+                let selectedOpt = select.options[select.selectedIndex] || options[0];
+
+                triggerText.textContent = selectedOpt ? selectedOpt.text : 'Select...';
+
+                options.forEach((opt, idx) => {
+                    const optEl = document.createElement('div');
+                    optEl.className = 'hr-custom-select-option' + (opt.selected ? ' selected' : '');
+                    optEl.setAttribute('role', 'option');
+                    optEl.setAttribute('data-value', opt.value);
+
+                    const labelSpan = document.createElement('span');
+                    labelSpan.textContent = opt.text;
+                    optEl.appendChild(labelSpan);
+
+                    if (opt.selected) {
+                        const checkIcon = document.createElement('i');
+                        checkIcon.className = 'ph ph-check hr-select-check';
+                        optEl.appendChild(checkIcon);
+                    }
+
+                    optEl.onclick = (e) => {
+                        e.stopPropagation();
+                        select.selectedIndex = idx;
+                        select.value = opt.value;
+                        triggerText.textContent = opt.text;
+
+                        menu.querySelectorAll('.hr-custom-select-option').forEach(el => el.classList.remove('selected'));
+                        optEl.classList.add('selected');
+
+                        wrap.classList.remove('open');
+
+                        // Fire native change events
+                        select.dispatchEvent(new Event('input', { bubbles: true }));
+                        select.dispatchEvent(new Event('change', { bubbles: true }));
+                        if (typeof select.onchange === 'function') {
+                            select.onchange();
+                        }
+                    };
+
+                    menu.appendChild(optEl);
+                });
+            }
+
+            updateOptions();
+
+            // Toggle open
+            trigger.onclick = (e) => {
+                e.stopPropagation();
+                document.querySelectorAll('.hr-custom-select-wrap.open').forEach(w => {
+                    if (w !== wrap) w.classList.remove('open');
+                });
+                wrap.classList.toggle('open');
+            };
+
+            // Keyboard navigation
+            trigger.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    wrap.classList.toggle('open');
+                } else if (e.key === 'Escape') {
+                    wrap.classList.remove('open');
+                } else if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    if (!wrap.classList.contains('open')) {
+                        wrap.classList.add('open');
+                    } else if (select.selectedIndex < select.options.length - 1) {
+                        select.selectedIndex++;
+                        updateOptions();
+                        select.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    if (select.selectedIndex > 0) {
+                        select.selectedIndex--;
+                        updateOptions();
+                        select.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                }
+            });
+        });
+
+        // Close on click outside
+        document.addEventListener('click', (e) => {
+            document.querySelectorAll('.hr-custom-select-wrap.open').forEach(w => {
+                if (!w.contains(e.target)) {
+                    w.classList.remove('open');
+                }
+            });
+        });
+    }
+
+    // Initialize custom components
+    initCustomDatePickers();
+    initCustomSelects();
+
+    window.initCustomDatePickers = initCustomDatePickers;
+    window.initCustomSelects = initCustomSelects;
 });
 
