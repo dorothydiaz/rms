@@ -710,23 +710,59 @@ document.addEventListener('DOMContentLoaded', () => {
             // Toggle open
             trigger.onclick = (e) => {
                 e.stopPropagation();
+                const isOpening = !wrap.classList.contains('open');
+
+                // Close all other open custom selects and reset their parent z-index
                 document.querySelectorAll('.hr-custom-select-wrap.open').forEach(w => {
-                    if (w !== wrap) w.classList.remove('open');
+                    w.classList.remove('open');
+                    w.style.zIndex = '';
+                    const p = w.closest('.hr-filter-bar, .hr-table-header, .hr-table-card, .hr-pagination-container');
+                    if (p) p.style.zIndex = '';
                 });
-                wrap.classList.toggle('open');
+
+                if (isOpening) {
+                    wrap.classList.add('open');
+                    wrap.style.zIndex = '99999';
+                    const parentBar = wrap.closest('.hr-filter-bar, .hr-table-header, .hr-table-card, .hr-pagination-container');
+                    if (parentBar) {
+                        parentBar.style.zIndex = '1000';
+                        parentBar.style.position = 'relative';
+                    }
+
+                    // Auto-flip upward if too close to bottom edge of screen
+                    const rect = trigger.getBoundingClientRect();
+                    const spaceBelow = window.innerHeight - rect.bottom;
+                    if (spaceBelow < 260 && rect.top > 260) {
+                        menu.style.top = 'auto';
+                        menu.style.bottom = 'calc(100% + 6px)';
+                    } else {
+                        menu.style.top = 'calc(100% + 6px)';
+                        menu.style.bottom = 'auto';
+                    }
+                } else {
+                    wrap.classList.remove('open');
+                    wrap.style.zIndex = '';
+                    const parentBar = wrap.closest('.hr-filter-bar, .hr-table-header, .hr-table-card, .hr-pagination-container');
+                    if (parentBar) {
+                        parentBar.style.zIndex = '';
+                    }
+                }
             };
 
             // Keyboard navigation
             trigger.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
-                    wrap.classList.toggle('open');
+                    trigger.click();
                 } else if (e.key === 'Escape') {
                     wrap.classList.remove('open');
+                    wrap.style.zIndex = '';
+                    const parentBar = wrap.closest('.hr-filter-bar, .hr-table-header, .hr-table-card, .hr-pagination-container');
+                    if (parentBar) parentBar.style.zIndex = '';
                 } else if (e.key === 'ArrowDown') {
                     e.preventDefault();
                     if (!wrap.classList.contains('open')) {
-                        wrap.classList.add('open');
+                        trigger.click();
                     } else if (select.selectedIndex < select.options.length - 1) {
                         select.selectedIndex++;
                         updateOptions();
@@ -748,6 +784,11 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.hr-custom-select-wrap.open').forEach(w => {
                 if (!w.contains(e.target)) {
                     w.classList.remove('open');
+                    w.style.zIndex = '';
+                    const parentBar = w.closest('.hr-filter-bar, .hr-table-header, .hr-table-card, .hr-pagination-container');
+                    if (parentBar) {
+                        parentBar.style.zIndex = '';
+                    }
                 }
             });
         });

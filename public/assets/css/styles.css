@@ -2281,6 +2281,9 @@ a {
     flex-wrap: wrap;
     gap: 12px;
     box-shadow: 0 8px 24px rgba(148, 163, 184, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.95);
+    position: relative;
+    z-index: 50;
+    overflow: visible;
 }
 
 .hr-filter-form {
@@ -2289,6 +2292,9 @@ a {
     gap: 10px;
     flex-wrap: wrap;
     width: 100%;
+    position: relative;
+    z-index: 50;
+    overflow: visible;
 }
 
 .hr-input, .hr-select, .hr-textarea {
@@ -2403,6 +2409,7 @@ a {
     overflow: hidden;
     margin-bottom: 24px;
     position: relative;
+    z-index: 1;
     padding: 22px;
 }
 
@@ -4891,6 +4898,10 @@ select option {
     vertical-align: middle;
 }
 
+.hr-custom-select-wrap.open {
+    z-index: 9999 !important;
+}
+
 .hr-custom-select-trigger {
     background: rgba(255, 255, 255, 0.78);
     backdrop-filter: blur(16px);
@@ -4953,9 +4964,9 @@ select option {
     -webkit-backdrop-filter: blur(24px) saturate(180%);
     border: 1px solid rgba(255, 255, 255, 0.95);
     border-radius: 14px;
-    box-shadow: 0 18px 48px -8px rgba(168, 85, 247, 0.22), 0 4px 14px rgba(0, 0, 0, 0.04), inset 0 1px 1.5px #ffffff;
+    box-shadow: 0 18px 48px -8px rgba(168, 85, 247, 0.25), 0 4px 14px rgba(0, 0, 0, 0.04), inset 0 1px 1.5px #ffffff;
     padding: 6px;
-    z-index: 99999;
+    z-index: 999999 !important;
     display: none;
     flex-direction: column;
     gap: 3px;
