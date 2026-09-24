@@ -18,6 +18,15 @@
                     <i class="ph ph-arrow-left"></i> Back to Directory
                 </a>
                 <span class="hr-badge hr-badge-neutral">{{ $employee->branch?->name }}</span>
+                @if($employee->employment_source === 'Agency')
+                    <span class="hr-badge" style="background: rgba(168, 85, 247, 0.12); color: #7e22ce; border: 1px solid rgba(168, 85, 247, 0.25);">
+                        <i class="ph ph-handshake"></i> Agency: {{ $employee->company_or_agency }}
+                    </span>
+                @else
+                    <span class="hr-badge" style="background: rgba(59, 130, 246, 0.12); color: #1d4ed8; border: 1px solid rgba(59, 130, 246, 0.25);">
+                        <i class="ph ph-buildings"></i> Company: {{ $employee->company_or_agency }}
+                    </span>
+                @endif
                 @if($employee->employment_status === 'Active')
                     <span class="hr-badge hr-badge-success">{{ $employee->employment_status }}</span>
                 @elseif($employee->employment_status === 'Probationary')
@@ -87,6 +96,28 @@
                     <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Regularization Date</div>
                     <div style="font-size: 14px; font-weight: 600; color: #0f172a; margin-top: 3px;">
                         {{ $employee->date_of_regularization ? \Carbon\Carbon::parse($employee->date_of_regularization)->format('M d, Y') : 'Pending evaluation' }}
+                    </div>
+                </div>
+                <div>
+                    <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Employment Sourcing</div>
+                    <div style="font-size: 14px; font-weight: 600; color: #0f172a; margin-top: 3px;">
+                        @if($employee->employment_source === 'Agency')
+                            <span class="hr-badge" style="background: rgba(168, 85, 247, 0.12); color: #7e22ce; border: 1px solid rgba(168, 85, 247, 0.25);">
+                                <i class="ph ph-handshake"></i> Staffing Agency
+                            </span>
+                        @else
+                            <span class="hr-badge" style="background: rgba(59, 130, 246, 0.12); color: #1d4ed8; border: 1px solid rgba(59, 130, 246, 0.25);">
+                                <i class="ph ph-buildings"></i> Direct Company
+                            </span>
+                        @endif
+                    </div>
+                </div>
+                <div>
+                    <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">
+                        {{ $employee->employment_source === 'Agency' ? 'Agency Partner' : 'Corporate Entity' }}
+                    </div>
+                    <div style="font-size: 14px; font-weight: 700; color: #0f172a; margin-top: 3px;">
+                        {{ $employee->company_or_agency }}
                     </div>
                 </div>
             </div>
@@ -339,6 +370,16 @@
             </div>
             <div style="padding: 18px; font-size: 13px; display: flex; flex-direction: column; gap: 10px;">
                 <div>
+                    <span style="color: #64748b;">Sourcing:</span>
+                    <strong style="color: {{ $employee->employment_source === 'Agency' ? '#7e22ce' : '#1d4ed8' }};">
+                        {{ $employee->employment_source ?? 'Company' }}
+                    </strong>
+                </div>
+                <div>
+                    <span style="color: #64748b;">{{ $employee->employment_source === 'Agency' ? 'Agency:' : 'Company:' }}</span>
+                    <strong>{{ $employee->company_or_agency }}</strong>
+                </div>
+                <div>
                     <span style="color: #64748b;">Branch:</span>
                     <strong>{{ $employee->branch?->name }}</strong>
                 </div>
@@ -506,12 +547,30 @@
                         </div>
                     </div>
                     <div class="hr-form-group" id="edit_emp_company_box" style="{{ ($employee->employment_source ?? 'Company') === 'Agency' ? 'display: none;' : '' }}">
-                        <label class="hr-form-label">Company Name</label>
-                        <input type="text" name="company_name" class="hr-input" value="{{ $employee->company_name ?? $employee->company_agency_name }}" placeholder="e.g. Bistro Hospitality Group Inc.">
+                        <label class="hr-form-label">Company Name *</label>
+                        <select name="company_name" class="hr-select">
+                            @foreach($companies as $c)
+                                <option value="{{ $c->name }}" {{ ($employee->company_name === $c->name || $employee->company_id === $c->id) ? 'selected' : '' }}>
+                                    {{ $c->name }} ({{ $c->code }})
+                                </option>
+                            @endforeach
+                            @if($employee->company_name && !$companies->contains('name', $employee->company_name))
+                                <option value="{{ $employee->company_name }}" selected>{{ $employee->company_name }}</option>
+                            @endif
+                        </select>
                     </div>
                     <div class="hr-form-group" id="edit_emp_agency_box" style="{{ ($employee->employment_source ?? 'Company') === 'Agency' ? '' : 'display: none;' }}">
-                        <label class="hr-form-label">Agency Name</label>
-                        <input type="text" name="agency_name" class="hr-input" value="{{ $employee->agency_name ?? $employee->company_agency_name }}" placeholder="e.g. ABC Manpower & Staffing">
+                        <label class="hr-form-label">Agency Name *</label>
+                        <select name="agency_name" class="hr-select">
+                            @foreach($agencies as $a)
+                                <option value="{{ $a->name }}" {{ ($employee->agency_name === $a->name || $employee->company_id === $a->id) ? 'selected' : '' }}>
+                                    {{ $a->name }} ({{ $a->code }})
+                                </option>
+                            @endforeach
+                            @if($employee->agency_name && !$agencies->contains('name', $employee->agency_name))
+                                <option value="{{ $employee->agency_name }}" selected>{{ $employee->agency_name }}</option>
+                            @endif
+                        </select>
                     </div>
                     <div class="hr-form-group">
                         <label class="hr-form-label">Basic Salary</label>

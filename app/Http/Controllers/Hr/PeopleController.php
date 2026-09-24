@@ -58,8 +58,10 @@ class PeopleController extends Controller
         $branches = Branch::where('is_active', true)->get();
         $departments = Department::all();
         $positions = Position::all();
+        $companies = Company::where('type', 'Company')->where('is_active', true)->get();
+        $agencies = Company::where('type', 'Agency')->where('is_active', true)->get();
 
-        return view('hr.people.employees', compact('employees', 'branches', 'departments', 'positions'));
+        return view('hr.people.employees', compact('employees', 'branches', 'departments', 'positions', 'companies', 'agencies'));
     }
 
     public function employeeShow(int $id): View
@@ -78,8 +80,10 @@ class PeopleController extends Controller
         }
 
         $canViewSensitive = $user->isSuperAdmin() || $user->isHrAdmin() || $user->hasPermission('employees.sensitive');
+        $companies = Company::where('type', 'Company')->where('is_active', true)->get();
+        $agencies = Company::where('type', 'Agency')->where('is_active', true)->get();
 
-        return view('hr.people.employee-detail', compact('employee', 'canViewSensitive'));
+        return view('hr.people.employee-detail', compact('employee', 'canViewSensitive', 'companies', 'agencies'));
     }
 
     public function employeeStore(Request $request): RedirectResponse
@@ -129,10 +133,31 @@ class PeopleController extends Controller
             abort(403, 'Unauthorized to create employee in another branch.');
         }
 
-        if (($validated['employment_source'] ?? '') === 'Agency') {
+        if (!empty($validated['company_id'])) {
+            $comp = Company::find($validated['company_id']);
+            if ($comp) {
+                if ($comp->type === 'Agency') {
+                    $validated['employment_source'] = 'Agency';
+                    $validated['agency_name'] = $comp->name;
+                    $validated['company_agency_name'] = $comp->name;
+                } else {
+                    $validated['employment_source'] = 'Company';
+                    $validated['company_name'] = $comp->name;
+                    $validated['company_agency_name'] = $comp->name;
+                }
+            }
+        } elseif (($validated['employment_source'] ?? '') === 'Agency') {
             $validated['company_agency_name'] = $validated['agency_name'] ?? null;
+            if (!empty($validated['agency_name'])) {
+                $comp = Company::where('name', $validated['agency_name'])->first();
+                if ($comp) $validated['company_id'] = $comp->id;
+            }
         } else {
             $validated['company_agency_name'] = $validated['company_name'] ?? null;
+            if (!empty($validated['company_name'])) {
+                $comp = Company::where('name', $validated['company_name'])->first();
+                if ($comp) $validated['company_id'] = $comp->id;
+            }
         }
 
         if ($request->hasFile('photo')) {
@@ -203,10 +228,32 @@ class PeopleController extends Controller
             'allowances' => 'nullable|numeric|min:0',
         ]);
 
-        if (($validated['employment_source'] ?? '') === 'Agency') {
+        if (!empty($request->input('company_id'))) {
+            $validated['company_id'] = $request->input('company_id');
+            $comp = Company::find($validated['company_id']);
+            if ($comp) {
+                if ($comp->type === 'Agency') {
+                    $validated['employment_source'] = 'Agency';
+                    $validated['agency_name'] = $comp->name;
+                    $validated['company_agency_name'] = $comp->name;
+                } else {
+                    $validated['employment_source'] = 'Company';
+                    $validated['company_name'] = $comp->name;
+                    $validated['company_agency_name'] = $comp->name;
+                }
+            }
+        } elseif (($validated['employment_source'] ?? '') === 'Agency') {
             $validated['company_agency_name'] = $validated['agency_name'] ?? null;
+            if (!empty($validated['agency_name'])) {
+                $comp = Company::where('name', $validated['agency_name'])->first();
+                if ($comp) $validated['company_id'] = $comp->id;
+            }
         } else {
             $validated['company_agency_name'] = $validated['company_name'] ?? null;
+            if (!empty($validated['company_name'])) {
+                $comp = Company::where('name', $validated['company_name'])->first();
+                if ($comp) $validated['company_id'] = $comp->id;
+            }
         }
 
         if ($request->boolean('remove_photo')) {
@@ -375,6 +422,123 @@ class PeopleController extends Controller
         AuditLogger::log('Update', 'Organization', $branch->id, "Updated branch {$branch->name}");
 
         return redirect()->back()->with('success', "Branch '{$branch->name}' updated.");
+    }
+
+    // ==========================================
+    // 4.1. AGENCIES & COMPANIES
+    // ==========================================
+
+    public function companiesIndex(Request $request): View
+    {
+        $query = Company::withCount('employees')->withCount('branches');
+
+        if ($type = $request->get('type')) {
+            if (in_array($type, ['Company', 'Agency'])) {
+                $query->where('type', $type);
+            }
+        }
+
+        if ($search = $request->get('search')) {
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('code', 'like', "%{$search}%")
+                  ->orWhere('contact_person', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('tin', 'like', "%{$search}%");
+            });
+        }
+
+        $companies = $query->orderBy('type', 'asc')->orderBy('name', 'asc')->get();
+
+        $totalCount = Company::count();
+        $companyCount = Company::where('type', 'Company')->count();
+        $agencyCount = Company::where('type', 'Agency')->count();
+        $totalStaffCount = Employee::whereNotNull('company_id')->orWhereNotNull('company_name')->orWhereNotNull('agency_name')->count();
+
+        return view('hr.people.companies', compact('companies', 'totalCount', 'companyCount', 'agencyCount', 'totalStaffCount'));
+    }
+
+    public function companyStore(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:150',
+            'type' => 'required|in:Company,Agency',
+            'code' => 'required|string|max:50|unique:companies,code',
+            'tin' => 'nullable|string|max:30',
+            'contact_person' => 'nullable|string|max:100',
+            'email' => 'nullable|email|max:100',
+            'phone' => 'nullable|string|max:50',
+            'address' => 'nullable|string',
+            'notes' => 'nullable|string',
+            'is_active' => 'nullable|boolean',
+        ]);
+
+        $validated['is_active'] = $request->has('is_active') ? $request->boolean('is_active') : true;
+
+        $entity = Company::create($validated);
+        AuditLogger::log('Create', 'Organization', $entity->id, "Created {$entity->type} '{$entity->name}'");
+
+        return redirect()->back()->with('success', "{$entity->type} '{$entity->name}' created successfully.");
+    }
+
+    public function companyUpdate(Request $request, int $id): RedirectResponse
+    {
+        $entity = Company::findOrFail($id);
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:150',
+            'type' => 'required|in:Company,Agency',
+            'code' => 'required|string|max:50|unique:companies,code,' . $id,
+            'tin' => 'nullable|string|max:30',
+            'contact_person' => 'nullable|string|max:100',
+            'email' => 'nullable|email|max:100',
+            'phone' => 'nullable|string|max:50',
+            'address' => 'nullable|string',
+            'notes' => 'nullable|string',
+            'is_active' => 'nullable|boolean',
+        ]);
+
+        $validated['is_active'] = $request->has('is_active') ? $request->boolean('is_active') : true;
+
+        $oldName = $entity->name;
+        $entity->update($validated);
+
+        if ($oldName !== $entity->name) {
+            if ($entity->type === 'Agency') {
+                Employee::where('company_id', $entity->id)->update(['agency_name' => $entity->name, 'company_agency_name' => $entity->name]);
+            } else {
+                Employee::where('company_id', $entity->id)->update(['company_name' => $entity->name, 'company_agency_name' => $entity->name]);
+            }
+        }
+
+        AuditLogger::log('Update', 'Organization', $entity->id, "Updated {$entity->type} '{$entity->name}'");
+
+        return redirect()->back()->with('success', "{$entity->type} '{$entity->name}' updated successfully.");
+    }
+
+    public function companyDestroy(int $id): RedirectResponse
+    {
+        $entity = Company::findOrFail($id);
+        $empCount = Employee::where('company_id', $id)
+            ->orWhere('company_name', $entity->name)
+            ->orWhere('agency_name', $entity->name)
+            ->count();
+
+        if ($empCount > 0) {
+            return redirect()->back()->with('error', "Cannot delete '{$entity->name}' because {$empCount} employee(s) are assigned to it. Please reassign the employees first.");
+        }
+
+        if ($entity->branches()->count() > 0) {
+            return redirect()->back()->with('error', "Cannot delete '{$entity->name}' because it has restaurant branches attached.");
+        }
+
+        $name = $entity->name;
+        $type = $entity->type;
+        $entity->delete();
+
+        AuditLogger::log('Delete', 'Organization', $id, "Deleted {$type} '{$name}'");
+
+        return redirect()->back()->with('success', "{$type} '{$name}' deleted successfully.");
     }
 
     // ==========================================

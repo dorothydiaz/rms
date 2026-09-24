@@ -1215,8 +1215,13 @@ a {
     padding: 10px 24px;
     justify-content: space-between;
     position: relative;
-    z-index: 50;
+    z-index: 800;
     overflow: visible;
+}
+
+.main-header:has(.breadcrumb-dropdown-container:hover),
+.main-header:has(.breadcrumb-dropdown-container.open) {
+    z-index: 950;
 }
 
 .header-left {
@@ -1227,6 +1232,7 @@ a {
     min-width: 0;
     overflow: visible;
     position: relative;
+    z-index: 800;
 }
 
 /* Header Sidebar Collapse Toggle Button - Modern Glassmorphic */
@@ -1355,6 +1361,7 @@ a {
     align-items: center;
     overflow: visible;
     position: relative;
+    z-index: 800;
     padding: 0;
     background: transparent;
     border: none;
@@ -1370,6 +1377,9 @@ a {
     margin: 0;
     padding: 0;
     white-space: nowrap;
+    overflow: visible;
+    position: relative;
+    z-index: 800;
 }
 
 .breadcrumb-item {
@@ -1453,7 +1463,7 @@ a {
     user-select: none;
 }
 
-/* Floating Breadcrumb Dropdown Menu - 90% Transparency */
+/* Floating Breadcrumb Dropdown Menu - Clean Opaque White Layer, Top-level Stacking */
 .breadcrumb-dropdown-menu {
     position: absolute;
     top: calc(100% + 8px);
@@ -1461,16 +1471,14 @@ a {
     min-width: 290px;
     max-height: 480px;
     overflow-y: auto;
-    background: rgba(255, 255, 255, 0.90);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.95);
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
     box-shadow: 
-        0 16px 40px -4px rgba(0, 0, 0, 0.12),
-        0 4px 16px -2px rgba(0, 0, 0, 0.05);
+        0 20px 48px -4px rgba(15, 23, 42, 0.18),
+        0 8px 24px -2px rgba(15, 23, 42, 0.08) !important;
     border-radius: 16px;
     padding: 14px 10px 12px 10px;
-    z-index: 99999;
+    z-index: 99999 !important;
     opacity: 0;
     visibility: hidden;
     transform: translateY(-6px) scale(0.98);
@@ -1492,6 +1500,12 @@ a {
 
 .breadcrumb-dropdown-container {
     position: relative;
+    z-index: 800;
+}
+
+.breadcrumb-dropdown-container:hover,
+.breadcrumb-dropdown-container.open {
+    z-index: 950;
 }
 
 .breadcrumb-dropdown-container:hover .breadcrumb-dropdown-menu,
@@ -2282,7 +2296,7 @@ a {
     gap: 12px;
     box-shadow: 0 8px 24px rgba(148, 163, 184, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.95);
     position: relative;
-    z-index: 50;
+    z-index: 20;
     overflow: visible;
 }
 
@@ -2293,7 +2307,7 @@ a {
     flex-wrap: wrap;
     width: 100%;
     position: relative;
-    z-index: 50;
+    z-index: 20;
     overflow: visible;
 }
 
@@ -2713,13 +2727,15 @@ nav[role="navigation"] svg,
 .sidebar-nav::-webkit-scrollbar,
 .hr-modal-body::-webkit-scrollbar,
 .modal-body::-webkit-scrollbar,
-.hr-dropdown-menu::-webkit-scrollbar {
+.hr-dropdown-menu::-webkit-scrollbar,
+.breadcrumb-dropdown-menu::-webkit-scrollbar {
     width: 6px;
     height: 6px;
 }
 
 .hr-modal-body::-webkit-scrollbar-track,
-.modal-body::-webkit-scrollbar-track {
+.modal-body::-webkit-scrollbar-track,
+.breadcrumb-dropdown-menu::-webkit-scrollbar-track {
     background: transparent;
     margin: 8px 0;
 }
@@ -2729,7 +2745,8 @@ nav[role="navigation"] svg,
 .sidebar-nav::-webkit-scrollbar-thumb,
 .hr-modal-body::-webkit-scrollbar-thumb,
 .modal-body::-webkit-scrollbar-thumb,
-.hr-dropdown-menu::-webkit-scrollbar-thumb {
+.hr-dropdown-menu::-webkit-scrollbar-thumb,
+.breadcrumb-dropdown-menu::-webkit-scrollbar-thumb {
     background: rgba(168, 85, 247, 0.35);
     border-radius: 8px;
 }
@@ -2794,7 +2811,6 @@ select option {
 /* Custom Dropdown Menus and Popovers */
 .dropdown-menu,
 .hr-dropdown-menu,
-.breadcrumb-dropdown-menu,
 .custom-dropdown-menu {
     background: rgba(255, 255, 255, 0.90) !important;
     backdrop-filter: blur(28px) saturate(190%) !important;

@@ -28,6 +28,7 @@
                 ['name' => 'Departments', 'route' => 'hr.people.departments', 'icon' => 'ph-tree-structure', 'active' => ['hr.people.departments*']],
                 ['name' => 'Positions', 'route' => 'hr.people.positions', 'icon' => 'ph-identification-card', 'active' => ['hr.people.positions*']],
                 ['name' => 'Branches', 'route' => 'hr.people.branches', 'icon' => 'ph-storefront', 'active' => ['hr.people.branches*']],
+                ['name' => 'Agency / Company', 'route' => 'hr.people.companies', 'icon' => 'ph-buildings', 'active' => ['hr.people.companies*']],
             ],
         ],
         'system-administration' => [

@@ -94,6 +94,17 @@
                         </td>
                         <td>
                             <span class="hr-badge hr-badge-neutral">{{ $emp->branch?->name ?? 'Unassigned' }}</span>
+                            <div style="font-size: 11px; margin-top: 4px;">
+                                @if($emp->employment_source === 'Agency')
+                                    <span style="color: #7e22ce; font-weight: 600; display: inline-flex; align-items: center; gap: 3px;" title="Agency: {{ $emp->company_or_agency }}">
+                                        <i class="ph ph-handshake"></i> {{ Str::limit($emp->company_or_agency, 24) }}
+                                    </span>
+                                @else
+                                    <span style="color: #1d4ed8; font-weight: 600; display: inline-flex; align-items: center; gap: 3px;" title="Company: {{ $emp->company_or_agency }}">
+                                        <i class="ph ph-buildings"></i> {{ Str::limit($emp->company_or_agency, 24) }}
+                                    </span>
+                                @endif
+                            </div>
                         </td>
                         <td>
                             <div>{{ $emp->position?->name ?? 'N/A' }}</div>
@@ -304,12 +315,20 @@
                         </div>
                     </div>
                     <div class="hr-form-group" id="emp_company_box">
-                        <label class="hr-form-label">Company Name</label>
-                        <input type="text" name="company_name" class="hr-input" placeholder="e.g. Bistro Hospitality Group Inc.">
+                        <label class="hr-form-label">Company Name *</label>
+                        <select name="company_name" class="hr-select">
+                            @foreach($companies as $c)
+                                <option value="{{ $c->name }}">{{ $c->name }} ({{ $c->code }})</option>
+                            @endforeach
+                        </select>
                     </div>
                     <div class="hr-form-group" id="emp_agency_box" style="display: none;">
                         <label class="hr-form-label">Agency Name *</label>
-                        <input type="text" name="agency_name" class="hr-input" placeholder="e.g. ABC Manpower & Staffing">
+                        <select name="agency_name" class="hr-select">
+                            @foreach($agencies as $a)
+                                <option value="{{ $a->name }}">{{ $a->name }} ({{ $a->code }})</option>
+                            @endforeach
+                        </select>
                     </div>
                     <div class="hr-form-group">
                         <label class="hr-form-label">Contract End Date</label>
