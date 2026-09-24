@@ -5,28 +5,20 @@
 @section('content')
 <div class="hr-dash-wrapper">
 
-    <!-- Global SVG Gradient Definitions for Card Wave Accents -->
+    <!-- Global Sparkline Gradients -->
     <svg style="position: absolute; width: 0; height: 0; pointer-events: none;" aria-hidden="true">
         <defs>
-            <linearGradient id="wavePinkPurple" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#f472b6" stop-opacity="0.45"/>
-                <stop offset="100%" stop-color="#c084fc" stop-opacity="0.6"/>
+            <linearGradient id="sparkPurple" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#c084fc" stop-opacity="0.3"/>
+                <stop offset="100%" stop-color="#9333ea" stop-opacity="1"/>
             </linearGradient>
-            <linearGradient id="wavePinkPurpleLight" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#fbcfe8" stop-opacity="0.6"/>
-                <stop offset="100%" stop-color="#e9d5ff" stop-opacity="0.75"/>
+            <linearGradient id="sparkBlue" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#7dd3fc" stop-opacity="0.3"/>
+                <stop offset="100%" stop-color="#0284c7" stop-opacity="1"/>
             </linearGradient>
-            <linearGradient id="waveBluePurple" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#93c5fd" stop-opacity="0.45"/>
-                <stop offset="100%" stop-color="#c084fc" stop-opacity="0.55"/>
-            </linearGradient>
-            <linearGradient id="wavePurePink" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#fbcfe8" stop-opacity="0.6"/>
-                <stop offset="100%" stop-color="#f472b6" stop-opacity="0.5"/>
-            </linearGradient>
-            <linearGradient id="wavePurePurple" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#e9d5ff" stop-opacity="0.65"/>
-                <stop offset="100%" stop-color="#c084fc" stop-opacity="0.55"/>
+            <linearGradient id="sparkOrange" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#fed7aa" stop-opacity="0.3"/>
+                <stop offset="100%" stop-color="#ea580c" stop-opacity="1"/>
             </linearGradient>
         </defs>
     </svg>
@@ -105,113 +97,96 @@
                 <!-- 1. Top 4 KPI Cards -->
                 <div class="hr-bento-kpi-grid">
                     
-                    <!-- Total Workforce -->
-                    <a href="{{ route('hr.people.employees') }}" class="hr-bento-kpi-card has-wave">
+                    <!-- Card 1: Total Workforce -->
+                    <a href="{{ route('hr.people.employees') }}" class="hr-bento-kpi-card">
                         <div class="hr-bento-kpi-top">
                             <div class="hr-bento-kpi-lead">
                                 <div class="hr-bento-icon-box purple">
-                                    <i class="ph ph-users"></i>
+                                    <i class="ph ph-user"></i>
                                 </div>
                                 <span class="hr-bento-kpi-title">Total Workforce</span>
                             </div>
-                            <i class="ph ph-caret-right hr-kpi-chevron" style="color: #c084fc;"></i>
                         </div>
-                        <div class="hr-bento-kpi-body">
-                            <div>
-                                <div class="hr-bento-kpi-val">{{ $totalEmployees > 0 ? $totalEmployees : 10 }}</div>
-                                <div class="hr-bento-kpi-sub">{{ $activeEmployees > 0 ? $activeEmployees : 8 }} Active &bull; {{ $probationaryEmployees > 0 ? $probationaryEmployees : 2 }} Probationary</div>
-                            </div>
+                        <div class="hr-bento-kpi-val">{{ $totalEmployees }}</div>
+                        <div class="hr-bento-kpi-bottom">
+                            <span style="font-size: 11.5px; font-weight: 500; color: #64748b;">
+                                {{ $activeEmployees }} Active &bull; {{ $probationaryEmployees }} Probationary
+                            </span>
+                            <svg class="hr-kpi-sparkline" viewBox="0 0 68 26" fill="none">
+                                <path d="M2 20C12 18 20 8 32 15C44 22 52 5 66 3" stroke="url(#sparkPurple)" stroke-width="2.5" stroke-linecap="round"/>
+                            </svg>
                         </div>
-                        <!-- Wavy Accent -->
-                        <svg class="hr-card-wave" viewBox="0 0 160 65" fill="none" preserveAspectRatio="none">
-                            <path d="M0 65C30 52 70 38 105 46C130 52 145 22 160 28V65H0Z" fill="url(#wavePinkPurple)" opacity="0.6"/>
-                            <path d="M25 65C60 55 95 18 125 32C140 40 150 10 160 14V65H25Z" fill="url(#wavePinkPurpleLight)" opacity="0.85"/>
-                        </svg>
                     </a>
 
-                    <!-- Today's Attendance -->
-                    <a href="{{ route('hr.attendance.dtr') }}" class="hr-bento-kpi-card has-wave">
+                    <!-- Card 2: Today's Attendance -->
+                    <a href="{{ route('hr.attendance.dtr') }}" class="hr-bento-kpi-card">
                         <div class="hr-bento-kpi-top">
                             <div class="hr-bento-kpi-lead">
-                                <div class="hr-bento-icon-box blue">
+                                <div class="hr-bento-icon-box green" style="background: #dcfce7; color: #16a34a;">
                                     <i class="ph ph-calendar-check"></i>
                                 </div>
                                 <span class="hr-bento-kpi-title">Today's Attendance</span>
                             </div>
-                            <i class="ph ph-caret-right hr-kpi-chevron" style="color: #93c5fd;"></i>
                         </div>
-                        <div class="hr-bento-kpi-body">
+                        <div style="display: flex; align-items: flex-end; justify-content: space-between;">
                             <div>
-                                <div class="hr-bento-kpi-val">{{ $todayPresent }}</div>
-                                <div class="hr-bento-kpi-sub">{{ $todayLate }} Late &bull; {{ $todayAbsent }} Absent</div>
+                                <div class="hr-bento-kpi-val" style="margin-bottom: 2px;">{{ $todayPresent }}</div>
+                                <span style="font-size: 11.5px; color: #64748b; font-weight: 500;">
+                                    {{ $todayLate }} Late &bull; {{ $todayAbsent }} Absent
+                                </span>
                             </div>
-                            <div class="hr-kpi-ring-wrap">
-                                <svg width="42" height="42" viewBox="0 0 42 42">
-                                    <circle cx="21" cy="21" r="17" fill="none" stroke="#e2e8f0" stroke-width="3.5" />
-                                    <circle cx="21" cy="21" r="17" fill="none" stroke="#3b82f6" stroke-width="3.5"
-                                            stroke-dasharray="106.8"
-                                            stroke-dashoffset="{{ 106.8 - (106.8 * ($attendancePercentage / 100)) }}"
+                            <div class="hr-circular-badge">
+                                <svg width="40" height="40" viewBox="0 0 36 36">
+                                    <circle cx="18" cy="18" r="14" fill="none" stroke="#e2e8f0" stroke-width="3.5" />
+                                    <circle cx="18" cy="18" r="14" fill="none" stroke="#10b981" stroke-width="3.5"
+                                            stroke-dasharray="88"
+                                            stroke-dashoffset="{{ 88 - (88 * ($attendancePercentage / 100)) }}"
                                             stroke-linecap="round"
-                                            transform="rotate(-90 21 21)" />
+                                            transform="rotate(-90 18 18)" />
                                 </svg>
-                                <span class="hr-kpi-ring-text">{{ $attendancePercentage }}%</span>
+                                <span class="hr-circular-badge-text">{{ $attendancePercentage }}%</span>
                             </div>
                         </div>
-                        <!-- Wavy Accent -->
-                        <svg class="hr-card-wave" viewBox="0 0 160 65" fill="none" preserveAspectRatio="none">
-                            <path d="M0 65C35 50 80 42 110 52C130 58 145 25 160 35V65H0Z" fill="url(#waveBluePurple)" opacity="0.5"/>
-                            <path d="M20 65C55 58 90 28 125 40C140 45 150 15 160 20V65H20Z" fill="url(#wavePinkPurpleLight)" opacity="0.7"/>
-                        </svg>
                     </a>
 
-                    <!-- On Leave -->
-                    <a href="{{ route('hr.leave.requests') }}" class="hr-bento-kpi-card has-wave">
+                    <!-- Card 3: On Leave -->
+                    <a href="{{ route('hr.leave.requests') }}" class="hr-bento-kpi-card">
                         <div class="hr-bento-kpi-top">
                             <div class="hr-bento-kpi-lead">
-                                <div class="hr-bento-icon-box pink">
+                                <div class="hr-bento-icon-box orange">
                                     <i class="ph ph-airplane-tilt"></i>
                                 </div>
                                 <span class="hr-bento-kpi-title">On Leave</span>
                             </div>
-                            <i class="ph ph-caret-right hr-kpi-chevron" style="color: #f472b6;"></i>
+                            <i class="ph ph-caret-right hr-kpi-chevron"></i>
                         </div>
-                        <div class="hr-bento-kpi-body">
-                            <div>
-                                <div class="hr-bento-kpi-val">{{ $onLeaveEmployees }}</div>
-                                <div class="hr-bento-kpi-sub" style="color: #f97316; font-weight: 600;">
-                                    {{ $pendingLeaveRequests }} Pending Request{{ $pendingLeaveRequests == 1 ? '' : 's' }}
-                                </div>
-                            </div>
+                        <div class="hr-bento-kpi-val">{{ $onLeaveEmployees }}</div>
+                        <div class="hr-bento-kpi-bottom">
+                            <span style="font-size: 11.5px; font-weight: 600; color: #ea580c;">
+                                {{ $pendingLeaveRequests }} Pending Request{{ $pendingLeaveRequests > 1 ? 's' : '' }}
+                            </span>
                         </div>
-                        <!-- Wavy Accent -->
-                        <svg class="hr-card-wave" viewBox="0 0 160 65" fill="none" preserveAspectRatio="none">
-                            <path d="M0 65C30 56 65 38 100 48C125 54 145 20 160 25V65H0Z" fill="url(#wavePurePink)" opacity="0.6"/>
-                            <path d="M20 65C50 56 85 24 120 38C138 44 148 12 160 16V65H20Z" fill="url(#wavePinkPurpleLight)" opacity="0.75"/>
-                        </svg>
                     </a>
 
-                    <!-- Payroll -->
-                    <a href="{{ route('hr.payroll.periods') }}" class="hr-bento-kpi-card has-wave">
+                    <!-- Card 4: Payroll -->
+                    <a href="{{ route('hr.payroll.periods') }}" class="hr-bento-kpi-card">
                         <div class="hr-bento-kpi-top">
                             <div class="hr-bento-kpi-lead">
-                                <div class="hr-bento-icon-box purple">
+                                <div class="hr-bento-icon-box blue">
                                     <i class="ph ph-wallet"></i>
                                 </div>
                                 <span class="hr-bento-kpi-title">Payroll</span>
                             </div>
-                            <i class="ph ph-caret-right hr-kpi-chevron" style="color: #a78bfa;"></i>
+                            <i class="ph ph-caret-right hr-kpi-chevron"></i>
                         </div>
-                        <div class="hr-bento-kpi-body">
-                            <div>
-                                <span class="hr-badge-approved">Approved</span>
-                                <div class="hr-bento-kpi-sub" style="margin-top: 6px;">{{ $payrollSummary['period_name'] ?? 'September 2026 - 1st Half' }}</div>
-                            </div>
+                        <div style="margin: 8px 0 6px;">
+                            <span class="hr-badge-approved">Approved</span>
                         </div>
-                        <!-- Wavy Accent -->
-                        <svg class="hr-card-wave" viewBox="0 0 160 65" fill="none" preserveAspectRatio="none">
-                            <path d="M0 65C30 52 70 38 105 46C130 52 145 22 160 28V65H0Z" fill="url(#wavePurePurple)" opacity="0.6"/>
-                            <path d="M25 65C60 55 95 18 125 32C140 40 150 10 160 14V65H25Z" fill="url(#wavePinkPurpleLight)" opacity="0.75"/>
-                        </svg>
+                        <div class="hr-bento-kpi-bottom">
+                            <span style="font-size: 11.5px; font-weight: 500; color: #64748b;">
+                                {{ $payrollSummary['period_name'] ?? 'September 2026 - 1st Half' }}
+                            </span>
+                        </div>
                     </a>
 
                 </div>
@@ -220,107 +195,99 @@
                 <div class="hr-bento-mid-grid">
                     
                     <!-- Attendance Overview -->
-                    <div class="hr-bento-card has-wave">
+                    <div class="hr-bento-card">
                         <div class="hr-bento-card-header">
                             <div>
                                 <div class="hr-bento-card-title">
-                                    <div class="hr-bento-icon-box pink" style="width: 28px; height: 28px; font-size: 14px;">
-                                        <i class="ph ph-users-three"></i>
+                                    <div class="hr-bento-icon-box purple" style="width: 32px; height: 32px; font-size: 16px;">
+                                        <i class="ph ph-users"></i>
                                     </div>
                                     <span>Attendance Overview</span>
                                 </div>
-                                <div class="hr-bento-card-subtitle" style="margin-left: 36px;">Daily attendance for the current period</div>
+                                <div class="hr-bento-card-subtitle" style="margin-left: 42px;">Daily attendance for the current period</div>
                             </div>
-                            <span class="hr-bento-pill" style="cursor: default;">{{ $dateRangeLabel }} <i class="ph ph-caret-down" style="font-size: 10px; margin-left: 2px;"></i></span>
+                            <span class="hr-bento-pill" style="cursor: default;">
+                                {{ $dateRangeLabel ?? 'Sep 18 – Sep 24' }}
+                                <i class="ph ph-caret-right" style="font-size: 10px; margin-left: 2px;"></i>
+                            </span>
                         </div>
                         
                         <div class="hr-att-overview-body">
-                            <div class="hr-att-chart-wrap">
-                                <div style="height: 195px; position: relative;">
-                                    <canvas id="attendanceSummaryChart"></canvas>
+                            <!-- Left: Attendance Chart -->
+                            <div style="flex: 1; min-width: 0;">
+                                <div class="hr-sales-chart-wrap" style="height: 180px;">
+                                    <canvas id="attendanceOverviewChart"></canvas>
                                 </div>
-                                <div class="hr-custom-chart-legend" style="margin-top: 8px;">
-                                    <span class="hr-custom-chart-legend-item">
-                                        <span class="hr-breakdown-dot" style="background-color: #10b981;"></span> Present
+                                <div style="display: flex; align-items: center; gap: 18px; margin-top: 10px; font-size: 11.5px; color: #64748b; font-weight: 500;">
+                                    <span style="display: inline-flex; align-items: center; gap: 6px;">
+                                        <span style="width: 8px; height: 8px; border-radius: 50%; background: #10b981;"></span> Present
                                     </span>
-                                    <span class="hr-custom-chart-legend-item">
-                                        <span class="hr-breakdown-dot" style="background-color: #f59e0b;"></span> Late
+                                    <span style="display: inline-flex; align-items: center; gap: 6px;">
+                                        <span style="width: 8px; height: 8px; border-radius: 50%; background: #f59e0b;"></span> Late
                                     </span>
-                                    <span class="hr-custom-chart-legend-item">
-                                        <span class="hr-breakdown-dot" style="background-color: #f43f5e;"></span> Absent
+                                    <span style="display: inline-flex; align-items: center; gap: 6px;">
+                                        <span style="width: 8px; height: 8px; border-radius: 50%; background: #f43f5e;"></span> Absent
                                     </span>
                                 </div>
                             </div>
 
-                            <!-- Attendance Rate circular widget -->
+                            <!-- Right: Attendance Rate gauge -->
                             <div class="hr-att-rate-box">
-                                <span class="hr-att-rate-title">Attendance Rate</span>
-                                <div class="hr-att-rate-gauge">
-                                    <svg width="76" height="76" viewBox="0 0 76 76">
-                                        <circle cx="38" cy="38" r="30" fill="none" stroke="#e2e8f0" stroke-width="6.5" />
-                                        <circle cx="38" cy="38" r="30" fill="none" stroke="#3b82f6" stroke-width="6.5"
-                                                stroke-dasharray="188.5"
-                                                stroke-dashoffset="{{ 188.5 - (188.5 * ($attendancePercentage / 100)) }}"
+                                <span style="font-size: 12px; font-weight: 600; color: #0f172a; margin-bottom: 12px;">Attendance Rate</span>
+                                <div class="hr-circular-badge lg">
+                                    <svg width="68" height="68" viewBox="0 0 36 36">
+                                        <circle cx="18" cy="18" r="14" fill="none" stroke="#e2e8f0" stroke-width="3" />
+                                        <circle cx="18" cy="18" r="14" fill="none" stroke="#38bdf8" stroke-width="3"
+                                                stroke-dasharray="88"
+                                                stroke-dashoffset="{{ 88 - (88 * ($attendancePercentage / 100)) }}"
                                                 stroke-linecap="round"
-                                                transform="rotate(-90 38 38)" />
+                                                transform="rotate(-90 18 18)" />
                                     </svg>
-                                    <span class="hr-att-rate-num">{{ $attendancePercentage }}%</span>
+                                    <span class="hr-circular-badge-text lg">{{ $attendancePercentage }}%</span>
                                 </div>
-                                <div class="hr-att-rate-trend">
-                                    <i class="ph ph-arrow-up-right"></i>
-                                    <span>+5% vs. last week</span>
+                                <div style="margin-top: 14px; text-align: center;">
+                                    <span style="font-size: 11px; font-weight: 600; color: #16a34a; display: block;">
+                                        <i class="ph ph-arrow-up-right"></i> +5%
+                                    </span>
+                                    <span style="font-size: 10px; color: #64748b;">vs. last week</span>
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Corner Waves -->
-                        <svg class="hr-card-wave" style="left: 0; right: auto; transform: scaleX(-1);" viewBox="0 0 160 65" fill="none" preserveAspectRatio="none">
-                            <path d="M0 65C30 52 70 38 105 46C130 52 145 22 160 28V65H0Z" fill="url(#wavePinkPurple)" opacity="0.35"/>
-                        </svg>
-                        <svg class="hr-card-wave" viewBox="0 0 160 65" fill="none" preserveAspectRatio="none">
-                            <path d="M0 65C30 52 70 38 105 46C130 52 145 22 160 28V65H0Z" fill="url(#wavePinkPurple)" opacity="0.35"/>
-                        </svg>
                     </div>
 
                     <!-- Employees by Department -->
-                    <div class="hr-bento-card has-wave">
+                    <div class="hr-bento-card">
                         <div class="hr-bento-card-header">
                             <div class="hr-bento-card-title">
-                                <div class="hr-bento-icon-box purple" style="width: 28px; height: 28px; font-size: 14px;">
-                                    <i class="ph ph-star"></i>
+                                <div class="hr-bento-icon-box purple" style="width: 32px; height: 32px; font-size: 16px;">
+                                    <i class="ph ph-users-three"></i>
                                 </div>
                                 <span>Employees by Department</span>
                             </div>
-                            <span class="hr-bento-pill">Total {{ $totalEmployees > 0 ? $totalEmployees : 10 }}</span>
+                            <span class="hr-bento-pill">Total {{ $totalEmployees }}</span>
                         </div>
                         <div class="hr-donut-layout">
-                            <div class="hr-donut-chart-wrap" style="width: 145px; height: 145px;">
+                            <div class="hr-donut-chart-wrap">
                                 <canvas id="deptDonutChart"></canvas>
                                 <div class="hr-donut-center-info">
-                                    <span class="hr-donut-center-num">{{ $totalEmployees > 0 ? $totalEmployees : 10 }}</span>
+                                    <span class="hr-donut-center-num">{{ $totalEmployees }}</span>
                                     <span class="hr-donut-center-lbl">Total Employees</span>
                                 </div>
                             </div>
                             <div class="hr-breakdown-list">
-                                @foreach($deptBreakdown as $db)
-                                    <div class="hr-breakdown-item">
-                                        <span class="hr-breakdown-item-left">
-                                            <span class="hr-breakdown-dot" style="background-color: {{ $db['color'] }};"></span>
-                                            {{ $db['name'] }}
-                                        </span>
-                                        <span class="hr-breakdown-item-right">
-                                            {{ $db['count'] }} <span class="hr-breakdown-pct">({{ $db['percent'] }}%)</span>
-                                        </span>
-                                    </div>
+                                @foreach($deptBreakdown as $dept)
+                                <div class="hr-breakdown-item">
+                                    <span class="hr-breakdown-item-left">
+                                        <span class="hr-breakdown-dot" style="background-color: {{ $dept['color'] }};"></span>
+                                        {{ $dept['name'] }}
+                                    </span>
+                                    <span class="hr-breakdown-item-right">
+                                        {{ $dept['count'] }} <span class="hr-breakdown-pct">({{ $dept['percent'] }}%)</span>
+                                    </span>
+                                </div>
                                 @endforeach
                             </div>
                         </div>
-
-                        <!-- Wavy Accent -->
-                        <svg class="hr-card-wave wide" viewBox="0 0 180 70" fill="none" preserveAspectRatio="none">
-                            <path d="M0 70C40 55 80 40 120 48C145 54 165 20 180 25V70H0Z" fill="url(#wavePinkPurple)" opacity="0.45"/>
-                            <path d="M30 70C65 58 105 25 140 40C160 48 170 12 180 18V70H30Z" fill="url(#wavePinkPurpleLight)" opacity="0.7"/>
-                        </svg>
                     </div>
 
                 </div>
@@ -329,60 +296,51 @@
                 <div class="hr-bento-lower-grid">
                     
                     <!-- Payroll Summary -->
-                    <div class="hr-bento-card has-wave" style="display: flex; flex-direction: column; justify-content: space-between;">
-                        <div>
-                            <div class="hr-bento-card-header">
-                                <div class="hr-bento-card-title">
-                                    <div class="hr-bento-icon-box purple" style="width: 28px; height: 28px; font-size: 14px;">
-                                        <i class="ph ph-receipt"></i>
-                                    </div>
-                                    <span>Payroll Summary</span>
+                    <div class="hr-bento-card">
+                        <div class="hr-bento-card-header">
+                            <div class="hr-bento-card-title">
+                                <div class="hr-bento-icon-box purple" style="width: 32px; height: 32px; font-size: 16px;">
+                                    <i class="ph ph-receipt"></i>
                                 </div>
-                                <span class="hr-bento-pill" style="cursor: pointer;">
-                                    {{ $payrollSummary['period_name'] ?? 'September 2026 - 1st Half' }} <i class="ph ph-caret-down" style="font-size: 10px; margin-left: 2px;"></i>
-                                </span>
+                                <span>Payroll Summary</span>
                             </div>
-                            
-                            <div style="height: 160px; position: relative;">
-                                <canvas id="payrollSummaryChart"></canvas>
-                            </div>
-
-                            <div class="hr-payroll-summary-stats">
-                                <div class="hr-payroll-stat-item">
-                                    <span class="hr-payroll-stat-label">Gross Pay</span>
-                                    <span class="hr-payroll-stat-val">₱{{ number_format($payrollSummary['total_gross'], 2) }}</span>
-                                </div>
-                                <div class="hr-payroll-stat-item">
-                                    <span class="hr-payroll-stat-label">Total Net Pay</span>
-                                    <span class="hr-payroll-stat-val">₱{{ number_format($payrollSummary['total_net'], 2) }}</span>
-                                </div>
-                                <div class="hr-payroll-stat-item">
-                                    <span class="hr-payroll-stat-label">Deductions</span>
-                                    <span class="hr-payroll-stat-val red">-₱{{ number_format($payrollSummary['total_deductions'], 2) }}</span>
-                                </div>
-                                <div class="hr-payroll-stat-item">
-                                    <span class="hr-payroll-stat-label">Overtime Pay</span>
-                                    <span class="hr-payroll-stat-val">₱{{ number_format($payrollSummary['total_ot'], 2) }}</span>
-                                </div>
-                            </div>
+                            <span class="hr-bento-pill" style="cursor: default;">
+                                {{ $payrollSummary['period_name'] ?? 'September 2026 - 1st Half' }}
+                                <i class="ph ph-caret-down" style="font-size: 10px; margin-left: 2px;"></i>
+                            </span>
                         </div>
-
-                        <a href="{{ route('hr.payroll.register') }}" class="hr-bento-view-details">
-                            View Details <i class="ph ph-arrow-right"></i>
-                        </a>
-
-                        <!-- Wavy Accent -->
-                        <svg class="hr-card-wave" viewBox="0 0 160 65" fill="none" preserveAspectRatio="none">
-                            <path d="M0 65C30 52 70 38 105 46C130 52 145 22 160 28V65H0Z" fill="url(#wavePurePurple)" opacity="0.45"/>
-                        </svg>
+                        <div style="height: 155px; position: relative;">
+                            <canvas id="payrollSummaryChart"></canvas>
+                        </div>
+                        <div class="hr-pay-kpi-strip">
+                            <div class="hr-pay-kpi-item">
+                                <span class="hr-pay-kpi-label">Gross Pay</span>
+                                <span class="hr-pay-kpi-val">₱{{ number_format($payrollSummary['total_gross'], 2) }}</span>
+                            </div>
+                            <div class="hr-pay-kpi-item">
+                                <span class="hr-pay-kpi-label">Total Net Pay</span>
+                                <span class="hr-pay-kpi-val">₱{{ number_format($payrollSummary['total_net'], 2) }}</span>
+                            </div>
+                            <div class="hr-pay-kpi-item">
+                                <span class="hr-pay-kpi-label">Deductions</span>
+                                <span class="hr-pay-kpi-val" style="color: #ef4444;">-₱{{ number_format($payrollSummary['total_deductions'], 2) }}</span>
+                            </div>
+                            <div class="hr-pay-kpi-item">
+                                <span class="hr-pay-kpi-label">Overtime Pay</span>
+                                <span class="hr-pay-kpi-val">₱{{ number_format($payrollSummary['total_ot'], 2) }}</span>
+                            </div>
+                            <a href="{{ route('hr.payroll.periods') }}" class="hr-bento-link" style="align-self: flex-end; margin-bottom: 2px;">
+                                View Details <i class="ph ph-arrow-right"></i>
+                            </a>
+                        </div>
                     </div>
 
                     <!-- Recent Attendance -->
-                    <div class="hr-bento-card has-wave">
+                    <div class="hr-bento-card">
                         <div class="hr-bento-card-header">
                             <div class="hr-bento-card-title">
-                                <div class="hr-bento-icon-box pink" style="width: 28px; height: 28px; font-size: 14px;">
-                                    <i class="ph ph-file-text"></i>
+                                <div class="hr-bento-icon-box purple" style="width: 32px; height: 32px; font-size: 16px;">
+                                    <i class="ph ph-clock"></i>
                                 </div>
                                 <span>Recent Attendance</span>
                             </div>
@@ -402,68 +360,48 @@
                                 </thead>
                                 <tbody>
                                     @php
-                                        $sampleRecords = [
-                                            ['dt' => 'Sep 23, 2026 10:00 PM', 'name' => 'Maria', 'ip' => '127.0.0.1', 'status' => 'Successful'],
-                                            ['dt' => 'Sep 23, 2026 10:00 PM', 'name' => 'Gabriel', 'ip' => '10.0.0.12', 'status' => 'Successful'],
-                                            ['dt' => 'Sep 23, 2026 10:00 PM', 'name' => 'Patricia', 'ip' => '10.0.0.12', 'status' => 'Successful'],
-                                            ['dt' => 'Sep 23, 2026 02:00 PM', 'name' => 'Rodrigo', 'ip' => '137.74.0.1', 'status' => 'Successful'],
-                                            ['dt' => 'Sep 22, 2026 07:50 PM', 'name' => 'Juan', 'ip' => '137.74.0.1', 'status' => 'Failed Attempt'],
-                                        ];
+                                        $displayAtt = $recentAttendance && $recentAttendance->count() >= 3
+                                            ? $recentAttendance
+                                            : collect([
+                                                (object)['date_formatted' => 'Sep 23, 2026 10:00 PM', 'name' => 'Maria', 'ip' => '127.0.0.1', 'status' => 'Successful'],
+                                                (object)['date_formatted' => 'Sep 23, 2026 10:00 PM', 'name' => 'Gabriel', 'ip' => '10.0.0.12', 'status' => 'Successful'],
+                                                (object)['date_formatted' => 'Sep 23, 2026 10:00 PM', 'name' => 'Patricia', 'ip' => '10.0.0.12', 'status' => 'Successful'],
+                                                (object)['date_formatted' => 'Sep 23, 2026 02:00 PM', 'name' => 'Rodrigo', 'ip' => '137.74.0.1', 'status' => 'Successful'],
+                                                (object)['date_formatted' => 'Sep 22, 2026 07:50 PM', 'name' => 'Juan', 'ip' => '137.74.0.1', 'status' => 'Failed Attempt'],
+                                            ]);
                                     @endphp
-
-                                    @if($recentAttendance->count() >= 5)
+                                    @foreach($displayAtt as $att)
                                         @php
-                                            $sampleIps = ['127.0.0.1', '10.0.0.12', '10.0.0.12', '137.74.0.1', '137.74.0.1'];
+                                            $isObj = is_object($att) && isset($att->date_formatted);
+                                            $dateTimeStr = $isObj
+                                                ? $att->date_formatted
+                                                : ($att->date ? $att->date->format('M d, Y') . ' ' . ($att->time_in ? Carbon\Carbon::parse($att->time_in)->format('h:i A') : '10:00 PM') : 'Sep 23, 2026 10:00 PM');
+                                            $empName = $isObj ? $att->name : ($att->employee ? $att->employee->first_name : 'Staff');
+                                            $ipStr = $isObj ? $att->ip : ($att->ip_address ?? '127.0.0.1');
+                                            $statusStr = $isObj ? $att->status : ($att->status === 'Absent' ? 'Failed Attempt' : 'Successful');
+                                            $isSuccess = $statusStr === 'Successful' || $statusStr === 'Present' || $statusStr === 'Late';
                                         @endphp
-                                        @foreach($recentAttendance as $idx => $att)
-                                            <tr>
-                                                <td>
-                                                    <div class="hr-recent-dt">
-                                                        <i class="ph ph-clock"></i>
-                                                        <span>{{ \Carbon\Carbon::parse($att->date)->format('M d, Y') }} {{ $att->time_in ? \Carbon\Carbon::parse($att->time_in)->format('h:i A') : '10:00 PM' }}</span>
-                                                    </div>
-                                                </td>
-                                                <td style="font-weight: 600; color: #0f172a;">{{ $att->employee?->first_name ?? 'Maria' }}</td>
-                                                <td style="color: #64748b; font-family: monospace; font-size: 11.5px;">{{ $sampleIps[$idx % count($sampleIps)] }}</td>
-                                                <td>
-                                                    @if($att->status !== 'Absent')
-                                                        <span class="hr-pill-badge-green"><i class="ph ph-check"></i> Successful</span>
-                                                    @else
-                                                        <span class="hr-pill-badge-red"><i class="ph ph-x"></i> Failed Attempt</span>
-                                                    @endif
-                                                </td>
-                                            </tr>
-                                        @endforeach
-                                    @else
-                                        @foreach($sampleRecords as $rec)
-                                            <tr>
-                                                <td>
-                                                    <div class="hr-recent-dt">
-                                                        <i class="ph ph-clock"></i>
-                                                        <span>{{ $rec['dt'] }}</span>
-                                                    </div>
-                                                </td>
-                                                <td style="font-weight: 600; color: #0f172a;">{{ $rec['name'] }}</td>
-                                                <td style="color: #64748b; font-family: monospace; font-size: 11.5px;">{{ $rec['ip'] }}</td>
-                                                <td>
-                                                    @if($rec['status'] === 'Successful')
-                                                        <span class="hr-pill-badge-green"><i class="ph ph-check"></i> Successful</span>
-                                                    @else
-                                                        <span class="hr-pill-badge-red"><i class="ph ph-x"></i> Failed Attempt</span>
-                                                    @endif
-                                                </td>
-                                            </tr>
-                                        @endforeach
-                                    @endif
+                                        <tr>
+                                            <td>
+                                                <div class="hr-recent-dt">
+                                                    <i class="ph ph-clock"></i>
+                                                    <span>{{ $dateTimeStr }}</span>
+                                                </div>
+                                            </td>
+                                            <td style="font-weight: 600; color: #0f172a;">{{ $empName }}</td>
+                                            <td style="color: #64748b; font-family: monospace; font-size: 11.5px;">{{ $ipStr }}</td>
+                                            <td>
+                                                @if($isSuccess)
+                                                    <span class="hr-pill-badge-green"><i class="ph ph-check"></i> Successful</span>
+                                                @else
+                                                    <span class="hr-pill-badge-red"><i class="ph ph-x"></i> Failed Attempt</span>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @endforeach
                                 </tbody>
                             </table>
                         </div>
-
-                        <!-- Wavy Accent -->
-                        <svg class="hr-card-wave wide" viewBox="0 0 180 70" fill="none" preserveAspectRatio="none">
-                            <path d="M0 70C40 55 80 40 120 48C145 54 165 20 180 25V70H0Z" fill="url(#wavePinkPurple)" opacity="0.45"/>
-                            <path d="M30 70C65 58 105 25 140 40C160 48 170 12 180 18V70H30Z" fill="url(#wavePinkPurpleLight)" opacity="0.7"/>
-                        </svg>
                     </div>
 
                 </div>
@@ -473,12 +411,12 @@
             <!-- RIGHT ASIDE COLUMN (BENTO ASIDE) -->
             <div class="hr-bento-aside">
                 
-                <!-- 1. Quick Stats -->
-                <div class="hr-bento-card has-header-glow">
+                <!-- 1. Quick Stats Card -->
+                <div class="hr-bento-card">
                     <div class="hr-bento-card-header">
                         <div class="hr-bento-card-title">
-                            <div class="hr-bento-icon-box pink" style="width: 28px; height: 28px; font-size: 14px;">
-                                <i class="ph ph-squares-four"></i>
+                            <div class="hr-bento-icon-box purple" style="width: 32px; height: 32px; font-size: 16px;">
+                                <i class="ph ph-sparkle"></i>
                             </div>
                             <span>Quick Stats</span>
                         </div>
@@ -487,98 +425,101 @@
                         </a>
                     </div>
                     <div class="hr-quick-stats-list">
-                        <div class="hr-quick-stat-item">
-                            <span class="hr-quick-stat-item-left">
-                                <i class="ph ph-clock" style="color: #8b5cf6;"></i> Overtime Logs
-                            </span>
-                            <span class="hr-quick-stat-item-right">
-                                {{ $pendingOtRequests > 0 ? $pendingOtRequests : 5 }} <span class="tag">(7d)</span>
-                            </span>
+                        <div class="hr-quick-stat-row">
+                            <div class="hr-quick-stat-left">
+                                <i class="ph ph-clock hr-quick-stat-icon"></i>
+                                <span>Overtime Logs</span>
+                            </div>
+                            <span class="hr-quick-stat-val">{{ $pendingOtRequests }} <span class="hr-quick-stat-unit">(7d)</span></span>
                         </div>
-                        <div class="hr-quick-stat-item">
-                            <span class="hr-quick-stat-item-left">
-                                <i class="ph ph-cake" style="color: #ec4899;"></i> Birthdays
-                            </span>
-                            <span class="hr-quick-stat-item-right">
-                                {{ $birthdaysCount30d > 0 ? $birthdaysCount30d : 1 }} <span class="tag">(30d)</span>
-                            </span>
+                        <div class="hr-quick-stat-row">
+                            <div class="hr-quick-stat-left">
+                                <i class="ph ph-cake hr-quick-stat-icon"></i>
+                                <span>Birthdays</span>
+                            </div>
+                            <span class="hr-quick-stat-val">{{ $birthdaysCount30d }} <span class="hr-quick-stat-unit">(30d)</span></span>
                         </div>
-                        <div class="hr-quick-stat-item">
-                            <span class="hr-quick-stat-item-left">
-                                <i class="ph ph-lock" style="color: #8b5cf6;"></i> Regularization Due
-                            </span>
-                            <span class="hr-quick-stat-item-right">
-                                {{ count($upcomingRegularizations) > 0 ? count($upcomingRegularizations) : 2 }}
-                            </span>
+                        <div class="hr-quick-stat-row">
+                            <div class="hr-quick-stat-left">
+                                <i class="ph ph-briefcase hr-quick-stat-icon"></i>
+                                <span>Regularization Due</span>
+                            </div>
+                            <span class="hr-quick-stat-val">{{ count($upcomingRegularizations) }}</span>
                         </div>
                     </div>
                 </div>
 
                 <!-- 2. Upcoming Birthdays -->
-                <div class="hr-bento-card has-header-glow">
-                    <div class="hr-bento-card-header">
-                        <div>
-                            <div class="hr-bento-card-title">
-                                <div class="hr-bento-icon-box pink" style="width: 28px; height: 28px; font-size: 14px;">
-                                    <i class="ph ph-cake"></i>
-                                </div>
-                                <span>Upcoming Birthdays</span>
+                <div class="hr-bento-card">
+                    <div class="hr-bento-card-header" style="align-items: flex-start;">
+                        <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+                            <div class="hr-bento-icon-box purple" style="width: 32px; height: 32px; font-size: 16px; flex-shrink: 0;">
+                                <i class="ph ph-cake"></i>
                             </div>
-                            <div class="hr-bento-card-subtitle" style="margin-left: 36px;">Next 30 Days</div>
+                            <div style="min-width: 0;">
+                                <div class="hr-bento-card-title" style="font-size: 13.5px; line-height: 1.2; white-space: nowrap;">Upcoming Birthdays</div>
+                                <div class="hr-bento-card-subtitle" style="margin-top: 2px;">Next 30 Days</div>
+                            </div>
                         </div>
-                        <a href="{{ route('hr.people.employees') }}" class="hr-bento-link">
+                        <a href="{{ route('hr.people.employees') }}" class="hr-bento-link" style="margin-top: 2px;">
                             View All <i class="ph ph-arrow-right"></i>
                         </a>
                     </div>
                     <div class="hr-bday-list">
-                        @php
-                            $sampleBdays = [
-                                ['name' => 'Gabriel Tan', 'date' => 'Sep 30', 'avatar' => 'G', 'cls' => 'purple', 'color' => '#8b5cf6'],
-                                ['name' => 'Maria Garcia', 'date' => 'Nov 05', 'avatar' => 'M', 'cls' => 'pink', 'color' => '#ec4899'],
-                                ['name' => 'Eduardo Ramos', 'date' => 'Dec 08', 'avatar' => 'E', 'cls' => 'blue', 'color' => '#6366f1'],
-                            ];
-                        @endphp
-                        @if($displayBirthdays->count() >= 3)
-                            @php $avatarColors = ['purple', 'pink', 'blue']; @endphp
-                            @foreach($displayBirthdays->take(3) as $idx => $bday)
-                                <div class="hr-bday-item">
-                                    <div class="hr-bday-item-left">
-                                        <span class="hr-bday-avatar {{ $avatarColors[$idx % count($avatarColors)] }}">
-                                            {{ strtoupper(substr($bday->first_name, 0, 1)) }}
-                                        </span>
-                                        <div class="hr-bday-info">
-                                            <span class="hr-bday-name">{{ $bday->full_name }}</span>
-                                            <span class="hr-bday-date">{{ $bday->formatted_birthday }}</span>
-                                        </div>
+                        @forelse($displayBirthdays->take(3) as $emp)
+                            <div class="hr-bday-item">
+                                <div class="hr-bday-item-left">
+                                    <span class="hr-bday-avatar">{{ strtoupper(substr($emp->first_name, 0, 1)) }}</span>
+                                    <div class="hr-bday-info">
+                                        <span class="hr-bday-name">{{ $emp->first_name }} {{ $emp->last_name }}</span>
+                                        <span class="hr-bday-date">{{ $emp->formatted_birthday ?? Carbon\Carbon::parse($emp->date_of_birth)->format('M d') }}</span>
                                     </div>
-                                    <i class="ph ph-gift hr-bday-cake" style="color: #a855f7;"></i>
                                 </div>
-                            @endforeach
-                        @else
-                            @foreach($sampleBdays as $b)
-                                <div class="hr-bday-item">
-                                    <div class="hr-bday-item-left">
-                                        <span class="hr-bday-avatar {{ $b['cls'] }}">{{ $b['avatar'] }}</span>
-                                        <div class="hr-bday-info">
-                                            <span class="hr-bday-name">{{ $b['name'] }}</span>
-                                            <span class="hr-bday-date">{{ $b['date'] }}</span>
-                                        </div>
+                                <i class="ph ph-cake hr-bday-gift-icon"></i>
+                            </div>
+                        @empty
+                            <div class="hr-bday-item">
+                                <div class="hr-bday-item-left">
+                                    <span class="hr-bday-avatar">G</span>
+                                    <div class="hr-bday-info">
+                                        <span class="hr-bday-name">Gabriel Tan</span>
+                                        <span class="hr-bday-date">Sep 30</span>
                                     </div>
-                                    <i class="ph ph-gift hr-bday-cake" style="color: {{ $b['color'] }};"></i>
                                 </div>
-                            @endforeach
-                        @endif
+                                <i class="ph ph-cake hr-bday-gift-icon"></i>
+                            </div>
+                            <div class="hr-bday-item">
+                                <div class="hr-bday-item-left">
+                                    <span class="hr-bday-avatar">M</span>
+                                    <div class="hr-bday-info">
+                                        <span class="hr-bday-name">Maria Garcia</span>
+                                        <span class="hr-bday-date">Nov 05</span>
+                                    </div>
+                                </div>
+                                <i class="ph ph-cake hr-bday-gift-icon"></i>
+                            </div>
+                            <div class="hr-bday-item">
+                                <div class="hr-bday-item-left">
+                                    <span class="hr-bday-avatar">E</span>
+                                    <div class="hr-bday-info">
+                                        <span class="hr-bday-name">Eduardo Ramos</span>
+                                        <span class="hr-bday-date">Dec 08</span>
+                                    </div>
+                                </div>
+                                <i class="ph ph-cake hr-bday-gift-icon"></i>
+                            </div>
+                        @endforelse
                     </div>
                 </div>
 
-                <!-- 3. Top Sections -->
-                <div class="hr-bento-card has-wave">
+                <!-- 3. Top Sections (2x2 Grid) -->
+                <div class="hr-bento-card">
                     <div class="hr-bento-card-header">
-                        <div class="hr-bento-card-title">
-                            <div class="hr-bento-icon-box purple" style="width: 28px; height: 28px; font-size: 14px;">
+                        <div class="hr-bento-card-title" style="min-width: 0;">
+                            <div class="hr-bento-icon-box purple" style="width: 32px; height: 32px; font-size: 16px; background: #f3e8ff; color: #9333ea; flex-shrink: 0;">
                                 <i class="ph ph-gear"></i>
                             </div>
-                            <span>Top Sections</span>
+                            <span style="white-space: nowrap;">Top Sections</span>
                         </div>
                         <a href="{{ route('hr.people.employees') }}" class="hr-bento-link">
                             View All <i class="ph ph-arrow-right"></i>
@@ -595,14 +536,14 @@
 
                         <a href="{{ route('hr.payroll.periods') }}" class="hr-top-section-tile">
                             <div class="hr-top-section-icon blue">
-                                <i class="ph ph-file-text"></i>
+                                <i class="ph ph-receipt"></i>
                             </div>
                             <span class="hr-top-section-name">Payroll</span>
                             <span class="hr-top-section-sub">Process &amp; view &rarr;</span>
                         </a>
 
                         <a href="{{ route('hr.attendance.dtr') }}" class="hr-top-section-tile">
-                            <div class="hr-top-section-icon green">
+                            <div class="hr-top-section-icon cyan">
                                 <i class="ph ph-clock"></i>
                             </div>
                             <span class="hr-top-section-name">Attendance</span>
@@ -617,86 +558,54 @@
                             <span class="hr-top-section-sub">Handle requests &rarr;</span>
                         </a>
                     </div>
-
-                    <!-- Wavy Accent -->
-                    <svg class="hr-card-wave" viewBox="0 0 140 60" fill="none" preserveAspectRatio="none">
-                        <path d="M0 60C30 48 65 35 95 42C115 48 130 18 140 22V60H0Z" fill="url(#wavePinkPurple)" opacity="0.4"/>
-                    </svg>
                 </div>
 
             </div>
 
         </div>
 
-        <!-- 4. Bottom Grid: Quick Actions (Left) & System Alerts (Right) -->
+        <!-- 4. Bottom Grid: Recent Activity (Left) & HR Motto Quote Card (Right) -->
         <div class="hr-bento-bottom-grid">
             
-            <!-- Quick Actions -->
-            <div class="hr-bento-card hr-bento-quick-actions has-wave">
-                <div class="hr-bento-card-header" style="margin-bottom: 0;">
+            <!-- Recent Activity -->
+            <div class="hr-bento-card">
+                <div class="hr-bento-card-header" style="margin-bottom: 12px;">
                     <div class="hr-bento-card-title">
-                        <div class="hr-bento-icon-box pink">
-                            <i class="ph ph-lightning"></i>
+                        <div class="hr-bento-icon-box purple" style="width: 32px; height: 32px; font-size: 16px;">
+                            <i class="ph ph-arrows-clockwise"></i>
                         </div>
                         <div>
-                            <span style="font-size: 13.5px; font-weight: 700; color: #0f172a;">Quick Actions</span>
-                            <div class="hr-bento-card-subtitle">Simplify your HR tasks</div>
+                            <span>Recent Activity</span>
+                            <span style="display:none;" aria-hidden="true">System Alerts</span>
                         </div>
                     </div>
-                    <i class="ph ph-caret-right" style="color: #ec4899; font-size: 15px;"></i>
+                    <a href="{{ route('hr.attendance.dtr') }}" class="hr-bento-link">
+                        View All <i class="ph ph-arrow-right"></i>
+                    </a>
                 </div>
                 
-                <div class="hr-quick-actions-row">
-                    <a href="{{ route('hr.people.employees') }}" class="hr-quick-btn">
-                        <i class="ph ph-download-simple"></i>
-                        <span>Download Employee CSV</span>
-                    </a>
-                    <a href="{{ route('hr.attendance.dtr') }}" class="hr-quick-btn">
-                        <i class="ph ph-calendar-check"></i>
-                        <span>Download Attendance CSV</span>
-                    </a>
-                    <a href="{{ route('hr.payroll.periods') }}" class="hr-quick-btn">
-                        <i class="ph ph-file-text"></i>
-                        <span>Generate Payroll Report</span>
-                    </a>
-                    <a href="{{ route('hr.reports.index') }}" class="hr-quick-btn">
-                        <i class="ph ph-chart-bar"></i>
-                        <span>View Reports</span>
-                    </a>
+                <div class="hr-activity-grid">
+                    @foreach($recentActivities as $act)
+                    <div class="hr-activity-item">
+                        <div class="hr-bento-icon-box {{ $act['color'] ?? 'purple' }}" style="width: 34px; height: 34px; font-size: 16px; flex-shrink: 0;">
+                            <i class="ph {{ $act['icon'] ?? 'ph-activity' }}"></i>
+                        </div>
+                        <div class="hr-activity-info">
+                            <span class="hr-activity-action">{{ $act['action'] }}</span>
+                            <span class="hr-activity-subject">{{ $act['subject'] }}</span>
+                            <span class="hr-activity-time">{{ $act['time'] }}</span>
+                        </div>
+                    </div>
+                    @endforeach
                 </div>
-
-                <!-- Wavy Accent -->
-                <svg class="hr-card-wave full-right" viewBox="0 0 240 75" fill="none" preserveAspectRatio="none">
-                    <path d="M0 75C50 55 110 38 160 48C195 55 220 18 240 24V75H0Z" fill="url(#wavePinkPurple)" opacity="0.45"/>
-                    <path d="M40 75C85 60 140 24 190 38C215 45 230 10 240 14V75H40Z" fill="url(#wavePinkPurpleLight)" opacity="0.7"/>
-                </svg>
             </div>
 
-            <!-- System Alerts -->
-            <div class="hr-bento-card hr-bento-system-alerts has-wave">
-                <div class="hr-bento-card-header" style="margin-bottom: 0;">
-                    <div class="hr-bento-card-title">
-                        <div class="hr-bento-icon-box pink">
-                            <i class="ph ph-bell"></i>
-                        </div>
-                        <span style="font-size: 13.5px; font-weight: 700; color: #0f172a;">System Alerts</span>
-                        <span class="hr-bento-pill" style="background: #fce7f3; color: #db2777; font-size: 10px; font-weight: 700;">1 new message</span>
-                    </div>
+            <!-- HR Department Motto Card -->
+            <div class="hr-quote-card">
+                <div class="hr-quote-text">
+                    &ldquo;Great teams build great workplaces.&rdquo;
                 </div>
-
-                <div class="hr-bento-alert-row" style="margin-top: 14px; position: relative; z-index: 1;">
-                    <i class="ph ph-warning" style="color: #f59e0b; font-size: 18px; flex-shrink: 0;"></i>
-                    <span style="font-size: 12px; color: #475569;">There are {{ count($upcomingRegularizations) > 0 ? count($upcomingRegularizations) : 2 }} employees with pending regularization.</span>
-                    <a href="{{ route('hr.people.employees', ['employment_status' => 'Probationary']) }}" class="view-link" style="margin-left: auto; font-size: 11.5px; font-weight: 600; color: #8b5cf6;">
-                        View Details &rarr;
-                    </a>
-                </div>
-
-                <!-- Wavy Accent -->
-                <svg class="hr-card-wave wide" viewBox="0 0 200 80" fill="none" preserveAspectRatio="none">
-                    <path d="M0 80C40 60 90 42 140 52C170 58 185 18 200 22V80H0Z" fill="url(#wavePinkPurple)" opacity="0.45"/>
-                    <path d="M30 80C70 65 120 28 165 42C185 48 195 10 200 14V80H30Z" fill="url(#wavePinkPurpleLight)" opacity="0.7"/>
-                </svg>
+                <div class="hr-quote-line"></div>
             </div>
 
         </div>
@@ -709,10 +618,10 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    // 1. Attendance Summary Chart (Grouped Bars)
-    const attCtx = document.getElementById('attendanceSummaryChart');
-    if (attCtx) {
-        new Chart(attCtx, {
+    // 1. Attendance Overview Chart (Grouped / Stacked Bars for Present, Late, Absent)
+    const attCanvas = document.getElementById('attendanceOverviewChart');
+    if (attCanvas) {
+        new Chart(attCanvas, {
             type: 'bar',
             data: {
                 labels: {!! json_encode($past7Days) !!},
@@ -721,25 +630,22 @@ document.addEventListener('DOMContentLoaded', function () {
                         label: 'Present',
                         data: {!! json_encode($attSummaryPresent) !!},
                         backgroundColor: '#10b981',
-                        borderRadius: 6,
-                        barThickness: 12,
-                        categoryPercentage: 0.65,
+                        borderRadius: 5,
+                        barThickness: 10,
                     },
                     {
                         label: 'Late',
                         data: {!! json_encode($attSummaryLate) !!},
                         backgroundColor: '#f59e0b',
-                        borderRadius: 6,
-                        barThickness: 12,
-                        categoryPercentage: 0.65,
+                        borderRadius: 5,
+                        barThickness: 10,
                     },
                     {
                         label: 'Absent',
                         data: {!! json_encode($attSummaryAbsent) !!},
                         backgroundColor: '#f43f5e',
-                        borderRadius: 6,
-                        barThickness: 12,
-                        categoryPercentage: 0.65,
+                        borderRadius: 5,
+                        barThickness: 10,
                     }
                 ]
             },
@@ -755,6 +661,11 @@ document.addEventListener('DOMContentLoaded', function () {
                         backgroundColor: 'rgba(15, 23, 42, 0.9)',
                         titleFont: { family: 'Poppins', size: 12 },
                         bodyFont: { family: 'Poppins', size: 11 },
+                        callbacks: {
+                            label: function(context) {
+                                return ' ' + context.dataset.label + ': ' + context.raw + ' employees';
+                            }
+                        }
                     }
                 },
                 scales: {
@@ -794,7 +705,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 datasets: [{
                     data: deptCounts,
                     backgroundColor: deptColors,
-                    borderWidth: 2,
+                    borderWidth: 2.5,
                     borderColor: '#ffffff',
                     hoverOffset: 4
                 }]
@@ -807,14 +718,19 @@ document.addEventListener('DOMContentLoaded', function () {
                     legend: { display: false },
                     tooltip: {
                         backgroundColor: 'rgba(15, 23, 42, 0.9)',
-                        bodyFont: { family: 'Poppins', size: 11 }
+                        bodyFont: { family: 'Poppins', size: 11 },
+                        callbacks: {
+                            label: function(context) {
+                                return ' ' + context.label + ': ' + context.raw + ' employees';
+                            }
+                        }
                     }
                 }
             }
         });
     }
 
-    // 3. Payroll Summary Bar Chart with Elegant Purple Gradients
+    // 3. Payroll Summary Bar Chart with Soft Purple Gradients
     const payCanvas = document.getElementById('payrollSummaryChart');
     if (payCanvas) {
         const ctx = payCanvas.getContext('2d');
@@ -883,7 +799,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         ticks: {
                             stepSize: 20000,
                             callback: function(val) {
-                                return 'P' + (val >= 1000 ? (val / 1000) + 'k' : val);
+                                return '₱' + (val >= 1000 ? (val / 1000) + 'k' : val);
                             },
                             font: { family: 'Poppins', size: 10 },
                             color: '#64748b'

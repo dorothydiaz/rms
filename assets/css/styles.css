@@ -3932,7 +3932,10 @@ select option {
 }
 
 /* ============================================================
-   HR BENTO DASHBOARD SYSTEM (90% Glassmorphism, Zero Harsh Top Lines)
+/* ============================================================
+   HR BENTO DASHBOARD SYSTEM
+   Matches exact reference: clean frosted white cards, sparklines,
+   dual bar+line chart, donut legend, tables, quick actions & quote card
    ============================================================ */
 
 .hr-bento-dashboard {
@@ -3944,7 +3947,7 @@ select option {
 
 .hr-bento-layout {
     display: grid;
-    grid-template-columns: 1fr 310px;
+    grid-template-columns: minmax(0, 1fr) 310px;
     gap: 16px;
     align-items: start;
 }
@@ -3967,15 +3970,15 @@ select option {
     gap: 16px;
 }
 
-/* Common Bento Card Base */
+/* Common Card Base - Clean Frosted Glassmorphism */
 .hr-bento-card {
-    background: rgba(255, 255, 255, 0.88);
-    backdrop-filter: blur(24px) saturate(180%);
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    background: rgba(255, 255, 255, 0.84);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
     border: 1px solid rgba(255, 255, 255, 0.95);
     border-radius: 20px;
-    padding: 18px 20px;
-    box-shadow: 0 10px 28px rgba(168, 85, 247, 0.05), 0 2px 6px rgba(0, 0, 0, 0.02), inset 0 1px 1.5px rgba(255, 255, 255, 0.95);
+    padding: 20px 22px;
+    box-shadow: 0 10px 30px -5px rgba(100, 116, 139, 0.07), 0 4px 10px -2px rgba(100, 116, 139, 0.03);
     position: relative;
     overflow: hidden;
     transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s;
@@ -3983,44 +3986,8 @@ select option {
 
 .hr-bento-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 14px 34px rgba(168, 85, 247, 0.1), inset 0 1px 1px #ffffff;
-    border-color: rgba(168, 85, 247, 0.3);
-}
-
-/* Card Decorative Waves */
-.hr-card-wave {
-    position: absolute;
-    right: 0;
-    bottom: 0;
-    width: 140px;
-    height: 60px;
-    pointer-events: none;
-    z-index: 0;
-    border-bottom-right-radius: 20px;
-    overflow: hidden;
-}
-
-.hr-card-wave.wide {
-    width: 190px;
-    height: 70px;
-}
-
-.hr-card-wave.full-right {
-    width: 250px;
-    height: 75px;
-}
-
-/* Card Header Glow */
-.hr-bento-card.has-header-glow::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 65px;
-    background: linear-gradient(135deg, rgba(254, 242, 242, 0.45) 0%, rgba(243, 232, 255, 0.55) 100%);
-    pointer-events: none;
-    z-index: 0;
+    box-shadow: 0 14px 34px -4px rgba(100, 116, 139, 0.12), 0 6px 16px -2px rgba(100, 116, 139, 0.06);
+    border-color: rgba(168, 85, 247, 0.35);
 }
 
 /* Card Header */
@@ -4028,50 +3995,52 @@ select option {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 14px;
+    gap: 10px;
+    margin-bottom: 16px;
     position: relative;
     z-index: 1;
 }
 
 .hr-bento-card-title {
-    font-size: 13.5px;
+    font-size: 14px;
     font-weight: 700;
     color: #0f172a;
     display: flex;
     align-items: center;
-    gap: 8px;
-}
-
-.hr-bento-card-title i {
-    font-size: 16px;
+    gap: 10px;
 }
 
 .hr-bento-card-subtitle {
-    font-size: 11px;
+    font-size: 11.5px;
     color: #64748b;
     margin-top: 2px;
     font-weight: 400;
 }
 
 .hr-bento-pill {
-    background: rgba(255, 255, 255, 0.8);
-    border: 1px solid rgba(226, 232, 240, 0.85);
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
     color: #475569;
-    font-size: 11px;
+    font-size: 11.5px;
     font-weight: 600;
-    padding: 3px 10px;
+    padding: 4px 12px;
     border-radius: 9999px;
     white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
 }
 
 .hr-bento-link {
-    font-size: 11.5px;
+    font-size: 12px;
     font-weight: 600;
     color: #8b5cf6;
     text-decoration: none;
     display: inline-flex;
     align-items: center;
-    gap: 3px;
+    gap: 4px;
+    white-space: nowrap;
+    flex-shrink: 0;
     transition: color 0.15s, transform 0.15s;
 }
 
@@ -4100,17 +4069,17 @@ select option {
 }
 
 .hr-bento-kpi-card {
-    background: rgba(255, 255, 255, 0.88);
-    backdrop-filter: blur(24px) saturate(180%);
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    background: rgba(255, 255, 255, 0.84);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
     border: 1px solid rgba(255, 255, 255, 0.95);
     border-radius: 20px;
-    padding: 16px 18px;
+    padding: 18px 20px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    min-height: 118px;
-    box-shadow: 0 8px 24px rgba(168, 85, 247, 0.05), 0 2px 6px rgba(0, 0, 0, 0.02), inset 0 1px 1px rgba(255, 255, 255, 0.95);
+    min-height: 124px;
+    box-shadow: 0 10px 30px -5px rgba(100, 116, 139, 0.07), 0 4px 10px -2px rgba(100, 116, 139, 0.03);
     position: relative;
     overflow: hidden;
     transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s;
@@ -4119,111 +4088,211 @@ select option {
 
 .hr-bento-kpi-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 14px 30px rgba(168, 85, 247, 0.1);
-    border-color: rgba(168, 85, 247, 0.3);
+    box-shadow: 0 14px 34px -4px rgba(100, 116, 139, 0.12), 0 6px 16px -2px rgba(100, 116, 139, 0.06);
+    border-color: rgba(168, 85, 247, 0.35);
 }
 
 .hr-bento-kpi-top {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 8px;
-    position: relative;
-    z-index: 1;
 }
 
 .hr-bento-kpi-lead {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
 }
 
 .hr-kpi-chevron {
-    font-size: 14px;
-    transition: transform 0.2s ease;
+    font-size: 13px;
+    color: #cbd5e1;
+    transition: transform 0.2s ease, color 0.2s ease;
 }
 
 .hr-bento-kpi-card:hover .hr-kpi-chevron {
     transform: translateX(3px);
+    color: #94a3b8;
 }
 
 .hr-bento-icon-box {
-    width: 32px;
-    height: 32px;
-    border-radius: 10px;
+    width: 36px;
+    height: 36px;
+    border-radius: 11px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 16px;
+    font-size: 18px;
     flex-shrink: 0;
 }
 
-.hr-bento-icon-box.purple { background: rgba(168, 85, 247, 0.12); color: #8b5cf6; }
-.hr-bento-icon-box.green { background: rgba(16, 185, 129, 0.12); color: #10b981; }
-.hr-bento-icon-box.orange { background: rgba(249, 115, 22, 0.12); color: #f97316; }
-.hr-bento-icon-box.blue { background: rgba(59, 130, 246, 0.12); color: #3b82f6; }
-.hr-bento-icon-box.pink { background: rgba(236, 72, 153, 0.12); color: #ec4899; }
+.hr-bento-icon-box.purple { background: #f3e8ff; color: #9333ea; }
+.hr-bento-icon-box.blue   { background: #e0f2fe; color: #0284c7; }
+.hr-bento-icon-box.orange { background: #ffedd5; color: #ea580c; }
+.hr-bento-icon-box.indigo { background: #e0e7ff; color: #4f46e5; }
+.hr-bento-icon-box.green  { background: #dcfce7; color: #16a34a; }
+.hr-bento-icon-box.pink   { background: #fce7f3; color: #db2777; }
 
 .hr-bento-kpi-title {
-    font-size: 12.5px;
-    font-weight: 700;
-    color: #334155;
-}
-
-.hr-bento-kpi-body {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    position: relative;
-    z-index: 1;
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
 }
 
 .hr-bento-kpi-val {
-    font-size: 28px;
-    font-weight: 800;
+    font-size: 27px;
+    font-weight: 700;
     color: #0f172a;
-    line-height: 1.1;
+    line-height: 1.15;
     letter-spacing: -0.02em;
+    margin: 8px 0 6px;
 }
 
-.hr-bento-kpi-sub {
-    font-size: 11px;
-    color: #64748b;
-    margin-top: 4px;
-    font-weight: 500;
-}
-
-.hr-kpi-ring-wrap {
-    width: 42px;
-    height: 42px;
-    position: relative;
+.hr-bento-kpi-bottom {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.hr-bento-trend {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #16a34a;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.hr-kpi-sparkline {
+    width: 68px;
+    height: 26px;
+    display: block;
     flex-shrink: 0;
 }
 
-.hr-kpi-ring-text {
-    position: absolute;
-    font-size: 10px;
-    font-weight: 800;
+/* Quick Stats Card (Top Aside) */
+.hr-quick-stats-list {
+    display: flex;
+    flex-direction: column;
+    gap: 11px;
+}
+
+.hr-quick-stat-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12.5px;
+    padding: 3px 0;
+}
+
+.hr-quick-stat-left {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    color: #475569;
+    font-weight: 500;
+}
+
+.hr-quick-stat-icon {
+    font-size: 16px;
+    color: #64748b;
+}
+
+.hr-quick-stat-val {
+    font-weight: 700;
     color: #0f172a;
+}
+
+.hr-quick-stat-unit {
+    font-weight: 500;
+    color: #94a3b8;
+    font-size: 11.5px;
 }
 
 .hr-badge-approved {
     background: #dcfce7;
-    color: #15803d;
+    color: #16a34a;
     font-size: 11px;
     font-weight: 700;
-    padding: 3px 12px;
+    padding: 2.5px 9px;
     border-radius: 9999px;
     display: inline-block;
 }
 
-/* Middle Row: Attendance (wide) + Dept */
+.hr-circular-badge {
+    position: relative;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.hr-circular-badge.lg {
+    width: 68px;
+    height: 68px;
+}
+
+.hr-circular-badge-text {
+    position: absolute;
+    font-size: 11px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.hr-circular-badge-text.lg {
+    font-size: 16px;
+    font-weight: 800;
+}
+
+/* Today's Shift Card (Alternative) */
+.hr-shift-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 124px;
+}
+
+.hr-shift-badge-ongoing {
+    background: #dcfce7;
+    color: #15803d;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2.5px 8.5px;
+    border-radius: 9999px;
+    display: inline-block;
+}
+
+.hr-shift-time {
+    font-size: 13px;
+    font-weight: 500;
+    color: #64748b;
+    margin: 10px 0 14px;
+}
+
+.hr-shift-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #475569;
+    text-decoration: none;
+    transition: color 0.15s;
+    padding-top: 10px;
+    border-top: 1px solid rgba(241, 245, 249, 0.9);
+}
+
+.hr-shift-link:hover {
+    color: #8b5cf6;
+}
+
+/* Middle Row: Attendance Overview (wide) + Dept Donut */
 .hr-bento-mid-grid {
     display: grid;
-    grid-template-columns: 1.18fr 0.82fr;
+    grid-template-columns: 1.35fr 1fr;
     gap: 16px;
 }
 
@@ -4233,72 +4302,229 @@ select option {
     }
 }
 
-/* Attendance Overview Internal Layout */
 .hr-att-overview-body {
-    display: flex;
-    gap: 18px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 140px;
+    gap: 16px;
     align-items: center;
-    position: relative;
-    z-index: 1;
 }
 
-.hr-att-chart-wrap {
-    flex: 1;
-    min-width: 0;
+@media (max-width: 680px) {
+    .hr-att-overview-body {
+        grid-template-columns: 1fr;
+    }
 }
 
 .hr-att-rate-box {
-    width: 140px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 14px 10px;
-    background: rgba(255, 255, 255, 0.6);
-    border: 1px solid rgba(226, 232, 240, 0.85);
-    border-radius: 16px;
-    flex-shrink: 0;
-    text-align: center;
+    padding-left: 14px;
+    border-left: 1px solid #f1f5f9;
 }
 
-.hr-att-rate-title {
-    font-size: 11px;
-    font-weight: 700;
-    color: #475569;
-    margin-bottom: 8px;
+.hr-sales-overview-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 180px;
+    gap: 18px;
+    align-items: center;
 }
 
-.hr-att-rate-gauge {
+@media (max-width: 680px) {
+    .hr-sales-overview-body {
+        grid-template-columns: 1fr;
+    }
+}
+
+.hr-sales-chart-wrap {
+    height: 180px;
     position: relative;
-    width: 78px;
-    height: 78px;
+}
+
+.hr-sales-stats-col {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding-left: 14px;
+    border-left: 1px solid #f1f5f9;
+}
+
+.hr-sales-stat-item {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.hr-sales-stat-label {
+    font-size: 11.5px;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.hr-sales-stat-val-row {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
+    gap: 8px;
 }
 
-.hr-att-rate-num {
-    position: absolute;
+.hr-sales-stat-val {
     font-size: 17px;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+}
+
+.hr-trend-tag-sm {
+    font-size: 10.5px;
+    font-weight: 600;
+    color: #16a34a;
+    background: rgba(22, 163, 74, 0.08);
+    padding: 1.5px 6px;
+    border-radius: 9999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+}
+
+/* Donut Layout */
+.hr-donut-layout {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+
+.hr-donut-chart-wrap {
+    position: relative;
+    width: 140px;
+    height: 140px;
+    flex-shrink: 0;
+}
+
+.hr-donut-center-info {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    pointer-events: none;
+}
+
+.hr-donut-center-num {
+    font-size: 22px;
     font-weight: 800;
+    color: #0f172a;
+    line-height: 1;
+    display: block;
+}
+
+.hr-donut-center-lbl {
+    font-size: 10px;
+    color: #64748b;
+    font-weight: 500;
+    margin-top: 3px;
+    display: block;
+}
+
+.hr-breakdown-list {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    flex: 1;
+}
+
+.hr-breakdown-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+}
+
+.hr-breakdown-item-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #475569;
+    font-weight: 500;
+}
+
+.hr-breakdown-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.hr-breakdown-item-right {
+    font-weight: 600;
     color: #0f172a;
 }
 
-.hr-att-rate-trend {
-    margin-top: 8px;
+.hr-breakdown-pct {
+    color: #64748b;
+    font-weight: 400;
     font-size: 11px;
-    display: flex;
-    align-items: center;
-    gap: 3px;
-    justify-content: center;
-    color: #10b981;
-    font-weight: 600;
 }
 
-/* Lower Row: Payroll + Recent Attendance */
+/* Upcoming Birthdays */
+.hr-bday-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.hr-bday-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.hr-bday-item-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.hr-bday-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: #f3e8ff;
+    color: #9333ea;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.hr-bday-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.hr-bday-name {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.hr-bday-date {
+    font-size: 11px;
+    color: #64748b;
+}
+
+.hr-bday-gift-icon {
+    font-size: 18px;
+    color: #c084fc;
+}
+
+/* Lower Row: Recent Orders (wide) + Recent Attendance */
 .hr-bento-lower-grid {
     display: grid;
-    grid-template-columns: 0.98fr 1.02fr;
+    grid-template-columns: 1.15fr 1fr;
     gap: 16px;
 }
 
@@ -4308,68 +4534,20 @@ select option {
     }
 }
 
-/* Payroll Summary Stats Row */
-.hr-payroll-summary-stats {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-    margin-top: 14px;
-    padding-top: 12px;
-    border-top: 1px solid rgba(226, 232, 240, 0.7);
-    position: relative;
-    z-index: 1;
+.hr-table-responsive {
+    overflow-x: auto;
+    width: 100%;
 }
 
-.hr-payroll-stat-item {
-    display: flex;
-    flex-direction: column;
-}
-
-.hr-payroll-stat-label {
-    font-size: 10.5px;
-    color: #64748b;
-    font-weight: 500;
-}
-
-.hr-payroll-stat-val {
-    font-size: 12px;
-    font-weight: 700;
-    color: #0f172a;
-    margin-top: 2px;
-}
-
-.hr-payroll-stat-val.red { color: #e11d48; }
-
-.hr-bento-view-details {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 11.5px;
-    font-weight: 600;
-    color: #8b5cf6;
-    text-decoration: none;
-    margin-top: 10px;
-    align-self: flex-end;
-    position: relative;
-    z-index: 1;
-}
-
-.hr-bento-view-details:hover {
-    color: #7c3aed;
-}
-
-/* Recent Attendance Table */
 .hr-recent-table {
     width: 100%;
     border-collapse: collapse;
     font-size: 12px;
-    position: relative;
-    z-index: 1;
 }
 
 .hr-recent-table th {
     padding: 8px 10px;
-    font-size: 10px;
+    font-size: 10.5px;
     font-weight: 700;
     color: #64748b;
     text-transform: uppercase;
@@ -4380,8 +4558,8 @@ select option {
 }
 
 .hr-recent-table td {
-    padding: 9px 10px;
-    border-bottom: 1px solid rgba(241, 245, 249, 0.8);
+    padding: 9.5px 10px;
+    border-bottom: 1px solid rgba(241, 245, 249, 0.85);
     color: #334155;
     vertical-align: middle;
 }
@@ -4390,24 +4568,46 @@ select option {
     border-bottom: none;
 }
 
-.hr-recent-dt {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    color: #475569;
+/* Status Badges */
+.hr-badge-preparing {
+    background: #fef3c7;
+    color: #d97706;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2.5px 9px;
+    border-radius: 9999px;
+    display: inline-block;
+    white-space: nowrap;
 }
 
-.hr-recent-dt i {
-    color: #8b5cf6;
-    font-size: 13px;
+.hr-badge-served {
+    background: #dcfce7;
+    color: #15803d;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2.5px 9px;
+    border-radius: 9999px;
+    display: inline-block;
+    white-space: nowrap;
+}
+
+.hr-badge-paid {
+    background: #ede9fe;
+    color: #7c3aed;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2.5px 9px;
+    border-radius: 9999px;
+    display: inline-block;
+    white-space: nowrap;
 }
 
 .hr-pill-badge-green {
     background: #dcfce7;
     color: #16a34a;
     font-size: 11px;
-    font-weight: 700;
-    padding: 3px 10px;
+    font-weight: 600;
+    padding: 2.5px 9px;
     border-radius: 9999px;
     display: inline-flex;
     align-items: center;
@@ -4419,8 +4619,8 @@ select option {
     background: #fee2e2;
     color: #dc2626;
     font-size: 11px;
-    font-weight: 700;
-    padding: 3px 10px;
+    font-weight: 600;
+    padding: 2.5px 9px;
     border-radius: 9999px;
     display: inline-flex;
     align-items: center;
@@ -4428,104 +4628,16 @@ select option {
     white-space: nowrap;
 }
 
-/* Quick Stats List */
-.hr-quick-stats-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    position: relative;
-    z-index: 1;
-}
-
-.hr-quick-stat-item {
+.hr-recent-dt {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    font-size: 12px;
+    gap: 6px;
+    color: #475569;
 }
 
-.hr-quick-stat-item-left {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: #334155;
-    font-weight: 500;
-}
-
-.hr-quick-stat-item-left i {
-    font-size: 15px;
-}
-
-.hr-quick-stat-item-right {
-    font-size: 12px;
-    font-weight: 700;
-    color: #0f172a;
-}
-
-.hr-quick-stat-item-right .tag {
-    font-size: 10.5px;
-    font-weight: 500;
-    color: #64748b;
-}
-
-/* Upcoming Birthdays List */
-.hr-bday-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    position: relative;
-    z-index: 1;
-}
-
-.hr-bday-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 4px 0;
-}
-
-.hr-bday-item-left {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.hr-bday-avatar {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
-    font-weight: 700;
-    flex-shrink: 0;
-}
-
-.hr-bday-avatar.purple { background: #ede9fe; color: #7c3aed; }
-.hr-bday-avatar.pink { background: #fce7f3; color: #db2777; }
-.hr-bday-avatar.blue { background: #e0e7ff; color: #4338ca; }
-
-.hr-bday-info {
-    display: flex;
-    flex-direction: column;
-}
-
-.hr-bday-name {
-    font-size: 12px;
-    font-weight: 600;
-    color: #0f172a;
-    line-height: 1.2;
-}
-
-.hr-bday-date {
-    font-size: 10.5px;
-    color: #64748b;
-    margin-top: 1px;
-}
-
-.hr-bday-cake {
-    font-size: 16px;
+.hr-recent-dt i {
+    color: #38bdf8;
+    font-size: 13px;
 }
 
 /* Top Sections 2x2 Grid */
@@ -4533,8 +4645,6 @@ select option {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 10px;
-    position: relative;
-    z-index: 1;
 }
 
 .hr-top-section-tile {
@@ -4551,7 +4661,7 @@ select option {
 
 .hr-top-section-tile:hover {
     background: #ffffff;
-    border-color: rgba(168, 85, 247, 0.3);
+    border-color: rgba(168, 85, 247, 0.35);
     transform: translateY(-2px);
     box-shadow: 0 4px 14px rgba(168, 85, 247, 0.1);
 }
@@ -4559,17 +4669,17 @@ select option {
 .hr-top-section-icon {
     width: 32px;
     height: 32px;
-    border-radius: 8px;
+    border-radius: 9px;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 16px;
 }
 
-.hr-top-section-icon.purple { background: rgba(168, 85, 247, 0.12); color: #8b5cf6; }
-.hr-top-section-icon.blue { background: rgba(59, 130, 246, 0.12); color: #3b82f6; }
-.hr-top-section-icon.green { background: rgba(16, 185, 129, 0.12); color: #10b981; }
-.hr-top-section-icon.pink { background: rgba(236, 72, 153, 0.12); color: #ec4899; }
+.hr-top-section-icon.purple { background: #f3e8ff; color: #9333ea; }
+.hr-top-section-icon.blue   { background: #e0f2fe; color: #0284c7; }
+.hr-top-section-icon.cyan   { background: #e0f2fe; color: #0284c7; }
+.hr-top-section-icon.pink   { background: #fce7f3; color: #db2777; }
 
 .hr-top-section-name {
     font-size: 12px;
@@ -4579,40 +4689,126 @@ select option {
 }
 
 .hr-top-section-sub {
-    font-size: 10px;
+    font-size: 10.5px;
     color: #64748b;
     display: flex;
     align-items: center;
     gap: 2px;
 }
 
-/* 4. Bottom Grid: Quick Actions & System Alerts */
+/* Payroll Summary Strip */
+.hr-pay-kpi-strip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid #f1f5f9;
+}
+
+.hr-pay-kpi-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.hr-pay-kpi-label {
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.hr-pay-kpi-val {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+/* Bottom Grid: Recent Activity & HR Motto Quote Card */
 .hr-bento-bottom-grid {
     display: grid;
-    grid-template-columns: 1.55fr 1fr;
+    grid-template-columns: minmax(0, 1fr) 310px;
     gap: 16px;
     align-items: stretch;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1200px) {
     .hr-bento-bottom-grid {
         grid-template-columns: 1fr;
     }
 }
 
-.hr-bento-quick-actions {
+/* Recent Activity Grid */
+.hr-activity-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+}
+
+@media (max-width: 960px) {
+    .hr-activity-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 500px) {
+    .hr-activity-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.hr-activity-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background: rgba(255, 255, 255, 0.65);
+    border: 1px solid rgba(226, 232, 240, 0.85);
+    border-radius: 14px;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hr-activity-item:hover {
+    background: #ffffff;
+    border-color: rgba(168, 85, 247, 0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px rgba(168, 85, 247, 0.08);
+}
+
+.hr-activity-info {
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    min-width: 0;
+}
+
+.hr-activity-action {
+    font-size: 10.5px;
+    font-weight: 600;
+    color: #64748b;
+}
+
+.hr-activity-subject {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #0f172a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.hr-activity-time {
+    font-size: 10.5px;
+    color: #94a3b8;
+    margin-top: 1px;
 }
 
 .hr-quick-actions-row {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
-    margin-top: 14px;
-    position: relative;
-    z-index: 1;
+    gap: 12px;
+    margin-top: 6px;
 }
 
 @media (max-width: 900px) {
@@ -4621,67 +4817,90 @@ select option {
     }
 }
 
-.hr-quick-btn {
-    background: rgba(255, 255, 255, 0.75);
-    border: 1px solid rgba(226, 232, 240, 0.85);
-    border-radius: 12px;
-    padding: 10px 12px;
-    font-size: 11px;
-    font-weight: 600;
-    color: #475569;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    text-decoration: none;
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+@media (max-width: 500px) {
+    .hr-quick-actions-row {
+        grid-template-columns: 1fr;
+    }
 }
 
-.hr-quick-btn:hover {
+.hr-quick-action-tile {
+    background: rgba(255, 255, 255, 0.72);
+    border: 1px solid rgba(226, 232, 240, 0.85);
+    border-radius: 14px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hr-quick-action-tile:hover {
     background: #ffffff;
     border-color: rgba(168, 85, 247, 0.4);
-    color: #7c3aed;
     transform: translateY(-2px);
     box-shadow: 0 4px 14px rgba(168, 85, 247, 0.1);
 }
 
-.hr-quick-btn i {
-    font-size: 16px;
-    color: #8b5cf6;
-    flex-shrink: 0;
-}
-
-.hr-bento-system-alerts {
+.hr-quick-action-info {
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
 }
 
-.hr-bento-alert-row {
+.hr-quick-action-name {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.hr-quick-action-sub {
+    font-size: 10.5px;
+    color: #64748b;
+}
+
+/* Quote Card with Plant/Interior Aesthetic */
+.hr-quote-card {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.88) 0%, rgba(248, 250, 252, 0.75) 100%);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.95);
+    border-radius: 20px;
+    padding: 22px 24px;
+    box-shadow: 0 10px 30px -5px rgba(100, 116, 139, 0.07);
     display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 12px;
-    color: #475569;
-    flex-wrap: wrap;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    min-height: 110px;
 }
 
-.hr-bento-alert-row .view-link {
-    font-size: 11.5px;
-    font-weight: 600;
-    color: #8b5cf6;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 2px;
-    transition: color 0.15s, transform 0.15s;
+.hr-quote-card::after {
+    content: '';
+    position: absolute;
+    right: 12px;
+    bottom: -6px;
+    width: 80px;
+    height: 80px;
+    background-image: radial-gradient(circle at 60% 60%, rgba(16, 185, 129, 0.15) 0%, transparent 65%);
+    pointer-events: none;
 }
 
-.hr-bento-alert-row .view-link:hover {
-    color: #7c3aed;
-    transform: translateX(2px);
+.hr-quote-text {
+    font-size: 14.5px;
+    font-style: italic;
+    font-weight: 500;
+    color: #334155;
+    line-height: 1.45;
+    position: relative;
+    z-index: 1;
+}
+
+.hr-quote-line {
+    width: 24px;
+    height: 2px;
+    background: #cbd5e1;
+    margin-top: 10px;
 }
 
 /* ============================================================
@@ -4951,12 +5170,10 @@ select option {
 }
 
 .hr-custom-select-menu {
-    position: absolute;
-    top: calc(100% + 6px);
-    left: 0;
-    min-width: 100%;
+    position: fixed;
+    min-width: 140px;
     width: max-content;
-    max-width: 320px;
+    max-width: 340px;
     max-height: 260px;
     overflow-y: auto;
     background: rgba(255, 255, 255, 0.85);
@@ -4966,15 +5183,16 @@ select option {
     border-radius: 14px;
     box-shadow: 0 18px 48px -8px rgba(168, 85, 247, 0.25), 0 4px 14px rgba(0, 0, 0, 0.04), inset 0 1px 1.5px #ffffff;
     padding: 6px;
-    z-index: 999999 !important;
+    z-index: 99999999 !important;
     display: none;
     flex-direction: column;
     gap: 3px;
     animation: hrDropdownFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.hr-custom-select-wrap.open .hr-custom-select-menu {
-    display: flex;
+.hr-custom-select-wrap.open .hr-custom-select-menu,
+body > .hr-custom-select-menu {
+    display: flex !important;
 }
 
 @keyframes hrDropdownFadeIn {

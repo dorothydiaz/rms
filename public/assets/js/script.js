@@ -659,6 +659,50 @@ document.addEventListener('DOMContentLoaded', () => {
             menu.setAttribute('role', 'listbox');
             wrap.appendChild(menu);
 
+            function positionMenu() {
+                const rect = trigger.getBoundingClientRect();
+                menu.style.position = 'fixed';
+                menu.style.left = `${rect.left}px`;
+                menu.style.minWidth = `${rect.width}px`;
+                menu.style.width = 'max-content';
+                menu.style.maxWidth = '340px';
+                menu.style.zIndex = '99999999';
+
+                const spaceBelow = window.innerHeight - rect.bottom;
+                const menuHeight = Math.min(menu.scrollHeight || 240, 260);
+
+                if (spaceBelow < menuHeight + 10 && rect.top > menuHeight) {
+                    menu.style.top = 'auto';
+                    menu.style.bottom = `${window.innerHeight - rect.top + 6}px`;
+                } else {
+                    menu.style.top = `${rect.bottom + 6}px`;
+                    menu.style.bottom = 'auto';
+                }
+            }
+
+            function closeMenu() {
+                wrap.classList.remove('open');
+                if (menu.parentNode === document.body) {
+                    document.body.removeChild(menu);
+                    wrap.appendChild(menu);
+                }
+            }
+
+            function openMenu() {
+                // Close all other open custom selects
+                document.querySelectorAll('.hr-custom-select-wrap.open').forEach(w => {
+                    if (w !== wrap && typeof w._closeCustomSelect === 'function') {
+                        w._closeCustomSelect();
+                    }
+                });
+
+                wrap.classList.add('open');
+                document.body.appendChild(menu);
+                positionMenu();
+            }
+
+            wrap._closeCustomSelect = closeMenu;
+
             function updateOptions() {
                 menu.innerHTML = '';
                 const options = Array.from(select.options);
@@ -691,7 +735,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         menu.querySelectorAll('.hr-custom-select-option').forEach(el => el.classList.remove('selected'));
                         optEl.classList.add('selected');
 
-                        wrap.classList.remove('open');
+                        closeMenu();
 
                         // Fire native change events
                         select.dispatchEvent(new Event('input', { bubbles: true }));
@@ -707,45 +751,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
             updateOptions();
 
+            optEl_click_callback = (e, opt, idx) => {
+                e.stopPropagation();
+                select.selectedIndex = idx;
+                select.value = opt.value;
+                triggerText.textContent = opt.text;
+
+                menu.querySelectorAll('.hr-custom-select-option').forEach(el => el.classList.remove('selected'));
+                const matchedOpt = menu.querySelectorAll('.hr-custom-select-option')[idx];
+                if (matchedOpt) matchedOpt.classList.add('selected');
+
+                closeMenu();
+
+                // Fire native change events
+                select.dispatchEvent(new Event('input', { bubbles: true }));
+                select.dispatchEvent(new Event('change', { bubbles: true }));
+                if (typeof select.onchange === 'function') {
+                    select.onchange();
+                }
+            };
+
             // Toggle open
             trigger.onclick = (e) => {
                 e.stopPropagation();
-                const isOpening = !wrap.classList.contains('open');
-
-                // Close all other open custom selects and reset their parent z-index
-                document.querySelectorAll('.hr-custom-select-wrap.open').forEach(w => {
-                    w.classList.remove('open');
-                    w.style.zIndex = '';
-                    const p = w.closest('.hr-filter-bar, .hr-table-header, .hr-table-card, .hr-pagination-container');
-                    if (p) p.style.zIndex = '';
-                });
-
-                if (isOpening) {
-                    wrap.classList.add('open');
-                    wrap.style.zIndex = '99999';
-                    const parentBar = wrap.closest('.hr-filter-bar, .hr-table-header, .hr-table-card, .hr-pagination-container');
-                    if (parentBar) {
-                        parentBar.style.zIndex = '1000';
-                        parentBar.style.position = 'relative';
-                    }
-
-                    // Auto-flip upward if too close to bottom edge of screen
-                    const rect = trigger.getBoundingClientRect();
-                    const spaceBelow = window.innerHeight - rect.bottom;
-                    if (spaceBelow < 260 && rect.top > 260) {
-                        menu.style.top = 'auto';
-                        menu.style.bottom = 'calc(100% + 6px)';
-                    } else {
-                        menu.style.top = 'calc(100% + 6px)';
-                        menu.style.bottom = 'auto';
-                    }
+                if (wrap.classList.contains('open')) {
+                    closeMenu();
                 } else {
-                    wrap.classList.remove('open');
-                    wrap.style.zIndex = '';
-                    const parentBar = wrap.closest('.hr-filter-bar, .hr-table-header, .hr-table-card, .hr-pagination-container');
-                    if (parentBar) {
-                        parentBar.style.zIndex = '';
-                    }
+                    openMenu();
                 }
             };
 
@@ -755,14 +787,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     e.preventDefault();
                     trigger.click();
                 } else if (e.key === 'Escape') {
-                    wrap.classList.remove('open');
-                    wrap.style.zIndex = '';
-                    const parentBar = wrap.closest('.hr-filter-bar, .hr-table-header, .hr-table-card, .hr-pagination-container');
-                    if (parentBar) parentBar.style.zIndex = '';
+                    closeMenu();
                 } else if (e.key === 'ArrowDown') {
                     e.preventDefault();
                     if (!wrap.classList.contains('open')) {
-                        trigger.click();
+                        openMenu();
                     } else if (select.selectedIndex < select.options.length - 1) {
                         select.selectedIndex++;
                         updateOptions();
@@ -781,17 +810,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Close on click outside
         document.addEventListener('click', (e) => {
-            document.querySelectorAll('.hr-custom-select-wrap.open').forEach(w => {
-                if (!w.contains(e.target)) {
-                    w.classList.remove('open');
-                    w.style.zIndex = '';
-                    const parentBar = w.closest('.hr-filter-bar, .hr-table-header, .hr-table-card, .hr-pagination-container');
-                    if (parentBar) {
-                        parentBar.style.zIndex = '';
+            if (!e.target.closest('.hr-custom-select-wrap') && !e.target.closest('.hr-custom-select-menu')) {
+                document.querySelectorAll('.hr-custom-select-wrap.open').forEach(w => {
+                    if (typeof w._closeCustomSelect === 'function') {
+                        w._closeCustomSelect();
                     }
+                });
+            }
+        });
+
+        // Close on scroll so floating menu does not detach from trigger
+        window.addEventListener('scroll', () => {
+            document.querySelectorAll('.hr-custom-select-wrap.open').forEach(w => {
+                if (typeof w._closeCustomSelect === 'function') {
+                    w._closeCustomSelect();
                 }
             });
-        });
+        }, { passive: true });
     }
 
     // Initialize custom components

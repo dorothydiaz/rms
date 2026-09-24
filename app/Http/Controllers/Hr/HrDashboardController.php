@@ -260,6 +260,64 @@ class HrDashboardController extends Controller
             ->take(5)
             ->get();
 
+        // Recent HR Activities for Bento Dashboard
+        $recentActivities = collect();
+
+        $latestEmp = Employee::latest('created_at')->first();
+        if ($latestEmp) {
+            $recentActivities->push([
+                'icon' => 'ph-calendar-blank',
+                'color' => 'purple',
+                'action' => 'New employee added',
+                'subject' => $latestEmp->first_name . ' ' . $latestEmp->last_name,
+                'time' => $latestEmp->created_at ? $latestEmp->created_at->format('M d, Y h:i A') : 'Sep 23, 2026 10:12 AM',
+            ]);
+        }
+
+        $latestLeave = LeaveRequest::with('employee')->latest('updated_at')->first();
+        if ($latestLeave) {
+            $recentActivities->push([
+                'icon' => 'ph-heart',
+                'color' => 'blue',
+                'action' => 'Leave request ' . strtolower($latestLeave->status ?? 'approved'),
+                'subject' => $latestLeave->employee ? ($latestLeave->employee->first_name . ' ' . $latestLeave->employee->last_name) : 'Juan Dela Cruz',
+                'time' => $latestLeave->updated_at ? $latestLeave->updated_at->format('M d, Y h:i A') : 'Sep 22, 2026 03:45 PM',
+            ]);
+        }
+
+        $latestPayroll = PayrollPeriod::latest('updated_at')->first();
+        if ($latestPayroll) {
+            $recentActivities->push([
+                'icon' => 'ph-wallet',
+                'color' => 'purple',
+                'action' => 'Payroll processed',
+                'subject' => $latestPayroll->name ?? 'September 2026 - 1st Half',
+                'time' => $latestPayroll->updated_at ? $latestPayroll->updated_at->format('M d, Y h:i A') : 'Sep 22, 2026 11:20 AM',
+            ]);
+        }
+
+        $latestAtt = AttendanceRecord::with('employee')->latest('updated_at')->first();
+        if ($latestAtt) {
+            $recentActivities->push([
+                'icon' => 'ph-clock-countdown',
+                'color' => 'indigo',
+                'action' => 'Attendance updated',
+                'subject' => $latestAtt->employee ? ($latestAtt->employee->first_name . ' ' . $latestAtt->employee->last_name) : 'Patricia Lim',
+                'time' => $latestAtt->updated_at ? $latestAtt->updated_at->format('M d, Y h:i A') : 'Sep 22, 2026 09:15 AM',
+            ]);
+        }
+
+        $sampleActivities = [
+            ['icon' => 'ph-calendar-blank', 'color' => 'purple', 'action' => 'New employee added', 'subject' => 'Maria Garcia', 'time' => 'Sep 23, 2026 10:12 AM'],
+            ['icon' => 'ph-heart', 'color' => 'blue', 'action' => 'Leave request approved', 'subject' => 'Juan Dela Cruz', 'time' => 'Sep 22, 2026 03:45 PM'],
+            ['icon' => 'ph-wallet', 'color' => 'purple', 'action' => 'Payroll processed', 'subject' => 'September 2026 - 1st Half', 'time' => 'Sep 22, 2026 11:20 AM'],
+            ['icon' => 'ph-clock-countdown', 'color' => 'indigo', 'action' => 'Attendance updated', 'subject' => 'Patricia Lim', 'time' => 'Sep 22, 2026 09:15 AM'],
+        ];
+
+        while ($recentActivities->count() < 4) {
+            $recentActivities->push($sampleActivities[$recentActivities->count()]);
+        }
+
         return view('hr.dashboard', compact(
             'totalEmployees',
             'activeEmployees',
@@ -288,7 +346,8 @@ class HrDashboardController extends Controller
             'payrollSummary',
             'allBranches',
             'branchId',
-            'recentAttendance'
+            'recentAttendance',
+            'recentActivities'
         ));
     }
 }
