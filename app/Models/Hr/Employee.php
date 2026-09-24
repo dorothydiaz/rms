@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -105,6 +106,38 @@ class Employee extends Model
             return $this->agency_name ?: ($this->company?->type === 'Agency' ? $this->company->name : ($this->company_agency_name ?: 'Agency'));
         }
         return $this->company_name ?: ($this->company?->name ?: ($this->company_agency_name ?: ($this->branch?->company?->name ?? 'Company')));
+    }
+
+    public function permissions(): BelongsToMany
+    {
+        return $this->belongsToMany(Permission::class, 'employee_permissions');
+    }
+
+    public function getAssignedRoleAttribute(): ?Role
+    {
+        if ($this->user && $this->user->roles->isNotEmpty()) {
+            return $this->user->roles->first();
+        }
+
+        $posName = strtolower($this->position?->name ?? '');
+        if (str_contains($posName, 'manager')) {
+            return Role::where('slug', 'restaurant-manager')->first();
+        }
+        if (str_contains($posName, 'cashier')) {
+            return Role::where('slug', 'cashier')->first();
+        }
+        if (str_contains($posName, 'cook') || str_contains($posName, 'kitchen') || str_contains($posName, 'chef')) {
+            return Role::where('slug', 'kitchen')->first();
+        }
+        return Role::where('slug', 'staff')->first();
+    }
+
+    public function hasDirectPermission(int|string $permission): bool
+    {
+        if (is_numeric($permission)) {
+            return $this->permissions->contains('id', (int) $permission);
+        }
+        return $this->permissions->contains('slug', $permission);
     }
 
     public function user(): BelongsTo

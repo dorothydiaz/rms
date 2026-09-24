@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Hr\Branch;
 use App\Models\Hr\Employee;
+use App\Models\Hr\Permission;
 use App\Models\Hr\Role;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -62,6 +63,11 @@ class User extends Authenticatable
         return $this->belongsToMany(Role::class, 'role_user');
     }
 
+    public function permissions(): BelongsToMany
+    {
+        return $this->belongsToMany(Permission::class, 'permission_user');
+    }
+
     public function isSuperAdmin(): bool
     {
         return strcasecmp($this->role, 'Admin') === 0 || $this->hasRole('super-admin');
@@ -113,6 +119,31 @@ class User extends Authenticatable
             return true;
         }
 
+        // 1. Check direct user permissions
+        if ($this->relationLoaded('permissions')) {
+            if ($this->permissions->contains('slug', $permissionSlug)) {
+                return true;
+            }
+        } else {
+            if ($this->permissions()->where('slug', $permissionSlug)->exists()) {
+                return true;
+            }
+        }
+
+        // 2. Check employee direct permissions if linked
+        if ($this->employee) {
+            if ($this->employee->relationLoaded('permissions')) {
+                if ($this->employee->permissions->contains('slug', $permissionSlug)) {
+                    return true;
+                }
+            } else {
+                if ($this->employee->permissions()->where('slug', $permissionSlug)->exists()) {
+                    return true;
+                }
+            }
+        }
+
+        // 3. Check role-assigned permissions
         foreach ($this->roles as $role) {
             if ($role->hasPermission($permissionSlug)) {
                 return true;

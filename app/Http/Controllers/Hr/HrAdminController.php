@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Hr\AuditLog;
 use App\Models\Hr\Branch;
 use App\Models\Hr\Company;
+use App\Models\Hr\Employee;
 use App\Models\Hr\InternalNotification;
 use App\Models\Hr\Permission;
 use App\Models\Hr\Role;
@@ -15,6 +16,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class HrAdminController extends Controller
@@ -126,12 +128,40 @@ class HrAdminController extends Controller
     // 2. ROLES & PERMISSIONS
     // ==========================================
 
-    public function rolesIndex(): View
+    public function rolesIndex(Request $request): View
     {
         $roles = Role::with('permissions')->get();
         $permissions = Permission::all()->groupBy('module');
 
-        return view('hr.admin.roles', compact('roles', 'permissions'));
+        $employeeQuery = Employee::with([
+            'user.roles',
+            'permissions',
+            'branch',
+            'position',
+            'department',
+            'company',
+        ])->orderBy('first_name')->orderBy('last_name');
+
+        if ($request->filled('search')) {
+            $term = '%' . $request->search . '%';
+            $employeeQuery->where(function ($q) use ($term) {
+                $q->where('first_name', 'like', $term)
+                  ->orWhere('last_name', 'like', $term)
+                  ->orWhere('employee_id', 'like', $term)
+                  ->orWhereHas('user', function ($uq) use ($term) {
+                      $uq->where('username', 'like', $term)->orWhere('email', 'like', $term);
+                  });
+            });
+        }
+
+        if ($request->filled('branch_id')) {
+            $employeeQuery->where('branch_id', $request->branch_id);
+        }
+
+        $employees = $employeeQuery->get();
+        $branches = Branch::where('is_active', true)->orderBy('name')->get();
+
+        return view('hr.admin.roles', compact('roles', 'permissions', 'employees', 'branches'));
     }
 
     public function roleUpdatePermissions(Request $request, int $id): RedirectResponse
@@ -142,7 +172,81 @@ class HrAdminController extends Controller
         $role->permissions()->sync($permissionIds);
         AuditLogger::log('Update', 'RBAC', $role->id, "Updated permission set for role '{$role->name}'");
 
-        return redirect()->back()->with('success', "Permissions updated for role '{$role->name}'.");
+        return redirect()->route('hr.admin.roles', ['tab' => 'roles'])->with('success', "Permissions updated for role '{$role->name}'.");
+    }
+
+    public function roleStore(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:50|unique:roles,name',
+            'slug' => 'nullable|string|max:50|unique:roles,slug',
+            'description' => 'nullable|string|max:255',
+            'permissions' => 'nullable|array',
+            'permissions.*' => 'exists:permissions,id',
+        ]);
+
+        $slug = !empty($validated['slug']) 
+            ? Str::slug($validated['slug']) 
+            : Str::slug($validated['name']);
+
+        $baseSlug = $slug;
+        $counter = 1;
+        while (Role::where('slug', $slug)->exists()) {
+            $slug = "{$baseSlug}-{$counter}";
+            $counter++;
+        }
+
+        $role = Role::create([
+            'name' => $validated['name'],
+            'slug' => $slug,
+            'description' => $validated['description'] ?? null,
+        ]);
+
+        $permissionIds = $request->input('permissions', []);
+        if (!empty($permissionIds)) {
+            $role->permissions()->sync($permissionIds);
+        }
+
+        $count = count($permissionIds);
+        AuditLogger::log('Create', 'RBAC', $role->id, "Created new role '{$role->name}' ({$slug}) with {$count} initial permissions");
+
+        return redirect()->route('hr.admin.roles', ['tab' => 'roles'])->with('success', "Role '{$role->name}' created successfully with {$count} permissions.");
+    }
+
+    public function roleDestroy(int $id): RedirectResponse
+    {
+        $role = Role::findOrFail($id);
+        $systemRoles = ['super-admin', 'hr-admin', 'restaurant-manager', 'staff', 'cashier', 'kitchen'];
+
+        if (in_array($role->slug, $systemRoles)) {
+            return redirect()->route('hr.admin.roles', ['tab' => 'roles'])->with('error', "System core role '{$role->name}' cannot be deleted.");
+        }
+
+        $roleName = $role->name;
+        $role->permissions()->detach();
+        $role->users()->detach();
+        $role->delete();
+
+        AuditLogger::log('Delete', 'RBAC', $id, "Deleted custom role '{$roleName}'");
+
+        return redirect()->route('hr.admin.roles', ['tab' => 'roles'])->with('success', "Role '{$roleName}' deleted successfully.");
+    }
+
+    public function employeeUpdatePermissions(Request $request, int $id): RedirectResponse
+    {
+        $employee = Employee::findOrFail($id);
+        $permissionIds = $request->input('permissions', []);
+
+        $employee->permissions()->sync($permissionIds);
+
+        if ($employee->user) {
+            $employee->user->permissions()->sync($permissionIds);
+        }
+
+        $count = count($permissionIds);
+        AuditLogger::log('Update', 'RBAC', $employee->id, "Updated permissions for employee {$employee->full_name} ({$count} permissions assigned)");
+
+        return redirect()->route('hr.admin.roles', ['tab' => 'employees'])->with('success', "Permissions successfully updated for {$employee->full_name} ({$count} permissions assigned).");
     }
 
     // ==========================================
