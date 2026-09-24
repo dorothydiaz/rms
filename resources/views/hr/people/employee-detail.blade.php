@@ -180,6 +180,136 @@
                 </table>
             </div>
         </div>
+
+        <!-- Card 4: Employee Documents Repository (Directly Linked to Employee) -->
+        <div class="hr-table-card" style="margin-bottom: 0;" id="employeeDocumentsSection">
+            <div class="hr-table-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span class="hr-table-title">
+                        <i class="ph ph-folder-notch-open" style="color: #7c3aed;"></i>
+                        Employee Documents Repository
+                    </span>
+                    <span class="hr-badge hr-badge-neutral">{{ $employee->documents->count() }} {{ Str::plural('File', $employee->documents->count()) }}</span>
+                </div>
+                <button type="button" class="hr-btn hr-btn-primary hr-btn-sm" onclick="openModal('uploadDocModal')">
+                    <i class="ph ph-upload-simple"></i>
+                    <span>Upload Document</span>
+                </button>
+            </div>
+            <div class="hr-table-wrapper">
+                <table class="hr-table">
+                    <thead>
+                        <tr>
+                            <th>Document Title</th>
+                            <th>Type</th>
+                            <th>Uploaded</th>
+                            <th>Expiry / Status</th>
+                            <th style="text-align: right;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($employee->documents as $doc)
+                            @php
+                                $ext = strtolower(pathinfo($doc->file_path, PATHINFO_EXTENSION));
+                                $iconClass = 'ph-file-text';
+                                $iconColor = '#6366f1';
+                                if (in_array($ext, ['pdf'])) {
+                                    $iconClass = 'ph-file-pdf';
+                                    $iconColor = '#ef4444';
+                                } elseif (in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif'])) {
+                                    $iconClass = 'ph-file-image';
+                                    $iconColor = '#10b981';
+                                } elseif (in_array($ext, ['doc', 'docx'])) {
+                                    $iconClass = 'ph-file-doc';
+                                    $iconColor = '#2563eb';
+                                }
+                            @endphp
+                            <tr>
+                                <td>
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <div style="width: 34px; height: 34px; border-radius: 9px; background: rgba(147, 51, 234, 0.08); border: 1px solid rgba(147, 51, 234, 0.15); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                            <i class="ph {{ $iconClass }}" style="font-size: 19px; color: {{ $iconColor }};"></i>
+                                        </div>
+                                        <div>
+                                            <a href="{{ asset('storage/' . $doc->file_path) }}" target="_blank" style="font-weight: 700; color: #0f172a; text-decoration: none;" onmouseover="this.style.color='#7c3aed'" onmouseout="this.style.color='#0f172a'">
+                                                {{ $doc->title }}
+                                            </a>
+                                            <div style="font-size: 11.5px; color: #64748b; margin-top: 1px;">
+                                                {{ $doc->file_name }}
+                                                @if($doc->notes)
+                                                    &bull; <span style="font-style: italic;">{{ Str::limit($doc->notes, 32) }}</span>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="hr-badge hr-badge-neutral">{{ $doc->document_type }}</span>
+                                </td>
+                                <td style="font-size: 12.5px; color: #475569;">
+                                    {{ $doc->created_at ? $doc->created_at->format('M d, Y') : '—' }}
+                                </td>
+                                <td>
+                                    @if($doc->expiry_date)
+                                        @php
+                                            $isExpired = $doc->expiry_date->isPast();
+                                            $isExpiring = !$isExpired && $doc->expiry_date->diffInDays(now()) <= 30;
+                                        @endphp
+                                        @if($isExpired)
+                                            <span class="hr-badge hr-badge-danger" title="Expired on {{ $doc->expiry_date->format('M d, Y') }}">
+                                                <i class="ph ph-warning-circle"></i> Expired ({{ $doc->expiry_date->format('M d, Y') }})
+                                            </span>
+                                        @elseif($isExpiring)
+                                            <span class="hr-badge hr-badge-warning" title="Expiring soon">
+                                                <i class="ph ph-clock"></i> Expires: {{ $doc->expiry_date->format('M d, Y') }}
+                                            </span>
+                                        @else
+                                            <span style="font-size: 12.5px; font-weight: 600; color: #0f172a;">
+                                                {{ $doc->expiry_date->format('M d, Y') }}
+                                            </span>
+                                        @endif
+                                    @else
+                                        <span style="color: #94a3b8; font-size: 12px;">No Expiry Date</span>
+                                    @endif
+                                </td>
+                                <td style="text-align: right;">
+                                    <div style="display: inline-flex; align-items: center; gap: 6px;">
+                                        <a href="{{ asset('storage/' . $doc->file_path) }}" target="_blank" class="hr-btn hr-btn-secondary hr-btn-sm" title="View Document in New Tab">
+                                            <i class="ph ph-eye"></i>
+                                        </a>
+                                        <a href="{{ route('hr.people.documents.download', $doc->id) }}" class="hr-btn hr-btn-secondary hr-btn-sm" title="Download Document">
+                                            <i class="ph ph-download-simple"></i>
+                                        </a>
+                                        <form method="POST" action="{{ route('hr.people.documents.destroy', $doc->id) }}" onsubmit="return confirm('Are you sure you want to delete this document: {{ addslashes($doc->title) }}?');" style="display: inline;">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="hr-btn hr-btn-danger hr-btn-sm" title="Delete Document">
+                                                <i class="ph ph-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="5" style="text-align: center; padding: 36px 20px;">
+                                    <div style="width: 48px; height: 48px; border-radius: 12px; background: #f5f3ff; color: #7c3aed; display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 10px;">
+                                        <i class="ph ph-folder-open"></i>
+                                    </div>
+                                    <div style="font-weight: 700; color: #0f172a; font-size: 14px;">No documents uploaded yet</div>
+                                    <p style="color: #64748b; font-size: 12.5px; margin: 4px auto 14px; max-width: 420px;">
+                                        Attach health certificates, sanitary permits, employment contracts, government IDs, and clearances for <strong>{{ $employee->full_name }}</strong>.
+                                    </p>
+                                    <button type="button" class="hr-btn hr-btn-primary hr-btn-sm" onclick="openModal('uploadDocModal')">
+                                        <i class="ph ph-upload-simple"></i> Upload First Document
+                                    </button>
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
     <!-- Right Column: Emergency Contact & Documents -->
@@ -220,6 +350,42 @@
                     <span style="color: #64748b;">Contract Period:</span>
                     <strong>{{ $employee->contract_start_date ?? 'N/A' }} ~ {{ $employee->contract_end_date ?? 'Permanent' }}</strong>
                 </div>
+            </div>
+        </div>
+
+        <!-- Document Compliance & Health Card Status -->
+        <div class="hr-table-card" style="margin-bottom: 0;">
+            <div class="hr-table-header">
+                <span class="hr-table-title"><i class="ph ph-files" style="color: #7c3aed;"></i> Documents Compliance</span>
+            </div>
+            <div style="padding: 18px; font-size: 13px; display: flex; flex-direction: column; gap: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="color: #64748b;">Total Filed Documents</span>
+                    <strong style="color: #0f172a; font-size: 14px;">{{ $employee->documents->count() }}</strong>
+                </div>
+                @php
+                    $healthDocs = $employee->documents->whereIn('document_type', ['Health Permit', 'Food Handler Certificate']);
+                    $hasExpired = $employee->documents->filter(fn($d) => $d->expiry_date && $d->expiry_date->isPast())->count();
+                @endphp
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="color: #64748b;">Health & Food Clearances</span>
+                    @if($healthDocs->count() > 0)
+                        <span class="hr-badge hr-badge-success">{{ $healthDocs->count() }} Attached</span>
+                    @else
+                        <span class="hr-badge hr-badge-warning">Missing</span>
+                    @endif
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="color: #64748b;">Expired Certificates</span>
+                    @if($hasExpired > 0)
+                        <span class="hr-badge hr-badge-danger">{{ $hasExpired }} Expired</span>
+                    @else
+                        <span class="hr-badge hr-badge-neutral">0 Expired</span>
+                    @endif
+                </div>
+                <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" style="width: 100%; margin-top: 4px;" onclick="openModal('uploadDocModal')">
+                    <i class="ph ph-plus-circle"></i> Add New Document
+                </button>
             </div>
         </div>
     </div>
@@ -376,6 +542,110 @@
             <div class="hr-modal-footer">
                 <button type="button" class="hr-btn hr-btn-secondary" onclick="closeModal('editEmployeeModal')">Cancel</button>
                 <button type="submit" class="hr-btn hr-btn-primary">Update Profile</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Upload Employee Document Modal (Pre-Linked to Current Employee) -->
+<div id="uploadDocModal" class="hr-modal-overlay">
+    <div class="hr-modal" style="max-width: 620px;">
+        <div class="hr-modal-header">
+            <span class="hr-modal-title">
+                <i class="ph ph-file-arrow-up" style="color: #7c3aed;"></i>
+                Upload Employee Document
+            </span>
+            <button type="button" class="icon-btn" onclick="closeModal('uploadDocModal')"><i class="ph ph-x"></i></button>
+        </div>
+        <form method="POST" action="{{ route('hr.people.documents.store') }}" enctype="multipart/form-data">
+            @csrf
+            <!-- Pre-linked Employee Hidden Input -->
+            <input type="hidden" name="employee_id" value="{{ $employee->id }}">
+
+            <div class="hr-modal-body">
+                <!-- Pre-Linked Employee Banner -->
+                <div style="background: linear-gradient(135deg, rgba(124, 58, 237, 0.06), rgba(99, 102, 241, 0.08)); border: 1.5px solid rgba(124, 58, 237, 0.22); border-radius: 14px; padding: 14px 16px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+                    <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+                        @if($employee->photo_url)
+                            <img src="{{ $employee->photo_url }}" alt="{{ $employee->full_name }}" style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid #e2e8f0; flex-shrink: 0; box-shadow: 0 2px 6px rgba(0,0,0,0.08);">
+                        @else
+                            <div style="width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%); color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 700; flex-shrink: 0; box-shadow: 0 2px 8px rgba(168, 85, 247, 0.3);">
+                                {{ $employee->initials }}
+                            </div>
+                        @endif
+                        <div style="min-width: 0;">
+                            <div style="font-weight: 700; color: #0f172a; font-size: 14px; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                {{ $employee->full_name }}
+                            </div>
+                            <div style="font-size: 12px; color: #64748b; margin-top: 3px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                                <span><code style="background: rgba(15, 23, 42, 0.06); padding: 2px 6px; border-radius: 4px; font-size: 11px;">{{ $employee->employee_id }}</code></span>
+                                <span>&bull;</span>
+                                <span>{{ $employee->position?->name ?? 'Employee' }}</span>
+                                <span>&bull;</span>
+                                <span>{{ $employee->branch?->name }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <span class="hr-badge hr-badge-success" style="flex-shrink: 0; font-size: 11.5px; padding: 4px 10px; display: inline-flex; align-items: center; gap: 4px;">
+                        <i class="ph ph-link"></i> Auto-Linked
+                    </span>
+                </div>
+
+                <div class="hr-form-group">
+                    <label class="hr-form-label">Document Category *</label>
+                    <select name="document_type" class="hr-select" required>
+                        <option value="Health Permit">Health Permit / Sanitary Card</option>
+                        <option value="Food Handler Certificate">Food Handler Certificate</option>
+                        <option value="Employment Contract">Employment Contract</option>
+                        <option value="Government ID">Government ID (SSS, TIN, PhilHealth, Pag-IBIG)</option>
+                        <option value="NBI Clearance">NBI / Police Clearance</option>
+                        <option value="Barista / Chef Certification">Barista / Culinary Certification</option>
+                        <option value="Performance Review">Performance Evaluation Document</option>
+                        <option value="Medical Certificate">Medical / Fit-to-Work Clearance</option>
+                        <option value="Other">Other Operational Record</option>
+                    </select>
+                </div>
+
+                <div class="hr-form-group">
+                    <label class="hr-form-label">Document Title *</label>
+                    <input type="text" name="title" class="hr-input" required placeholder="e.g. 2026 City Health Certificate, Employment Contract">
+                </div>
+
+                <div class="hr-form-group">
+                    <label class="hr-form-label">Attach File * (Max 10MB)</label>
+                    <div style="border: 2px dashed #cbd5e1; border-radius: 12px; padding: 18px 16px; text-align: center; background: #f8fafc; transition: all 0.2s ease;">
+                        <i class="ph ph-file-arrow-up" style="font-size: 32px; color: #7c3aed; margin-bottom: 6px; display: inline-block;"></i>
+                        <div style="font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 2px;">Select document to upload</div>
+                        <div style="font-size: 11.5px; color: #64748b; margin-bottom: 12px;">Accepted: PDF, PNG, JPG, JPEG, WEBP, DOC, DOCX up to 10MB</div>
+                        <input type="file" name="file" class="hr-input" required accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp" style="padding: 7px 10px; max-width: 400px; margin: 0 auto; display: block;">
+                    </div>
+                </div>
+
+                <div class="hr-form-group">
+                    <label class="hr-form-label">
+                        Expiry Date
+                        <span style="font-weight: 400; font-size: 12px; color: #64748b;">(Required for Health & Sanitary permits)</span>
+                    </label>
+                    <input type="date" name="expiry_date" class="hr-input">
+                    <small style="font-size: 11.5px; color: #64748b; margin-top: 4px; display: block;">
+                        Leave empty for documents that do not expire (e.g. permanent contracts or birth certificates).
+                    </small>
+                </div>
+
+                <div class="hr-form-group">
+                    <label class="hr-form-label">
+                        Notes / Remarks
+                        <span style="font-weight: 400; font-size: 12px; color: #64748b;">(Optional)</span>
+                    </label>
+                    <textarea name="notes" class="hr-input" rows="2" placeholder="e.g. Issued by Manila City Health Office; annual renewal required." style="resize: vertical;"></textarea>
+                </div>
+            </div>
+
+            <div class="hr-modal-footer">
+                <button type="button" class="hr-btn hr-btn-secondary" onclick="closeModal('uploadDocModal')">Cancel</button>
+                <button type="submit" class="hr-btn hr-btn-primary">
+                    <i class="ph ph-upload-simple"></i> Upload to Repository
+                </button>
             </div>
         </form>
     </div>

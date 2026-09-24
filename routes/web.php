@@ -58,6 +58,7 @@ Route::middleware('auth')->group(function () {
 
             Route::get('/documents', [\App\Http\Controllers\Hr\PeopleController::class, 'documentsIndex'])->name('documents');
             Route::post('/documents', [\App\Http\Controllers\Hr\PeopleController::class, 'documentStore'])->name('documents.store');
+            Route::get('/documents/{id}/download', [\App\Http\Controllers\Hr\PeopleController::class, 'documentDownload'])->name('documents.download');
             Route::delete('/documents/{id}', [\App\Http\Controllers\Hr\PeopleController::class, 'documentDestroy'])->name('documents.destroy');
         });
 

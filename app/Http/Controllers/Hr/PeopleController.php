@@ -67,7 +67,9 @@ class PeopleController extends Controller
         $user = Auth::user();
         $employee = Employee::with([
             'branch', 'department', 'position', 'supervisor',
-            'emergencyContacts', 'documents', 'employmentHistories',
+            'emergencyContacts',
+            'documents' => fn($q) => $q->orderBy('created_at', 'desc'),
+            'employmentHistories',
             'leaveBalances.leaveType'
         ])->findOrFail($id);
 
@@ -410,17 +412,27 @@ class PeopleController extends Controller
         $doc = EmployeeDocument::create([
             'employee_id' => $validated['employee_id'],
             'document_type' => $validated['document_type'],
-            'title' => $validated['title'],
+            'document_name' => $validated['title'] ?? $validated['document_name'] ?? $request->file('file')->getClientOriginalName(),
             'file_path' => $path,
-            'file_name' => $request->file('file')->getClientOriginalName(),
-            'file_size' => $request->file('file')->getSize(),
-            'mime_type' => $request->file('file')->getClientMimeType(),
             'expiry_date' => $validated['expiry_date'] ?? null,
+            'uploaded_by' => Auth::id(),
+            'notes' => $request->input('notes'),
         ]);
 
         AuditLogger::log('Create', 'Employees', $doc->id, "Uploaded document '{$doc->title}' for employee #{$doc->employee_id}");
 
         return redirect()->back()->with('success', "Document uploaded successfully.");
+    }
+
+    public function documentDownload(int $id)
+    {
+        $doc = EmployeeDocument::findOrFail($id);
+        if (!Storage::disk('public')->exists($doc->file_path)) {
+            return redirect()->back()->with('error', 'File not found in storage.');
+        }
+        $ext = pathinfo($doc->file_path, PATHINFO_EXTENSION);
+        $filename = $doc->document_name . ($ext ? '.' . $ext : '');
+        return Storage::disk('public')->download($doc->file_path, $filename);
     }
 
     public function documentDestroy(int $id): RedirectResponse
