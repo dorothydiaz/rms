@@ -185,7 +185,10 @@ Route::middleware('auth')->group(function () {
             Route::post('/users/{id}/reset-password', [\App\Http\Controllers\Hr\HrAdminController::class, 'userPasswordReset'])->name('users.reset-password');
 
             Route::get('/roles', [\App\Http\Controllers\Hr\HrAdminController::class, 'rolesIndex'])->name('roles');
+            Route::post('/roles', [\App\Http\Controllers\Hr\HrAdminController::class, 'roleStore'])->name('roles.store');
+            Route::delete('/roles/{id}', [\App\Http\Controllers\Hr\HrAdminController::class, 'roleDestroy'])->name('roles.destroy');
             Route::post('/roles/{id}/permissions', [\App\Http\Controllers\Hr\HrAdminController::class, 'roleUpdatePermissions'])->name('roles.permissions');
+            Route::post('/roles/employees/{id}/permissions', [\App\Http\Controllers\Hr\HrAdminController::class, 'employeeUpdatePermissions'])->name('roles.employee-permissions');
 
             Route::get('/settings', [\App\Http\Controllers\Hr\HrAdminController::class, 'settingsIndex'])->name('settings');
             Route::post('/settings', [\App\Http\Controllers\Hr\HrAdminController::class, 'settingsUpdate'])->name('settings.update');

@@ -859,16 +859,22 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Automatically manage body scroll lock when right drawer modals open/close
-    try {
-        const modalObserver = new MutationObserver(() => {
-            if (document.querySelector('.hr-modal-overlay.open, .modal.show')) {
-                document.body.style.overflow = 'hidden';
-            } else {
+    // Universal Modal Helper Functions
+    window.openModal = function(id) {
+        const m = document.getElementById(id);
+        if (m) {
+            m.classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+    };
+    window.closeModal = function(id) {
+        const m = document.getElementById(id);
+        if (m) {
+            m.classList.remove('open');
+            if (!document.querySelector('.hr-modal-overlay.open')) {
                 document.body.style.overflow = '';
             }
-        });
-        modalObserver.observe(document.body, { attributes: true, subtree: true, attributeFilter: ['class'] });
-    } catch (err) {}
+        }
+    };
 });
 
