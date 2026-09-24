@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Restaurant Management System')</title>
+    <title>@hasSection('title'){{ Str::contains($__env->yieldContent('title'), 'Restaurant Management System') ? $__env->yieldContent('title') : $__env->yieldContent('title') . ' - Restaurant Management System' }}@else Restaurant Management System @endif</title>
 
     <!-- Custom RMS Stylesheet -->
     <link rel="stylesheet" href="{{ asset('assets/css/styles.css') }}?v={{ time() }}">
@@ -19,7 +19,7 @@
     
     @stack('styles')
 </head>
-<body>
+<body class="{{ request()->routeIs('account-settings*') ? 'page-account-settings' : '' }}">
     <div class="app-container">
         <!-- Dual-Rail Interactive Sidebar Component -->
         <x-sidebar />
@@ -31,6 +31,10 @@
                     <x-breadcrumbs />
                 </div>
                 <div class="header-actions">
+                    <div class="header-date-badge">
+                        <i class="ph ph-calendar-blank"></i>
+                        <span id="currentHeaderDate">{{ now()->format('D, M d, Y') }}</span>
+                    </div>
                     <button class="icon-btn notification-btn" title="Notifications" aria-label="Notifications">
                         <i class="ph ph-bell"></i>
                     </button>

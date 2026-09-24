@@ -229,11 +229,15 @@ Route::middleware('auth')->group(function () {
         Route::get('/vendor-bills', [PurchaseController::class, 'vendorBills'])->name('vendor-bills');
     });
 
-    // Business Configuration
+    // Settings (Business Configuration)
     Route::prefix('config')->name('config.')->group(function () {
         Route::get('/business-settings', [ConfigController::class, 'businessSettings'])->name('business-settings');
-        Route::get('/account-settings', [ConfigController::class, 'accountSettings'])->name('account-settings');
     });
+
+    // User Account Settings
+    Route::get('/account-settings', [ConfigController::class, 'accountSettings'])->name('account-settings');
+    Route::post('/account-settings/profile', [ConfigController::class, 'updateProfile'])->name('account-settings.profile');
+    Route::post('/account-settings/password', [ConfigController::class, 'updatePassword'])->name('account-settings.password');
 
     // Credits & Support
     Route::prefix('credits')->name('credits.')->group(function () {

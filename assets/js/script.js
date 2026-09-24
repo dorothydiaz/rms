@@ -18,6 +18,33 @@ document.addEventListener('DOMContentLoaded', () => {
         overlay.onclick = toggleSidebar;
     }
 
+    // Synchronize Rail Active Indicators (Clean up active items when sidebar is collapsed on non-module pages like Account Settings)
+    function syncRailActiveState() {
+        if (!sidebar) return;
+        const isCollapsed = sidebar.classList.contains('collapsed');
+        const isSettingsPage = document.body.classList.contains('page-account-settings') || 
+                               window.location.pathname.includes('/account-settings');
+        const isHomePage = window.location.pathname.endsWith('index.php') || 
+                           window.location.pathname.endsWith('/rms/') || 
+                           window.location.pathname.endsWith('/rms') ||
+                           window.location.pathname === '/' ||
+                           (document.querySelector('.brand-logo') && !document.querySelector('.breadcrumb-list'));
+
+        if (isCollapsed) {
+            if (isSettingsPage) {
+                // On Account Settings, when collapsed, no rail item or submenu should remain active
+                document.querySelectorAll('.rail-item').forEach(ri => ri.classList.remove('active'));
+                document.querySelectorAll('.submenu').forEach(menu => menu.classList.remove('active'));
+            } else if (isHomePage) {
+                // On Home page, when collapsed, only Home icon is active
+                document.querySelectorAll('.rail-item[data-target]').forEach(ri => ri.classList.remove('active'));
+                document.querySelectorAll('.submenu').forEach(menu => menu.classList.remove('active'));
+                const homeRail = document.querySelector('.rail-item[data-title="Home"]');
+                if (homeRail) homeRail.classList.add('active');
+            }
+        }
+    }
+
     // Dynamic Sidebar Toggle Icon & Tooltip Synchronizer
     function updateSidebarToggleIcon() {
         const headerToggle = document.querySelector('.header-sidebar-toggle');
@@ -34,6 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
             headerToggle.setAttribute('data-tooltip', 'Expand Sidebar');
             headerToggle.setAttribute('aria-expanded', 'false');
             headerToggle.classList.add('collapsed-state');
+            syncRailActiveState();
         } else {
             // Open/expanded state -> show left caret to collapse
             if (icon && !icon.classList.contains('ph-caret-left')) {
@@ -59,6 +87,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (firstSubmenu) firstSubmenu.classList.add('active');
                 const firstRail = document.querySelector('.rail-item[data-target="submenu-hr"]');
                 if (firstRail) firstRail.classList.add('active');
+            } else if (isNowCollapsed) {
+                syncRailActiveState();
             }
 
             try {
@@ -253,8 +283,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (sidebarLink) {
             const href = sidebarLink.getAttribute('href');
             if (href && href !== '#' && !href.startsWith('javascript:')) {
-                // If navigating to Home / index.php, Home has no sub-menu so collapse sidebar
-                if (href.endsWith('index.php') || href.endsWith('/rms/') || href.endsWith('/rms') || href === '/') {
+                // If navigating to Home / index.php or Account Settings, collapse sidebar panel
+                if (href.includes('account-settings') || href.endsWith('index.php') || href.endsWith('/rms/') || href.endsWith('/rms') || href === '/') {
                     try {
                         localStorage.setItem('rms_sidebar_collapsed', 'true');
                     } catch (err) {}
@@ -275,7 +305,8 @@ document.addEventListener('DOMContentLoaded', () => {
                                window.location.pathname.endsWith('/rms/') || 
                                window.location.pathname.endsWith('/rms') ||
                                window.location.pathname === '/';
-            if (isHomePage) {
+            const isSettingsPage = window.location.pathname.includes('/account-settings');
+            if (isHomePage || isSettingsPage) {
                 if (sidebar) sidebar.classList.add('collapsed');
                 try { localStorage.setItem('rms_sidebar_collapsed', 'true'); } catch (err) {}
                 updateSidebarToggleIcon();
@@ -293,5 +324,55 @@ document.addEventListener('DOMContentLoaded', () => {
             updateSidebarToggleIcon();
         } catch (err) {}
     });
+
+    // User Profile Pop-up Menu Toggle
+    const userProfileToggle = document.getElementById('userProfileToggle');
+    const userProfilePopup = document.getElementById('userProfilePopup');
+
+    if (userProfileToggle && userProfilePopup) {
+        userProfileToggle.addEventListener('click', (e) => {
+            // Prevent event if clicked on logout button form
+            if (e.target.closest('#sidebarLogoutForm')) {
+                return;
+            }
+            e.stopPropagation();
+            const isOpen = userProfilePopup.classList.toggle('show');
+            userProfileToggle.classList.toggle('open', isOpen);
+            userProfileToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        });
+
+        // Close on click outside
+        document.addEventListener('click', (e) => {
+            if (!userProfilePopup.contains(e.target) && !userProfileToggle.contains(e.target)) {
+                userProfilePopup.classList.remove('show');
+                userProfileToggle.classList.remove('open');
+                userProfileToggle.setAttribute('aria-expanded', 'false');
+            }
+        });
+
+        // Close on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && userProfilePopup.classList.contains('show')) {
+                userProfilePopup.classList.remove('show');
+                userProfileToggle.classList.remove('open');
+                userProfileToggle.setAttribute('aria-expanded', 'false');
+            }
+        });
+    }
+
+    // Sync current header date badge with user local date
+    const headerDateSpan = document.getElementById('currentHeaderDate');
+    if (headerDateSpan) {
+        try {
+            const today = new Date();
+            const dateStr = today.toLocaleDateString('en-US', {
+                weekday: 'short',
+                month: 'short',
+                day: '2-digit',
+                year: 'numeric'
+            });
+            headerDateSpan.textContent = dateStr;
+        } catch (e) {}
+    }
 });
 

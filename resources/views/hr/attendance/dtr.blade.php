@@ -184,8 +184,8 @@
         </table>
     </div>
 
-    @if($records->hasPages())
-        <div style="padding: 14px 20px; border-top: 1px solid #e2e8f0;">
+    @if($records->total() > 0)
+        <div class="hr-table-footer">
             {{ $records->links() }}
         </div>
     @endif

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Employees Directory - People Administration')
+@section('title', 'Employees Directory - People Administration - Restaurant Management System')
 
 @section('content')
 <div class="hr-page-header">

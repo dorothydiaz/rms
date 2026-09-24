@@ -81,6 +81,22 @@ class HrOperationsTest extends TestCase
     }
 
     /**
+     * Test: DTR page renders table and glassmorphic pagination
+     */
+    public function test_dtr_renders_with_table_and_glassmorphic_pagination(): void
+    {
+        $admin = $this->getSuperAdmin();
+
+        $response = $this->actingAs($admin)->get(route('hr.attendance.dtr'));
+        $response->assertStatus(200);
+        $response->assertSee('hr-table-card', false);
+        $response->assertSee('hr-table', false);
+        $response->assertSee('hr-table-footer', false);
+        $response->assertSee('hr-pagination-container', false);
+        $response->assertSee('Showing', false);
+    }
+
+    /**
      * Test 2: Branch Manager access is properly scoped to their assigned branch
      */
     public function test_branch_manager_access_is_scoped(): void

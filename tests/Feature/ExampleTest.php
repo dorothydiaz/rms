@@ -44,4 +44,25 @@ class ExampleTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('Main dashboard content goes here.');
     }
+
+    /**
+     * Authenticated user can access the HR dashboard.
+     */
+    public function test_authenticated_user_can_access_hr_dashboard(): void
+    {
+        $user = User::where('username', 'peter')->first() ?? User::first();
+        if ($user) {
+            $response = $this->actingAs($user)->get('/hr/dashboard');
+            $response->assertStatus(200);
+            $response->assertSee('Total Workforce');
+            $response->assertSee("Today's Attendance", false);
+            $response->assertSee('Attendance Overview');
+            $response->assertSee('Employees by Department');
+            $response->assertSee('Payroll Summary');
+            $response->assertSee('Upcoming Birthdays');
+            $response->assertSee('Recent Attendance');
+            $response->assertSee('System Alerts');
+            $response->assertSee('Top Sections');
+        }
+    }
 }

@@ -1,6 +1,8 @@
 @php
     $currentRouteName = request()->route() ? request()->route()->getName() : '';
     $isHome = ($currentRouteName === 'dashboard');
+    $isAccountSettings = request()->routeIs('account-settings*');
+    $isInitiallyCollapsed = ($isHome || $isAccountSettings);
 
     $moduleRegistry = [
         'hr' => [
@@ -231,16 +233,29 @@
             ]
         ],
         'config' => [
-            'title' => 'Business Configuration',
-            'icon' => 'ph-storefront',
+            'title' => 'Settings',
+            'icon' => 'ph-gear',
             'dashboard_url' => route('config.business-settings'),
             'sections' => [
-                'settings' => [
-                    'title' => 'Configuration',
+                'business' => [
+                    'title' => 'Business Settings',
                     'url' => route('config.business-settings'),
                     'items' => [
-                        ['title' => 'Business Settings', 'url' => route('config.business-settings'), 'icon' => 'ph-storefront', 'route' => 'config.business-settings'],
-                        ['title' => 'Account Settings', 'url' => route('config.account-settings'), 'icon' => 'ph-user-gear', 'route' => 'config.account-settings']
+                        ['title' => 'Business Settings', 'url' => route('config.business-settings'), 'icon' => 'ph-storefront', 'route' => 'config.business-settings']
+                    ]
+                ]
+            ]
+        ],
+        'profile' => [
+            'title' => 'User Profile',
+            'icon' => 'ph-user-circle',
+            'dashboard_url' => route('account-settings'),
+            'sections' => [
+                'account' => [
+                    'title' => 'My Profile',
+                    'url' => route('account-settings'),
+                    'items' => [
+                        ['title' => 'Account Settings', 'url' => route('account-settings'), 'icon' => 'ph-user-gear', 'route' => 'account-settings']
                     ]
                 ]
             ]
@@ -300,16 +315,16 @@
     }
 @endphp
 
-<button type="button" class="sidebar-toggle-btn header-sidebar-toggle" data-tooltip="{{ $isHome ? 'Expand Sidebar' : 'Collapse Sidebar' }}" aria-label="Toggle Sidebar">
-    <i class="ph {{ $isHome ? 'ph-list' : 'ph-caret-left' }}"></i>
+<button type="button" class="sidebar-toggle-btn header-sidebar-toggle" data-tooltip="{{ $isInitiallyCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar' }}" aria-label="Toggle Sidebar">
+    <i class="ph {{ $isInitiallyCollapsed ? 'ph-list' : 'ph-caret-left' }}"></i>
 </button>
 <script>
     (function() {
         try {
-            var isHome = {{ $isHome ? 'true' : 'false' }};
+            var isInitCol = {{ $isInitiallyCollapsed ? 'true' : 'false' }};
             var state = localStorage.getItem('rms_sidebar_collapsed');
-            var isCol = isHome || (state === 'true');
-            if (!isHome && state === 'false') isCol = false;
+            var isCol = isInitCol || (state === 'true');
+            if (!isInitCol && state === 'false') isCol = false;
             var btn = document.querySelector('.header-sidebar-toggle');
             if (btn) {
                 var icon = btn.querySelector('i');

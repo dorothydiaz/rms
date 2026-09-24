@@ -1,5 +1,6 @@
 @php
     $isHome = request()->routeIs('dashboard');
+    $isAccountSettings = request()->routeIs('account-settings*');
     $activeModule = '';
     if (request()->routeIs('hr.*')) $activeModule = 'hr';
     elseif (request()->routeIs('sales.*')) $activeModule = 'sales';
@@ -17,12 +18,12 @@
 <div class="sidebar-overlay"></div>
 
 <!-- Sidebar Container -->
-<aside id="app-sidebar" class="sidebar{{ $isHome ? ' collapsed' : '' }}">
+<aside id="app-sidebar" class="sidebar{{ ($isHome || $isAccountSettings) ? ' collapsed' : '' }}">
     <script>
         (function() {
             try {
                 var sb = document.getElementById('app-sidebar');
-                @if ($isHome)
+                @if ($isHome || $isAccountSettings)
                     sb.classList.add('collapsed');
                     try { localStorage.setItem('rms_sidebar_collapsed', 'true'); } catch(e) {}
                 @else
@@ -51,11 +52,11 @@
             <a href="#" class="rail-item{{ $activeModule === 'sales' ? ' active' : '' }}" data-tooltip="Sales Operations" data-title="Sales Operations" data-target="submenu-sales"><i class="ph ph-chart-line-up"></i></a>
             <a href="#" class="rail-item{{ $activeModule === 'inventory' ? ' active' : '' }}" data-tooltip="Inventory Operations" data-title="Inventory Operations" data-target="submenu-inventory"><i class="ph ph-package"></i></a>
             <a href="#" class="rail-item{{ $activeModule === 'purchase' ? ' active' : '' }}" data-tooltip="Purchase Operations" data-title="Purchase Operations" data-target="submenu-purchase"><i class="ph ph-shopping-cart"></i></a>
-            <a href="#" class="rail-item{{ $activeModule === 'config' ? ' active' : '' }}" data-tooltip="Business Config" data-title="Business Config" data-target="submenu-config"><i class="ph ph-storefront"></i></a>
         </nav>
         
         <div class="rail-footer">
             <a href="#" class="rail-item{{ $activeModule === 'credits' ? ' active' : '' }}" data-tooltip="Credits" data-title="Credits" data-target="submenu-credits"><i class="ph ph-info"></i></a>
+            <a href="#" class="rail-item{{ $activeModule === 'config' ? ' active' : '' }}" data-tooltip="Settings" data-title="Settings" data-target="submenu-config"><i class="ph ph-gear"></i></a>
         </div>
     </div>
 
@@ -382,23 +383,6 @@
             </div>
         </div>
 
-        <!-- Business Configuration -->
-        <div id="submenu-config" class="panel-content submenu{{ $activeModule === 'config' ? ' active' : '' }}">
-            <div class="submenu-header">
-                <span class="submenu-title">Business Configuration</span>
-            </div>
-            <div class="nav-section">
-                <a href="{{ route('config.business-settings') }}" class="nav-item{{ request()->routeIs('config.business-settings') ? ' active' : '' }}">
-                    <i class="ph ph-storefront"></i>
-                    <span>Business Settings</span>
-                </a>
-                <a href="{{ route('config.account-settings') }}" class="nav-item{{ request()->routeIs('config.account-settings') ? ' active' : '' }}">
-                    <i class="ph ph-user-gear"></i>
-                    <span>Account Settings</span>
-                </a>
-            </div>
-        </div>
-
         <!-- Credits -->
         <div id="submenu-credits" class="panel-content submenu{{ $activeModule === 'credits' ? ' active' : '' }}">
             <div class="submenu-header">
@@ -416,8 +400,63 @@
             </div>
         </div>
 
+        <!-- Settings (Business Configuration) -->
+        <div id="submenu-config" class="panel-content submenu{{ $activeModule === 'config' ? ' active' : '' }}">
+            <div class="submenu-header">
+                <span class="submenu-title">Settings</span>
+            </div>
+            <div class="nav-section">
+                <a href="{{ route('config.business-settings') }}" class="nav-item{{ request()->routeIs('config.business-settings') ? ' active' : '' }}">
+                    <i class="ph ph-storefront"></i>
+                    <span>Business Settings</span>
+                </a>
+            </div>
+        </div>
+
         <div class="panel-footer">
-            <div class="user-profile">
+            <!-- User Profile Pop-up Menu -->
+            <div class="user-profile-popup" id="userProfilePopup" role="menu" aria-label="User Account Menu">
+                <div class="popup-user-header">
+                    <div class="popup-avatar">
+                        <i class="ph ph-user"></i>
+                    </div>
+                    <div class="popup-user-meta">
+                        <span class="popup-user-name">{{ $userFullName }}</span>
+                        <span class="popup-user-role">{{ $userRole }}</span>
+                        @if($user && $user->email)
+                            <span class="popup-user-email">{{ $user->email }}</span>
+                        @endif
+                    </div>
+                </div>
+                <div class="popup-menu-divider"></div>
+                <div class="popup-menu-items">
+                    <a href="{{ route('account-settings') }}" class="popup-menu-item{{ request()->routeIs('account-settings*') ? ' active' : '' }}" role="menuitem">
+                        <div class="popup-item-icon">
+                            <i class="ph ph-user-gear"></i>
+                        </div>
+                        <div class="popup-item-text">
+                            <span class="popup-item-title">Account Settings</span>
+                            <span class="popup-item-desc">Profile, password & security</span>
+                        </div>
+                        <i class="ph ph-caret-right popup-item-arrow"></i>
+                    </a>
+                    <div class="popup-menu-divider"></div>
+                    <form method="POST" action="{{ route('logout') }}" id="popupLogoutForm">
+                        @csrf
+                        <button type="submit" class="popup-menu-item logout-item" role="menuitem">
+                            <div class="popup-item-icon">
+                                <i class="ph ph-sign-out"></i>
+                            </div>
+                            <div class="popup-item-text">
+                                <span class="popup-item-title">Sign Out</span>
+                            </div>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Clickable User Profile Card -->
+            <div class="user-profile{{ request()->routeIs('account-settings*') ? ' active' : '' }}" id="userProfileToggle" role="button" tabindex="0" aria-haspopup="true" aria-expanded="false" title="Click to view account options">
                 <div class="user-avatar-icon">
                     <i class="ph ph-user"></i>
                 </div>
@@ -425,12 +464,17 @@
                     <span class="user-name">{{ $userFullName }}</span>
                     <span class="user-role">{{ $userRole }}</span>
                 </div>
-                <form method="POST" action="{{ route('logout') }}" id="sidebarLogoutForm" style="display:inline;">
-                    @csrf
-                    <button type="submit" class="logout-btn" data-tooltip="Sign Out" aria-label="Sign Out" style="background:none;border:none;cursor:pointer;padding:0;">
-                        <i class="ph ph-sign-out"></i>
-                    </button>
-                </form>
+                <div class="user-profile-actions">
+                    <span class="user-popup-caret">
+                        <i class="ph ph-caret-up"></i>
+                    </span>
+                    <form method="POST" action="{{ route('logout') }}" id="sidebarLogoutForm" style="display:inline;" onclick="event.stopPropagation();">
+                        @csrf
+                        <button type="submit" class="logout-btn" data-tooltip="Sign Out" aria-label="Sign Out" style="background:none;border:none;cursor:pointer;padding:0;">
+                            <i class="ph ph-sign-out"></i>
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>

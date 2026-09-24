@@ -134,7 +134,7 @@ class RmsNavigationAndAuthTest extends TestCase
 
         $routes = [
             'config.business-settings',
-            'config.account-settings',
+            'account-settings',
             'credits.tickets',
             'credits.developers',
         ];
