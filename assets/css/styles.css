@@ -2921,8 +2921,8 @@ select option {
 }
 
 /* ============================================================
-   UNIVERSAL GLASSMORPHIC MODALS (White BG with 90% Transparency)
-   Applies to .hr-modal, .modal-content, and all system modals
+   RIGHT MODAL INTERFACE (Pure White Background, Clean Professional Design)
+   Applies to .hr-modal, .modal-content, and all system slide-over modals
    ============================================================ */
 .hr-modal-overlay,
 .modal-backdrop {
@@ -2931,53 +2931,68 @@ select option {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(15, 23, 42, 0.35) !important;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    background: rgba(15, 23, 42, 0.45) !important;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    display: flex !important;
+    align-items: stretch !important;
+    justify-content: flex-end !important;
     z-index: 1050;
     opacity: 0;
     visibility: hidden;
-    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-    padding: 20px;
+    pointer-events: none;
+    padding: 0 !important;
+    margin: 0 !important;
+    transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .hr-modal-overlay.open,
 .modal.show {
-    opacity: 1;
-    visibility: visible;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
 }
 
 .hr-modal,
 .modal-content,
 .modal-dialog .modal-content,
-.modal-box,
-.swal2-popup {
-    background: rgba(255, 255, 255, 0.90) !important;
-    backdrop-filter: blur(28px) saturate(190%) !important;
-    -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
-    border-radius: 22px !important;
-    box-shadow: 0 25px 60px -10px rgba(100, 116, 139, 0.20), 0 10px 24px -4px rgba(0, 0, 0, 0.06), inset 0 1.5px 2px #ffffff !important;
-    border: 1px solid rgba(255, 255, 255, 0.95) !important;
-    width: 100%;
-    max-width: 640px;
-    max-height: 90vh;
+.modal-box {
+    background: #ffffff !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border-radius: 20px 0 0 20px !important;
+    box-shadow: -12px 0 45px -4px rgba(15, 23, 42, 0.18), -4px 0 16px -2px rgba(15, 23, 42, 0.08) !important;
+    border: none !important;
+    border-left: 1px solid #e2e8f0 !important;
+    width: 100% !important;
+    max-width: min(620px, 94vw);
+    height: 100vh !important;
+    max-height: 100vh !important;
+    min-height: 100vh !important;
+    margin: 0 0 0 auto !important;
     overflow: hidden !important;
     display: flex !important;
     flex-direction: column !important;
-    transform: scale(0.96) translateY(12px);
-    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-    position: relative;
+    transform: translateX(100%) !important;
+    transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.32s ease !important;
+    position: relative !important;
+    z-index: 1060 !important;
+}
+
+/* Allow wider forms to expand comfortably up to 760px on wide desktop displays */
+@media (min-width: 1200px) {
+    .hr-modal[style*="max-width: 7"],
+    .hr-modal[style*="max-width: 8"],
+    .hr-modal[style*="max-width: 68"] {
+        max-width: min(760px, 92vw) !important;
+    }
 }
 
 /* Never show scrollbar on the outer modal container itself */
 .hr-modal::-webkit-scrollbar,
 .modal-content::-webkit-scrollbar,
 .modal-dialog .modal-content::-webkit-scrollbar,
-.modal-box::-webkit-scrollbar,
-.swal2-popup::-webkit-scrollbar {
+.modal-box::-webkit-scrollbar {
     display: none !important;
     width: 0 !important;
     height: 0 !important;
@@ -2989,7 +3004,10 @@ select option {
     flex-direction: column !important;
     flex: 1 1 auto !important;
     min-height: 0 !important;
+    height: 100% !important;
     overflow: hidden !important;
+    background: #ffffff !important;
+    margin: 0 !important;
 }
 
 /* Remove colored gradient accent strip */
@@ -2998,27 +3016,34 @@ select option {
     display: none !important;
 }
 
+/* Slide in smoothly from right edge */
 .hr-modal-overlay.open .hr-modal,
-.modal.show .modal-content {
-    transform: scale(1) translateY(0);
+.modal.show .modal-content,
+.modal.show .modal-dialog .modal-content,
+.modal.show .modal-box {
+    transform: translateX(0) !important;
 }
 
+/* Modal Header - Pure White, Clean, Professional */
 .hr-modal-header,
 .modal-header {
     flex-shrink: 0 !important;
-    padding: 18px 24px !important;
-    border-bottom: 1px solid rgba(226, 232, 240, 0.75) !important;
+    padding: 22px 28px !important;
+    border-bottom: 1px solid #f1f5f9 !important;
     display: flex !important;
     justify-content: space-between !important;
     align-items: center !important;
-    background: rgba(255, 255, 255, 0.70) !important;
-    border-radius: 22px 22px 0 0 !important;
+    background: #ffffff !important;
+    border-radius: 20px 0 0 0 !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 20 !important;
 }
 
 .hr-modal-title,
 .modal-title {
     font-family: var(--font-heading) !important;
-    font-size: 16.5px !important;
+    font-size: 17px !important;
     font-weight: 700 !important;
     color: #0f172a !important;
     background: none !important;
@@ -3026,70 +3051,259 @@ select option {
     -webkit-text-fill-color: #0f172a !important;
     display: inline-flex !important;
     align-items: center !important;
-    gap: 8px !important;
+    gap: 12px !important;
+    letter-spacing: -0.015em !important;
+    margin: 0 !important;
 }
 
 .hr-modal-title i,
 .modal-title i {
-    color: #8b5cf6 !important;
-    font-size: 18px !important;
+    color: #7c3aed !important;
+    font-size: 19px !important;
+    width: 36px !important;
+    height: 36px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: #f5f3ff !important;
+    border: 1px solid #ede9fe !important;
+    border-radius: 10px !important;
+    flex-shrink: 0 !important;
 }
 
 .hr-modal-header .icon-btn,
 .modal-header .btn-close,
 .modal-header .close {
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 10px;
-    background: rgba(241, 245, 249, 0.7);
-    border: 1px solid rgba(226, 232, 240, 0.85);
-    color: #64748b;
-    cursor: pointer;
-    font-size: 14px;
-    transition: all 0.15s ease;
+    width: 34px !important;
+    height: 34px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 9px !important;
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #64748b !important;
+    cursor: pointer !important;
+    font-size: 15px !important;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    outline: none !important;
+    flex-shrink: 0 !important;
 }
 
 .hr-modal-header .icon-btn:hover,
 .modal-header .btn-close:hover,
 .modal-header .close:hover {
-    background: #ffffff;
-    border-color: rgba(168, 85, 247, 0.4);
-    color: #7c3aed;
-    box-shadow: 0 2px 8px rgba(168, 85, 247, 0.15);
+    background: #f1f5f9 !important;
+    border-color: #cbd5e1 !important;
+    color: #0f172a !important;
+    transform: scale(1.05) !important;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06) !important;
 }
 
+/* Modal Body - Pure White Background with Smooth Scrolling */
 .hr-modal-body,
 .modal-body {
     flex: 1 1 auto !important;
     min-height: 0 !important;
     overflow-y: auto !important;
     overflow-x: hidden !important;
-    padding: 24px !important;
-    padding-right: 20px !important;
+    padding: 26px 28px !important;
     display: flex !important;
     flex-direction: column !important;
-    gap: 16px !important;
-    background: transparent !important;
+    gap: 18px !important;
+    background: #ffffff !important;
     color: #334155 !important;
     scrollbar-gutter: stable;
 }
 
+/* Modal Footer - Pure White, Sticky Bottom */
 .hr-modal-footer,
 .modal-footer {
     flex-shrink: 0 !important;
-    padding: 16px 24px !important;
-    border-top: 1px solid rgba(226, 232, 240, 0.75) !important;
+    padding: 18px 28px !important;
+    border-top: 1px solid #f1f5f9 !important;
     display: flex !important;
     justify-content: flex-end !important;
     align-items: center !important;
     gap: 12px !important;
-    background: rgba(255, 255, 255, 0.60) !important;
-    backdrop-filter: blur(16px) !important;
-    -webkit-backdrop-filter: blur(16px) !important;
-    border-radius: 0 0 22px 22px !important;
+    background: #ffffff !important;
+    border-radius: 0 !important;
+    position: sticky !important;
+    bottom: 0 !important;
+    z-index: 20 !important;
+    box-shadow: 0 -4px 16px rgba(15, 23, 42, 0.03) !important;
+}
+
+/* Professional Clean Form Elements inside Right Modal */
+.hr-modal .hr-form-group {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px !important;
+    width: 100% !important;
+}
+
+.hr-modal .hr-form-label {
+    font-size: 11.5px !important;
+    font-weight: 700 !important;
+    color: #334155 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    margin-bottom: 2px !important;
+}
+
+/* Ensure all form wrappers span full width inside right modals */
+.hr-modal .hr-custom-select-wrap,
+.hr-modal .hr-custom-date-wrap {
+    width: 100% !important;
+    display: block !important;
+    position: relative !important;
+}
+
+/* HIGH-VISIBILITY INPUTS & DROPDOWNS INSIDE MODAL (Crisp, High-Contrast Borders) */
+.hr-modal .hr-custom-select-trigger,
+.hr-modal .hr-input,
+.hr-modal .hr-select,
+.hr-modal select,
+.hr-modal textarea.hr-input,
+.hr-modal textarea,
+.hr-modal .form-control,
+.hr-modal .hr-custom-date-wrap input.hr-input,
+.hr-modal .hr-custom-date-wrap input[type="text"],
+.hr-modal input[type="date"],
+.hr-modal input[type="text"],
+.hr-modal input[type="email"],
+.hr-modal input[type="number"],
+.hr-modal input[type="password"] {
+    width: 100% !important;
+    min-height: 42px !important;
+    background: #ffffff !important;
+    border: 1.5px solid #cbd5e1 !important;
+    border-radius: 10px !important;
+    color: #0f172a !important;
+    font-family: inherit !important;
+    font-size: 13.5px !important;
+    font-weight: 600 !important;
+    padding: 9px 14px !important;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05), inset 0 1px 1px #ffffff !important;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease !important;
+    box-sizing: border-box !important;
+}
+
+/* Ensure flex alignment for the custom select trigger */
+.hr-modal .hr-custom-select-trigger {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    cursor: pointer !important;
+    user-select: none !important;
+}
+
+.hr-modal .hr-custom-select-trigger .hr-select-trigger-text {
+    color: #0f172a !important;
+    font-size: 13.5px !important;
+    font-weight: 600 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+/* Distinct Chevron for modal dropdowns */
+.hr-modal .hr-select-chevron {
+    font-size: 15px !important;
+    color: #7c3aed !important;
+    font-weight: 700 !important;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    flex-shrink: 0 !important;
+}
+
+.hr-modal .hr-custom-select-wrap.open .hr-select-chevron {
+    transform: rotate(180deg) !important;
+}
+
+/* Hover state: clear vibrant highlight */
+.hr-modal .hr-custom-select-trigger:hover,
+.hr-modal .hr-input:hover,
+.hr-modal .hr-select:hover,
+.hr-modal select:hover,
+.hr-modal textarea.hr-input:hover,
+.hr-modal .hr-custom-date-wrap input.hr-input:hover {
+    border-color: #8b5cf6 !important;
+    background: #ffffff !important;
+    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.14) !important;
+}
+
+/* Open / Active / Focus state: crisp visible focus ring */
+.hr-modal .hr-custom-select-wrap.open .hr-custom-select-trigger,
+.hr-modal .hr-custom-select-trigger:focus,
+.hr-modal .hr-input:focus,
+.hr-modal .hr-select:focus,
+.hr-modal select:focus,
+.hr-modal textarea.hr-input:focus,
+.hr-modal .form-control:focus,
+.hr-modal .hr-custom-date-wrap input.hr-input:focus {
+    border-color: #7c3aed !important;
+    box-shadow: 0 0 0 3.5px rgba(124, 58, 237, 0.18), 0 2px 8px rgba(124, 58, 237, 0.08) !important;
+    outline: none !important;
+    background: #ffffff !important;
+}
+
+/* Calendar icon inside custom date wrap in modals */
+.hr-modal .hr-custom-date-wrap .hr-custom-date-icon {
+    font-size: 16px !important;
+    color: #7c3aed !important;
+    right: 13px !important;
+}
+
+.hr-modal h4 {
+    font-size: 12.5px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    color: #6366f1 !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+    padding-bottom: 6px !important;
+    margin-top: 6px !important;
+    margin-bottom: 0 !important;
+}
+
+/* SweetAlert2 Popup Clean Centered Dialog (Preserve Alert Dialog Nature) */
+.swal2-popup {
+    background: #ffffff !important;
+    border-radius: 20px !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 20px 45px -10px rgba(15, 23, 42, 0.22) !important;
+    padding: 28px !important;
+    max-width: 440px !important;
+}
+
+/* Right Modal Responsive Support */
+@media (max-width: 768px) {
+    .hr-modal,
+    .modal-content,
+    .modal-dialog .modal-content,
+    .modal-box {
+        max-width: 100vw !important;
+        width: 100vw !important;
+        border-radius: 0 !important;
+        border-left: none !important;
+    }
+
+    .hr-modal-header,
+    .modal-header {
+        padding: 16px 20px !important;
+        border-radius: 0 !important;
+    }
+
+    .hr-modal-body,
+    .modal-body {
+        padding: 20px !important;
+    }
+
+    .hr-modal-footer,
+    .modal-footer {
+        padding: 14px 20px !important;
+        border-radius: 0 !important;
+    }
 }
 
 .hr-form-grid {
@@ -5003,51 +5217,60 @@ select option {
 
 .hr-custom-date-wrap input.hr-input,
 .hr-custom-date-wrap input[type="text"] {
-    padding-right: 34px !important;
-    background: rgba(255, 255, 255, 0.78) !important;
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.95) !important;
-    border-radius: 12px !important;
-    font-size: 12.5px;
-    font-weight: 600;
-    color: #1e293b;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02), inset 0 1px 1px #ffffff;
-    cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    padding-right: 36px !important;
+    background: #ffffff !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border: 1.5px solid #cbd5e1 !important;
+    border-radius: 10px !important;
+    font-size: 13.5px !important;
+    font-weight: 600 !important;
+    color: #0f172a !important;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05), inset 0 1px 1px #ffffff !important;
+    cursor: pointer !important;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    min-height: 42px !important;
 }
 
 .hr-custom-date-wrap input.hr-input:hover,
 .hr-custom-date-wrap input[type="text"]:hover {
-    background: rgba(255, 255, 255, 0.92) !important;
-    border-color: rgba(168, 85, 247, 0.4) !important;
-    box-shadow: 0 4px 12px rgba(168, 85, 247, 0.1);
+    background: #ffffff !important;
+    border-color: #8b5cf6 !important;
+    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.12) !important;
+}
+
+.hr-custom-date-wrap input.hr-input:focus,
+.hr-custom-date-wrap input[type="text"]:focus {
+    background: #ffffff !important;
+    border-color: #7c3aed !important;
+    box-shadow: 0 0 0 3.5px rgba(124, 58, 237, 0.18), 0 2px 8px rgba(124, 58, 237, 0.08) !important;
+    outline: none !important;
 }
 
 .hr-custom-date-wrap .hr-custom-date-icon {
     position: absolute;
-    right: 12px;
-    font-size: 15px;
-    color: #8b5cf6;
+    right: 13px;
+    font-size: 16px;
+    color: #7c3aed;
     pointer-events: none;
     transition: color 0.15s ease;
 }
 
 .hr-custom-date-wrap:hover .hr-custom-date-icon {
-    color: #7c3aed;
+    color: #6d28d9;
 }
 
 .hr-custom-calendar-popup {
-    position: absolute;
-    width: 285px;
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(24px) saturate(180%);
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.95);
-    border-radius: 18px;
-    box-shadow: 0 18px 48px -8px rgba(168, 85, 247, 0.22), 0 4px 14px rgba(0, 0, 0, 0.04), inset 0 1px 1.5px #ffffff;
+    position: fixed;
+    width: 290px;
+    background: #ffffff !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border: 1.5px solid #cbd5e1 !important;
+    border-radius: 16px !important;
+    box-shadow: 0 20px 48px -6px rgba(15, 23, 42, 0.22), 0 6px 16px -2px rgba(15, 23, 42, 0.08) !important;
     padding: 16px;
-    z-index: 99999;
+    z-index: 99999999 !important;
     display: none;
     flex-direction: column;
     gap: 12px;
@@ -5210,72 +5433,75 @@ select option {
 }
 
 .hr-custom-select-trigger {
-    background: rgba(255, 255, 255, 0.78);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.95);
-    border-radius: 12px;
-    padding: 8px 14px;
-    font-size: 12.5px;
-    font-weight: 600;
-    color: #1e293b;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    cursor: pointer;
-    gap: 8px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02), inset 0 1px 1px #ffffff;
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-    min-height: 38px;
+    background: #ffffff !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border: 1.5px solid #cbd5e1 !important;
+    border-radius: 10px !important;
+    padding: 9px 14px !important;
+    font-size: 13.5px !important;
+    font-weight: 600 !important;
+    color: #0f172a !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    cursor: pointer !important;
+    gap: 8px !important;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05), inset 0 1px 1px #ffffff !important;
+    transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    min-height: 42px !important;
+    box-sizing: border-box !important;
 }
 
 .hr-custom-select-trigger:hover {
-    background: rgba(255, 255, 255, 0.92);
-    border-color: rgba(168, 85, 247, 0.4);
-    box-shadow: 0 4px 12px rgba(168, 85, 247, 0.1);
+    background: #ffffff !important;
+    border-color: #8b5cf6 !important;
+    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.14) !important;
 }
 
 .hr-custom-select-wrap.open .hr-custom-select-trigger {
-    border-color: rgba(168, 85, 247, 0.6);
-    box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.18), inset 0 1px 1px #ffffff;
+    background: #ffffff !important;
+    border-color: #7c3aed !important;
+    box-shadow: 0 0 0 3.5px rgba(124, 58, 237, 0.18), 0 2px 8px rgba(124, 58, 237, 0.08) !important;
 }
 
 .hr-select-trigger-text {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    color: #0f172a !important;
+    font-weight: 600 !important;
 }
 
 .hr-select-chevron {
-    font-size: 12px;
-    color: #8b5cf6;
-    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-    flex-shrink: 0;
+    font-size: 14px !important;
+    color: #7c3aed !important;
+    font-weight: 700 !important;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    flex-shrink: 0 !important;
 }
 
 .hr-custom-select-wrap.open .hr-select-chevron {
-    transform: rotate(180deg);
+    transform: rotate(180deg) !important;
 }
 
 .hr-custom-select-menu {
-    position: fixed;
-    min-width: 140px;
-    width: max-content;
-    max-width: 340px;
-    max-height: 260px;
-    overflow-y: auto;
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(24px) saturate(180%);
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.95);
-    border-radius: 14px;
-    box-shadow: 0 18px 48px -8px rgba(168, 85, 247, 0.25), 0 4px 14px rgba(0, 0, 0, 0.04), inset 0 1px 1.5px #ffffff;
-    padding: 6px;
+    position: fixed !important;
+    min-width: 160px !important;
+    max-height: 280px !important;
+    overflow-y: auto !important;
+    background: #ffffff !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border: 1.5px solid #cbd5e1 !important;
+    border-radius: 12px !important;
+    box-shadow: 0 20px 48px -6px rgba(15, 23, 42, 0.22), 0 6px 16px -2px rgba(15, 23, 42, 0.08) !important;
+    padding: 6px !important;
     z-index: 99999999 !important;
     display: none;
-    flex-direction: column;
-    gap: 3px;
-    animation: hrDropdownFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+    flex-direction: column !important;
+    gap: 3px !important;
+    animation: hrDropdownFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 .hr-custom-select-wrap.open .hr-custom-select-menu,
@@ -5295,36 +5521,37 @@ body > .hr-custom-select-menu {
 }
 
 .hr-custom-select-option {
-    padding: 8px 12px;
-    border-radius: 10px;
-    font-size: 12.5px;
-    font-weight: 500;
-    color: #334155;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    gap: 10px;
-    white-space: nowrap;
+    padding: 9px 14px !important;
+    border-radius: 8px !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    color: #1e293b !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    cursor: pointer !important;
+    transition: all 0.15s ease !important;
+    gap: 10px !important;
+    white-space: nowrap !important;
 }
 
 .hr-custom-select-option:hover {
-    background: rgba(168, 85, 247, 0.12);
-    color: #7c3aed;
-    font-weight: 600;
+    background: #f5f3ff !important;
+    color: #7c3aed !important;
+    font-weight: 600 !important;
 }
 
 .hr-custom-select-option.selected {
-    background: linear-gradient(135deg, rgba(168, 85, 247, 0.16) 0%, rgba(124, 58, 237, 0.12) 100%);
-    color: #6d28d9;
-    font-weight: 700;
+    background: #ede9fe !important;
+    color: #5b21b6 !important;
+    font-weight: 700 !important;
 }
 
 .hr-select-check {
-    font-size: 13px;
-    color: #7c3aed;
-    flex-shrink: 0;
+    font-size: 14px !important;
+    color: #7c3aed !important;
+    font-weight: 700 !important;
+    flex-shrink: 0 !important;
 }
 
 /* ========================================================
@@ -5333,7 +5560,7 @@ body > .hr-custom-select-menu {
    ======================================================== */
 .dtr-export-modal-dialog {
     max-width: 660px !important;
-    width: 95% !important;
+    width: 100% !important;
 }
 
 .dtr-section-label {

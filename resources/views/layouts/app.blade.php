@@ -67,7 +67,7 @@
     <!-- Chart.js for Analytics -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Client Interactive JS -->
-    <script src="{{ asset('assets/js/script.js') }}"></script>
+    <script src="{{ asset('assets/js/script.js') }}?v={{ time() }}"></script>
     @stack('scripts')
 </body>
 </html>

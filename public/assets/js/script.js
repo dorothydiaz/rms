@@ -549,15 +549,22 @@ document.addEventListener('DOMContentLoaded', () => {
             // Position popup relative to input
             const rect = input.getBoundingClientRect();
             calendarPopup.classList.add('show');
+            calendarPopup.style.position = 'fixed';
+            calendarPopup.style.zIndex = '99999999';
 
-            const popupWidth = 280;
-            let left = rect.left + window.scrollX;
-            let top = rect.bottom + window.scrollY + 6;
+            const popupWidth = 290;
+            let left = rect.left;
+            let top = rect.bottom + 6;
 
             if (left + popupWidth > window.innerWidth - 10) {
                 left = window.innerWidth - popupWidth - 14;
             }
             if (left < 10) left = 10;
+
+            const popupHeight = 310;
+            if (top + popupHeight > window.innerHeight && rect.top > popupHeight) {
+                top = rect.top - popupHeight - 6;
+            }
 
             calendarPopup.style.left = `${left}px`;
             calendarPopup.style.top = `${top}px`;
@@ -664,12 +671,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 menu.style.position = 'fixed';
                 menu.style.left = `${rect.left}px`;
                 menu.style.minWidth = `${rect.width}px`;
-                menu.style.width = 'max-content';
-                menu.style.maxWidth = '340px';
+                menu.style.width = `${rect.width}px`;
+                menu.style.maxWidth = `${Math.max(rect.width, 360)}px`;
                 menu.style.zIndex = '99999999';
 
                 const spaceBelow = window.innerHeight - rect.bottom;
-                const menuHeight = Math.min(menu.scrollHeight || 240, 260);
+                const menuHeight = Math.min(menu.scrollHeight || 240, 280);
 
                 if (spaceBelow < menuHeight + 10 && rect.top > menuHeight) {
                     menu.style.top = 'auto';
@@ -835,5 +842,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.initCustomDatePickers = initCustomDatePickers;
     window.initCustomSelects = initCustomSelects;
+
+    // ============================================================
+    // Universal Right Modal Controls (Click Outside & Escape Key)
+    // ============================================================
+    document.addEventListener('click', (e) => {
+        if (e.target && e.target.classList.contains('hr-modal-overlay') && e.target.classList.contains('open')) {
+            e.target.classList.remove('open');
+        }
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            const openModals = document.querySelectorAll('.hr-modal-overlay.open');
+            openModals.forEach(m => m.classList.remove('open'));
+        }
+    });
+
+    // Automatically manage body scroll lock when right drawer modals open/close
+    try {
+        const modalObserver = new MutationObserver(() => {
+            if (document.querySelector('.hr-modal-overlay.open, .modal.show')) {
+                document.body.style.overflow = 'hidden';
+            } else {
+                document.body.style.overflow = '';
+            }
+        });
+        modalObserver.observe(document.body, { attributes: true, subtree: true, attributeFilter: ['class'] });
+    } catch (err) {}
 });
 
