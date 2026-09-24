@@ -3,15 +3,7 @@
 @section('title', 'Philippine Statutory Rules - Payroll')
 
 @section('content')
-<div class="hr-page-header">
-    <div>
-        <h1 class="hr-page-title">
-            <i class="ph ph-bank"></i>
-            Philippine Statutory Contribution Rules
-        </h1>
-        <p class="hr-page-subtitle">Configurable parameters for SSS, PhilHealth, Pag-IBIG (HDMF), and BIR withholding tax schedules</p>
-    </div>
-</div>
+<x-hr-tabs parent="payroll" />
 
 <div class="hr-table-card">
     <div class="hr-table-wrapper">

@@ -3,21 +3,14 @@
 @section('title', 'Attendance Corrections - Attendance Management')
 
 @section('content')
-<div class="hr-page-header">
-    <div>
-        <h1 class="hr-page-title">
-            <i class="ph ph-note-pencil"></i>
-            Attendance Corrections & Audit Trail
-        </h1>
-        <p class="hr-page-subtitle">Multi-tier review workflow for biometric glitches, missed punches, and shift adjustments</p>
-    </div>
-    <div class="hr-page-actions">
+<x-hr-tabs parent="time-attendance">
+    <x-slot:actions>
         <button class="hr-btn hr-btn-primary" onclick="openModal('addCorrectionModal')">
             <i class="ph ph-plus-circle"></i>
             <span>Submit Correction</span>
         </button>
-    </div>
-</div>
+    </x-slot:actions>
+</x-hr-tabs>
 
 <div class="hr-table-card">
     <div class="hr-table-wrapper">

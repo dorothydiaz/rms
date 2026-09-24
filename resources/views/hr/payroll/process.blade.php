@@ -3,15 +3,7 @@
 @section('title', 'Process Payroll - Philippine Payroll Engine')
 
 @section('content')
-<div class="hr-page-header">
-    <div>
-        <h1 class="hr-page-title">
-            <i class="ph ph-calculator"></i>
-            Process Restaurant Payroll
-        </h1>
-        <p class="hr-page-subtitle">Execute Philippine statutory deductions (SSS, PhilHealth, Pag-IBIG, BIR withholding tax) & attendance calculations</p>
-    </div>
-</div>
+<x-hr-tabs parent="payroll" />
 
 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start;">
     <!-- Payroll Execution Card -->

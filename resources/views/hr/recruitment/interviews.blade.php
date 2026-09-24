@@ -3,21 +3,14 @@
 @section('title', 'Interviews Schedule - Recruitment')
 
 @section('content')
-<div class="hr-page-header">
-    <div>
-        <h1 class="hr-page-title">
-            <i class="ph ph-calendar-check"></i>
-            Candidate Interviews & Evaluations
-        </h1>
-        <p class="hr-page-subtitle">Schedule practical kitchen cooking trials, manager interviews, ratings, and recommendations</p>
-    </div>
-    <div class="hr-page-actions">
+<x-hr-tabs parent="talent-acquisition">
+    <x-slot:actions>
         <button class="hr-btn hr-btn-primary" onclick="openModal('scheduleInterviewModal')">
             <i class="ph ph-calendar-plus"></i>
             <span>Schedule Interview</span>
         </button>
-    </div>
-</div>
+    </x-slot:actions>
+</x-hr-tabs>
 
 <div class="hr-table-card">
     <div class="hr-table-wrapper">

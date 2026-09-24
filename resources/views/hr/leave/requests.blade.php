@@ -3,21 +3,14 @@
 @section('title', 'Leave Requests - Leave & Absence Management')
 
 @section('content')
-<div class="hr-page-header">
-    <div>
-        <h1 class="hr-page-title">
-            <i class="ph ph-calendar-blank"></i>
-            Employee Leave Requests & Approvals
-        </h1>
-        <p class="hr-page-subtitle">Submit, track, and approve vacation, sick, emergency, and statutory maternity/paternity leaves</p>
-    </div>
-    <div class="hr-page-actions">
+<x-hr-tabs parent="leave-absences">
+    <x-slot:actions>
         <button class="hr-btn hr-btn-primary" onclick="openModal('addLeaveModal')">
             <i class="ph ph-plus-circle"></i>
             <span>File Leave Request</span>
         </button>
-    </div>
-</div>
+    </x-slot:actions>
+</x-hr-tabs>
 
 <div class="hr-table-card">
     <div class="hr-table-wrapper">

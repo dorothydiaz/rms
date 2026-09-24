@@ -3,15 +3,8 @@
 @section('title', 'Daily Time Record (DTR) - Attendance Management')
 
 @section('content')
-<div class="hr-page-header">
-    <div>
-        <h1 class="hr-page-title">
-            <i class="ph ph-calendar-check"></i>
-            Daily Time Record (DTR)
-        </h1>
-        <p class="hr-page-subtitle">Detailed breakdown of daily work hours, late deductions, undertime, overtime, and night shift differential (10 PM - 6 AM)</p>
-    </div>
-    <div class="hr-page-actions" style="display: flex; gap: 10px; align-items: center;">
+<x-hr-tabs parent="time-attendance">
+    <x-slot:actions>
         <button type="button" class="hr-btn hr-btn-primary" onclick="openDtrExportModal()" id="btnOpenExportDtr" style="background: linear-gradient(135deg, #7c3aed 0%, #9333ea 100%); border: none; color: #fff; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(124, 58, 237, 0.35);">
             <i class="ph ph-file-pdf" style="font-size: 18px;"></i>
             <span>Export DTR</span>
@@ -20,8 +13,8 @@
             <i class="ph ph-download-simple"></i>
             <span>Export CSV</span>
         </a>
-    </div>
-</div>
+    </x-slot:actions>
+</x-hr-tabs>
 
 <!-- DTR Summary KPI Cards -->
 <div class="hr-metrics-grid" style="margin-bottom: 20px;">

@@ -3,21 +3,14 @@
 @section('title', 'Payroll Register - Philippine Payroll Engine')
 
 @section('content')
-<div class="hr-page-header">
-    <div>
-        <h1 class="hr-page-title">
-            <i class="ph ph-receipt"></i>
-            Restaurant Payroll Register
-        </h1>
-        <p class="hr-page-subtitle">Master payroll sheet: Basic pay, overtime, night differential, Philippine statutory contributions, tax, and net disbursements</p>
-    </div>
-    <div class="hr-page-actions">
+<x-hr-tabs parent="payroll">
+    <x-slot:actions>
         <a href="{{ route('hr.reports.export.payroll', ['payroll_period_id' => $currentPeriod?->id]) }}" class="hr-btn hr-btn-secondary">
             <i class="ph ph-download-simple"></i>
             <span>Export Register CSV</span>
         </a>
-    </div>
-</div>
+    </x-slot:actions>
+</x-hr-tabs>
 
 <!-- Summary Totals Grid -->
 <div class="hr-metrics-grid" style="margin-bottom: 20px;">

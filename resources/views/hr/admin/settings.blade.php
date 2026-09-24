@@ -3,15 +3,7 @@
 @section('title', 'System Settings - HR Operations')
 
 @section('content')
-<div class="hr-page-header">
-    <div>
-        <h1 class="hr-page-title">
-            <i class="ph ph-gear"></i>
-            Restaurant Corporate & System Settings
-        </h1>
-        <p class="hr-page-subtitle">Configure company legal entity, tax identification, and business address</p>
-    </div>
-</div>
+<x-hr-tabs parent="system-administration" />
 
 <div style="max-width: 800px;">
     <div class="hr-card">

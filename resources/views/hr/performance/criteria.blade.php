@@ -3,21 +3,14 @@
 @section('title', 'Evaluation Criteria - Performance Management')
 
 @section('content')
-<div class="hr-page-header">
-    <div>
-        <h1 class="hr-page-title">
-            <i class="ph ph-check-square-offset"></i>
-            Restaurant Performance Criteria
-        </h1>
-        <p class="hr-page-subtitle">Configurable evaluation benchmarks for food safety compliance, customer service, punctuality, and cleanliness</p>
-    </div>
-    <div class="hr-page-actions">
+<x-hr-tabs parent="performance-management">
+    <x-slot:actions>
         <button class="hr-btn hr-btn-primary" onclick="openModal('addCritModal')">
             <i class="ph ph-plus-circle"></i>
             <span>Add Criterion</span>
         </button>
-    </div>
-</div>
+    </x-slot:actions>
+</x-hr-tabs>
 
 <div class="hr-table-card">
     <div class="hr-table-wrapper">

@@ -3,21 +3,14 @@
 @section('title', 'Applicants Pool - Recruitment')
 
 @section('content')
-<div class="hr-page-header">
-    <div>
-        <h1 class="hr-page-title">
-            <i class="ph ph-users-four"></i>
-            Applicant Tracking & Hiring
-        </h1>
-        <p class="hr-page-subtitle">Track candidate applications, screening pipeline, interview progress, and hire conversion</p>
-    </div>
-    <div class="hr-page-actions">
+<x-hr-tabs parent="talent-acquisition">
+    <x-slot:actions>
         <button class="hr-btn hr-btn-primary" onclick="openModal('addApplicantModal')">
             <i class="ph ph-user-plus"></i>
             <span>Register Applicant</span>
         </button>
-    </div>
-</div>
+    </x-slot:actions>
+</x-hr-tabs>
 
 <!-- Filter Bar -->
 <div class="hr-filter-bar">

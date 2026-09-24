@@ -3,21 +3,14 @@
 @section('title', 'Training Programs - Restaurant Development')
 
 @section('content')
-<div class="hr-page-header">
-    <div>
-        <h1 class="hr-page-title">
-            <i class="ph ph-graduation-cap"></i>
-            Training & Development Programs
-        </h1>
-        <p class="hr-page-subtitle">Manage food hygiene, customer service, barista training, and health safety certifications</p>
-    </div>
-    <div class="hr-page-actions">
+<x-hr-tabs parent="learning-development">
+    <x-slot:actions>
         <button class="hr-btn hr-btn-primary" onclick="openModal('addProgramModal')">
             <i class="ph ph-plus-circle"></i>
             <span>Create Training</span>
         </button>
-    </div>
-</div>
+    </x-slot:actions>
+</x-hr-tabs>
 
 <!-- Filters -->
 <div class="hr-filter-bar">

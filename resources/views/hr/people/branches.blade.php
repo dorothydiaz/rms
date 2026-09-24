@@ -3,21 +3,14 @@
 @section('title', 'Branches - Organization Management')
 
 @section('content')
-<div class="hr-page-header">
-    <div>
-        <h1 class="hr-page-title">
-            <i class="ph ph-storefront"></i>
-            Restaurant Branches & Locations
-        </h1>
-        <p class="hr-page-subtitle">Manage multi-unit restaurant stores, locations, and scoped management</p>
-    </div>
-    <div class="hr-page-actions">
+<x-hr-tabs parent="employee-management">
+    <x-slot:actions>
         <button class="hr-btn hr-btn-primary" onclick="openModal('addBranchModal')">
             <i class="ph ph-plus-circle"></i>
             <span>Add Branch</span>
         </button>
-    </div>
-</div>
+    </x-slot:actions>
+</x-hr-tabs>
 
 <div class="hr-table-card">
     <div class="hr-table-wrapper">

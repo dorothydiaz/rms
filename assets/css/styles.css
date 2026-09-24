@@ -5702,4 +5702,149 @@ body > .hr-custom-select-menu {
     user-select: none;
 }
 
+/* ============================================================
+   HRIS PARENT PAGE TAB NAVIGATION SYSTEM
+   ============================================================ */
+.hr-parent-header {
+    margin-bottom: 22px;
+}
+
+.hr-parent-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+.hr-parent-title {
+    font-family: var(--font-heading);
+    font-size: 23px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    letter-spacing: -0.02em;
+    margin: 0;
+}
+
+.hr-parent-title i {
+    width: 40px;
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(236, 72, 153, 0.14), rgba(168, 85, 247, 0.20));
+    border: 1px solid rgba(168, 85, 247, 0.32);
+    color: #9333ea;
+    font-size: 21px;
+    box-shadow: 0 4px 14px rgba(168, 85, 247, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.8);
+    flex-shrink: 0;
+}
+
+.hr-parent-subtitle {
+    font-size: 13px;
+    color: #64748b;
+    font-weight: 400;
+    margin-top: 4px;
+}
+
+.hr-tabs-wrapper {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    border-radius: 14px;
+    padding: 6px;
+    margin-top: 14px;
+    margin-bottom: 22px;
+    box-shadow: 0 4px 16px rgba(148, 163, 184, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.95);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.hr-tabs-wrapper::-webkit-scrollbar {
+    display: none;
+}
+
+.hr-tab-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 18px;
+    border-radius: 10px;
+    font-family: var(--font-family);
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+    text-decoration: none;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    white-space: nowrap;
+    position: relative;
+    border: 1px solid transparent;
+}
+
+.hr-tab-item i {
+    font-size: 16px;
+    color: #94a3b8;
+    transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.hr-tab-item:hover {
+    color: #9333ea;
+    background: rgba(168, 85, 247, 0.08);
+}
+
+.hr-tab-item:hover i {
+    color: #9333ea;
+    transform: scale(1.1);
+}
+
+.hr-tab-item.active {
+    background: #ffffff;
+    color: #9333ea;
+    border-color: rgba(168, 85, 247, 0.28);
+    box-shadow: 0 4px 14px rgba(168, 85, 247, 0.14), 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.hr-tab-item.active i {
+    background: linear-gradient(135deg, #ec4899, #a855f7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 700;
+}
+
+.hr-tab-item.active::after {
+    content: '';
+    position: absolute;
+    bottom: -7px;
+    left: 18%;
+    right: 18%;
+    height: 3px;
+    background: linear-gradient(90deg, #ec4899, #a855f7);
+    border-radius: 3px 3px 0 0;
+}
+
+/* Sidebar section header category titles */
+.nav-category-header {
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #94a3b8;
+    padding: 12px 14px 4px;
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    user-select: none;
+}
+
+
 

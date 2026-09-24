@@ -3,21 +3,14 @@
 @section('title', 'Payroll Periods - Philippine Payroll Engine')
 
 @section('content')
-<div class="hr-page-header">
-    <div>
-        <h1 class="hr-page-title">
-            <i class="ph ph-calendar-plus"></i>
-            Payroll Periods & Cutoffs
-        </h1>
-        <p class="hr-page-subtitle">Configure semi-monthly and monthly cutoffs, approve calculation drafts, and lock finalized payrolls</p>
-    </div>
-    <div class="hr-page-actions">
+<x-hr-tabs parent="payroll">
+    <x-slot:actions>
         <button class="hr-btn hr-btn-primary" onclick="openModal('addPeriodModal')">
             <i class="ph ph-plus-circle"></i>
             <span>New Payroll Period</span>
         </button>
-    </div>
-</div>
+    </x-slot:actions>
+</x-hr-tabs>
 
 <div class="hr-table-card">
     <div class="hr-table-wrapper">

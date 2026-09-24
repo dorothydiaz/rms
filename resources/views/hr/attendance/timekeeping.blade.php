@@ -3,21 +3,14 @@
 @section('title', 'Timekeeping Station - Attendance Management')
 
 @section('content')
-<div class="hr-page-header">
-    <div>
-        <h1 class="hr-page-title">
-            <i class="ph ph-clock"></i>
-            Restaurant Timekeeping Station
-        </h1>
-        <p class="hr-page-subtitle">Record and review In, Break Out, Break In, Coffee Break Out, Coffee Break In, and Final Out for staff shifts</p>
-    </div>
-    <div class="hr-page-actions">
+<x-hr-tabs parent="time-attendance">
+    <x-slot:actions>
         <form method="GET" action="{{ route('hr.attendance.timekeeping') }}" style="display: flex; gap: 8px; align-items: center;">
             <label style="font-size: 12px; font-weight: 600; color: #475569;">Select Date:</label>
             <input type="date" name="date" class="hr-input" value="{{ $date }}" onchange="this.form.submit()">
         </form>
-    </div>
-</div>
+    </x-slot:actions>
+</x-hr-tabs>
 
 <div class="hr-table-card">
     <div class="hr-table-header">

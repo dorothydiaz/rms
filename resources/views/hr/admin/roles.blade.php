@@ -3,15 +3,7 @@
 @section('title', 'Roles & Permissions - Administration')
 
 @section('content')
-<div class="hr-page-header">
-    <div>
-        <h1 class="hr-page-title">
-            <i class="ph ph-shield-check"></i>
-            Roles & Permission Matrix
-        </h1>
-        <p class="hr-page-subtitle">Granular access control matrix for Super Admin, HR/Admin, and Restaurant Managers</p>
-    </div>
-</div>
+<x-hr-tabs parent="system-administration" />
 
 <div style="display: flex; flex-direction: column; gap: 24px;">
     @foreach($roles as $role)

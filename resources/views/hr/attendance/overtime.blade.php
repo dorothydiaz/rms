@@ -3,15 +3,7 @@
 @section('title', 'Overtime Records - Attendance Management')
 
 @section('content')
-<div class="hr-page-header">
-    <div>
-        <h1 class="hr-page-title">
-            <i class="ph ph-trend-up"></i>
-            Restaurant Overtime Hours & Approvals
-        </h1>
-        <p class="hr-page-subtitle">Track overtime hours rendered beyond scheduled shift templates</p>
-    </div>
-</div>
+<x-hr-tabs parent="time-attendance" />
 
 <div class="hr-table-card">
     <div class="hr-table-wrapper">

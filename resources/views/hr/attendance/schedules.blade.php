@@ -3,15 +3,8 @@
 @section('title', 'Work Schedule Management - Attendance')
 
 @section('content')
-<div class="hr-page-header">
-    <div>
-        <h1 class="hr-page-title">
-            <i class="ph ph-calendar"></i>
-            Work Schedule Management
-        </h1>
-        <p class="hr-page-subtitle">Assign work schedules across flexible date ranges and configure weekly rest days (Mon – Sun)</p>
-    </div>
-    <div class="hr-page-actions">
+<x-hr-tabs parent="time-attendance">
+    <x-slot:actions>
         <button class="hr-btn hr-btn-secondary" onclick="openModal('addShiftModal')">
             <i class="ph ph-clock-afternoon"></i>
             <span>Add Shift Template</span>
@@ -20,8 +13,8 @@
             <i class="ph ph-calendar-plus"></i>
             <span>Assign Schedule</span>
         </button>
-    </div>
-</div>
+    </x-slot:actions>
+</x-hr-tabs>
 
 <!-- Weekly Schedule Matrix -->
 <div class="hr-table-card">

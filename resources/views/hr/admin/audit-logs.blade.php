@@ -3,15 +3,7 @@
 @section('title', 'Audit Logs - System Security')
 
 @section('content')
-<div class="hr-page-header">
-    <div>
-        <h1 class="hr-page-title">
-            <i class="ph ph-shield-check"></i>
-            System Audit & Security Logs
-        </h1>
-        <p class="hr-page-subtitle">Immutable trail of user logins, payroll finalizations, employee profile edits, and attendance approvals</p>
-    </div>
-</div>
+<x-hr-tabs parent="system-administration" />
 
 <!-- Filters -->
 <div class="hr-filter-bar">

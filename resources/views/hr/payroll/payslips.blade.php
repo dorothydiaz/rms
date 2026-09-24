@@ -3,15 +3,8 @@
 @section('title', 'Employee Payslips - Philippine Payroll Engine')
 
 @section('content')
-<div class="hr-page-header">
-    <div>
-        <h1 class="hr-page-title">
-            <i class="ph ph-receipt"></i>
-            Employee Payslips Directory
-        </h1>
-        <p class="hr-page-subtitle">Generate, inspect, and print Philippine compliant restaurant payslips</p>
-    </div>
-    <div class="hr-page-actions">
+<x-hr-tabs parent="payroll">
+    <x-slot:actions>
         <form method="GET" action="{{ route('hr.payroll.payslips') }}" style="display: flex; align-items: center; gap: 8px;">
             <label style="font-size: 12px; font-weight: 600; color: #475569;">Cutoff Period:</label>
             <select name="payroll_period_id" class="hr-select" onchange="this.form.submit()">
@@ -22,8 +15,8 @@
                 @endforeach
             </select>
         </form>
-    </div>
-</div>
+    </x-slot:actions>
+</x-hr-tabs>
 
 <!-- Payslips Cards Grid -->
 <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 18px; margin-bottom: 24px;">

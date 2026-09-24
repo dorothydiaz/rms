@@ -3,21 +3,14 @@
 @section('title', 'Job Vacancies - Recruitment')
 
 @section('content')
-<div class="hr-page-header">
-    <div>
-        <h1 class="hr-page-title">
-            <i class="ph ph-briefcase"></i>
-            Job Openings & Vacancies
-        </h1>
-        <p class="hr-page-subtitle">Publish and manage restaurant openings for cooks, servers, hosts, and managers</p>
-    </div>
-    <div class="hr-page-actions">
+<x-hr-tabs parent="talent-acquisition">
+    <x-slot:actions>
         <button class="hr-btn hr-btn-primary" onclick="openModal('addVacancyModal')">
             <i class="ph ph-plus-circle"></i>
             <span>Post New Vacancy</span>
         </button>
-    </div>
-</div>
+    </x-slot:actions>
+</x-hr-tabs>
 
 <div class="hr-table-card">
     <div class="hr-table-wrapper">

@@ -3,21 +3,14 @@
 @section('title', 'Staff Evaluations - Performance Management')
 
 @section('content')
-<div class="hr-page-header">
-    <div>
-        <h1 class="hr-page-title">
-            <i class="ph ph-chart-line-up"></i>
-            Staff Performance Evaluations
-        </h1>
-        <p class="hr-page-subtitle">Track, grade, and review restaurant crew competencies, food safety, and customer service ratings</p>
-    </div>
-    <div class="hr-page-actions">
+<x-hr-tabs parent="performance-management">
+    <x-slot:actions>
         <button class="hr-btn hr-btn-primary" onclick="openModal('newEvaluationModal')">
             <i class="ph ph-plus-circle"></i>
             <span>New Evaluation</span>
         </button>
-    </div>
-</div>
+    </x-slot:actions>
+</x-hr-tabs>
 
 <!-- Filters -->
 <div class="hr-filter-bar">

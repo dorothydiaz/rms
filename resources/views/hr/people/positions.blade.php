@@ -3,21 +3,14 @@
 @section('title', 'Positions - Organization Management')
 
 @section('content')
-<div class="hr-page-header">
-    <div>
-        <h1 class="hr-page-title">
-            <i class="ph ph-briefcase"></i>
-            Restaurant Positions & Job Roles
-        </h1>
-        <p class="hr-page-subtitle">Configure chef, cook, server, cashier, manager, and dishwasher positions</p>
-    </div>
-    <div class="hr-page-actions">
+<x-hr-tabs parent="employee-management">
+    <x-slot:actions>
         <button class="hr-btn hr-btn-primary" onclick="openModal('addPosModal')">
             <i class="ph ph-plus-circle"></i>
             <span>Add Position</span>
         </button>
-    </div>
-</div>
+    </x-slot:actions>
+</x-hr-tabs>
 
 <div class="hr-table-card">
     <div class="hr-table-wrapper">

@@ -1,13 +1,13 @@
 @extends('layouts.app')
 
-@section('title', 'Reports Center - Restaurant HR Management')
+@section('title', 'Analytics Hub - Restaurant HR Management')
 
 @section('content')
 <div class="hr-page-header">
     <div>
         <h1 class="hr-page-title">
-            <i class="ph ph-file-text"></i>
-            HRIS Management Reports Center
+            <i class="ph ph-chart-polar"></i>
+            Analytics Hub
         </h1>
         <p class="hr-page-subtitle">Export employee records, attendance DTRs, Philippine payroll registers, and compliance logs in CSV format</p>
     </div>

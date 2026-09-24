@@ -3,15 +3,8 @@
 @section('title', 'Employees Directory - People Administration - Restaurant Management System')
 
 @section('content')
-<div class="hr-page-header">
-    <div>
-        <h1 class="hr-page-title">
-            <i class="ph ph-users"></i>
-            Employee Management
-        </h1>
-        <p class="hr-page-subtitle">Manage restaurant staff, profiles, compensation, and organizational assignments</p>
-    </div>
-    <div class="hr-page-actions">
+<x-hr-tabs parent="employee-management">
+    <x-slot:actions>
         <a href="{{ route('hr.reports.export.employees') }}" class="hr-btn hr-btn-secondary">
             <i class="ph ph-download-simple"></i>
             <span>Export CSV</span>
@@ -20,8 +13,8 @@
             <i class="ph ph-plus-circle"></i>
             <span>Add New Employee</span>
         </button>
-    </div>
-</div>
+    </x-slot:actions>
+</x-hr-tabs>
 
 <!-- Filter Bar -->
 <div class="hr-filter-bar">

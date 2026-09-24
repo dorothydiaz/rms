@@ -3,21 +3,14 @@
 @section('title', 'User Accounts - Administration')
 
 @section('content')
-<div class="hr-page-header">
-    <div>
-        <h1 class="hr-page-title">
-            <i class="ph ph-users-three"></i>
-            User Accounts & Administrative Access
-        </h1>
-        <p class="hr-page-subtitle">Manage Super Admins, HR Officers, and Branch Restaurant Managers</p>
-    </div>
-    <div class="hr-page-actions">
+<x-hr-tabs parent="system-administration">
+    <x-slot:actions>
         <button class="hr-btn hr-btn-primary" onclick="openModal('addUserModal')">
             <i class="ph ph-user-plus"></i>
             <span>Add User</span>
         </button>
-    </div>
-</div>
+    </x-slot:actions>
+</x-hr-tabs>
 
 <!-- Filters -->
 <div class="hr-filter-bar">

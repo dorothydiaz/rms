@@ -3,21 +3,14 @@
 @section('title', 'Training Records - HR Operations')
 
 @section('content')
-<div class="hr-page-header">
-    <div>
-        <h1 class="hr-page-title">
-            <i class="ph ph-certificate"></i>
-            Employee Training Records & Enrollments
-        </h1>
-        <p class="hr-page-subtitle">Track staff certifications, completion statuses, scores, and retraining requirements</p>
-    </div>
-    <div class="hr-page-actions">
+<x-hr-tabs parent="learning-development">
+    <x-slot:actions>
         <button class="hr-btn hr-btn-primary" onclick="openModal('enrollModal')">
             <i class="ph ph-user-plus"></i>
             <span>Enroll Employee</span>
         </button>
-    </div>
-</div>
+    </x-slot:actions>
+</x-hr-tabs>
 
 <!-- Filters -->
 <div class="hr-filter-bar">

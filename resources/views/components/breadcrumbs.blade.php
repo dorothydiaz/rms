@@ -19,7 +19,7 @@
                     ]
                 ],
                 'people' => [
-                    'title' => 'People Administration',
+                    'title' => 'Employee Management',
                     'url' => route('hr.people.employees'),
                     'icon' => 'ph-users',
                     'items' => [
@@ -32,7 +32,7 @@
                     ]
                 ],
                 'recruitment' => [
-                    'title' => 'Recruitment',
+                    'title' => 'Talent Acquisition',
                     'url' => route('hr.recruitment.vacancies'),
                     'icon' => 'ph-user-plus',
                     'items' => [
@@ -42,7 +42,7 @@
                     ]
                 ],
                 'attendance' => [
-                    'title' => 'Attendance & Timekeeping',
+                    'title' => 'Time & Attendance',
                     'url' => route('hr.attendance.timekeeping'),
                     'icon' => 'ph-clock',
                     'items' => [
@@ -56,7 +56,7 @@
                     ]
                 ],
                 'leave' => [
-                    'title' => 'Leave & Absence',
+                    'title' => 'Leave & Absences',
                     'url' => route('hr.leave.requests'),
                     'icon' => 'ph-calendar-blank',
                     'items' => [
@@ -68,8 +68,8 @@
                     ]
                 ],
                 'payroll' => [
-                    'title' => 'Payroll & Statutory',
-                    'url' => route('hr.payroll.register'),
+                    'title' => 'Payroll',
+                    'url' => route('hr.payroll.periods'),
                     'icon' => 'ph-wallet',
                     'items' => [
                         ['title' => 'Payroll Periods', 'url' => route('hr.payroll.periods'), 'icon' => 'ph-calendar-dots', 'route' => 'hr.payroll.periods'],
@@ -80,8 +80,8 @@
                     ]
                 ],
                 'performance' => [
-                    'title' => 'Performance',
-                    'url' => route('hr.performance.evaluations'),
+                    'title' => 'Performance Management',
+                    'url' => route('hr.performance.periods'),
                     'icon' => 'ph-star',
                     'items' => [
                         ['title' => 'Evaluation Periods', 'url' => route('hr.performance.periods'), 'icon' => 'ph-calendar-check', 'route' => 'hr.performance.periods'],
@@ -91,7 +91,7 @@
                     ]
                 ],
                 'training' => [
-                    'title' => 'Training & Development',
+                    'title' => 'Learning & Development',
                     'url' => route('hr.training.programs'),
                     'icon' => 'ph-graduation-cap',
                     'items' => [
@@ -101,15 +101,15 @@
                     ]
                 ],
                 'reports' => [
-                    'title' => 'HR Reports Center',
+                    'title' => 'Analytics Hub',
                     'url' => route('hr.reports.index'),
-                    'icon' => 'ph-file-text',
+                    'icon' => 'ph-chart-polar',
                     'items' => [
-                        ['title' => 'Reports & CSV Export', 'url' => route('hr.reports.index'), 'icon' => 'ph-download-simple', 'route' => 'hr.reports.index'],
+                        ['title' => 'Analytics Hub', 'url' => route('hr.reports.index'), 'icon' => 'ph-download-simple', 'route' => 'hr.reports.index'],
                     ]
                 ],
                 'admin' => [
-                    'title' => 'Administration & Security',
+                    'title' => 'System Administration',
                     'url' => route('hr.admin.users'),
                     'icon' => 'ph-shield-check',
                     'items' => [

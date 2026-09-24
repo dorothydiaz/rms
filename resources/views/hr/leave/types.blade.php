@@ -3,21 +3,14 @@
 @section('title', 'Leave Types - Leave & Absence Management')
 
 @section('content')
-<div class="hr-page-header">
-    <div>
-        <h1 class="hr-page-title">
-            <i class="ph ph-list-bullets"></i>
-            Configurable Leave Types
-        </h1>
-        <p class="hr-page-subtitle">Configure statutory Philippine leave types (VL, SL, Emergency, SIL, Maternity, Paternity, Solo Parent, Bereavement)</p>
-    </div>
-    <div class="hr-page-actions">
+<x-hr-tabs parent="leave-absences">
+    <x-slot:actions>
         <button class="hr-btn hr-btn-primary" onclick="openModal('addLeaveTypeModal')">
             <i class="ph ph-plus-circle"></i>
             <span>Add Leave Type</span>
         </button>
-    </div>
-</div>
+    </x-slot:actions>
+</x-hr-tabs>
 
 <div class="hr-table-card">
     <div class="hr-table-wrapper">

@@ -3,15 +3,8 @@
 @section('title', 'Leave Credits - Leave & Absence Management')
 
 @section('content')
-<div class="hr-page-header">
-    <div>
-        <h1 class="hr-page-title">
-            <i class="ph ph-wallet"></i>
-            Employee Leave Credits & Balances
-        </h1>
-        <p class="hr-page-subtitle">Track beginning balance, earned credits, used leaves, and encashments per calendar year</p>
-    </div>
-    <div class="hr-page-actions">
+<x-hr-tabs parent="leave-absences">
+    <x-slot:actions>
         <form method="GET" action="{{ route('hr.leave.credits') }}" style="display: flex; align-items: center; gap: 8px;">
             <label style="font-size: 12px; font-weight: 600; color: #475569;">Calendar Year:</label>
             <select name="year" class="hr-select" onchange="this.form.submit()">
@@ -20,8 +13,8 @@
                 @endfor
             </select>
         </form>
-    </div>
-</div>
+    </x-slot:actions>
+</x-hr-tabs>
 
 <div class="hr-table-card">
     <div class="hr-table-wrapper">
