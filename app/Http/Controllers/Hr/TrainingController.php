@@ -26,7 +26,8 @@ class TrainingController extends Controller
             $query->where('status', $request->status);
         }
 
-        $programs = $query->orderBy('start_date', 'desc')->paginate(10);
+        $perPage = (int) $request->get('per_page', 10);
+        $programs = $query->orderBy('start_date', 'desc')->paginate($perPage)->withQueryString();
         return view('hr.training.programs', compact('programs'));
     }
 
@@ -90,7 +91,8 @@ class TrainingController extends Controller
             $query->where('training_program_id', $request->training_program_id);
         }
 
-        $records = $query->orderBy('enrollment_date', 'desc')->paginate(15);
+        $perPage = (int) $request->get('per_page', 10);
+        $records = $query->orderBy('enrollment_date', 'desc')->paginate($perPage)->withQueryString();
         $programs = TrainingProgram::all();
         $employees = Employee::where('employment_status', 'Active')->get();
 

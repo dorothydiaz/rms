@@ -2381,25 +2381,13 @@ a {
     padding: 0;
 }
 
-.hr-card::before,
-.hr-table-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3.5px;
-    background: linear-gradient(90deg, #ec4899 0%, #a855f7 50%, #8b5cf6 100%);
-    z-index: 10;
-}
-
 .hr-table-header {
-    padding: 18px 22px;
-    border-bottom: 1px solid rgba(168, 85, 247, 0.12);
+    padding: 16px 22px;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.85);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: linear-gradient(135deg, rgba(236, 72, 153, 0.03), rgba(168, 85, 247, 0.05));
+    background: rgba(248, 250, 252, 0.65);
 }
 
 .hr-table-title {
@@ -2434,7 +2422,7 @@ a {
     text-transform: uppercase;
     letter-spacing: 0.06em;
     color: #475569;
-    border-bottom: 2px solid rgba(168, 85, 247, 0.18);
+    border-bottom: 1px solid rgba(226, 232, 240, 0.95);
     white-space: nowrap;
 }
 
@@ -2456,7 +2444,7 @@ a {
 
 /* Glassmorphic Table Footer & Pagination (90% Transparency) */
 .hr-table-footer {
-    padding: 14px 20px;
+    padding: 12px 20px;
     background: rgba(255, 255, 255, 0.90);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
@@ -2478,6 +2466,13 @@ a {
     gap: 14px;
 }
 
+.hr-pagination-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
 .hr-pagination-info {
     font-size: 12.5px;
     color: #64748b;
@@ -2487,6 +2482,53 @@ a {
 .hr-pagination-info strong {
     color: #0f172a;
     font-weight: 700;
+}
+
+/* Rows Per Page Selector */
+.hr-per-page-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.hr-per-page-label {
+    font-size: 12px;
+    color: #64748b;
+    user-select: none;
+}
+
+.hr-per-page-select {
+    padding: 4px 26px 4px 10px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    color: #0f172a !important;
+    background: rgba(255, 255, 255, 0.90) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    border: 1px solid rgba(203, 213, 225, 0.9) !important;
+    border-radius: 8px !important;
+    outline: none !important;
+    cursor: pointer !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03) !important;
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 256 256'%3E%3Cpath fill='%237c3aed' d='m213.66 101.66l-80 80a8 8 0 0 1-11.32 0l-80-80a8 8 0 0 1 11.32-11.32L128 164.69l74.34-74.35a8 8 0 0 1 11.32 11.32Z'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 8px center !important;
+    background-size: 10px !important;
+    height: 30px !important;
+    line-height: 1 !important;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.hr-per-page-select:focus,
+.hr-per-page-select:hover {
+    border-color: #a855f7 !important;
+    background-color: #ffffff !important;
+    box-shadow: 0 0 0 2.5px rgba(168, 85, 247, 0.15) !important;
 }
 
 .hr-pagination-nav {
@@ -2589,6 +2631,143 @@ nav[role="navigation"] svg,
     max-height: 16px !important;
     display: inline-block;
     vertical-align: middle;
+}
+
+/* ============================================================
+   CUSTOM GLASSMORPHIC SCROLLBAR (Global & Containers)
+   ============================================================ */
+/* Firefox */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(168, 85, 247, 0.38) rgba(241, 245, 249, 0.5);
+}
+
+/* Webkit (Chrome, Edge, Safari, Opera) */
+::-webkit-scrollbar {
+    width: 7px;
+    height: 7px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(241, 245, 249, 0.5);
+    border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(168, 85, 247, 0.38);
+    border-radius: 9999px;
+    border: 1.5px solid transparent;
+    background-clip: padding-box;
+    transition: background-color 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(168, 85, 247, 0.7);
+    border: 1.5px solid transparent;
+    background-clip: padding-box;
+}
+
+::-webkit-scrollbar-corner {
+    background: transparent;
+}
+
+/* Specific scrollable containers */
+.content-area::-webkit-scrollbar,
+.hr-table-wrapper::-webkit-scrollbar,
+.sidebar-nav::-webkit-scrollbar,
+.hr-modal::-webkit-scrollbar,
+.hr-dropdown-menu::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.content-area::-webkit-scrollbar-thumb,
+.hr-table-wrapper::-webkit-scrollbar-thumb,
+.sidebar-nav::-webkit-scrollbar-thumb,
+.hr-modal::-webkit-scrollbar-thumb,
+.hr-dropdown-menu::-webkit-scrollbar-thumb {
+    background: rgba(168, 85, 247, 0.35);
+    border-radius: 8px;
+}
+
+.content-area::-webkit-scrollbar-thumb:hover,
+.hr-table-wrapper::-webkit-scrollbar-thumb:hover,
+.sidebar-nav::-webkit-scrollbar-thumb:hover,
+.hr-modal::-webkit-scrollbar-thumb:hover,
+.hr-dropdown-menu::-webkit-scrollbar-thumb:hover {
+    background: rgba(168, 85, 247, 0.65);
+}
+
+/* ============================================================
+   UNIVERSAL DROPDOWN UI: 90% TRANSPARENCY GLASSMORPHISM
+   Applies to every <select>, custom dropdown, menu across all pages
+   ============================================================ */
+
+/* All native select inputs */
+select,
+.hr-select,
+.form-select,
+.form-control:is(select) {
+    background: rgba(255, 255, 255, 0.90) !important;
+    backdrop-filter: blur(24px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+    border: 1px solid rgba(203, 213, 225, 0.9) !important;
+    border-radius: 11px !important;
+    color: #0f172a !important;
+    font-family: var(--font-family) !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    padding: 8px 34px 8px 12px !important;
+    box-shadow: 0 2px 8px rgba(148, 163, 184, 0.08), inset 0 1px 1px #ffffff !important;
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 256 256'%3E%3Cpath fill='%238b5cf6' d='m213.66 101.66l-80 80a8 8 0 0 1-11.32 0l-80-80a8 8 0 0 1 11.32-11.32L128 164.69l74.34-74.35a8 8 0 0 1 11.32 11.32Z'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 12px center !important;
+    background-size: 12px !important;
+    cursor: pointer !important;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+select:focus,
+.hr-select:focus,
+.form-select:focus,
+.form-control:is(select):focus {
+    background-color: #ffffff !important;
+    border-color: #a855f7 !important;
+    box-shadow: 0 0 0 3.5px rgba(168, 85, 247, 0.18), 0 4px 12px rgba(168, 85, 247, 0.08) !important;
+    outline: none !important;
+}
+
+select option {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    padding: 10px 14px !important;
+    font-size: 13px !important;
+}
+
+/* Custom Dropdown Menus and Popovers */
+.dropdown-menu,
+.hr-dropdown-menu,
+.breadcrumb-dropdown-menu,
+.custom-dropdown-menu {
+    background: rgba(255, 255, 255, 0.90) !important;
+    backdrop-filter: blur(28px) saturate(190%) !important;
+    -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.95) !important;
+    box-shadow: 0 20px 48px rgba(15, 23, 42, 0.12), 0 4px 16px rgba(168, 85, 247, 0.08), inset 0 1px 1.5px #ffffff !important;
+    border-radius: 16px !important;
+}
+
+/* Dropdown triggers */
+.hr-dropdown-trigger,
+.dropdown-toggle-custom {
+    background: rgba(255, 255, 255, 0.90) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border: 1px solid rgba(226, 232, 240, 0.95) !important;
+    box-shadow: 0 2px 8px rgba(148, 163, 184, 0.08), inset 0 1px 1px #ffffff !important;
+    border-radius: 12px !important;
 }
 
 /* Glassmorphic Gradient Badges */

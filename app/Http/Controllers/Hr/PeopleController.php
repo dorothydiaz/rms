@@ -53,7 +53,8 @@ class PeopleController extends Controller
             });
         }
 
-        $employees = $query->orderBy('created_at', 'desc')->paginate(12)->withQueryString();
+        $perPage = (int) $request->get('per_page', 10);
+        $employees = $query->orderBy('created_at', 'desc')->paginate($perPage)->withQueryString();
         $branches = Branch::where('is_active', true)->get();
         $departments = Department::all();
         $positions = Position::all();
@@ -348,7 +349,8 @@ class PeopleController extends Controller
             $query->whereHas('employee', fn($q) => $q->where('branch_id', $user->branch_id));
         }
 
-        $documents = $query->orderBy('created_at', 'desc')->paginate(15);
+        $perPage = (int) $request->get('per_page', 10);
+        $documents = $query->orderBy('created_at', 'desc')->paginate($perPage)->withQueryString();
         $employees = Employee::where('employment_status', 'Active')->get();
 
         return view('hr.people.documents', compact('documents', 'employees'));

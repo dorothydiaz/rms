@@ -93,7 +93,22 @@ class HrOperationsTest extends TestCase
         $response->assertSee('hr-table', false);
         $response->assertSee('hr-table-footer', false);
         $response->assertSee('hr-pagination-container', false);
+        $response->assertSee('hr-per-page-select', false);
+        $response->assertSee('value="10"', false);
+        $response->assertSee('selected', false);
         $response->assertSee('Showing', false);
+    }
+
+    /**
+     * Test: DTR page supports custom rows per page selector
+     */
+    public function test_dtr_supports_custom_per_page(): void
+    {
+        $admin = $this->getSuperAdmin();
+
+        $response = $this->actingAs($admin)->get(route('hr.attendance.dtr', ['per_page' => 25]));
+        $response->assertStatus(200);
+        $response->assertSee('value="25"', false);
     }
 
     /**

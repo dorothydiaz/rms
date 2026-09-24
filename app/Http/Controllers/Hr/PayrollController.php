@@ -36,12 +36,13 @@ class PayrollController extends Controller
     // 1. PAYROLL PERIODS
     // ==========================================
 
-    public function periodsIndex(): View
+    public function periodsIndex(Request $request): View
     {
+        $perPage = (int) $request->get('per_page', 10);
         $periods = PayrollPeriod::with(['processor', 'approver'])
             ->withCount('records')
             ->orderBy('start_date', 'desc')
-            ->paginate(10);
+            ->paginate($perPage)->withQueryString();
 
         return view('hr.payroll.periods', compact('periods'));
     }
@@ -164,7 +165,8 @@ class PayrollController extends Controller
             $query->whereHas('employee', fn($q) => $q->where('branch_id', $request->branch_id));
         }
 
-        $records = $query->paginate(20)->withQueryString();
+        $perPage = (int) $request->get('per_page', 10);
+        $records = $query->paginate($perPage)->withQueryString();
         $currentPeriod = $selectedPeriodId ? PayrollPeriod::find($selectedPeriodId) : null;
         $branches = Branch::where('is_active', true)->get();
 
@@ -213,7 +215,8 @@ class PayrollController extends Controller
             });
         }
 
-        $payslips = $query->paginate(12)->withQueryString();
+        $perPage = (int) $request->get('per_page', 10);
+        $payslips = $query->paginate($perPage)->withQueryString();
         $currentPeriod = $selectedPeriodId ? PayrollPeriod::find($selectedPeriodId) : null;
 
         return view('hr.payroll.payslips', compact('payslips', 'periods', 'currentPeriod'));

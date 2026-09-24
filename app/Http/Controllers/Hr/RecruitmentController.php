@@ -34,7 +34,8 @@ class RecruitmentController extends Controller
             $query->where('branch_id', $request->branch_id);
         }
 
-        $vacancies = $query->orderBy('opening_date', 'desc')->paginate(10);
+        $perPage = (int) $request->get('per_page', 10);
+        $vacancies = $query->orderBy('opening_date', 'desc')->paginate($perPage)->withQueryString();
         $branches = Branch::where('is_active', true)->get();
         $departments = Department::all();
         $positions = Position::all();
@@ -112,7 +113,8 @@ class RecruitmentController extends Controller
             });
         }
 
-        $applicants = $query->orderBy('application_date', 'desc')->paginate(12)->withQueryString();
+        $perPage = (int) $request->get('per_page', 10);
+        $applicants = $query->orderBy('application_date', 'desc')->paginate($perPage)->withQueryString();
         $vacancies = JobVacancy::whereIn('status', ['Open', 'Draft'])->get();
         $branches = Branch::where('is_active', true)->get();
         $departments = Department::all();
@@ -232,7 +234,8 @@ class RecruitmentController extends Controller
             $query->where('status', $request->status);
         }
 
-        $interviews = $query->orderBy('interview_date', 'asc')->paginate(15);
+        $perPage = (int) $request->get('per_page', 10);
+        $interviews = $query->orderBy('interview_date', 'asc')->paginate($perPage)->withQueryString();
         $applicants = Applicant::whereNotIn('status', ['Hired', 'Rejected'])->get();
         $users = User::all();
 

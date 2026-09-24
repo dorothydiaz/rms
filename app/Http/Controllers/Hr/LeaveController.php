@@ -46,7 +46,8 @@ class LeaveController extends Controller
             $query->where('leave_type_id', $request->leave_type_id);
         }
 
-        $requests = $query->orderBy('created_at', 'desc')->paginate(15);
+        $perPage = (int) $request->get('per_page', 10);
+        $requests = $query->orderBy('created_at', 'desc')->paginate($perPage)->withQueryString();
         $leaveTypes = LeaveType::all();
         $employees = Employee::where('employment_status', 'Active')->get();
 
@@ -207,7 +208,8 @@ class LeaveController extends Controller
             $query->where('leave_type_id', $request->leave_type_id);
         }
 
-        $balances = $query->paginate(20)->withQueryString();
+        $perPage = (int) $request->get('per_page', 10);
+        $balances = $query->paginate($perPage)->withQueryString();
         $leaveTypes = LeaveType::all();
         $employees = Employee::where('employment_status', 'Active')->get();
 

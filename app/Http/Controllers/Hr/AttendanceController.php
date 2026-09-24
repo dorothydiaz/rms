@@ -155,7 +155,8 @@ class AttendanceController extends Controller
             $query->where('status', $request->status);
         }
 
-        $records = $query->orderBy('date', 'desc')->paginate(20)->withQueryString();
+        $perPage = (int) $request->get('per_page', 10);
+        $records = $query->orderBy('date', 'desc')->paginate($perPage)->withQueryString();
         $branches = Branch::where('is_active', true)->get();
         $employees = Employee::where('employment_status', 'Active')->get();
 
@@ -273,7 +274,8 @@ class AttendanceController extends Controller
             $query->where('branch_id', $user->branch_id);
         }
 
-        $records = $query->orderBy('date', 'desc')->paginate(15);
+        $perPage = (int) $request->get('per_page', 10);
+        $records = $query->orderBy('date', 'desc')->paginate($perPage)->withQueryString();
         return view('hr.attendance.overtime', compact('records'));
     }
 
@@ -294,7 +296,8 @@ class AttendanceController extends Controller
             $query->where('status', $request->status);
         }
 
-        $corrections = $query->orderBy('created_at', 'desc')->paginate(15);
+        $perPage = (int) $request->get('per_page', 10);
+        $corrections = $query->orderBy('created_at', 'desc')->paginate($perPage)->withQueryString();
         $employees = Employee::where('employment_status', 'Active')->get();
 
         return view('hr.attendance.corrections', compact('corrections', 'employees'));

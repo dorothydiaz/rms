@@ -21,11 +21,12 @@ class PerformanceController extends Controller
     // 1. EVALUATION PERIODS
     // ==========================================
 
-    public function periodsIndex(): View
+    public function periodsIndex(Request $request): View
     {
+        $perPage = (int) $request->get('per_page', 10);
         $periods = PerformancePeriod::withCount('evaluations')
             ->orderBy('start_date', 'desc')
-            ->paginate(10);
+            ->paginate($perPage)->withQueryString();
         return view('hr.performance.periods', compact('periods'));
     }
 
@@ -86,7 +87,8 @@ class PerformanceController extends Controller
             $query->where('performance_period_id', $request->performance_period_id);
         }
 
-        $evaluations = $query->orderBy('created_at', 'desc')->paginate(15);
+        $perPage = (int) $request->get('per_page', 10);
+        $evaluations = $query->orderBy('created_at', 'desc')->paginate($perPage)->withQueryString();
         $periods = PerformancePeriod::all();
         $employees = Employee::where('employment_status', 'Active')->get();
         $criteria = PerformanceCriterion::where('is_active', true)->get();
