@@ -81,13 +81,23 @@
             </thead>
             <tbody>
                 @forelse($employees as $emp)
-                    <tr>
                         <td>
                             <strong style="color: #9333ea; font-family: monospace;">{{ $emp->employee_id }}</strong>
                         </td>
                         <td>
-                            <div style="font-weight: 600; color: #0f172a;">{{ $emp->full_name }}</div>
-                            <div style="font-size: 11.5px; color: #64748b;">{{ $emp->email ?? 'No email' }} &bull; {{ $emp->mobile_number ?? 'No phone' }}</div>
+                            <div class="hr-emp-avatar-wrap">
+                                @if($emp->photo_url)
+                                    <img src="{{ $emp->photo_url }}" alt="{{ $emp->full_name }}" class="hr-avatar-img">
+                                @else
+                                    <div class="hr-avatar-circle">
+                                        {{ $emp->initials }}
+                                    </div>
+                                @endif
+                                <div>
+                                    <div style="font-weight: 600; color: #0f172a;">{{ $emp->full_name }}</div>
+                                    <div style="font-size: 11.5px; color: #64748b;">{{ $emp->email ?? 'No email' }} &bull; {{ $emp->mobile_number ?? 'No phone' }}</div>
+                                </div>
+                            </div>
                         </td>
                         <td>
                             <span class="hr-badge hr-badge-neutral">{{ $emp->branch?->name ?? 'Unassigned' }}</span>
@@ -152,12 +162,32 @@
             <span class="hr-modal-title"><i class="ph ph-user-plus"></i> Add New Employee</span>
             <button class="icon-btn" onclick="closeModal('addEmployeeModal')"><i class="ph ph-x"></i></button>
         </div>
-        <form method="POST" action="{{ route('hr.people.employees.store') }}">
+        <form method="POST" action="{{ route('hr.people.employees.store') }}" enctype="multipart/form-data">
             @csrf
             <div class="hr-modal-body">
                 <h4 style="font-size: 13px; text-transform: uppercase; color: #9333ea; font-weight: 700; border-bottom: 1px solid #f1f5f9; padding-bottom: 4px;">
                     1. Personal Information
                 </h4>
+
+                <!-- Employee Photo Upload with Avatar Preview -->
+                <div class="hr-form-group" style="background: rgba(248, 250, 252, 0.85); border: 1.5px dashed #cbd5e1; border-radius: 12px; padding: 12px 16px; margin-bottom: 4px;">
+                    <label class="hr-form-label" style="margin-bottom: 6px;">Profile Photo</label>
+                    <div style="display: flex; align-items: center; gap: 16px;">
+                        <div id="addPhotoPreviewWrap">
+                            <img id="addPhotoPreviewImg" src="" alt="Preview" style="display: none; width: 56px; height: 56px; border-radius: 50%; object-fit: cover; border: 2px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+                            <div id="addPhotoAvatarPlaceholder" style="width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%); color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 700; box-shadow: 0 2px 8px rgba(168, 85, 247, 0.25);">
+                                <i class="ph ph-user"></i>
+                            </div>
+                        </div>
+                        <div style="flex: 1;">
+                            <input type="file" name="photo" id="addEmployeePhoto" class="hr-input" accept="image/*" onchange="previewAddPhoto(this)" style="padding: 7px 10px;">
+                            <small style="font-size: 11px; color: #64748b; margin-top: 4px; display: block;">
+                                Upload a photo (JPEG, PNG, WEBP up to 5MB). If omitted, an avatar will be generated automatically.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="hr-form-grid">
                     <div class="hr-form-group">
                         <label class="hr-form-label">Employee ID *</label>
@@ -268,6 +298,27 @@
                         </select>
                     </div>
                     <div class="hr-form-group">
+                        <label class="hr-form-label">Employment Source *</label>
+                        <div style="display: flex; gap: 16px; align-items: center; margin-top: 6px;">
+                            <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer;">
+                                <input type="radio" name="employment_source" value="Company" checked onchange="document.getElementById('emp_agency_box').style.display='none'; document.getElementById('emp_company_box').style.display='block';">
+                                <span>Company</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer;">
+                                <input type="radio" name="employment_source" value="Agency" onchange="document.getElementById('emp_agency_box').style.display='block'; document.getElementById('emp_company_box').style.display='none';">
+                                <span>Agency</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="hr-form-group" id="emp_company_box">
+                        <label class="hr-form-label">Company Name</label>
+                        <input type="text" name="company_name" class="hr-input" placeholder="e.g. Bistro Hospitality Group Inc.">
+                    </div>
+                    <div class="hr-form-group" id="emp_agency_box" style="display: none;">
+                        <label class="hr-form-label">Agency Name *</label>
+                        <input type="text" name="agency_name" class="hr-input" placeholder="e.g. ABC Manpower & Staffing">
+                    </div>
+                    <div class="hr-form-group">
                         <label class="hr-form-label">Contract End Date</label>
                         <input type="date" name="contract_end_date" class="hr-input">
                     </div>
@@ -352,6 +403,23 @@ function openModal(id) {
 }
 function closeModal(id) {
     document.getElementById(id).classList.remove('open');
+}
+function previewAddPhoto(input) {
+    var preview = document.getElementById('addPhotoPreviewImg');
+    var placeholder = document.getElementById('addPhotoAvatarPlaceholder');
+    if (input.files && input.files[0]) {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            preview.src = e.target.result;
+            preview.style.display = 'block';
+            placeholder.style.display = 'none';
+        }
+        reader.readAsDataURL(input.files[0]);
+    } else {
+        preview.src = '';
+        preview.style.display = 'none';
+        placeholder.style.display = 'flex';
+    }
 }
 </script>
 @endpush

@@ -27,7 +27,9 @@ class AttendanceCalculationService
         ?string $timeOut,
         ?string $breakOut = null,
         ?string $breakIn = null,
-        bool $isOvernight = false
+        bool $isOvernight = false,
+        ?string $coffeeBreakOut = null,
+        ?string $coffeeBreakIn = null
     ): array {
         if (!$timeIn || !$timeOut) {
             return [

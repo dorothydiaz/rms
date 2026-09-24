@@ -35,4 +35,17 @@ class ShiftTemplate extends Model
     {
         return $this->hasMany(EmployeeSchedule::class);
     }
+
+    public static function formatShiftLabel(string $startTime, string $endTime): string
+    {
+        $code = \Carbon\Carbon::parse($startTime)->format('Hi');
+        $startFmt = \Carbon\Carbon::parse($startTime)->format('gA');
+        $endFmt = \Carbon\Carbon::parse($endTime)->format('gA');
+        return "{$code} = {$startFmt} - {$endFmt}";
+    }
+
+    public function getFormattedLabelAttribute(): string
+    {
+        return self::formatShiftLabel($this->start_time, $this->end_time);
+    }
 }

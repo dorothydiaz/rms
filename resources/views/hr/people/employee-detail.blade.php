@@ -4,25 +4,33 @@
 
 @section('content')
 <div class="hr-page-header">
-    <div>
-        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-            <a href="{{ route('hr.people.employees') }}" class="hr-btn hr-btn-secondary hr-btn-sm">
-                <i class="ph ph-arrow-left"></i> Back to Directory
-            </a>
-            <span class="hr-badge hr-badge-neutral">{{ $employee->branch?->name }}</span>
-            @if($employee->employment_status === 'Active')
-                <span class="hr-badge hr-badge-success">{{ $employee->employment_status }}</span>
-            @elseif($employee->employment_status === 'Probationary')
-                <span class="hr-badge hr-badge-warning">{{ $employee->employment_status }}</span>
-            @else
-                <span class="hr-badge hr-badge-danger">{{ $employee->employment_status }}</span>
-            @endif
+    <div style="display: flex; align-items: center; gap: 20px;">
+        @if($employee->photo_url)
+            <img src="{{ $employee->photo_url }}" alt="{{ $employee->full_name }}" class="hr-avatar-img-lg">
+        @else
+            <div class="hr-avatar-circle-lg">
+                {{ $employee->initials }}
+            </div>
+        @endif
+        <div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                <a href="{{ route('hr.people.employees') }}" class="hr-btn hr-btn-secondary hr-btn-sm">
+                    <i class="ph ph-arrow-left"></i> Back to Directory
+                </a>
+                <span class="hr-badge hr-badge-neutral">{{ $employee->branch?->name }}</span>
+                @if($employee->employment_status === 'Active')
+                    <span class="hr-badge hr-badge-success">{{ $employee->employment_status }}</span>
+                @elseif($employee->employment_status === 'Probationary')
+                    <span class="hr-badge hr-badge-warning">{{ $employee->employment_status }}</span>
+                @else
+                    <span class="hr-badge hr-badge-danger">{{ $employee->employment_status }}</span>
+                @endif
+            </div>
+            <h1 class="hr-page-title" style="margin-top: 2px;">
+                {{ $employee->full_name }}
+            </h1>
+            <p class="hr-page-subtitle">{{ $employee->position?->name }} &bull; {{ $employee->department?->name }} &bull; ID: <strong>{{ $employee->employee_id }}</strong></p>
         </div>
-        <h1 class="hr-page-title">
-            <i class="ph ph-user-circle"></i>
-            {{ $employee->full_name }}
-        </h1>
-        <p class="hr-page-subtitle">{{ $employee->position?->name }} &bull; {{ $employee->department?->name }} &bull; ID: <strong>{{ $employee->employee_id }}</strong></p>
     </div>
     <div class="hr-page-actions">
         <button class="hr-btn hr-btn-primary" onclick="openModal('editEmployeeModal')">
@@ -224,10 +232,42 @@
             <span class="hr-modal-title"><i class="ph ph-pencil"></i> Edit Employee Profile</span>
             <button class="icon-btn" onclick="closeModal('editEmployeeModal')"><i class="ph ph-x"></i></button>
         </div>
-        <form method="POST" action="{{ route('hr.people.employees.update', $employee->id) }}">
+        <form method="POST" action="{{ route('hr.people.employees.update', $employee->id) }}" enctype="multipart/form-data">
             @csrf
             @method('PUT')
             <div class="hr-modal-body">
+                <!-- Employee Photo Upload with Preview -->
+                <div class="hr-form-group" style="background: rgba(248, 250, 252, 0.85); border: 1.5px dashed #cbd5e1; border-radius: 12px; padding: 12px 16px; margin-bottom: 6px;">
+                    <label class="hr-form-label" style="margin-bottom: 6px;">Profile Photo</label>
+                    <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+                        <div id="editPhotoPreviewWrap">
+                            @if($employee->photo_url)
+                                <img id="editPhotoPreviewImg" src="{{ $employee->photo_url }}" alt="Preview" style="width: 56px; height: 56px; border-radius: 50%; object-fit: cover; border: 2px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+                                <div id="editPhotoAvatarPlaceholder" style="display: none; width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%); color: #ffffff; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; box-shadow: 0 2px 8px rgba(168, 85, 247, 0.25);">
+                                    {{ $employee->initials }}
+                                </div>
+                            @else
+                                <img id="editPhotoPreviewImg" src="" alt="Preview" style="display: none; width: 56px; height: 56px; border-radius: 50%; object-fit: cover; border: 2px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+                                <div id="editPhotoAvatarPlaceholder" style="width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%); color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; box-shadow: 0 2px 8px rgba(168, 85, 247, 0.25);">
+                                    {{ $employee->initials }}
+                                </div>
+                            @endif
+                        </div>
+                        <div style="flex: 1; min-width: 200px;">
+                            <input type="file" name="photo" id="editEmployeePhoto" class="hr-input" accept="image/*" onchange="previewEditPhoto(this)" style="padding: 7px 10px;">
+                            <small style="font-size: 11px; color: #64748b; margin-top: 4px; display: block;">
+                                Upload new photo (JPG, PNG, WEBP max 5MB).
+                            </small>
+                        </div>
+                        @if($employee->photo)
+                            <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #ef4444; cursor: pointer; background: #fee2e2; padding: 6px 12px; border-radius: 6px;">
+                                <input type="checkbox" name="remove_photo" value="1">
+                                <span>Remove Photo</span>
+                            </label>
+                        @endif
+                    </div>
+                </div>
+
                 <div class="hr-form-grid">
                     <div class="hr-form-group">
                         <label class="hr-form-label">First Name *</label>
@@ -287,6 +327,27 @@
                         </select>
                     </div>
                     <div class="hr-form-group">
+                        <label class="hr-form-label">Employment Source *</label>
+                        <div style="display: flex; gap: 16px; align-items: center; margin-top: 6px;">
+                            <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer;">
+                                <input type="radio" name="employment_source" value="Company" {{ ($employee->employment_source ?? 'Company') === 'Company' ? 'checked' : '' }} onchange="document.getElementById('edit_emp_agency_box').style.display='none'; document.getElementById('edit_emp_company_box').style.display='block';">
+                                <span>Company</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer;">
+                                <input type="radio" name="employment_source" value="Agency" {{ ($employee->employment_source ?? '') === 'Agency' ? 'checked' : '' }} onchange="document.getElementById('edit_emp_agency_box').style.display='block'; document.getElementById('edit_emp_company_box').style.display='none';">
+                                <span>Agency</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="hr-form-group" id="edit_emp_company_box" style="{{ ($employee->employment_source ?? 'Company') === 'Agency' ? 'display: none;' : '' }}">
+                        <label class="hr-form-label">Company Name</label>
+                        <input type="text" name="company_name" class="hr-input" value="{{ $employee->company_name ?? $employee->company_agency_name }}" placeholder="e.g. Bistro Hospitality Group Inc.">
+                    </div>
+                    <div class="hr-form-group" id="edit_emp_agency_box" style="{{ ($employee->employment_source ?? 'Company') === 'Agency' ? '' : 'display: none;' }}">
+                        <label class="hr-form-label">Agency Name</label>
+                        <input type="text" name="agency_name" class="hr-input" value="{{ $employee->agency_name ?? $employee->company_agency_name }}" placeholder="e.g. ABC Manpower & Staffing">
+                    </div>
+                    <div class="hr-form-group">
                         <label class="hr-form-label">Basic Salary</label>
                         <input type="number" step="0.01" name="basic_salary" class="hr-input" value="{{ $employee->basic_salary }}">
                     </div>
@@ -324,6 +385,19 @@
 <script>
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function previewEditPhoto(input) {
+    var preview = document.getElementById('editPhotoPreviewImg');
+    var placeholder = document.getElementById('editPhotoAvatarPlaceholder');
+    if (input.files && input.files[0]) {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            preview.src = e.target.result;
+            preview.style.display = 'block';
+            if (placeholder) placeholder.style.display = 'none';
+        }
+        reader.readAsDataURL(input.files[0]);
+    }
+}
 </script>
 @endpush
 @endsection

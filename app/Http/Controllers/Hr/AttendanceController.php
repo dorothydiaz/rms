@@ -6,17 +6,23 @@ use App\Http\Controllers\Controller;
 use App\Models\Hr\AttendanceCorrection;
 use App\Models\Hr\AttendanceRecord;
 use App\Models\Hr\Branch;
+use App\Models\Hr\Department;
 use App\Models\Hr\Employee;
 use App\Models\Hr\EmployeeSchedule;
+use App\Models\Hr\LeaveRequest;
+use App\Models\Hr\Position;
 use App\Models\Hr\ShiftTemplate;
 use App\Services\AttendanceCalculationService;
 use App\Services\AuditLogger;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
+use ZipArchive;
 
 class AttendanceController extends Controller
 {
@@ -62,7 +68,7 @@ class AttendanceController extends Controller
         $validated = $request->validate([
             'employee_id' => 'required|exists:employees,id',
             'date' => 'required|date',
-            'punch_type' => 'required|in:time_in,break_out,break_in,time_out',
+            'punch_type' => 'required|in:in,time_in,break_out,break_in,coffee_break_out,coffee_break_in,final_out,time_out',
             'time' => 'required|date_format:H:i',
             'notes' => 'nullable|string',
         ]);
@@ -79,7 +85,43 @@ class AttendanceController extends Controller
         $record->source = 'Manual';
 
         $punchType = $validated['punch_type'];
-        $record->{$punchType} = $timeStr;
+        $punchLabel = 'Time Punch';
+
+        switch ($punchType) {
+            case 'in':
+            case 'time_in':
+                $record->time_in = $timeStr;
+                $record->in_1 = $timeStr;
+                $punchLabel = 'In';
+                break;
+            case 'break_out':
+                $record->break_out = $timeStr;
+                $record->out_1 = $timeStr;
+                $punchLabel = 'Break Out';
+                break;
+            case 'break_in':
+                $record->break_in = $timeStr;
+                $record->in_2 = $timeStr;
+                $punchLabel = 'Break In';
+                break;
+            case 'coffee_break_out':
+                $record->coffee_break_out = $timeStr;
+                $record->out_2 = $timeStr;
+                $punchLabel = 'Coffee Break Out';
+                break;
+            case 'coffee_break_in':
+                $record->coffee_break_in = $timeStr;
+                $record->in_3 = $timeStr;
+                $punchLabel = 'Coffee Break In';
+                break;
+            case 'final_out':
+            case 'time_out':
+                $record->time_out = $timeStr;
+                $record->out_3 = $timeStr;
+                $punchLabel = 'Final Out';
+                break;
+        }
+
         if (!empty($validated['notes'])) {
             $record->notes = ($record->notes ? $record->notes . ' | ' : '') . $validated['notes'];
         }
@@ -104,7 +146,9 @@ class AttendanceController extends Controller
                 $record->time_out,
                 $record->break_out,
                 $record->break_in,
-                $isOvernight
+                $isOvernight,
+                $record->coffee_break_out,
+                $record->coffee_break_in
             );
 
             $record->total_hours = $calc['total_hours'];
@@ -122,10 +166,10 @@ class AttendanceController extends Controller
             'Update',
             'Attendance',
             $record->id,
-            "Recorded {$punchType} ({$timeStr}) for employee {$employee->full_name} on {$validated['date']}"
+            "Recorded {$punchLabel} ({$timeStr}) for employee {$employee->full_name} on {$validated['date']}"
         );
 
-        return redirect()->back()->with('success', "Punched {$punchType} for {$employee->full_name} at {$validated['time']}.");
+        return redirect()->back()->with('success', "Recorded {$punchLabel} for {$employee->full_name} at {$validated['time']}.");
     }
 
     // ==========================================
@@ -171,6 +215,481 @@ class AttendanceController extends Controller
         return view('hr.attendance.dtr', compact('records', 'startDate', 'endDate', 'branches', 'employees', 'totals'));
     }
 
+    public function dtrTags(Request $request): JsonResponse
+    {
+        $user = Auth::user();
+        $query = Employee::where('employment_status', 'Active')
+            ->with(['branch.company', 'department', 'position']);
+
+        if (!$user->isSuperAdmin() && !$user->isHrAdmin() && $user->branch_id) {
+            $query->where('branch_id', $user->branch_id);
+        }
+
+        $employees = $query->orderBy('last_name')->get();
+
+        // Build dynamic tags from database
+        $tags = [];
+
+        // 1. Employment Statuses & Types
+        $statuses = Employee::select('employment_status')->whereNotNull('employment_status')->distinct()->pluck('employment_status');
+        $types = Employee::select('employment_type')->whereNotNull('employment_type')->distinct()->pluck('employment_type');
+        $allStatuses = $statuses->concat($types)->unique()->filter()->values();
+        foreach ($allStatuses as $st) {
+            $tags[] = [
+                'category' => 'Employment Status',
+                'type' => 'status',
+                'label' => $st,
+                'value' => $st,
+            ];
+        }
+
+        // 2. Employment Source
+        $sources = Employee::select('employment_source')->whereNotNull('employment_source')->distinct()->pluck('employment_source')->unique();
+        if ($sources->isEmpty()) {
+            $sources = collect(['Company', 'Agency']);
+        }
+        foreach ($sources as $src) {
+            $tags[] = [
+                'category' => 'Employment Source',
+                'type' => 'source',
+                'label' => $src,
+                'value' => $src,
+            ];
+        }
+
+        // 3. Company / Agency Names
+        $companies = Employee::select('company_name')->whereNotNull('company_name')->where('company_name', '!=', '')->distinct()->pluck('company_name');
+        $agencies = Employee::select('agency_name')->whereNotNull('agency_name')->where('agency_name', '!=', '')->distinct()->pluck('agency_name');
+        $companyAgencies = Employee::select('company_agency_name')->whereNotNull('company_agency_name')->where('company_agency_name', '!=', '')->distinct()->pluck('company_agency_name');
+        $allCoAgencies = $companies->concat($agencies)->concat($companyAgencies)->unique()->filter()->values();
+        foreach ($allCoAgencies as $ca) {
+            $tags[] = [
+                'category' => 'Company / Agency',
+                'type' => 'company_agency',
+                'label' => $ca,
+                'value' => $ca,
+            ];
+        }
+
+        // 4. Branch
+        $branchQuery = Branch::where('is_active', true);
+        if (!$user->isSuperAdmin() && !$user->isHrAdmin() && $user->branch_id) {
+            $branchQuery->where('id', $user->branch_id);
+        }
+        $branches = $branchQuery->orderBy('name')->get();
+        foreach ($branches as $b) {
+            $tags[] = [
+                'category' => 'Branch',
+                'type' => 'branch',
+                'label' => $b->name,
+                'value' => (string)$b->id,
+            ];
+        }
+
+        // 5. Department
+        $departments = Department::orderBy('name')->get();
+        foreach ($departments as $d) {
+            $tags[] = [
+                'category' => 'Department',
+                'type' => 'department',
+                'label' => $d->name,
+                'value' => (string)$d->id,
+            ];
+        }
+
+        // 6. Position
+        $positions = Position::orderBy('name')->get();
+        foreach ($positions as $p) {
+            $tags[] = [
+                'category' => 'Position',
+                'type' => 'position',
+                'label' => $p->name,
+                'value' => (string)$p->id,
+            ];
+        }
+
+        // 7. Individual Employees (by ID & Name)
+        foreach ($employees as $e) {
+            $tags[] = [
+                'category' => 'Employee',
+                'type' => 'employee',
+                'label' => "{$e->employee_id} - {$e->full_name}",
+                'value' => (string)$e->id,
+                'subtext' => $e->employee_id,
+            ];
+        }
+
+        // Minimal employee map for instantaneous client-side count and filtering
+        $employeeData = $employees->map(function ($e) {
+            return [
+                'id' => $e->id,
+                'employee_id' => $e->employee_id,
+                'name' => $e->full_name,
+                'statuses' => array_values(array_filter([$e->employment_status, $e->employment_type])),
+                'source' => $e->employment_source ?: 'Company',
+                'companies' => array_values(array_filter([$e->company_name, $e->agency_name, $e->company_agency_name, $e->branch?->company?->name])),
+                'branch_id' => (string)$e->branch_id,
+                'branch_name' => $e->branch?->name,
+                'department_id' => (string)$e->department_id,
+                'department_name' => $e->department?->name,
+                'position_id' => (string)$e->position_id,
+                'position_name' => $e->position?->name,
+            ];
+        });
+
+        return response()->json([
+            'tags' => $tags,
+            'employees' => $employeeData,
+            'total_active' => $employees->count(),
+        ]);
+    }
+
+    public function dtrExportPdf(Request $request)
+    {
+        $user = Auth::user();
+        $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->toDateString());
+        $endDate = $request->input('end_date', Carbon::now()->toDateString());
+        $scope = $request->input('scope', 'all'); // 'all' or 'filtered'
+        $outputFormat = $request->input('output_format', 'individual'); // 'individual' or 'combined'
+        $selectedTagsRaw = $request->input('tags', '[]');
+        $selectedTags = is_array($selectedTagsRaw) ? $selectedTagsRaw : json_decode($selectedTagsRaw, true);
+        if (!is_array($selectedTags)) {
+            $selectedTags = [];
+        }
+
+        // Query active employees
+        $empQuery = Employee::where('employment_status', 'Active')
+            ->with(['branch.company', 'department', 'position']);
+
+        if (!$user->isSuperAdmin() && !$user->isHrAdmin() && $user->branch_id) {
+            $empQuery->where('branch_id', $user->branch_id);
+        }
+
+        $allEmployees = $empQuery->orderBy('last_name')->get();
+
+        // Apply dynamic filter tags if scope is filtered
+        if ($scope === 'filtered' && !empty($selectedTags)) {
+            $groupedTags = [];
+            foreach ($selectedTags as $tag) {
+                if (isset($tag['type']) && isset($tag['value'])) {
+                    $groupedTags[$tag['type']][] = (string)$tag['value'];
+                }
+            }
+
+            $employees = $allEmployees->filter(function ($emp) use ($groupedTags) {
+                foreach ($groupedTags as $type => $values) {
+                    $match = false;
+                    switch ($type) {
+                        case 'status':
+                            $match = in_array($emp->employment_status, $values) || in_array($emp->employment_type, $values);
+                            break;
+                        case 'source':
+                            $match = in_array($emp->employment_source, $values);
+                            break;
+                        case 'company_agency':
+                            $caList = array_map('strval', array_filter([$emp->company_name, $emp->agency_name, $emp->company_agency_name, $emp->branch?->company?->name]));
+                            $match = !empty(array_intersect($values, $caList));
+                            break;
+                        case 'branch':
+                            $match = in_array((string)$emp->branch_id, $values) || in_array($emp->branch?->name, $values);
+                            break;
+                        case 'department':
+                            $match = in_array((string)$emp->department_id, $values) || in_array($emp->department?->name, $values);
+                            break;
+                        case 'position':
+                            $match = in_array((string)$emp->position_id, $values) || in_array($emp->position?->name, $values);
+                            break;
+                        case 'employee':
+                            $match = in_array((string)$emp->id, $values) || in_array($emp->employee_id, $values);
+                            break;
+                        default:
+                            $match = true;
+                    }
+                    if (!$match) {
+                        return false;
+                    }
+                }
+                return true;
+            })->values();
+        } else {
+            $employees = $allEmployees;
+        }
+
+        if ($employees->isEmpty()) {
+            return redirect()->back()->with('error', 'No employees match the selected export criteria.');
+        }
+
+        // Build cutoff date range
+        $start = Carbon::parse($startDate);
+        $end = Carbon::parse($endDate);
+        if ($end->lt($start)) {
+            $temp = $start;
+            $start = $end;
+            $end = $temp;
+        }
+
+        $dateList = [];
+        $cur = $start->copy();
+        while ($cur->lte($end)) {
+            $dateList[] = $cur->toDateString();
+            $cur->addDay();
+        }
+
+        // Preload attendance records and leave requests for all matching employees in date range
+        $employeeIds = $employees->pluck('id');
+        $attendanceMap = AttendanceRecord::whereIn('employee_id', $employeeIds)
+            ->whereBetween('date', [$start->toDateString(), $end->toDateString()])
+            ->get()
+            ->groupBy(function ($item) {
+                $d = Carbon::parse($item->date)->toDateString();
+                return $item->employee_id . '_' . $d;
+            });
+
+        $leaveMap = LeaveRequest::whereIn('employee_id', $employeeIds)
+            ->where('status', 'Approved')
+            ->where(function ($q) use ($start, $end) {
+                $q->whereBetween('start_date', [$start->toDateString(), $end->toDateString()])
+                  ->orWhereBetween('end_date', [$start->toDateString(), $end->toDateString()])
+                  ->orWhere(function ($sub) use ($start, $end) {
+                      $sub->where('start_date', '<=', $start->toDateString())
+                          ->where('end_date', '>=', $end->toDateString());
+                  });
+            })
+            ->with('leaveType')
+            ->get();
+
+        $scheduleMap = EmployeeSchedule::whereIn('employee_id', $employeeIds)
+            ->whereBetween('schedule_date', [$start->toDateString(), $end->toDateString()])
+            ->with('shiftTemplate')
+            ->get()
+            ->groupBy(function ($item) {
+                $d = Carbon::parse($item->schedule_date)->toDateString();
+                return $item->employee_id . '_' . $d;
+            });
+
+        $employeesData = [];
+        $cutoffFormatted = $start->format('M j, Y') . ' to ' . $end->format('M j, Y');
+
+        foreach ($employees as $emp) {
+            $companyDisplay = $emp->employment_source === 'Agency'
+                ? ($emp->agency_name ?: $emp->company_agency_name ?: 'AGENCY')
+                : ($emp->company_name ?: $emp->company_agency_name ?: ($emp->branch?->company?->name ?? 'COMPANY'));
+
+            $days = [];
+            $totalRegHrs = 0.0;
+            $totalLateMins = 0;
+            $totalUtMins = 0;
+            $totalAbsence = 0.0;
+            $totalNet = 0.0;
+            $totalOt = 0.0;
+
+            foreach ($dateList as $dateStr) {
+                $dateObj = Carbon::parse($dateStr);
+                $key = $emp->id . '_' . $dateStr;
+                $record = $attendanceMap->has($key) ? $attendanceMap->get($key)->first() : null;
+                $sched = $scheduleMap->has($key) ? $scheduleMap->get($key)->first() : null;
+
+                $isSunday = $dateObj->isSunday();
+                $isRestDay = $sched !== null ? (bool)$sched->is_rest_day : ($record?->is_rest_day ?? $isSunday);
+
+                // Shift ID: concise code e.g. 0800A, 0600A, or RD for rest days
+                if ($isRestDay && (!$record || (!$record->time_in && !$record->in_1))) {
+                    $shiftId = 'RD';
+                } else {
+                    $st = $sched?->shiftTemplate ?? $record?->schedule?->shiftTemplate;
+                    if ($st) {
+                        $code = trim($st->code ?: '');
+                        if (!empty($code)) {
+                            $shiftId = preg_match('/^\d{4}$/', $code) ? $code . 'A' : $code;
+                        } else {
+                            $shiftId = Carbon::parse($st->start_time)->format('Hi') . 'A';
+                        }
+                    } else {
+                        $shiftId = '0800A';
+                    }
+                }
+
+                // 6 Actual Time Entry Punches
+                $in1 = $out1 = $in2 = $out2 = $in3 = $out3 = '';
+                if ($record && $shiftId !== 'RD') {
+                    $rawIn1 = $record->in_1 ?? $record->time_in;
+                    $rawOut1 = $record->out_1 ?? $record->break_out;
+                    $rawIn2 = $record->in_2 ?? $record->break_in;
+                    $rawOut2 = $record->out_2 ?? $record->coffee_break_out;
+                    $rawIn3 = $record->in_3 ?? $record->coffee_break_in;
+                    $rawOut3 = $record->out_3 ?? $record->time_out;
+
+                    $in1 = $rawIn1 ? Carbon::parse($rawIn1)->format('G:i') : '';
+                    $out1 = $rawOut1 ? Carbon::parse($rawOut1)->format('G:i') : '';
+                    $in2 = $rawIn2 ? Carbon::parse($rawIn2)->format('G:i') : '';
+                    $out2 = $rawOut2 ? Carbon::parse($rawOut2)->format('G:i') : '';
+                    $in3 = $rawIn3 ? Carbon::parse($rawIn3)->format('G:i') : '';
+                    $out3 = $rawOut3 ? Carbon::parse($rawOut3)->format('G:i') : '';
+                }
+
+                // Leave check
+                $leaveCode = null;
+                $empLeave = $leaveMap->first(function ($l) use ($emp, $dateStr) {
+                    return $l->employee_id == $emp->id && $dateStr >= $l->start_date && $dateStr <= $l->end_date;
+                });
+                if ($empLeave) {
+                    $leaveCode = $empLeave->leaveType?->code ?: 'AA';
+                }
+
+                // Metrics calculation
+                $regHrs = null;
+                $lateMins = 0;
+                $utMins = 0;
+                $absence = 0.0;
+                $net = null;
+                $ot = 0.0;
+                $remarks = '';
+
+                if ($shiftId === 'RD') {
+                    $regHrs = null;
+                    $lateMins = 0;
+                    $utMins = 0;
+                    $absence = 0.0;
+                    $net = null;
+                    $ot = 0.0;
+                    $remarks = '';
+                } elseif ($record) {
+                    $regHrs = 8.00;
+                    $lateMins = (int)$record->late_minutes;
+                    $utMins = (int)$record->undertime_minutes;
+                    $ot = (float)$record->overtime_hours;
+
+                    if ($record->status === 'Absent' || (float)$record->absence_days > 0) {
+                        $absence = (float)($record->absence_days > 0 ? $record->absence_days : 1.00);
+                        $net = null;
+                        if ($record->dtr_remarks) {
+                            $remarks = $record->dtr_remarks;
+                        } elseif ($record->holiday_type === 'Regular') {
+                            $remarks = 'LH';
+                        } elseif ($record->holiday_type === 'SpecialNonWorking') {
+                            $remarks = 'UA SH';
+                        } else {
+                            $remarks = $leaveCode ?: 'UA';
+                        }
+                    } else {
+                        $net = (float)($record->regular_hours > 0 ? $record->regular_hours : 8.00);
+                        if ($record->dtr_remarks) {
+                            $remarks = $record->dtr_remarks;
+                        } elseif ($record->holiday_type === 'Regular') {
+                            $remarks = 'LH';
+                        } elseif ($record->holiday_type === 'SpecialNonWorking') {
+                            $remarks = 'SH';
+                        }
+                    }
+                } else {
+                    // No record
+                    if ($dateObj->lte(Carbon::today())) {
+                        $regHrs = 8.00;
+                        $absence = 1.00;
+                        $net = null;
+                        $remarks = $leaveCode ?: 'UA';
+                    }
+                }
+
+                if ($regHrs !== null) {
+                    $totalRegHrs += (float)$regHrs;
+                }
+                $totalLateMins += $lateMins;
+                $totalUtMins += $utMins;
+                $totalAbsence += $absence;
+                if ($net !== null) {
+                    $totalNet += (float)$net;
+                }
+                $totalOt += $ot;
+
+                $days[] = [
+                    'date_formatted' => $dateObj->format('M j'),
+                    'day_short' => $dateObj->format('D'),
+                    'shift_id' => $shiftId,
+                    'in_1' => $in1,
+                    'out_1' => $out1,
+                    'in_2' => $in2,
+                    'out_2' => $out2,
+                    'in_3' => $in3,
+                    'out_3' => $out3,
+                    'reg_hrs' => $regHrs,
+                    'late_mins' => $lateMins,
+                    'ut_mins' => $utMins,
+                    'absence' => $absence,
+                    'net' => $net,
+                    'ot' => $ot,
+                    'remarks' => $remarks,
+                ];
+            }
+
+            $employeesData[] = [
+                'employee_id' => $emp->employee_id,
+                'employee_name' => mb_strtoupper($emp->last_name . ', ' . $emp->first_name . ($emp->middle_name ? ' ' . mb_substr($emp->middle_name, 0, 1) . '.' : '') . ($emp->suffix ? ' ' . $emp->suffix : '')),
+                'company' => mb_strtoupper($companyDisplay),
+                'branch' => mb_strtoupper($emp->branch?->name ?? 'MAIN'),
+                'department' => mb_strtoupper($emp->department?->name ?? 'GENERAL'),
+                'cutoff' => $cutoffFormatted,
+                'days' => $days,
+                'totals' => [
+                    'reg_hrs' => $totalRegHrs,
+                    'late_mins' => $totalLateMins,
+                    'ut_mins' => $totalUtMins,
+                    'absence' => $totalAbsence,
+                    'net' => $totalNet,
+                    'ot' => $totalOt,
+                ],
+            ];
+        }
+
+        AuditLogger::log('Export', 'Attendance', null, "Exported DTR PDF for " . count($employeesData) . " employees ({$startDate} to {$endDate})");
+
+        $runDate = Carbon::now()->format('m/d/y');
+        $runTime = Carbon::now()->format('H:i:s');
+
+        if (!is_dir(storage_path('fonts'))) {
+            @mkdir(storage_path('fonts'), 0777, true);
+        }
+
+        // Check output format
+        if ($outputFormat === 'individual' && count($employeesData) > 1) {
+            $zipName = "DTR_Individual_PDFs_{$startDate}_{$endDate}_" . uniqid() . ".zip";
+            $zipPath = storage_path('app/' . $zipName);
+            $zip = new ZipArchive();
+            if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) === true) {
+                foreach ($employeesData as $empData) {
+                    $singlePdf = Pdf::loadView('hr.attendance.pdf.dtr_sheet', [
+                        'employeesData' => [$empData],
+                        'runDate' => $runDate,
+                        'runTime' => $runTime,
+                    ])->setPaper('letter', 'portrait')
+                      ->setOption('isRemoteEnabled', true);
+
+                    $cleanEmpId = preg_replace('/[^A-Za-z0-9_\-]/', '_', $empData['employee_id']);
+                    $cleanName = preg_replace('/[^A-Za-z0-9_\-]/', '_', $empData['employee_name']);
+                    $zip->addFromString("DTR_{$cleanEmpId}_{$cleanName}_{$startDate}_{$endDate}.pdf", $singlePdf->output());
+                }
+                $zip->close();
+                return response()->download($zipPath, "DTR_Individual_PDFs_{$startDate}_{$endDate}.zip")->deleteFileAfterSend(true);
+            }
+        }
+
+        // Single employee individual or Combined PDF
+        $pdf = Pdf::loadView('hr.attendance.pdf.dtr_sheet', [
+            'employeesData' => $employeesData,
+            'runDate' => $runDate,
+            'runTime' => $runTime,
+        ])->setPaper('letter', 'portrait')
+          ->setOption('isRemoteEnabled', true);
+
+        if (count($employeesData) === 1) {
+            $cleanEmpId = preg_replace('/[^A-Za-z0-9_\-]/', '_', $employeesData[0]['employee_id']);
+            $cleanName = preg_replace('/[^A-Za-z0-9_\-]/', '_', $employeesData[0]['employee_name']);
+            return $pdf->download("DTR_{$cleanEmpId}_{$cleanName}_{$startDate}_{$endDate}.pdf");
+        }
+
+        return $pdf->download("DTR_Combined_{$startDate}_{$endDate}.pdf");
+    }
+
     // ==========================================
     // 3. SCHEDULES & SHIFT TEMPLATES
     // ==========================================
@@ -193,7 +712,7 @@ class AttendanceController extends Controller
         }
 
         $employees = $empQuery->orderBy('first_name')->get();
-        $shiftTemplates = ShiftTemplate::all();
+        $shiftTemplates = ShiftTemplate::orderBy('code')->get();
 
         // Load schedules for these employees for this week
         $schedules = EmployeeSchedule::whereIn('employee_id', $employees->pluck('id'))
@@ -209,55 +728,150 @@ class AttendanceController extends Controller
 
     public function scheduleStore(Request $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'employee_id' => 'required|exists:employees,id',
-            'schedule_date' => 'required|date',
+        $user = Auth::user();
+
+        $request->validate([
+            'employee_id' => 'nullable',
+            'employee_ids' => 'nullable|array',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date',
+            'schedule_date' => 'nullable|date',
             'shift_template_id' => 'nullable|exists:shift_templates,id',
-            'is_rest_day' => 'boolean',
-            'notes' => 'nullable|string',
+            'is_rest_day' => 'nullable|boolean',
+            'rest_days' => 'nullable|array',
+            'apply_mode' => 'nullable|string',
+            'notes' => 'nullable|string|max:255',
         ]);
 
-        $employee = Employee::findOrFail($validated['employee_id']);
+        // Resolve dates
+        $startDateStr = $request->input('start_date') ?: $request->input('schedule_date') ?: Carbon::today()->toDateString();
+        $endDateStr = $request->input('end_date') ?: $startDateStr;
 
-        $schedule = EmployeeSchedule::updateOrCreate(
-            [
-                'employee_id' => $employee->id,
-                'schedule_date' => $validated['schedule_date'],
-            ],
-            [
-                'branch_id' => $employee->branch_id,
-                'shift_template_id' => $validated['shift_template_id'] ?? null,
-                'is_rest_day' => $request->boolean('is_rest_day'),
-                'notes' => $validated['notes'] ?? null,
-            ]
-        );
+        $startDate = Carbon::parse($startDateStr)->startOfDay();
+        $endDate = Carbon::parse($endDateStr)->startOfDay();
 
-        AuditLogger::log('Update', 'Schedules', $schedule->id, "Updated schedule for {$employee->full_name} on {$validated['schedule_date']}");
+        if ($endDate->lt($startDate)) {
+            $tmp = $startDate;
+            $startDate = $endDate;
+            $endDate = $tmp;
+        }
 
-        return redirect()->back()->with('success', "Schedule updated.");
+        // Resolve target employees
+        $employeeIds = [];
+        if ($request->input('employee_id') === 'all') {
+            $empQuery = Employee::where('employment_status', 'Active');
+            if (!$user->isSuperAdmin() && !$user->isHrAdmin() && $user->branch_id) {
+                $empQuery->where('branch_id', $user->branch_id);
+            } elseif ($request->filled('branch_id')) {
+                $empQuery->where('branch_id', $request->input('branch_id'));
+            }
+            $employeeIds = $empQuery->pluck('id')->toArray();
+        } elseif ($request->filled('employee_id')) {
+            $employeeIds = [(int) $request->input('employee_id')];
+        } elseif ($request->has('employee_ids') && is_array($request->input('employee_ids'))) {
+            $employeeIds = array_map('intval', $request->input('employee_ids'));
+        }
+
+        if (empty($employeeIds)) {
+            return redirect()->back()->with('error', 'Please select at least one employee.');
+        }
+
+        // Rest days by day of week (Mon - Sun)
+        $rawRestDays = $request->input('rest_days', []);
+        if (!is_array($rawRestDays)) {
+            $rawRestDays = [];
+        }
+        $restDays = array_map(function ($d) {
+            return ucfirst(strtolower(substr(trim($d), 0, 3)));
+        }, $rawRestDays);
+
+        $isAllRestDay = $request->boolean('is_rest_day');
+        $shiftTemplateId = $request->input('shift_template_id');
+        $applyMode = $request->input('apply_mode', 'standard'); // 'standard' or 'rest_only'
+        $notes = $request->input('notes');
+
+        $employees = Employee::whereIn('id', $employeeIds)->get()->keyBy('id');
+        $totalAssigned = 0;
+
+        DB::transaction(function () use ($employees, $startDate, $endDate, $restDays, $isAllRestDay, $shiftTemplateId, $applyMode, $notes, &$totalAssigned) {
+            $curr = $startDate->copy();
+            while ($curr->lte($endDate)) {
+                $dateStr = $curr->toDateString();
+                $dayOfWeek = $curr->format('D'); // e.g. Mon, Tue, Wed, Thu, Fri, Sat, Sun
+
+                $isRestDayOnThisDate = $isAllRestDay || in_array($dayOfWeek, $restDays);
+
+                // If 'rest_only' mode is chosen, skip dates that are not designated as rest days
+                if ($applyMode === 'rest_only' && !$isRestDayOnThisDate) {
+                    $curr->addDay();
+                    continue;
+                }
+
+                foreach ($employees as $emp) {
+                    EmployeeSchedule::updateOrCreate(
+                        [
+                            'employee_id' => $emp->id,
+                            'schedule_date' => $dateStr,
+                        ],
+                        [
+                            'branch_id' => $emp->branch_id,
+                            'shift_template_id' => $isRestDayOnThisDate ? null : $shiftTemplateId,
+                            'is_rest_day' => $isRestDayOnThisDate,
+                            'notes' => $notes,
+                        ]
+                    );
+                    $totalAssigned++;
+                }
+                $curr->addDay();
+            }
+        });
+
+        $dateRangeText = $startDate->toDateString() === $endDate->toDateString()
+            ? $startDate->toDateString()
+            : "{$startDate->toDateString()} to {$endDate->toDateString()}";
+
+        $empCount = count($employeeIds);
+        AuditLogger::log('Update', 'Schedules', 0, "Assigned schedules for {$empCount} employee(s) across date range {$dateRangeText}");
+
+        return redirect()->back()->with('success', "Schedule assigned successfully ({$dateRangeText}) for {$empCount} employee(s).");
     }
 
     public function shiftTemplateStore(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:60',
-            'code' => 'required|string|max:20|unique:shift_templates,code',
             'start_time' => 'required|date_format:H:i',
             'end_time' => 'required|date_format:H:i',
-            'is_overnight' => 'boolean',
-            'break_minutes' => 'required|integer|min:0',
+            'is_overnight' => 'nullable|boolean',
+            'break_minutes' => 'nullable|integer|min:0',
             'color' => 'nullable|string|max:20',
-            'description' => 'nullable|string',
         ]);
 
-        $validated['start_time'] .= ':00';
-        $validated['end_time'] .= ':00';
-        $validated['is_overnight'] = $request->boolean('is_overnight');
+        $startTime = $validated['start_time'] . ':00';
+        $endTime = $validated['end_time'] . ':00';
+        $code = Carbon::parse($startTime)->format('Hi');
+        $formattedName = ShiftTemplate::formatShiftLabel($startTime, $endTime);
 
-        $shift = ShiftTemplate::create($validated);
+        $isOvernight = $request->boolean('is_overnight');
+        if (!$isOvernight && Carbon::parse($startTime)->gt(Carbon::parse($endTime))) {
+            $isOvernight = true;
+        }
+
+        $shift = ShiftTemplate::updateOrCreate(
+            ['code' => $code],
+            [
+                'name' => $formattedName,
+                'start_time' => $startTime,
+                'end_time' => $endTime,
+                'is_overnight' => $isOvernight,
+                'break_minutes' => $validated['break_minutes'] ?? 60,
+                'color' => $validated['color'] ?? '#8b5cf6',
+                'description' => null,
+            ]
+        );
+
         AuditLogger::log('Create', 'Schedules', $shift->id, "Created shift template '{$shift->name}'");
 
-        return redirect()->back()->with('success', "Shift template '{$shift->name}' created.");
+        return redirect()->back()->with('success', "Shift template '{$shift->name}' saved.");
     }
 
     // ==========================================

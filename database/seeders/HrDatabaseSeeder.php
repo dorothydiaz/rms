@@ -205,42 +205,42 @@ class HrDatabaseSeeder extends Seeder
         $posServer = Position::updateOrCreate(['code' => 'SV-08'], ['department_id' => $deptFoh->id, 'name' => 'Server']);
         $posHost = Position::updateOrCreate(['code' => 'HT-09'], ['department_id' => $deptFoh->id, 'name' => 'Host']);
 
-        // 8. Shift Templates (Supporting Overnight Shifts)
+        // 8. Shift Templates
         $shiftMorning = ShiftTemplate::updateOrCreate(
-            ['code' => 'MORN-01'],
+            ['code' => '0600'],
             [
-                'name' => 'Morning Shift (FOH/Kitchen)',
+                'name' => '0600 = 6AM - 3PM',
                 'start_time' => '06:00:00',
                 'end_time' => '15:00:00',
                 'break_minutes' => 60,
                 'color' => '#10b981',
-                'description' => 'Standard opening restaurant shift',
+                'description' => null,
                 'is_overnight' => false,
             ]
         );
 
         $shiftAfternoon = ShiftTemplate::updateOrCreate(
-            ['code' => 'AFT-02'],
+            ['code' => '1400'],
             [
-                'name' => 'Afternoon/Closing Shift',
+                'name' => '1400 = 2PM - 11PM',
                 'start_time' => '14:00:00',
                 'end_time' => '23:00:00',
                 'break_minutes' => 60,
-                'color' => '#f59e0b',
-                'description' => 'Evening dinner and restaurant closing shift',
-                'is_overnight' => false, // ends 11 PM, includes 1 hr night diff
+                'color' => '#f97316',
+                'description' => null,
+                'is_overnight' => false,
             ]
         );
 
         $shiftOvernight = ShiftTemplate::updateOrCreate(
-            ['code' => 'NIGHT-03'],
+            ['code' => '2200'],
             [
-                'name' => 'Overnight Prep Shift',
+                'name' => '2200 = 10PM - 7AM',
                 'start_time' => '22:00:00',
                 'end_time' => '07:00:00',
                 'break_minutes' => 60,
                 'color' => '#8b5cf6',
-                'description' => 'Crosses midnight into next morning for kitchen stock prep',
+                'description' => null,
                 'is_overnight' => true,
             ]
         );

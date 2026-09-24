@@ -96,6 +96,7 @@ class PeopleController extends Controller
             'mobile_number' => 'nullable|string|max:30',
             'email' => 'nullable|email|max:100',
             'address' => 'nullable|string',
+            'photo' => 'nullable|file|mimes:jpeg,png,jpg,webp,gif|max:5120',
             'branch_id' => 'required|exists:branches,id',
             'department_id' => 'nullable|exists:departments,id',
             'position_id' => 'nullable|exists:positions,id',
@@ -103,6 +104,9 @@ class PeopleController extends Controller
             'date_hired' => 'required|date',
             'employment_status' => 'required|in:Active,Probationary,On Leave,Suspended,Resigned,Terminated,Retired',
             'employment_type' => 'required|in:Regular,Probationary,Part-time,Casual,Contractual',
+            'employment_source' => 'nullable|in:Company,Agency',
+            'company_name' => 'nullable|string|max:150',
+            'agency_name' => 'nullable|string|max:150',
             'date_of_regularization' => 'nullable|date',
             'contract_start_date' => 'nullable|date',
             'contract_end_date' => 'nullable|date',
@@ -121,6 +125,17 @@ class PeopleController extends Controller
 
         if (!$user->canAccessBranch($validated['branch_id'])) {
             abort(403, 'Unauthorized to create employee in another branch.');
+        }
+
+        if (($validated['employment_source'] ?? '') === 'Agency') {
+            $validated['company_agency_name'] = $validated['agency_name'] ?? null;
+        } else {
+            $validated['company_agency_name'] = $validated['company_name'] ?? null;
+        }
+
+        if ($request->hasFile('photo')) {
+            $path = $request->file('photo')->store('employees/photos', 'public');
+            $validated['photo'] = $path;
         }
 
         $employee = Employee::create($validated);
@@ -161,6 +176,8 @@ class PeopleController extends Controller
             'mobile_number' => 'nullable|string|max:30',
             'email' => 'nullable|email|max:100',
             'address' => 'nullable|string',
+            'photo' => 'nullable|file|mimes:jpeg,png,jpg,webp,gif|max:5120',
+            'remove_photo' => 'nullable|boolean',
             'branch_id' => 'required|exists:branches,id',
             'department_id' => 'nullable|exists:departments,id',
             'position_id' => 'nullable|exists:positions,id',
@@ -168,6 +185,9 @@ class PeopleController extends Controller
             'date_hired' => 'required|date',
             'employment_status' => 'required|in:Active,Probationary,On Leave,Suspended,Resigned,Terminated,Retired',
             'employment_type' => 'required|in:Regular,Probationary,Part-time,Casual,Contractual',
+            'employment_source' => 'nullable|in:Company,Agency',
+            'company_name' => 'nullable|string|max:150',
+            'agency_name' => 'nullable|string|max:150',
             'date_of_regularization' => 'nullable|date',
             'contract_start_date' => 'nullable|date',
             'contract_end_date' => 'nullable|date',
@@ -180,6 +200,25 @@ class PeopleController extends Controller
             'pay_frequency' => 'required|in:Semi-Monthly,Monthly,Weekly',
             'allowances' => 'nullable|numeric|min:0',
         ]);
+
+        if (($validated['employment_source'] ?? '') === 'Agency') {
+            $validated['company_agency_name'] = $validated['agency_name'] ?? null;
+        } else {
+            $validated['company_agency_name'] = $validated['company_name'] ?? null;
+        }
+
+        if ($request->boolean('remove_photo')) {
+            if ($employee->photo && Storage::disk('public')->exists($employee->photo)) {
+                Storage::disk('public')->delete($employee->photo);
+            }
+            $validated['photo'] = null;
+        } elseif ($request->hasFile('photo')) {
+            if ($employee->photo && Storage::disk('public')->exists($employee->photo)) {
+                Storage::disk('public')->delete($employee->photo);
+            }
+            $path = $request->file('photo')->store('employees/photos', 'public');
+            $validated['photo'] = $path;
+        }
 
         $prev = $employee->toArray();
         $employee->update($validated);

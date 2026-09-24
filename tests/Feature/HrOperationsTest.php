@@ -137,7 +137,7 @@ class HrOperationsTest extends TestCase
     {
         // Overnight Shift: 22:00 to 07:00 (9 hours total, 1 hour break = 8 hours worked)
         // All 8 working hours fall between 22:00 and 06:00
-        $shift = ShiftTemplate::where('code', 'NIGHT-03')->first();
+        $shift = ShiftTemplate::whereIn('code', ['2200', 'NIGHT-03'])->first();
         $this->assertNotNull($shift);
 
         $service = new AttendanceCalculationService();

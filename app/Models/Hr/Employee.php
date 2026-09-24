@@ -38,6 +38,10 @@ class Employee extends Model
         'date_hired',
         'employment_status',
         'employment_type',
+        'employment_source',
+        'company_name',
+        'agency_name',
+        'company_agency_name',
         'date_of_regularization',
         'contract_start_date',
         'contract_end_date',
@@ -70,6 +74,36 @@ class Employee extends Model
         $middle = $this->middle_name ? ' ' . mb_substr($this->middle_name, 0, 1) . '.' : '';
         $suffix = $this->suffix ? ' ' . $this->suffix : '';
         return "{$this->first_name}{$middle} {$this->last_name}{$suffix}";
+    }
+
+    public function getPhotoUrlAttribute(): ?string
+    {
+        if (!empty($this->photo)) {
+            if (str_starts_with($this->photo, 'http://') || str_starts_with($this->photo, 'https://')) {
+                return $this->photo;
+            }
+            if (str_starts_with($this->photo, 'storage/')) {
+                return asset($this->photo);
+            }
+            return asset('storage/' . $this->photo);
+        }
+        return null;
+    }
+
+    public function getInitialsAttribute(): string
+    {
+        $first = mb_substr(trim($this->first_name ?? ''), 0, 1);
+        $last = mb_substr(trim($this->last_name ?? ''), 0, 1);
+        $init = strtoupper($first . $last);
+        return $init ?: 'EM';
+    }
+
+    public function getCompanyOrAgencyAttribute(): string
+    {
+        if ($this->employment_source === 'Agency') {
+            return $this->agency_name ?: $this->company_agency_name ?: 'Agency';
+        }
+        return $this->company_name ?: $this->company_agency_name ?: ($this->branch?->company?->name ?? 'Company');
     }
 
     public function user(): BelongsTo

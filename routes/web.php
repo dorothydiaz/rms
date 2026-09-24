@@ -83,6 +83,8 @@ Route::middleware('auth')->group(function () {
             Route::post('/timekeeping', [\App\Http\Controllers\Hr\AttendanceController::class, 'timekeepingStore'])->name('timekeeping.store');
 
             Route::get('/dtr', [\App\Http\Controllers\Hr\AttendanceController::class, 'dtrIndex'])->name('dtr');
+            Route::get('/dtr/tags', [\App\Http\Controllers\Hr\AttendanceController::class, 'dtrTags'])->name('dtr.tags');
+            Route::post('/dtr/export-pdf', [\App\Http\Controllers\Hr\AttendanceController::class, 'dtrExportPdf'])->name('dtr.export-pdf');
 
             Route::get('/schedules', [\App\Http\Controllers\Hr\AttendanceController::class, 'schedulesIndex'])->name('schedules');
             Route::post('/schedules', [\App\Http\Controllers\Hr\AttendanceController::class, 'scheduleStore'])->name('schedules.store');

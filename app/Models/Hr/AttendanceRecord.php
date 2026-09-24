@@ -18,19 +18,29 @@ class AttendanceRecord extends Model
         'schedule_id',
         'branch_id',
         'date',
+        'in_1',
+        'out_1',
+        'in_2',
+        'out_2',
+        'in_3',
+        'out_3',
         'time_in',
         'break_out',
         'break_in',
+        'coffee_break_out',
+        'coffee_break_in',
         'time_out',
         'total_hours',
         'regular_hours',
         'late_minutes',
         'undertime_minutes',
         'overtime_hours',
+        'absence_days',
         'night_diff_hours',
         'holiday_type',
         'is_rest_day',
         'status',
+        'dtr_remarks',
         'source',
         'notes',
     ];
@@ -67,5 +77,15 @@ class AttendanceRecord extends Model
     public function corrections(): HasMany
     {
         return $this->hasMany(AttendanceCorrection::class);
+    }
+
+    public function getInAttribute(): ?string
+    {
+        return $this->time_in ?? $this->in_1;
+    }
+
+    public function getFinalOutAttribute(): ?string
+    {
+        return $this->time_out ?? $this->out_3;
     }
 }
