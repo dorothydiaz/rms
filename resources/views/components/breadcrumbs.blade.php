@@ -27,6 +27,7 @@
                         ['title' => 'Departments', 'url' => route('hr.people.departments'), 'icon' => 'ph-tree-structure', 'route' => 'hr.people.departments'],
                         ['title' => 'Positions', 'url' => route('hr.people.positions'), 'icon' => 'ph-identification-card', 'route' => 'hr.people.positions'],
                         ['title' => 'Branches', 'url' => route('hr.people.branches'), 'icon' => 'ph-storefront', 'route' => 'hr.people.branches'],
+                        ['title' => 'Agency / Company', 'url' => route('hr.people.companies'), 'icon' => 'ph-buildings', 'route' => 'hr.people.companies'],
                         ['title' => 'Documents Repository', 'url' => route('hr.people.documents'), 'icon' => 'ph-folder-simple-user', 'route' => 'hr.people.documents'],
                         ['title' => 'Employee Masterlist (Legacy)', 'url' => route('hr.employee'), 'icon' => 'ph-users', 'route' => 'hr.employee'],
                     ]

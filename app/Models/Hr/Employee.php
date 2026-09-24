@@ -32,6 +32,7 @@ class Employee extends Model
         'address',
         'photo',
         'branch_id',
+        'company_id',
         'department_id',
         'position_id',
         'supervisor_id',
@@ -101,14 +102,19 @@ class Employee extends Model
     public function getCompanyOrAgencyAttribute(): string
     {
         if ($this->employment_source === 'Agency') {
-            return $this->agency_name ?: $this->company_agency_name ?: 'Agency';
+            return $this->agency_name ?: ($this->company?->type === 'Agency' ? $this->company->name : ($this->company_agency_name ?: 'Agency'));
         }
-        return $this->company_name ?: $this->company_agency_name ?: ($this->branch?->company?->name ?? 'Company');
+        return $this->company_name ?: ($this->company?->name ?: ($this->company_agency_name ?: ($this->branch?->company?->name ?? 'Company')));
     }
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
     }
 
     public function branch(): BelongsTo

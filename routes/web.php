@@ -56,8 +56,14 @@ Route::middleware('auth')->group(function () {
             Route::post('/branches', [\App\Http\Controllers\Hr\PeopleController::class, 'branchStore'])->name('branches.store');
             Route::put('/branches/{id}', [\App\Http\Controllers\Hr\PeopleController::class, 'branchUpdate'])->name('branches.update');
 
+            Route::get('/companies', [\App\Http\Controllers\Hr\PeopleController::class, 'companiesIndex'])->name('companies');
+            Route::post('/companies', [\App\Http\Controllers\Hr\PeopleController::class, 'companyStore'])->name('companies.store');
+            Route::put('/companies/{id}', [\App\Http\Controllers\Hr\PeopleController::class, 'companyUpdate'])->name('companies.update');
+            Route::delete('/companies/{id}', [\App\Http\Controllers\Hr\PeopleController::class, 'companyDestroy'])->name('companies.destroy');
+
             Route::get('/documents', [\App\Http\Controllers\Hr\PeopleController::class, 'documentsIndex'])->name('documents');
             Route::post('/documents', [\App\Http\Controllers\Hr\PeopleController::class, 'documentStore'])->name('documents.store');
+            Route::get('/documents/{id}/download', [\App\Http\Controllers\Hr\PeopleController::class, 'documentDownload'])->name('documents.download');
             Route::delete('/documents/{id}', [\App\Http\Controllers\Hr\PeopleController::class, 'documentDestroy'])->name('documents.destroy');
         });
 
