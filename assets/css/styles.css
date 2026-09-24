@@ -2911,97 +2911,148 @@ select option {
     min-height: 240px;
 }
 
-/* Glassmorphic Modals with Gradient Header */
-.hr-modal-overlay {
+/* ============================================================
+   UNIVERSAL GLASSMORPHIC MODALS (White BG with 90% Transparency)
+   Applies to .hr-modal, .modal-content, and all system modals
+   ============================================================ */
+.hr-modal-overlay,
+.modal-backdrop {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(15, 23, 42, 0.45);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    background: rgba(15, 23, 42, 0.35) !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1000;
+    z-index: 1050;
     opacity: 0;
     visibility: hidden;
     transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     padding: 20px;
 }
 
-.hr-modal-overlay.open {
+.hr-modal-overlay.open,
+.modal.show {
     opacity: 1;
     visibility: visible;
 }
 
-.hr-modal {
-    background: rgba(255, 255, 255, 0.88);
-    backdrop-filter: blur(28px);
-    -webkit-backdrop-filter: blur(28px);
-    border-radius: 20px;
-    box-shadow: 0 24px 60px rgba(168, 85, 247, 0.18), 0 10px 24px rgba(0, 0, 0, 0.08);
+.hr-modal,
+.modal-content,
+.modal-dialog .modal-content,
+.modal-box,
+.swal2-popup {
+    background: rgba(255, 255, 255, 0.90) !important;
+    backdrop-filter: blur(28px) saturate(190%) !important;
+    -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
+    border-radius: 22px !important;
+    box-shadow: 0 25px 60px -10px rgba(100, 116, 139, 0.20), 0 10px 24px -4px rgba(0, 0, 0, 0.06), inset 0 1.5px 2px #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.95) !important;
     width: 100%;
     max-width: 640px;
     max-height: 90vh;
     overflow-y: auto;
-    border: 1px solid rgba(255, 255, 255, 0.95);
     display: flex;
     flex-direction: column;
-    transform: scale(0.96) translateY(10px);
+    transform: scale(0.96) translateY(12px);
     transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     position: relative;
 }
 
-.hr-modal::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, #ec4899, #a855f7);
-    border-radius: 20px 20px 0 0;
+/* Remove colored gradient accent strip */
+.hr-modal::before,
+.modal-content::before {
+    display: none !important;
 }
 
-.hr-modal-overlay.open .hr-modal {
+.hr-modal-overlay.open .hr-modal,
+.modal.show .modal-content {
     transform: scale(1) translateY(0);
 }
 
-.hr-modal-header {
-    padding: 18px 24px;
-    border-bottom: 1px solid rgba(168, 85, 247, 0.14);
+.hr-modal-header,
+.modal-header {
+    padding: 18px 24px !important;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.75) !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    background: rgba(255, 255, 255, 0.70) !important;
+    border-radius: 22px 22px 0 0 !important;
+}
+
+.hr-modal-title,
+.modal-title {
+    font-family: var(--font-heading) !important;
+    font-size: 16.5px !important;
+    font-weight: 700 !important;
+    color: #0f172a !important;
+    background: none !important;
+    -webkit-background-clip: unset !important;
+    -webkit-text-fill-color: #0f172a !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+}
+
+.hr-modal-title i,
+.modal-title i {
+    color: #8b5cf6 !important;
+    font-size: 18px !important;
+}
+
+.hr-modal-header .icon-btn,
+.modal-header .btn-close,
+.modal-header .close {
+    width: 32px;
+    height: 32px;
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    background: linear-gradient(135deg, rgba(236, 72, 153, 0.04), rgba(168, 85, 247, 0.06));
+    justify-content: center;
+    border-radius: 10px;
+    background: rgba(241, 245, 249, 0.7);
+    border: 1px solid rgba(226, 232, 240, 0.85);
+    color: #64748b;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.15s ease;
 }
 
-.hr-modal-title {
-    font-family: var(--font-heading);
-    font-size: 17px;
-    font-weight: 800;
-    background: linear-gradient(135deg, #ec4899, #a855f7);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+.hr-modal-header .icon-btn:hover,
+.modal-header .btn-close:hover,
+.modal-header .close:hover {
+    background: #ffffff;
+    border-color: rgba(168, 85, 247, 0.4);
+    color: #7c3aed;
+    box-shadow: 0 2px 8px rgba(168, 85, 247, 0.15);
 }
 
-.hr-modal-body {
-    padding: 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
+.hr-modal-body,
+.modal-body {
+    padding: 24px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px !important;
+    background: transparent !important;
+    color: #334155 !important;
 }
 
-.hr-modal-footer {
-    padding: 16px 24px;
-    border-top: 1px solid rgba(168, 85, 247, 0.12);
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-    background: rgba(255, 255, 255, 0.5);
-    border-radius: 0 0 20px 20px;
+.hr-modal-footer,
+.modal-footer {
+    padding: 16px 24px !important;
+    border-top: 1px solid rgba(226, 232, 240, 0.75) !important;
+    display: flex !important;
+    justify-content: flex-end !important;
+    align-items: center !important;
+    gap: 12px !important;
+    background: rgba(255, 255, 255, 0.60) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    border-radius: 0 0 22px 22px !important;
 }
 
 .hr-form-grid {
