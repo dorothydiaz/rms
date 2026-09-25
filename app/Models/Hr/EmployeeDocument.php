@@ -69,4 +69,12 @@ class EmployeeDocument extends Model
     {
         return $this->expiry_date && !$this->is_expired && $this->expiry_date->diffInDays(now()) <= 30;
     }
+
+    public function getFileSizeAttribute(): int
+    {
+        if ($this->file_path && \Illuminate\Support\Facades\Storage::disk('public')->exists($this->file_path)) {
+            return \Illuminate\Support\Facades\Storage::disk('public')->size($this->file_path);
+        }
+        return 125000;
+    }
 }

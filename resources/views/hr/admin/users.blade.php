@@ -44,6 +44,7 @@
                     <th>Username / Name</th>
                     <th>Email</th>
                     <th>Assigned Role</th>
+                    <th>Linked Employee Profile</th>
                     <th>Branch Access Scope</th>
                     <th>Status</th>
                     <th>Last Active</th>
@@ -64,6 +65,18 @@
                                     {{ $role->name }}
                                 </span>
                             @endforeach
+                        </td>
+                        <td>
+                            @if($u->employee)
+                                <a href="{{ route('hr.people.employees.show', $u->employee->id) }}" style="text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
+                                    <span class="hr-badge hr-badge-neutral" style="font-size: 12px; font-weight: 600;">
+                                        <i class="ph ph-identification-card" style="color: #7c3aed;"></i> {{ $u->employee->full_name }}
+                                    </span>
+                                    <span style="font-size: 11px; color: #64748b; font-family: monospace;">{{ $u->employee->employee_id }}</span>
+                                </a>
+                            @else
+                                <span style="color: #94a3b8; font-size: 12px; font-style: italic;">No Employee Linked</span>
+                            @endif
                         </td>
                         <td>
                             @if($u->branch)
@@ -91,7 +104,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="7" style="text-align: center; color: #94a3b8; padding: 35px;">
+                        <td colspan="8" style="text-align: center; color: #94a3b8; padding: 35px;">
                             No user accounts matching criteria.
                         </td>
                     </tr>
@@ -157,6 +170,16 @@
                     </div>
                 </div>
                 <div class="hr-form-group">
+                    <label class="hr-form-label">Link to Database Employee Profile</label>
+                    <select name="employee_id" class="hr-select">
+                        <option value="">-- None (Standalone Account) --</option>
+                        @foreach($employees as $emp)
+                            <option value="{{ $emp->id }}">{{ $emp->full_name }} ({{ $emp->employee_id }}) - {{ $emp->branch?->name ?? 'Universal' }}</option>
+                        @endforeach
+                    </select>
+                    <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Connects this user login with their employee master record in the database.</div>
+                </div>
+                <div class="hr-form-group">
                     <label class="hr-form-label">Account Status *</label>
                     <select name="status" class="hr-select" required>
                         <option value="Active">Active</option>
@@ -210,6 +233,16 @@
                     </div>
                 </div>
                 <div class="hr-form-group">
+                    <label class="hr-form-label">Link to Database Employee Profile</label>
+                    <select id="edit_employee_id" name="employee_id" class="hr-select">
+                        <option value="">-- None (Standalone Account) --</option>
+                        @foreach($employees as $emp)
+                            <option value="{{ $emp->id }}">{{ $emp->full_name }} ({{ $emp->employee_id }}) - {{ $emp->branch?->name ?? 'Universal' }}</option>
+                        @endforeach
+                    </select>
+                    <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Connects this user login with their employee master record in the database.</div>
+                </div>
+                <div class="hr-form-group">
                     <label class="hr-form-label">Account Status *</label>
                     <select id="edit_status" name="status" class="hr-select" required>
                         <option value="Active">Active</option>
@@ -261,6 +294,7 @@ function editUser(user) {
     document.getElementById('edit_email').value = user.email;
     document.getElementById('edit_branch_id').value = user.branch_id || '';
     document.getElementById('edit_status').value = user.status;
+    document.getElementById('edit_employee_id').value = user.employee ? user.employee.id : '';
     if (user.roles && user.roles.length > 0) {
         document.getElementById('edit_role_id').value = user.roles[0].id;
     }

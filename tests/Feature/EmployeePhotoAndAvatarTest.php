@@ -7,12 +7,15 @@ use App\Models\Hr\Department;
 use App\Models\Hr\Employee;
 use App\Models\Hr\Position;
 use App\Models\User;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class EmployeePhotoAndAvatarTest extends TestCase
 {
+    use DatabaseTransactions;
+
     private User $admin;
     private Branch $branch;
 

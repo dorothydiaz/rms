@@ -27,7 +27,7 @@ class HrAdminController extends Controller
 
     public function usersIndex(Request $request): View
     {
-        $query = User::with(['roles', 'branch']);
+        $query = User::with(['roles', 'branch', 'employee']);
 
         if ($request->filled('role')) {
             $query->whereHas('roles', fn($q) => $q->where('slug', $request->role));
@@ -40,8 +40,9 @@ class HrAdminController extends Controller
         $users = $query->paginate($perPage)->withQueryString();
         $roles = Role::all();
         $branches = Branch::where('is_active', true)->get();
+        $employees = Employee::orderBy('first_name')->orderBy('last_name')->get();
 
-        return view('hr.admin.users', compact('users', 'roles', 'branches'));
+        return view('hr.admin.users', compact('users', 'roles', 'branches', 'employees'));
     }
 
     public function userStore(Request $request): RedirectResponse
@@ -53,6 +54,7 @@ class HrAdminController extends Controller
             'password' => 'required|string|min:8',
             'role_id' => 'required|exists:roles,id',
             'branch_id' => 'nullable|exists:branches,id',
+            'employee_id' => 'nullable|exists:employees,id',
             'status' => 'required|in:Active,Inactive',
         ]);
 
@@ -73,6 +75,10 @@ class HrAdminController extends Controller
 
         $user->roles()->sync([$role->id]);
 
+        if (!empty($validated['employee_id'])) {
+            Employee::where('id', $validated['employee_id'])->update(['user_id' => $user->id]);
+        }
+
         AuditLogger::log('Create', 'RBAC', $user->id, "Created administrative user {$user->username} with role {$role->name}");
 
         return redirect()->back()->with('success', "User '{$user->username}' created successfully.");
@@ -86,6 +92,7 @@ class HrAdminController extends Controller
             'email' => 'required|email|max:100|unique:users,email,' . $id,
             'role_id' => 'required|exists:roles,id',
             'branch_id' => 'nullable|exists:branches,id',
+            'employee_id' => 'nullable|exists:employees,id',
             'status' => 'required|in:Active,Inactive',
         ]);
 
@@ -103,6 +110,13 @@ class HrAdminController extends Controller
         ]);
 
         $user->roles()->sync([$role->id]);
+
+        if ($request->has('employee_id')) {
+            Employee::where('user_id', $user->id)->update(['user_id' => null]);
+            if (!empty($validated['employee_id'])) {
+                Employee::where('id', $validated['employee_id'])->update(['user_id' => $user->id]);
+            }
+        }
 
         AuditLogger::log('Update', 'RBAC', $user->id, "Updated user {$user->username} profile/role");
 

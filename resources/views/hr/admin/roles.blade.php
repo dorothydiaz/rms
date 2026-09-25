@@ -163,51 +163,112 @@
     </div>
 
     <!-- Filter Bar -->
-    <div class="hr-filter-bar" style="margin-bottom: 18px;">
-        <div style="display: flex; gap: 12px; width: 100%; align-items: center; flex-wrap: wrap; justify-content: space-between;">
-            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; flex: 1;">
-                <div style="position: relative; min-width: 260px;">
-                    <i class="ph ph-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 15px;"></i>
-                    <input type="text" id="employeeSearchInput" class="hr-input" placeholder="Search employee name, ID, position..." oninput="filterEmployeeTable()" style="padding-left: 36px;">
-                </div>
-
-                <select id="branchFilterSelect" class="hr-select" style="max-width: 220px;" onchange="filterEmployeeTable()">
-                    <option value="">-- All Branches --</option>
-                    @foreach($branches as $b)
-                        <option value="{{ $b->name }}" {{ request('branch_id') == $b->id ? 'selected' : '' }}>{{ $b->name }}</option>
-                    @endforeach
-                </select>
-
-                <select id="permStatusFilter" class="hr-select" style="max-width: 210px;" onchange="filterEmployeeTable()">
-                    <option value="">-- All Permission States --</option>
-                    <option value="custom">Has Custom Permissions</option>
-                    <option value="defaults">Role Defaults Only</option>
-                    <option value="has_user">Has System User</option>
-                </select>
-
-                <button type="button" class="hr-btn hr-btn-secondary" onclick="resetEmployeeFilters()">
-                    <i class="ph ph-arrows-counter-clockwise"></i> Reset
-                </button>
+    <div class="hr-filter-bar" style="margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+        <!-- Filters & Search Controls Group -->
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; flex: 1;">
+            <!-- Search Input -->
+            <div style="position: relative; width: 260px; flex-shrink: 0;">
+                <i class="ph ph-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 16px; pointer-events: none;"></i>
+                <input type="text" id="employeeSearchInput" class="hr-input" placeholder="Search employee, ID, role..." oninput="filterEmployeeTable()" style="width: 100%; box-sizing: border-box; padding-left: 36px; height: 38px;">
             </div>
 
-            <div style="font-size: 13px; color: #64748b; font-weight: 500;">
+            <select id="branchFilterSelect" class="hr-select" style="height: 38px; max-width: 190px;" onchange="filterEmployeeTable()">
+                <option value="">-- All Branches --</option>
+                @foreach($branches as $b)
+                    <option value="{{ $b->name }}" {{ request('branch_id') == $b->id ? 'selected' : '' }}>{{ $b->name }}</option>
+                @endforeach
+            </select>
+
+            <select id="permStatusFilter" class="hr-select" style="height: 38px; max-width: 200px;" onchange="filterEmployeeTable()">
+                <option value="">-- All Permission States --</option>
+                <option value="custom">Has Custom Permissions</option>
+                <option value="defaults">Role Defaults Only</option>
+                <option value="has_user">Has System User</option>
+            </select>
+
+            <!-- Sort Options in Toolbar -->
+            <select id="rolesSortSelect" class="hr-select" style="height: 38px; max-width: 195px;" onchange="applyRolesSortFromSelect(this.value)">
+                <option value="">Sort By: Default</option>
+                <option value="name_asc">Employee (A &rarr; Z)</option>
+                <option value="name_desc">Employee (Z &rarr; A)</option>
+                <option value="pos_asc">Position / Dept (A &rarr; Z)</option>
+                <option value="branch_asc">Branch (A &rarr; Z)</option>
+                <option value="role_asc">Role (A &rarr; Z)</option>
+                <option value="perms_desc">Direct Permissions (Most First)</option>
+                <option value="perms_asc">Direct Permissions (Least First)</option>
+            </select>
+
+            <button type="button" class="hr-btn hr-btn-secondary" onclick="resetEmployeeFilters()" title="Reset all filters" style="height: 38px; padding: 0 14px;">
+                <i class="ph ph-arrows-counter-clockwise"></i>
+                <span>Reset</span>
+            </button>
+        </div>
+
+        <!-- Live Counter Badge -->
+        <div style="flex-shrink: 0;">
+            <span class="hr-badge hr-badge-neutral" style="font-size: 12px; font-weight: 600; padding: 7px 12px; border-radius: 8px; background: #f1f5f9; color: #475569; display: inline-flex; align-items: center; gap: 4px;">
                 Showing <strong id="displayedEmpCount" style="color: #0f172a;">{{ $employees->count() }}</strong> employees
-            </div>
+            </span>
         </div>
     </div>
 
     <!-- Employee Table -->
     <div class="hr-table-card">
-        <div class="hr-table-wrapper">
+        <div class="hr-table-wrapper" style="max-height: 560px; overflow-y: auto; overflow-x: auto;">
             <table class="hr-table" id="employeePermissionsTable">
                 <thead>
                     <tr>
-                        <th>Employee</th>
-                        <th>Position & Department</th>
-                        <th>Branch</th>
-                        <th>System User & Role</th>
-                        <th>Direct Permissions</th>
-                        <th style="text-align: right;">Action</th>
+                        <th class="sortable" onclick="sortEmployeesTable(0, 'text')" title="Click to sort by Employee Name (A-Z / Z-A)">
+                            <div style="display: flex; align-items: center; justify-content: space-between;">
+                                <span>Employee</span>
+                                <span style="display: inline-flex; align-items: center;">
+                                    <span class="sort-badge asc">ASC</span>
+                                    <span class="sort-badge desc">DESC</span>
+                                    <span class="sort-icon"><i class="ph ph-arrows-down-up"></i></span>
+                                </span>
+                            </div>
+                        </th>
+                        <th class="sortable" onclick="sortEmployeesTable(1, 'text')" title="Click to sort by Position & Department">
+                            <div style="display: flex; align-items: center; justify-content: space-between;">
+                                <span>Position & Department</span>
+                                <span style="display: inline-flex; align-items: center;">
+                                    <span class="sort-badge asc">ASC</span>
+                                    <span class="sort-badge desc">DESC</span>
+                                    <span class="sort-icon"><i class="ph ph-arrows-down-up"></i></span>
+                                </span>
+                            </div>
+                        </th>
+                        <th class="sortable" onclick="sortEmployeesTable(2, 'text')" title="Click to sort by Branch (A-Z / Z-A)">
+                            <div style="display: flex; align-items: center; justify-content: space-between;">
+                                <span>Branch</span>
+                                <span style="display: inline-flex; align-items: center;">
+                                    <span class="sort-badge asc">ASC</span>
+                                    <span class="sort-badge desc">DESC</span>
+                                    <span class="sort-icon"><i class="ph ph-arrows-down-up"></i></span>
+                                </span>
+                            </div>
+                        </th>
+                        <th class="sortable" onclick="sortEmployeesTable(3, 'text')" title="Click to sort by System User & Role">
+                            <div style="display: flex; align-items: center; justify-content: space-between;">
+                                <span>System User & Role</span>
+                                <span style="display: inline-flex; align-items: center;">
+                                    <span class="sort-badge asc">ASC</span>
+                                    <span class="sort-badge desc">DESC</span>
+                                    <span class="sort-icon"><i class="ph ph-arrows-down-up"></i></span>
+                                </span>
+                            </div>
+                        </th>
+                        <th class="sortable" onclick="sortEmployeesTable(4, 'number')" title="Click to sort by Direct Permissions Count">
+                            <div style="display: flex; align-items: center; justify-content: space-between;">
+                                <span>Direct Permissions</span>
+                                <span style="display: inline-flex; align-items: center;">
+                                    <span class="sort-badge asc">ASC</span>
+                                    <span class="sort-badge desc">DESC</span>
+                                    <span class="sort-icon"><i class="ph ph-arrows-down-up"></i></span>
+                                </span>
+                            </div>
+                        </th>
+                        <th style="text-align: right; width: 140px;">Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -225,6 +286,8 @@
                             data-emp-id="{{ strtolower($emp->employee_id) }}" 
                             data-position="{{ strtolower($emp->position?->name ?? '') }}" 
                             data-branch="{{ $emp->branch?->name ?? '' }}" 
+                            data-role="{{ strtolower($roleName) }}"
+                            data-permissions-count="{{ $customCount }}"
                             data-has-custom="{{ $hasCustom ? 'true' : 'false' }}" 
                             data-has-user="{{ $hasUser ? 'true' : 'false' }}">
                             <td>
@@ -880,6 +943,180 @@ function filterModalPermissions(query) {
         const visibleItems = card.querySelectorAll('.modal-perm-item:not([style*="display: none"])');
         card.style.display = visibleItems.length === 0 ? 'none' : 'block';
     });
+}
+
+// =========================================================================
+// Employee Permissions Table Real-Time Filter
+// =========================================================================
+function filterEmployeeTable() {
+    const searchVal = (document.getElementById('employeeSearchInput')?.value || '').toLowerCase().trim();
+    const branchVal = (document.getElementById('branchFilterSelect')?.value || '').trim();
+    const permVal = (document.getElementById('permStatusFilter')?.value || '').trim();
+
+    const rows = document.querySelectorAll('#employeePermissionsTable tbody tr.emp-row');
+    let visibleCount = 0;
+
+    rows.forEach(row => {
+        const name = row.getAttribute('data-name') || '';
+        const empId = row.getAttribute('data-emp-id') || '';
+        const pos = row.getAttribute('data-position') || '';
+        const branch = row.getAttribute('data-branch') || '';
+        const role = row.getAttribute('data-role') || '';
+        const hasCustom = row.getAttribute('data-has-custom') === 'true';
+        const hasUser = row.getAttribute('data-has-user') === 'true';
+
+        const matchesSearch = !searchVal || 
+            name.includes(searchVal) || 
+            empId.includes(searchVal) || 
+            pos.includes(searchVal) || 
+            role.includes(searchVal);
+
+        const matchesBranch = !branchVal || branch === branchVal;
+
+        let matchesPerm = true;
+        if (permVal === 'custom') matchesPerm = hasCustom;
+        else if (permVal === 'defaults') matchesPerm = !hasCustom;
+        else if (permVal === 'has_user') matchesPerm = hasUser;
+
+        if (matchesSearch && matchesBranch && matchesPerm) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+
+    const countElem = document.getElementById('displayedEmpCount');
+    if (countElem) countElem.textContent = visibleCount;
+}
+
+function resetEmployeeFilters() {
+    const s = document.getElementById('employeeSearchInput');
+    if (s) s.value = '';
+    const b = document.getElementById('branchFilterSelect');
+    if (b) b.value = '';
+    const p = document.getElementById('permStatusFilter');
+    if (p) p.value = '';
+    const sel = document.getElementById('rolesSortSelect');
+    if (sel) sel.value = '';
+
+    document.querySelectorAll('#employeePermissionsTable thead th.sortable').forEach(th => {
+        th.classList.remove('sorted-asc', 'sorted-desc');
+        const icon = th.querySelector('.sort-icon i');
+        if (icon) icon.className = 'ph ph-arrows-down-up';
+    });
+    currentEmpSortCol = -1;
+
+    filterEmployeeTable();
+}
+
+// =========================================================================
+// Employee Table Column Sorting (Via Table Header Click or Toolbar Dropdown)
+// =========================================================================
+let currentEmpSortCol = -1;
+let currentEmpSortDir = 'asc';
+
+function applyRolesSortFromSelect(val) {
+    if (!val) {
+        document.querySelectorAll('#employeePermissionsTable thead th.sortable').forEach(th => {
+            th.classList.remove('sorted-asc', 'sorted-desc');
+            const icon = th.querySelector('.sort-icon i');
+            if (icon) icon.className = 'ph ph-arrows-down-up';
+        });
+        currentEmpSortCol = -1;
+        return;
+    }
+
+    const sortMap = {
+        'name_asc': [0, 'text', 'asc'],
+        'name_desc': [0, 'text', 'desc'],
+        'pos_asc': [1, 'text', 'asc'],
+        'branch_asc': [2, 'text', 'asc'],
+        'role_asc': [3, 'text', 'asc'],
+        'perms_desc': [4, 'number', 'desc'],
+        'perms_asc': [4, 'number', 'asc'],
+    };
+
+    if (sortMap[val]) {
+        sortEmployeesTable(sortMap[val][0], sortMap[val][1], sortMap[val][2]);
+    }
+}
+
+function sortEmployeesTable(colIndex, dataType, forceDir = null) {
+    const tableBody = document.querySelector('#employeePermissionsTable tbody');
+    const rows = Array.from(tableBody.querySelectorAll('tr.emp-row'));
+    const headers = document.querySelectorAll('#employeePermissionsTable thead th.sortable');
+
+    if (forceDir) {
+        currentEmpSortDir = forceDir;
+        currentEmpSortCol = colIndex;
+    } else {
+        if (currentEmpSortCol === colIndex) {
+            currentEmpSortDir = currentEmpSortDir === 'asc' ? 'desc' : 'asc';
+        } else {
+            currentEmpSortCol = colIndex;
+            currentEmpSortDir = 'asc';
+        }
+    }
+
+    headers.forEach((th, idx) => {
+        th.classList.remove('sorted-asc', 'sorted-desc');
+        const icon = th.querySelector('.sort-icon i');
+        if (icon) icon.className = 'ph ph-arrows-down-up';
+
+        if (idx === colIndex) {
+            th.classList.add(currentEmpSortDir === 'asc' ? 'sorted-asc' : 'sorted-desc');
+            if (icon) icon.className = currentEmpSortDir === 'asc' ? 'ph ph-caret-up' : 'ph ph-caret-down';
+        } else {
+            th.classList.remove('sorted-asc', 'sorted-desc');
+            if (icon) icon.className = 'ph ph-arrows-down-up';
+        }
+    });
+
+    const sortSelect = document.getElementById('rolesSortSelect');
+    if (sortSelect) {
+        const keyMap = {
+            '0_asc': 'name_asc', '0_desc': 'name_desc',
+            '1_asc': 'pos_asc',
+            '2_asc': 'branch_asc',
+            '3_asc': 'role_asc',
+            '4_desc': 'perms_desc', '4_asc': 'perms_asc'
+        };
+        sortSelect.value = keyMap[colIndex + '_' + currentEmpSortDir] || '';
+    }
+
+    rows.sort((a, b) => {
+        let valA, valB;
+        switch (colIndex) {
+            case 0:
+                valA = a.getAttribute('data-name') || '';
+                valB = b.getAttribute('data-name') || '';
+                break;
+            case 1:
+                valA = a.getAttribute('data-position') || '';
+                valB = b.getAttribute('data-position') || '';
+                break;
+            case 2:
+                valA = a.getAttribute('data-branch') || '';
+                valB = b.getAttribute('data-branch') || '';
+                break;
+            case 3:
+                valA = a.getAttribute('data-role') || '';
+                valB = b.getAttribute('data-role') || '';
+                break;
+            case 4:
+                valA = parseInt(a.getAttribute('data-permissions-count') || '0', 10);
+                valB = parseInt(b.getAttribute('data-permissions-count') || '0', 10);
+                return currentEmpSortDir === 'asc' ? valA - valB : valB - valA;
+            default:
+                valA = a.children[colIndex].textContent.trim();
+                valB = b.children[colIndex].textContent.trim();
+        }
+        const cmp = String(valA).localeCompare(String(valB), undefined, { numeric: true, sensitivity: 'base' });
+        return currentEmpSortDir === 'asc' ? cmp : -cmp;
+    });
+
+    rows.forEach(r => tableBody.appendChild(r));
 }
 
 // Initialize on page load

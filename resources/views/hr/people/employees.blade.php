@@ -16,64 +16,166 @@
     </x-slot:actions>
 </x-hr-tabs>
 
-<!-- Filter Bar -->
-<div class="hr-filter-bar">
-    <form method="GET" action="{{ route('hr.people.employees') }}" class="hr-filter-form">
-        <input type="text" name="search" class="hr-input" placeholder="Search by name, ID, email..." value="{{ request('search') }}" style="flex: 1; min-width: 200px;">
+<!-- Real-Time Filter & Search Bar (No Enter Key Required) -->
+<div class="hr-filter-bar" style="margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+    <!-- Filters & Search Controls Group -->
+    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; flex: 1;">
+        <!-- Search Input -->
+        <div style="position: relative; width: 260px; flex-shrink: 0;">
+            <i class="ph ph-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 16px; pointer-events: none;"></i>
+            <input type="text" id="empSearchInput" class="hr-input" placeholder="Search name, ID, position..." oninput="filterEmployeesDirectory()" style="width: 100%; box-sizing: border-box; padding-left: 36px; height: 38px;">
+        </div>
 
         @if(Auth::user()->isSuperAdmin() || Auth::user()->isHrAdmin())
-            <select name="branch_id" class="hr-select">
+            <select id="empBranchFilter" class="hr-select" style="height: 38px; max-width: 190px;" onchange="filterEmployeesDirectory()">
                 <option value="">All Branches</option>
                 @foreach($branches as $b)
-                    <option value="{{ $b->id }}" {{ request('branch_id') == $b->id ? 'selected' : '' }}>{{ $b->name }}</option>
+                    <option value="{{ $b->name }}">{{ $b->name }}</option>
                 @endforeach
             </select>
         @endif
 
-        <select name="department_id" class="hr-select">
+        <select id="empDeptFilter" class="hr-select" style="height: 38px; max-width: 180px;" onchange="filterEmployeesDirectory()">
             <option value="">All Departments</option>
             @foreach($departments as $d)
-                <option value="{{ $d->id }}" {{ request('department_id') == $d->id ? 'selected' : '' }}>{{ $d->name }}</option>
+                <option value="{{ $d->name }}">{{ $d->name }}</option>
             @endforeach
         </select>
 
-        <select name="employment_status" class="hr-select">
+        <select id="empStatusFilter" class="hr-select" style="height: 38px; max-width: 150px;" onchange="filterEmployeesDirectory()">
             <option value="">All Statuses</option>
             @foreach(['Active', 'Probationary', 'On Leave', 'Suspended', 'Resigned', 'Terminated', 'Retired'] as $st)
-                <option value="{{ $st }}" {{ request('employment_status') == $st ? 'selected' : '' }}>{{ $st }}</option>
+                <option value="{{ $st }}">{{ $st }}</option>
             @endforeach
         </select>
 
-        <button type="submit" class="hr-btn hr-btn-secondary">
-            <i class="ph ph-magnifying-glass"></i>
-            <span>Filter</span>
+        <!-- Sort By Options in Table Toolbar -->
+        <select id="empSortSelect" class="hr-select" style="height: 38px; max-width: 200px;" onchange="applyEmpSortFromSelect(this.value)">
+            <option value="">Sort By: Default</option>
+            <option value="name_asc">Name (A &rarr; Z)</option>
+            <option value="name_desc">Name (Z &rarr; A)</option>
+            <option value="id_asc">Employee ID (Ascending)</option>
+            <option value="id_desc">Employee ID (Descending)</option>
+            <option value="branch_asc">Branch (A &rarr; Z)</option>
+            <option value="dept_asc">Department / Position (A &rarr; Z)</option>
+            <option value="type_asc">Employment Type (A &rarr; Z)</option>
+            <option value="status_asc">Status (Active First)</option>
+            <option value="date_desc">Date Hired (Newest First)</option>
+            <option value="date_asc">Date Hired (Oldest First)</option>
+        </select>
+
+        <!-- Reset Filter Button -->
+        <button type="button" class="hr-btn hr-btn-secondary" onclick="resetEmployeesDirectory()" title="Reset all filters" style="height: 38px; padding: 0 14px;">
+            <i class="ph ph-arrows-counter-clockwise"></i>
+            <span>Reset</span>
         </button>
-        @if(request()->hasAny(['search', 'branch_id', 'department_id', 'employment_status']))
-            <a href="{{ route('hr.people.employees') }}" class="hr-btn hr-btn-secondary" title="Clear Filters">
-                <i class="ph ph-x"></i>
-            </a>
-        @endif
-    </form>
+    </div>
+
+    <!-- Live Counter Badge -->
+    <div style="flex-shrink: 0;">
+        <span class="hr-badge hr-badge-neutral" style="font-size: 12px; font-weight: 600; padding: 7px 12px; border-radius: 8px; background: #f1f5f9; color: #475569; display: inline-flex; align-items: center; gap: 4px;">
+            Showing <strong id="empVisibleCount" style="color: #0f172a;">{{ $employees->count() }}</strong> of {{ $employees->count() }} employees
+        </span>
+    </div>
 </div>
 
-<!-- Employees Data Table -->
+<!-- Employees Data Table with Sticky Headers and Vertical Scrollbar -->
 <div class="hr-table-card">
-    <div class="hr-table-wrapper">
-        <table class="hr-table">
+    <div class="hr-table-wrapper" id="employeesTableWrapper" style="max-height: 560px; overflow-y: auto; overflow-x: auto;">
+        <table class="hr-table" id="employeesDirectoryTable">
             <thead>
                 <tr>
-                    <th>Employee ID</th>
-                    <th>Full Name</th>
-                    <th>Branch</th>
-                    <th>Department & Position</th>
-                    <th>Employment Type</th>
-                    <th>Status</th>
-                    <th>Date Hired</th>
-                    <th style="text-align: right;">Actions</th>
+                    <th class="sortable" onclick="sortEmployeesDirectory(0, 'text')" title="Click to sort by Employee ID">
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <span>Employee ID</span>
+                            <span style="display: inline-flex; align-items: center;">
+                                <span class="sort-badge asc">ASC</span>
+                                <span class="sort-badge desc">DESC</span>
+                                <span class="sort-icon"><i class="ph ph-arrows-down-up"></i></span>
+                            </span>
+                        </div>
+                    </th>
+                    <th class="sortable" onclick="sortEmployeesDirectory(1, 'text')" title="Click to sort by Full Name (A-Z / Z-A)">
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <span>Full Name</span>
+                            <span style="display: inline-flex; align-items: center;">
+                                <span class="sort-badge asc">ASC</span>
+                                <span class="sort-badge desc">DESC</span>
+                                <span class="sort-icon"><i class="ph ph-arrows-down-up"></i></span>
+                            </span>
+                        </div>
+                    </th>
+                    <th class="sortable" onclick="sortEmployeesDirectory(2, 'text')" title="Click to sort by Branch (A-Z / Z-A)">
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <span>Branch</span>
+                            <span style="display: inline-flex; align-items: center;">
+                                <span class="sort-badge asc">ASC</span>
+                                <span class="sort-badge desc">DESC</span>
+                                <span class="sort-icon"><i class="ph ph-arrows-down-up"></i></span>
+                            </span>
+                        </div>
+                    </th>
+                    <th class="sortable" onclick="sortEmployeesDirectory(3, 'text')" title="Click to sort by Department & Position">
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <span>Department & Position</span>
+                            <span style="display: inline-flex; align-items: center;">
+                                <span class="sort-badge asc">ASC</span>
+                                <span class="sort-badge desc">DESC</span>
+                                <span class="sort-icon"><i class="ph ph-arrows-down-up"></i></span>
+                            </span>
+                        </div>
+                    </th>
+                    <th class="sortable" onclick="sortEmployeesDirectory(4, 'text')" title="Click to sort by Employment Type">
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <span>Employment Type</span>
+                            <span style="display: inline-flex; align-items: center;">
+                                <span class="sort-badge asc">ASC</span>
+                                <span class="sort-badge desc">DESC</span>
+                                <span class="sort-icon"><i class="ph ph-arrows-down-up"></i></span>
+                            </span>
+                        </div>
+                    </th>
+                    <th class="sortable" onclick="sortEmployeesDirectory(5, 'text')" title="Click to sort by Status">
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <span>Status</span>
+                            <span style="display: inline-flex; align-items: center;">
+                                <span class="sort-badge asc">ASC</span>
+                                <span class="sort-badge desc">DESC</span>
+                                <span class="sort-icon"><i class="ph ph-arrows-down-up"></i></span>
+                            </span>
+                        </div>
+                    </th>
+                    <th class="sortable" onclick="sortEmployeesDirectory(6, 'date')" title="Click to sort by Date Hired">
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <span>Date Hired</span>
+                            <span style="display: inline-flex; align-items: center;">
+                                <span class="sort-badge asc">ASC</span>
+                                <span class="sort-badge desc">DESC</span>
+                                <span class="sort-icon"><i class="ph ph-arrows-down-up"></i></span>
+                            </span>
+                        </div>
+                    </th>
+                    <th style="text-align: right; width: 140px;">Actions</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="employeesTableBody">
                 @forelse($employees as $emp)
+                    @php
+                        $deptName = $emp->department?->name ?? 'General';
+                        $posName = $emp->position?->name ?? 'N/A';
+                        $branchName = $emp->branch?->name ?? 'Unassigned';
+                        $dateHiredVal = $emp->date_hired ? \Carbon\Carbon::parse($emp->date_hired)->timestamp : 0;
+                    @endphp
+                    <tr class="emp-row" 
+                        data-id="{{ strtolower($emp->employee_id) }}"
+                        data-name="{{ strtolower($emp->full_name) }}"
+                        data-email="{{ strtolower($emp->email ?? '') }}"
+                        data-branch="{{ $branchName }}"
+                        data-dept="{{ $deptName }}"
+                        data-position="{{ strtolower($posName) }}"
+                        data-type="{{ strtolower($emp->employment_type ?? '') }}"
+                        data-status="{{ $emp->employment_status }}"
+                        data-date="{{ $dateHiredVal }}">
                         <td>
                             <strong style="color: #9333ea; font-family: monospace;">{{ $emp->employee_id }}</strong>
                         </td>
@@ -87,13 +189,20 @@
                                     </div>
                                 @endif
                                 <div>
-                                    <div style="font-weight: 600; color: #0f172a;">{{ $emp->full_name }}</div>
+                                    <div style="font-weight: 600; color: #0f172a; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                                        <span>{{ $emp->full_name }}</span>
+                                        @if($emp->user)
+                                            <span class="hr-badge hr-badge-purple" style="font-size: 10.5px; padding: 1px 6px; font-weight: 600;" title="Linked User Account: @ {{ $emp->user->username }}">
+                                                <i class="ph ph-user-check"></i> {{ '@' . $emp->user->username }}
+                                            </span>
+                                        @endif
+                                    </div>
                                     <div style="font-size: 11.5px; color: #64748b;">{{ $emp->email ?? 'No email' }} &bull; {{ $emp->mobile_number ?? 'No phone' }}</div>
                                 </div>
                             </div>
                         </td>
                         <td>
-                            <span class="hr-badge hr-badge-neutral">{{ $emp->branch?->name ?? 'Unassigned' }}</span>
+                            <span class="hr-badge hr-badge-neutral">{{ $branchName }}</span>
                             <div style="font-size: 11px; margin-top: 4px;">
                                 @if($emp->employment_source === 'Agency')
                                     <span style="color: #7e22ce; font-weight: 600; display: inline-flex; align-items: center; gap: 3px;" title="Agency: {{ $emp->company_or_agency }}">
@@ -107,8 +216,8 @@
                             </div>
                         </td>
                         <td>
-                            <div>{{ $emp->position?->name ?? 'N/A' }}</div>
-                            <div style="font-size: 11.5px; color: #64748b;">{{ $emp->department?->name ?? 'General' }}</div>
+                            <div>{{ $posName }}</div>
+                            <div style="font-size: 11.5px; color: #64748b;">{{ $deptName }}</div>
                         </td>
                         <td>{{ $emp->employment_type }}</td>
                         <td>
@@ -148,6 +257,12 @@
                         </td>
                     </tr>
                 @endforelse
+                <tr id="noEmpResultsRow" style="display: none;">
+                    <td colspan="8" style="text-align: center; color: #94a3b8; padding: 40px;">
+                        <i class="ph ph-magnifying-glass" style="font-size: 32px; display: block; margin-bottom: 8px; color: #cbd5e1;"></i>
+                        No employees match your filter criteria.
+                    </td>
+                </tr>
             </tbody>
         </table>
     </div>
@@ -258,6 +373,15 @@
                         <select name="branch_id" class="hr-select" required>
                             @foreach($branches as $b)
                                 <option value="{{ $b->id }}">{{ $b->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="hr-form-group">
+                        <label class="hr-form-label">Linked User Account (Optional)</label>
+                        <select name="user_id" class="hr-select">
+                            <option value="">-- No User Account --</option>
+                            @foreach($users as $u)
+                                <option value="{{ $u->id }}">{{ $u->full_name }} (@ {{ $u->username }})</option>
                             @endforeach
                         </select>
                     </div>
@@ -432,6 +556,202 @@ function previewAddPhoto(input) {
         preview.style.display = 'none';
         placeholder.style.display = 'flex';
     }
+}
+
+// =========================================================================
+// Real-Time Table Filter (No Enter Key or Submit Button Required)
+// =========================================================================
+function filterEmployeesDirectory() {
+    const searchVal = (document.getElementById('empSearchInput')?.value || '').toLowerCase().trim();
+    const branchVal = (document.getElementById('empBranchFilter')?.value || '').trim();
+    const deptVal = (document.getElementById('empDeptFilter')?.value || '').trim();
+    const statusVal = (document.getElementById('empStatusFilter')?.value || '').trim();
+
+    const rows = document.querySelectorAll('#employeesTableBody tr.emp-row');
+    const noResultsRow = document.getElementById('noEmpResultsRow');
+    let visibleCount = 0;
+
+    rows.forEach(row => {
+        const id = row.getAttribute('data-id') || '';
+        const name = row.getAttribute('data-name') || '';
+        const email = row.getAttribute('data-email') || '';
+        const branch = row.getAttribute('data-branch') || '';
+        const dept = row.getAttribute('data-dept') || '';
+        const pos = row.getAttribute('data-position') || '';
+        const type = row.getAttribute('data-type') || '';
+        const status = row.getAttribute('data-status') || '';
+
+        const matchesSearch = !searchVal || 
+            id.includes(searchVal) || 
+            name.includes(searchVal) || 
+            email.includes(searchVal) || 
+            pos.includes(searchVal) ||
+            dept.toLowerCase().includes(searchVal) ||
+            branch.toLowerCase().includes(searchVal);
+
+        const matchesBranch = !branchVal || branch === branchVal;
+        const matchesDept = !deptVal || dept === deptVal;
+        const matchesStatus = !statusVal || status === statusVal;
+
+        if (matchesSearch && matchesBranch && matchesDept && matchesStatus) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+
+    const countElem = document.getElementById('empVisibleCount');
+    if (countElem) countElem.textContent = visibleCount;
+
+    if (noResultsRow) {
+        if (visibleCount === 0 && rows.length > 0) {
+            noResultsRow.style.display = '';
+        } else {
+            noResultsRow.style.display = 'none';
+        }
+    }
+}
+
+function resetEmployeesDirectory() {
+    const s = document.getElementById('empSearchInput');
+    if (s) s.value = '';
+    const b = document.getElementById('empBranchFilter');
+    if (b) b.value = '';
+    const d = document.getElementById('empDeptFilter');
+    if (d) d.value = '';
+    const st = document.getElementById('empStatusFilter');
+    if (st) st.value = '';
+    const sel = document.getElementById('empSortSelect');
+    if (sel) sel.value = '';
+
+    // Clear header sort classes
+    document.querySelectorAll('#employeesDirectoryTable thead th.sortable').forEach(th => {
+        th.classList.remove('sorted-asc', 'sorted-desc');
+        const icon = th.querySelector('.sort-icon i');
+        if (icon) icon.className = 'ph ph-arrows-down-up';
+    });
+    empSortCol = -1;
+
+    filterEmployeesDirectory();
+}
+
+// =========================================================================
+// Real-Time Column Sorting (Via Table Header Click or Toolbar Dropdown)
+// =========================================================================
+let empSortCol = -1;
+let empSortDir = 'asc';
+
+function applyEmpSortFromSelect(val) {
+    if (!val) {
+        document.querySelectorAll('#employeesDirectoryTable thead th.sortable').forEach(th => {
+            th.classList.remove('sorted-asc', 'sorted-desc');
+            const icon = th.querySelector('.sort-icon i');
+            if (icon) icon.className = 'ph ph-arrows-down-up';
+        });
+        empSortCol = -1;
+        return;
+    }
+
+    const sortMap = {
+        'name_asc': [1, 'text', 'asc'],
+        'name_desc': [1, 'text', 'desc'],
+        'id_asc': [0, 'text', 'asc'],
+        'id_desc': [0, 'text', 'desc'],
+        'branch_asc': [2, 'text', 'asc'],
+        'dept_asc': [3, 'text', 'asc'],
+        'type_asc': [4, 'text', 'asc'],
+        'status_asc': [5, 'text', 'asc'],
+        'date_desc': [6, 'date', 'desc'],
+        'date_asc': [6, 'date', 'asc'],
+    };
+
+    if (sortMap[val]) {
+        sortEmployeesDirectory(sortMap[val][0], sortMap[val][1], sortMap[val][2]);
+    }
+}
+
+function sortEmployeesDirectory(colIndex, dataType, forceDir = null) {
+    const tableBody = document.getElementById('employeesTableBody');
+    const rows = Array.from(tableBody.querySelectorAll('tr.emp-row'));
+    const headers = document.querySelectorAll('#employeesDirectoryTable thead th.sortable');
+
+    if (forceDir) {
+        empSortDir = forceDir;
+        empSortCol = colIndex;
+    } else {
+        if (empSortCol === colIndex) {
+            empSortDir = empSortDir === 'asc' ? 'desc' : 'asc';
+        } else {
+            empSortCol = colIndex;
+            empSortDir = 'asc';
+        }
+    }
+
+    headers.forEach((th, idx) => {
+        const icon = th.querySelector('.sort-icon i');
+        if (idx === colIndex) {
+            th.classList.remove('sorted-asc', 'sorted-desc');
+            th.classList.add(empSortDir === 'asc' ? 'sorted-asc' : 'sorted-desc');
+            if (icon) {
+                icon.className = empSortDir === 'asc' ? 'ph ph-caret-up' : 'ph ph-caret-down';
+            }
+        } else {
+            th.classList.remove('sorted-asc', 'sorted-desc');
+            if (icon) {
+                icon.className = 'ph ph-arrows-down-up';
+            }
+        }
+    });
+
+    // Synchronize Toolbar Sort Dropdown
+    const sortSelect = document.getElementById('empSortSelect');
+    if (sortSelect) {
+        const keyMap = {
+            '0_asc': 'id_asc', '0_desc': 'id_desc',
+            '1_asc': 'name_asc', '1_desc': 'name_desc',
+            '2_asc': 'branch_asc', '2_desc': 'branch_asc',
+            '3_asc': 'dept_asc', '3_desc': 'dept_asc',
+            '4_asc': 'type_asc', '4_desc': 'type_asc',
+            '5_asc': 'status_asc', '5_desc': 'status_asc',
+            '6_asc': 'date_asc', '6_desc': 'date_desc'
+        };
+        sortSelect.value = keyMap[colIndex + '_' + empSortDir] || '';
+    }
+
+    rows.sort((a, b) => {
+        let valA, valB;
+        if (colIndex === 0) {
+            valA = a.getAttribute('data-id') || '';
+            valB = b.getAttribute('data-id') || '';
+        } else if (colIndex === 1) {
+            valA = a.getAttribute('data-name') || '';
+            valB = b.getAttribute('data-name') || '';
+        } else if (colIndex === 2) {
+            valA = a.getAttribute('data-branch') || '';
+            valB = b.getAttribute('data-branch') || '';
+        } else if (colIndex === 3) {
+            valA = (a.getAttribute('data-dept') || '') + ' ' + (a.getAttribute('data-position') || '');
+            valB = (b.getAttribute('data-dept') || '') + ' ' + (b.getAttribute('data-position') || '');
+        } else if (colIndex === 4) {
+            valA = a.getAttribute('data-type') || '';
+            valB = b.getAttribute('data-type') || '';
+        } else if (colIndex === 5) {
+            valA = a.getAttribute('data-status') || '';
+            valB = b.getAttribute('data-status') || '';
+        } else if (colIndex === 6) {
+            valA = parseFloat(a.getAttribute('data-date')) || 0;
+            valB = parseFloat(b.getAttribute('data-date')) || 0;
+            return empSortDir === 'asc' ? valA - valB : valB - valA;
+        }
+
+        const cmp = valA.localeCompare(valB, undefined, { numeric: true, sensitivity: 'base' });
+        return empSortDir === 'asc' ? cmp : -cmp;
+    });
+
+    const noResultsRow = document.getElementById('noEmpResultsRow');
+    rows.forEach(r => tableBody.appendChild(r));
+    if (noResultsRow) tableBody.appendChild(noResultsRow);
 }
 </script>
 @endpush

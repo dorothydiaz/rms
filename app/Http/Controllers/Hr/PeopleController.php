@@ -10,6 +10,7 @@ use App\Models\Hr\EmergencyContact;
 use App\Models\Hr\Employee;
 use App\Models\Hr\EmployeeDocument;
 use App\Models\Hr\Position;
+use App\Models\User;
 use App\Services\AuditLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -26,7 +27,7 @@ class PeopleController extends Controller
     public function employeesIndex(Request $request): View
     {
         $user = Auth::user();
-        $query = Employee::with(['branch', 'department', 'position', 'supervisor']);
+        $query = Employee::with(['branch', 'department', 'position', 'supervisor', 'user.roles', 'company']);
 
         // Branch scoping
         if (!$user->isSuperAdmin() && !$user->isHrAdmin() && $user->branch_id) {
@@ -53,15 +54,16 @@ class PeopleController extends Controller
             });
         }
 
-        $perPage = (int) $request->get('per_page', 10);
+        $perPage = (int) $request->get('per_page', 100);
         $employees = $query->orderBy('created_at', 'desc')->paginate($perPage)->withQueryString();
         $branches = Branch::where('is_active', true)->get();
         $departments = Department::all();
         $positions = Position::all();
         $companies = Company::where('type', 'Company')->where('is_active', true)->get();
         $agencies = Company::where('type', 'Agency')->where('is_active', true)->get();
+        $users = User::orderBy('full_name')->get();
 
-        return view('hr.people.employees', compact('employees', 'branches', 'departments', 'positions', 'companies', 'agencies'));
+        return view('hr.people.employees', compact('employees', 'branches', 'departments', 'positions', 'companies', 'agencies', 'users'));
     }
 
     public function employeeShow(int $id): View
@@ -103,6 +105,7 @@ class PeopleController extends Controller
             'email' => 'nullable|email|max:100',
             'address' => 'nullable|string',
             'photo' => 'nullable|file|mimes:jpeg,png,jpg,webp,gif|max:5120',
+            'user_id' => 'nullable|exists:users,id',
             'branch_id' => 'required|exists:branches,id',
             'department_id' => 'nullable|exists:departments,id',
             'position_id' => 'nullable|exists:positions,id',
@@ -205,6 +208,7 @@ class PeopleController extends Controller
             'address' => 'nullable|string',
             'photo' => 'nullable|file|mimes:jpeg,png,jpg,webp,gif|max:5120',
             'remove_photo' => 'nullable|boolean',
+            'user_id' => 'nullable|exists:users,id',
             'branch_id' => 'required|exists:branches,id',
             'department_id' => 'nullable|exists:departments,id',
             'position_id' => 'nullable|exists:positions,id',
@@ -554,11 +558,12 @@ class PeopleController extends Controller
             $query->whereHas('employee', fn($q) => $q->where('branch_id', $user->branch_id));
         }
 
-        $perPage = (int) $request->get('per_page', 10);
+        $perPage = (int) $request->get('per_page', 50);
         $documents = $query->orderBy('created_at', 'desc')->paginate($perPage)->withQueryString();
-        $employees = Employee::where('employment_status', 'Active')->get();
+        $employees = Employee::where('employment_status', 'Active')->orderBy('first_name')->get();
+        $branches = Branch::where('is_active', true)->orderBy('name')->get();
 
-        return view('hr.people.documents', compact('documents', 'employees'));
+        return view('hr.people.documents', compact('documents', 'employees', 'branches'));
     }
 
     public function documentStore(Request $request): RedirectResponse
