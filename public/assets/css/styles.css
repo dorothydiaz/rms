@@ -2911,6 +2911,8 @@ select option {
     font-weight: 700;
     letter-spacing: 0.02em;
     line-height: 1;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .hr-badge-purple {
@@ -3084,7 +3086,8 @@ select option {
 }
 
 .hr-modal > form,
-.modal-content > form {
+.modal-content > form,
+.hr-modal form {
     display: flex !important;
     flex-direction: column !important;
     flex: 1 1 auto !important;
@@ -3205,8 +3208,9 @@ select option {
 .hr-modal-footer,
 .modal-footer {
     flex-shrink: 0 !important;
+    margin-top: auto !important;
     padding: 18px 28px !important;
-    border-top: 1px solid #f1f5f9 !important;
+    border-top: 1.5px solid #e2e8f0 !important;
     display: flex !important;
     justify-content: flex-end !important;
     align-items: center !important;
@@ -3216,7 +3220,65 @@ select option {
     position: sticky !important;
     bottom: 0 !important;
     z-index: 20 !important;
-    box-shadow: 0 -4px 16px rgba(15, 23, 42, 0.03) !important;
+    box-shadow: 0 -4px 16px rgba(15, 23, 42, 0.04) !important;
+}
+
+/* Modal Footer Action Buttons - Crisp, Clear, High-Contrast */
+.hr-modal-footer .hr-btn,
+.modal-footer .btn,
+.hr-modal-footer button,
+.modal-footer button {
+    min-height: 42px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    padding: 10px 22px !important;
+    font-size: 13.5px !important;
+    font-weight: 600 !important;
+    border-radius: 10px !important;
+    cursor: pointer !important;
+    text-decoration: none !important;
+    line-height: 1 !important;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.hr-modal-footer .hr-btn-secondary,
+.modal-footer .btn-secondary,
+.hr-modal .hr-btn-secondary {
+    background: #f8fafc !important;
+    border: 1.5px solid #cbd5e1 !important;
+    color: #475569 !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05) !important;
+}
+
+.hr-modal-footer .hr-btn-secondary:hover,
+.modal-footer .btn-secondary:hover,
+.hr-modal .hr-btn-secondary:hover {
+    background: #f1f5f9 !important;
+    border-color: #94a3b8 !important;
+    color: #0f172a !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08) !important;
+}
+
+.hr-modal-footer .hr-btn-primary,
+.modal-footer .btn-primary,
+.hr-modal .hr-btn-primary {
+    background: linear-gradient(135deg, #7c3aed, #6d28d9) !important;
+    border: 1.5px solid #7c3aed !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 14px rgba(124, 58, 237, 0.35) !important;
+}
+
+.hr-modal-footer .hr-btn-primary:hover,
+.modal-footer .btn-primary:hover,
+.hr-modal .hr-btn-primary:hover {
+    background: linear-gradient(135deg, #6d28d9, #5b21b6) !important;
+    border-color: #5b21b6 !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 6px 20px rgba(124, 58, 237, 0.45) !important;
+    color: #ffffff !important;
 }
 
 /* Professional Clean Form Elements inside Right Modal */
@@ -3237,10 +3299,16 @@ select option {
 }
 
 /* Ensure all form wrappers span full width inside right modals */
-.hr-modal .hr-custom-select-wrap,
-.hr-modal .hr-custom-date-wrap {
+.hr-modal .hr-custom-select-wrap {
     width: 100% !important;
     display: block !important;
+    position: relative !important;
+}
+
+.hr-modal .hr-custom-date-wrap {
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
     position: relative !important;
 }
 
@@ -3334,9 +3402,22 @@ select option {
 
 /* Calendar icon inside custom date wrap in modals */
 .hr-modal .hr-custom-date-wrap .hr-custom-date-icon {
+    position: absolute !important;
+    right: 14px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
     font-size: 16px !important;
+    line-height: 1 !important;
+    height: 16px !important;
+    width: 16px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
     color: #7c3aed !important;
-    right: 13px !important;
+    pointer-events: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    z-index: 2 !important;
 }
 
 .hr-modal h4 {
@@ -5294,15 +5375,16 @@ select option {
    CUSTOM GLASSMORPHIC CALENDAR (85% Transparency)
    ============================================================ */
 .hr-custom-date-wrap {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    width: auto;
+    position: relative !important;
+    display: flex !important;
+    align-items: center !important;
+    width: 100% !important;
 }
 
 .hr-custom-date-wrap input.hr-input,
 .hr-custom-date-wrap input[type="text"] {
-    padding-right: 36px !important;
+    width: 100% !important;
+    padding-right: 38px !important;
     background: #ffffff !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
@@ -5315,6 +5397,7 @@ select option {
     cursor: pointer !important;
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
     min-height: 42px !important;
+    box-sizing: border-box !important;
 }
 
 .hr-custom-date-wrap input.hr-input:hover,
@@ -5333,16 +5416,37 @@ select option {
 }
 
 .hr-custom-date-wrap .hr-custom-date-icon {
-    position: absolute;
-    right: 13px;
-    font-size: 16px;
-    color: #7c3aed;
-    pointer-events: none;
-    transition: color 0.15s ease;
+    position: absolute !important;
+    right: 14px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    font-size: 16px !important;
+    line-height: 1 !important;
+    height: 16px !important;
+    width: 16px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: #7c3aed !important;
+    pointer-events: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    z-index: 2 !important;
+    transition: color 0.15s ease !important;
 }
 
 .hr-custom-date-wrap:hover .hr-custom-date-icon {
-    color: #6d28d9;
+    color: #6d28d9 !important;
+}
+
+/* Fallback for native webkit date inputs */
+input[type="date"]::-webkit-calendar-picker-indicator,
+.hr-modal input[type="date"]::-webkit-calendar-picker-indicator {
+    cursor: pointer !important;
+    margin: auto 0 !important;
+    padding: 0 !important;
+    font-size: 16px !important;
+    vertical-align: middle !important;
 }
 
 .hr-custom-calendar-popup {

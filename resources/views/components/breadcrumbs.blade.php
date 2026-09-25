@@ -51,7 +51,7 @@
                         ['title' => 'Daily Time Record (DTR)', 'url' => route('hr.attendance.dtr'), 'icon' => 'ph-calendar-check', 'route' => 'hr.attendance.dtr'],
                         ['title' => 'Work Schedules', 'url' => route('hr.attendance.schedules'), 'icon' => 'ph-calendar', 'route' => 'hr.attendance.schedules'],
                         ['title' => 'Overtime Requests', 'url' => route('hr.attendance.overtime'), 'icon' => 'ph-clock-countdown', 'route' => 'hr.attendance.overtime'],
-                        ['title' => 'Attendance Corrections', 'url' => route('hr.attendance.corrections'), 'icon' => 'ph-clock-afternoon', 'route' => 'hr.attendance.corrections'],
+                        ['title' => 'Manual Time Entries', 'url' => route('hr.attendance.corrections'), 'icon' => 'ph-pencil-line', 'route' => 'hr.attendance.corrections'],
                         ['title' => 'Check-in (Legacy)', 'url' => route('hr.attendance-checkin'), 'icon' => 'ph-clock', 'route' => 'hr.attendance-checkin'],
                         ['title' => 'Schedule (Legacy)', 'url' => route('hr.attendance-schedule'), 'icon' => 'ph-calendar', 'route' => 'hr.attendance-schedule'],
                     ]

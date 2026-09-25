@@ -101,6 +101,14 @@ Route::middleware('auth')->group(function () {
             Route::get('/corrections', [\App\Http\Controllers\Hr\AttendanceController::class, 'correctionsIndex'])->name('corrections');
             Route::post('/corrections', [\App\Http\Controllers\Hr\AttendanceController::class, 'correctionStore'])->name('corrections.store');
             Route::post('/corrections/{id}/review', [\App\Http\Controllers\Hr\AttendanceController::class, 'correctionReview'])->name('corrections.review');
+            Route::delete('/corrections/{id}', [\App\Http\Controllers\Hr\AttendanceController::class, 'manualEntryDestroy'])->name('corrections.destroy');
+            Route::get('/corrections/lookup', [\App\Http\Controllers\Hr\AttendanceController::class, 'lookupAttendance'])->name('corrections.lookup');
+
+            // Semantic Aliases for Manual Time Entries
+            Route::get('/manual-entries', [\App\Http\Controllers\Hr\AttendanceController::class, 'correctionsIndex'])->name('manual-entries');
+            Route::post('/manual-entries', [\App\Http\Controllers\Hr\AttendanceController::class, 'correctionStore'])->name('manual-entries.store');
+            Route::get('/manual-entries/lookup', [\App\Http\Controllers\Hr\AttendanceController::class, 'lookupAttendance'])->name('manual-entries.lookup');
+            Route::delete('/manual-entries/{id}', [\App\Http\Controllers\Hr\AttendanceController::class, 'manualEntryDestroy'])->name('manual-entries.destroy');
         });
 
         // 5. Leave & Absence

@@ -105,9 +105,9 @@
                             </span>
                         </div>
                     </th>
-                    <th class="sortable" onclick="sortEmployeesDirectory(2, 'text')" title="Click to sort by Branch (A-Z / Z-A)">
+                    <th class="sortable" style="min-width: 200px;" onclick="sortEmployeesDirectory(2, 'text')" title="Click to sort by Branch (A-Z / Z-A)">
                         <div style="display: flex; align-items: center; justify-content: space-between;">
-                            <span>Branch</span>
+                            <span>Branch & Company</span>
                             <span style="display: inline-flex; align-items: center;">
                                 <span class="sort-badge asc">ASC</span>
                                 <span class="sort-badge desc">DESC</span>
@@ -201,18 +201,23 @@
                                 </div>
                             </div>
                         </td>
-                        <td>
-                            <span class="hr-badge hr-badge-neutral">{{ $branchName }}</span>
-                            <div style="font-size: 11px; margin-top: 4px;">
-                                @if($emp->employment_source === 'Agency')
-                                    <span style="color: #7e22ce; font-weight: 600; display: inline-flex; align-items: center; gap: 3px;" title="Agency: {{ $emp->company_or_agency }}">
-                                        <i class="ph ph-handshake"></i> {{ Str::limit($emp->company_or_agency, 24) }}
-                                    </span>
-                                @else
-                                    <span style="color: #1d4ed8; font-weight: 600; display: inline-flex; align-items: center; gap: 3px;" title="Company: {{ $emp->company_or_agency }}">
-                                        <i class="ph ph-buildings"></i> {{ Str::limit($emp->company_or_agency, 24) }}
-                                    </span>
-                                @endif
+                        <td style="white-space: nowrap; min-width: 200px;">
+                            <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 5px;">
+                                <div style="font-weight: 600; color: #0f172a; font-size: 13px; display: inline-flex; align-items: center; gap: 6px;">
+                                    <i class="ph ph-storefront" style="color: #64748b; font-size: 15px;"></i>
+                                    <span>{{ $branchName }}</span>
+                                </div>
+                                <div style="display: inline-flex; align-items: center;">
+                                    @if($emp->employment_source === 'Agency')
+                                        <span class="hr-badge hr-badge-purple" style="font-size: 10.5px; padding: 2.5px 8px; font-weight: 600;" title="Agency: {{ $emp->company_or_agency }}">
+                                            <i class="ph ph-handshake"></i> {{ $emp->company_or_agency }}
+                                        </span>
+                                    @else
+                                        <span class="hr-badge hr-badge-info" style="font-size: 10.5px; padding: 2.5px 8px; font-weight: 600;" title="Company: {{ $emp->company_or_agency }}">
+                                            <i class="ph ph-buildings"></i> {{ $emp->company_or_agency }}
+                                        </span>
+                                    @endif
+                                </div>
                             </div>
                         </td>
                         <td>

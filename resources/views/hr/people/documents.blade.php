@@ -123,7 +123,7 @@
                             </span>
                         </div>
                     </th>
-                    <th class="sortable" onclick="sortDocumentsTable(3, 'text')" title="Click to sort by Branch (A-Z / Z-A)">
+                    <th class="sortable" style="min-width: 175px;" onclick="sortDocumentsTable(3, 'text')" title="Click to sort by Branch (A-Z / Z-A)">
                         <div style="display: flex; align-items: center; justify-content: space-between;">
                             <span>Branch</span>
                             <span style="display: inline-flex; align-items: center;">
@@ -231,7 +231,7 @@
                                 <div style="font-size: 11px; color: #64748b; font-family: monospace;">{{ $doc->employee->employee_id }}</div>
                             @endif
                         </td>
-                        <td>
+                        <td style="white-space: nowrap; min-width: 175px;">
                             <span class="hr-badge hr-badge-neutral">
                                 <i class="ph ph-storefront"></i> {{ $branchName }}
                             </span>

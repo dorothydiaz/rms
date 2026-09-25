@@ -65,6 +65,11 @@ class AttendanceController extends Controller
 
     public function timekeepingStore(Request $request): RedirectResponse
     {
+        // If request is full manual time entries encoding (not a single punch_type), delegate to correctionStore
+        if (!$request->filled('punch_type') && ($request->filled('time_in') || $request->filled('break_out') || $request->filled('break_in') || $request->filled('coffee_break_out') || $request->filled('coffee_break_in') || $request->filled('time_out') || $request->filled('status') || $request->filled('notes'))) {
+            return $this->correctionStore($request);
+        }
+
         $validated = $request->validate([
             'employee_id' => 'required|exists:employees,id',
             'date' => 'required|date',
@@ -894,27 +899,93 @@ class AttendanceController extends Controller
     }
 
     // ==========================================
-    // 5. ATTENDANCE CORRECTIONS (Review Workflow)
+    // 5. MANUAL TIME ENTRIES (Direct Encoding & Adjustment Workflow)
     // ==========================================
 
     public function correctionsIndex(Request $request): View
     {
         $user = Auth::user();
-        $query = AttendanceCorrection::with(['employee.branch', 'attendanceRecord', 'requester', 'reviewer']);
+
+        // Query attendance records for manual encoding
+        $query = AttendanceRecord::with(['employee.branch', 'employee.department', 'employee.position', 'corrections.requester']);
 
         if (!$user->isSuperAdmin() && !$user->isHrAdmin() && $user->branch_id) {
-            $query->whereHas('employee', fn($q) => $q->where('branch_id', $user->branch_id));
+            $query->where('branch_id', $user->branch_id);
         }
 
+        // If specific date is filtered, show all records for that date; otherwise show manual entries
+        if ($request->filled('date')) {
+            $query->where('date', $request->date);
+        } elseif (!$request->filled('show_all')) {
+            $query->where(function ($q) {
+                $q->where('source', 'Manual')
+                  ->orWhereHas('corrections');
+            });
+        }
+
+        if ($request->filled('date_from')) {
+            $query->where('date', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->where('date', '<=', $request->date_to);
+        }
+        if ($request->filled('employee_id')) {
+            $query->where('employee_id', $request->employee_id);
+        }
+        if ($request->filled('branch_id')) {
+            $query->where('branch_id', $request->branch_id);
+        }
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
-        $perPage = (int) $request->get('per_page', 10);
-        $corrections = $query->orderBy('created_at', 'desc')->paginate($perPage)->withQueryString();
-        $employees = Employee::where('employment_status', 'Active')->get();
+        $perPage = (int) $request->get('per_page', 15);
+        $records = $query->orderBy('date', 'desc')->paginate($perPage)->withQueryString();
 
-        return view('hr.attendance.corrections', compact('corrections', 'employees'));
+        // Corrections collection for backwards compatibility
+        $corrections = AttendanceCorrection::with(['employee.branch', 'attendanceRecord', 'requester', 'reviewer'])
+            ->orderBy('created_at', 'desc')->paginate(10);
+
+        $employees = Employee::where('employment_status', 'Active')
+            ->when(!$user->isSuperAdmin() && !$user->isHrAdmin() && $user->branch_id, fn($q) => $q->where('branch_id', $user->branch_id))
+            ->orderBy('first_name')
+            ->get();
+
+        $branches = Branch::where('is_active', true)->get();
+
+        return view('hr.attendance.corrections', compact('records', 'corrections', 'employees', 'branches'));
+    }
+
+    public function lookupAttendance(Request $request): JsonResponse
+    {
+        $employeeId = $request->get('employee_id');
+        $date = $request->get('date');
+
+        if (!$employeeId || !$date) {
+            return response()->json(['exists' => false]);
+        }
+
+        $att = AttendanceRecord::where('employee_id', $employeeId)
+            ->where('date', $date)
+            ->first();
+
+        if (!$att) {
+            return response()->json(['exists' => false]);
+        }
+
+        return response()->json([
+            'exists' => true,
+            'id' => $att->id,
+            'time_in' => $att->time_in ? substr($att->time_in, 0, 5) : '',
+            'break_out' => $att->break_out ? substr($att->break_out, 0, 5) : '',
+            'break_in' => $att->break_in ? substr($att->break_in, 0, 5) : '',
+            'coffee_break_out' => $att->coffee_break_out ? substr($att->coffee_break_out, 0, 5) : '',
+            'coffee_break_in' => $att->coffee_break_in ? substr($att->coffee_break_in, 0, 5) : '',
+            'time_out' => $att->time_out ? substr($att->time_out, 0, 5) : '',
+            'status' => $att->status ?? 'Present',
+            'notes' => $att->notes ?? '',
+            'total_hours' => number_format($att->total_hours ?? 0, 2),
+        ]);
     }
 
     public function correctionStore(Request $request): RedirectResponse
@@ -922,38 +993,176 @@ class AttendanceController extends Controller
         $validated = $request->validate([
             'employee_id' => 'required|exists:employees,id',
             'date' => 'required|date',
-            'requested_time_in' => 'nullable|date_format:H:i',
-            'requested_time_out' => 'nullable|date_format:H:i',
-            'reason' => 'required|string',
-            'supporting_document' => 'nullable|file|max:5120',
+            'time_in' => 'nullable',
+            'break_out' => 'nullable',
+            'break_in' => 'nullable',
+            'coffee_break_out' => 'nullable',
+            'coffee_break_in' => 'nullable',
+            'time_out' => 'nullable',
+            'requested_time_in' => 'nullable',
+            'requested_time_out' => 'nullable',
+            'status' => 'nullable|string',
+            'reason' => 'nullable|string',
+            'notes' => 'nullable|string',
+            'supporting_document' => 'nullable|file|max:10240',
         ]);
 
-        $att = AttendanceRecord::firstOrCreate(
-            ['employee_id' => $validated['employee_id'], 'date' => $validated['date']],
-            ['branch_id' => Employee::find($validated['employee_id'])->branch_id, 'status' => 'Present']
-        );
+        $employee = Employee::findOrFail($validated['employee_id']);
+        $date = $validated['date'];
 
+        $timeIn = $request->input('time_in') ?: $request->input('requested_time_in');
+        $timeOut = $request->input('time_out') ?: $request->input('requested_time_out');
+        $breakOut = $request->input('break_out');
+        $breakIn = $request->input('break_in');
+        $coffeeBreakOut = $request->input('coffee_break_out');
+        $coffeeBreakIn = $request->input('coffee_break_in');
+        $notes = $request->input('notes') ?: ($request->input('reason') ?: 'Manual time entry');
+
+        $formatTime = function ($val) {
+            if (!$val) return null;
+            $val = trim($val);
+            if (strlen($val) === 5) return $val . ':00';
+            return $val;
+        };
+
+        $timeInFmt = $formatTime($timeIn);
+        $timeOutFmt = $formatTime($timeOut);
+        $breakOutFmt = $formatTime($breakOut);
+        $breakInFmt = $formatTime($breakIn);
+        $coffeeOutFmt = $formatTime($coffeeBreakOut);
+        $coffeeInFmt = $formatTime($coffeeBreakIn);
+
+        $record = AttendanceRecord::firstOrNew([
+            'employee_id' => $employee->id,
+            'date' => $date,
+        ]);
+
+        $prev = $record->toArray();
+        $record->branch_id = $employee->branch_id;
+        $record->source = 'Manual';
+
+        if ($timeInFmt !== null) {
+            $record->time_in = $timeInFmt;
+            $record->in_1 = $timeInFmt;
+        }
+        if ($breakOutFmt !== null) {
+            $record->break_out = $breakOutFmt;
+            $record->out_1 = $breakOutFmt;
+        }
+        if ($breakInFmt !== null) {
+            $record->break_in = $breakInFmt;
+            $record->in_2 = $breakInFmt;
+        }
+        if ($coffeeOutFmt !== null) {
+            $record->coffee_break_out = $coffeeOutFmt;
+            $record->out_2 = $coffeeOutFmt;
+        }
+        if ($coffeeInFmt !== null) {
+            $record->coffee_break_in = $coffeeInFmt;
+            $record->in_3 = $coffeeInFmt;
+        }
+        if ($timeOutFmt !== null) {
+            $record->time_out = $timeOutFmt;
+            $record->out_3 = $timeOutFmt;
+        }
+
+        $record->notes = $notes;
+
+        // Recalculate metrics if time_in and time_out are provided
+        $schedule = EmployeeSchedule::with('shiftTemplate')
+            ->where('employee_id', $employee->id)
+            ->where('schedule_date', $date)
+            ->first();
+
+        $shift = $schedule?->shiftTemplate;
+        $schedStart = $schedule?->custom_start_time ?? $shift?->start_time;
+        $schedEnd = $schedule?->custom_end_time ?? $shift?->end_time;
+        $isOvernight = (bool) ($shift?->is_overnight ?? false);
+
+        if ($record->time_in && $record->time_out) {
+            $calc = $this->calcService->calculate(
+                $date,
+                $schedStart,
+                $schedEnd,
+                $record->time_in,
+                $record->time_out,
+                $record->break_out,
+                $record->break_in,
+                $isOvernight,
+                $record->coffee_break_out,
+                $record->coffee_break_in
+            );
+
+            $record->total_hours = $calc['total_hours'];
+            $record->regular_hours = $calc['regular_hours'];
+            $record->late_minutes = $calc['late_minutes'];
+            $record->undertime_minutes = $calc['undertime_minutes'];
+            $record->overtime_hours = $calc['overtime_hours'];
+            $record->night_diff_hours = $calc['night_diff_hours'];
+            $record->status = (!empty($validated['status']) && $validated['status'] !== 'Auto') 
+                ? $validated['status'] 
+                : $calc['status'];
+        } elseif (!empty($validated['status']) && $validated['status'] !== 'Auto') {
+            $record->status = $validated['status'];
+        } else {
+            $record->status = 'Present';
+        }
+
+        $record->save();
+
+        // Also record/sync in attendance_corrections table for permanent audit
         $docPath = null;
         if ($request->hasFile('supporting_document')) {
             $docPath = $request->file('supporting_document')->store('corrections', 'public');
         }
 
-        $correction = AttendanceCorrection::create([
-            'attendance_record_id' => $att->id,
-            'employee_id' => $validated['employee_id'],
-            'requested_by' => Auth::id(),
-            'original_time_in' => $att->time_in,
-            'original_time_out' => $att->time_out,
-            'requested_time_in' => $validated['requested_time_in'] ? $validated['requested_time_in'] . ':00' : null,
-            'requested_time_out' => $validated['requested_time_out'] ? $validated['requested_time_out'] . ':00' : null,
-            'reason' => $validated['reason'],
-            'supporting_document' => $docPath,
-            'status' => 'Pending',
-        ]);
+        AttendanceCorrection::updateOrCreate(
+            [
+                'attendance_record_id' => $record->id,
+                'employee_id' => $employee->id,
+            ],
+            [
+                'requested_by' => Auth::id() ?? 1,
+                'reviewed_by' => Auth::id() ?? 1,
+                'reviewed_at' => now(),
+                'original_time_in' => $prev['time_in'] ?? null,
+                'original_time_out' => $prev['time_out'] ?? null,
+                'requested_time_in' => $record->time_in,
+                'requested_time_out' => $record->time_out,
+                'reason' => $notes,
+                'supporting_document' => $docPath,
+                'status' => 'Approved',
+                'reviewer_notes' => 'Directly encoded manual entry',
+            ]
+        );
 
-        AuditLogger::log('Create', 'Attendance', $correction->id, "Submitted attendance correction request for {$att->employee?->full_name} on {$validated['date']}");
+        AuditLogger::log(
+            'ManualEntry',
+            'Attendance',
+            $record->id,
+            "Encoded manual time entry for {$employee->full_name} on {$date} (In: {$record->time_in}, Out: {$record->time_out})"
+        );
 
-        return redirect()->back()->with('success', "Attendance correction submitted for review.");
+        return redirect()->back()->with('success', "Manual time entry saved successfully for {$employee->full_name} on {$date}.");
+    }
+
+    public function manualEntryDestroy(int $id): RedirectResponse
+    {
+        $record = AttendanceRecord::findOrFail($id);
+        $user = Auth::user();
+        if (!$user->isSuperAdmin() && !$user->isHrAdmin() && $user->branch_id && $record->branch_id !== $user->branch_id) {
+            abort(403, 'Unauthorized to delete manual entry for another branch.');
+        }
+
+        AttendanceCorrection::where('attendance_record_id', $record->id)->delete();
+
+        $empName = $record->employee?->full_name ?? 'Employee';
+        $date = \Carbon\Carbon::parse($record->date)->format('M d, Y');
+        $record->delete();
+
+        AuditLogger::log('Delete', 'Attendance', $id, "Deleted manual time entry for {$empName} on {$date}");
+
+        return redirect()->back()->with('success', "Manual time entry for {$empName} on {$date} deleted successfully.");
     }
 
     public function correctionReview(Request $request, int $id): RedirectResponse
@@ -965,7 +1174,7 @@ class AttendanceController extends Controller
         ]);
 
         $user = Auth::user();
-        if ($correction->attendanceRecord->employee && !$user->canAccessBranch($correction->attendanceRecord->employee->branch_id)) {
+        if ($correction->attendanceRecord && $correction->attendanceRecord->employee && !$user->canAccessBranch($correction->attendanceRecord->employee->branch_id)) {
             abort(403, 'Unauthorized to review correction for another branch.');
         }
 
@@ -978,8 +1187,7 @@ class AttendanceController extends Controller
                 'reviewer_notes' => $validated['reviewer_notes'] ?? null,
             ]);
 
-            // If Approved, update the original attendance record and recompute
-            if ($status === 'Approved') {
+            if ($status === 'Approved' && $correction->attendanceRecord) {
                 $att = $correction->attendanceRecord;
                 $prev = $att->toArray();
 
@@ -990,7 +1198,6 @@ class AttendanceController extends Controller
                     $att->time_out = $correction->requested_time_out;
                 }
 
-                // Recompute metrics
                 $calc = $this->calcService->calculate(
                     $att->date,
                     null,
