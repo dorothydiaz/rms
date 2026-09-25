@@ -394,41 +394,7 @@
             </div>
         </div>
 
-        <!-- Document Compliance & Health Card Status -->
-        <div class="hr-table-card" style="margin-bottom: 0;">
-            <div class="hr-table-header">
-                <span class="hr-table-title"><i class="ph ph-files" style="color: #7c3aed;"></i> Documents Compliance</span>
-            </div>
-            <div style="padding: 18px; font-size: 13px; display: flex; flex-direction: column; gap: 12px;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="color: #64748b;">Total Filed Documents</span>
-                    <strong style="color: #0f172a; font-size: 14px;">{{ $employee->documents->count() }}</strong>
-                </div>
-                @php
-                    $healthDocs = $employee->documents->whereIn('document_type', ['Health Permit', 'Food Handler Certificate']);
-                    $hasExpired = $employee->documents->filter(fn($d) => $d->expiry_date && $d->expiry_date->isPast())->count();
-                @endphp
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="color: #64748b;">Health & Food Clearances</span>
-                    @if($healthDocs->count() > 0)
-                        <span class="hr-badge hr-badge-success">{{ $healthDocs->count() }} Attached</span>
-                    @else
-                        <span class="hr-badge hr-badge-warning">Missing</span>
-                    @endif
-                </div>
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="color: #64748b;">Expired Certificates</span>
-                    @if($hasExpired > 0)
-                        <span class="hr-badge hr-badge-danger">{{ $hasExpired }} Expired</span>
-                    @else
-                        <span class="hr-badge hr-badge-neutral">0 Expired</span>
-                    @endif
-                </div>
-                <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" style="width: 100%; margin-top: 4px;" onclick="openModal('uploadDocModal')">
-                    <i class="ph ph-plus-circle"></i> Add New Document
-                </button>
-            </div>
-        </div>
+
     </div>
 </div>
 

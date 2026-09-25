@@ -16,10 +16,13 @@ use App\Services\AttendanceCalculationService;
 use App\Services\LeaveCalculationService;
 use App\Services\PayrollCalculationService;
 use App\Services\StatutoryContributionService;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 class HrOperationsTest extends TestCase
 {
+    use DatabaseTransactions;
+
     protected function getSuperAdmin(): User
     {
         return User::where('username', 'peter')->first();

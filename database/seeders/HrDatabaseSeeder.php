@@ -11,6 +11,7 @@ use App\Models\Hr\Company;
 use App\Models\Hr\Department;
 use App\Models\Hr\EmergencyContact;
 use App\Models\Hr\Employee;
+use App\Models\Hr\EmployeeDocument;
 use App\Models\Hr\EmployeeSchedule;
 use App\Models\Hr\InternalNotification;
 use App\Models\Hr\Interview;
@@ -53,6 +54,18 @@ class HrDatabaseSeeder extends Seeder
         $managerRole = Role::updateOrCreate(
             ['slug' => 'restaurant-manager'],
             ['name' => 'Restaurant Manager', 'description' => 'Branch-scoped operational management']
+        );
+        $cashierRole = Role::updateOrCreate(
+            ['slug' => 'cashier'],
+            ['name' => 'Cashier', 'description' => 'Cashiering, order entry, and settlement']
+        );
+        $staffRole = Role::updateOrCreate(
+            ['slug' => 'staff'],
+            ['name' => 'Staff', 'description' => 'Dining floor and customer service staff']
+        );
+        $kitchenRole = Role::updateOrCreate(
+            ['slug' => 'kitchen'],
+            ['name' => 'Kitchen Staff', 'description' => 'Kitchen production and food prep operations']
         );
 
         // 2. Permissions
@@ -122,15 +135,51 @@ class HrDatabaseSeeder extends Seeder
         $hrAdminRole->permissions()->sync($hrPermissionIds);
         $managerRole->permissions()->sync($managerPermissionIds);
 
-        // 3. Company
+        $baseStaffPerms = Permission::whereIn('slug', ['attendance.view', 'leave.view', 'performance.view'])->pluck('id');
+        $cashierRole->permissions()->sync($baseStaffPerms);
+        $staffRole->permissions()->sync($baseStaffPerms);
+        $kitchenRole->permissions()->sync($baseStaffPerms);
+
+        // 3. Company & Agencies
         $company = Company::updateOrCreate(
             ['code' => 'BHG-01'],
             [
                 'name' => 'Bistro Hospitality Group Inc.',
+                'type' => 'Company',
                 'tin' => '123-456-789-000',
                 'email' => 'admin@rusticrestaurant.ph',
                 'phone' => '+63 2 8123 4567',
                 'address' => 'Ground Floor, Greenbelt 5, Ayala Center, Makati City',
+                'contact_person' => 'Dorothy Diaz',
+                'is_active' => true,
+            ]
+        );
+
+        $agency1 = Company::updateOrCreate(
+            ['code' => 'ABC-STAFF'],
+            [
+                'name' => 'ABC Manpower & Staffing Services',
+                'type' => 'Agency',
+                'tin' => '456-789-012-000',
+                'email' => 'info@abcmanpower.ph',
+                'phone' => '+63 2 8555 7788',
+                'address' => 'Unit 402, Strata 100, F. Ortigas Jr. Rd, Pasig City',
+                'contact_person' => 'Robert Tan (Account Executive)',
+                'is_active' => true,
+            ]
+        );
+
+        $agency2 = Company::updateOrCreate(
+            ['code' => 'PRIME-CARE'],
+            [
+                'name' => 'Prime Hospitality Care Agency',
+                'type' => 'Agency',
+                'tin' => '789-012-345-000',
+                'email' => 'partnerships@primecare.ph',
+                'phone' => '+63 2 8999 4433',
+                'address' => 'Suite 808, One Park Drive, 9th Ave, BGC, Taguig City',
+                'contact_person' => 'Camille Bautista (Staffing Coordinator)',
+                'is_active' => true,
             ]
         );
 
@@ -195,7 +244,11 @@ class HrDatabaseSeeder extends Seeder
         $levelStaff = JobLevel::updateOrCreate(['name' => 'Rank and File'], ['level' => 3, 'description' => 'Kitchen helpers, servers, cashiers']);
 
         // 7. Positions
+        $posGeneralMgr = Position::updateOrCreate(['code' => 'GM-00'], ['department_id' => $deptMgmt->id, 'name' => 'General Manager']);
+        $posSysAdmin = Position::updateOrCreate(['code' => 'IT-01'], ['department_id' => $deptMgmt->id, 'name' => 'Systems Administrator']);
+        $posHrMgr = Position::updateOrCreate(['code' => 'HR-01'], ['department_id' => $deptFin->id, 'name' => 'HR Manager']);
         $posManager = Position::updateOrCreate(['code' => 'RM-01'], ['department_id' => $deptMgmt->id, 'name' => 'Restaurant Manager']);
+        $posSupervisor = Position::updateOrCreate(['code' => 'SP-01'], ['department_id' => $deptMgmt->id, 'name' => 'Restaurant Supervisor']);
         $posAsstMgr = Position::updateOrCreate(['code' => 'AM-02'], ['department_id' => $deptMgmt->id, 'name' => 'Assistant Manager']);
         $posHeadCook = Position::updateOrCreate(['code' => 'HC-03'], ['department_id' => $deptBoh->id, 'name' => 'Head Cook']);
         $posCook = Position::updateOrCreate(['code' => 'CK-04'], ['department_id' => $deptBoh->id, 'name' => 'Cook']);
@@ -377,6 +430,19 @@ class HrDatabaseSeeder extends Seeder
             $adminUser->roles()->syncWithoutDetaching([$superAdminRole->id]);
         }
 
+        $dorothyUser = User::updateOrCreate(
+            ['username' => 'dorothy'],
+            [
+                'full_name' => 'Dorothy Diaz',
+                'email' => 'dorothy@rms.local',
+                'password' => Hash::make('password'),
+                'role' => 'Manager',
+                'status' => 'Active',
+                'branch_id' => null, // Multi-branch executive
+            ]
+        );
+        $dorothyUser->roles()->sync([$superAdminRole->id, $managerRole->id]);
+
         $hrUser = User::updateOrCreate(
             ['username' => 'hr_admin'],
             [
@@ -416,8 +482,159 @@ class HrDatabaseSeeder extends Seeder
         );
         $mgrBgc->roles()->sync([$managerRole->id]);
 
+        $mgrQc = User::updateOrCreate(
+            ['username' => 'manager_qc'],
+            [
+                'full_name' => 'Eduardo Ramos (QC RM)',
+                'email' => 'manager.qc@rusticrestaurant.ph',
+                'password' => Hash::make('Manager@12345'),
+                'role' => 'Manager',
+                'status' => 'Active',
+                'branch_id' => $branchQc->id,
+            ]
+        );
+        $mgrQc->roles()->sync([$managerRole->id]);
+
+        $cashierUser = User::updateOrCreate(
+            ['username' => 'cashier'],
+            [
+                'full_name' => 'John Cashier',
+                'email' => 'cashier@rms.local',
+                'password' => Hash::make('password'),
+                'role' => 'Cashier',
+                'status' => 'Active',
+                'branch_id' => $branchMakati->id,
+            ]
+        );
+        $cashierUser->roles()->sync([$cashierRole->id]);
+
+        $staffUser = User::updateOrCreate(
+            ['username' => 'staff'],
+            [
+                'full_name' => 'Sarah Staff',
+                'email' => 'staff@rms.local',
+                'password' => Hash::make('password'),
+                'role' => 'Staff',
+                'status' => 'Active',
+                'branch_id' => $branchMakati->id,
+            ]
+        );
+        $staffUser->roles()->sync([$staffRole->id]);
+
+        $kitchenUser = User::updateOrCreate(
+            ['username' => 'kitchen'],
+            [
+                'full_name' => 'Chef Marco Rossi',
+                'email' => 'kitchen@rms.local',
+                'password' => Hash::make('password'),
+                'role' => 'Kitchen',
+                'status' => 'Active',
+                'branch_id' => $branchMakati->id,
+            ]
+        );
+        $kitchenUser->roles()->sync([$kitchenRole->id]);
+
         // 14. Seed Realistic Restaurant Employees
         $sampleEmployees = [
+            [
+                'employee_id' => 'EMP-2026-000',
+                'first_name' => 'Dorothy',
+                'last_name' => 'Diaz',
+                'date_of_birth' => '1985-06-15',
+                'gender' => 'Female',
+                'civil_status' => 'Single',
+                'nationality' => 'Filipino',
+                'mobile_number' => '09171234000',
+                'email' => 'dorothy@rms.local',
+                'address' => 'Legaspi Village, Makati City',
+                'branch_id' => $branchMakati->id,
+                'department_id' => $deptMgmt->id,
+                'position_id' => $posGeneralMgr->id,
+                'user_id' => $dorothyUser->id,
+                'company_id' => $company->id,
+                'employment_source' => 'Direct',
+                'company_name' => $company->name,
+                'agency_name' => null,
+                'company_agency_name' => $company->name,
+                'date_hired' => '2022-01-01',
+                'employment_status' => 'Active',
+                'employment_type' => 'Regular',
+                'date_of_regularization' => '2022-07-01',
+                'sss_number' => '34-1111111-1',
+                'philhealth_number' => '12-111111111-1',
+                'pagibig_number' => '1210-1111-1111',
+                'tin' => '111-222-333-000',
+                'basic_salary' => 75000.00,
+                'salary_type' => 'Monthly',
+                'pay_frequency' => 'Semi-Monthly',
+                'allowances' => 10000.00,
+            ],
+            [
+                'employee_id' => 'EMP-2026-ADM',
+                'first_name' => 'Peter',
+                'last_name' => 'Administrator',
+                'date_of_birth' => '1989-10-10',
+                'gender' => 'Male',
+                'civil_status' => 'Married',
+                'nationality' => 'Filipino',
+                'mobile_number' => '09171234001',
+                'email' => 'admin@rms.local',
+                'address' => 'Salcedo Village, Makati City',
+                'branch_id' => $branchMakati->id,
+                'department_id' => $deptMgmt->id,
+                'position_id' => $posSysAdmin->id,
+                'user_id' => $adminUser ? $adminUser->id : null,
+                'company_id' => $company->id,
+                'employment_source' => 'Direct',
+                'company_name' => $company->name,
+                'agency_name' => null,
+                'company_agency_name' => $company->name,
+                'date_hired' => '2022-03-01',
+                'employment_status' => 'Active',
+                'employment_type' => 'Regular',
+                'date_of_regularization' => '2022-09-01',
+                'sss_number' => '34-2222222-2',
+                'philhealth_number' => '12-222222222-2',
+                'pagibig_number' => '1210-2222-2222',
+                'tin' => '222-333-444-000',
+                'basic_salary' => 60000.00,
+                'salary_type' => 'Monthly',
+                'pay_frequency' => 'Semi-Monthly',
+                'allowances' => 8000.00,
+            ],
+            [
+                'employee_id' => 'EMP-2026-HRA',
+                'first_name' => 'Elena',
+                'last_name' => 'Reyes',
+                'date_of_birth' => '1991-03-20',
+                'gender' => 'Female',
+                'civil_status' => 'Single',
+                'nationality' => 'Filipino',
+                'mobile_number' => '09171234002',
+                'email' => 'hr@rusticrestaurant.ph',
+                'address' => 'San Lorenzo Village, Makati City',
+                'branch_id' => $branchMakati->id,
+                'department_id' => $deptFin->id,
+                'position_id' => $posHrMgr->id,
+                'user_id' => $hrUser->id,
+                'company_id' => $company->id,
+                'employment_source' => 'Direct',
+                'company_name' => $company->name,
+                'agency_name' => null,
+                'company_agency_name' => $company->name,
+                'date_hired' => '2023-01-01',
+                'employment_status' => 'Active',
+                'employment_type' => 'Regular',
+                'date_of_regularization' => '2023-07-01',
+                'sss_number' => '34-3333333-3',
+                'philhealth_number' => '12-333333333-3',
+                'pagibig_number' => '1210-3333-3333',
+                'tin' => '333-444-555-000',
+                'basic_salary' => 50000.00,
+                'salary_type' => 'Monthly',
+                'pay_frequency' => 'Semi-Monthly',
+                'allowances' => 6000.00,
+            ],
             [
                 'employee_id' => 'EMP-2026-001',
                 'first_name' => 'Carlos',
@@ -433,6 +650,11 @@ class HrDatabaseSeeder extends Seeder
                 'department_id' => $deptMgmt->id,
                 'position_id' => $posManager->id,
                 'user_id' => $mgrMakati->id,
+                'company_id' => $company->id,
+                'employment_source' => 'Direct',
+                'company_name' => $company->name,
+                'agency_name' => null,
+                'company_agency_name' => $company->name,
                 'date_hired' => '2023-01-15',
                 'employment_status' => 'Active',
                 'employment_type' => 'Regular',
@@ -460,6 +682,12 @@ class HrDatabaseSeeder extends Seeder
                 'branch_id' => $branchMakati->id,
                 'department_id' => $deptBoh->id,
                 'position_id' => $posHeadCook->id,
+                'user_id' => null,
+                'company_id' => $company->id,
+                'employment_source' => 'Direct',
+                'company_name' => $company->name,
+                'agency_name' => null,
+                'company_agency_name' => $company->name,
                 'date_hired' => '2023-03-01',
                 'employment_status' => 'Active',
                 'employment_type' => 'Regular',
@@ -487,6 +715,12 @@ class HrDatabaseSeeder extends Seeder
                 'branch_id' => $branchMakati->id,
                 'department_id' => $deptFoh->id,
                 'position_id' => $posCashier->id,
+                'user_id' => null,
+                'company_id' => $company->id,
+                'employment_source' => 'Direct',
+                'company_name' => $company->name,
+                'agency_name' => null,
+                'company_agency_name' => $company->name,
                 'date_hired' => '2024-02-15',
                 'employment_status' => 'Active',
                 'employment_type' => 'Regular',
@@ -499,6 +733,106 @@ class HrDatabaseSeeder extends Seeder
                 'salary_type' => 'Monthly',
                 'pay_frequency' => 'Semi-Monthly',
                 'allowances' => 1500.00,
+            ],
+            [
+                'employee_id' => 'EMP-2026-CSH',
+                'first_name' => 'John',
+                'last_name' => 'Cashier',
+                'date_of_birth' => '1997-04-18',
+                'gender' => 'Male',
+                'civil_status' => 'Single',
+                'nationality' => 'Filipino',
+                'mobile_number' => '09171234003',
+                'email' => 'cashier@rms.local',
+                'address' => 'Poblacion, Makati City',
+                'branch_id' => $branchMakati->id,
+                'department_id' => $deptFoh->id,
+                'position_id' => $posCashier->id,
+                'user_id' => $cashierUser->id,
+                'company_id' => $company->id,
+                'employment_source' => 'Direct',
+                'company_name' => $company->name,
+                'agency_name' => null,
+                'company_agency_name' => $company->name,
+                'date_hired' => '2024-03-01',
+                'employment_status' => 'Active',
+                'employment_type' => 'Regular',
+                'date_of_regularization' => '2024-09-01',
+                'sss_number' => '34-3344556-7',
+                'philhealth_number' => '12-334455667-8',
+                'pagibig_number' => '1210-3344-5566',
+                'tin' => '334-455-667-000',
+                'basic_salary' => 21000.00,
+                'salary_type' => 'Monthly',
+                'pay_frequency' => 'Semi-Monthly',
+                'allowances' => 1500.00,
+            ],
+            [
+                'employee_id' => 'EMP-2026-STF',
+                'first_name' => 'Sarah',
+                'last_name' => 'Staff',
+                'date_of_birth' => '2000-09-12',
+                'gender' => 'Female',
+                'civil_status' => 'Single',
+                'nationality' => 'Filipino',
+                'mobile_number' => '09171234004',
+                'email' => 'staff@rms.local',
+                'address' => 'Palanan, Makati City',
+                'branch_id' => $branchMakati->id,
+                'department_id' => $deptFoh->id,
+                'position_id' => $posServer->id,
+                'user_id' => $staffUser->id,
+                'company_id' => $agency1->id,
+                'employment_source' => 'Agency',
+                'company_name' => $agency1->name,
+                'agency_name' => $agency1->name,
+                'company_agency_name' => $agency1->name,
+                'date_hired' => '2025-02-01',
+                'employment_status' => 'Active',
+                'employment_type' => 'Contractual',
+                'contract_start_date' => '2025-02-01',
+                'contract_end_date' => '2026-12-31',
+                'sss_number' => '34-4455667-8',
+                'philhealth_number' => '12-445566778-9',
+                'pagibig_number' => '1210-4455-6677',
+                'tin' => '445-566-778-000',
+                'basic_salary' => 17500.00,
+                'salary_type' => 'Monthly',
+                'pay_frequency' => 'Semi-Monthly',
+                'allowances' => 1000.00,
+            ],
+            [
+                'employee_id' => 'EMP-2026-KTC',
+                'first_name' => 'Marco',
+                'last_name' => 'Rossi',
+                'date_of_birth' => '1993-11-28',
+                'gender' => 'Male',
+                'civil_status' => 'Single',
+                'nationality' => 'Filipino',
+                'mobile_number' => '09171234005',
+                'email' => 'kitchen@rms.local',
+                'address' => 'Guadalupe Viejo, Makati City',
+                'branch_id' => $branchMakati->id,
+                'department_id' => $deptBoh->id,
+                'position_id' => $posCook->id,
+                'user_id' => $kitchenUser->id,
+                'company_id' => $company->id,
+                'employment_source' => 'Direct',
+                'company_name' => $company->name,
+                'agency_name' => null,
+                'company_agency_name' => $company->name,
+                'date_hired' => '2023-09-15',
+                'employment_status' => 'Active',
+                'employment_type' => 'Regular',
+                'date_of_regularization' => '2024-03-15',
+                'sss_number' => '34-5566778-9',
+                'philhealth_number' => '12-556677889-0',
+                'pagibig_number' => '1210-5566-7788',
+                'tin' => '556-677-889-000',
+                'basic_salary' => 24000.00,
+                'salary_type' => 'Monthly',
+                'pay_frequency' => 'Semi-Monthly',
+                'allowances' => 2000.00,
             ],
             [
                 'employee_id' => 'EMP-2026-004',
@@ -514,6 +848,12 @@ class HrDatabaseSeeder extends Seeder
                 'branch_id' => $branchMakati->id,
                 'department_id' => $deptFoh->id,
                 'position_id' => $posServer->id,
+                'user_id' => null,
+                'company_id' => $agency1->id,
+                'employment_source' => 'Agency',
+                'company_name' => $agency1->name,
+                'agency_name' => $agency1->name,
+                'company_agency_name' => $agency1->name,
                 'date_hired' => '2026-04-01',
                 'employment_status' => 'Probationary',
                 'employment_type' => 'Probationary',
@@ -543,6 +883,11 @@ class HrDatabaseSeeder extends Seeder
                 'department_id' => $deptMgmt->id,
                 'position_id' => $posManager->id,
                 'user_id' => $mgrBgc->id,
+                'company_id' => $company->id,
+                'employment_source' => 'Direct',
+                'company_name' => $company->name,
+                'agency_name' => null,
+                'company_agency_name' => $company->name,
                 'date_hired' => '2023-06-01',
                 'employment_status' => 'Active',
                 'employment_type' => 'Regular',
@@ -570,6 +915,12 @@ class HrDatabaseSeeder extends Seeder
                 'branch_id' => $branchBgc->id,
                 'department_id' => $deptBoh->id,
                 'position_id' => $posCook->id,
+                'user_id' => null,
+                'company_id' => $company->id,
+                'employment_source' => 'Direct',
+                'company_name' => $company->name,
+                'agency_name' => null,
+                'company_agency_name' => $company->name,
                 'date_hired' => '2024-01-10',
                 'employment_status' => 'Active',
                 'employment_type' => 'Regular',
@@ -597,6 +948,12 @@ class HrDatabaseSeeder extends Seeder
                 'branch_id' => $branchBgc->id,
                 'department_id' => $deptFoh->id,
                 'position_id' => $posHost->id,
+                'user_id' => null,
+                'company_id' => $agency2->id,
+                'employment_source' => 'Agency',
+                'company_name' => $agency2->name,
+                'agency_name' => $agency2->name,
+                'company_agency_name' => $agency2->name,
                 'date_hired' => '2026-05-01',
                 'employment_status' => 'Probationary',
                 'employment_type' => 'Probationary',
@@ -623,8 +980,14 @@ class HrDatabaseSeeder extends Seeder
                 'email' => 'eduardo.ramos@rusticrestaurant.ph',
                 'address' => 'Kamuning, Quezon City',
                 'branch_id' => $branchQc->id,
-                'department_id' => $deptBoh->id,
-                'position_id' => $posHeadCook->id,
+                'department_id' => $deptMgmt->id,
+                'position_id' => $posManager->id,
+                'user_id' => $mgrQc->id,
+                'company_id' => $company->id,
+                'employment_source' => 'Direct',
+                'company_name' => $company->name,
+                'agency_name' => null,
+                'company_agency_name' => $company->name,
                 'date_hired' => '2023-08-01',
                 'employment_status' => 'Active',
                 'employment_type' => 'Regular',
@@ -633,10 +996,10 @@ class HrDatabaseSeeder extends Seeder
                 'philhealth_number' => '12-012345678-9',
                 'pagibig_number' => '1210-2109-8765',
                 'tin' => '901-234-567-000',
-                'basic_salary' => 30000.00,
+                'basic_salary' => 45000.00,
                 'salary_type' => 'Monthly',
                 'pay_frequency' => 'Semi-Monthly',
-                'allowances' => 2500.00,
+                'allowances' => 5000.00,
             ],
             [
                 'employee_id' => 'EMP-2026-009',
@@ -652,6 +1015,12 @@ class HrDatabaseSeeder extends Seeder
                 'branch_id' => $branchQc->id,
                 'department_id' => $deptFoh->id,
                 'position_id' => $posServer->id,
+                'user_id' => null,
+                'company_id' => $agency1->id,
+                'employment_source' => 'Agency',
+                'company_name' => $agency1->name,
+                'agency_name' => $agency1->name,
+                'company_agency_name' => $agency1->name,
                 'date_hired' => '2024-04-10',
                 'employment_status' => 'Active',
                 'employment_type' => 'Regular',
@@ -679,6 +1048,12 @@ class HrDatabaseSeeder extends Seeder
                 'branch_id' => $branchQc->id,
                 'department_id' => $deptBoh->id,
                 'position_id' => $posDishwasher->id,
+                'user_id' => null,
+                'company_id' => $agency2->id,
+                'employment_source' => 'Agency',
+                'company_name' => $agency2->name,
+                'agency_name' => $agency2->name,
+                'company_agency_name' => $agency2->name,
                 'date_hired' => '2025-01-15',
                 'employment_status' => 'Active',
                 'employment_type' => 'Regular',
@@ -747,6 +1122,149 @@ class HrDatabaseSeeder extends Seeder
                     'remarks' => 'Successfully passed restaurant food sanitation exam.',
                 ]
             );
+        }
+
+        // 14.1 Seed Authentic Employee Documents
+        $sampleDocs = [
+            [
+                'employee_id' => 'EMP-2026-000',
+                'document_type' => 'Employment Contract',
+                'document_name' => 'General Manager Employment Contract',
+                'file_path' => 'employee_documents/employment_contract.pdf',
+                'expiry_date' => null,
+                'notes' => 'Executive employment agreement signed by Board of Directors.',
+            ],
+            [
+                'employee_id' => 'EMP-2026-000',
+                'document_type' => 'Government ID',
+                'document_name' => 'Philippine Passport & Unified ID Copy',
+                'file_path' => 'employee_documents/government_id.pdf',
+                'expiry_date' => '2032-05-15',
+                'notes' => 'Primary identification on file.',
+            ],
+            [
+                'employee_id' => 'EMP-2026-HRA',
+                'document_type' => 'Employment Contract',
+                'document_name' => 'HR Manager Employment Contract',
+                'file_path' => 'employee_documents/employment_contract.pdf',
+                'expiry_date' => null,
+                'notes' => 'Regular employment contract for Head of Human Resources.',
+            ],
+            [
+                'employee_id' => 'EMP-2026-HRA',
+                'document_type' => 'NBI Clearance',
+                'document_name' => 'NBI Background Clearance 2026',
+                'file_path' => 'employee_documents/nbi_clearance.pdf',
+                'expiry_date' => '2027-04-10',
+                'notes' => 'Cleared with no derogatory record.',
+            ],
+            [
+                'employee_id' => 'EMP-2026-001',
+                'document_type' => 'Employment Contract',
+                'document_name' => 'Makati Restaurant Manager Contract',
+                'file_path' => 'employee_documents/employment_contract.pdf',
+                'expiry_date' => null,
+                'notes' => 'Annual manager performance and compensation rider attached.',
+            ],
+            [
+                'employee_id' => 'EMP-2026-001',
+                'document_type' => 'Health Permit',
+                'document_name' => 'Makati City Sanitary Health Permit 2026',
+                'file_path' => 'employee_documents/health_permit_2026.pdf',
+                'expiry_date' => '2026-12-31',
+                'notes' => 'LGU Health Certificate issued by Makati City Health Department.',
+            ],
+            [
+                'employee_id' => 'EMP-2026-002',
+                'document_type' => 'Food Handler Certificate',
+                'document_name' => 'Culinary Food Safety & Sanitation Certificate',
+                'file_path' => 'employee_documents/food_handler_cert.pdf',
+                'expiry_date' => '2027-03-01',
+                'notes' => 'Required kitchen handler certificate for Head Cook.',
+            ],
+            [
+                'employee_id' => 'EMP-2026-002',
+                'document_type' => 'Health Permit',
+                'document_name' => 'City Sanitary Health Permit 2026',
+                'file_path' => 'employee_documents/health_permit_2026.pdf',
+                'expiry_date' => '2026-10-15',
+                'notes' => 'Renewal due in October 2026.',
+            ],
+            [
+                'employee_id' => 'EMP-2026-003',
+                'document_type' => 'NBI Clearance',
+                'document_name' => 'National Police & NBI Clearance 2026',
+                'file_path' => 'employee_documents/nbi_clearance.pdf',
+                'expiry_date' => '2027-02-15',
+                'notes' => 'Annual clearance verified by HR.',
+            ],
+            [
+                'employee_id' => 'EMP-2026-CSH',
+                'document_type' => 'Government ID',
+                'document_name' => 'SSS & PhilHealth ID Verification',
+                'file_path' => 'employee_documents/government_id.pdf',
+                'expiry_date' => '2029-08-20',
+                'notes' => 'Verified statutory cards on file.',
+            ],
+            [
+                'employee_id' => 'EMP-2026-STF',
+                'document_type' => 'Health Permit',
+                'document_name' => 'Food Server Health Certificate',
+                'file_path' => 'employee_documents/health_permit_2026.pdf',
+                'expiry_date' => '2026-11-20',
+                'notes' => 'Endorsed by ABC Manpower & Staffing Services.',
+            ],
+            [
+                'employee_id' => 'EMP-2026-KTC',
+                'document_type' => 'Food Handler Certificate',
+                'document_name' => 'Commercial Cookery Food Safety Certificate',
+                'file_path' => 'employee_documents/food_handler_cert.pdf',
+                'expiry_date' => '2027-06-30',
+                'notes' => 'HACCP food handling certification.',
+            ],
+            [
+                'employee_id' => 'EMP-2026-005',
+                'document_type' => 'Employment Contract',
+                'document_name' => 'BGC Branch Manager Contract',
+                'file_path' => 'employee_documents/employment_contract.pdf',
+                'expiry_date' => null,
+                'notes' => 'BGC Branch Manager standard agreement.',
+            ],
+            [
+                'employee_id' => 'EMP-2026-005',
+                'document_type' => 'Health Permit',
+                'document_name' => 'Taguig City Health Permit 2026',
+                'file_path' => 'employee_documents/health_permit_2026.pdf',
+                'expiry_date' => '2026-12-31',
+                'notes' => 'Valid through end of year.',
+            ],
+            [
+                'employee_id' => 'EMP-2026-007',
+                'document_type' => 'Medical Certificate',
+                'document_name' => 'Annual Pre-Employment Physical Exam',
+                'file_path' => 'employee_documents/medical_cert.pdf',
+                'expiry_date' => '2027-05-01',
+                'notes' => 'Fit to work medical exam clearance.',
+            ],
+        ];
+
+        foreach ($sampleDocs as $docData) {
+            $targetEmp = Employee::where('employee_id', $docData['employee_id'])->first();
+            if ($targetEmp) {
+                EmployeeDocument::updateOrCreate(
+                    [
+                        'employee_id' => $targetEmp->id,
+                        'document_name' => $docData['document_name'],
+                    ],
+                    [
+                        'document_type' => $docData['document_type'],
+                        'file_path' => $docData['file_path'],
+                        'expiry_date' => $docData['expiry_date'],
+                        'notes' => $docData['notes'],
+                        'uploaded_by' => $hrUser->id,
+                    ]
+                );
+            }
         }
 
         // 15. Seed Leave Requests

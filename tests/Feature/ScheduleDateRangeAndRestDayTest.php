@@ -10,11 +10,13 @@ use App\Models\Hr\Position;
 use App\Models\Hr\ShiftTemplate;
 use App\Models\User;
 use Carbon\Carbon;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 class ScheduleDateRangeAndRestDayTest extends TestCase
 {
+    use DatabaseTransactions;
+
     private User $hrAdmin;
     private Employee $employee;
     private ShiftTemplate $shift;

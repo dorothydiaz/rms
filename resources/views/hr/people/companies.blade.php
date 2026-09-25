@@ -52,59 +52,141 @@
     </div>
 </div>
 
-<!-- Filter Bar -->
-<div class="hr-filter-bar">
-    <form method="GET" action="{{ route('hr.people.companies') }}" class="hr-filter-form" style="display: flex; gap: 12px; align-items: center; width: 100%; flex-wrap: wrap;">
-        <!-- Search Input -->
-        <input type="text" name="search" class="hr-input" placeholder="Search by name, code, contact person, TIN..." value="{{ request('search') }}" style="flex: 1; min-width: 220px;">
+<!-- Real-Time Filter & Search Bar (No Enter Key or Submit Button Required) -->
+<div class="hr-filter-bar" style="margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+    <!-- Filters & Search Controls Group -->
+    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; flex: 1;">
+        <!-- Instant Real-Time Search -->
+        <div style="position: relative; width: 260px; flex-shrink: 0;">
+            <i class="ph ph-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 16px; pointer-events: none;"></i>
+            <input type="text" id="companySearchInput" class="hr-input" placeholder="Search name, code, TIN..." oninput="filterCompaniesTable()" style="width: 100%; box-sizing: border-box; padding-left: 36px; height: 38px;">
+        </div>
 
         <!-- Type Selector -->
-        <select name="type" class="hr-select" style="min-width: 170px;">
+        <select id="companyTypeFilter" class="hr-select" style="height: 38px; max-width: 180px;" onchange="filterCompaniesTable()">
             <option value="">All Entity Types</option>
-            <option value="Company" {{ request('type') === 'Company' ? 'selected' : '' }}>Direct Company</option>
-            <option value="Agency" {{ request('type') === 'Agency' ? 'selected' : '' }}>Staffing Agency</option>
+            <option value="Company">Direct Company</option>
+            <option value="Agency">Staffing Agency</option>
         </select>
 
-        <button type="submit" class="hr-btn hr-btn-secondary">
-            <i class="ph ph-magnifying-glass"></i>
-            <span>Filter</span>
-        </button>
+        <!-- Status Selector -->
+        <select id="companyStatusFilter" class="hr-select" style="height: 38px; max-width: 150px;" onchange="filterCompaniesTable()">
+            <option value="">All Statuses</option>
+            <option value="Active">Active</option>
+            <option value="Inactive">Inactive</option>
+        </select>
 
-        @if(request()->hasAny(['search', 'type']))
-            <a href="{{ route('hr.people.companies') }}" class="hr-btn hr-btn-secondary" title="Clear Filters">
-                <i class="ph ph-x"></i>
-                <span>Reset</span>
-            </a>
-        @endif
-    </form>
+        <!-- Sort By Options in Table Toolbar -->
+        <select id="companySortSelect" class="hr-select" style="height: 38px; max-width: 195px;" onchange="applyCompanySortFromSelect(this.value)">
+            <option value="">Sort By: Default</option>
+            <option value="name_asc">Name (A &rarr; Z)</option>
+            <option value="name_desc">Name (Z &rarr; A)</option>
+            <option value="code_asc">Code (A &rarr; Z)</option>
+            <option value="code_desc">Code (Z &rarr; A)</option>
+            <option value="contact_asc">Contact Person (A &rarr; Z)</option>
+            <option value="tin_asc">TIN (Ascending)</option>
+            <option value="staff_desc">Deployed Staff (Most)</option>
+            <option value="staff_asc">Deployed Staff (Least)</option>
+            <option value="status_asc">Status (Active First)</option>
+        </select>
+
+        <!-- Reset Filter Button -->
+        <button type="button" class="hr-btn hr-btn-secondary" onclick="resetCompaniesFilters()" title="Reset all filters" style="height: 38px; padding: 0 14px;">
+            <i class="ph ph-arrows-counter-clockwise"></i>
+            <span>Reset</span>
+        </button>
+    </div>
+
+    <!-- Live Counter Badge -->
+    <div style="flex-shrink: 0;">
+        <span class="hr-badge hr-badge-neutral" style="font-size: 12px; font-weight: 600; padding: 7px 12px; border-radius: 8px; background: #f1f5f9; color: #475569; display: inline-flex; align-items: center; gap: 4px;">
+            Showing <strong id="companyVisibleCount" style="color: #0f172a;">{{ $companies->count() }}</strong> of {{ $companies->count() }} entities
+        </span>
+    </div>
 </div>
 
-<!-- Table Card -->
+<!-- Table Card with Sticky Headers and Vertical Scrollbar -->
 <div class="hr-table-card">
-    <div class="hr-table-header">
-        <span class="hr-table-title">
-            <i class="ph ph-buildings" style="color: #7c3aed;"></i>
-            Registered Agencies & Corporate Entities
-        </span>
-        <span class="hr-badge hr-badge-neutral">{{ $companies->count() }} {{ Str::plural('Record', $companies->count()) }}</span>
-    </div>
-    <div class="hr-table-wrapper">
-        <table class="hr-table">
+    <div class="hr-table-wrapper" id="companiesTableWrapper" style="max-height: 560px; overflow-y: auto; overflow-x: auto;">
+        <table class="hr-table" id="companiesTable">
             <thead>
                 <tr>
-                    <th>Entity Code</th>
-                    <th>Name & Classification</th>
-                    <th>Contact Person</th>
+                    <th class="sortable" onclick="sortCompaniesTable(0, 'text')" title="Click to sort by Entity Code (A-Z / Z-A)">
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <span>Entity Code</span>
+                            <span style="display: inline-flex; align-items: center;">
+                                <span class="sort-badge asc">ASC</span>
+                                <span class="sort-badge desc">DESC</span>
+                                <span class="sort-icon"><i class="ph ph-arrows-down-up"></i></span>
+                            </span>
+                        </div>
+                    </th>
+                    <th class="sortable" onclick="sortCompaniesTable(1, 'text')" title="Click to sort by Name & Classification (A-Z / Z-A)">
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <span>Name & Classification</span>
+                            <span style="display: inline-flex; align-items: center;">
+                                <span class="sort-badge asc">ASC</span>
+                                <span class="sort-badge desc">DESC</span>
+                                <span class="sort-icon"><i class="ph ph-arrows-down-up"></i></span>
+                            </span>
+                        </div>
+                    </th>
+                    <th class="sortable" onclick="sortCompaniesTable(2, 'text')" title="Click to sort by Contact Person (A-Z / Z-A)">
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <span>Contact Person</span>
+                            <span style="display: inline-flex; align-items: center;">
+                                <span class="sort-badge asc">ASC</span>
+                                <span class="sort-badge desc">DESC</span>
+                                <span class="sort-icon"><i class="ph ph-arrows-down-up"></i></span>
+                            </span>
+                        </div>
+                    </th>
                     <th>Contact Info</th>
-                    <th>TIN</th>
-                    <th>Deployed Staff</th>
-                    <th>Status</th>
-                    <th style="text-align: right;">Actions</th>
+                    <th class="sortable" onclick="sortCompaniesTable(4, 'text')" title="Click to sort by TIN">
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <span>TIN</span>
+                            <span style="display: inline-flex; align-items: center;">
+                                <span class="sort-badge asc">ASC</span>
+                                <span class="sort-badge desc">DESC</span>
+                                <span class="sort-icon"><i class="ph ph-arrows-down-up"></i></span>
+                            </span>
+                        </div>
+                    </th>
+                    <th class="sortable" onclick="sortCompaniesTable(5, 'number')" title="Click to sort by Deployed Staff">
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <span>Deployed Staff</span>
+                            <span style="display: inline-flex; align-items: center;">
+                                <span class="sort-badge asc">ASC</span>
+                                <span class="sort-badge desc">DESC</span>
+                                <span class="sort-icon"><i class="ph ph-arrows-down-up"></i></span>
+                            </span>
+                        </div>
+                    </th>
+                    <th class="sortable" onclick="sortCompaniesTable(6, 'text')" title="Click to sort by Status">
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <span>Status</span>
+                            <span style="display: inline-flex; align-items: center;">
+                                <span class="sort-badge asc">ASC</span>
+                                <span class="sort-badge desc">DESC</span>
+                                <span class="sort-icon"><i class="ph ph-arrows-down-up"></i></span>
+                            </span>
+                        </div>
+                    </th>
+                    <th style="text-align: right; width: 110px;">Actions</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="companiesTableBody">
                 @forelse($companies as $item)
-                    <tr>
+                    <tr class="company-row"
+                        data-code="{{ strtolower($item->code) }}"
+                        data-name="{{ strtolower($item->name) }}"
+                        data-type="{{ $item->type }}"
+                        data-contact="{{ strtolower($item->contact_person ?? '') }}"
+                        data-email="{{ strtolower($item->email ?? '') }}"
+                        data-phone="{{ strtolower($item->phone ?? '') }}"
+                        data-tin="{{ strtolower($item->tin ?? '') }}"
+                        data-staff="{{ $item->employees_count }}"
+                        data-status="{{ $item->is_active ? 'Active' : 'Inactive' }}">
                         <td>
                             <code style="font-weight: 700; color: #7c3aed; background: rgba(124, 58, 237, 0.08); padding: 3px 8px; border-radius: 6px; font-size: 12px;">
                                 {{ $item->code }}
@@ -186,6 +268,12 @@
                         </td>
                     </tr>
                 @endforelse
+                <tr id="noCompanyResultsRow" style="display: none;">
+                    <td colspan="8" style="text-align: center; color: #94a3b8; padding: 40px;">
+                        <i class="ph ph-magnifying-glass" style="font-size: 32px; display: block; margin-bottom: 8px; color: #cbd5e1;"></i>
+                        No agencies or companies match your filter criteria.
+                    </td>
+                </tr>
             </tbody>
         </table>
     </div>
@@ -403,6 +491,193 @@ function openEditCompanyModal(data) {
     document.getElementById('edit_is_active').checked = !!data.is_active;
 
     openModal('editCompanyModal');
+}
+
+// =========================================================================
+// Real-Time Table Filter (No Enter Key or Submit Button Required)
+// =========================================================================
+function filterCompaniesTable() {
+    const searchVal = (document.getElementById('companySearchInput')?.value || '').toLowerCase().trim();
+    const typeVal = (document.getElementById('companyTypeFilter')?.value || '').trim();
+    const statusVal = (document.getElementById('companyStatusFilter')?.value || '').trim();
+
+    const rows = document.querySelectorAll('#companiesTableBody tr.company-row');
+    const noResultsRow = document.getElementById('noCompanyResultsRow');
+    let visibleCount = 0;
+
+    rows.forEach(row => {
+        const code = row.getAttribute('data-code') || '';
+        const name = row.getAttribute('data-name') || '';
+        const type = row.getAttribute('data-type') || '';
+        const contact = row.getAttribute('data-contact') || '';
+        const email = row.getAttribute('data-email') || '';
+        const phone = row.getAttribute('data-phone') || '';
+        const tin = row.getAttribute('data-tin') || '';
+        const status = row.getAttribute('data-status') || '';
+
+        const matchesSearch = !searchVal || 
+            code.includes(searchVal) || 
+            name.includes(searchVal) || 
+            contact.includes(searchVal) || 
+            email.includes(searchVal) || 
+            phone.includes(searchVal) || 
+            tin.includes(searchVal);
+
+        const matchesType = !typeVal || type === typeVal;
+        const matchesStatus = !statusVal || status === statusVal;
+
+        if (matchesSearch && matchesType && matchesStatus) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+
+    const countElem = document.getElementById('companyVisibleCount');
+    if (countElem) countElem.textContent = visibleCount;
+
+    if (noResultsRow) {
+        if (visibleCount === 0 && rows.length > 0) {
+            noResultsRow.style.display = '';
+        } else {
+            noResultsRow.style.display = 'none';
+        }
+    }
+}
+
+function resetCompaniesFilters() {
+    const s = document.getElementById('companySearchInput');
+    if (s) s.value = '';
+    const t = document.getElementById('companyTypeFilter');
+    if (t) t.value = '';
+    const st = document.getElementById('companyStatusFilter');
+    if (st) st.value = '';
+    const sel = document.getElementById('companySortSelect');
+    if (sel) sel.value = '';
+
+    // Clear header sort classes
+    document.querySelectorAll('#companiesTable thead th.sortable').forEach(th => {
+        th.classList.remove('sorted-asc', 'sorted-desc');
+        const icon = th.querySelector('.sort-icon i');
+        if (icon) icon.className = 'ph ph-arrows-down-up';
+    });
+    compSortCol = -1;
+
+    filterCompaniesTable();
+}
+
+// =========================================================================
+// Real-Time Column Sorting (Via Table Header Click or Toolbar Dropdown)
+// =========================================================================
+let compSortCol = -1;
+let compSortDir = 'asc';
+
+function applyCompanySortFromSelect(val) {
+    if (!val) {
+        document.querySelectorAll('#companiesTable thead th.sortable').forEach(th => {
+            th.classList.remove('sorted-asc', 'sorted-desc');
+            const icon = th.querySelector('.sort-icon i');
+            if (icon) icon.className = 'ph ph-arrows-down-up';
+        });
+        compSortCol = -1;
+        return;
+    }
+
+    const sortMap = {
+        'name_asc': [1, 'text', 'asc'],
+        'name_desc': [1, 'text', 'desc'],
+        'code_asc': [0, 'text', 'asc'],
+        'code_desc': [0, 'text', 'desc'],
+        'contact_asc': [2, 'text', 'asc'],
+        'tin_asc': [4, 'text', 'asc'],
+        'staff_desc': [5, 'number', 'desc'],
+        'staff_asc': [5, 'number', 'asc'],
+        'status_asc': [6, 'text', 'asc'],
+    };
+
+    if (sortMap[val]) {
+        sortCompaniesTable(sortMap[val][0], sortMap[val][1], sortMap[val][2]);
+    }
+}
+
+function sortCompaniesTable(colIndex, dataType, forceDir = null) {
+    const tableBody = document.getElementById('companiesTableBody');
+    const rows = Array.from(tableBody.querySelectorAll('tr.company-row'));
+    const headers = document.querySelectorAll('#companiesTable thead th.sortable');
+
+    if (forceDir) {
+        compSortDir = forceDir;
+        compSortCol = colIndex;
+    } else {
+        if (compSortCol === colIndex) {
+            compSortDir = compSortDir === 'asc' ? 'desc' : 'asc';
+        } else {
+            compSortCol = colIndex;
+            compSortDir = 'asc';
+        }
+    }
+
+    headers.forEach((th, idx) => {
+        const icon = th.querySelector('.sort-icon i');
+        if (idx === colIndex) {
+            th.classList.remove('sorted-asc', 'sorted-desc');
+            th.classList.add(compSortDir === 'asc' ? 'sorted-asc' : 'sorted-desc');
+            if (icon) {
+                icon.className = compSortDir === 'asc' ? 'ph ph-caret-up' : 'ph ph-caret-down';
+            }
+        } else {
+            th.classList.remove('sorted-asc', 'sorted-desc');
+            if (icon) {
+                icon.className = 'ph ph-arrows-down-up';
+            }
+        }
+    });
+
+    // Synchronize Toolbar Sort Dropdown
+    const sortSelect = document.getElementById('companySortSelect');
+    if (sortSelect) {
+        const keyMap = {
+            '0_asc': 'code_asc', '0_desc': 'code_desc',
+            '1_asc': 'name_asc', '1_desc': 'name_desc',
+            '2_asc': 'contact_asc',
+            '4_asc': 'tin_asc',
+            '5_desc': 'staff_desc', '5_asc': 'staff_asc',
+            '6_asc': 'status_asc'
+        };
+        sortSelect.value = keyMap[colIndex + '_' + compSortDir] || '';
+    }
+
+    rows.sort((a, b) => {
+        let valA = '', valB = '';
+        if (colIndex === 0) {
+            valA = a.getAttribute('data-code') || '';
+            valB = b.getAttribute('data-code') || '';
+        } else if (colIndex === 1) {
+            valA = a.getAttribute('data-name') || '';
+            valB = b.getAttribute('data-name') || '';
+        } else if (colIndex === 2) {
+            valA = a.getAttribute('data-contact') || '';
+            valB = b.getAttribute('data-contact') || '';
+        } else if (colIndex === 4) {
+            valA = a.getAttribute('data-tin') || '';
+            valB = b.getAttribute('data-tin') || '';
+        } else if (colIndex === 5) {
+            const numA = parseFloat(a.getAttribute('data-staff')) || 0;
+            const numB = parseFloat(b.getAttribute('data-staff')) || 0;
+            return compSortDir === 'asc' ? numA - numB : numB - numA;
+        } else if (colIndex === 6) {
+            valA = a.getAttribute('data-status') || '';
+            valB = b.getAttribute('data-status') || '';
+        }
+
+        const cmp = valA.localeCompare(valB, undefined, { numeric: true, sensitivity: 'base' });
+        return compSortDir === 'asc' ? cmp : -cmp;
+    });
+
+    const noResultsRow = document.getElementById('noCompanyResultsRow');
+    rows.forEach(r => tableBody.appendChild(r));
+    if (noResultsRow) tableBody.appendChild(noResultsRow);
 }
 </script>
 @endpush

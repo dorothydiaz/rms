@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Daily Time Record</title>
+    <style>
+        @page {
+            size: letter portrait;
+            margin-top: 18pt;
+            margin-left: 20pt;
+            margin-right: 20pt;
+            margin-bottom: 18pt;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 8.5pt;
+            color: #0f172a;
+            line-height: 1.3;
+            margin: 0;
+            padding: 0;
+            background: #ffffff;
+        }
+
+        .dtr-page {
+            width: 100%;
+            page-break-after: always;
+        }
+
+        .dtr-page:last-child {
+            page-break-after: avoid;
+        }
+
+        /* Top Header Letterhead with Purple/Violet UI Theme */
+        .header-container {
+            width: 100%;
+            margin-bottom: 8pt;
+            border-bottom: 2.5pt solid #7c3aed;
+            padding-bottom: 5pt;
+        }
+
+        .title-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .title-table td {
+            vertical-align: middle;
+            padding: 0;
+        }
+
+        .doc-title {
+            font-size: 15pt;
+            font-weight: bold;
+            letter-spacing: 2px;
+            color: #581c87;
+            text-transform: uppercase;
+        }
+
+        .doc-subtitle {
+            font-size: 8.5pt;
+            letter-spacing: 0.5px;
+            color: #7c3aed;
+            margin-top: 2pt;
+            font-weight: bold;
+        }
+
+        .header-meta-right {
+            text-align: right;
+            font-size: 8.5pt;
+            color: #334155;
+            line-height: 1.4;
+        }
+
+        .header-meta-label {
+            font-weight: bold;
+            color: #6b21a8;
+        }
+
+        /* Integrated Company & Employee Information Card */
+        .info-card {
+            width: 100%;
+            border-collapse: collapse;
+            border: 1.2pt solid #ddd6fe;
+            border-left: 4pt solid #7c3aed;
+            background-color: #faf5ff;
+            margin-bottom: 8pt;
+        }
+
+        .info-card td {
+            font-size: 8.5pt;
+            line-height: 1.35;
+            vertical-align: top;
+            padding: 3pt 8pt;
+        }
+
+        .info-label {
+            font-weight: bold;
+            color: #6b21a8;
+            white-space: nowrap;
+        }
+
+        .info-sep {
+            color: #7c3aed;
+            font-weight: bold;
+            width: 8pt;
+            text-align: center;
+        }
+
+        .info-val {
+            color: #0f172a;
+        }
+
+        .info-val-bold {
+            font-weight: bold;
+            color: #0f172a;
+            font-size: 9pt;
+        }
+
+        .info-divider {
+            border-top: 0.8pt solid #ede9fe;
+        }
+
+        /* DTR Grid Table */
+        .dtr-grid {
+            width: 100%;
+            table-layout: fixed;
+            border-collapse: collapse;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 8.5pt;
+            line-height: 1.25;
+            border: 1.5pt solid #6b21a8;
+        }
+
+        .dtr-grid th {
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: bold;
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+
+        /* Group Headers in Deep Purple */
+        .th-group {
+            background-color: #6b21a8;
+            color: #ffffff;
+            letter-spacing: 0.8px;
+            padding: 4pt 1pt;
+            font-size: 8.5pt;
+            border-bottom: 1.2pt solid #4c1d95;
+        }
+
+        /* Sub-Headers (Row 2) - Soft Lavender Tint */
+        .th-sub {
+            background-color: #f3e8ff;
+            color: #581c87;
+            border-bottom: 1.5pt solid #6b21a8;
+            padding: 3.5pt 1pt;
+            font-size: 8pt;
+        }
+
+        /* Section Vertical Dividers */
+        .sec-div {
+            border-right: 1.5pt solid #6b21a8;
+        }
+
+        .col-div {
+            border-right: 0.5pt solid #ddd6fe;
+        }
+
+        /* Table Body Rows */
+        .dtr-grid td {
+            padding: 6.2pt 1.5pt;
+            white-space: nowrap;
+            vertical-align: middle;
+            font-size: 7.6pt;
+            border-bottom: 0.5pt solid #e2e8f0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .row-even {
+            background-color: #ffffff;
+        }
+
+        .row-odd {
+            background-color: #faf5ff;
+        }
+
+        .row-restday {
+            background-color: #fffbeb;
+        }
+
+        .badge-rd {
+            color: #d97706;
+            font-weight: bold;
+        }
+
+        .val-late {
+            color: #d97706;
+            font-weight: bold;
+        }
+
+        .val-ut {
+            color: #ef4444;
+            font-weight: bold;
+        }
+
+        .val-ot {
+            color: #6366f1;
+            font-weight: bold;
+        }
+
+        .val-abs {
+            color: #ef4444;
+            font-weight: bold;
+        }
+
+        .val-remarks {
+            color: #7c3aed;
+            font-weight: bold;
+        }
+
+        .text-left { text-align: left; }
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+
+        /* Totals Row with Royal Purple Accents */
+        .totals-row td {
+            background-color: #f5f3ff;
+            color: #0f172a;
+            font-weight: bold;
+            padding-top: 5.5pt;
+            padding-bottom: 5.5pt;
+            font-size: 7.6pt;
+            border-top: 1.5pt solid #6b21a8;
+            border-bottom: 3pt double #6b21a8;
+            white-space: nowrap;
+        }
+
+        .totals-label {
+            letter-spacing: 0.8px;
+            font-size: 7.6pt;
+            padding-right: 5pt;
+            color: #6b21a8;
+        }
+
+        .totals-num {
+            color: #0f172a;
+            font-weight: bold;
+        }
+
+        /* Signatures Section */
+        .signatures-section {
+            width: 100%;
+            margin-top: 12pt;
+            border: 1pt solid #ddd6fe;
+            border-top: 2.5pt solid #7c3aed;
+            background-color: #ffffff;
+            padding: 8pt 10pt;
+        }
+
+        .cert-statement {
+            font-size: 7.8pt;
+            text-align: center;
+            font-style: italic;
+            margin-bottom: 12pt;
+            color: #6b21a8;
+            background-color: #f5f3ff;
+            padding: 3.5pt 8pt;
+            border-radius: 2pt;
+            border: 0.5pt solid #ddd6fe;
+        }
+
+        .signatures-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .signatures-table td {
+            vertical-align: top;
+            font-size: 7.8pt;
+            text-align: center;
+            padding: 0 10pt;
+        }
+
+        .sig-title {
+            font-weight: bold;
+            font-size: 7.5pt;
+            text-transform: uppercase;
+            margin-bottom: 34pt;
+            letter-spacing: 0.5px;
+            color: #6b21a8;
+        }
+
+        .sig-line {
+            border-top: 1.2pt solid #7c3aed;
+            width: 88%;
+            margin: 0 auto 3pt auto;
+        }
+
+        .sig-name {
+            font-size: 8.2pt;
+            font-weight: bold;
+            color: #0f172a;
+            text-transform: uppercase;
+            margin-bottom: 2pt;
+        }
+
+        .sig-role {
+            font-size: 7.2pt;
+            color: #64748b;
+            margin-bottom: 2pt;
+        }
+
+        .sig-date {
+            font-size: 7pt;
+            color: #94a3b8;
+        }
+
+        /* Bottom Legend Strip */
+        .legend-strip {
+            width: 100%;
+            margin-top: 6pt;
+            border: 0.8pt solid #ddd6fe;
+            background-color: #faf5ff;
+            padding: 3.5pt 6pt;
+            font-size: 7pt;
+            color: #475569;
+            text-align: center;
+            line-height: 1.35;
+        }
+
+        .legend-item {
+            display: inline-block;
+            margin: 0 4pt;
+            white-space: nowrap;
+        }
+
+        .legend-tag {
+            font-weight: bold;
+            color: #6b21a8;
+        }
+    </style>
+</head>
+<body style="background: #e2e8f0; padding: 24px 0; margin: 0; min-height: 100vh; display: flex; justify-content: center;">
+     <div style="background: #ffffff; width: 8.5in; min-height: 11in; padding: 18pt 20pt 18pt 20pt; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15), 0 8px 10px -6px rgba(0,0,0,0.1); position: relative; box-sizing: border-box;">
+
+
+    
+            
+        <div class="dtr-page">
+            <!-- Top Header Letterhead -->
+            <div class="header-container">
+                <table class="title-table">
+                    <tr>
+                        <td style="width: 58%;">
+                            <div class="doc-title">DAILY TIME RECORD</div>
+                            <div class="doc-subtitle">Civil Service Form No. 48 / Official Timekeeping Ledger</div>
+                        </td>
+                        <td style="width: 42%;" class="header-meta-right">
+                            <div><span class="header-meta-label">CUT-OFF:</span> Sep 1, 2026 to Sep 16, 2026</div>
+                            <div><span class="header-meta-label">PAGE:</span> 1 &nbsp;|&nbsp; <span class="header-meta-label">PRINTED:</span> 09/24/26 18:38:24</div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- Integrated Company & Employee Information Card -->
+            <table class="info-card">
+                <tr>
+                    <td style="width: 14%;" class="info-label">COMPANY</td>
+                    <td class="info-sep">:</td>
+                    <td style="width: 36%;" class="info-val">BISTRO HOSPITALITY GROUP INC.</td>
+                    <td style="width: 14%;" class="info-label">EMPLOYEE ID</td>
+                    <td class="info-sep">:</td>
+                    <td style="width: 36%;" class="info-val-bold">EMP-2026-001</td>
+                </tr>
+                <tr>
+                    <td class="info-label">BRANCH</td>
+                    <td class="info-sep">:</td>
+                    <td class="info-val">MAKATI FLAGSHIP BRANCH</td>
+                    <td class="info-label">EMPLOYEE NAME</td>
+                    <td class="info-sep">:</td>
+                    <td class="info-val-bold">MENDOZA, CARLOS</td>
+                </tr>
+                <tr class="info-divider">
+                    <td class="info-label">DEPARTMENT</td>
+                    <td class="info-sep">:</td>
+                    <td class="info-val">MANAGEMENT</td>
+                    <td class="info-label">REPORT TYPE</td>
+                    <td class="info-sep">:</td>
+                    <td class="info-val">OFFICIAL ATTENDANCE RECORD</td>
+                </tr>
+            </table>
+
+            <!-- DTR Table Grid (Up to 16 rows per page) -->
+            <table class="dtr-grid">
+                <colgroup>
+                    <col style="width: 6.6%;">
+                    <col style="width: 4.0%;">
+                    <col style="width: 4.8%;">
+                    <col style="width: 5.4%;">
+                    <col style="width: 5.4%;">
+                    <col style="width: 5.4%;">
+                    <col style="width: 5.4%;">
+                    <col style="width: 5.4%;">
+                    <col style="width: 5.4%;">
+                    <col style="width: 5.6%;">
+                    <col style="width: 4.6%;">
+                    <col style="width: 4.6%;">
+                    <col style="width: 4.6%;">
+                    <col style="width: 5.6%;">
+                    <col style="width: 4.6%;">
+                    <col style="width: 23.0%;">
+                </colgroup>
+                <thead>
+                    <!-- Header Row 1: Unified Purple Section Groups -->
+                    <tr>
+                        <th colspan="3" class="th-group sec-div text-center">SCHEDULE</th>
+                        <th colspan="6" class="th-group sec-div text-center">ACTUAL TIME ENTRIES</th>
+                        <th colspan="6" class="th-group sec-div text-center">HOURS &amp; MINUTES COMPUTATION</th>
+                        <th class="th-group text-center">NOTES</th>
+                    </tr>
+                    <!-- Header Row 2: Clean Sub-Headers -->
+                    <tr>
+                        <th class="th-sub col-div text-left" style="padding-left: 3pt;">DATE</th>
+                        <th class="th-sub col-div text-center">DAY</th>
+                        <th class="th-sub sec-div text-center">SHIFT</th>
+                        <th class="th-sub col-div text-center">IN 1</th>
+                        <th class="th-sub col-div text-center">OUT 1</th>
+                        <th class="th-sub col-div text-center">IN 2</th>
+                        <th class="th-sub col-div text-center">OUT 2</th>
+                        <th class="th-sub col-div text-center">IN 3</th>
+                        <th class="th-sub sec-div text-center">OUT 3</th>
+                        <th class="th-sub col-div text-right" style="padding-right: 2pt;">REG</th>
+                        <th class="th-sub col-div text-right" style="padding-right: 2pt;">LATE</th>
+                        <th class="th-sub col-div text-right" style="padding-right: 2pt;">UT</th>
+                        <th class="th-sub col-div text-right" style="padding-right: 2pt;">ABS</th>
+                        <th class="th-sub col-div text-right" style="padding-right: 2pt;">NET</th>
+                        <th class="th-sub sec-div text-right" style="padding-right: 2pt;">OT</th>
+                        <th class="th-sub text-left" style="padding-left: 5pt;">REMARKS</th>
+                    </tr>
+                </thead>
+                <tbody>
+                                                                    <tr class="row-even">
+                            <td class="col-div text-left" style="padding-left: 3pt;">Sep 1</td>
+                            <td class="col-div text-center">Tue</td>
+                            <td class="sec-div text-center" style="font-weight: bold; color: #6b21a8;">DS8</td>
+
+                                                            <!-- 6 Actual Time Entry Punches -->
+                                <td class="col-div text-center">7:56</td>
+                                <td class="col-div text-center">12:02</td>
+                                <td class="col-div text-center">12:58</td>
+                                <td class="col-div text-center">17:05</td>
+                                <td class="col-div text-center"></td>
+                                <td class="sec-div text-center"></td>
+
+                                <!-- Calculated Metrics Matching UI Color Cues -->
+                                <td class="col-div text-right" style="padding-right: 2pt;">8.00</td>
+                                <td class="col-div text-right " style="padding-right: 2pt;"></td>
+                                <td class="col-div text-right " style="padding-right: 2pt;"></td>
+                                <td class="col-div text-right " style="padding-right: 2pt;"></td>
+                                <td class="col-div text-right" style="padding-right: 2pt; font-weight: bold;">8.00</td>
+                                <td class="sec-div text-right " style="padding-right: 2pt;"></td>
+                                <td class="text-left val-remarks" style="padding-left: 5pt;"></td>
+                                                    </tr>
+                                                                    <tr class="row-odd">
+                            <td class="col-div text-left" style="padding-left: 3pt;">Sep 2</td>
+                            <td class="col-div text-center">Wed</td>
+                            <td class="sec-div text-center" style="font-weight: bold; color: #6b21a8;">DS8</td>
+
+                                                            <!-- 6 Actual Time Entry Punches -->
+                                <td class="col-div text-center">7:56</td>
+                                <td class="col-div text-center">12:02</td>
+                                <td class="col-div text-center">12:58</td>
+                                <td class="col-div text-center">17:05</td>
+                                <td class="col-div text-center"></td>
+                                <td class="sec-div text-center"></td>
+
+                                <!-- Calculated Metrics Matching UI Color Cues -->
+                                <td class="col-div text-right" style="padding-right: 2pt;">8.00</td>
+                                <td class="col-div text-right " style="padding-right: 2pt;"></td>
+                                <td class="col-div text-right " style="padding-right: 2pt;"></td>
+                                <td class="col-div text-right " style="padding-right: 2pt;"></td>
+                                <td class="col-div text-right" style="padding-right: 2pt; font-weight: bold;">8.00</td>
+                                <td class="sec-div text-right " style="padding-right: 2pt;"></td>
+                                <td class="text-left val-remarks" style="padding-left: 5pt;"></td>
+                                                    </tr>
+                                                                    <tr class="row-even">
+                            <td class="col-div text-left" style="padding-left: 3pt;">Sep 3</td>
+                            <td class="col-div text-center">Thu</td>
+                            <td class="sec-div text-center" style="font-weight: bold; color: #6b21a8;">DS8</td>
+
+                                                            <!-- 6 Actual Time Entry Punches -->
+                                <td class="col-div text-center">8:15</td>
+                                <td class="col-div text-center">12:00</td>
+                                <td class="col-div text-center">13:00</td>
+                                <td class="col-div text-center">17:00</td>
+                                <td class="col-div text-center"></td>
+                                <td class="sec-div text-center"></td>
+
+                                <!-- Calculated Metrics Matching UI Color Cues -->
+                                <td class="col-div text-right" style="padding-right: 2pt;">8.00</td>
+                                <td class="col-div text-right val-late" style="padding-right: 2pt;">15</td>
+                                <td class="col-div text-right " style="padding-right: 2pt;"></td>
+                                <td class="col-div text-right " style="padding-right: 2pt;"></td>
+                                <td class="col-div text-right" style="padding-right: 2pt; font-weight: bold;">7.75</td>
+                                <td class="sec-div text-right " style="padding-right: 2pt;"></td>
+                                <td class="text-left val-remarks" style="padding-left: 5pt;">TARDY 15M</td>
+                                                    </tr>
+                                                                    <tr class="row-odd">
+                            <td class="col-div text-left" style="padding-left: 3pt;">Sep 4</td>
+                            <td class="col-div text-center">Fri</td>
+                            <td class="sec-div text-center" style="font-weight: bold; color: #6b21a8;">DS8</td>
+
+                                                            <!-- 6 Actual Time Entry Punches -->
+                                <td class="col-div text-center">7:56</td>
+                                <td class="col-div text-center">12:02</td>
+                                <td class="col-div text-center">12:58</td>
+                                <td class="col-div text-center">17:05</td>
+                                <td class="col-div text-center"></td>
+                                <td class="sec-div text-center"></td>
+
+                                <!-- Calculated Metrics Matching UI Color Cues -->
+                                <td class="col-div text-right" style="padding-right: 2pt;">8.00</td>
+                                <td class="col-div text-right " style="padding-right: 2pt;"></td>
+                                <td class="col-div text-right " style="padding-right: 2pt;"></td>
+                                <td class="col-div text-right " style="padding-right: 2pt;"></td>
+                                <td class="col-div text-right" style="padding-right: 2pt; font-weight: bold;">8.00</td>
+                                <td class="sec-div text-right " style="padding-right: 2pt;"></td>
+                                <td class="text-left val-remarks" style="padding-left: 5pt;"></td>
+                                                    </tr>
+                                                                    <tr class="row-restday">
+                            <td class="col-div text-left" style="padding-left: 3pt;">Sep 5</td>
+                            <td class="col-div text-center">Sat</td>
+                            <td class="sec-div text-center" style="font-weight: bold; color: #d97706;">RD</td>
+
+                                                            <!-- Rest Day: warm cream row, clear status badge in remarks -->
+                                <td class="col-div text-center"></td>
+                                <td class="col-div text-center"></td>
+                                <td class="col-div text-center"></td>
+                                <td class="col-div text-center"></td>
+                                <td class="col-div text-center"></td>
+                                <td class="sec-div text-center"></td>
+                                <td class="col-div text-right"></td>
+                                <td class="col-div text-right"></td>
+                                <td class="col-div text-right"></td>
+                                <td class="col-div text-right"></td>
+                                <td class="col-div text-right"></td>
+                                <td class="sec-div text-right"></td>
+                                <td class="text-left" style="padding-left: 5pt;"><span class="badge-rd">REST DAY</span></td>
+                                                    </tr>
+                                                                    <tr class="row-restday">
+                            <td class="col-div text-left" style="padding-left: 3pt;">Sep 6</td>
+                            <td class="col-div text-center">Sun</td>
+                            <td class="sec-div text-center" style="font-weight: bold; color: #d97706;">RD</td>
+
+                                                            <!-- Rest Day: warm cream row, clear status badge in remarks -->
+                                <td class="col-div text-center"></td>
+                                <td class="col-div text-center"></td>
+                                <td class="col-div text-center"></td>
+                                <td class="col-div text-center"></td>
+                                <td class="col-div text-center"></td>
+                                <td class="sec-div text-center"></td>
+                                <td class="col-div text-right"></td>
+                                <td class="col-div text-right"></td>
+                                <td class="col-div text-right"></td>
+                                <td class="col-div text-right"></td>
+                                <td class="col-div text-right"></td>
+                                <td class="sec-div text-right"></td>
+                                <td class="text-left" style="padding-left: 5pt;"><span class="badge-rd">REST DAY</span></td>
+                                                    </tr>
+                                                                    <tr class="row-even">
+                            <td class="col-div text-left" style="padding-left: 3pt;">Sep 7</td>
+                            <td class="col-div text-center">Mon</td>
+                            <td class="sec-div text-center" style="font-weight: bold; color: #6b21a8;">DS8</td>
+
+                                                            <!-- 6 Actual Time Entry Punches -->
+                                <td class="col-div text-center">7:55</td>
+                                <td class="col-div text-center">12:00</td>
+                                <td class="col-div text-center">13:00</td>
+                                <td class="col-div text-center">17:00</td>
+                                <td class="col-div text-center">17:30</td>
+                                <td class="sec-div text-center">19:30</td>
+
+                                <!-- Calculated Metrics Matching UI Color Cues -->
+                                <td class="col-div text-right" style="padding-right: 2pt;">8.00</td>
+                                <td class="col-div text-right " style="padding-right: 2pt;"></td>
+                                <td class="col-div text-right " style="padding-right: 2pt;"></td>
+                                <td class="col-div text-right " style="padding-right: 2pt;"></td>
+                                <td class="col-div text-right" style="padding-right: 2pt; font-weight: bold;">8.00</td>
+                                <td class="sec-div text-right val-ot" style="padding-right: 2pt;">2.00</td>
+                                <td class="text-left val-remarks" style="padding-left: 5pt;">OT 2.0H</td>
+                                                    </tr>
+                                                                    <tr class="row-odd">
+                            <td class="col-div text-left" style="padding-left: 3pt;">Sep 8</td>
+                            <td class="col-div text-center">Tue</td>
+                            <td class="sec-div text-center" style="font-weight: bold; color: #6b21a8;">DS8</td>
+
+                                                            <!-- 6 Actual Time Entry Punches -->
+                                <td class="col-div text-center">7:56</td>
+                                <td class="col-div text-center">12:02</td>
+                                <td class="col-div text-center">12:58</td>
+                                <td class="col-div text-center">17:05</td>
+                                <td class="col-div text-center"></td>
+                                <td class="sec-div text-center"></td>
+
+                                <!-- Calculated Metrics Matching UI Color Cues -->
+                                <td class="col-div text-right" style="padding-right: 2pt;">8.00</td>
+                                <td class="col-div text-right " style="padding-right: 2pt;"></td>
+                                <td class="col-div text-right " style="padding-right: 2pt;"></td>
+                                <td class="col-div text-right " style="padding-right: 2pt;"></td>
+                                <td class="col-div text-right" style="padding-right: 2pt; font-weight: bold;">8.00</td>
+                                <td class="sec-div text-right " style="padding-right: 2pt;"></td>
+                                <td class="text-left val-remarks" style="padding-left: 5pt;"></td>
+                                                    </tr>
+                                                                    <tr class="row-even">
+                            <td class="col-div text-left" style="padding-left: 3pt;">Sep 9</td>
+                            <td class="col-div text-center">Wed</td>
+                            <td class="sec-div text-center" style="font-weight: bold; color: #6b21a8;">DS8</td>
+
+                                                            <!-- 6 Actual Time Entry Punches -->
+                                <td class="col-div text-center">7:56</td>
+                                <td class="col-div text-center">12:02</td>
+                                <td class="col-div text-center">12:58</td>
+                                <td class="col-div text-center">17:05</td>
+                                <td class="col-div text-center"></td>
+                                <td class="sec-div text-center"></td>
+
+                                <!-- Calculated Metrics Matching UI Color Cues -->
+                                <td class="col-div text-right" style="padding-right: 2pt;">8.00</td>
+                                <td class="col-div text-right " style="padding-right: 2pt;"></td>
+                                <td class="col-div text-right " style="padding-right: 2pt;"></td>
+                                <td class="col-div text-right " style="padding-right: 2pt;"></td>
+                                <td class="col-div text-right" style="padding-right: 2pt; font-weight: bold;">8.00</td>
+                                <td class="sec-div text-right " style="padding-right: 2pt;"></td>
+                                <td class="text-left val-remarks" style="padding-left: 5pt;"></td>
+                                                    </tr>
+                                                                    <tr class="row-odd">
+                            <td class="col-div text-left" style="padding-left: 3pt;">Sep 10</td>
+                            <td class="col-div text-center">Thu</td>
+                            <td class="sec-div text-center" style="font-weight: bold; color: #6b21a8;">DS8</td>
+
+                                                            <!-- 6 Actual Time Entry Punches -->
+                                <td class="col-div text-center">7:56</td>
+                                <td class="col-div text-center">12:02</td>
+                                <td class="col-div text-center">12:58</td>
+                                <td class="col-div text-center">17:05</td>
+                                <td class="col-div text-center"></td>
+                                <td class="sec-div text-center"></td>
+
+                                <!-- Calculated Metrics Matching UI Color Cues -->
+                                <td class="col-div text-right" style="padding-right: 2pt;">8.00</td>
+                                <td class="col-div text-right " style="padding-right: 2pt;"></td>
+                                <td class="col-div text-right " style="padding-right: 2pt;"></td>
+                                <td class="col-div text-right " style="padding-right: 2pt;"></td>
+                                <td class="col-div text-right" style="padding-right: 2pt; font-weight: bold;">8.00</td>
+                                <td class="sec-div text-right " style="padding-right: 2pt;"></td>
+                                <td class="text-left val-remarks" style="padding-left: 5pt;"></td>
+                                                    </tr>
+                                                                    <tr class="row-even">
+                            <td class="col-div text-left" style="padding-left: 3pt;">Sep 11</td>
+                            <td class="col-div text-center">Fri</td>
+                            <td class="sec-div text-center" style="font-weight: bold; color: #6b21a8;">DS8</td>
+
+                                                            <!-- 6 Actual Time Entry Punches -->
+                                <td class="col-div text-center"></td>
+                                <td class="col-div text-center"></td>
+                                <td class="col-div text-center"></td>
+                                <td class="col-div text-center"></td>
+                                <td class="col-div text-center"></td>
+                                <td class="sec-div text-center"></td>
+
+                                <!-- Calculated Metrics Matching UI Color Cues -->
+                                <td class="col-div text-right" style="padding-right: 2pt;">8.00</td>
+                                <td class="col-div text-right " style="padding-right: 2pt;"></td>
+                                <td class="col-div text-right " style="padding-right: 2pt;"></td>
+                                <td class="col-div text-right " style="padding-right: 2pt;"></td>
+                                <td class="col-div text-right" style="padding-right: 2pt; font-weight: bold;">8.00</td>
+                                <td class="sec-div text-right " style="padding-right: 2pt;"></td>
+                                <td class="text-left val-remarks" style="padding-left: 5pt;">VL APPROVED</td>
+                                                    </tr>
+                                                                    <tr class="row-restday">
+                            <td class="col-div text-left" style="padding-left: 3pt;">Sep 12</td>
+                            <td class="col-div text-center">Sat</td>
+                            <td class="sec-div text-center" style="font-weight: bold; color: #d97706;">RD</td>
+
+                                                            <!-- Rest Day: warm cream row, clear status badge in remarks -->
+                                <td class="col-div text-center"></td>
+                                <td class="col-div text-center"></td>
+                                <td class="col-div text-center"></td>
+                                <td class="col-div text-center"></td>
+                                <td class="col-div text-center"></td>
+                                <td class="sec-div text-center"></td>
+                                <td class="col-div text-right"></td>
+                                <td class="col-div text-right"></td>
+                                <td class="col-div text-right"></td>
+                                <td class="col-div text-right"></td>
+                                <td class="col-div text-right"></td>
+                                <td class="sec-div text-right"></td>
+                                <td class="text-left" style="padding-left: 5pt;"><span class="badge-rd">REST DAY</span></td>
+                                                    </tr>
+                                                                    <tr class="row-restday">
+                            <td class="col-div text-left" style="padding-left: 3pt;">Sep 13</td>
+                            <td class="col-div text-center">Sun</td>
+                            <td class="sec-div text-center" style="font-weight: bold; color: #d97706;">RD</td>
+
+                                                            <!-- Rest Day: warm cream row, clear status badge in remarks -->
+                                <td class="col-div text-center"></td>
+                                <td class="col-div text-center"></td>
+                                <td class="col-div text-center"></td>
+                                <td class="col-div text-center"></td>
+                                <td class="col-div text-center"></td>
+                                <td class="sec-div text-center"></td>
+                                <td class="col-div text-right"></td>
+                                <td class="col-div text-right"></td>
+                                <td class="col-div text-right"></td>
+                                <td class="col-div text-right"></td>
+                                <td class="col-div text-right"></td>
+                                <td class="sec-div text-right"></td>
+                                <td class="text-left" style="padding-left: 5pt;"><span class="badge-rd">REST DAY</span></td>
+                                                    </tr>
+                                                                    <tr class="row-odd">
+                            <td class="col-div text-left" style="padding-left: 3pt;">Sep 14</td>
+                            <td class="col-div text-center">Mon</td>
+                            <td class="sec-div text-center" style="font-weight: bold; color: #6b21a8;">DS8</td>
+
+                                                            <!-- 6 Actual Time Entry Punches -->
+                                <td class="col-div text-center">7:56</td>
+                                <td class="col-div text-center">12:02</td>
+                                <td class="col-div text-center">12:58</td>
+                                <td class="col-div text-center">17:05</td>
+                                <td class="col-div text-center"></td>
+                                <td class="sec-div text-center"></td>
+
+                                <!-- Calculated Metrics Matching UI Color Cues -->
+                                <td class="col-div text-right" style="padding-right: 2pt;">8.00</td>
+                                <td class="col-div text-right " style="padding-right: 2pt;"></td>
+                                <td class="col-div text-right " style="padding-right: 2pt;"></td>
+                                <td class="col-div text-right " style="padding-right: 2pt;"></td>
+                                <td class="col-div text-right" style="padding-right: 2pt; font-weight: bold;">8.00</td>
+                                <td class="sec-div text-right " style="padding-right: 2pt;"></td>
+                                <td class="text-left val-remarks" style="padding-left: 5pt;"></td>
+                                                    </tr>
+                                                                    <tr class="row-even">
+                            <td class="col-div text-left" style="padding-left: 3pt;">Sep 15</td>
+                            <td class="col-div text-center">Tue</td>
+                            <td class="sec-div text-center" style="font-weight: bold; color: #6b21a8;">DS8</td>
+
+                                                            <!-- 6 Actual Time Entry Punches -->
+                                <td class="col-div text-center">7:58</td>
+                                <td class="col-div text-center">12:00</td>
+                                <td class="col-div text-center">13:00</td>
+                                <td class="col-div text-center">16:30</td>
+                                <td class="col-div text-center"></td>
+                                <td class="sec-div text-center"></td>
+
+                                <!-- Calculated Metrics Matching UI Color Cues -->
+                                <td class="col-div text-right" style="padding-right: 2pt;">8.00</td>
+                                <td class="col-div text-right " style="padding-right: 2pt;"></td>
+                                <td class="col-div text-right val-ut" style="padding-right: 2pt;">30</td>
+                                <td class="col-div text-right " style="padding-right: 2pt;"></td>
+                                <td class="col-div text-right" style="padding-right: 2pt; font-weight: bold;">7.50</td>
+                                <td class="sec-div text-right " style="padding-right: 2pt;"></td>
+                                <td class="text-left val-remarks" style="padding-left: 5pt;">UT 30M</td>
+                                                    </tr>
+                                                                    <tr class="row-odd">
+                            <td class="col-div text-left" style="padding-left: 3pt;">Sep 16</td>
+                            <td class="col-div text-center">Wed</td>
+                            <td class="sec-div text-center" style="font-weight: bold; color: #6b21a8;">DS8</td>
+
+                                                            <!-- 6 Actual Time Entry Punches -->
+                                <td class="col-div text-center">7:56</td>
+                                <td class="col-div text-center">12:02</td>
+                                <td class="col-div text-center">12:58</td>
+                                <td class="col-div text-center">17:05</td>
+                                <td class="col-div text-center"></td>
+                                <td class="sec-div text-center"></td>
+
+                                <!-- Calculated Metrics Matching UI Color Cues -->
+                                <td class="col-div text-right" style="padding-right: 2pt;">8.00</td>
+                                <td class="col-div text-right " style="padding-right: 2pt;"></td>
+                                <td class="col-div text-right " style="padding-right: 2pt;"></td>
+                                <td class="col-div text-right " style="padding-right: 2pt;"></td>
+                                <td class="col-div text-right" style="padding-right: 2pt; font-weight: bold;">8.00</td>
+                                <td class="sec-div text-right " style="padding-right: 2pt;"></td>
+                                <td class="text-left val-remarks" style="padding-left: 5pt;"></td>
+                                                    </tr>
+                    
+                    <!-- Totals Row with Clean Accounting Rule -->
+                    <tr class="totals-row">
+                        <td colspan="9" class="sec-div text-right totals-label">PAGE TOTALS:</td>
+                        <td class="col-div text-right totals-num" style="padding-right: 2pt;">96.00</td>
+                        <td class="col-div text-right totals-num" style="padding-right: 2pt;">15</td>
+                        <td class="col-div text-right totals-num" style="padding-right: 2pt;">30</td>
+                        <td class="col-div text-right totals-num" style="padding-right: 2pt;">0.00</td>
+                        <td class="col-div text-right totals-num" style="padding-right: 2pt;">95.25</td>
+                        <td class="sec-div text-right totals-num" style="padding-right: 2pt;">2.00</td>
+                        <td class="text-left" style="padding-left: 5pt; color: #7c3aed; font-size: 7pt; font-weight: bold;">VERIFIED</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Signatures Section with Certification -->
+            <div class="signatures-section">
+                <div class="cert-statement">
+                    I certify on my honor that the above is a true and correct report of the hours of work performed.
+                </div>
+                <table class="signatures-table">
+                    <tr>
+                        <td style="width: 33%;">
+                            <div class="sig-title">PREPARED BY</div>
+                            <div class="sig-line"></div>
+                            <div class="sig-name">TIMEKEEPING / HR</div>
+                            <div class="sig-role">Authorized Representative</div>
+                            <div class="sig-date">Date: ____________________</div>
+                        </td>
+                        <td style="width: 34%;">
+                            <div class="sig-title">EMPLOYEE CONFORME</div>
+                            <div class="sig-line"></div>
+                            <div class="sig-name">MENDOZA, CARLOS</div>
+                            <div class="sig-role">Signature over Printed Name</div>
+                            <div class="sig-date">Date: ____________________</div>
+                        </td>
+                        <td style="width: 33%;">
+                            <div class="sig-title">APPROVED BY</div>
+                            <div class="sig-line"></div>
+                            <div class="sig-name">DEPARTMENT HEAD</div>
+                            <div class="sig-role">Immediate Supervisor / Manager</div>
+                            <div class="sig-date">Date: ____________________</div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- Bottom Legend Strip -->
+            <div class="legend-strip">
+                <span class="legend-item"><span class="legend-tag">DS8:</span> Regular Shift (8H)</span>
+                <span class="legend-item"><span class="legend-tag">RD:</span> Rest Day</span>
+                <span class="legend-item"><span class="legend-tag">LATE:</span> Tardy Mins</span>
+                <span class="legend-item"><span class="legend-tag">UT:</span> Undertime Mins</span>
+                <span class="legend-item"><span class="legend-tag">ABS:</span> Absence Days</span>
+                <span class="legend-item"><span class="legend-tag">OT:</span> Overtime Hrs</span>
+                <span class="legend-item"><span class="legend-tag">VL/SL:</span> Approved Leaves</span>
+                <span class="legend-item"><span class="legend-tag">LH/SH:</span> Holidays</span>
+            </div>
+        </div>
+    
+</div></body>
+</html>

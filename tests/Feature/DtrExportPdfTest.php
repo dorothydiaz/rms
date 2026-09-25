@@ -4,10 +4,13 @@ namespace Tests\Feature;
 
 use App\Models\Hr\Employee;
 use App\Models\User;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 class DtrExportPdfTest extends TestCase
 {
+    use DatabaseTransactions;
+
     protected function getAdmin(): User
     {
         return User::where('username', 'peter')->first() ?? User::first();

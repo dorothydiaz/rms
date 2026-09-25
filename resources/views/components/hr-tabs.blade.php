@@ -44,14 +44,14 @@
         ],
         'time-attendance' => [
             'title' => 'Time & Attendance',
-            'subtitle' => 'Track staff timekeeping logs, daily time records (DTR), schedules, overtime, and corrections',
+            'subtitle' => 'Track staff timekeeping logs, daily time records (DTR), schedules, overtime, and manual time entries',
             'icon' => 'ph-clock',
             'tabs' => [
                 ['name' => 'Time-Keeping', 'route' => 'hr.attendance.timekeeping', 'icon' => 'ph-fingerprint', 'active' => ['hr.attendance.timekeeping*', 'hr.attendance-checkin']],
                 ['name' => 'Daily Time Records (DTR)', 'route' => 'hr.attendance.dtr', 'icon' => 'ph-calendar-check', 'active' => ['hr.attendance.dtr*']],
                 ['name' => 'Schedules', 'route' => 'hr.attendance.schedules', 'icon' => 'ph-calendar', 'active' => ['hr.attendance.schedules*', 'hr.attendance-schedule']],
                 ['name' => 'Overtime', 'route' => 'hr.attendance.overtime', 'icon' => 'ph-clock-countdown', 'active' => ['hr.attendance.overtime*']],
-                ['name' => 'Attendance Corrections', 'route' => 'hr.attendance.corrections', 'icon' => 'ph-clock-afternoon', 'active' => ['hr.attendance.corrections*']],
+                ['name' => 'Manual Time Entries', 'route' => 'hr.attendance.corrections', 'icon' => 'ph-pencil-line', 'active' => ['hr.attendance.corrections*', 'hr.attendance.manual-entries*']],
             ],
         ],
         'leave-absences' => [
