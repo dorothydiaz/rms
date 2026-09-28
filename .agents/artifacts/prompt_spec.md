@@ -1,30 +1,29 @@
-# Prompt Specification: Accelerated Shift Schedule Plotter
+# Prompt Specification: Inventory Module - Product Management
 
 ## 1. Core Intent
-Transform the Weekly Shift Roster in `resources/views/hr/attendance/schedules.blade.php` from a slow, modal-dependent single-cell workflow into a high-speed, interactive matrix plotter inspired by `Reference/Schedule.html`. Planners must be able to:
-- Instantly plot shifts into any empty cell via 1-click preset buttons (e.g., Opening, Mid Day, Late Day, Closing, Rest Day / Templates).
-- Click or hover to remove or switch shift assignments without navigating away.
-- Copy the previous week's schedule forward to the active week in 1 click.
-- Batch fill an entire row or group (e.g. standard Mon-Sat shift with Sunday Rest Day).
-- Save batch changes with visual confirmation and real-time state synchronization.
-- Filter and search the roster quickly by staff name, branch, or department.
+Build the **Inventory Module: Product Management (`product-categories.blade.php`)** adhering strictly to the user's architectural reference and theme:
+1. **Background Layer (Master List):**
+   - **Header Section:** Full-width horizontal bar with page title ("Product Management") on the left and primary action button ("+ Add Product", hotkey F2) on the right.
+   - **Filter Bar:** Secondary horizontal row directly above table containing search input field (`Fuse.js` / fuzzy filter, barcode quick focus), category filter, and quick view toggles.
+   - **Grouped Data Grid:** Multi-column table partitioned by horizontal "Group Headers" (by Category, e.g., "Beverages", "Main Course", "Pastries & Desserts", "Raw Ingredients") spanning the entire width.
+   - **Columns:** 5 standard data columns (Product / SKU, Barcode, Unit / Spec, Cost Price, Selling Price) followed by a right-aligned action column with a "View" link/button.
+   - **Row Alignment:** Standard linear rows nested under each group header.
+2. **Foreground Layer (Slide-out Detail Drawer):**
+   - **Container:** Vertical drawer panel anchored to the right edge of the screen, overlaying ~35-40% of the screen with glassmorphic backdrop.
+   - **Panel Header:** Top bar with title on left and "Close (✕)" icon / Esc hotkey on right.
+   - **Primary Navigation:** Horizontal tab bar immediately below panel header (e.g. "General Info", "Inventory & Units", "Pricing & Tax", "Suppliers").
+   - **Form Content (Vertical Stack):** Stacked input fields: Single-line text inputs (SKU, Product Name, Barcode), multi-line textarea (Description), checkbox with label ("Active / Available for Sale", "Track Stock"), and dropdown selectors (Category, Unit of Measure, Tax Group).
+   - **Nested Content Section:** Secondary horizontal tab bar in the middle of the panel ("Stock Levels per Branch", "Recent Movements", "Recipe Components"), with nested data sub-table directly below.
+   - **Panel Footer:** Fixed bottom section with two right-aligned action buttons ("Cancel" and "Save Changes").
 
 ## 2. Explicit Constraints
-- **Framework & Runtime:** Laravel 12 on PHP 8.2+, MySQL.
-- **Frontend Architecture:** Laravel Blade templating with Phosphor Icons (`<i class="ph ph-...">`), custom CSS design tokens from `assets/css/styles.css`, and modular Vanilla JavaScript.
-- **Security:** Strict CSRF validation on all asynchronous POST/PUT endpoints.
-- **Data Persistence:** Persist to `employee_schedules` table with valid `shift_template_id`, `schedule_date`, `is_rest_day`, and `branch_id`.
-- **Backward Compatibility:** Keep existing manual modal dialogs functional while introducing the direct-in-cell quick-plotters.
+- **Framework & Stack:** Laravel 12 on PHP 8.2+, Blade Templating, Vanilla CSS adhering to `assets/css/styles.css` RMS glassmorphism, Phosphor Icons (`ph ph-*`), and high-performance client JS.
+- **Theme Consistency:** Use RMS Design System tokens (`--font-family: 'Poppins'`, glass borders, soft shadows, `#a855f7` / `#ec4899` gradient accents, `#0f172a` strong text, `#64748b` muted text).
+- **Industrial Ergonomics (Modern UX Designer):** 
+  - Fitts's Law CTAs, keyboard shortcuts (`F2` to Add Product, `Esc` to Close Drawer, `/` to focus search).
+  - Smooth 200ms spring drawer transition, pessimistic UI locking simulation, and soft toast notifications.
+  - Zero Cumulative Layout Shift (CLS) and responsive horizontal overflow wrapping for data grids.
 
-## 3. Excluded Scope (Non-Goals)
-- No dependency on Google Apps Script / Google Sheets (`serverCode`, `PMC Attendance` references from the legacy reference file).
-- No biometric physical sync modifications (punches display reference only if linked).
-- No payroll recalculation triggers outside normal schedule saves.
-
-## 4. Target Tech Stack
-- **Backend:** PHP 8.2+, Laravel 12, Eloquent ORM (`EmployeeSchedule`, `ShiftTemplate`, `Employee`, `Branch`).
-- **Endpoints:**
-  - `POST /attendance/schedules/batch` (batch upsert schedule matrix payload).
-  - `POST /attendance/schedules/copy-week` (copy schedule from prior week).
-  - `POST /attendance/schedules/quick-set` (inline cell update).
-- **Frontend:** Blade, Vanilla JS, CSS3 Flexbox/Grid, Phosphor Icons Web.
+## 3. Non-Goals
+- Complex multi-stage database migrations requiring external server connection if local DB is not currently running migrations. Provide rich mock/live fallback data model so the view works instantly in the browser and controller.
+- Modifying unrelated HR or Sales modules.

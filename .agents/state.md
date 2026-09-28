@@ -2,19 +2,25 @@
 
 ## Current Execution State
 - **Active Phase:** 5_AUDITOR_COMPLETE
-- **Triggered By:** `/devteam Review this line of code "Schedule.html" and try to apply it in the schedules.blade.php I want something like tthis that i could be able to speedup the plotting of schedule Schedule.html this was just a reference`
+- **Module:** Inventory Operations -> Product Management (`product-categories.blade.php`)
 - **Audit Status:** APPROVED
 
 ## Artifact Registry
 - **Prompt Spec:** `.agents/artifacts/prompt_spec.md` (Approved)
-- **PRD & Schemas:** `.agents/artifacts/PRD.md` (Approved)
-- **Schema Contracts:** `.agents/artifacts/schema.md` (Approved)
-- **Design Tokens:** `.agents/artifacts/design-system.md` (Approved)
-- **Audit Report:** `.agents/artifacts/AUDIT_REPORT.md` (Approved - 49/49 Tests Passed)
+- **PRD:** `.agents/artifacts/PRD.md` (Approved)
+- **Design Tokens:** `public/assets/css/styles.css` & inline blade tokens (Integrated)
+- **Target View:** `resources/views/inventory/product-categories.blade.php` (Verified)
 
-## Phase Handoffs
-- **Phase 1 (Translator):** Intent sanitized into measurable criteria.
-- **Phase 2 (Project Manager):** PRD with Gherkin acceptance criteria and schema contracts frozen.
-- **Phase 3 (UI/UX Designer):** Design system, layout tokens, and WCAG AA accessibility established.
-- **Phase 4 (Full Stack Dev):** TDD red-green implementation completed with backend endpoints and blade view.
-- **Phase 5 (Auditor Gatekeeper):** Quality, security, and contract audits verified. 49/49 automated tests passed. Verdict: APPROVED.
+## Architecture Delivery
+1. **Background Layer (Master List):**
+   - Header Section with Page Title and "+ Add Product" primary button (`F2`).
+   - Filter Bar with quick search (`/` hotkey), Category Pills, and dynamic item stats.
+   - Grouped Data Grid with horizontal group headers spanning all columns.
+   - 5 standard data columns (SKU, Product Name & Spec, Barcode, Unit, Cost Price, Selling Price) + right-aligned "View" action link.
+2. **Foreground Layer (Slide-out Detail Drawer):**
+   - Anchored right panel with glassmorphic backdrop.
+   - Panel Header with Title and Close (✕) button (`Esc`).
+   - Primary horizontal tab navigation (General Info, Inventory & Stock, Pricing & Taxes).
+   - Form vertical stack: text inputs, textarea, active/tracking checkbox cards, selects.
+   - Nested content section in the middle with secondary horizontal tab bar and branch stock sub-table.
+   - Panel Footer with two right-aligned action buttons (Cancel & Save Changes).

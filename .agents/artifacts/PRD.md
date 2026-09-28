@@ -1,90 +1,47 @@
-# Product Requirements Document (PRD): Accelerated Shift Schedule Planner
+# Product Requirements Document (PRD): Inventory Module - Product Management
 
-## 1. Executive Summary
-Provide an industrial-grade, responsive weekly shift roster matrix in `resources/views/hr/attendance/schedules.blade.php`, matching the speed and convenience demonstrated in `Reference/Schedule.html`. This eliminates the bottleneck of opening repetitive popups for every single day and employee.
+## 1. Feature Overview
+A high-throughput Product & Category Management interface following the two-layer architecture:
+- **Layer 1 (Background):** Grouped Master List with category bands, quick search, item counts, price ranges, and drawer triggers.
+- **Layer 2 (Foreground):** Slide-out Detail Drawer featuring multi-tab views (General Info, Specifications, Branches & Stock Sub-table, Pricing), fluid input stacks, and fixed sticky footer controls.
 
-## 2. Feature Slicing: MVP vs Phase 2
+## 2. Gherkin Acceptance Criteria
 
-### MVP (In Scope for this execution)
-1. **Interactive In-Cell Quick Plotter:**
-   - Empty grid cells present 1-click preset shift buttons (`O`, `MD`, `LD`, `C`, etc. matching configured shift templates) + `OFF` (Rest Day).
-   - Instant assignment with AJAX background sync and optimistic UI rendering.
-2. **Assigned Shift Badge with Fast Unassign:**
-   - Active cells display the template code, time range, and colored styling.
-   - Hovering displays a quick clear (`✕`) button to wipe the schedule without opening a modal.
-3. **Copy Previous Week Schedule:**
-   - Top-bar button "Copy Prev Week" duplicates all schedules from `weekStart - 7 days` to the active week in 1 click.
-4. **Row-Level Quick Fill:**
-   - Dropdown or quick action on each employee row: "Apply Mon-Sat [Shift], Sun Off" or "Fill All Days with Shift".
-5. **Fast Filtering & Live Search Toolbar:**
-   - Client-side search by employee name, ID, branch, or position category without reloading the browser.
-6. **Unified Shift Master Settings Modal:**
-   - Inspect and configure shift start/end times directly from the schedule planner view.
-
-### Phase 2 (Future Scope)
-- Drag-and-drop shift assignment across cells.
-- Biometric timecard discrepancy overlay (comparing scheduled shift vs actual biometric punch in/out).
-- Export roster to Excel / PDF roster matrix.
-
----
-
-## 3. Gherkin Acceptance Criteria
-
-### Scenario 1: Fast One-Click Shift Assignment in Empty Cell
+### Scenario 1: Grouped Master Table Display
 ```gherkin
-Scenario: Scheduler clicks a shift preset button on an empty cell
-  Given the Weekly Shift Roster is loaded for the week of "2026-09-28"
-  And employee ID 14 has no schedule on "2026-09-29"
-  When the user clicks the "O" (Opening) preset button on the "2026-09-29" cell for employee 14
-  Then an asynchronous request is dispatched to "/attendance/schedules/quick-assign"
-  And the cell immediately transitions to an active scheduled card with Opening badge and times
-  And an entry in "employee_schedules" is created with employee_id=14, schedule_date="2026-09-29", is_rest_day=false
+Scenario: View products grouped by category
+  Given the user navigates to "/inventory/product-categories"
+  Then the master table displays categorized group headers (e.g. "Beverages", "Main Course", "Pastries & Desserts")
+  And each group header displays the category name, item count badge, and spans all 6 columns
+  And rows under each group display SKU, Name, Barcode, Unit, Cost Price, Selling Price, and a "View" action
 ```
 
-### Scenario 2: Fast Rest Day Assignment
+### Scenario 2: Opening the Slide-out Detail Drawer
 ```gherkin
-Scenario: Scheduler marks a day as Rest Day
-  Given employee ID 14 on date "2026-10-04" (Sunday) has no schedule
-  When the user clicks the "OFF" (Rest Day) preset button
-  Then the cell transitions to a "Rest Day" badge
-  And "employee_schedules" records is_rest_day=true and shift_template_id=null
+Scenario: Clicking "View" or "+ Add Product" opens the foreground drawer
+  Given the user is on the Product Management page
+  When the user clicks the "View" button on an existing product row
+  Then the right-hand slide-out drawer animates smoothly into view (35-40% width)
+  And the drawer header displays the product title and a close (✕) button
+  And the form inputs populate with the product's details
+  And the master list background is partially visible behind a translucent overlay
 ```
 
-### Scenario 3: Quick Clear / Unassign Shift
+### Scenario 3: Switching Sub-Tabs and Viewing Nested Data Table
 ```gherkin
-Scenario: Scheduler clears an existing shift
-  Given employee ID 14 has an assigned shift on "2026-09-29"
-  When the user hovers over the card and clicks the "✕" (Clear) button
-  Then an asynchronous request is dispatched with clear=true
-  And the record is removed or unassigned from "employee_schedules"
-  And the cell returns to the empty state with quick preset buttons
+Scenario: Inspecting branch stock levels inside drawer
+  Given the slide-out drawer is open for a product
+  When the user navigates to the nested content section's secondary tabs
+  And clicks "Branch Stock Levels"
+  Then a nested sub-table renders showing Branch Name, On Hand, Reserved, Reorder Point, and Stock Status
 ```
 
-### Scenario 4: Copy Previous Week Schedules
+### Scenario 4: Fast Keyboard Ergonomics
 ```gherkin
-Scenario: Scheduler copies previous week roster into the current week
-  Given the previous week "2026-09-21" to "2026-09-27" has 35 assigned shifts
-  And the current week "2026-09-28" to "2026-10-04" has unassigned days
-  When the user clicks "Copy Prev Week" and confirms
-  Then the system copies the corresponding shift templates and rest days from the previous week
-  And a toast notification confirms "Successfully copied X schedules from previous week"
-  And the roster UI refreshes without full page disruption
-```
-
-### Scenario 5: Row-Level Quick Fill
-```gherkin
-Scenario: Scheduler fills an entire week for an employee in one click
-  Given employee ID 14 has an empty or partial week
-  When the user opens the employee row quick action menu and selects "Fill Mon-Sat Opening, Sun Off"
-  Then 7 schedule records are upserted for that employee across the week
-  And the entire row displays the updated shifts immediately
-```
-
-### Scenario 6: Live Employee Search Filter
-```gherkin
-Scenario: Planner searches for an employee in the roster
-  Given the matrix contains 40 employee rows
-  When the user types "Maria" in the quick search input
-  Then only rows matching "Maria" remain visible
-  And the table header and totals dynamically reflect the filtered count
+Scenario: Keyboard accessibility
+  Given the Product Management page is open
+  When the user presses "F2"
+  Then the drawer opens in "Add New Product" mode with the SKU / Name input automatically focused
+  When the user presses "Escape"
+  Then the drawer closes smoothly and focus returns to the search input
 ```
