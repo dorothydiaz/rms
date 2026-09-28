@@ -709,7 +709,7 @@ class AttendanceController extends Controller
             $dates[] = $start->copy()->addDays($i)->toDateString();
         }
 
-        $empQuery = Employee::where('employment_status', 'Active')->with(['branch', 'department']);
+        $empQuery = Employee::where('employment_status', 'Active')->with(['branch', 'department', 'position']);
         if (!$user->isSuperAdmin() && !$user->isHrAdmin() && $user->branch_id) {
             $empQuery->where('branch_id', $user->branch_id);
         } elseif ($request->filled('branch_id')) {
@@ -727,8 +727,10 @@ class AttendanceController extends Controller
             ->groupBy('employee_id');
 
         $branches = Branch::where('is_active', true)->get();
+        $departments = Department::where('is_active', true)->orderBy('name')->get();
+        $allEmployees = Employee::with(['branch', 'department', 'position'])->orderBy('first_name')->get();
 
-        return view('hr.attendance.schedules', compact('employees', 'dates', 'schedules', 'shiftTemplates', 'weekStart', 'branches'));
+        return view('hr.attendance.schedules', compact('employees', 'dates', 'schedules', 'shiftTemplates', 'weekStart', 'branches', 'departments', 'allEmployees'));
     }
 
     public function scheduleStore(Request $request): RedirectResponse
@@ -839,6 +841,279 @@ class AttendanceController extends Controller
         AuditLogger::log('Update', 'Schedules', 0, "Assigned schedules for {$empCount} employee(s) across date range {$dateRangeText}");
 
         return redirect()->back()->with('success', "Schedule assigned successfully ({$dateRangeText}) for {$empCount} employee(s).");
+    }
+
+    public function scheduleQuickAssign(Request $request): JsonResponse
+    {
+        $request->validate([
+            'employee_id' => 'required|exists:employees,id',
+            'date' => 'required|date',
+            'shift_template_id' => 'nullable|exists:shift_templates,id',
+            'is_rest_day' => 'nullable|boolean',
+            'clear' => 'nullable|boolean',
+            'custom_start_time' => 'nullable|string',
+            'custom_end_time' => 'nullable|string',
+            'shift_code' => 'nullable|string',
+            'notes' => 'nullable|string',
+        ]);
+
+        $empId = (int) $request->input('employee_id');
+        $date = Carbon::parse($request->input('date'))->toDateString();
+        $isClear = $request->boolean('clear');
+
+        if ($isClear) {
+            EmployeeSchedule::where('employee_id', $empId)
+                ->where('schedule_date', $date)
+                ->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Schedule cleared successfully.',
+                'cleared' => true,
+                'employee_id' => $empId,
+                'date' => $date,
+            ]);
+        }
+
+        $emp = Employee::findOrFail($empId);
+        $isRestDay = $request->boolean('is_rest_day');
+        $shiftTemplateId = $isRestDay ? null : $request->input('shift_template_id');
+        $customStart = $isRestDay ? null : $request->input('custom_start_time');
+        $customEnd = $isRestDay ? null : $request->input('custom_end_time');
+        $shiftCode = $request->input('shift_code');
+        $notes = $isRestDay ? 'RESTDAY' : ($request->input('notes') ?: $shiftCode);
+
+        // If shift_template_id not passed but shift_code matches a template
+        if (!$isRestDay && !$shiftTemplateId && $shiftCode) {
+            $matchedTmpl = ShiftTemplate::where('code', $shiftCode)->first();
+            if ($matchedTmpl) {
+                $shiftTemplateId = $matchedTmpl->id;
+            }
+        }
+
+        $updateData = [
+            'branch_id' => $emp->branch_id,
+            'shift_template_id' => $shiftTemplateId,
+            'is_rest_day' => $isRestDay,
+            'notes' => $notes,
+        ];
+
+        if ($customStart !== null) {
+            $updateData['custom_start_time'] = strlen($customStart) === 5 ? $customStart . ':00' : $customStart;
+        }
+        if ($customEnd !== null) {
+            $updateData['custom_end_time'] = strlen($customEnd) === 5 ? $customEnd . ':00' : $customEnd;
+        }
+
+        $sched = EmployeeSchedule::updateOrCreate(
+            [
+                'employee_id' => $empId,
+                'schedule_date' => $date,
+            ],
+            $updateData
+        );
+
+        $sched->load('shiftTemplate');
+
+        return response()->json([
+            'success' => true,
+            'message' => $isRestDay ? 'Rest day assigned.' : 'Shift assigned.',
+            'data' => [
+                'id' => $sched->id,
+                'employee_id' => $empId,
+                'date' => $date,
+                'is_rest_day' => (bool) $sched->is_rest_day,
+                'custom_start_time' => $sched->custom_start_time ? substr($sched->custom_start_time, 0, 5) : null,
+                'custom_end_time' => $sched->custom_end_time ? substr($sched->custom_end_time, 0, 5) : null,
+                'shift_code' => $shiftCode ?: ($sched->shiftTemplate?->code ?? ($isRestDay ? 'OFF' : 'CUSTOM')),
+                'notes' => $sched->notes,
+                'shift' => $sched->shiftTemplate ? [
+                    'id' => $sched->shiftTemplate->id,
+                    'name' => $sched->shiftTemplate->name,
+                    'code' => $sched->shiftTemplate->code,
+                    'start_time' => substr($sched->shiftTemplate->start_time, 0, 5),
+                    'end_time' => substr($sched->shiftTemplate->end_time, 0, 5),
+                    'color' => $sched->shiftTemplate->color ?? '#8b5cf6',
+                    'label' => $sched->shiftTemplate->formatted_label ?? $sched->shiftTemplate->name,
+                ] : null,
+            ],
+        ]);
+    }
+
+    public function scheduleCopyWeek(Request $request): JsonResponse
+    {
+        $request->validate([
+            'current_week_start' => 'required|date',
+            'branch_id' => 'nullable',
+        ]);
+
+        $currStart = Carbon::parse($request->input('current_week_start'))->startOfDay();
+        $prevStart = $currStart->copy()->subDays(7);
+
+        $prevDates = [];
+        for ($i = 0; $i < 7; $i++) {
+            $prevDates[] = $prevStart->copy()->addDays($i)->toDateString();
+        }
+
+        $user = Auth::user();
+        $query = EmployeeSchedule::whereIn('schedule_date', $prevDates);
+
+        if (!$user->isSuperAdmin() && !$user->isHrAdmin() && $user->branch_id) {
+            $query->where('branch_id', $user->branch_id);
+        } elseif ($request->filled('branch_id')) {
+            $query->where('branch_id', $request->input('branch_id'));
+        }
+
+        $prevSchedules = $query->get();
+
+        if ($prevSchedules->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No schedules found in the previous week to copy.',
+                'copied_count' => 0,
+            ], 422);
+        }
+
+        $copiedCount = 0;
+        DB::transaction(function () use ($prevSchedules, &$copiedCount) {
+            foreach ($prevSchedules as $prev) {
+                $targetDate = Carbon::parse($prev->schedule_date)->addDays(7)->toDateString();
+
+                EmployeeSchedule::updateOrCreate(
+                    [
+                        'employee_id' => $prev->employee_id,
+                        'schedule_date' => $targetDate,
+                    ],
+                    [
+                        'branch_id' => $prev->branch_id,
+                        'shift_template_id' => $prev->shift_template_id,
+                        'custom_start_time' => $prev->custom_start_time,
+                        'custom_end_time' => $prev->custom_end_time,
+                        'is_rest_day' => $prev->is_rest_day,
+                        'notes' => $prev->notes,
+                    ]
+                );
+                $copiedCount++;
+            }
+        });
+
+        AuditLogger::log('Create', 'Schedules', 0, "Copied {$copiedCount} schedule entries from week of {$prevStart->toDateString()} to {$currStart->toDateString()}");
+
+        return response()->json([
+            'success' => true,
+            'message' => "Successfully copied {$copiedCount} schedule entries from previous week.",
+            'copied_count' => $copiedCount,
+        ]);
+    }
+
+    public function scheduleQuickFillRow(Request $request): JsonResponse
+    {
+        $request->validate([
+            'employee_id' => 'required|exists:employees,id',
+            'week_start' => 'required|date',
+            'shift_template_id' => 'required|exists:shift_templates,id',
+            'rest_days' => 'nullable|array',
+        ]);
+
+        $empId = (int) $request->input('employee_id');
+        $emp = Employee::findOrFail($empId);
+        $shiftId = (int) $request->input('shift_template_id');
+
+        $rawRest = $request->input('rest_days', ['Sun']);
+        $restDays = array_map(function ($d) {
+            return ucfirst(strtolower(substr(trim($d), 0, 3)));
+        }, $rawRest);
+
+        $start = Carbon::parse($request->input('week_start'))->startOfDay();
+        $updatedCount = 0;
+
+        DB::transaction(function () use ($emp, $shiftId, $restDays, $start, &$updatedCount) {
+            for ($i = 0; $i < 7; $i++) {
+                $curr = $start->copy()->addDays($i);
+                $dateStr = $curr->toDateString();
+                $dayOfWeek = $curr->format('D'); // Mon, Tue...
+
+                $isRest = in_array($dayOfWeek, $restDays);
+
+                EmployeeSchedule::updateOrCreate(
+                    [
+                        'employee_id' => $emp->id,
+                        'schedule_date' => $dateStr,
+                    ],
+                    [
+                        'branch_id' => $emp->branch_id,
+                        'shift_template_id' => $isRest ? null : $shiftId,
+                        'is_rest_day' => $isRest,
+                    ]
+                );
+                $updatedCount++;
+            }
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => "Populated 7 days schedule for {$emp->full_name}.",
+            'updated_count' => $updatedCount,
+        ]);
+    }
+
+    public function scheduleBatchStore(Request $request): JsonResponse
+    {
+        $request->validate([
+            'schedules' => 'required|array|min:1',
+            'schedules.*.employee_id' => 'required|exists:employees,id',
+            'schedules.*.date' => 'required|date',
+            'schedules.*.shift_template_id' => 'nullable|exists:shift_templates,id',
+            'schedules.*.is_rest_day' => 'nullable|boolean',
+            'schedules.*.clear' => 'nullable|boolean',
+        ]);
+
+        $entries = $request->input('schedules');
+        $employeeIds = array_unique(array_column($entries, 'employee_id'));
+        $employees = Employee::whereIn('id', $employeeIds)->get()->keyBy('id');
+
+        $savedCount = 0;
+        DB::transaction(function () use ($entries, $employees, &$savedCount) {
+            foreach ($entries as $item) {
+                $empId = (int) $item['employee_id'];
+                $emp = $employees->get($empId);
+                if (!$emp) continue;
+
+                $date = Carbon::parse($item['date'])->toDateString();
+
+                if (!empty($item['clear'])) {
+                    EmployeeSchedule::where('employee_id', $empId)
+                        ->where('schedule_date', $date)
+                        ->delete();
+                    $savedCount++;
+                    continue;
+                }
+
+                $isRest = !empty($item['is_rest_day']);
+                $shiftId = $isRest ? null : ($item['shift_template_id'] ?? null);
+
+                EmployeeSchedule::updateOrCreate(
+                    [
+                        'employee_id' => $empId,
+                        'schedule_date' => $date,
+                    ],
+                    [
+                        'branch_id' => $emp->branch_id,
+                        'shift_template_id' => $shiftId,
+                        'is_rest_day' => $isRest,
+                    ]
+                );
+                $savedCount++;
+            }
+        });
+
+        AuditLogger::log('Update', 'Schedules', 0, "Batch saved {$savedCount} schedule entries.");
+
+        return response()->json([
+            'success' => true,
+            'message' => "Saved {$savedCount} schedule entries successfully.",
+            'saved_count' => $savedCount,
+        ]);
     }
 
     public function shiftTemplateStore(Request $request): RedirectResponse
