@@ -1,0 +1,1469 @@
+<!-- 2.Attendance_Schedule.html -->
+<!-- Ported from PMC Monitoring V3 TabSchedule.html -->
+<div class="glass-panel p-4 sm:p-5 flex flex-col h-full min-h-0 overflow-hidden" x-data="scheduleGrid()" x-init="init()"
+  @data-refreshed.window="refreshData()"
+  @view-activated.window="handleViewActivated($event)">
+
+  <!-- Top Bar Controls -->
+  <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3.5 mb-3.5 shrink-0 w-full">
+    <!-- 60% Width for Description -->
+    <div class="w-full md:w-[60%]">
+      <div class="flex items-center gap-2 mb-1">
+        <i class="fi fi-br-calendar-clock text-primary text-xl"></i>
+        <h2 class="font-bold text-lg text-slate-800">Shift Schedule Planner</h2>
+      </div>
+      <p class="text-xs text-slate-600 leading-relaxed font-medium">
+        Interactive tool to plan and assign merchandiser shifts across branches. Data entered here
+        sets the baseline for tracking actual check-in variance and attendance accuracy.
+      </p>
+    </div>
+
+    <!-- 40% Width for Buttons -->
+    <div class="w-full md:w-[40%] flex flex-wrap items-center justify-end gap-2.5">
+      <!-- Week Picker -->
+      <div class="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">
+        <label class="text-xs font-bold text-slate-600">Week Of:</label>
+        <input type="date" x-model="weekStartDate" @change="updateWeekDays()"
+          class="text-xs border-none focus:ring-0 outline-none bg-transparent text-slate-700 font-semibold cursor-pointer">
+      </div>
+
+      <!-- Auto-Fill Head Office (Full Month Generator) -->
+      <button @click="autoFillMonthlyHeadOffice()"
+        class="bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300/80 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors shadow-sm flex items-center gap-1.5 cursor-pointer"
+        title="Generate full month schedule for Head Office staff (Mon-Sat 08:00-17:00, Sun Off)">
+        <i class="fi fi-br-calendar-clock text-amber-600"></i>
+        <span>Full Month Head Office</span>
+      </button>
+
+      <!-- Auto-Fill Head Office Grid -->
+      <button @click="autoFillHeadOffice()"
+        class="bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors shadow-sm flex items-center gap-1.5 cursor-pointer"
+        title="Auto-fill Head Office staff into current weekly grid">
+        <i class="fi fi-br-magic-wand text-amber-600"></i>
+        <span>Fill Weekly Grid</span>
+      </button>
+
+      <!-- Copy Previous Week -->
+      <button @click="copyPreviousWeekSchedule()"
+        class="bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-200 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors shadow-sm flex items-center gap-1.5 cursor-pointer"
+        title="Copy previous week schedule to current week">
+        <i class="fi fi-br-copy text-primary"></i>
+        <span>Copy Prev Week</span>
+      </button>
+
+      <!-- Shift Details Modal Trigger -->
+      <button @click="showShiftModal = true"
+        class="bg-white hover:bg-slate-50 text-slate-700 px-3 py-1.5 rounded-lg border border-slate-300 text-xs font-semibold transition-colors shadow-sm flex items-center gap-1.5 cursor-pointer">
+        <i class="fi fi-br-settings"></i> Shift Settings
+      </button>
+
+      <!-- Save All -->
+      <button @click="saveAllSchedules()"
+        class="bg-primary hover:bg-blue-600 text-white px-4 py-1.5 rounded-lg text-xs font-semibold transition-colors shadow-sm flex items-center gap-1.5 cursor-pointer">
+        <i class="fi fi-br-disk"></i> Save Grid
+      </button>
+    </div>
+  </div>
+
+  <div class="flex-1 min-h-0 bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col relative overflow-hidden">
+
+    <!-- Table Toolbar -->
+    <div class="p-2.5 sm:p-3 border-b border-slate-100 bg-slate-50 flex flex-wrap items-center gap-3 z-30 relative shrink-0">
+
+      <!-- Employee Multi Select Dropdown -->
+      <div class="relative" @click.outside="showEmpDropdown = false">
+        <button @click="showEmpDropdown = !showEmpDropdown"
+          class="bg-white border border-slate-300 px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-700 flex items-center gap-2 shadow-sm hover:bg-slate-50 transition-all cursor-pointer">
+          <i class="fi fi-br-user-add text-primary"></i>
+          <span>Add Employee Row</span>
+          <i class="fi fi-br-angle-small-down text-slate-400 transition-transform duration-200"
+            :class="{'rotate-180': showEmpDropdown}"></i>
+          <span x-show="selectedEmpIds.length > 0"
+            class="ml-1 px-1.5 py-0.5 text-[10px] bg-primary text-white font-bold rounded-full"
+            x-text="selectedEmpIds.length"></span>
+        </button>
+
+        <!-- Multi-Filter Dropdown Panel (Top-Layer Stacking z-50) -->
+        <div x-show="showEmpDropdown" style="display:none;"
+          x-transition:enter="transition opacity duration-150 ease-out"
+          x-transition:enter-start="opacity-0 translate-y-1" x-transition:enter-end="opacity-100 translate-y-0"
+          x-transition:leave="transition opacity duration-100 ease-in"
+          x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-1"
+          class="absolute left-0 mt-2 w-[580px] max-w-[92vw] bg-white border border-slate-200 rounded-2xl shadow-xl z-50 flex flex-col overflow-hidden">
+
+          <!-- Header Bar -->
+          <div class="p-3.5 bg-slate-50/80 border-b border-slate-200/80 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <div
+                class="h-7 w-7 rounded-lg bg-blue-100 text-primary flex items-center justify-center font-bold text-xs">
+                <i class="fi fi-br-users text-sm"></i>
+              </div>
+              <div>
+                <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wide">Select Employees to Schedule</h4>
+                <p class="text-[11px] text-slate-500"
+                  x-text="filteredEmployees.length + ' employee(s) matching filter'"></p>
+              </div>
+            </div>
+            <button @click="showEmpDropdown = false"
+              class="h-7 w-7 rounded-full bg-slate-200/60 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors cursor-pointer">
+              <i class="fi fi-br-cross text-xs"></i>
+            </button>
+          </div>
+
+          <!-- Search & Filter Controls Bar -->
+          <div class="p-3 bg-white border-b border-slate-100 flex flex-col gap-2.5">
+            <!-- Search Bar -->
+            <div class="relative w-full">
+              <i class="fi fi-br-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+              <input type="text" x-model="empSearch" placeholder="Search name, ID, branch, position..."
+                class="w-full text-xs pl-8 pr-7 py-2 border border-slate-200 rounded-lg outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all">
+              <button x-show="empSearch" @click="empSearch = ''"
+                class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer">
+                <i class="fi fi-br-cross-small text-xs"></i>
+              </button>
+            </div>
+
+            <!-- Filters Row: Status & Position Category -->
+            <div class="flex items-center gap-2">
+              <!-- Status Filter -->
+              <div class="flex-1 relative">
+                <select x-model="selectedStatus"
+                  class="w-full text-xs py-1.5 px-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-700 outline-none focus:border-primary focus:bg-white transition-all cursor-pointer font-medium">
+                  <option value="">All Statuses</option>
+                  <template x-for="s in availableStatuses" :key="s">
+                    <option :value="s" x-text="s"></option>
+                  </template>
+                </select>
+              </div>
+
+              <!-- Position_Category Filter -->
+              <div class="flex-1 relative">
+                <select x-model="selectedPositionCategory"
+                  class="w-full text-xs py-1.5 px-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-700 outline-none focus:border-primary focus:bg-white transition-all cursor-pointer font-medium">
+                  <option value="">All Position Categories</option>
+                  <option value="Power Mac Center">Power Mac Center</option>
+                  <option value="Kiosk">Kiosk</option>
+                  <option value="Head Office">Head Office</option>
+                </select>
+              </div>
+
+              <!-- Reset Filters Button -->
+              <button x-show="empSearch || selectedStatus || selectedPositionCategory" @click="clearFilters()"
+                class="text-[11px] text-slate-500 hover:text-red-600 px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-red-50 font-medium whitespace-nowrap transition-colors cursor-pointer">
+                Clear Filters
+              </button>
+            </div>
+
+            <!-- Select All / Unselect Toggle Bar -->
+            <div class="flex items-center justify-between pt-1 border-t border-slate-100 text-xs">
+              <button @click="toggleSelectAllFiltered()"
+                class="flex items-center gap-1.5 text-primary hover:text-blue-700 font-semibold transition-colors cursor-pointer">
+                <i class="fi"
+                  :class="isAllFilteredSelected ? 'fi-br-checkbox text-primary' : 'fi-br-square text-slate-400'"></i>
+                <span
+                  x-text="isAllFilteredSelected ? 'Deselect All Filtered' : 'Select All Filtered (' + filteredEmployees.filter(e => !isEmpAdded(e)).length + ')'"></span>
+              </button>
+
+              <span class="text-[11px] text-slate-400 italic"
+                x-text="selectedEmpIds.length + ' selected for addition'"></span>
+            </div>
+          </div>
+
+          <!-- Employee List Area (Max 40 items rendered for Potato PC performance) -->
+          <div class="max-h-72 overflow-y-auto custom-scrollbar p-2 space-y-1.5 bg-slate-50/30">
+            <template x-for="(emp, idx) in visibleEmployees" :key="emp.Employee_ID || emp.Employeee_ID || emp.EmployeeID || emp.ID || 'emp_'+idx">
+              <div @click="toggleEmpSelected(emp)"
+                class="p-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-3"
+                :class="isEmpAdded(emp) ? 'bg-slate-100/70 border-slate-200 opacity-60 cursor-not-allowed' : (isEmpSelected(emp) ? 'bg-blue-50/70 border-blue-200 shadow-sm' : 'bg-white border-slate-200/80 hover:border-slate-300 hover:shadow-sm')">
+
+                <!-- Left: Checkbox + Name & ID -->
+                <div class="flex items-center gap-2.5 min-w-0 flex-1">
+                  <input type="checkbox" :checked="isEmpSelected(emp) || isEmpAdded(emp)" :disabled="isEmpAdded(emp)"
+                    @click.stop="toggleEmpSelected(emp)"
+                    class="h-4 w-4 text-primary rounded border-slate-300 focus:ring-primary cursor-pointer disabled:cursor-not-allowed">
+
+                  <div class="min-w-0 flex-1">
+                    <div class="flex items-center gap-2">
+                      <span class="font-bold text-xs text-slate-800 truncate"
+                        x-text="emp.Employee_Name || emp.Merchandiser_Name || emp.Name || 'Staff'"></span>
+                      <span class="text-[10px] text-slate-400 font-mono"
+                        x-text="emp.Employee_ID || emp.Employeee_ID || emp.EmployeeID || emp.ID"></span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Right: Branch & Position Badges -->
+                <div class="flex items-center gap-2 shrink-0">
+                  <!-- Branch Badge -->
+                  <span
+                    class="text-[11px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md font-medium border border-blue-100 flex items-center gap-1 max-w-[130px] truncate"
+                    x-show="emp.Assigned_Branch || emp.Branch" :title="emp.Assigned_Branch || emp.Branch">
+                    <i class="fi fi-br-marker text-[9px]"></i>
+                    <span class="truncate" x-text="emp.Assigned_Branch || emp.Branch"></span>
+                  </span>
+
+                  <!-- Position Badge -->
+                  <span
+                    class="text-[11px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md font-medium border border-slate-200 flex items-center gap-1 max-w-[120px] truncate"
+                    x-show="emp.Position" :title="emp.Position">
+                    <i class="fi fi-br-briefcase text-[9px]"></i>
+                    <span class="truncate" x-text="emp.Position"></span>
+                  </span>
+
+                  <!-- Added status or quick add button -->
+                  <template x-if="isEmpAdded(emp)">
+                    <span
+                      class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                      <i class="fi fi-br-check text-[9px]"></i> In Grid
+                    </span>
+                  </template>
+                  <template x-if="!isEmpAdded(emp)">
+                    <button @click.stop="addSingleEmpRow(emp)"
+                      class="text-xs text-primary hover:text-white hover:bg-primary border border-blue-200 px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer">
+                      + Add
+                    </button>
+                  </template>
+                </div>
+
+              </div>
+            </template>
+
+            <!-- Empty State -->
+            <div x-show="filteredEmployees.length === 0" class="py-8 text-center text-slate-400">
+              <i class="fi fi-br-search-alt text-2xl opacity-40 mb-1 block"></i>
+              <p class="text-xs">No employees found matching the current search & filters.</p>
+            </div>
+          </div>
+
+          <!-- Footer Bar -->
+          <div class="p-3 bg-slate-50 border-t border-slate-200/80 flex items-center justify-between">
+            <span class="text-xs font-semibold text-slate-600">
+              Selected: <span class="text-primary font-bold" x-text="selectedEmpIds.length"></span> row(s)
+            </span>
+
+            <div class="flex items-center gap-2">
+              <button @click="showEmpDropdown = false"
+                class="px-3 py-1.5 text-xs text-slate-600 font-semibold hover:bg-slate-200/80 rounded-lg transition-colors cursor-pointer">
+                Cancel
+              </button>
+              <button @click="addSelectedEmployees()" :disabled="selectedEmpIds.length === 0"
+                class="px-4 py-1.5 bg-primary hover:bg-blue-600 disabled:opacity-50 text-white font-semibold text-xs rounded-lg shadow-sm flex items-center gap-1.5 transition-all cursor-pointer">
+                <i class="fi fi-br-plus"></i> Add Selected (<span x-text="selectedEmpIds.length"></span>)
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Position_Category Checkbox Filter Group -->
+      <div class="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-lg border border-slate-200 shadow-xs">
+        <span class="text-[11px] font-bold text-slate-500 mr-1 select-none flex items-center gap-1">
+          <i class="fi fi-br-filter text-[10px]"></i> Category:
+        </span>
+        <label class="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer px-1.5 py-0.5 rounded hover:bg-slate-50 select-none">
+          <input type="checkbox" value="Power Mac Center" x-model="selectedCategoryFilters"
+            class="rounded text-primary focus:ring-primary h-3.5 w-3.5 cursor-pointer">
+          <span>Power Mac Center</span>
+        </label>
+        <label class="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer px-1.5 py-0.5 rounded hover:bg-slate-50 select-none">
+          <input type="checkbox" value="Kiosk" x-model="selectedCategoryFilters"
+            class="rounded text-primary focus:ring-primary h-3.5 w-3.5 cursor-pointer">
+          <span>Kiosk</span>
+        </label>
+        <label class="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer px-1.5 py-0.5 rounded hover:bg-slate-50 select-none">
+          <input type="checkbox" value="Head Office" x-model="selectedCategoryFilters"
+            class="rounded text-primary focus:ring-primary h-3.5 w-3.5 cursor-pointer">
+          <span>Head Office</span>
+        </label>
+      </div>
+
+      <span class="text-xs text-slate-500 italic hidden md:inline"
+        x-text="visibleGridRows.length > 0 ? 'Showing ' + visibleGridRows.length + ' employee(s). Click cell buttons to assign shift presets.' : (gridRows.length > 0 ? 'No employees match the selected category filter.' : 'Add employees to start scheduling.')"></span>
+
+      <div class="ml-auto flex items-center gap-2">
+        <button @click="gridRows = []; _gridRowIdSetCache = null;" class="text-xs text-red-500 hover:text-red-700 font-semibold px-2 py-1 cursor-pointer">
+          Clear Grid
+        </button>
+      </div>
+    </div>
+
+    <!-- Weekly Grid (Headers frozen up to Employee > Sun row, Left Employee column frozen) -->
+    <div class="schedule-grid-container flex-1 min-h-0 overflow-auto custom-scrollbar relative">
+      <table class="schedule-table w-full text-left border-separate border-spacing-0 min-w-[900px]">
+        <thead class="sticky top-0 z-20 shadow-xs bg-slate-100">
+          <tr>
+            <th class="col-employee sticky top-0 left-0 z-30 px-4 py-3 border-r border-b border-slate-200 bg-slate-100 w-60 min-w-[240px] shrink-0 shadow-[2px_0_5px_rgba(0,0,0,0.03)]">
+              <div class="flex items-center justify-between gap-1.5">
+                <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                  <i class="fi fi-br-user"></i> Employee
+                </span>
+                <span class="text-[9px] font-bold text-blue-700 bg-blue-100/70 border border-blue-200/80 px-2 py-0.5 rounded-md uppercase tracking-wider shrink-0 shadow-2xs"
+                  title="Sorted alphabetically by Assigned Branch primary, then Name secondary">
+                  Branch &darr;
+                </span>
+              </div>
+            </th>
+            <th class="sticky top-0 z-20 px-3 py-3 border-r border-b border-slate-200 bg-slate-100 w-24 text-center">
+              <span class="text-xs font-bold text-slate-700 flex items-center justify-center gap-1.5"><i class="fi fi-br-calendar"></i> Week</span>
+            </th>
+
+            <template x-for="day in weekDays" :key="day.date">
+              <th class="sticky top-0 z-20 px-2 py-3 border-r border-b border-slate-200 bg-slate-100 min-w-[145px] text-center">
+                <div class="text-xs font-bold text-slate-700 flex items-center justify-center gap-1">
+                  <i class="fi fi-br-calendar-day"></i> <span x-text="day.dayName"></span>
+                </div>
+                <div class="text-[10px] text-slate-400 mt-0.5" x-text="day.dateFormatted"></div>
+              </th>
+            </template>
+            <th class="sticky top-0 z-20 px-2 py-3 border-b border-slate-200 bg-slate-100 w-10"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <template x-for="row in visibleGridRows" :key="row.id">
+            <tr class="hover:bg-slate-50 transition-colors border-b border-slate-100 group">
+              <!-- Name, Category, Branch (Sticky Left Column - Executive Industrial Card) -->
+              <td class="col-employee sticky left-0 z-10 px-3.5 py-3 border-r border-b border-slate-100 bg-white shadow-[2px_0_5px_rgba(0,0,0,0.02)] group-hover:bg-slate-50/90 transition-colors align-top">
+                <div class="flex items-start gap-2.5">
+                  <!-- Dynamic Division Avatar Badge -->
+                  <div class="w-8 h-8 rounded-lg flex items-center justify-center font-black text-[11px] shrink-0 border mt-0.5 shadow-2xs select-none transition-transform group-hover:scale-105"
+                    :class="getCategoryTheme(row.positionCategory).avatar"
+                    x-text="getInitials(row.name)">
+                  </div>
+
+                  <!-- Stacked Details: Name -> Category -> Branch -->
+                  <div class="min-w-0 flex-1 flex flex-col gap-1.5">
+                    <!-- 1. Employee Name -->
+                    <div class="font-extrabold text-[13px] text-slate-800 leading-tight tracking-tight truncate group-hover:text-primary transition-colors"
+                      x-text="row.name" :title="row.name"></div>
+
+                    <!-- 2. Position Category (Division Status Pill) -->
+                    <div class="leading-none">
+                      <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold border shadow-2xs tracking-wide"
+                        :class="getCategoryTheme(row.positionCategory).badge">
+                        <span class="w-1.5 h-1.5 rounded-full shrink-0"
+                          :class="getCategoryTheme(row.positionCategory).dot"></span>
+                        <span class="truncate" x-text="row.positionCategory || 'Power Mac Center'"></span>
+                      </span>
+                    </div>
+
+                    <!-- 3. Assigned Branch (Location Anchor) -->
+                    <div class="flex items-center gap-1.5 text-xs text-slate-600 min-w-0" :title="row.branch">
+                      <i class="fi fi-br-marker text-[10px] text-primary shrink-0"></i>
+                      <span class="font-bold text-slate-700 truncate tracking-tight text-[11px]"
+                        x-text="row.branch || 'Unassigned'"></span>
+                    </div>
+                  </div>
+                </div>
+              </td>
+              <!-- Week Start -->
+              <td class="px-3 py-3 border-r border-b border-slate-100 text-xs text-slate-500 text-center" x-text="weekStartDate"></td>
+
+              <!-- Days -->
+              <template x-for="day in weekDays" :key="day.date">
+                <td class="p-1.5 border-r border-b border-slate-100 align-top min-w-[165px]">
+                  <div class="w-full h-full min-h-[72px] flex flex-col justify-center">
+
+                    <!-- State 1: Scheduled Shift Card -->
+                    <div x-show="row.schedule[day.date]"
+                      class="w-full rounded-xl border p-2 shadow-xs relative group flex flex-col justify-between gap-1.5 transition-all"
+                      :class="getShiftTheme(row.schedule[day.date], row.positionCategory).bg">
+
+                      <!-- Card Header: Code Badge + Full Title + Clear Button -->
+                      <div class="flex items-center justify-between gap-1">
+                        <div class="flex items-center gap-1.5 min-w-0">
+                          <span class="px-1.5 py-0.5 rounded text-[10px] font-black tracking-wider shadow-2xs shrink-0"
+                            :class="getShiftTheme(row.schedule[day.date], row.positionCategory).badge"
+                            x-text="row.schedule[day.date]"></span>
+                          <span class="font-extrabold text-[11px] uppercase tracking-wide truncate"
+                            :class="getShiftTheme(row.schedule[day.date], row.positionCategory).text"
+                            x-text="getShiftTheme(row.schedule[day.date], row.positionCategory).title"></span>
+                        </div>
+
+                        <!-- Unassign Shift Button (Shows on hover) -->
+                        <button @click="setShift(row, day.date, null)"
+                          class="h-4 w-4 rounded-full bg-black/10 hover:bg-rose-500 hover:text-white text-slate-600 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all cursor-pointer text-[9px] shrink-0"
+                          title="Clear Assigned Shift">✕</button>
+                      </div>
+
+                      <!-- Scheduled Time Subtitle -->
+                      <div class="text-[10px] font-mono font-bold flex items-center gap-1"
+                        :class="getShiftTheme(row.schedule[day.date], row.positionCategory).sub">
+                        <i class="fi fi-br-clock text-[9px] opacity-75"></i>
+                        <span x-text="getShiftTheme(row.schedule[day.date], row.positionCategory).time"></span>
+                      </div>
+
+                      <!-- Actual Punch Info / Timecard Badge (Array Data from PMC Attendance) -->
+                      <template x-if="getPunchRecord(row, day.date)">
+                        <div class="mt-1 pt-1 border-t border-slate-300/40 flex flex-col gap-0.5 font-mono">
+                          <div class="flex items-center justify-between text-[9px] font-bold">
+                            <span class="text-slate-700 flex items-center gap-1">
+                              <span class="w-1.5 h-1.5 rounded-full"
+                                :class="getPunchRecord(row, day.date).status === 'TARDINESS' ? 'bg-amber-500' : ((getPunchRecord(row, day.date).in && getPunchRecord(row, day.date).out) ? 'bg-emerald-500' : 'bg-rose-400')"></span>
+                              <span x-text="(getPunchRecord(row, day.date).in || '--:--') + ' → ' + (getPunchRecord(row, day.date).out || '--:--')"></span>
+                            </span>
+                            <span class="px-1 py-0.2 rounded text-[8px] font-black uppercase tracking-tight shadow-2xs"
+                              :class="getPunchStatusBadge(getPunchRecord(row, day.date).status)"
+                              x-text="getPunchRecord(row, day.date).status || 'Punched'"></span>
+                          </div>
+                          <div x-show="getPunchRecord(row, day.date).hours" class="text-[8px] text-slate-500 flex justify-between font-semibold">
+                            <span>Hours Worked:</span>
+                            <span class="font-bold text-slate-700" x-text="getPunchRecord(row, day.date).hours + ' hrs'"></span>
+                          </div>
+                        </div>
+                      </template>
+                    </div>
+
+                    <!-- State 2: Unscheduled / Empty State -->
+                    <div x-show="!row.schedule[day.date]"
+                      class="w-full rounded-xl border border-dashed border-slate-200 bg-slate-50/50 hover:bg-white hover:border-blue-300 p-2 transition-all flex flex-col justify-between gap-1.5 group/empty shadow-2xs">
+
+                      <!-- If employee punched in on this date without a schedule -->
+                      <template x-if="getPunchRecord(row, day.date)">
+                        <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-1.5 text-[9px] font-mono text-emerald-950 mb-0.5">
+                          <div class="flex items-center justify-between font-bold text-emerald-700">
+                            <span class="flex items-center gap-1">
+                              <i class="fi fi-br-fingerprint text-[10px]"></i>
+                              <span>Punch Logged</span>
+                            </span>
+                            <span class="text-[8px] px-1 py-0.2 bg-emerald-200 text-emerald-800 rounded font-black uppercase"
+                              x-text="getPunchRecord(row, day.date).status"></span>
+                          </div>
+                          <div class="text-[10px] font-black text-slate-800 mt-0.5">
+                            <span x-text="getPunchRecord(row, day.date).in || '--:--'"></span> → <span x-text="getPunchRecord(row, day.date).out || '--:--'"></span>
+                          </div>
+                        </div>
+                      </template>
+
+                      <!-- Segmented Shift Presets: O (Opening), MD (Mid Day), LD (Late Day), C (Closing), OFF (Restday) -->
+                      <div class="flex flex-col gap-1 w-full">
+                        <div class="flex gap-1 justify-center">
+                          <button @click="setShift(row, day.date, 'O')"
+                            class="flex-1 py-1 rounded-md bg-white hover:bg-emerald-500 hover:text-white text-emerald-800 font-black text-[9px] border border-emerald-200 shadow-2xs transition-all cursor-pointer text-center"
+                            :title="'OPENING: ' + getShiftTime('O', row.positionCategory)">O</button>
+                          <button @click="setShift(row, day.date, 'MD')"
+                            class="flex-1 py-1 rounded-md bg-white hover:bg-blue-600 hover:text-white text-blue-800 font-black text-[9px] border border-blue-200 shadow-2xs transition-all cursor-pointer text-center"
+                            :title="'MID DAY: ' + getShiftTime('MD', row.positionCategory)">MD</button>
+                          <button @click="setShift(row, day.date, 'LD')"
+                            class="flex-1 py-1 rounded-md bg-white hover:bg-amber-500 hover:text-white text-amber-800 font-black text-[9px] border border-amber-200 shadow-2xs transition-all cursor-pointer text-center"
+                            :title="'LATE DAY: ' + getShiftTime('LD', row.positionCategory)">LD</button>
+                        </div>
+                        <div class="flex gap-1 justify-center">
+                          <button @click="setShift(row, day.date, 'C')"
+                            class="flex-1 py-1 rounded-md bg-white hover:bg-purple-600 hover:text-white text-purple-800 font-black text-[9px] border border-purple-200 shadow-2xs transition-all cursor-pointer text-center"
+                            :title="'CLOSING: ' + getShiftTime('C', row.positionCategory)">C</button>
+                          <button @click="setShift(row, day.date, 'OFF')"
+                            class="flex-[2] py-1 rounded-md bg-white hover:bg-slate-700 hover:text-white text-slate-700 font-black text-[9px] border border-slate-200 shadow-2xs transition-all cursor-pointer text-center"
+                            title="RESTDAY (Off Duty)">RESTDAY</button>
+                        </div>
+                      </div>
+
+                    </div>
+
+                  </div>
+                </td>
+              </template>
+
+              <!-- Row Delete -->
+              <td class="px-2 py-3 border-b border-slate-100 text-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <button @click="removeRow(row.id)" class="text-rose-500 hover:text-rose-700 p-1 cursor-pointer" title="Remove row from grid">
+                  <i class="fi fi-br-trash"></i>
+                </button>
+              </td>
+            </tr>
+          </template>
+
+          <tr x-show="visibleGridRows.length === 0">
+            <td :colspan="weekDays.length + 3" class="py-12 text-center text-slate-400">
+              <div class="flex flex-col items-center gap-2">
+                <i class="fi fi-br-calendar text-3xl opacity-40"></i>
+                <p class="text-xs" x-text="gridRows.length > 0 ? 'No employee rows match the selected Position Category filter.' : 'Grid is empty. Add an employee to begin scheduling.'"></p>
+                <button x-show="gridRows.length > 0 && selectedCategoryFilters.length > 0"
+                  @click="selectedCategoryFilters = []"
+                  class="text-xs font-bold text-primary hover:underline mt-1 cursor-pointer">
+                  Show All Categories (<span x-text="gridRows.length"></span> rows)
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Shift Settings Modal -->
+  <div x-show="showShiftModal" style="display:none;"
+    class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60"
+    @click.self="showShiftModal = false">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg border border-slate-200 flex flex-col overflow-hidden">
+      
+      <!-- Modal Header -->
+      <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+        <div class="flex items-center gap-3">
+          <div class="h-9 w-9 rounded-xl bg-blue-100 text-primary flex items-center justify-center font-bold text-sm shadow-xs">
+            <i class="fi fi-br-clock"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-slate-800 text-base">Shift Master Settings</h3>
+            <p class="text-[11px] text-slate-500">Configure default shift hours for each Position Category.</p>
+          </div>
+        </div>
+        <button @click="showShiftModal = false"
+          class="h-8 w-8 rounded-full bg-slate-200/60 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors cursor-pointer">
+          <i class="fi fi-br-cross text-xs"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-5 space-y-4 max-h-[75vh] overflow-y-auto custom-scrollbar">
+        <!-- Position Category Tabs -->
+        <div>
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+            Select Position Category
+          </label>
+          <div class="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
+            <button type="button" @click="activeShiftModalCategory = 'Power Mac Center'"
+              :class="activeShiftModalCategory === 'Power Mac Center' ? 'bg-white text-primary font-bold shadow-xs border border-slate-200/80' : 'text-slate-600 font-semibold hover:text-slate-900'"
+              class="py-2 text-xs rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer">
+              <i class="fi fi-br-shop text-[10px]"></i>
+              <span>Power Mac</span>
+            </button>
+            <button type="button" @click="activeShiftModalCategory = 'Kiosk'"
+              :class="activeShiftModalCategory === 'Kiosk' ? 'bg-white text-primary font-bold shadow-xs border border-slate-200/80' : 'text-slate-600 font-semibold hover:text-slate-900'"
+              class="py-2 text-xs rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer">
+              <i class="fi fi-br-store-alt text-[10px]"></i>
+              <span>Kiosk</span>
+            </button>
+            <button type="button" @click="activeShiftModalCategory = 'Head Office'"
+              :class="activeShiftModalCategory === 'Head Office' ? 'bg-white text-primary font-bold shadow-xs border border-slate-200/80' : 'text-slate-600 font-semibold hover:text-slate-900'"
+              class="py-2 text-xs rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer">
+              <i class="fi fi-br-building text-[10px]"></i>
+              <span>Head Office</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Informational Banner -->
+        <div class="text-[11px] font-medium text-slate-600 bg-blue-50/80 p-2.5 rounded-xl border border-blue-100 flex items-center justify-between">
+          <span class="flex items-center gap-1.5">
+            <i class="fi fi-br-info text-primary"></i>
+            <span>Editing templates for <strong class="text-slate-800" x-text="activeShiftModalCategory"></strong></span>
+          </span>
+          <button @click="resetShiftTemplatesToDefault(activeShiftModalCategory)"
+            class="text-[10px] text-blue-600 hover:text-blue-800 font-bold underline cursor-pointer">
+            Reset to Default
+          </button>
+        </div>
+
+        <!-- Editable Shifts for Selected Category -->
+        <div class="space-y-2.5">
+          <template x-for="opt in shiftOptions" :key="opt">
+            <div class="p-3 rounded-xl border transition-all flex items-center gap-3"
+              :class="opt === 'OFF' ? 'bg-slate-50 border-slate-200' : 'bg-white border-slate-200 shadow-2xs'">
+              
+              <!-- Left Badge -->
+              <div class="w-32 shrink-0 flex items-center gap-2">
+                <span class="w-7 h-7 rounded-lg text-xs font-black flex items-center justify-center shadow-2xs text-white"
+                  :class="opt === 'O' ? 'bg-emerald-600' : (opt === 'MD' ? 'bg-blue-600' : (opt === 'LD' ? 'bg-amber-600' : (opt === 'C' ? 'bg-purple-600' : 'bg-slate-500')))"
+                  x-text="opt"></span>
+                <div>
+                  <div class="font-bold text-xs text-slate-800"
+                    x-text="getShiftTemplate(activeShiftModalCategory)[opt] ? getShiftTemplate(activeShiftModalCategory)[opt].label : opt"></div>
+                  <div class="text-[10px] text-slate-400 uppercase tracking-tight"
+                    x-text="opt === 'OFF' ? 'REST DAY' : 'SHIFT'"></div>
+                </div>
+              </div>
+
+              <!-- Right: Inputs or Off State -->
+              <div class="flex-1 min-w-0">
+                <template x-if="opt !== 'OFF'">
+                  <div class="flex items-center gap-2">
+                    <div class="relative flex-1">
+                      <label class="absolute -top-2 left-2 bg-white px-1 text-[9px] font-bold text-slate-400 rounded">START</label>
+                      <input type="time" x-model="getShiftTemplate(activeShiftModalCategory)[opt].start"
+                        class="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-mono font-bold text-slate-700 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all">
+                    </div>
+                    <span class="text-slate-400 font-bold text-xs">→</span>
+                    <div class="relative flex-1">
+                      <label class="absolute -top-2 left-2 bg-white px-1 text-[9px] font-bold text-slate-400 rounded">END</label>
+                      <input type="time" x-model="getShiftTemplate(activeShiftModalCategory)[opt].end"
+                        class="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-mono font-bold text-slate-700 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all">
+                    </div>
+                  </div>
+                </template>
+                <template x-if="opt === 'OFF'">
+                  <div class="text-xs font-mono font-bold text-slate-500 italic flex items-center gap-1.5 px-2 py-1.5 bg-slate-100 rounded-lg">
+                    <i class="fi fi-br-coffee text-slate-400 text-xs"></i>
+                    <span>Off Duty / No Scheduled Hours</span>
+                  </div>
+                </template>
+              </div>
+
+            </div>
+          </template>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="px-6 py-3.5 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+        <button @click="resetShiftTemplatesToDefault()"
+          class="text-xs text-slate-500 hover:text-slate-800 font-semibold cursor-pointer">
+          Reset All Defaults
+        </button>
+        <div class="flex items-center gap-2">
+          <button @click="showShiftModal = false"
+            class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-200/80 rounded-lg transition-colors cursor-pointer">
+            Cancel
+          </button>
+          <button @click="saveShiftTemplates()"
+            class="px-5 py-2 bg-primary hover:bg-blue-600 text-white text-xs font-bold rounded-lg shadow-sm flex items-center gap-1.5 transition-all cursor-pointer">
+            <i class="fi fi-br-disk"></i>
+            <span>Save Settings</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function scheduleGrid() {
+    return {
+      weekStartDate: '',
+      weekDays: [],
+      gridRows: [],
+      showEmpDropdown: false,
+      showShiftModal: false,
+      empSearch: '',
+      selectedStatus: '',
+      selectedPositionCategory: '',
+      selectedCategoryFilters: [], // Toolbar Position_Category filters
+      activeShiftModalCategory: 'Power Mac Center',
+      availableStatuses: [],
+      selectedEmpIds: [],
+      shiftOptions: ['O', 'MD', 'LD', 'C', 'OFF'],
+
+      // Multi-category default shift hour templates
+      defaultShiftTemplates: {
+        'Power Mac Center': {
+          'O': { label: 'OPENING', start: '10:00', end: '19:00', color: 'bg-emerald-50 text-emerald-900 border-emerald-300' },
+          'MD': { label: 'MID DAY', start: '11:00', end: '20:00', color: 'bg-blue-50 text-blue-900 border-blue-300' },
+          'LD': { label: 'LATE DAY', start: '12:00', end: '21:00', color: 'bg-amber-50 text-amber-900 border-amber-300' },
+          'C': { label: 'CLOSING', start: '13:00', end: '22:00', color: 'bg-purple-50 text-purple-900 border-purple-300' },
+          'OFF': { label: 'RESTDAY', start: 'OFF', end: 'OFF', color: 'bg-slate-100 text-slate-700 border-slate-300' }
+        },
+        'Kiosk': {
+          'O': { label: 'OPENING', start: '10:00', end: '19:00', color: 'bg-emerald-50 text-emerald-900 border-emerald-300' },
+          'MD': { label: 'MID DAY', start: '11:00', end: '20:00', color: 'bg-blue-50 text-blue-900 border-blue-300' },
+          'LD': { label: 'LATE DAY', start: '12:00', end: '21:00', color: 'bg-amber-50 text-amber-900 border-amber-300' },
+          'C': { label: 'CLOSING', start: '13:00', end: '22:00', color: 'bg-purple-50 text-purple-900 border-purple-300' },
+          'OFF': { label: 'RESTDAY', start: 'OFF', end: 'OFF', color: 'bg-slate-100 text-slate-700 border-slate-300' }
+        },
+        'Head Office': {
+          'O': { label: 'OPENING', start: '08:00', end: '17:00', color: 'bg-emerald-50 text-emerald-900 border-emerald-300' },
+          'MD': { label: 'MID DAY', start: '08:30', end: '17:30', color: 'bg-blue-50 text-blue-900 border-blue-300' },
+          'LD': { label: 'LATE DAY', start: '09:00', end: '18:00', color: 'bg-amber-50 text-amber-900 border-amber-300' },
+          'C': { label: 'CLOSING', start: '09:30', end: '18:30', color: 'bg-purple-50 text-purple-900 border-purple-300' },
+          'OFF': { label: 'RESTDAY', start: 'OFF', end: 'OFF', color: 'bg-slate-100 text-slate-700 border-slate-300' }
+        }
+      },
+      shiftTemplates: {},
+
+      _gridRowIdSetCache: null,
+      _gridRowIdSetLen: -1,
+      _selectedEmpIdSetCache: null,
+      _selectedEmpIdSetLen: -1,
+      _isDirty: false,
+
+      init() {
+        // Hydrate shift templates from localStorage or fallback to defaults
+        try {
+          const savedTmpl = localStorage.getItem('PMC_SHIFT_TEMPLATES');
+          if (savedTmpl) {
+            const parsed = JSON.parse(savedTmpl);
+            if (parsed && typeof parsed === 'object') {
+              this.shiftTemplates = JSON.parse(JSON.stringify(this.defaultShiftTemplates));
+              for (const cat in parsed) {
+                if (this.shiftTemplates[cat] && parsed[cat]) {
+                  this.shiftTemplates[cat] = Object.assign({}, this.shiftTemplates[cat], parsed[cat]);
+                } else if (parsed[cat]) {
+                  this.shiftTemplates[cat] = parsed[cat];
+                }
+              }
+            } else {
+              this.shiftTemplates = JSON.parse(JSON.stringify(this.defaultShiftTemplates));
+            }
+          } else {
+            this.shiftTemplates = JSON.parse(JSON.stringify(this.defaultShiftTemplates));
+          }
+        } catch (e) {
+          this.shiftTemplates = JSON.parse(JSON.stringify(this.defaultShiftTemplates));
+        }
+
+        const d = new Date();
+        const day = d.getDay();
+        const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Monday
+        const monday = new Date(d.setDate(diff));
+        this.weekStartDate = monday.toISOString().split('T')[0];
+        this.updateWeekDays();
+        this.refreshData();
+      },
+
+      handleViewActivated(e) {
+        if (e && e.detail && e.detail.viewId === 'view-attendance-schedule') {
+          if (this._isDirty || !this.gridRows.length) {
+            this.refreshData();
+          }
+        }
+      },
+
+      refreshData() {
+        const viewEl = document.getElementById('view-attendance-schedule');
+        if (viewEl && viewEl.classList.contains('hidden')) {
+          this._isDirty = true;
+          return;
+        }
+        this._isDirty = false;
+        const rawEmps = (window.AppStore && window.AppStore.employees) || [];
+        const statusSet = new Set();
+        rawEmps.forEach(e => {
+          if (!e) return;
+          const s = String(e.Status || '').trim();
+          if (s) statusSet.add(s);
+        });
+        this.availableStatuses = Array.from(statusSet).sort();
+        this.loadWeekSchedules();
+      },
+
+      updateWeekDays() {
+        if (!this.weekStartDate) return;
+        const daysShort = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        this.weekDays = [];
+        const base = new Date(this.weekStartDate + 'T00:00:00');
+        for (let i = 0; i < 7; i++) {
+          const d = new Date(base);
+          d.setDate(base.getDate() + i);
+          const yStr = d.getFullYear();
+          const mStr = String(d.getMonth() + 1).padStart(2, '0');
+          const dStr = String(d.getDate()).padStart(2, '0');
+          this.weekDays.push({
+            date: `${yStr}-${mStr}-${dStr}`,
+            dayName: daysShort[i],
+            dateFormatted: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+          });
+        }
+        this.loadWeekSchedules();
+      },
+
+      getShiftTemplate(cat) {
+        let key = 'Power Mac Center';
+        const rawCat = String(cat || '').trim().toLowerCase();
+        if (rawCat === 'head office') key = 'Head Office';
+        else if (rawCat === 'kiosk') key = 'Kiosk';
+        else if (rawCat === 'power mac center') key = 'Power Mac Center';
+
+        if (!this.shiftTemplates[key]) {
+          this.shiftTemplates[key] = JSON.parse(JSON.stringify(this.defaultShiftTemplates[key] || this.defaultShiftTemplates['Power Mac Center']));
+        }
+        return this.shiftTemplates[key];
+      },
+
+      getShiftConfig(category, shiftCode) {
+        if (!shiftCode) {
+          return { label: '', start: '', end: '', color: 'bg-slate-100 border-slate-300 text-slate-800' };
+        }
+        const codeStr = String(shiftCode).trim().toUpperCase();
+        const tmpl = this.getShiftTemplate(category);
+        let normalizedCode = codeStr;
+        if (normalizedCode === 'MN') normalizedCode = 'LD'; // Mid Night alias to Late Day
+
+        if (tmpl && tmpl[normalizedCode]) {
+          return tmpl[normalizedCode];
+        }
+
+        // Fallback search by label
+        if (tmpl) {
+          for (const k in tmpl) {
+            if (tmpl[k] && tmpl[k].label && tmpl[k].label.toUpperCase() === codeStr) {
+              return tmpl[k];
+            }
+          }
+        }
+
+        const isOff = codeStr === 'OFF' || codeStr === 'RESTDAY' || codeStr === 'DAY OFF';
+        return {
+          label: isOff ? 'RESTDAY' : codeStr,
+          start: isOff ? 'OFF' : codeStr,
+          end: isOff ? 'OFF' : '',
+          color: isOff ? 'bg-slate-100 border-slate-300 text-slate-700' : 'bg-slate-50 border-slate-200 text-slate-800'
+        };
+      },
+
+      getShiftTime(val, category) {
+        if (!val) return '';
+        const s = String(val).trim().toUpperCase();
+        if (s === 'OFF' || s === 'RESTDAY' || s === 'DAY OFF') return 'OFF DUTY';
+        const cfg = this.getShiftConfig(category, val);
+        if (cfg && cfg.start && cfg.end && cfg.start !== 'OFF') {
+          return cfg.start + ' - ' + cfg.end;
+        }
+        if (cfg && cfg.start) return cfg.start;
+        return val;
+      },
+
+      getShiftTheme(val, category) {
+        const timeStr = this.getShiftTime(val, category);
+        const s = String(val || '').trim().toUpperCase();
+        if (s === 'O') {
+          return {
+            bg: 'bg-emerald-50/90 hover:bg-emerald-50 border-emerald-200/90',
+            badge: 'bg-emerald-600 text-white',
+            text: 'text-emerald-950',
+            sub: 'text-emerald-700',
+            time: timeStr || '08:00 - 17:00',
+            title: 'OPENING'
+          };
+        }
+        if (s === 'MD') {
+          return {
+            bg: 'bg-blue-50/90 hover:bg-blue-50 border-blue-200/90',
+            badge: 'bg-blue-600 text-white',
+            text: 'text-blue-950',
+            sub: 'text-blue-700',
+            time: timeStr || '10:00 - 19:00',
+            title: 'MID DAY'
+          };
+        }
+        if (s === 'LD' || s === 'MN') {
+          return {
+            bg: 'bg-amber-50/90 hover:bg-amber-50 border-amber-200/90',
+            badge: 'bg-amber-600 text-white',
+            text: 'text-amber-950',
+            sub: 'text-amber-700',
+            time: timeStr || '12:00 - 21:00',
+            title: 'LATE DAY'
+          };
+        }
+        if (s === 'C') {
+          return {
+            bg: 'bg-purple-50/90 hover:bg-purple-50 border-purple-200/90',
+            badge: 'bg-purple-600 text-white',
+            text: 'text-purple-950',
+            sub: 'text-purple-700',
+            time: timeStr || '13:00 - 22:00',
+            title: 'CLOSING'
+          };
+        }
+        if (s === 'OFF' || s === 'RESTDAY' || s === 'DAY OFF') {
+          return {
+            bg: 'bg-slate-100/90 hover:bg-slate-100 border-slate-200',
+            badge: 'bg-slate-500 text-white',
+            text: 'text-slate-800',
+            sub: 'text-slate-500',
+            time: 'OFF DUTY',
+            title: 'RESTDAY'
+          };
+        }
+        return {
+          bg: 'bg-slate-50 border-slate-200',
+          badge: 'bg-slate-600 text-white',
+          text: 'text-slate-800',
+          sub: 'text-slate-500',
+          time: timeStr || val,
+          title: val
+        };
+      },
+
+      getInitials(name) {
+        if (!name || typeof name !== 'string') return '??';
+        const parts = name.trim().split(/\s+/).filter(Boolean);
+        if (parts.length === 0) return '??';
+        if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+      },
+
+      getCategoryTheme(category) {
+        const cat = String(category || '').trim().toLowerCase();
+        if (cat === 'head office') {
+          return {
+            badge: 'bg-purple-50 text-purple-800 border-purple-200/90',
+            dot: 'bg-purple-600',
+            avatar: 'bg-gradient-to-br from-purple-100 to-indigo-100 text-purple-900 border-purple-200',
+            label: 'Head Office'
+          };
+        }
+        if (cat === 'kiosk') {
+          return {
+            badge: 'bg-cyan-50 text-cyan-800 border-cyan-200/90',
+            dot: 'bg-cyan-600',
+            avatar: 'bg-gradient-to-br from-cyan-100 to-blue-100 text-cyan-900 border-cyan-200',
+            label: 'Kiosk'
+          };
+        }
+        // Default: Power Mac Center
+        return {
+          badge: 'bg-slate-100 text-slate-800 border-slate-200/90',
+          dot: 'bg-blue-600',
+          avatar: 'bg-gradient-to-br from-blue-100 to-slate-100 text-blue-950 border-blue-200',
+          label: 'Power Mac Center'
+        };
+      },
+
+      saveShiftTemplates() {
+        try {
+          localStorage.setItem('PMC_SHIFT_TEMPLATES', JSON.stringify(this.shiftTemplates));
+          if (typeof window.showToast === 'function') {
+            window.showToast('Shift Master Settings saved successfully!');
+          }
+        } catch (e) {
+          console.error('Error saving shift templates:', e);
+        }
+        this.showShiftModal = false;
+      },
+
+      resetShiftTemplatesToDefault(category) {
+        const cat = category || this.activeShiftModalCategory || 'Power Mac Center';
+        if (this.defaultShiftTemplates[cat]) {
+          this.shiftTemplates[cat] = JSON.parse(JSON.stringify(this.defaultShiftTemplates[cat]));
+          if (typeof window.showToast === 'function') {
+            window.showToast(`Reset ${cat} shifts to factory defaults`);
+          }
+        } else if (!category) {
+          this.shiftTemplates = JSON.parse(JSON.stringify(this.defaultShiftTemplates));
+          if (typeof window.showToast === 'function') {
+            window.showToast('Reset all shift templates to factory defaults');
+          }
+        }
+      },
+
+      get visibleGridRows() {
+        if (!this.selectedCategoryFilters || this.selectedCategoryFilters.length === 0) {
+          return this.gridRows;
+        }
+        const filterSet = new Set(this.selectedCategoryFilters.map(c => String(c).trim().toLowerCase()));
+        return this.gridRows.filter(r => {
+          const cat = String(r.positionCategory || 'Power Mac Center').trim().toLowerCase();
+          return filterSet.has(cat);
+        });
+      },
+
+      loadWeekSchedules() {
+        if (!this.weekDays || !this.weekDays.length) return;
+        const weekDates = new Set(this.weekDays.map(d => d.date));
+        const allAttendance = (window.AppStore && (window.AppStore.schedules || window.AppStore.attendanceLogs)) || [];
+        const allEmployees = (window.AppStore && window.AppStore.employees) || [];
+
+        // Build Employee Map by ID
+        const empMap = new Map();
+        allEmployees.forEach(e => {
+          const id = String(e.Employee_ID || '').trim();
+          if (id) empMap.set(id, e);
+        });
+
+        // Catch existing schedules from sheet PMC Attendance for this week
+        const empWeekScheds = new Map();
+        allAttendance.forEach(att => {
+          if (!att) return;
+          let dStr = '';
+          if (att.Attendance_Date instanceof Date) {
+            dStr = att.Attendance_Date.toISOString().split('T')[0];
+          } else {
+            dStr = String(att.Attendance_Date || '').split('T')[0].trim();
+          }
+          if (!weekDates.has(dStr)) return;
+
+          const empId = String(att.Employee_ID || att.Merchandiser_ID || '').trim();
+          if (!empId) return;
+
+          if (!empWeekScheds.has(empId)) {
+            empWeekScheds.set(empId, {
+              empId: empId,
+              empName: att.Employee_Name || att.Merchandiser_Name || '',
+              branch: att.Assigned_Branch || '',
+              shifts: {},
+              punches: {}
+            });
+          }
+
+          if (att.Check_In || att.Check_Out || att.Status) {
+            empWeekScheds.get(empId).punches[dStr] = {
+              in: att.Check_In || '',
+              out: att.Check_Out || '',
+              status: att.Status || '',
+              hours: att.Total_Hours ? parseFloat(att.Total_Hours).toFixed(2) : ''
+            };
+          }
+
+          // Determine shift code preset: O, MD, LD, C, OFF
+          let shiftVal = '';
+          const sStatus = String(att.Status || '').trim().toUpperCase();
+          const sStart = String(att.Shift_Start || '').trim().toUpperCase();
+
+          if (sStart === 'OFF' || sStatus === 'RESTDAY' || sStatus === 'OFF') {
+            shiftVal = 'OFF';
+          } else if (att.Notes && ['O', 'MD', 'LD', 'MN', 'C'].includes(att.Notes.trim().toUpperCase())) {
+            var nVal = att.Notes.trim().toUpperCase();
+            shiftVal = (nVal === 'MN') ? 'LD' : nVal;
+          } else if (sStart === '08:00' || sStart === '09:00') {
+            shiftVal = 'O';
+          } else if (sStart === '10:00' || sStart === '11:00') {
+            shiftVal = 'MD';
+          } else if (sStart === '12:00') {
+            shiftVal = 'LD';
+          } else if (sStart === '13:00') {
+            shiftVal = 'C';
+          } else if (sStart && sStart !== '00:00') {
+            shiftVal = sStart;
+          }
+
+          empWeekScheds.get(empId).shifts[dStr] = shiftVal;
+        });
+
+        // Populate or merge gridRows
+        const existingRowMap = new Map(this.gridRows.map(r => [r.id, r]));
+
+        empWeekScheds.forEach((data, empId) => {
+          const empInfo = empMap.get(empId);
+          if (existingRowMap.has(empId)) {
+            const row = existingRowMap.get(empId);
+            row.schedule = Object.assign({}, data.shifts);
+            row.punches = Object.assign({}, data.punches);
+          } else {
+            this.gridRows.push({
+              id: empId,
+              name: (empInfo && (empInfo.Employee_Name || empInfo.Merchandiser_Name)) || data.empName || 'Staff',
+              branch: (empInfo && empInfo.Assigned_Branch) || data.branch || 'Unassigned',
+              positionCategory: (empInfo && empInfo.Position_Category) || 'Power Mac Center',
+              schedule: Object.assign({}, data.shifts),
+              punches: Object.assign({}, data.punches)
+            });
+          }
+        });
+
+        // If grid is still empty and employees exist, populate top 8 sorted by branch then name
+        if (this.gridRows.length === 0 && allEmployees.length > 0) {
+          const sortedAll = [...allEmployees].sort((a, b) => {
+            const branchA = String(a.Assigned_Branch || a.Branch || 'Unassigned').toLowerCase().trim();
+            const branchB = String(b.Assigned_Branch || b.Branch || 'Unassigned').toLowerCase().trim();
+            const branchCmp = branchA.localeCompare(branchB);
+            if (branchCmp !== 0) return branchCmp;
+
+            const nameA = String(a.Employee_Name || a.Merchandiser_Name || a.Name || '').toLowerCase().trim();
+            const nameB = String(b.Employee_Name || b.Merchandiser_Name || b.Name || '').toLowerCase().trim();
+            return nameA.localeCompare(nameB);
+          });
+          sortedAll.slice(0, 8).forEach(e => this.addSingleEmpRow(e));
+        }
+
+        // Keep grid rows sorted: Assigned_Branch primary (A-Z), Employee_Name secondary (A-Z)
+        this.sortGridRows();
+      },
+
+      sortGridRows() {
+        this.gridRows.sort((a, b) => {
+          const branchA = String(a.branch || 'Unassigned').toLowerCase().trim();
+          const branchB = String(b.branch || 'Unassigned').toLowerCase().trim();
+          const branchCmp = branchA.localeCompare(branchB);
+          if (branchCmp !== 0) return branchCmp;
+
+          const nameA = String(a.name || '').toLowerCase().trim();
+          const nameB = String(b.name || '').toLowerCase().trim();
+          return nameA.localeCompare(nameB);
+        });
+      },
+
+      getPunchRecord(row, dateStr) {
+        if (!row || !row.punches || !row.punches[dateStr]) return null;
+        const p = row.punches[dateStr];
+        if (!p.in && !p.out && !p.status) return null;
+        return p;
+      },
+
+      getPunchStatusBadge(status) {
+        const s = String(status || '').toUpperCase().trim();
+        if (s === 'REGULAR' || s === 'PRESENT') return 'bg-emerald-100 text-emerald-800 border border-emerald-200';
+        if (s === 'TARDINESS' || s === 'LATE') return 'bg-amber-100 text-amber-800 border border-amber-200';
+        if (s.includes('ABSEN') || s === 'NO SHOW') return 'bg-rose-100 text-rose-800 border border-rose-200';
+        if (s === 'RESTDAY' || s === 'OFF') return 'bg-slate-100 text-slate-700 border border-slate-200';
+        if (s === 'NO IN OR OUT') return 'bg-rose-100 text-rose-800 border border-rose-200';
+        return 'bg-blue-100 text-blue-800 border border-blue-200';
+      },
+
+      get gridRowIdSet() {
+        if (!this._gridRowIdSetCache || this._gridRowIdSetLen !== (this.gridRows ? this.gridRows.length : 0)) {
+          this._gridRowIdSetCache = new Set((this.gridRows || []).map(r => String(r.id).trim()));
+          this._gridRowIdSetLen = this.gridRows ? this.gridRows.length : 0;
+        }
+        return this._gridRowIdSetCache;
+      },
+
+      get selectedEmpIdSet() {
+        if (!this._selectedEmpIdSetCache || this._selectedEmpIdSetLen !== (this.selectedEmpIds ? this.selectedEmpIds.length : 0)) {
+          this._selectedEmpIdSetCache = new Set((this.selectedEmpIds || []).map(id => String(id).trim()));
+          this._selectedEmpIdSetLen = this.selectedEmpIds ? this.selectedEmpIds.length : 0;
+        }
+        return this._selectedEmpIdSetCache;
+      },
+
+      get filteredEmployees() {
+        const raw = (window.AppStore && window.AppStore.employees) || [];
+        let list = raw.filter(e => {
+          if (!e) return false;
+          const id = String(e.Employee_ID || e.Employeee_ID || e.EmployeeID || e.ID || '').trim();
+          const name = String(e.Employee_Name || e.Merchandiser_Name || e.Name || '').trim();
+          return id !== '' && id !== 'undefined' && id !== 'null' && name !== '';
+        });
+
+        if (this.selectedStatus) {
+          list = list.filter(e => String(e.Status || '').trim() === this.selectedStatus);
+        }
+
+        if (this.selectedPositionCategory) {
+          list = list.filter(e => String(e.Position_Category || 'Power Mac Center').trim() === this.selectedPositionCategory);
+        }
+
+        if (this.empSearch) {
+          const q = this.empSearch.toLowerCase().trim();
+          list = list.filter(e => {
+            const name = String(e.Employee_Name || e.Merchandiser_Name || e.Name || '').toLowerCase();
+            const id = String(e.Employee_ID || e.Employeee_ID || e.EmployeeID || e.ID || '').toLowerCase();
+            const branch = String(e.Assigned_Branch || e.Branch || '').toLowerCase();
+            const pos = String(e.Position || '').toLowerCase();
+            const posCat = String(e.Position_Category || 'Power Mac Center').toLowerCase();
+            const status = String(e.Status || '').toLowerCase();
+            return name.includes(q) || id.includes(q) || branch.includes(q) || pos.includes(q) || posCat.includes(q) || status.includes(q);
+          });
+        }
+
+        // Alphabetical Sorting: Assigned_Branch primary (A-Z), Employee_Name secondary (A-Z)
+        list.sort((a, b) => {
+          const branchA = String(a.Assigned_Branch || a.Branch || 'Unassigned').toLowerCase().trim();
+          const branchB = String(b.Assigned_Branch || b.Branch || 'Unassigned').toLowerCase().trim();
+          const branchCmp = branchA.localeCompare(branchB);
+          if (branchCmp !== 0) return branchCmp;
+
+          const nameA = String(a.Employee_Name || a.Merchandiser_Name || a.Name || '').toLowerCase().trim();
+          const nameB = String(b.Employee_Name || b.Merchandiser_Name || b.Name || '').toLowerCase().trim();
+          return nameA.localeCompare(nameB);
+        });
+
+        return list;
+      },
+
+      get visibleEmployees() {
+        return this.filteredEmployees.slice(0, 40);
+      },
+
+      isEmpAdded(emp) {
+        if (!emp) return false;
+        const id = String(emp.Employee_ID || emp.Employeee_ID || emp.EmployeeID || emp.ID || '').trim();
+        return this.gridRowIdSet.has(id);
+      },
+
+      isEmpSelected(emp) {
+        if (!emp) return false;
+        const id = String(emp.Employee_ID || emp.Employeee_ID || emp.EmployeeID || emp.ID || '').trim();
+        return this.selectedEmpIdSet.has(id);
+      },
+
+      toggleEmpSelected(emp) {
+        if (!emp || this.isEmpAdded(emp)) return;
+        const id = String(emp.Employee_ID || emp.Employeee_ID || emp.EmployeeID || emp.ID || '').trim();
+        if (!id) return;
+        const idx = this.selectedEmpIds.indexOf(id);
+        if (idx >= 0) {
+          this.selectedEmpIds.splice(idx, 1);
+        } else {
+          this.selectedEmpIds.push(id);
+        }
+        this._selectedEmpIdSetCache = null;
+      },
+
+      get isAllFilteredSelected() {
+        const unaddedFiltered = this.filteredEmployees.filter(e => !this.isEmpAdded(e));
+        if (unaddedFiltered.length === 0) return false;
+        return unaddedFiltered.every(e => this.isEmpSelected(e));
+      },
+
+      toggleSelectAllFiltered() {
+        const unaddedFiltered = this.filteredEmployees.filter(e => !this.isEmpAdded(e));
+        if (this.isAllFilteredSelected) {
+          unaddedFiltered.forEach(e => {
+            const id = String(e.Employee_ID || e.Employeee_ID || e.EmployeeID || e.ID || '').trim();
+            const idx = this.selectedEmpIds.indexOf(id);
+            if (idx >= 0) this.selectedEmpIds.splice(idx, 1);
+          });
+        } else {
+          unaddedFiltered.forEach(e => {
+            const id = String(e.Employee_ID || e.Employeee_ID || e.EmployeeID || e.ID || '').trim();
+            if (!this.selectedEmpIds.includes(id)) {
+              this.selectedEmpIds.push(id);
+            }
+          });
+        }
+        this._selectedEmpIdSetCache = null;
+      },
+
+      clearFilters() {
+        this.empSearch = '';
+        this.selectedStatus = '';
+        this.selectedPositionCategory = '';
+      },
+
+      addSingleEmpRow(emp) {
+        if (!emp) return;
+        const id = String(emp.Employee_ID || emp.Employeee_ID || emp.EmployeeID || emp.ID || '').trim();
+        if (!id || this.isEmpAdded(emp)) return;
+
+        const newRow = {
+          id: id,
+          name: emp.Employee_Name || emp.Merchandiser_Name || emp.Name || 'Staff',
+          branch: emp.Assigned_Branch || emp.Branch || 'Unassigned',
+          position: emp.Position || '',
+          positionCategory: emp.Position_Category || 'Power Mac Center',
+          schedule: {},
+          punches: {}
+        };
+
+        // Hydrate existing week schedule and punches for this employee if available in AppStore
+        if (this.weekDays && this.weekDays.length) {
+          const weekDates = new Set(this.weekDays.map(d => d.date));
+          const allAttendance = (window.AppStore && (window.AppStore.schedules || window.AppStore.attendanceLogs)) || [];
+          allAttendance.forEach(att => {
+            if (!att) return;
+            const attId = String(att.Employee_ID || att.Merchandiser_ID || '').trim();
+            if (attId !== id) return;
+
+            let dStr = '';
+            if (att.Attendance_Date instanceof Date) {
+              dStr = att.Attendance_Date.toISOString().split('T')[0];
+            } else {
+              dStr = String(att.Attendance_Date || '').split('T')[0].trim();
+            }
+            if (!weekDates.has(dStr)) return;
+
+            if (att.Check_In || att.Check_Out || att.Status) {
+              newRow.punches[dStr] = {
+                in: att.Check_In || '',
+                out: att.Check_Out || '',
+                status: att.Status || '',
+                hours: att.Total_Hours ? parseFloat(att.Total_Hours).toFixed(2) : ''
+              };
+            }
+
+            let shiftVal = '';
+            const sStatus = String(att.Status || '').trim().toUpperCase();
+            const sStart = String(att.Shift_Start || '').trim().toUpperCase();
+            if (sStart === 'OFF' || sStatus === 'RESTDAY' || sStatus === 'OFF') {
+              shiftVal = 'OFF';
+            } else if (att.Notes && ['O', 'MD', 'LD', 'MN', 'C'].includes(att.Notes.trim().toUpperCase())) {
+              var nVal = att.Notes.trim().toUpperCase();
+              shiftVal = (nVal === 'MN') ? 'LD' : nVal;
+            } else if (sStart === '08:00' || sStart === '09:00') {
+              shiftVal = 'O';
+            } else if (sStart === '10:00' || sStart === '11:00') {
+              shiftVal = 'MD';
+            } else if (sStart === '12:00') {
+              shiftVal = 'LD';
+            } else if (sStart === '13:00') {
+              shiftVal = 'C';
+            } else if (sStart && sStart !== '00:00') {
+              shiftVal = sStart;
+            }
+            if (shiftVal) {
+              newRow.schedule[dStr] = shiftVal;
+            }
+          });
+        }
+
+        this.gridRows.push(newRow);
+        this.sortGridRows();
+        this._gridRowIdSetCache = null;
+
+        const idx = this.selectedEmpIds.indexOf(id);
+        if (idx >= 0) this.selectedEmpIds.splice(idx, 1);
+        this._selectedEmpIdSetCache = null;
+      },
+
+      addSelectedEmployees() {
+        if (this.selectedEmpIds.length === 0) return;
+        const allEmps = (window.AppStore && window.AppStore.employees) || [];
+        const empMap = new Map();
+        allEmps.forEach(e => {
+          if (!e) return;
+          const id = String(e.Employee_ID || e.Employeee_ID || e.EmployeeID || e.ID || '').trim();
+          if (id) empMap.set(id, e);
+        });
+
+        let addedCount = 0;
+        this.selectedEmpIds.forEach(id => {
+          const emp = empMap.get(id);
+          if (emp && !this.isEmpAdded(emp)) {
+            this.addSingleEmpRow(emp);
+            addedCount++;
+          }
+        });
+
+        this.sortGridRows();
+        this.selectedEmpIds = [];
+        this._selectedEmpIdSetCache = null;
+        this.showEmpDropdown = false;
+        if (typeof window.showToast === 'function') {
+          window.showToast(`Added ${addedCount} employee row(s) to grid!`);
+        }
+      },
+
+      removeRow(target) {
+        let idx = -1;
+        if (typeof target === 'number') {
+          idx = target;
+        } else if (typeof target === 'object' && target !== null) {
+          idx = this.gridRows.findIndex(r => r === target || String(r.id) === String(target.id));
+        } else {
+          idx = this.gridRows.findIndex(r => String(r.id) === String(target));
+        }
+        if (idx >= 0) {
+          this.gridRows.splice(idx, 1);
+          this._gridRowIdSetCache = null;
+        }
+      },
+
+      setShift(target, dateStr, shiftVal) {
+        let row = null;
+        if (typeof target === 'object' && target !== null) {
+          row = target;
+        } else if (typeof target === 'number') {
+          row = this.gridRows[target];
+        } else {
+          row = this.gridRows.find(r => String(r.id) === String(target));
+        }
+        if (!row) return;
+
+        if (shiftVal === null) {
+          delete row.schedule[dateStr];
+        } else {
+          row.schedule[dateStr] = shiftVal;
+        }
+      },
+
+      autoFillHeadOffice() {
+        const emps = (window.AppStore && window.AppStore.employees) || [];
+        const hoEmps = emps.filter(e => (e.Position_Category || '').toLowerCase() === 'head office');
+        hoEmps.forEach(e => this.addSingleEmpRow(e));
+
+        this.gridRows.forEach(r => {
+          if ((r.positionCategory || '').toLowerCase() === 'head office') {
+            this.weekDays.forEach((d, idx) => {
+              r.schedule[d.date] = idx === 6 ? 'OFF' : 'O'; // Sunday OFF, Mon-Sat O
+            });
+          }
+        });
+        if (typeof window.showToast === 'function') window.showToast('Auto-filled Head Office weekly schedule (Mon-Sat O, Sun OFF)');
+      },
+
+      autoFillMonthlyHeadOffice() {
+        this.autoFillHeadOffice();
+        if (typeof window.showToast === 'function') window.showToast('Generated monthly schedule for Head Office');
+      },
+
+      copyPreviousWeekSchedule() {
+        if (this.gridRows.length === 0) return;
+        this.gridRows.forEach(r => {
+          this.weekDays.forEach((d, idx) => {
+            if (!r.schedule[d.date]) {
+              r.schedule[d.date] = idx === 6 ? 'OFF' : 'O';
+            }
+          });
+        });
+        if (typeof window.showToast === 'function') window.showToast('Copied default schedule to current week');
+      },
+
+      saveAllSchedules() {
+        const payloads = [];
+        this.gridRows.forEach(r => {
+          this.weekDays.forEach(d => {
+            const sVal = r.schedule[d.date];
+            if (sVal) {
+              const isOff = sVal === 'OFF' || sVal === 'RESTDAY' || sVal === 'DAY OFF';
+              let sStart = '08:00';
+              let sEnd = '17:00';
+              if (isOff) {
+                sStart = 'OFF';
+                sEnd = 'OFF';
+              } else {
+                const cfg = this.getShiftConfig(r.positionCategory, sVal);
+                if (cfg && cfg.start && cfg.end) {
+                  sStart = cfg.start;
+                  sEnd = cfg.end;
+                }
+              }
+
+              payloads.push({
+                Attendance_Date: d.date,
+                Assigned_Branch: r.branch,
+                Employee_ID: r.id,
+                Employee_Name: r.name,
+                Merchandiser_ID: r.id,
+                Merchandiser_Name: r.name,
+                Shift_Start: sStart,
+                Shift_End: sEnd,
+                Notes: sVal,
+                Status: isOff ? 'RESTDAY' : 'Scheduled'
+              });
+            }
+          });
+        });
+
+        if (payloads.length === 0) {
+          if (typeof window.showToast === 'function') window.showToast('No shift entries assigned to save.');
+          return;
+        }
+
+        if (typeof window.showLock === 'function') {
+          window.showLock(`Saving ${payloads.length} schedule entries to sheet PMC Attendance...`);
+        } else if (typeof window.lockUI === 'function') {
+          window.lockUI();
+        }
+
+        window.serverCode('saveScheduleBatch', payloads)
+          .then(res => {
+            if (typeof window.hideLock === 'function') window.hideLock();
+            else if (typeof window.unlockUI === 'function') window.unlockUI();
+
+            if (res && res.success) {
+              if (typeof window.showToast === 'function') window.showToast(`Saved ${payloads.length} schedule entries to PMC Attendance!`);
+
+              // Update local memory in-place so other views see the new schedules immediately
+              if (!window.AppStore.attendanceLogs) window.AppStore.attendanceLogs = [];
+              payloads.forEach(p => {
+                const pDate = p.Attendance_Date;
+                const pId = String(p.Employee_ID).trim();
+                const idx = window.AppStore.attendanceLogs.findIndex(l =>
+                  String(l.Attendance_Date || '').slice(0, 10) === pDate &&
+                  String(l.Employee_ID || l.Merchandiser_ID || '').trim() === pId
+                );
+                if (idx !== -1) {
+                  window.AppStore.attendanceLogs[idx] = Object.assign({}, window.AppStore.attendanceLogs[idx], p);
+                } else {
+                  window.AppStore.attendanceLogs.push(p);
+                }
+              });
+              window.AppStore.schedules = window.AppStore.attendanceLogs;
+
+              window.dispatchEvent(new CustomEvent('data-refreshed'));
+            } else {
+              if (typeof window.showHardModal === 'function') window.showHardModal('Save Failed', res ? res.error : 'Unknown error');
+            }
+          })
+          .catch(err => {
+            if (typeof window.hideLock === 'function') window.hideLock();
+            else if (typeof window.unlockUI === 'function') window.unlockUI();
+            if (typeof window.showHardModal === 'function') window.showHardModal('Network Error', err.toString());
+          });
+      }
+    };
+  }
+</script>

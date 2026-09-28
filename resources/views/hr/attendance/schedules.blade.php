@@ -3,113 +3,599 @@
 @section('title', 'Work Schedule Management - Attendance')
 
 @section('content')
+@php
+    $cWeek = \Carbon\Carbon::parse($weekStart);
+    $prevWeek = $cWeek->copy()->subDays(7)->toDateString();
+    $nextWeek = $cWeek->copy()->addDays(7)->toDateString();
+    $thisWeek = \Carbon\Carbon::now()->startOfWeek()->toDateString();
+
+    // Collect available category names from departments, branches, or positions
+    $categories = collect();
+    if (isset($departments) && $departments->isNotEmpty()) {
+        $categories = $departments->pluck('name');
+    } else {
+        $categories = collect(['Power Mac Center', 'Kiosk', 'Head Office']);
+    }
+@endphp
+
 <x-hr-tabs parent="time-attendance">
     <x-slot:actions>
-        <button class="hr-btn hr-btn-secondary" onclick="openModal('addShiftModal')">
-            <i class="ph ph-clock-afternoon"></i>
-            <span>Add Shift Template</span>
-        </button>
-        <button class="hr-btn hr-btn-primary" onclick="openAssignModal()">
-            <i class="ph ph-calendar-plus"></i>
-            <span>Assign Schedule</span>
-        </button>
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <!-- Copy Previous Week Schedule Button -->
+            <button type="button" class="hr-btn hr-btn-secondary" onclick="triggerCopyPreviousWeek()" title="Copy all schedules from previous week to this week">
+                <i class="ph ph-copy"></i>
+                <span>Copy Prev Week</span>
+            </button>
+
+            <!-- Shift Settings Modal Trigger -->
+            <button type="button" class="hr-btn hr-btn-secondary" onclick="openShiftMasterModal()" title="Configure shift hours for O, MD, LD, C per Category">
+                <i class="ph ph-sliders"></i>
+                <span>Shift Settings</span>
+            </button>
+
+            <!-- Add Custom Shift Template -->
+            <button type="button" class="hr-btn hr-btn-secondary" onclick="openModal('addShiftModal')">
+                <i class="ph ph-clock-afternoon"></i>
+                <span>Add Shift Template</span>
+            </button>
+
+            <!-- Bulk Assign Modal Trigger -->
+            <button type="button" class="hr-btn hr-btn-primary" onclick="openAssignModal()">
+                <i class="ph ph-calendar-plus"></i>
+                <span>Bulk Assign Schedule</span>
+            </button>
+        </div>
     </x-slot:actions>
 </x-hr-tabs>
 
-<!-- Weekly Schedule Matrix -->
-<div class="hr-table-card">
-    <div class="hr-table-header">
+<!-- Main Accelerated Weekly Schedule Planner Matrix Card -->
+<div class="hr-table-card" id="schedPlannerCard">
+    <!-- Top Controller Toolbar -->
+    <div class="hr-table-header" style="flex-wrap: wrap; gap: 14px; padding: 14px 18px; border-bottom: 1.5px solid #e2e8f0; background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);">
+        <!-- Title & Subtitle -->
         <div>
-            <span class="hr-table-title"><i class="ph ph-table"></i> Weekly Shift Roster</span>
-            <div style="font-size: 12px; color: #64748b; margin-top: 2px;">
-                Click any cell or "+ Assign" to schedule shifts across custom date ranges and assign rest days.
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="hr-table-title" style="font-size: 16px; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                    <i class="ph ph-calendar-check" style="color: #7c3aed; font-size: 20px;"></i> 
+                    Weekly Shift Roster Planner
+                </span>
+                <span class="hr-badge hr-badge-neutral" id="empCountBadge" style="font-size: 11px; font-weight: 700;">
+                    {{ count($employees) }} Staff
+                </span>
+            </div>
+            <div style="font-size: 12px; color: #64748b; margin-top: 3px;">
+                Interactive tool to plan and assign shifts across branches. Click cell presets (O, MD, LD, C, OFF, Custom) to plot instantly.
             </div>
         </div>
-        <div style="display: flex; align-items: center; gap: 12px;">
-            <form method="GET" action="{{ route('hr.attendance.schedules') }}" style="display: flex; align-items: center; gap: 8px;">
-                @if(request('branch_id'))
-                    <input type="hidden" name="branch_id" value="{{ request('branch_id') }}">
+
+        <!-- Navigation Controls Toolbar -->
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <!-- Week Navigation Controls -->
+            <div style="display: flex; align-items: center; background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 3px 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+                <a href="{{ route('hr.attendance.schedules', array_merge(request()->query(), ['week_start' => $prevWeek])) }}" 
+                   class="sched-nav-btn" title="Previous Week ({{ \Carbon\Carbon::parse($prevWeek)->format('M d') }})">
+                    <i class="ph ph-caret-left"></i>
+                </a>
+
+                <form method="GET" action="{{ route('hr.attendance.schedules') }}" id="weekPickerForm" style="display: inline-flex; align-items: center; margin: 0 4px;">
+                    @if(request('branch_id'))
+                        <input type="hidden" name="branch_id" value="{{ request('branch_id') }}">
+                    @endif
+                    <label for="schedWeekInput" style="font-size: 11.5px; font-weight: 700; color: #475569; margin-right: 5px; cursor: pointer;">
+                        Week of:
+                    </label>
+                    <input type="date" name="week_start" id="schedWeekInput" value="{{ $weekStart }}" onchange="this.form.submit()" 
+                           style="border: none; background: transparent; font-size: 12.5px; font-weight: 700; color: #0f172a; outline: none; cursor: pointer; padding: 2px;">
+                </form>
+
+                <a href="{{ route('hr.attendance.schedules', array_merge(request()->query(), ['week_start' => $nextWeek])) }}" 
+                   class="sched-nav-btn" title="Next Week ({{ \Carbon\Carbon::parse($nextWeek)->format('M d') }})">
+                    <i class="ph ph-caret-right"></i>
+                </a>
+
+                @if($weekStart !== $thisWeek)
+                    <a href="{{ route('hr.attendance.schedules', array_merge(request()->query(), ['week_start' => $thisWeek])) }}" 
+                       class="sched-preset-btn" style="margin-left: 6px; font-size: 10.5px; padding: 2px 7px;">
+                        Current Week
+                    </a>
                 @endif
-                <label style="font-size: 12px; font-weight: 600; color: #475569;">Week of:</label>
-                <input type="date" name="week_start" class="hr-input" value="{{ $weekStart }}" onchange="this.form.submit()" style="padding: 6px 10px; font-size: 12.5px;">
-            </form>
+            </div>
         </div>
     </div>
-    <div class="hr-table-wrapper">
-        <table class="hr-table">
+
+    <!-- Secondary Table Toolbar: Referenced Multi-Filter "Add Employee Row" + Category Filters + Live Search -->
+    <div class="sched-sub-toolbar">
+        <!-- 1. Add Employee Row Multi-Select Dropdown Trigger -->
+        <div class="sched-add-emp-wrap" id="addEmpDropdownWrap">
+            <button type="button" class="sched-btn-add-emp-toggle" id="btnToggleEmpDropdown" onclick="toggleEmpDropdown()">
+                <i class="ph ph-user-plus" style="color: #7c3aed;"></i>
+                <span>Add Employee Row</span>
+                <i class="ph ph-caret-down" id="empDropdownChevron" style="color: #94a3b8; font-size: 11px; transition: transform 0.2s;"></i>
+                <span id="selectedEmpBadge" class="sched-badge-count" style="display: none;">0</span>
+            </button>
+
+            <!-- Multi-Filter Dropdown Panel (Top-Layer Stacking z-50 matching Schedule.html) -->
+            <div id="empDropdownPanel" class="sched-emp-dropdown-panel" style="display: none;">
+                <!-- Header Bar -->
+                <div class="sched-dropdown-header">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <div class="sched-avatar-circle" style="background: #ede9fe; color: #7c3aed; width: 28px; height: 28px;">
+                            <i class="ph ph-users"></i>
+                        </div>
+                        <div>
+                            <h4 style="font-size: 12px; font-weight: 800; color: #0f172a; margin: 0; text-transform: uppercase;">Select Employees to Schedule</h4>
+                            <p id="dropdownEmpMatchText" style="font-size: 11px; color: #64748b; margin: 0;">0 employee(s) matching filter</p>
+                        </div>
+                    </div>
+                    <button type="button" class="sched-btn-close-sm" onclick="closeEmpDropdown()">&times;</button>
+                </div>
+
+                <!-- Search & Filter Controls Bar -->
+                <div class="sched-dropdown-filter-bar">
+                    <!-- Search Input -->
+                    <div style="position: relative; width: 100%;">
+                        <i class="ph ph-magnifying-glass" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 12px;"></i>
+                        <input type="text" id="modalEmpSearch" placeholder="Search name, ID, branch, position..." 
+                               oninput="filterDropdownEmployees()"
+                               class="sched-input-search">
+                        <button type="button" id="clearModalSearchBtn" onclick="clearModalEmpSearch()" 
+                                style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); border: none; background: transparent; color: #94a3b8; cursor: pointer; display: none;">
+                            <i class="ph ph-x-circle"></i>
+                        </button>
+                    </div>
+
+                    <!-- Filters Row: Status & Category -->
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <select id="modalStatusFilter" onchange="filterDropdownEmployees()" class="sched-select-filter">
+                            <option value="">All Statuses</option>
+                            <option value="active" selected>Active</option>
+                            <option value="probationary">Probationary</option>
+                            <option value="regular">Regular</option>
+                        </select>
+
+                        <select id="modalCategoryFilter" onchange="filterDropdownEmployees()" class="sched-select-filter">
+                            <option value="">All Categories</option>
+                            @foreach($categories as $cat)
+                                <option value="{{ strtolower($cat) }}">{{ $cat }}</option>
+                            @endforeach
+                        </select>
+
+                        <button type="button" onclick="resetDropdownFilters()" class="sched-btn-clear-filters">
+                            Clear Filters
+                        </button>
+                    </div>
+
+                    <!-- Select All / Deselect Toggle -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 6px; border-top: 1px solid #f1f5f9; font-size: 11px;">
+                        <button type="button" id="btnToggleSelectAllModal" onclick="toggleSelectAllFilteredEmps()" style="border: none; background: transparent; color: #7c3aed; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                            <i class="ph ph-check-square" id="iconSelectAllModal"></i>
+                            <span id="labelSelectAllModal">Select All Filtered</span>
+                        </button>
+                        <span id="selectedAdditionCount" style="color: #94a3b8; font-style: italic;">0 selected for addition</span>
+                    </div>
+                </div>
+
+                <!-- Scrollable Employee List Area -->
+                <div class="sched-dropdown-list custom-scrollbar" id="dropdownEmpList">
+                    <!-- Populated dynamically by JS -->
+                </div>
+
+                <!-- Footer Bar -->
+                <div class="sched-dropdown-footer">
+                    <span style="font-size: 11.5px; font-weight: 600; color: #475569;">
+                        Selected: <strong id="footerSelectedCount" style="color: #7c3aed;">0</strong> row(s)
+                    </span>
+                    <div style="display: flex; gap: 8px;">
+                        <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="closeEmpDropdown()">Cancel</button>
+                        <button type="button" class="hr-btn hr-btn-primary hr-btn-sm" id="btnAddSelectedEmps" onclick="addSelectedEmployeesToGrid()" disabled>
+                            <i class="ph ph-plus"></i> Add Selected
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Category Checkbox Filter Group -->
+        <div class="sched-cat-filter-group">
+            <span style="font-size: 11px; font-weight: 800; color: #64748b; display: flex; align-items: center; gap: 4px; text-transform: uppercase;">
+                <i class="ph ph-funnel" style="font-size: 12px;"></i> Category:
+            </span>
+            @foreach($categories as $cat)
+                <label class="sched-cat-checkbox-label">
+                    <input type="checkbox" value="{{ strtolower($cat) }}" class="sched-cat-cb" onchange="filterMatrixByCategory()" checked>
+                    <span>{{ $cat }}</span>
+                </label>
+            @endforeach
+        </div>
+
+        <!-- 3. Real-time Search Input -->
+        <div style="position: relative; min-width: 180px; margin-left: auto;">
+            <i class="ph ph-magnifying-glass" style="position: absolute; left: 8px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 12px;"></i>
+            <input type="text" id="liveEmployeeSearch" placeholder="Search visible rows..." 
+                   oninput="filterMatrixRowsBySearch()"
+                   style="width: 100%; font-size: 11.5px; padding: 5px 22px 5px 26px; border: 1.5px solid #e2e8f0; border-radius: 8px; outline: none;">
+            <button type="button" id="clearSearchBtn" onclick="clearLiveSearch()" 
+                    style="position: absolute; right: 6px; top: 50%; transform: translateY(-50%); border: none; background: transparent; color: #94a3b8; cursor: pointer; display: none;">
+                &times;
+            </button>
+        </div>
+
+        <!-- 4. Clear Grid Action -->
+        <button type="button" class="sched-btn-clear-grid" onclick="clearRosterGrid()" title="Clear employee rows from current view">
+            Clear Grid
+        </button>
+    </div>
+
+    <!-- Weekly Interactive Schedule Table Matrix -->
+    <div class="hr-table-wrapper" style="max-height: calc(100vh - 270px); overflow: auto; position: relative;">
+        <table class="hr-table sched-matrix-table" id="schedMatrixTable" role="grid" style="border-collapse: separate; border-spacing: 0; min-width: 1150px;">
             <thead>
                 <tr>
-                    <th style="min-width: 200px;">Staff Member</th>
+                    <!-- Sticky Left Column: Employee Identity & Row Quick Actions -->
+                    <th class="sched-sticky-col sched-sticky-th" style="min-width: 250px; width: 250px; z-index: 30;">
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <span>Employee</span>
+                            <span style="font-size: 9px; font-weight: 700; color: #7c3aed; background: #ede9fe; padding: 2px 6px; border-radius: 4px; text-transform: uppercase;">
+                                Branch &darr;
+                            </span>
+                        </div>
+                    </th>
+
+                    <!-- 7 Day Columns (Mon - Sun) -->
                     @foreach($dates as $d)
-                        @php $cDate = \Carbon\Carbon::parse($d); @endphp
-                        <th style="text-align: center; min-width: 130px; {{ $cDate->isToday() ? 'background: rgba(168, 85, 247, 0.08);' : '' }}">
-                            <div style="font-weight: 700; color: {{ $cDate->isToday() ? '#7e22ce' : '#0f172a' }};">
+                        @php 
+                            $cDate = \Carbon\Carbon::parse($d); 
+                            $isToday = $cDate->isToday();
+                        @endphp
+                        <th style="text-align: center; min-width: 155px; {{ $isToday ? 'background: rgba(124, 58, 237, 0.08); border-bottom: 2px solid #7c3aed;' : '' }}">
+                            <div style="font-weight: 800; font-size: 12.5px; color: {{ $isToday ? '#7c3aed' : '#0f172a' }};">
                                 {{ $cDate->format('D') }}
+                                @if($isToday)
+                                    <span class="hr-badge hr-badge-primary" style="font-size: 9px; padding: 1px 4px; margin-left: 2px; vertical-align: middle;">TODAY</span>
+                                @endif
                             </div>
-                            <small style="color: #64748b; font-size: 11px;">{{ $cDate->format('M d') }}</small>
+                            <div style="color: #64748b; font-size: 11px; font-weight: 500;">
+                                {{ $cDate->format('M d') }}
+                            </div>
                         </th>
                     @endforeach
+
+                    <!-- Action Column: Remove Row (Trash Icon) -->
+                    <th style="width: 44px; text-align: center;"></th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="schedMatrixTbody">
                 @forelse($employees as $emp)
-                    @php $empScheds = $schedules->get($emp->id) ? $schedules->get($emp->id)->keyBy('schedule_date') : collect(); @endphp
-                    <tr>
-                        <td>
-                            <div class="hr-emp-avatar-wrap">
-                                @if($emp->photo_url)
-                                    <img src="{{ $emp->photo_url }}" alt="{{ $emp->full_name }}" class="hr-avatar-img-sm">
-                                @else
-                                    <div class="hr-avatar-circle-sm">
-                                        {{ $emp->initials }}
+                    @php 
+                        $empScheds = $schedules->get($emp->id) ? $schedules->get($emp->id)->keyBy(function($item) {
+                            return \Carbon\Carbon::parse($item->schedule_date)->toDateString();
+                        }) : collect(); 
+                        $branchName = $emp->branch?->name ?? 'Unassigned';
+                        $positionName = $emp->position?->name ?? 'Staff';
+                        $categoryName = $emp->department?->name ?? 'Front of House';
+                    @endphp
+                    <tr class="sched-row" 
+                        id="schedRow_{{ $emp->id }}"
+                        data-emp-id="{{ $emp->id }}" 
+                        data-emp-name="{{ strtolower($emp->full_name) }}" 
+                        data-emp-branch="{{ strtolower($branchName) }}"
+                        data-emp-pos="{{ strtolower($positionName) }}"
+                        data-emp-cat="{{ strtolower($categoryName) }}">
+                        
+                        <!-- Sticky Employee Column with Avatar, Category Pill, Branch -->
+                        <td class="sched-sticky-col sched-sticky-td">
+                            <div style="display: flex; align-items: flex-start; gap: 8px;">
+                                <!-- Initials Avatar Badge -->
+                                <div class="sched-emp-avatar" title="{{ $emp->full_name }}">
+                                    {{ $emp->initials }}
+                                </div>
+
+                                <div style="min-width: 0; flex: 1;">
+                                    <!-- Name -->
+                                    <div style="font-weight: 800; color: #0f172a; font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ $emp->full_name }}">
+                                        {{ $emp->full_name }}
                                     </div>
-                                @endif
-                                <div>
-                                    <div style="font-weight: 700; color: #0f172a;">{{ $emp->full_name }}</div>
-                                    <div style="font-size: 11px; color: #64748b;">
-                                        {{ $emp->position?->name ?? 'Staff' }} &bull; {{ $emp->branch?->name ?? 'Main' }}
+                                    <!-- Category Pill -->
+                                    <div style="margin: 2px 0;">
+                                        <span class="sched-cat-pill">
+                                            <span class="sched-cat-dot"></span>
+                                            <span class="truncate">{{ $categoryName }}</span>
+                                        </span>
+                                    </div>
+                                    <!-- Branch Location Anchor -->
+                                    <div style="font-size: 10.5px; color: #64748b; display: flex; align-items: center; gap: 3px;" title="{{ $branchName }}">
+                                        <i class="ph ph-map-pin" style="color: #7c3aed; font-size: 11px;"></i>
+                                        <span class="truncate" style="font-weight: 600; color: #475569;">{{ $branchName }}</span>
+                                    </div>
+                                </div>
+
+                                <!-- ⚡ Quick Fill Menu for this row -->
+                                <div class="sched-row-action-menu" style="position: relative;">
+                                    <button type="button" class="sched-row-btn" onclick="toggleRowMenu({{ $emp->id }})" title="Quick fill week for {{ $emp->full_name }}">
+                                        <i class="ph ph-lightning"></i>
+                                    </button>
+                                    
+                                    <div class="sched-row-dropdown" id="rowMenu_{{ $emp->id }}">
+                                        <div style="padding: 6px 10px; font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; border-bottom: 1px solid #f1f5f9;">
+                                            Quick Fill: {{ Str::limit($emp->first_name, 12) }}
+                                        </div>
+                                        <button type="button" class="sched-row-dd-item" onclick="quickFillRowPreset({{ $emp->id }}, 'O', ['Sun'])">
+                                            <i class="ph ph-sun" style="color: #10b981;"></i>
+                                            <span>Mon–Sat Opening (Sun Off)</span>
+                                        </button>
+                                        <button type="button" class="sched-row-dd-item" onclick="quickFillRowPreset({{ $emp->id }}, 'MD', ['Sun'])">
+                                            <i class="ph ph-clock" style="color: #3b82f6;"></i>
+                                            <span>Mon–Sat Mid Day (Sun Off)</span>
+                                        </button>
+                                        <button type="button" class="sched-row-dd-item" onclick="quickFillRowPreset({{ $emp->id }}, 'C', ['Sun'])">
+                                            <i class="ph ph-moon" style="color: #9333ea;"></i>
+                                            <span>Mon–Sat Closing (Sun Off)</span>
+                                        </button>
+                                        <div style="border-top: 1px solid #f1f5f9; margin: 4px 0;"></div>
+                                        <button type="button" class="sched-row-dd-item text-danger" onclick="quickFillRowPreset({{ $emp->id }}, 'OFF', ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'])">
+                                            <i class="ph ph-coffee"></i>
+                                            <span>Mark Entire Week as Rest Days</span>
+                                        </button>
+                                        <button type="button" class="sched-row-dd-item text-danger" onclick="clearEmployeeWeek({{ $emp->id }})">
+                                            <i class="ph ph-trash"></i>
+                                            <span>Clear All Shifts This Week</span>
+                                        </button>
                                     </div>
                                 </div>
                             </div>
                         </td>
+
+                        <!-- Day Cells for Employee -->
                         @foreach($dates as $d)
                             @php 
                                 $daySched = $empScheds->get($d); 
                                 $cDate = \Carbon\Carbon::parse($d);
+                                $isToday = $cDate->isToday();
                             @endphp
-                            <td style="text-align: center; vertical-align: middle; {{ $cDate->isToday() ? 'background: rgba(168, 85, 247, 0.03);' : '' }}">
+                            <td class="sched-cell-td" 
+                                id="cell_{{ $emp->id }}_{{ $d }}"
+                                data-emp-id="{{ $emp->id }}" 
+                                data-date="{{ $d }}"
+                                data-emp-cat="{{ strtolower($categoryName) }}"
+                                style="{{ $isToday ? 'background: rgba(124, 58, 237, 0.02);' : '' }}">
+                                
                                 @if($daySched)
-                                    @if($daySched->is_rest_day)
-                                        <div onclick="quickAssign({{ $emp->id }}, '{{ $d }}', true)" style="cursor: pointer;" title="Click to edit schedule for {{ $emp->full_name }}">
-                                            <span class="hr-badge hr-badge-neutral" style="font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 6px;">
-                                                Rest Day
-                                            </span>
-                                        </div>
-                                    @elseif($daySched->shiftTemplate)
-                                        <div onclick="quickAssign({{ $emp->id }}, '{{ $d }}', false, {{ $daySched->shift_template_id }})" style="cursor: pointer;" title="Click to edit schedule for {{ $emp->full_name }}">
-                                            <div style="background: rgba(168, 85, 247, 0.12); border: 1.5px solid rgba(168, 85, 247, 0.35); border-radius: 8px; padding: 5px 8px; font-size: 11.5px; font-weight: 700; color: #6b21a8; font-family: monospace; line-height: 1.25;">
-                                                {{ $daySched->shiftTemplate->name }}
+                                    @php
+                                        $sCode = $daySched->notes ?: ($daySched->shiftTemplate?->code ?? ($daySched->is_rest_day ? 'OFF' : 'CUSTOM'));
+                                        $sLabel = $daySched->is_rest_day ? 'RESTDAY' : ($sCode === 'O' ? 'OPENING' : ($sCode === 'MD' ? 'MID DAY' : ($sCode === 'LD' ? 'LATE DAY' : ($sCode === 'C' ? 'CLOSING' : ($daySched->shiftTemplate?->name ?? 'CUSTOM')))));
+                                        $sTime = $daySched->is_rest_day ? 'OFF DUTY' : ($daySched->custom_start_time ? substr($daySched->custom_start_time,0,5).' - '.substr($daySched->custom_end_time,0,5) : ($daySched->shiftTemplate ? \Carbon\Carbon::parse($daySched->shiftTemplate->start_time)->format('H:i').' - '.\Carbon\Carbon::parse($daySched->shiftTemplate->end_time)->format('H:i') : ''));
+                                    @endphp
+                                    <div class="sched-shift-card {{ $daySched->is_rest_day ? 'sched-card-rest' : ('sched-theme-'.strtolower($sCode)) }}">
+                                        <div class="sched-card-body" onclick="openCellCustomDropdown({{ $emp->id }}, '{{ $d }}')">
+                                            <div style="display: flex; align-items: center; gap: 4px;">
+                                                <span class="sched-card-pill">{{ $sCode }}</span>
+                                                <span class="sched-card-label">{{ $sLabel }}</span>
+                                            </div>
+                                            <div class="sched-card-time">
+                                                <i class="ph ph-clock" style="font-size: 10px;"></i>
+                                                <span>{{ $sTime }}</span>
                                             </div>
                                         </div>
-                                    @else
-                                        <div onclick="quickAssign({{ $emp->id }}, '{{ $d }}')" style="cursor: pointer;" title="Click to edit schedule">
-                                            <span style="font-size: 11px; color: #334155; font-weight: 600;">Custom Shift</span>
-                                        </div>
-                                    @endif
+                                        <button type="button" class="sched-card-clear" onclick="clearCellShift({{ $emp->id }}, '{{ $d }}')" title="Clear Shift">
+                                            &times;
+                                        </button>
+                                    </div>
                                 @else
-                                    <button class="hr-btn hr-btn-secondary hr-btn-sm" style="font-size: 10.5px; padding: 3px 8px;" onclick="quickAssign({{ $emp->id }}, '{{ $d }}')">
-                                        + Assign
-                                    </button>
+                                    <!-- Empty State: O, MD, LD / C, RESTDAY / Custom Dropdown Button -->
+                                    <div class="sched-empty-plotter">
+                                        <div class="sched-preset-grid">
+                                            <!-- Row 1: O, MD, LD -->
+                                            <div class="sched-btn-row">
+                                                <button type="button" class="sched-mini-pill sched-pill-o" onclick="directPlotPreset({{ $emp->id }}, '{{ $d }}', 'O')" title="OPENING Shift">O</button>
+                                                <button type="button" class="sched-mini-pill sched-pill-md" onclick="directPlotPreset({{ $emp->id }}, '{{ $d }}', 'MD')" title="MID DAY Shift">MD</button>
+                                                <button type="button" class="sched-mini-pill sched-pill-ld" onclick="directPlotPreset({{ $emp->id }}, '{{ $d }}', 'LD')" title="LATE DAY Shift">LD</button>
+                                            </div>
+                                            <!-- Row 2: C, RESTDAY -->
+                                            <div class="sched-btn-row">
+                                                <button type="button" class="sched-mini-pill sched-pill-c" onclick="directPlotPreset({{ $emp->id }}, '{{ $d }}', 'C')" title="CLOSING Shift">C</button>
+                                                <button type="button" class="sched-mini-pill sched-pill-restday" onclick="directPlotPreset({{ $emp->id }}, '{{ $d }}', 'OFF')" title="RESTDAY (Off Duty)">RESTDAY</button>
+                                            </div>
+                                            <!-- Row 3: Custom Dropdown Trigger Button -->
+                                            <div class="sched-btn-row">
+                                                <button type="button" class="sched-mini-pill sched-pill-custom" onclick="openCellCustomDropdown({{ $emp->id }}, '{{ $d }}')" title="Select other shift or enter custom time">
+                                                    Custom <i class="ph ph-caret-down" style="font-size: 8px;"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
                                 @endif
+
                             </td>
                         @endforeach
+
+                        <!-- Delete / Remove Row Button -->
+                        <td style="text-align: center; vertical-align: middle;">
+                            <button type="button" class="sched-btn-row-del" onclick="removeEmployeeRowFromGrid({{ $emp->id }})" title="Remove row from grid">
+                                <i class="ph ph-trash"></i>
+                            </button>
+                        </td>
                     </tr>
                 @empty
-                    <tr><td colspan="8" style="text-align: center; color: #94a3b8; padding: 36px;">No active employees found for this schedule roster.</td></tr>
+                    <tr id="schedEmptyRow">
+                        <td colspan="9" style="text-align: center; color: #94a3b8; padding: 48px;">
+                            <div style="font-size: 28px; margin-bottom: 8px;"><i class="ph ph-users"></i></div>
+                            <div style="font-weight: 700; color: #475569; font-size: 14px;">No employees in current view</div>
+                            <div style="font-size: 12px; color: #94a3b8;">Click "+ Add Employee Row" above to select and populate staff.</div>
+                        </td>
+                    </tr>
                 @endforelse
             </tbody>
         </table>
     </div>
+</div>
+
+<!-- Floating Cell Custom Schedule Dropdown Popover (Attached to active cell) -->
+<div id="cellCustomDropdown" class="sched-custom-dropdown" style="display: none;">
+    <div class="sched-custom-dd-header">
+        <span style="font-weight: 800; font-size: 11px; color: #0f172a; text-transform: uppercase;">Other Schedule / Custom</span>
+        <button type="button" class="sched-btn-close-sm" onclick="closeCellCustomDropdown()">&times;</button>
+    </div>
+    
+    <!-- Standard Templates Quick List -->
+    <div style="padding: 6px 10px; border-bottom: 1px solid #f1f5f9; font-size: 11px; max-height: 140px; overflow-y: auto;">
+        <div style="font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 4px;">Registered Shifts:</div>
+        @foreach($shiftTemplates as $st)
+            <button type="button" class="sched-dd-shift-item" onclick="applyTemplateToActiveCell({{ $st->id }}, '{{ $st->code }}', '{{ $st->name }}', '{{ substr($st->start_time,0,5) }}', '{{ substr($st->end_time,0,5) }}', '{{ $st->color ?? '#7c3aed' }}')">
+                <span class="sched-card-pill" style="background: {{ $st->color ?? '#7c3aed' }}; color: #fff; font-size: 8.5px;">{{ $st->code ?: substr($st->name, 0, 4) }}</span>
+                <span style="font-weight: 700; color: #1e293b; font-size: 11px;">{{ $st->formatted_label ?? $st->name }}</span>
+            </button>
+        @endforeach
+    </div>
+
+    <!-- Custom Time Inputs -->
+    <div style="padding: 10px; background: #faf5ff; border-bottom: 1px solid #e9d5ff;">
+        <div style="font-size: 10px; font-weight: 800; color: #7c3aed; text-transform: uppercase; margin-bottom: 6px;">
+            + Custom Time Field:
+        </div>
+        <div style="display: flex; gap: 6px; align-items: center; margin-bottom: 6px;">
+            <input type="time" id="customCellStart" value="08:00" class="sched-input-time" title="Start Time">
+            <span style="font-size: 10px; color: #7c3aed; font-weight: bold;">→</span>
+            <input type="time" id="customCellEnd" value="17:00" class="sched-input-time" title="End Time">
+        </div>
+        <input type="text" id="customCellLabel" placeholder="Label (e.g. Split Shift)" class="sched-input-text-sm" style="margin-bottom: 6px;">
+        <button type="button" class="hr-btn hr-btn-primary hr-btn-sm" style="width: 100%; justify-content: center;" onclick="applyCustomTimeToActiveCell()">
+            Apply Custom Shift
+        </button>
+    </div>
+
+    <!-- Edit Shift Times Button -->
+    <div style="padding: 8px 10px; background: #f8fafc; text-align: center;">
+        <button type="button" class="sched-btn-edit-times" onclick="openShiftMasterModal(); closeCellCustomDropdown();">
+            <i class="ph ph-sliders"></i> Edit Shift Times (O, MD, LD, C)
+        </button>
+    </div>
+</div>
+
+<!-- Modal: Shift Master Settings (Configurable hours for O, MD, LD, C per Category matching Schedule.html) -->
+<div id="shiftMasterSettingsModal" class="hr-modal-overlay">
+    <div class="hr-modal" style="max-width: 600px;">
+        <div class="hr-modal-header" style="background: #f8fafc;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <div class="sched-avatar-circle" style="background: #ede9fe; color: #7c3aed; width: 32px; height: 32px;">
+                    <i class="ph ph-clock"></i>
+                </div>
+                <div>
+                    <h3 style="font-size: 14px; font-weight: 800; color: #0f172a; margin: 0;">Shift Master Settings</h3>
+                    <p style="font-size: 11px; color: #64748b; margin: 0;">Configure default shift hours for each Position Category.</p>
+                </div>
+            </div>
+            <button type="button" class="icon-btn" onclick="closeModal('shiftMasterSettingsModal')"><i class="ph ph-x"></i></button>
+        </div>
+
+        <div class="hr-modal-body" style="padding: 16px;">
+            <!-- Category Tabs -->
+            <div style="margin-bottom: 12px;">
+                <label style="font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-bottom: 6px; display: block;">
+                    Select Position Category
+                </label>
+                <div class="sched-cat-tabs" id="shiftModalCatTabs">
+                    @foreach($categories as $idx => $cat)
+                        <button type="button" class="sched-cat-tab-btn {{ $loop->first ? 'active' : '' }}" 
+                                onclick="switchShiftModalCategory('{{ $cat }}', this)">
+                            <span>{{ $cat }}</span>
+                        </button>
+                    @endforeach
+                </div>
+            </div>
+
+            <!-- Informational Banner -->
+            <div style="display: flex; justify-content: space-between; align-items: center; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 8px 12px; margin-bottom: 14px; font-size: 11.5px; color: #1e40af;">
+                <span>Editing shift times for <strong id="modalActiveCategoryLabel">{{ $categories->first() ?? 'Default' }}</strong></span>
+                <button type="button" onclick="resetShiftCategoryDefaults()" style="border: none; background: transparent; color: #2563eb; font-weight: 700; text-decoration: underline; cursor: pointer; font-size: 11px;">
+                    Reset to Default
+                </button>
+            </div>
+
+            <!-- Shift Rows Editor -->
+            <div class="sched-shift-edit-rows" id="shiftRowsEditor">
+                <!-- O (OPENING) -->
+                <div class="sched-edit-row">
+                    <div class="sched-edit-row-badge" style="background: #10b981;">O</div>
+                    <div style="min-width: 90px;">
+                        <div style="font-weight: 800; font-size: 12px; color: #0f172a;" id="lblShift_O">OPENING</div>
+                        <div style="font-size: 10px; color: #94a3b8;">SHIFT PRESET</div>
+                    </div>
+                    <div style="display: flex; gap: 8px; align-items: center; flex: 1;">
+                        <input type="time" id="shiftTime_O_start" value="08:00" class="sched-input-time" style="flex: 1;">
+                        <span style="color: #94a3b8; font-weight: bold;">→</span>
+                        <input type="time" id="shiftTime_O_end" value="17:00" class="sched-input-time" style="flex: 1;">
+                    </div>
+                </div>
+
+                <!-- MD (MID DAY) -->
+                <div class="sched-edit-row">
+                    <div class="sched-edit-row-badge" style="background: #3b82f6;">MD</div>
+                    <div style="min-width: 90px;">
+                        <div style="font-weight: 800; font-size: 12px; color: #0f172a;" id="lblShift_MD">MID DAY</div>
+                        <div style="font-size: 10px; color: #94a3b8;">SHIFT PRESET</div>
+                    </div>
+                    <div style="display: flex; gap: 8px; align-items: center; flex: 1;">
+                        <input type="time" id="shiftTime_MD_start" value="10:00" class="sched-input-time" style="flex: 1;">
+                        <span style="color: #94a3b8; font-weight: bold;">→</span>
+                        <input type="time" id="shiftTime_MD_end" value="19:00" class="sched-input-time" style="flex: 1;">
+                    </div>
+                </div>
+
+                <!-- LD (LATE DAY) -->
+                <div class="sched-edit-row">
+                    <div class="sched-edit-row-badge" style="background: #f59e0b;">LD</div>
+                    <div style="min-width: 90px;">
+                        <div style="font-weight: 800; font-size: 12px; color: #0f172a;" id="lblShift_LD">LATE DAY</div>
+                        <div style="font-size: 10px; color: #94a3b8;">SHIFT PRESET</div>
+                    </div>
+                    <div style="display: flex; gap: 8px; align-items: center; flex: 1;">
+                        <input type="time" id="shiftTime_LD_start" value="12:00" class="sched-input-time" style="flex: 1;">
+                        <span style="color: #94a3b8; font-weight: bold;">→</span>
+                        <input type="time" id="shiftTime_LD_end" value="21:00" class="sched-input-time" style="flex: 1;">
+                    </div>
+                </div>
+
+                <!-- C (CLOSING) -->
+                <div class="sched-edit-row">
+                    <div class="sched-edit-row-badge" style="background: #9333ea;">C</div>
+                    <div style="min-width: 90px;">
+                        <div style="font-weight: 800; font-size: 12px; color: #0f172a;" id="lblShift_C">CLOSING</div>
+                        <div style="font-size: 10px; color: #94a3b8;">SHIFT PRESET</div>
+                    </div>
+                    <div style="display: flex; gap: 8px; align-items: center; flex: 1;">
+                        <input type="time" id="shiftTime_C_start" value="13:00" class="sched-input-time" style="flex: 1;">
+                        <span style="color: #94a3b8; font-weight: bold;">→</span>
+                        <input type="time" id="shiftTime_C_end" value="22:00" class="sched-input-time" style="flex: 1;">
+                    </div>
+                </div>
+
+                <!-- OFF (RESTDAY) -->
+                <div class="sched-edit-row" style="background: #f8fafc;">
+                    <div class="sched-edit-row-badge" style="background: #64748b;">OFF</div>
+                    <div style="min-width: 90px;">
+                        <div style="font-weight: 800; font-size: 12px; color: #475569;">RESTDAY</div>
+                        <div style="font-size: 10px; color: #94a3b8;">OFF DUTY</div>
+                    </div>
+                    <div style="flex: 1; font-size: 11px; color: #64748b; font-style: italic;">
+                        Off Duty / No Scheduled Working Hours
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="hr-modal-footer" style="background: #f8fafc; display: flex; justify-content: space-between; align-items: center;">
+            <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="closeModal('shiftMasterSettingsModal')">Cancel</button>
+            <button type="button" class="hr-btn hr-btn-primary" onclick="saveShiftMasterSettings()">
+                <i class="ph ph-check"></i> Save Shift Settings
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Floating Action Toast Notification -->
+<div id="schedToast" class="sched-toast" style="display: none;">
+    <div id="schedToastIcon"><i class="ph ph-check-circle"></i></div>
+    <div id="schedToastMsg">Shift updated successfully</div>
 </div>
 
 <!-- Modal: Assign Schedule (Date Range & Rest Day by Day) -->
@@ -117,7 +603,7 @@
     <div class="hr-modal" style="max-width: 680px;">
         <div class="hr-modal-header">
             <span class="hr-modal-title"><i class="ph ph-calendar-plus"></i> Assign Work Schedule</span>
-            <button class="icon-btn" onclick="closeModal('assignScheduleModal')"><i class="ph ph-x"></i></button>
+            <button type="button" class="icon-btn" onclick="closeModal('assignScheduleModal')"><i class="ph ph-x"></i></button>
         </div>
         <form method="POST" action="{{ route('hr.attendance.schedules.store') }}" id="assignScheduleForm">
             @csrf
@@ -166,7 +652,7 @@
                         <option value="">Select Shift Format</option>
                         @foreach($shiftTemplates as $st)
                             <option value="{{ $st->id }}" {{ $loop->first ? 'selected' : '' }}>
-                                {{ $st->name }}
+                                {{ $st->formatted_label ?? $st->name }}
                             </option>
                         @endforeach
                     </select>
@@ -236,7 +722,7 @@
     <div class="hr-modal" style="max-width: 520px;">
         <div class="hr-modal-header">
             <span class="hr-modal-title"><i class="ph ph-clock-afternoon"></i> Create Shift Template</span>
-            <button class="icon-btn" onclick="closeModal('addShiftModal')"><i class="ph ph-x"></i></button>
+            <button type="button" class="icon-btn" onclick="closeModal('addShiftModal')"><i class="ph ph-x"></i></button>
         </div>
         <form method="POST" action="{{ route('hr.attendance.shifts.store') }}">
             @csrf
@@ -290,19 +776,703 @@
 </div>
 
 <style>
-.sched-day-pills {
+/* Sub Toolbar (Add Employee Row + Category Checkboxes + Search + Clear) */
+.sched-sub-toolbar {
+    padding: 10px 18px;
+    background: #f8fafc;
+    border-bottom: 1.5px solid #e2e8f0;
     display: flex;
-    gap: 8px;
+    align-items: center;
+    gap: 12px;
     flex-wrap: wrap;
-    margin-top: 8px;
+    position: relative;
+    z-index: 25;
 }
-.sched-day-pill {
+
+.sched-add-emp-wrap {
+    position: relative;
+}
+
+.sched-btn-add-emp-toggle {
+    background: #ffffff;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #334155;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
     cursor: pointer;
-    margin: 0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    transition: all 0.15s ease;
 }
-.sched-day-input {
+.sched-btn-add-emp-toggle:hover {
+    background: #f8fafc;
+    border-color: #94a3b8;
+}
+
+.sched-badge-count {
+    background: #7c3aed;
+    color: #ffffff;
+    font-size: 10px;
+    font-weight: 800;
+    padding: 1px 6px;
+    border-radius: 10px;
+}
+
+/* Dropdown Panel */
+.sched-emp-dropdown-panel {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    width: 580px;
+    max-width: 92vw;
+    background: #ffffff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 14px;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.sched-dropdown-header {
+    padding: 12px 14px;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.sched-dropdown-filter-bar {
+    padding: 10px 14px;
+    background: #ffffff;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.sched-input-search {
+    width: 100%;
+    font-size: 12px;
+    padding: 7px 28px 7px 30px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    outline: none;
+}
+.sched-input-search:focus {
+    border-color: #7c3aed;
+}
+
+.sched-select-filter {
+    flex: 1;
+    font-size: 11.5px;
+    padding: 5px 8px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 6px;
+    background: #f8fafc;
+    color: #334155;
+    outline: none;
+    font-weight: 600;
+}
+
+.sched-btn-clear-filters {
+    font-size: 11px;
+    padding: 5px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    background: #f1f5f9;
+    color: #475569;
+    cursor: pointer;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.sched-btn-clear-filters:hover {
+    background: #fee2e2;
+    color: #ef4444;
+    border-color: #fca5a5;
+}
+
+.sched-dropdown-list {
+    max-height: 260px;
+    overflow-y: auto;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    background: #fafafa;
+}
+
+.sched-emp-row-item {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 8px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    transition: all 0.15s ease;
+    cursor: pointer;
+}
+.sched-emp-row-item:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.04);
+}
+.sched-emp-row-item.selected {
+    background: #f5f3ff;
+    border-color: #c4b5fd;
+}
+.sched-emp-row-item.already-added {
+    opacity: 0.65;
+    background: #f1f5f9;
+}
+
+.sched-dropdown-footer {
+    padding: 10px 14px;
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Category Filter Checkboxes */
+.sched-cat-filter-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: #ffffff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 5px 10px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+}
+
+.sched-cat-checkbox-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #334155;
+    cursor: pointer;
+    user-select: none;
+}
+
+.sched-btn-clear-grid {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #ef4444;
+    border: 1px solid #fecaca;
+    background: #fff;
+    padding: 5px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.sched-btn-clear-grid:hover {
+    background: #fef2f2;
+}
+
+.sched-btn-row-del {
+    border: none;
+    background: transparent;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 13px;
+    padding: 4px;
+    border-radius: 4px;
+    transition: color 0.15s, transform 0.15s;
+}
+.sched-btn-row-del:hover {
+    color: #ef4444;
+    transform: scale(1.15);
+}
+
+/* Matrix Table Sticky Styles */
+.sched-matrix-table {
+    width: 100%;
+    border-collapse: separate !important;
+}
+
+.sched-sticky-th {
+    position: sticky !important;
+    left: 0;
+    background: #f8fafc !important;
+    border-right: 2px solid #e2e8f0 !important;
+    box-shadow: 3px 0 6px rgba(0,0,0,0.03);
+}
+.sched-sticky-td {
+    position: sticky !important;
+    left: 0;
+    background: #ffffff !important;
+    border-right: 2px solid #e2e8f0 !important;
+    box-shadow: 3px 0 6px rgba(0,0,0,0.02);
+    z-index: 10;
+}
+.sched-row:hover .sched-sticky-td {
+    background: #f8fafc !important;
+}
+
+.sched-emp-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-weight: 800;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.sched-cat-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1px 7px;
+    font-size: 9.5px;
+    font-weight: 700;
+    color: #475569;
+}
+.sched-cat-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #7c3aed;
+}
+
+/* Cell Preset Buttons (O, MD, LD, C, RESTDAY, Custom) */
+.sched-cell-td {
+    padding: 6px !important;
+    vertical-align: middle !important;
+    text-align: center;
+    position: relative;
+    height: 78px;
+}
+
+.sched-empty-plotter {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+
+.sched-preset-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    width: 100%;
+    max-width: 155px;
+    margin: 0 auto;
+}
+
+.sched-btn-row {
+    display: flex;
+    gap: 3px;
+    width: 100%;
+}
+
+.sched-mini-pill {
+    flex: 1;
+    padding: 3px 2px;
+    font-size: 9.5px;
+    font-weight: 900;
+    font-family: monospace;
+    border-radius: 5px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    cursor: pointer;
+    transition: all 0.12s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    line-height: 1;
+}
+
+/* Preset Button Colors */
+.sched-pill-o { color: #047857; border-color: #a7f3d0; background: #ecfdf5; }
+.sched-pill-o:hover { background: #059669; color: #fff; border-color: #059669; transform: translateY(-1px); }
+
+.sched-pill-md { color: #1d4ed8; border-color: #bfdbfe; background: #eff6ff; }
+.sched-pill-md:hover { background: #2563eb; color: #fff; border-color: #2563eb; transform: translateY(-1px); }
+
+.sched-pill-ld { color: #b45309; border-color: #fde68a; background: #fffbeb; }
+.sched-pill-ld:hover { background: #d97706; color: #fff; border-color: #d97706; transform: translateY(-1px); }
+
+.sched-pill-c { color: #7e22ce; border-color: #e9d5ff; background: #faf5ff; }
+.sched-pill-c:hover { background: #9333ea; color: #fff; border-color: #9333ea; transform: translateY(-1px); }
+
+.sched-pill-restday { flex: 2; color: #475569; border-color: #cbd5e1; background: #f1f5f9; font-size: 8.5px; }
+.sched-pill-restday:hover { background: #0f172a; color: #fff; border-color: #0f172a; transform: translateY(-1px); }
+
+.sched-pill-custom {
+    flex: 1;
+    background: #ffffff;
+    border: 1px dashed #cbd5e1;
+    color: #64748b;
+    font-size: 9px;
+    font-weight: 700;
+}
+.sched-pill-custom:hover {
+    border-color: #7c3aed;
+    color: #7c3aed;
+    background: #faf5ff;
+}
+
+/* Assigned Shift Card (Time Card matching Schedule.html) */
+.sched-shift-card {
+    position: relative;
+    border-radius: 8px;
+    border: 1.5px solid #e2e8f0;
+    padding: 5px 7px;
+    transition: all 0.15s ease;
+    cursor: pointer;
+    text-align: left;
+    min-height: 60px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+.sched-shift-card:hover {
+    box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+    transform: translateY(-1px);
+}
+
+.sched-card-pill {
+    padding: 2px 4px;
+    border-radius: 4px;
+    font-size: 9px;
+    font-weight: 900;
+    font-family: monospace;
+    line-height: 1;
+    letter-spacing: 0.3px;
+    display: inline-block;
+}
+
+.sched-card-label {
+    font-size: 10.5px;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    margin-left: 3px;
+    vertical-align: middle;
+}
+
+.sched-card-time {
+    font-size: 9.5px;
+    font-weight: 700;
+    font-family: monospace;
+    margin-top: 3px;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+/* Theme Variations */
+.sched-theme-o { border-color: #a7f3d0; background: #ecfdf5; }
+.sched-theme-o .sched-card-pill { background: #059669; color: #fff; }
+.sched-theme-o .sched-card-label { color: #064e3b; }
+.sched-theme-o .sched-card-time { color: #047857; }
+
+.sched-theme-md { border-color: #bfdbfe; background: #eff6ff; }
+.sched-theme-md .sched-card-pill { background: #2563eb; color: #fff; }
+.sched-theme-md .sched-card-label { color: #1e3a8a; }
+.sched-theme-md .sched-card-time { color: #1d4ed8; }
+
+.sched-theme-ld { border-color: #fde68a; background: #fffbeb; }
+.sched-theme-ld .sched-card-pill { background: #d97706; color: #fff; }
+.sched-theme-ld .sched-card-label { color: #78350f; }
+.sched-theme-ld .sched-card-time { color: #b45309; }
+
+.sched-theme-c { border-color: #e9d5ff; background: #faf5ff; }
+.sched-theme-c .sched-card-pill { background: #9333ea; color: #fff; }
+.sched-theme-c .sched-card-label { color: #581c87; }
+.sched-theme-c .sched-card-time { color: #7e22ce; }
+
+.sched-card-rest { border-color: #cbd5e1; background: #f1f5f9; }
+.sched-card-rest .sched-card-pill { background: #64748b; color: #fff; }
+.sched-card-rest .sched-card-label { color: #1e293b; }
+.sched-card-rest .sched-card-time { color: #64748b; }
+
+.sched-card-custom { border-color: #c4b5fd; background: #f5f3ff; }
+.sched-card-custom .sched-card-pill { background: #7c3aed; color: #fff; }
+.sched-card-custom .sched-card-label { color: #4c1d95; }
+.sched-card-custom .sched-card-time { color: #6d28d9; }
+
+.sched-card-clear {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 17px;
+    height: 17px;
+    border-radius: 50%;
+    background: rgba(15, 23, 42, 0.6);
+    color: #ffffff;
+    border: none;
+    font-size: 11px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0;
+    transition: all 0.15s ease;
+}
+.sched-shift-card:hover .sched-card-clear { opacity: 1; }
+.sched-card-clear:hover { background: #ef4444; transform: scale(1.15); }
+
+/* Floating Cell Custom Dropdown */
+.sched-custom-dropdown {
+    position: absolute;
+    background: #ffffff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.18);
+    width: 250px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.sched-custom-dd-header {
+    padding: 8px 10px;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.sched-dd-shift-item {
+    width: 100%;
+    text-align: left;
+    padding: 5px 6px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 6px;
+    transition: background 0.1s;
+}
+.sched-dd-shift-item:hover {
+    background: #f1f5f9;
+}
+
+.sched-input-time {
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 4px 6px;
+    font-size: 11px;
+    font-weight: 700;
+    font-family: monospace;
+    outline: none;
+}
+.sched-input-text-sm {
+    width: 100%;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 11px;
+    outline: none;
+}
+
+.sched-btn-edit-times {
+    border: none;
+    background: transparent;
+    color: #7c3aed;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+.sched-btn-edit-times:hover {
+    text-decoration: underline;
+}
+
+/* Master Settings Modal */
+.sched-cat-tabs {
+    display: flex;
+    gap: 4px;
+    background: #f1f5f9;
+    padding: 3px;
+    border-radius: 8px;
+}
+.sched-cat-tab-btn {
+    flex: 1;
+    padding: 6px 10px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.12s;
+}
+.sched-cat-tab-btn.active {
+    background: #ffffff;
+    color: #7c3aed;
+    font-weight: 800;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+.sched-shift-edit-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.sched-edit-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background: #ffffff;
+}
+.sched-edit-row-badge {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    color: #ffffff;
+    font-weight: 900;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* Toast */
+.sched-toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: #0f172a;
+    color: #ffffff;
+    padding: 12px 18px;
+    border-radius: 10px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12.5px;
+    font-weight: 600;
+    z-index: 9999;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+/* Row Action Lightning Menu */
+.sched-row-btn {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+.sched-row-btn:hover { background: #fef3c7; border-color: #f59e0b; color: #b45309; }
+
+.sched-row-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 4px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.12);
+    min-width: 220px;
+    z-index: 100;
     display: none;
+    padding: 4px 0;
 }
+.sched-row-dropdown.open { display: block; }
+.sched-row-dd-item {
+    width: 100%;
+    text-align: left;
+    padding: 6px 12px;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #334155;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.sched-row-dd-item:hover { background: #f8fafc; color: #7c3aed; }
+.sched-row-dd-item.text-danger:hover { background: #fef2f2; color: #ef4444; }
+
+/* Nav Buttons */
+.sched-nav-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #475569;
+    text-decoration: none;
+}
+.sched-nav-btn:hover { background: #f1f5f9; color: #0f172a; }
+
+.sched-preset-btn {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    color: #475569;
+    cursor: pointer;
+    text-decoration: none;
+}
+.sched-preset-btn:hover { background: #0f172a; color: #ffffff; }
+
+.sched-btn-close-sm {
+    border: none;
+    background: #f1f5f9;
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #64748b;
+    font-size: 13px;
+}
+.sched-btn-close-sm:hover { background: #e2e8f0; color: #0f172a; }
+
+/* Modal Day Pills */
+.sched-day-pills { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.sched-day-pill { cursor: pointer; margin: 0; }
+.sched-day-input { display: none; }
 .sched-day-label {
     display: inline-flex;
     align-items: center;
@@ -323,75 +1493,944 @@
     background: #0f172a;
     border-color: #0f172a;
     color: #ffffff;
-    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.15);
-}
-.sched-day-pill:hover .sched-day-label {
-    border-color: #9333ea;
-}
-.sched-preset-btn {
-    font-size: 11px;
-    font-weight: 600;
-    padding: 3px 9px;
-    border-radius: 6px;
-    border: 1px solid #e2e8f0;
-    background: #ffffff;
-    color: #475569;
-    cursor: pointer;
-    transition: all 0.15s ease;
-}
-.sched-preset-btn:hover {
-    background: #0f172a;
-    color: #ffffff;
-    border-color: #0f172a;
 }
 </style>
 
 @push('scripts')
 <script>
+// -------------------------------------------------------------
+// Constants and Client Memory
+// -------------------------------------------------------------
+const CSRF_TOKEN = '{{ csrf_token() }}';
+const QUICK_ASSIGN_URL = '{{ route('hr.attendance.schedules.quick-assign') }}';
+const COPY_WEEK_URL = '{{ route('hr.attendance.schedules.copy-week') }}';
+const QUICK_FILL_ROW_URL = '{{ route('hr.attendance.schedules.quick-fill-row') }}';
+const ALL_EMPLOYEES = @json(isset($allEmployees) ? $allEmployees : $employees);
+const SHIFT_TEMPLATES = @json($shiftTemplates->keyBy('id'));
+
+// Default shift templates per category (matching Schedule.html)
+const DEFAULT_SHIFT_TEMPLATES = {
+    'default': {
+        'O': { label: 'OPENING', start: '08:00', end: '17:00' },
+        'MD': { label: 'MID DAY', start: '10:00', end: '19:00' },
+        'LD': { label: 'LATE DAY', start: '12:00', end: '21:00' },
+        'C': { label: 'CLOSING', start: '13:00', end: '22:00' },
+        'OFF': { label: 'RESTDAY', start: 'OFF', end: 'OFF' }
+    }
+};
+
+let shiftTemplatesStore = {};
+function initShiftTemplatesStore() {
+    try {
+        const saved = localStorage.getItem('RMS_SHIFT_TEMPLATES');
+        if (saved) {
+            shiftTemplatesStore = JSON.parse(saved);
+        } else {
+            shiftTemplatesStore = JSON.parse(JSON.stringify(DEFAULT_SHIFT_TEMPLATES));
+        }
+    } catch(e) {
+        shiftTemplatesStore = JSON.parse(JSON.stringify(DEFAULT_SHIFT_TEMPLATES));
+    }
+}
+initShiftTemplatesStore();
+
+function getShiftConfig(category, code) {
+    const catKey = (category || 'default').toLowerCase();
+    const config = shiftTemplatesStore[catKey] || shiftTemplatesStore['default'] || DEFAULT_SHIFT_TEMPLATES['default'];
+    return config[code] || { label: code, start: '08:00', end: '17:00' };
+}
+
+// -------------------------------------------------------------
+// Floating Cell Custom Schedule Popover
+// -------------------------------------------------------------
+let activeCellEmpId = null;
+let activeCellDate = null;
+
+function openCellCustomDropdown(empId, date) {
+    activeCellEmpId = empId;
+    activeCellDate = date;
+
+    const cell = document.getElementById(`cell_${empId}_${date}`);
+    const dd = document.getElementById('cellCustomDropdown');
+    if (!cell || !dd) return;
+
+    const rect = cell.getBoundingClientRect();
+    dd.style.display = 'flex';
+    dd.style.top = `${rect.bottom + window.scrollY + 4}px`;
+    dd.style.left = `${Math.min(rect.left + window.scrollX, window.innerWidth - 270)}px`;
+}
+
+function closeCellCustomDropdown() {
+    const dd = document.getElementById('cellCustomDropdown');
+    if (dd) dd.style.display = 'none';
+    activeCellEmpId = null;
+    activeCellDate = null;
+}
+
+document.addEventListener('click', function(e) {
+    const dd = document.getElementById('cellCustomDropdown');
+    if (dd && dd.style.display !== 'none') {
+        if (!e.target.closest('#cellCustomDropdown') && !e.target.closest('.sched-pill-custom') && !e.target.closest('.sched-card-body')) {
+            closeCellCustomDropdown();
+        }
+    }
+});
+
+function applyCustomTimeToActiveCell() {
+    if (!activeCellEmpId || !activeCellDate) return;
+    const start = document.getElementById('customCellStart').value || '08:00';
+    const end = document.getElementById('customCellEnd').value || '17:00';
+    const label = document.getElementById('customCellLabel').value.trim() || 'CUSTOM';
+
+    const empId = activeCellEmpId;
+    const date = activeCellDate;
+    closeCellCustomDropdown();
+
+    const cell = document.getElementById(`cell_${empId}_${date}`);
+    const prevHTML = cell.innerHTML;
+
+    // Optimistic UI
+    renderAssignedCardHTML(cell, empId, date, 'CUSTOM', label, `${start} - ${end}`, 'sched-card-custom');
+
+    fetch(QUICK_ASSIGN_URL, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': CSRF_TOKEN,
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+            employee_id: empId,
+            date: date,
+            custom_start_time: start,
+            custom_end_time: end,
+            notes: label,
+            is_rest_day: false
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            showSchedToast(`Applied ${label} (${start} - ${end})`);
+        } else {
+            cell.innerHTML = prevHTML;
+            showSchedToast(data.message || 'Failed to apply custom shift', false);
+        }
+    })
+    .catch(err => {
+        cell.innerHTML = prevHTML;
+        showSchedToast('Error saving custom shift', false);
+    });
+}
+
+function applyTemplateToActiveCell(templateId, code, name, start, end, color) {
+    if (!activeCellEmpId || !activeCellDate) return;
+    const empId = activeCellEmpId;
+    const date = activeCellDate;
+    closeCellCustomDropdown();
+
+    const cell = document.getElementById(`cell_${empId}_${date}`);
+    const prevHTML = cell.innerHTML;
+
+    renderAssignedCardHTML(cell, empId, date, code || 'TMPL', name, `${start} - ${end}`, 'sched-card-custom', color);
+
+    fetch(QUICK_ASSIGN_URL, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': CSRF_TOKEN,
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+            employee_id: empId,
+            date: date,
+            shift_template_id: templateId,
+            is_rest_day: false
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            showSchedToast(`Assigned ${code || name} on ${date}`);
+        } else {
+            cell.innerHTML = prevHTML;
+            showSchedToast(data.message, false);
+        }
+    })
+    .catch(() => {
+        cell.innerHTML = prevHTML;
+        showSchedToast('Network error saving shift', false);
+    });
+}
+
+// -------------------------------------------------------------
+// Direct 1-Click Preset Plotting (O, MD, LD, C, OFF)
+// -------------------------------------------------------------
+function directPlotPreset(empId, date, code) {
+    const cell = document.getElementById(`cell_${empId}_${date}`);
+    if (!cell) return;
+
+    const prevHTML = cell.innerHTML;
+    const empCat = cell.getAttribute('data-emp-cat') || 'default';
+    const cfg = getShiftConfig(empCat, code);
+
+    const isOff = code === 'OFF';
+    const sLabel = isOff ? 'RESTDAY' : (cfg.label || code);
+    const sTime = isOff ? 'OFF DUTY' : `${cfg.start} - ${cfg.end}`;
+    const themeClass = isOff ? 'sched-card-rest' : `sched-theme-${code.toLowerCase()}`;
+
+    // Render Optimistic Card
+    renderAssignedCardHTML(cell, empId, date, code, sLabel, sTime, themeClass);
+
+    fetch(QUICK_ASSIGN_URL, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': CSRF_TOKEN,
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+            employee_id: empId,
+            date: date,
+            shift_code: code,
+            custom_start_time: isOff ? null : cfg.start,
+            custom_end_time: isOff ? null : cfg.end,
+            notes: sLabel,
+            is_rest_day: isOff
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            showSchedToast(`Assigned ${sLabel} (${sTime})`);
+        } else {
+            cell.innerHTML = prevHTML;
+            showSchedToast(data.message || 'Failed to plot shift', false);
+        }
+    })
+    .catch(err => {
+        cell.innerHTML = prevHTML;
+        showSchedToast('Network error while plotting shift', false);
+    });
+}
+
+function clearCellShift(empId, date) {
+    const cell = document.getElementById(`cell_${empId}_${date}`);
+    if (!cell) return;
+
+    const prevHTML = cell.innerHTML;
+    renderEmptyCellHTML(cell, empId, date);
+
+    fetch(QUICK_ASSIGN_URL, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': CSRF_TOKEN,
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+            employee_id: empId,
+            date: date,
+            clear: true
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            showSchedToast('Shift cleared successfully');
+        } else {
+            cell.innerHTML = prevHTML;
+            showSchedToast(data.message, false);
+        }
+    })
+    .catch(() => {
+        cell.innerHTML = prevHTML;
+        showSchedToast('Network error clearing shift', false);
+    });
+}
+
+// -------------------------------------------------------------
+// Card & Empty Cell HTML Renderers
+// -------------------------------------------------------------
+function renderAssignedCardHTML(cell, empId, date, code, label, time, themeClass, customColor = null) {
+    const colorStyle = customColor ? `style="background: ${customColor}; color: #fff;"` : '';
+    cell.innerHTML = `
+        <div class="sched-shift-card ${themeClass}">
+            <div class="sched-card-body" onclick="openCellCustomDropdown(${empId}, '${date}')">
+                <div style="display: flex; align-items: center; gap: 4px;">
+                    <span class="sched-card-pill" ${colorStyle}>${escapeHtml(code)}</span>
+                    <span class="sched-card-label">${escapeHtml(label)}</span>
+                </div>
+                <div class="sched-card-time">
+                    <i class="ph ph-clock" style="font-size: 10px;"></i>
+                    <span>${escapeHtml(time)}</span>
+                </div>
+            </div>
+            <button type="button" class="sched-card-clear" onclick="clearCellShift(${empId}, '${date}')" title="Clear Shift">
+                &times;
+            </button>
+        </div>
+    `;
+}
+
+function renderEmptyCellHTML(cell, empId, date) {
+    cell.innerHTML = `
+        <div class="sched-empty-plotter">
+            <div class="sched-preset-grid">
+                <div class="sched-btn-row">
+                    <button type="button" class="sched-mini-pill sched-pill-o" onclick="directPlotPreset(${empId}, '${date}', 'O')" title="OPENING Shift">O</button>
+                    <button type="button" class="sched-mini-pill sched-pill-md" onclick="directPlotPreset(${empId}, '${date}', 'MD')" title="MID DAY Shift">MD</button>
+                    <button type="button" class="sched-mini-pill sched-pill-ld" onclick="directPlotPreset(${empId}, '${date}', 'LD')" title="LATE DAY Shift">LD</button>
+                </div>
+                <div class="sched-btn-row">
+                    <button type="button" class="sched-mini-pill sched-pill-c" onclick="directPlotPreset(${empId}, '${date}', 'C')" title="CLOSING Shift">C</button>
+                    <button type="button" class="sched-mini-pill sched-pill-restday" onclick="directPlotPreset(${empId}, '${date}', 'OFF')" title="RESTDAY (Off Duty)">RESTDAY</button>
+                </div>
+                <div class="sched-btn-row">
+                    <button type="button" class="sched-mini-pill sched-pill-custom" onclick="openCellCustomDropdown(${empId}, '${date}')" title="Select other shift or enter custom time">
+                        Custom <i class="ph ph-caret-down" style="font-size: 8px;"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// -------------------------------------------------------------
+// Shift Master Settings Modal Logic
+// -------------------------------------------------------------
+let activeModalCat = 'default';
+
+function openShiftMasterModal() {
+    activeModalCat = 'default';
+    const firstTab = document.querySelector('.sched-cat-tab-btn');
+    if (firstTab) {
+        document.querySelectorAll('.sched-cat-tab-btn').forEach(b => b.classList.remove('active'));
+        firstTab.classList.add('active');
+        activeModalCat = firstTab.textContent.trim().toLowerCase();
+        document.getElementById('modalActiveCategoryLabel').textContent = firstTab.textContent.trim();
+    }
+    loadShiftCategoryIntoModal(activeModalCat);
+    openModal('shiftMasterSettingsModal');
+}
+
+function switchShiftModalCategory(catName, btn) {
+    document.querySelectorAll('.sched-cat-tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeModalCat = catName.toLowerCase();
+    document.getElementById('modalActiveCategoryLabel').textContent = catName;
+    loadShiftCategoryIntoModal(activeModalCat);
+}
+
+function loadShiftCategoryIntoModal(catKey) {
+    const config = shiftTemplatesStore[catKey] || shiftTemplatesStore['default'] || DEFAULT_SHIFT_TEMPLATES['default'];
+    ['O', 'MD', 'LD', 'C'].forEach(code => {
+        const item = config[code] || DEFAULT_SHIFT_TEMPLATES['default'][code];
+        if (item) {
+            const startEl = document.getElementById(`shiftTime_${code}_start`);
+            const endEl = document.getElementById(`shiftTime_${code}_end`);
+            const lblEl = document.getElementById(`lblShift_${code}`);
+            if (startEl) startEl.value = item.start;
+            if (endEl) endEl.value = item.end;
+            if (lblEl) lblEl.textContent = item.label;
+        }
+    });
+}
+
+function saveShiftMasterSettings() {
+    if (!shiftTemplatesStore[activeModalCat]) {
+        shiftTemplatesStore[activeModalCat] = JSON.parse(JSON.stringify(DEFAULT_SHIFT_TEMPLATES['default']));
+    }
+
+    ['O', 'MD', 'LD', 'C'].forEach(code => {
+        const startVal = document.getElementById(`shiftTime_${code}_start`)?.value || '08:00';
+        const endVal = document.getElementById(`shiftTime_${code}_end`)?.value || '17:00';
+        shiftTemplatesStore[activeModalCat][code] = {
+            label: code === 'O' ? 'OPENING' : (code === 'MD' ? 'MID DAY' : (code === 'LD' ? 'LATE DAY' : 'CLOSING')),
+            start: startVal,
+            end: endVal
+        };
+    });
+
+    try {
+        localStorage.setItem('RMS_SHIFT_TEMPLATES', JSON.stringify(shiftTemplatesStore));
+    } catch(e) {
+        console.error(e);
+    }
+
+    closeModal('shiftMasterSettingsModal');
+    showSchedToast('Shift Master Settings saved successfully!');
+}
+
+function resetShiftCategoryDefaults() {
+    shiftTemplatesStore[activeModalCat] = JSON.parse(JSON.stringify(DEFAULT_SHIFT_TEMPLATES['default']));
+    loadShiftCategoryIntoModal(activeModalCat);
+    showSchedToast(`Reset ${activeModalCat} to default shift times`);
+}
+
+// -------------------------------------------------------------
+// Multi-Filter "Add Employee Row" Referenced Filtering Method
+// -------------------------------------------------------------
+let selectedEmpIdsForAddition = [];
+
+function toggleEmpDropdown() {
+    const p = document.getElementById('empDropdownPanel');
+    const chevron = document.getElementById('empDropdownChevron');
+    if (!p) return;
+    if (p.style.display === 'none') {
+        p.style.display = 'flex';
+        chevron.style.transform = 'rotate(180deg)';
+        renderDropdownEmployeeList();
+    } else {
+        closeEmpDropdown();
+    }
+}
+
+function closeEmpDropdown() {
+    const p = document.getElementById('empDropdownPanel');
+    const chevron = document.getElementById('empDropdownChevron');
+    if (p) p.style.display = 'none';
+    if (chevron) chevron.style.transform = 'rotate(0deg)';
+}
+
+document.addEventListener('click', function(e) {
+    const wrap = document.getElementById('addEmpDropdownWrap');
+    if (wrap && !wrap.contains(e.target)) {
+        closeEmpDropdown();
+    }
+});
+
+function isEmpAlreadyInGrid(empId) {
+    return document.getElementById(`schedRow_${empId}`) !== null;
+}
+
+function renderDropdownEmployeeList() {
+    const listEl = document.getElementById('dropdownEmpList');
+    if (!listEl) return;
+
+    const q = (document.getElementById('modalEmpSearch')?.value || '').toLowerCase().trim();
+    const statusVal = (document.getElementById('modalStatusFilter')?.value || '').toLowerCase().trim();
+    const catVal = (document.getElementById('modalCategoryFilter')?.value || '').toLowerCase().trim();
+
+    const filtered = ALL_EMPLOYEES.filter(emp => {
+        const name = (emp.full_name || `${emp.first_name} ${emp.last_name}`).toLowerCase();
+        const code = (emp.employee_id || '').toLowerCase();
+        const branch = (emp.branch?.name || '').toLowerCase();
+        const pos = (emp.position?.name || '').toLowerCase();
+        const dept = (emp.department?.name || '').toLowerCase();
+        const status = (emp.employment_status || '').toLowerCase();
+
+        const matchQ = !q || name.includes(q) || code.includes(q) || branch.includes(q) || pos.includes(q) || dept.includes(q);
+        const matchStatus = !statusVal || status === statusVal;
+        const matchCat = !catVal || dept.includes(catVal) || branch.includes(catVal);
+
+        return matchQ && matchStatus && matchCat;
+    });
+
+    document.getElementById('dropdownEmpMatchText').textContent = `${filtered.length} employee(s) matching filter`;
+
+    if (filtered.length === 0) {
+        listEl.innerHTML = `
+            <div style="padding: 24px; text-align: center; color: #94a3b8; font-size: 12px;">
+                <i class="ph ph-magnifying-glass" style="font-size: 22px; display: block; margin-bottom: 4px;"></i>
+                No employees matching filter criteria
+            </div>
+        `;
+        return;
+    }
+
+    let html = '';
+    filtered.slice(0, 40).forEach(emp => {
+        const inGrid = isEmpAlreadyInGrid(emp.id);
+        const isSelected = selectedEmpIdsForAddition.includes(emp.id);
+        const name = emp.full_name || `${emp.first_name} ${emp.last_name}`;
+        const initials = emp.initials || name.substring(0, 2).toUpperCase();
+        const branch = emp.branch?.name || 'Main';
+        const pos = emp.position?.name || 'Staff';
+
+        html += `
+            <div class="sched-emp-row-item ${inGrid ? 'already-added' : ''} ${isSelected ? 'selected' : ''}" 
+                 onclick="toggleEmpAdditionSelection(${emp.id})">
+                <div style="display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1;">
+                    <input type="checkbox" ${inGrid ? 'checked disabled' : (isSelected ? 'checked' : '')} 
+                           onclick="event.stopPropagation(); toggleEmpAdditionSelection(${emp.id})" 
+                           style="cursor: pointer;">
+                    <div class="sched-emp-avatar" style="width: 28px; height: 28px; font-size: 10px;">${initials}</div>
+                    <div style="min-width: 0; flex: 1;">
+                        <div style="font-weight: 700; font-size: 12px; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            ${escapeHtml(name)} <small style="color: #94a3b8; font-family: monospace;">(${escapeHtml(emp.employee_id || '')})</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 6px; align-items: center; flex-shrink: 0;">
+                    <span style="font-size: 10px; background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; border-radius: 4px; padding: 1px 5px; display: flex; align-items: center; gap: 3px;">
+                        <i class="ph ph-map-pin"></i> ${escapeHtml(branch)}
+                    </span>
+                    <span style="font-size: 10px; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; border-radius: 4px; padding: 1px 5px;">
+                        ${escapeHtml(pos)}
+                    </span>
+
+                    ${inGrid ? `
+                        <span style="font-size: 9.5px; font-weight: 800; background: #dcfce7; color: #15803d; border-radius: 4px; padding: 2px 6px;">
+                            <i class="ph ph-check"></i> In Grid
+                        </span>
+                    ` : `
+                        <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" style="font-size: 10px; padding: 2px 8px;" onclick="event.stopPropagation(); addSingleEmpToGrid(${emp.id})">
+                            + Add
+                        </button>
+                    `}
+                </div>
+            </div>
+        `;
+    });
+
+    listEl.innerHTML = html;
+    updateAdditionFooterCounts();
+}
+
+function filterDropdownEmployees() {
+    renderDropdownEmployeeList();
+}
+
+function clearModalEmpSearch() {
+    const inp = document.getElementById('modalEmpSearch');
+    if (inp) inp.value = '';
+    renderDropdownEmployeeList();
+}
+
+function resetDropdownFilters() {
+    const inp = document.getElementById('modalEmpSearch');
+    if (inp) inp.value = '';
+    const st = document.getElementById('modalStatusFilter');
+    if (st) st.value = '';
+    const ct = document.getElementById('modalCategoryFilter');
+    if (ct) ct.value = '';
+    renderDropdownEmployeeList();
+}
+
+function toggleEmpAdditionSelection(empId) {
+    if (isEmpAlreadyInGrid(empId)) return;
+    const idx = selectedEmpIdsForAddition.indexOf(empId);
+    if (idx >= 0) {
+        selectedEmpIdsForAddition.splice(idx, 1);
+    } else {
+        selectedEmpIdsForAddition.push(empId);
+    }
+    renderDropdownEmployeeList();
+}
+
+function toggleSelectAllFilteredEmps() {
+    const unaddedFiltered = ALL_EMPLOYEES.filter(emp => !isEmpAlreadyInGrid(emp.id));
+    const allSelected = unaddedFiltered.every(e => selectedEmpIdsForAddition.includes(e.id));
+
+    if (allSelected) {
+        selectedEmpIdsForAddition = [];
+    } else {
+        unaddedFiltered.forEach(e => {
+            if (!selectedEmpIdsForAddition.includes(e.id)) {
+                selectedEmpIdsForAddition.push(e.id);
+            }
+        });
+    }
+    renderDropdownEmployeeList();
+}
+
+function updateAdditionFooterCounts() {
+    const count = selectedEmpIdsForAddition.length;
+    const countBadge = document.getElementById('selectedEmpBadge');
+    if (countBadge) {
+        countBadge.style.display = count > 0 ? 'inline-block' : 'none';
+        countBadge.textContent = count;
+    }
+    const footerCount = document.getElementById('footerSelectedCount');
+    if (footerCount) footerCount.textContent = count;
+    const addCountText = document.getElementById('selectedAdditionCount');
+    if (addCountText) addCountText.textContent = `${count} selected for addition`;
+    const btn = document.getElementById('btnAddSelectedEmps');
+    if (btn) btn.disabled = count === 0;
+}
+
+function addSingleEmpToGrid(empId) {
+    const emp = ALL_EMPLOYEES.find(e => e.id == empId);
+    if (!emp || isEmpAlreadyInGrid(empId)) return;
+
+    appendEmployeeRowToTable(emp);
+    renderDropdownEmployeeList();
+    showSchedToast(`Added ${emp.full_name || emp.first_name} to grid`);
+}
+
+function addSelectedEmployeesToGrid() {
+    if (selectedEmpIdsForAddition.length === 0) return;
+    let added = 0;
+    selectedEmpIdsForAddition.forEach(id => {
+        const emp = ALL_EMPLOYEES.find(e => e.id == id);
+        if (emp && !isEmpAlreadyInGrid(id)) {
+            appendEmployeeRowToTable(emp);
+            added++;
+        }
+    });
+
+    selectedEmpIdsForAddition = [];
+    updateAdditionFooterCounts();
+    closeEmpDropdown();
+    showSchedToast(`Added ${added} employee(s) to grid`);
+}
+
+function appendEmployeeRowToTable(emp) {
+    const tbody = document.getElementById('schedMatrixTbody');
+    const emptyRow = document.getElementById('schedEmptyRow');
+    if (emptyRow) emptyRow.style.display = 'none';
+
+    const name = emp.full_name || `${emp.first_name} ${emp.last_name}`;
+    const initials = emp.initials || name.substring(0, 2).toUpperCase();
+    const branch = emp.branch?.name || 'Main';
+    const pos = emp.position?.name || 'Staff';
+    const cat = emp.department?.name || 'Front of House';
+
+    const tr = document.createElement('tr');
+    tr.className = 'sched-row';
+    tr.id = `schedRow_${emp.id}`;
+    tr.setAttribute('data-emp-id', emp.id);
+    tr.setAttribute('data-emp-name', name.toLowerCase());
+    tr.setAttribute('data-emp-branch', branch.toLowerCase());
+    tr.setAttribute('data-emp-pos', pos.toLowerCase());
+    tr.setAttribute('data-emp-cat', cat.toLowerCase());
+
+    const dates = @json($dates);
+    let cellsHTML = '';
+
+    dates.forEach(d => {
+        cellsHTML += `
+            <td class="sched-cell-td" id="cell_${emp.id}_${d}" data-emp-id="${emp.id}" data-date="${d}" data-emp-cat="${cat.toLowerCase()}">
+                <div class="sched-empty-plotter">
+                    <div class="sched-preset-grid">
+                        <div class="sched-btn-row">
+                            <button type="button" class="sched-mini-pill sched-pill-o" onclick="directPlotPreset(${emp.id}, '${d}', 'O')" title="OPENING Shift">O</button>
+                            <button type="button" class="sched-mini-pill sched-pill-md" onclick="directPlotPreset(${emp.id}, '${d}', 'MD')" title="MID DAY Shift">MD</button>
+                            <button type="button" class="sched-mini-pill sched-pill-ld" onclick="directPlotPreset(${emp.id}, '${d}', 'LD')" title="LATE DAY Shift">LD</button>
+                        </div>
+                        <div class="sched-btn-row">
+                            <button type="button" class="sched-mini-pill sched-pill-c" onclick="directPlotPreset(${emp.id}, '${d}', 'C')" title="CLOSING Shift">C</button>
+                            <button type="button" class="sched-mini-pill sched-pill-restday" onclick="directPlotPreset(${emp.id}, '${d}', 'OFF')" title="RESTDAY (Off Duty)">RESTDAY</button>
+                        </div>
+                        <div class="sched-btn-row">
+                            <button type="button" class="sched-mini-pill sched-pill-custom" onclick="openCellCustomDropdown(${emp.id}, '${d}')" title="Select other shift or enter custom time">
+                                Custom <i class="ph ph-caret-down" style="font-size: 8px;"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </td>
+        `;
+    });
+
+    tr.innerHTML = `
+        <td class="sched-sticky-col sched-sticky-td">
+            <div style="display: flex; align-items: flex-start; gap: 8px;">
+                <div class="sched-emp-avatar">${initials}</div>
+                <div style="min-width: 0; flex: 1;">
+                    <div style="font-weight: 800; color: #0f172a; font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        ${escapeHtml(name)}
+                    </div>
+                    <div style="margin: 2px 0;">
+                        <span class="sched-cat-pill">
+                            <span class="sched-cat-dot"></span>
+                            <span class="truncate">${escapeHtml(cat)}</span>
+                        </span>
+                    </div>
+                    <div style="font-size: 10.5px; color: #64748b; display: flex; align-items: center; gap: 3px;">
+                        <i class="ph ph-map-pin" style="color: #7c3aed; font-size: 11px;"></i>
+                        <span class="truncate" style="font-weight: 600; color: #475569;">${escapeHtml(branch)}</span>
+                    </div>
+                </div>
+                <div class="sched-row-action-menu" style="position: relative;">
+                    <button type="button" class="sched-row-btn" onclick="toggleRowMenu(${emp.id})" title="Quick fill week">
+                        <i class="ph ph-lightning"></i>
+                    </button>
+                    <div class="sched-row-dropdown" id="rowMenu_${emp.id}">
+                        <div style="padding: 6px 10px; font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; border-bottom: 1px solid #f1f5f9;">
+                            Quick Fill: ${escapeHtml(emp.first_name || name)}
+                        </div>
+                        <button type="button" class="sched-row-dd-item" onclick="quickFillRowPreset(${emp.id}, 'O', ['Sun'])">
+                            <i class="ph ph-sun" style="color: #10b981;"></i>
+                            <span>Mon–Sat Opening (Sun Off)</span>
+                        </button>
+                        <button type="button" class="sched-row-dd-item" onclick="quickFillRowPreset(${emp.id}, 'MD', ['Sun'])">
+                            <i class="ph ph-clock" style="color: #3b82f6;"></i>
+                            <span>Mon–Sat Mid Day (Sun Off)</span>
+                        </button>
+                        <button type="button" class="sched-row-dd-item" onclick="quickFillRowPreset(${emp.id}, 'C', ['Sun'])">
+                            <i class="ph ph-moon" style="color: #9333ea;"></i>
+                            <span>Mon–Sat Closing (Sun Off)</span>
+                        </button>
+                        <div style="border-top: 1px solid #f1f5f9; margin: 4px 0;"></div>
+                        <button type="button" class="sched-row-dd-item text-danger" onclick="quickFillRowPreset(${emp.id}, 'OFF', ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'])">
+                            <i class="ph ph-coffee"></i>
+                            <span>Mark Entire Week as Rest Days</span>
+                        </button>
+                        <button type="button" class="sched-row-dd-item text-danger" onclick="clearEmployeeWeek(${emp.id})">
+                            <i class="ph ph-trash"></i>
+                            <span>Clear All Shifts This Week</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </td>
+        ${cellsHTML}
+        <td style="text-align: center; vertical-align: middle;">
+            <button type="button" class="sched-btn-row-del" onclick="removeEmployeeRowFromGrid(${emp.id})" title="Remove row from grid">
+                <i class="ph ph-trash"></i>
+            </button>
+        </td>
+    `;
+
+    tbody.appendChild(tr);
+    updateVisibleRosterCount();
+}
+
+function removeEmployeeRowFromGrid(empId) {
+    const row = document.getElementById(`schedRow_${empId}`);
+    if (row) {
+        row.remove();
+        updateVisibleRosterCount();
+        showSchedToast('Employee removed from grid view');
+    }
+}
+
+function clearRosterGrid() {
+    if (!confirm('Clear all employee rows from the current schedule view? (Saved schedules in database are preserved)')) return;
+    const tbody = document.getElementById('schedMatrixTbody');
+    if (tbody) {
+        tbody.innerHTML = `
+            <tr id="schedEmptyRow">
+                <td colspan="9" style="text-align: center; color: #94a3b8; padding: 48px;">
+                    <div style="font-size: 28px; margin-bottom: 8px;"><i class="ph ph-users"></i></div>
+                    <div style="font-weight: 700; color: #475569; font-size: 14px;">Grid is cleared</div>
+                    <div style="font-size: 12px; color: #94a3b8;">Click "+ Add Employee Row" above to begin scheduling.</div>
+                </td>
+            </tr>
+        `;
+        updateVisibleRosterCount();
+    }
+}
+
+function filterMatrixByCategory() {
+    const checkedCats = Array.from(document.querySelectorAll('.sched-cat-cb:checked')).map(cb => cb.value);
+    const rows = document.querySelectorAll('.sched-row');
+
+    rows.forEach(r => {
+        const cat = r.getAttribute('data-emp-cat') || '';
+        if (checkedCats.length === 0 || checkedCats.includes(cat)) {
+            r.style.display = '';
+        } else {
+            r.style.display = 'none';
+        }
+    });
+
+    updateVisibleRosterCount();
+}
+
+function filterMatrixRowsBySearch() {
+    const q = (document.getElementById('liveEmployeeSearch')?.value || '').toLowerCase().trim();
+    const clearBtn = document.getElementById('clearSearchBtn');
+    if (clearBtn) clearBtn.style.display = q ? 'block' : 'none';
+
+    const checkedCats = Array.from(document.querySelectorAll('.sched-cat-cb:checked')).map(cb => cb.value);
+    const rows = document.querySelectorAll('.sched-row');
+
+    rows.forEach(r => {
+        const name = r.getAttribute('data-emp-name') || '';
+        const branch = r.getAttribute('data-emp-branch') || '';
+        const pos = r.getAttribute('data-emp-pos') || '';
+        const cat = r.getAttribute('data-emp-cat') || '';
+
+        const matchCat = checkedCats.length === 0 || checkedCats.includes(cat);
+        const matchQ = !q || name.includes(q) || branch.includes(q) || pos.includes(q);
+
+        if (matchCat && matchQ) {
+            r.style.display = '';
+        } else {
+            r.style.display = 'none';
+        }
+    });
+
+    updateVisibleRosterCount();
+}
+
+function clearLiveSearch() {
+    const inp = document.getElementById('liveEmployeeSearch');
+    if (inp) inp.value = '';
+    filterMatrixRowsBySearch();
+}
+
+function updateVisibleRosterCount() {
+    const visible = Array.from(document.querySelectorAll('.sched-row')).filter(r => r.style.display !== 'none').length;
+    const badge = document.getElementById('empCountBadge');
+    if (badge) badge.textContent = `${visible} Staff`;
+}
+
+// -------------------------------------------------------------
+// Toast Helper
+// -------------------------------------------------------------
+let toastTimer = null;
+function showSchedToast(msg, isSuccess = true) {
+    const toast = document.getElementById('schedToast');
+    const toastMsg = document.getElementById('schedToastMsg');
+    const toastIcon = document.getElementById('schedToastIcon');
+    if (!toast) return;
+
+    toastMsg.textContent = msg;
+    if (isSuccess) {
+        toast.style.background = '#0f172a';
+        toastIcon.innerHTML = '<i class="ph ph-check-circle" style="color: #10b981; font-size: 18px;"></i>';
+    } else {
+        toast.style.background = '#ef4444';
+        toastIcon.innerHTML = '<i class="ph ph-warning-circle" style="color: #ffffff; font-size: 18px;"></i>';
+    }
+
+    toast.style.display = 'flex';
+    toast.style.opacity = '1';
+    toast.style.transform = 'translateY(0)';
+
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(8px)';
+        setTimeout(() => { toast.style.display = 'none'; }, 200);
+    }, 2800);
+}
+
+// -------------------------------------------------------------
+// Row Lightning Quick Fill Logic
+// -------------------------------------------------------------
+function toggleRowMenu(empId) {
+    document.querySelectorAll('.sched-row-dropdown').forEach(d => {
+        if (d.id !== `rowMenu_${empId}`) d.classList.remove('open');
+    });
+    const dd = document.getElementById(`rowMenu_${empId}`);
+    if (dd) dd.classList.toggle('open');
+}
+
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.sched-row-action-menu')) {
+        document.querySelectorAll('.sched-row-dropdown').forEach(d => d.classList.remove('open'));
+    }
+});
+
+function quickFillRowPreset(empId, shiftCode, restDays) {
+    const weekStart = document.getElementById('schedWeekInput').value;
+    document.querySelectorAll('.sched-row-dropdown').forEach(d => d.classList.remove('open'));
+
+    const dates = @json($dates);
+    const rowEl = document.getElementById(`schedRow_${empId}`);
+    const empCat = rowEl ? (rowEl.getAttribute('data-emp-cat') || 'default') : 'default';
+    const cfg = getShiftConfig(empCat, shiftCode);
+
+    const promises = dates.map(d => {
+        const cDate = new Date(d);
+        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const dayName = dayNames[cDate.getDay()];
+        const isRest = restDays.includes(dayName) || shiftCode === 'OFF';
+
+        return fetch(QUICK_ASSIGN_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': CSRF_TOKEN,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                employee_id: empId,
+                date: d,
+                shift_code: isRest ? 'OFF' : shiftCode,
+                custom_start_time: isRest ? null : cfg.start,
+                custom_end_time: isRest ? null : cfg.end,
+                notes: isRest ? 'RESTDAY' : (cfg.label || shiftCode),
+                is_rest_day: isRest
+            })
+        });
+    });
+
+    Promise.all(promises).then(() => {
+        showSchedToast(`Filled week schedule`);
+        setTimeout(() => { window.location.reload(); }, 600);
+    });
+}
+
+function clearEmployeeWeek(empId) {
+    if (!confirm('Clear all shifts for this employee this week?')) return;
+    document.querySelectorAll('.sched-row-dropdown').forEach(d => d.classList.remove('open'));
+
+    const dates = @json($dates);
+    const promises = dates.map(d => {
+        return fetch(QUICK_ASSIGN_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': CSRF_TOKEN,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ employee_id: empId, date: d, clear: true })
+        });
+    });
+
+    Promise.all(promises).then(() => {
+        showSchedToast('Cleared employee week');
+        setTimeout(() => { window.location.reload(); }, 600);
+    });
+}
+
+// -------------------------------------------------------------
+// Copy Previous Week Schedules Handler
+// -------------------------------------------------------------
+function triggerCopyPreviousWeek() {
+    if (!confirm('Copy all shift schedules from the previous week into the current week?')) return;
+    const currentWeekStart = document.getElementById('schedWeekInput').value;
+
+    fetch(COPY_WEEK_URL, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': CSRF_TOKEN,
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({ current_week_start: currentWeekStart })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            showSchedToast(data.message);
+            setTimeout(() => { window.location.reload(); }, 800);
+        } else {
+            showSchedToast(data.message || 'No schedules found to copy', false);
+        }
+    })
+    .catch(() => showSchedToast('Error copying previous week schedules', false));
+}
+
+// -------------------------------------------------------------
+// Backward Compatibility Modals
+// -------------------------------------------------------------
 function openModal(id) { 
     var modal = document.getElementById(id);
     if (modal) modal.classList.add('open'); 
 }
-
 function closeModal(id) { 
     var modal = document.getElementById(id);
     if (modal) modal.classList.remove('open'); 
 }
-
 function openAssignModal() {
     clearRestDaysPreset();
     document.getElementById('isRestDayAll').checked = false;
     toggleRestDayAll(document.getElementById('isRestDayAll'));
     openModal('assignScheduleModal');
 }
-
-function quickAssign(empId, date, isRestDay = false, shiftTemplateId = null) {
-    document.getElementById('schedEmployeeId').value = empId;
-    document.getElementById('schedStartDate').value = date;
-    document.getElementById('schedEndDate').value = date;
-
-    clearRestDaysPreset();
-
-    if (isRestDay) {
-        document.getElementById('isRestDayAll').checked = true;
-    } else {
-        document.getElementById('isRestDayAll').checked = false;
-        if (shiftTemplateId) {
-            document.getElementById('schedShiftTemplateId').value = shiftTemplateId;
-        }
-    }
-    toggleRestDayAll(document.getElementById('isRestDayAll'));
-    openModal('assignScheduleModal');
-}
-
 function syncDateRange() {
     var start = document.getElementById('schedStartDate').value;
     var end = document.getElementById('schedEndDate').value;
-    if (!end || end < start) {
-        document.getElementById('schedEndDate').value = start;
-    }
+    if (!end || end < start) document.getElementById('schedEndDate').value = start;
 }
-
 function presetDateRange(type) {
     var now = new Date();
     var formatDate = function(d) {
@@ -400,14 +2439,11 @@ function presetDateRange(type) {
         var day = String(d.getDate()).padStart(2, '0');
         return year + '-' + month + '-' + day;
     };
-
     var start = new Date();
     var end = new Date();
-
     if (type === 'today') {
-        // already today
     } else if (type === 'this_week') {
-        var dayOfWeek = now.getDay(); // 0 is Sun, 1 is Mon
+        var dayOfWeek = now.getDay();
         var diffToMon = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
         start.setDate(now.getDate() + diffToMon);
         end.setDate(start.getDate() + 6);
@@ -420,11 +2456,9 @@ function presetDateRange(type) {
         start = new Date(now.getFullYear(), now.getMonth(), 1);
         end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
     }
-
     document.getElementById('schedStartDate').value = formatDate(start);
     document.getElementById('schedEndDate').value = formatDate(end);
 }
-
 function setRestDaysPreset(days) {
     var all = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     all.forEach(function(d) {
@@ -432,11 +2466,7 @@ function setRestDaysPreset(days) {
         if (cb) cb.checked = days.includes(d);
     });
 }
-
-function clearRestDaysPreset() {
-    setRestDaysPreset([]);
-}
-
+function clearRestDaysPreset() { setRestDaysPreset([]); }
 function toggleRestDayAll(cb) {
     var shiftGroup = document.getElementById('shiftSelectionGroup');
     var shiftSelect = document.getElementById('schedShiftTemplateId');
@@ -448,7 +2478,6 @@ function toggleRestDayAll(cb) {
         shiftGroup.style.opacity = '1';
     }
 }
-
 function formatTimeToAMPM(timeStr) {
     if (!timeStr) return '';
     var parts = timeStr.split(':');
@@ -459,22 +2488,19 @@ function formatTimeToAMPM(timeStr) {
     if (h12 === 0) h12 = 12;
     return h12 + (m !== '00' ? ':' + m : '') + ampm;
 }
-
 function updateShiftPreview() {
     var start = document.getElementById('newShiftStart').value || '06:00';
     var end = document.getElementById('newShiftEnd').value || '15:00';
-
     var code = start.replace(':', '');
     var startFmt = formatTimeToAMPM(start);
     var endFmt = formatTimeToAMPM(end);
-
-    var label = code + ' = ' + startFmt + ' - ' + endFmt;
-    document.getElementById('shiftFormatPreview').textContent = label;
-
+    document.getElementById('shiftFormatPreview').textContent = code + ' = ' + startFmt + ' - ' + endFmt;
     var overnightCheckbox = document.getElementById('isOvernight');
-    if (start > end) {
-        overnightCheckbox.checked = true;
-    }
+    if (start > end) overnightCheckbox.checked = true;
+}
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
 }
 </script>
 @endpush
