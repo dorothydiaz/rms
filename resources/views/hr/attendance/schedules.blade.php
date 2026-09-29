@@ -1732,7 +1732,8 @@
     border-radius: 10px;
     padding: 0 4px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-    gap: 2px;
+    gap: 4px;
+    box-sizing: border-box;
 }
 
 .sched-nav-btn-icon {
@@ -1746,6 +1747,7 @@
     font-size: 14px;
     text-decoration: none;
     transition: all 0.15s ease;
+    flex-shrink: 0;
 }
 .sched-nav-btn-icon:hover {
     background: #f1f5f9;
@@ -1755,34 +1757,64 @@
 .sched-week-picker-form {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-    margin: 0 3px;
+    gap: 6px;
+    margin: 0;
+    height: 28px;
+    padding: 0 8px;
+    border-radius: 6px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    transition: all 0.15s ease;
+    box-sizing: border-box;
+}
+.sched-week-picker-form:hover {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+}
+.sched-week-picker-form:focus-within {
+    background: #ffffff;
+    border-color: #7c3aed;
+    box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.12);
 }
 
 .sched-week-nav-tag {
-    font-size: 12px;
-    font-weight: 700;
-    color: #475569;
+    font-size: 11px;
+    font-weight: 800;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
     cursor: pointer;
     user-select: none;
+    line-height: 1;
+    display: flex;
+    align-items: center;
 }
 
 .sched-week-nav-input {
-    border: 1px solid #e2e8f0;
-    border-radius: 7px;
-    padding: 4px 8px;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    height: 100% !important;
     font-size: 12.5px;
     font-weight: 800;
+    font-family: var(--font-heading, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+    font-variant-numeric: tabular-nums;
     color: #0f172a;
-    background: #f8fafc;
-    outline: none;
+    background: transparent !important;
+    outline: none !important;
+    box-shadow: none !important;
     cursor: pointer;
-    transition: all 0.15s ease;
+    line-height: 1;
 }
-.sched-week-nav-input:focus {
-    border-color: #7c3aed;
-    background: #ffffff;
-    box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.15);
+.sched-week-nav-input::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.75;
+    margin-left: 2px;
+    transition: opacity 0.15s ease;
+}
+.sched-week-nav-input::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
 }
 
 .sched-nav-btn-current {
