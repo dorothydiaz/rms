@@ -433,20 +433,20 @@
 
                                         $dayAtt = $empAttendances->get($d);
                                     @endphp
-                                    <div class="sched-shift-card {{ $themeClass }}">
+                                    <div class="sched-shift-card {{ $themeClass }}" onclick="openCellCustomDropdown({{ $emp->id }}, '{{ $d }}')">
                                         <!-- Card Top Header with Pill & Clear Button -->
                                         <div class="sched-card-top">
                                             <div class="sched-badge-wrap">
                                                 <span class="sched-badge-code">{{ $sCode }}</span>
                                                 <span class="sched-badge-name">{{ $sLabel }}</span>
                                             </div>
-                                            <button type="button" class="sched-card-clear" onclick="clearCellShift({{ $emp->id }}, '{{ $d }}')" title="Clear Shift">
+                                            <button type="button" class="sched-card-clear" onclick="event.stopPropagation(); clearCellShift({{ $emp->id }}, '{{ $d }}')" title="Clear Shift">
                                                 &times;
                                             </button>
                                         </div>
 
                                         <!-- Scheduled Time Display -->
-                                        <div class="sched-card-time" onclick="openCellCustomDropdown({{ $emp->id }}, '{{ $d }}')">
+                                        <div class="sched-card-time">
                                             <i class="ph ph-clock"></i>
                                             <span>{{ $sTime }}</span>
                                         </div>
@@ -1961,11 +1961,17 @@ let activeCellEmpId = null;
 let activeCellDate = null;
 
 function openCellCustomDropdown(empId, date) {
+    const dd = document.getElementById('cellCustomDropdown');
+    // If clicking the same active cell that is already open, toggle it closed
+    if (dd && dd.style.display !== 'none' && activeCellEmpId === empId && activeCellDate === date) {
+        closeCellCustomDropdown();
+        return;
+    }
+
     activeCellEmpId = empId;
     activeCellDate = date;
 
     const cell = document.getElementById(`cell_${empId}_${date}`);
-    const dd = document.getElementById('cellCustomDropdown');
     if (!cell || !dd) return;
 
     // Show invisibly to measure real height and width
@@ -2022,7 +2028,7 @@ function closeCellCustomDropdown() {
 document.addEventListener('click', function(e) {
     const dd = document.getElementById('cellCustomDropdown');
     if (dd && dd.style.display !== 'none') {
-        if (!e.target.closest('#cellCustomDropdown') && !e.target.closest('.sched-pill-custom') && !e.target.closest('.sched-card-body') && !e.target.closest('.sched-card-time')) {
+        if (!e.target.closest('#cellCustomDropdown') && !e.target.closest('.sched-pill-custom') && !e.target.closest('.sched-shift-card')) {
             closeCellCustomDropdown();
         }
     }
@@ -2258,17 +2264,17 @@ function renderAssignedCardHTML(cell, empId, date, code, label, time, themeClass
     }
 
     cell.innerHTML = `
-        <div class="sched-shift-card ${finalTheme}">
+        <div class="sched-shift-card ${finalTheme}" onclick="openCellCustomDropdown(${empId}, '${date}')">
             <div class="sched-card-top">
                 <div class="sched-badge-wrap" ${colorStyle}>
                     <span class="sched-badge-code">${escapeHtml(code)}</span>
                     <span class="sched-badge-name">${escapeHtml(label)}</span>
                 </div>
-                <button type="button" class="sched-card-clear" onclick="clearCellShift(${empId}, '${date}')" title="Clear Shift">
+                <button type="button" class="sched-card-clear" onclick="event.stopPropagation(); clearCellShift(${empId}, '${date}')" title="Clear Shift">
                     &times;
                 </button>
             </div>
-            <div class="sched-card-time" onclick="openCellCustomDropdown(${empId}, '${date}')">
+            <div class="sched-card-time">
                 <i class="ph ph-clock"></i>
                 <span>${escapeHtml(time)}</span>
             </div>
