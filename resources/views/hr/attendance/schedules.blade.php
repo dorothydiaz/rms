@@ -467,11 +467,11 @@
                                             <div class="sched-card-detail-box">
                                                 <div class="sched-detail-row">
                                                     <span class="sched-detail-dot {{ $dotClass }}">●</span>
-                                                    <span class="sched-detail-punch">{{ $inTime }} - {{ $outTime }}</span>
+                                                    <span class="sched-detail-punch">{{ $inTime }} → {{ $outTime }}</span>
                                                     <span class="sched-detail-badge {{ $badgeClass }}">{{ $statusText }}</span>
                                                 </div>
                                                 <div class="sched-detail-row sched-detail-hours">
-                                                    <span>Worked:</span>
+                                                    <span>Hours Worked:</span>
                                                     <strong>{{ $hrs }} hrs</strong>
                                                 </div>
                                             </div>
@@ -483,7 +483,7 @@
                                                     <span class="sched-detail-badge" style="background:#f1f5f9;color:#475569;border:1px solid #cbd5e1;">OFF DUTY</span>
                                                 </div>
                                                 <div class="sched-detail-row sched-detail-hours">
-                                                    <span>Hours:</span>
+                                                    <span>Hours Worked:</span>
                                                     <strong>0.00 hrs</strong>
                                                 </div>
                                             </div>
@@ -495,7 +495,7 @@
                                                     <span class="sched-detail-badge badge-planned">SCHEDULED</span>
                                                 </div>
                                                 <div class="sched-detail-row sched-detail-hours">
-                                                    <span>Target:</span>
+                                                    <span>Target Hours:</span>
                                                     <strong>8.00 hrs</strong>
                                                 </div>
                                             </div>
@@ -1460,13 +1460,14 @@
 .sched-badge-wrap {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-    border-radius: 6px;
-    padding: 2px 7px 2px 2.5px;
-    font-size: 10.5px;
+    gap: 6px;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    font-size: 11px;
     line-height: 1;
     max-width: calc(100% - 22px);
-    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
     transition: all 0.15s ease;
 }
 
@@ -1540,16 +1541,18 @@
     opacity: 0.9;
 }
 
-/* Detail box inside card (Attendance Variance / Planned Hours - Spacious & Clean) */
+/* Detail box inside card (Integrated Hairline Layout matching Clean Image) */
 .sched-card-detail-box {
-    background: #ffffff;
-    border-radius: 6px;
-    padding: 3.5px 5.5px;
+    background: transparent !important;
+    border: none !important;
+    border-top: 1px solid rgba(0, 0, 0, 0.08) !important;
+    border-radius: 0 !important;
+    padding: 4px 1px 0 1px !important;
     display: flex;
     flex-direction: column;
     gap: 2.5px;
     margin-top: 1px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    box-shadow: none !important;
     box-sizing: border-box;
     overflow: hidden;
     width: 100%;
@@ -1624,60 +1627,66 @@
     font-size: 9.5px;
 }
 
-/* Theme Variations */
+/* Theme Variations - Clean Seamless Integrated Look */
 /* OPENING - GREEN (Per User Directive) */
 .sched-theme-o { border: 1.5px solid #86efac; background: #f0fdf4; }
-.sched-theme-o .sched-badge-wrap { background: #dcfce7; border: 1px solid #86efac; }
 .sched-theme-o .sched-badge-code { background: #059669; color: #ffffff; box-shadow: 0 1px 2px rgba(5, 150, 105, 0.25); }
-.sched-theme-o .sched-badge-name { color: #065f46; }
+.sched-theme-o .sched-badge-name { color: #065f46; font-size: 11px; font-weight: 800; }
 .sched-theme-o .sched-card-time { color: #047857; }
-.sched-theme-o .sched-card-detail-box { border: 1px solid #bbf7d0; background: #ffffff; }
-.sched-theme-o .sched-detail-hours strong { color: #047857; }
+.sched-theme-o .sched-card-detail-box { border-top: 1px solid #bbf7d0 !important; }
+.sched-theme-o .sched-detail-punch { color: #065f46; }
+.sched-theme-o .sched-detail-hours { color: #047857; }
+.sched-theme-o .sched-detail-hours strong { color: #065f46; }
 
 /* MID DAY - BLUE */
 .sched-theme-md { border: 1.5px solid #93c5fd; background: #f0f7ff; }
-.sched-theme-md .sched-badge-wrap { background: #dbeafe; border: 1px solid #93c5fd; }
 .sched-theme-md .sched-badge-code { background: #2563eb; color: #ffffff; box-shadow: 0 1px 2px rgba(37, 99, 235, 0.25); }
-.sched-theme-md .sched-badge-name { color: #1e40af; }
+.sched-theme-md .sched-badge-name { color: #1e40af; font-size: 11px; font-weight: 800; }
 .sched-theme-md .sched-card-time { color: #1d4ed8; }
-.sched-theme-md .sched-card-detail-box { border: 1px solid #bfdbfe; background: #ffffff; }
-.sched-theme-md .sched-detail-hours strong { color: #1d4ed8; }
+.sched-theme-md .sched-card-detail-box { border-top: 1px solid #bfdbfe !important; }
+.sched-theme-md .sched-detail-punch { color: #1e40af; }
+.sched-theme-md .sched-detail-hours { color: #1d4ed8; }
+.sched-theme-md .sched-detail-hours strong { color: #1e40af; }
 
 /* LATE DAY - AMBER */
 .sched-theme-ld { border: 1.5px solid #fcd34d; background: #fffdf5; }
-.sched-theme-ld .sched-badge-wrap { background: #fef3c7; border: 1px solid #fcd34d; }
 .sched-theme-ld .sched-badge-code { background: #d97706; color: #ffffff; box-shadow: 0 1px 2px rgba(217, 119, 6, 0.25); }
-.sched-theme-ld .sched-badge-name { color: #92400e; }
+.sched-theme-ld .sched-badge-name { color: #92400e; font-size: 11px; font-weight: 800; }
 .sched-theme-ld .sched-card-time { color: #b45309; }
-.sched-theme-ld .sched-card-detail-box { border: 1px solid #fde68a; background: #ffffff; }
-.sched-theme-ld .sched-detail-hours strong { color: #b45309; }
+.sched-theme-ld .sched-card-detail-box { border-top: 1px solid #fde68a !important; }
+.sched-theme-ld .sched-detail-punch { color: #92400e; }
+.sched-theme-ld .sched-detail-hours { color: #b45309; }
+.sched-theme-ld .sched-detail-hours strong { color: #92400e; }
 
 /* CLOSING - PURPLE */
 .sched-theme-c { border: 1.5px solid #d8b4fe; background: #faf5ff; }
-.sched-theme-c .sched-badge-wrap { background: #f3e8ff; border: 1px solid #d8b4fe; }
 .sched-theme-c .sched-badge-code { background: #9333ea; color: #ffffff; box-shadow: 0 1px 2px rgba(147, 51, 234, 0.25); }
-.sched-theme-c .sched-badge-name { color: #6b21a8; }
+.sched-theme-c .sched-badge-name { color: #6b21a8; font-size: 11px; font-weight: 800; }
 .sched-theme-c .sched-card-time { color: #7e22ce; }
-.sched-theme-c .sched-card-detail-box { border: 1px solid #e9d5ff; background: #ffffff; }
-.sched-theme-c .sched-detail-hours strong { color: #7e22ce; }
+.sched-theme-c .sched-card-detail-box { border-top: 1px solid #e9d5ff !important; }
+.sched-theme-c .sched-detail-punch { color: #6b21a8; }
+.sched-theme-c .sched-detail-hours { color: #7e22ce; }
+.sched-theme-c .sched-detail-hours strong { color: #6b21a8; }
 
 /* RESTDAY - SLATE */
 .sched-card-rest { border: 1.5px solid #cbd5e1; background: #f8fafc; }
-.sched-card-rest .sched-badge-wrap { background: #e2e8f0; border: 1px solid #cbd5e1; }
 .sched-card-rest .sched-badge-code { background: #64748b; color: #ffffff; }
-.sched-card-rest .sched-badge-name { color: #334155; }
+.sched-card-rest .sched-badge-name { color: #334155; font-size: 11px; font-weight: 800; }
 .sched-card-rest .sched-card-time { color: #64748b; }
-.sched-card-rest .sched-card-detail-box { border: 1px solid #e2e8f0; background: #ffffff; }
-.sched-card-rest .sched-detail-hours strong { color: #64748b; }
+.sched-card-rest .sched-card-detail-box { border-top: 1px solid #e2e8f0 !important; }
+.sched-card-rest .sched-detail-punch { color: #475569; }
+.sched-card-rest .sched-detail-hours { color: #64748b; }
+.sched-card-rest .sched-detail-hours strong { color: #334155; }
 
 /* CUSTOM - VIOLET */
 .sched-card-custom { border: 1.5px solid #c4b5fd; background: #f5f3ff; }
-.sched-card-custom .sched-badge-wrap { background: #ede9fe; border: 1px solid #c4b5fd; }
 .sched-card-custom .sched-badge-code { background: #7c3aed; color: #ffffff; }
-.sched-card-custom .sched-badge-name { color: #5b21b6; }
+.sched-card-custom .sched-badge-name { color: #5b21b6; font-size: 11px; font-weight: 800; }
 .sched-card-custom .sched-card-time { color: #6d28d9; }
-.sched-card-custom .sched-card-detail-box { border: 1px solid #ddd6fe; background: #ffffff; }
-.sched-card-custom .sched-detail-hours strong { color: #6d28d9; }
+.sched-card-custom .sched-card-detail-box { border-top: 1px solid #ddd6fe !important; }
+.sched-card-custom .sched-detail-punch { color: #5b21b6; }
+.sched-card-custom .sched-detail-hours { color: #6d28d9; }
+.sched-card-custom .sched-detail-hours strong { color: #5b21b6; }
 
 /* Custom background inline fallback */
 .sched-badge-wrap[style*="background"] {
@@ -2594,7 +2603,7 @@ function renderAssignedCardHTML(cell, empId, date, code, label, time, themeClass
                     <span class="sched-detail-badge" style="background:#f1f5f9;color:#475569;border:1px solid #cbd5e1;">OFF DUTY</span>
                 </div>
                 <div class="sched-detail-row sched-detail-hours">
-                    <span>Hours:</span>
+                    <span>Hours Worked:</span>
                     <strong>0.00 hrs</strong>
                 </div>
             </div>
@@ -2608,7 +2617,7 @@ function renderAssignedCardHTML(cell, empId, date, code, label, time, themeClass
                     <span class="sched-detail-badge badge-planned">SCHEDULED</span>
                 </div>
                 <div class="sched-detail-row sched-detail-hours">
-                    <span>Target:</span>
+                    <span>Target Hours:</span>
                     <strong>8.00 hrs</strong>
                 </div>
             </div>
