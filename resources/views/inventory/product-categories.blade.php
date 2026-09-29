@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Product Management - Inventory Operations')
+@section('title', 'Item Master - Inventory Operations')
 
 @push('styles')
 <style>
@@ -1465,6 +1465,323 @@ body.is-column-resizing * {
     border-top: 1px solid var(--inv-border-subtle);
 }
 
+/* Category Modal Autocomplete & Duplicate Match Dropdown */
+.inv-cat-input-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.inv-cat-autocomplete-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: #ffffff;
+    border: 1px solid var(--inv-border-subtle);
+    border-radius: 10px;
+    box-shadow: 0 10px 25px rgba(15, 23, 42, 0.12);
+    z-index: 1200;
+    max-height: 180px;
+    overflow-y: auto;
+    display: none;
+}
+
+.inv-cat-autocomplete-dropdown.is-open {
+    display: block;
+}
+
+.inv-cat-dropdown-header {
+    padding: 6px 12px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--inv-text-muted);
+    background: #f8fafc;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.inv-cat-dropdown-item {
+    padding: 8px 12px;
+    font-size: 0.8rem;
+    color: var(--inv-text-strong);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.inv-cat-dropdown-item:hover {
+    background: rgba(168, 85, 247, 0.08);
+    color: var(--inv-primary-dark);
+}
+
+.inv-cat-duplicate-warning {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+    padding: 6px 10px;
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    border-radius: 7px;
+    color: var(--inv-danger);
+    font-size: 0.74rem;
+    font-weight: 500;
+}
+
+.inv-cat-duplicate-warning.is-visible {
+    display: flex;
+}
+
+/* Accordion Header Category Management Action Buttons */
+.inv-group-actions-box {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    opacity: 0.9;
+    transition: opacity 0.2s ease;
+}
+
+.inv-group-row:hover .inv-group-actions-box {
+    opacity: 1;
+}
+
+.inv-group-action-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    color: var(--inv-text-medium);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.inv-group-action-btn:hover {
+    background: var(--inv-primary-glow);
+    color: var(--inv-primary-dark);
+    border-color: var(--inv-primary);
+    transform: scale(1.05);
+}
+
+.inv-group-action-btn.is-delete:hover {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--inv-danger);
+    border-color: rgba(239, 68, 68, 0.4);
+}
+
+/* Custom Category Dropdown in Drawer */
+.inv-custom-select-group {
+    display: flex;
+    gap: 6px;
+    align-items: stretch;
+}
+
+.inv-btn-quick-create {
+    padding: 0 12px;
+    background: rgba(168, 85, 247, 0.1);
+    border: 1.5px solid rgba(168, 85, 247, 0.3);
+    color: var(--inv-primary-dark);
+    border-radius: 9px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+}
+
+.inv-btn-quick-create:hover {
+    background: var(--inv-primary);
+    color: #ffffff;
+    border-color: var(--inv-primary);
+}
+
+/* Custom Scrollbar for Sub-tables */
+.inv-subtable-wrapper::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+.inv-subtable-wrapper::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 4px;
+}
+.inv-subtable-wrapper::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+.inv-subtable-wrapper::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* Sub-table Pagination Footer */
+.inv-subtable-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: #f8fafc;
+    border-top: 1px solid var(--inv-border-subtle);
+    font-size: 0.72rem;
+    color: var(--inv-text-muted);
+}
+
+.inv-subtable-pagination-nav {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.inv-subtable-page-btn {
+    width: 24px;
+    height: 24px;
+    border-radius: 5px;
+    border: 1px solid var(--inv-border-subtle);
+    background: #ffffff;
+    color: var(--inv-text-medium);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 11px;
+    transition: all 0.15s ease;
+}
+
+.inv-subtable-page-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    background: #f8fafc;
+}
+
+.inv-subtable-page-btn:not(:disabled):hover {
+    border-color: var(--inv-primary);
+    color: var(--inv-primary-dark);
+}
+
+/* Price History Column Chart Card & Supplier Comparison */
+.inv-pricing-chart-card {
+    background: #ffffff;
+    border: 1.5px solid var(--inv-border-subtle);
+    border-radius: 12px;
+    padding: 14px 16px;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.02);
+}
+
+.inv-pricing-chart-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.inv-pricing-chart-title {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--inv-text-strong);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.inv-pricing-chart-badge {
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 2px 7px;
+    background: rgba(168, 85, 247, 0.1);
+    color: var(--inv-primary-dark);
+    border-radius: 12px;
+}
+
+.inv-pricing-chart-canvas-wrapper {
+    position: relative;
+    height: 165px;
+    width: 100%;
+}
+
+.inv-supplier-list-card {
+    background: #ffffff;
+    border: 1.5px solid var(--inv-border-subtle);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.inv-supplier-list-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 9px 12px;
+    background: #f8fafc;
+    border-bottom: 1px solid var(--inv-border-subtle);
+    font-size: 0.74rem;
+    font-weight: 700;
+    color: var(--inv-text-strong);
+}
+
+.inv-supplier-list-body {
+    max-height: 140px;
+    overflow-y: auto;
+}
+
+.inv-supplier-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 0.76rem;
+    transition: background 0.15s ease;
+}
+
+.inv-supplier-item:last-child {
+    border-bottom: none;
+}
+
+.inv-supplier-item.is-lowest {
+    background: rgba(16, 185, 129, 0.05);
+}
+
+.inv-supplier-name {
+    font-weight: 600;
+    color: var(--inv-text-strong);
+}
+
+.inv-supplier-updated {
+    font-size: 0.68rem;
+    color: var(--inv-text-muted);
+}
+
+.inv-supplier-price-box {
+    text-align: right;
+}
+
+.inv-supplier-price {
+    font-weight: 700;
+    color: var(--inv-text-strong);
+}
+
+.inv-supplier-item.is-lowest .inv-supplier-price {
+    color: var(--inv-success);
+}
+
+.inv-supplier-best-badge {
+    font-size: 0.62rem;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: var(--inv-success-subtle);
+    color: var(--inv-success);
+    margin-left: 4px;
+}
+
+
 /* Import Modal Dropzone & Preview Styles */
 .inv-dropzone {
     border: 2px dashed #cbd5e1;
@@ -1611,8 +1928,8 @@ body.is-column-resizing * {
                 <i class="ph ph-package"></i>
             </div>
             <div>
-                <h1>Product Management</h1>
-                <p>Categorized product catalog, collapsible groups, barcode indexing, and custom column views.</p>
+                <h1>Item Master</h1>
+                <p>Centralized catalog for managing raw materials, packaging, suppliers, units of measure (UOM), and stock pricing.</p>
             </div>
         </div>
         <div class="inv-header-actions">
@@ -1750,17 +2067,36 @@ body.is-column-resizing * {
                     <div class="inv-form-row-2">
                         <div class="inv-form-group">
                             <label for="formCategory">Category *</label>
-                            <select id="formCategory" class="inv-form-select" required>
-                                <!-- Categories populated dynamically -->
-                            </select>
+                            <div class="inv-custom-select-group">
+                                <select id="formCategory" class="inv-form-select" required onchange="handleDrawerCategoryChange(this.value)">
+                                    <!-- Categories populated dynamically -->
+                                </select>
+                                <button type="button" class="inv-btn-quick-create" onclick="openNewCategoryModal()" title="Add new product category">
+                                    <i class="ph ph-plus"></i>
+                                    <span>New</span>
+                                </button>
+                            </div>
                         </div>
                         <div class="inv-form-group">
                             <label for="formSubcategory">Sub-category</label>
-                            <input type="text" id="formSubcategory" class="inv-form-input" placeholder="e.g. Espresso Based, Pastry">
+                            <div style="display: flex; gap: 6px;">
+                                <select id="formSubcategorySelect" class="inv-form-select" onchange="handleSubcategorySelectChange(this.value)" style="flex: 1;">
+                                    <!-- Dynamically populated with unique existing subcategories -->
+                                </select>
+                                <input type="text" id="formSubcategory" class="inv-form-input" placeholder="Custom subcategory..." style="flex: 1; display: none;">
+                                <button type="button" class="inv-btn-secondary" id="btnToggleCustomSubcat" onclick="toggleCustomSubcategoryInput()" style="padding: 0 10px; font-size: 0.76rem;" title="Toggle new/existing subcategory">
+                                    <i class="ph ph-pencil-simple-line"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
 
+                    <!-- Switched place: Pack Size / Spec FIRST (numbers only), then UOM -->
                     <div class="inv-form-row-2">
+                        <div class="inv-form-group">
+                            <label for="formPackSize">Pack Size / Spec (Numbers Only) *</label>
+                            <input type="number" step="any" min="0" id="formPackSize" class="inv-form-input" required placeholder="e.g. 16, 500, 1" onkeypress="return /[0-9.]/.test(event.key)">
+                        </div>
                         <div class="inv-form-group">
                             <label for="formUnit">Unit of Measure (UOM) *</label>
                             <select id="formUnit" class="inv-form-select" required>
@@ -1775,10 +2111,6 @@ body.is-column-resizing * {
                                 <option value="Kg">Kilogram (Kg)</option>
                                 <option value="Liter">Liter (L)</option>
                             </select>
-                        </div>
-                        <div class="inv-form-group">
-                            <label for="formPackSize">Pack Size / Spec</label>
-                            <input type="text" id="formPackSize" class="inv-form-input" placeholder="e.g. 16 oz, 500g, 1 pc">
                         </div>
                     </div>
 
@@ -1811,9 +2143,9 @@ body.is-column-resizing * {
                 </div>
             </div>
 
-            <!-- Tab 2: Inventory & Units (Includes Nested Content Section) -->
-            <div class="drawer-tab-pane" id="pane-tab-inventory" style="display: none;">
-                <div style="display: flex; flex-direction: column; gap: 16px;">
+            <!-- Tab 2: Inventory & Units (Includes Nested Content Section stretched with pagination) -->
+            <div class="drawer-tab-pane" id="pane-tab-inventory" style="display: none; height: 100%;">
+                <div style="display: flex; flex-direction: column; gap: 16px; height: 100%;">
                     <div class="inv-form-row-2">
                         <div class="inv-form-group">
                             <label for="formReorderPoint">Global Reorder Point</label>
@@ -1825,15 +2157,15 @@ body.is-column-resizing * {
                         </div>
                     </div>
 
-                    <!-- Nested Content Section: Secondary Tabs + Sub-Table -->
-                    <div class="inv-nested-section">
+                    <!-- Nested Content Section: Secondary Tabs + Sub-Table stretched -->
+                    <div class="inv-nested-section" style="display: flex; flex-direction: column; flex: 1; min-height: 380px;">
                         <div class="inv-subtabs-nav" id="drawerSubtabsNav">
                             <button type="button" class="inv-subtab-btn active" data-subtab="sub-branch">Branch Stock Levels</button>
                             <button type="button" class="inv-subtab-btn" data-subtab="sub-movements">Recent Ledger Log</button>
                         </div>
 
-                        <!-- Sub-table: Branch Stock Levels -->
-                        <div class="inv-subtable-wrapper" id="subpane-sub-branch">
+                        <!-- Sub-table: Branch Stock Levels with pagination -->
+                        <div class="inv-subtable-wrapper" id="subpane-sub-branch" style="flex: 1; min-height: 290px; max-height: 360px; overflow-y: auto;">
                             <table class="inv-subtable">
                                 <thead>
                                     <tr>
@@ -1849,8 +2181,21 @@ body.is-column-resizing * {
                             </table>
                         </div>
 
-                        <!-- Sub-table: Recent Ledger Log -->
-                        <div class="inv-subtable-wrapper" id="subpane-sub-movements" style="display: none;">
+                        <!-- Branch stock pagination -->
+                        <div class="inv-subtable-pagination" id="branchStockPagination">
+                            <span id="branchStockPageInfo">Page 1 of 1</span>
+                            <div class="inv-subtable-pagination-nav">
+                                <button type="button" class="inv-subtable-page-btn" id="btnBranchPrev" onclick="navigateBranchPage(-1)">
+                                    <i class="ph ph-caret-left"></i>
+                                </button>
+                                <button type="button" class="inv-subtable-page-btn" id="btnBranchNext" onclick="navigateBranchPage(1)">
+                                    <i class="ph ph-caret-right"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Sub-table: Recent Ledger Log with pagination -->
+                        <div class="inv-subtable-wrapper" id="subpane-sub-movements" style="display: none; flex: 1; min-height: 290px; max-height: 360px; overflow-y: auto;">
                             <table class="inv-subtable">
                                 <thead>
                                     <tr>
@@ -1865,16 +2210,47 @@ body.is-column-resizing * {
                                 </tbody>
                             </table>
                         </div>
+
+                        <!-- Ledger log pagination -->
+                        <div class="inv-subtable-pagination" id="ledgerLogPagination" style="display: none;">
+                            <span id="ledgerLogPageInfo">Page 1 of 1</span>
+                            <div class="inv-subtable-pagination-nav">
+                                <button type="button" class="inv-subtable-page-btn" id="btnLedgerPrev" onclick="navigateLedgerPage(-1)">
+                                    <i class="ph ph-caret-left"></i>
+                                </button>
+                                <button type="button" class="inv-subtable-page-btn" id="btnLedgerNext" onclick="navigateLedgerPage(1)">
+                                    <i class="ph ph-caret-right"></i>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Tab 3: Pricing & Suppliers -->
+            <!-- Tab 3: Pricing & Suppliers (Column Chart for last 3 mos + Cost Price auto-calculation + Supplier Prices list) -->
             <div class="drawer-tab-pane" id="pane-tab-pricing" style="display: none;">
                 <div style="display: flex; flex-direction: column; gap: 16px;">
+                    
+                    <!-- Column Chart: Last 3 Months Price History -->
+                    <div class="inv-pricing-chart-card">
+                        <div class="inv-pricing-chart-header">
+                            <div class="inv-pricing-chart-title">
+                                <i class="ph ph-chart-bar" style="color: var(--inv-primary-dark); font-size: 16px;"></i>
+                                <span>Price Trend History (Last 3 Months)</span>
+                            </div>
+                            <span class="inv-pricing-chart-badge" id="chartMonthsBadge">Jul - Sep 2026</span>
+                        </div>
+                        <div class="inv-pricing-chart-canvas-wrapper">
+                            <canvas id="priceHistoryChart"></canvas>
+                        </div>
+                    </div>
+
                     <div class="inv-form-row-2">
                         <div class="inv-form-group">
-                            <label for="formCostPrice">Cost Price (PHP) *</label>
+                            <div style="display: flex; align-items: center; justify-content: space-between;">
+                                <label for="formCostPrice">Cost Price (PHP) *</label>
+                                <span style="font-size: 0.68rem; color: var(--inv-primary-dark); font-weight: 600;" title="Lowest supplier price + 5% markup">Lowest + 5%</span>
+                            </div>
                             <input type="number" step="0.01" id="formCostPrice" class="inv-form-input" required placeholder="0.00">
                         </div>
                         <div class="inv-form-group">
@@ -1902,6 +2278,18 @@ body.is-column-resizing * {
                         <label for="formSupplier">Primary Supplier</label>
                         <input type="text" id="formSupplier" class="inv-form-input" placeholder="e.g. Power Mac Roasters, Golden Grains, Fresh Dairy Corp">
                     </div>
+
+                    <!-- Supplier Quotes & Recent Price Updates List -->
+                    <div class="inv-supplier-list-card">
+                        <div class="inv-supplier-list-header">
+                            <span>Supplier Price Benchmarks & Updates</span>
+                            <span style="font-size: 0.68rem; color: var(--inv-text-muted);">Recent Quotes</span>
+                        </div>
+                        <div class="inv-supplier-list-body" id="supplierPricesListBody">
+                            <!-- Dynamically populated with supplier price rows and recent update dates -->
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </form>
@@ -1917,34 +2305,48 @@ body.is-column-resizing * {
     </footer>
 </aside>
 
-<!-- Modal: Add New Category -->
+<!-- Modal: Add / Edit Product Category -->
 <div class="inv-modal-backdrop" id="newCategoryModal">
     <div class="inv-modal-card">
         <div class="inv-modal-header">
             <h3 class="inv-modal-title">
-                <i class="ph ph-folder-plus" style="color: var(--inv-primary-dark); font-size: 20px;"></i>
-                <span>Add Product Category</span>
+                <i class="ph ph-folder-plus" id="modalCategoryHeaderIcon" style="color: var(--inv-primary-dark); font-size: 20px;"></i>
+                <span id="modalCategoryTitle">Add Product Category</span>
             </h3>
             <button type="button" class="inv-drawer-close-btn" onclick="closeNewCategoryModal()">
                 <i class="ph ph-x"></i>
             </button>
         </div>
         <form onsubmit="handleCreateCategory(event)">
+            <input type="hidden" id="modalCategoryOriginalName" value="">
             <div class="inv-modal-body">
                 <div class="inv-form-group">
                     <label for="modalCategoryName">Category Name *</label>
-                    <input type="text" id="modalCategoryName" class="inv-form-input" required placeholder="e.g. Appetizers, Bottled Drinks, Packaging">
+                    <div class="inv-cat-input-wrapper">
+                        <input type="text" id="modalCategoryName" class="inv-form-input" required autocomplete="off" placeholder="e.g. Appetizers, Bottled Drinks, Packaging" oninput="handleCategoryInputCheck(this.value)">
+                        
+                        <!-- Live Search / Existing Categories Dropdown -->
+                        <div class="inv-cat-autocomplete-dropdown" id="catAutocompleteDropdown">
+                            <div class="inv-cat-dropdown-header">Existing Categories Matching</div>
+                            <div id="catAutocompleteList"></div>
+                        </div>
+                    </div>
+                    <!-- Duplicate warning banner -->
+                    <div class="inv-cat-duplicate-warning" id="catDuplicateWarning">
+                        <i class="ph ph-warning-circle" style="font-size: 16px;"></i>
+                        <span id="catDuplicateMsg">A category with this name already exists!</span>
+                    </div>
                 </div>
                 <div class="inv-form-group">
-                    <label for="modalCategoryDesc">Description (Optional)</label>
-                    <input type="text" id="modalCategoryDesc" class="inv-form-input" placeholder="e.g. Cold bar ingredients and syrups">
+                    <label for="modalCategoryDesc">Category Info / Description</label>
+                    <textarea id="modalCategoryDesc" class="inv-form-textarea" style="min-height: 80px;" placeholder="e.g. Cold bar ingredients, syrups, and beverage packaging"></textarea>
                 </div>
             </div>
             <div class="inv-modal-footer">
                 <button type="button" class="inv-btn-secondary" onclick="closeNewCategoryModal()">Cancel</button>
-                <button type="submit" class="inv-btn-primary">
+                <button type="submit" class="inv-btn-primary" id="btnSaveCategory">
                     <i class="ph ph-check"></i>
-                    <span>Create Category</span>
+                    <span id="btnSaveCategoryText">Save Category</span>
                 </button>
             </div>
         </form>
@@ -2390,11 +2792,17 @@ body.is-column-resizing * {
     // Reactive State Store
     window.AppStore = {
         categories: JSON.parse(localStorage.getItem('rms_product_categories')) || INITIAL_CATEGORIES,
+        categoryInfo: JSON.parse(localStorage.getItem('rms_category_info')) || {},
         products: JSON.parse(localStorage.getItem('rms_inventory_products')) || INITIAL_PRODUCTS,
         activeCategory: 'ALL',
         searchQuery: '',
         selectedProductId: null,
-        collapsedCategories: {}
+        collapsedCategories: {},
+        branchPage: 1,
+        branchPageSize: 4,
+        ledgerPage: 1,
+        ledgerPageSize: 4,
+        activePriceChart: null
     };
 
     // DOM Caches
@@ -2422,6 +2830,7 @@ body.is-column-resizing * {
     const formName = document.getElementById('formName');
     const formCategory = document.getElementById('formCategory');
     const formSubcategory = document.getElementById('formSubcategory');
+    const formSubcategorySelect = document.getElementById('formSubcategorySelect');
     const formUnit = document.getElementById('formUnit');
     const formPackSize = document.getElementById('formPackSize');
     const formDescription = document.getElementById('formDescription');
@@ -2437,6 +2846,7 @@ body.is-column-resizing * {
     const formSupplier = document.getElementById('formSupplier');
     const branchSubtableBody = document.getElementById('branchStockSubtableBody');
     const ledgerSubtableBody = document.getElementById('ledgerLogSubtableBody');
+    const supplierPricesListBody = document.getElementById('supplierPricesListBody');
 
     // Helper: Currency Formatter
     function formatPHP(amount) {
@@ -2469,13 +2879,78 @@ body.is-column-resizing * {
     formSellingPrice.addEventListener('input', updateMarginCalculation);
 
     // =========================================================================
-    // CATEGORY DROPDOWNS SYNCHRONIZATION
+    // CATEGORY & SUBCATEGORY DROPDOWNS SYNCHRONIZATION
     // =========================================================================
     function syncCategoryControls() {
         if (formCategory) {
+            const currentCat = formCategory.value;
             formCategory.innerHTML = window.AppStore.categories.map(c => `<option value="${c}">${c}</option>`).join('');
+            if (window.AppStore.categories.includes(currentCat)) {
+                formCategory.value = currentCat;
+            }
+        }
+        syncSubcategoryDropdown(formCategory ? formCategory.value : null);
+    }
+
+    function syncSubcategoryDropdown(categoryFilter) {
+        if (!formSubcategorySelect) return;
+        const subcatSet = new Set();
+        window.AppStore.products.forEach(p => {
+            if (!categoryFilter || p.category === categoryFilter) {
+                if (p.subcategory && p.subcategory.trim()) {
+                    subcatSet.add(p.subcategory.trim());
+                }
+            }
+        });
+
+        // Add defaults if set is small
+        if (subcatSet.size === 0) {
+            subcatSet.add('Standard');
+            subcatSet.add('Specialty');
+        }
+
+        const currentVal = formSubcategory ? formSubcategory.value : '';
+        let optsHtml = Array.from(subcatSet).map(s => `<option value="${s}">${s}</option>`).join('');
+        optsHtml += `<option value="__custom__">+ Enter Custom Subcategory...</option>`;
+        formSubcategorySelect.innerHTML = optsHtml;
+
+        if (currentVal && subcatSet.has(currentVal)) {
+            formSubcategorySelect.value = currentVal;
+            if (formSubcategory) formSubcategory.style.display = 'none';
+            formSubcategorySelect.style.display = 'block';
         }
     }
+
+    window.handleDrawerCategoryChange = function(selectedCategory) {
+        syncSubcategoryDropdown(selectedCategory);
+    };
+
+    window.handleSubcategorySelectChange = function(val) {
+        if (val === '__custom__') {
+            formSubcategorySelect.style.display = 'none';
+            formSubcategory.style.display = 'block';
+            formSubcategory.value = '';
+            formSubcategory.focus();
+        } else {
+            formSubcategory.value = val;
+            formSubcategory.style.display = 'none';
+            formSubcategorySelect.style.display = 'block';
+        }
+    };
+
+    window.toggleCustomSubcategoryInput = function() {
+        if (formSubcategory.style.display === 'none') {
+            formSubcategorySelect.style.display = 'none';
+            formSubcategory.style.display = 'block';
+            formSubcategory.focus();
+        } else {
+            formSubcategory.style.display = 'none';
+            formSubcategorySelect.style.display = 'block';
+            if (formSubcategorySelect.value !== '__custom__') {
+                formSubcategory.value = formSubcategorySelect.value;
+            }
+        }
+    };
 
     // =========================================================================
     // COLUMN FILTER DROPDOWN CONTROLLER (TRIGGERED BY FILTER ICON IN ACTION HEADER)
@@ -2798,6 +3273,7 @@ body.is-column-resizing * {
             const isCollapsed = !!window.AppStore.collapsedCategories[categoryName];
 
             // 1. Accordion Group Header Row
+            const isUncategorized = (categoryName === 'Uncategorized');
             html += `
                 <tr class="inv-group-row ${isCollapsed ? 'collapsed' : ''}" onclick="toggleAccordionCategory('${categoryName}')">
                     <td colspan="${totalVisibleCols}" class="inv-group-header-cell">
@@ -2809,6 +3285,16 @@ body.is-column-resizing * {
                                 <span class="inv-group-indicator"></span>
                                 <span class="inv-group-title">${categoryName}</span>
                                 <span class="inv-group-count-badge">${items.length} ${items.length === 1 ? 'item' : 'items'}</span>
+                            </div>
+                            <div class="inv-group-actions-box" onclick="event.stopPropagation()">
+                                <button type="button" class="inv-group-action-btn" title="Edit Category Info" onclick="openEditCategoryModal('${categoryName}')">
+                                    <i class="ph ph-pencil-simple"></i>
+                                </button>
+                                ${!isUncategorized ? `
+                                <button type="button" class="inv-group-action-btn is-delete" title="Delete Category & Move items to Uncategorized" onclick="confirmDeleteCategory('${categoryName}', ${items.length})">
+                                    <i class="ph ph-trash"></i>
+                                </button>
+                                ` : ''}
                             </div>
                         </div>
                     </td>
@@ -2936,36 +3422,189 @@ body.is-column-resizing * {
     };
 
     // =========================================================================
-    // NEW CATEGORY MODAL LOGIC
+    // NEW / EDIT CATEGORY MODAL LOGIC & DUPLICATE DETECTION
     // =========================================================================
     window.openNewCategoryModal = function() {
+        document.getElementById('modalCategoryOriginalName').value = '';
+        document.getElementById('modalCategoryTitle').textContent = 'Add Product Category';
+        document.getElementById('btnSaveCategoryText').textContent = 'Create Category';
+        document.getElementById('modalCategoryHeaderIcon').className = 'ph ph-folder-plus';
+        document.getElementById('modalCategoryName').value = '';
+        document.getElementById('modalCategoryDesc').value = '';
+        hideCategoryDuplicateWarning();
+        hideCategoryAutocomplete();
+        newCategoryModal.classList.add('is-open');
+        setTimeout(() => document.getElementById('modalCategoryName').focus(), 150);
+    };
+
+    window.openEditCategoryModal = function(catName) {
+        document.getElementById('modalCategoryOriginalName').value = catName;
+        document.getElementById('modalCategoryTitle').textContent = `Edit Category: ${catName}`;
+        document.getElementById('btnSaveCategoryText').textContent = 'Update Category';
+        document.getElementById('modalCategoryHeaderIcon').className = 'ph ph-pencil-simple';
+        document.getElementById('modalCategoryName').value = catName;
+        document.getElementById('modalCategoryDesc').value = window.AppStore.categoryInfo[catName] || '';
+        hideCategoryDuplicateWarning();
+        hideCategoryAutocomplete();
         newCategoryModal.classList.add('is-open');
         setTimeout(() => document.getElementById('modalCategoryName').focus(), 150);
     };
 
     window.closeNewCategoryModal = function() {
         newCategoryModal.classList.remove('is-open');
+        document.getElementById('modalCategoryOriginalName').value = '';
         document.getElementById('modalCategoryName').value = '';
         document.getElementById('modalCategoryDesc').value = '';
+        hideCategoryDuplicateWarning();
+        hideCategoryAutocomplete();
+    };
+
+    function hideCategoryDuplicateWarning() {
+        const warn = document.getElementById('catDuplicateWarning');
+        if (warn) warn.classList.remove('is-visible');
+    }
+
+    function hideCategoryAutocomplete() {
+        const drop = document.getElementById('catAutocompleteDropdown');
+        if (drop) drop.classList.remove('is-open');
+    }
+
+    window.handleCategoryInputCheck = function(typedVal) {
+        const originalName = document.getElementById('modalCategoryOriginalName').value;
+        const val = typedVal.trim().toLowerCase();
+        const warn = document.getElementById('catDuplicateWarning');
+        const msg = document.getElementById('catDuplicateMsg');
+        const drop = document.getElementById('catAutocompleteDropdown');
+        const list = document.getElementById('catAutocompleteList');
+
+        if (!val) {
+            hideCategoryDuplicateWarning();
+            hideCategoryAutocomplete();
+            return;
+        }
+
+        // Search matching categories
+        const matches = window.AppStore.categories.filter(c => c.toLowerCase().includes(val));
+        const exactMatch = window.AppStore.categories.find(c => c.toLowerCase() === val);
+
+        if (exactMatch && exactMatch.toLowerCase() !== originalName.toLowerCase()) {
+            warn.classList.add('is-visible');
+            msg.textContent = `A category named "${exactMatch}" already exists!`;
+        } else {
+            hideCategoryDuplicateWarning();
+        }
+
+        if (matches.length > 0) {
+            list.innerHTML = matches.map(c => `
+                <div class="inv-cat-dropdown-item" onclick="selectExistingCategory('${c}')">
+                    <span>${c}</span>
+                    <i class="ph ph-arrow-up-left" style="font-size: 13px; color: var(--inv-text-muted);"></i>
+                </div>
+            `).join('');
+            drop.classList.add('is-open');
+        } else {
+            hideCategoryAutocomplete();
+        }
+    };
+
+    window.selectExistingCategory = function(name) {
+        document.getElementById('modalCategoryName').value = name;
+        hideCategoryAutocomplete();
+        handleCategoryInputCheck(name);
     };
 
     window.handleCreateCategory = function(e) {
         e.preventDefault();
         const catName = document.getElementById('modalCategoryName').value.trim();
+        const catDesc = document.getElementById('modalCategoryDesc').value.trim();
+        const originalName = document.getElementById('modalCategoryOriginalName').value;
+
         if (!catName) return;
 
-        if (window.AppStore.categories.includes(catName)) {
+        // Check duplicate
+        const isDuplicate = window.AppStore.categories.some(c => 
+            c.toLowerCase() === catName.toLowerCase() && c.toLowerCase() !== originalName.toLowerCase()
+        );
+
+        if (isDuplicate) {
             showToast(`Category "${catName}" already exists!`);
+            const warn = document.getElementById('catDuplicateWarning');
+            if (warn) warn.classList.add('is-visible');
             return;
         }
 
-        window.AppStore.categories.push(catName);
-        localStorage.setItem('rms_product_categories', JSON.stringify(window.AppStore.categories));
+        if (originalName) {
+            // Edit Mode
+            const idx = window.AppStore.categories.indexOf(originalName);
+            if (idx !== -1) {
+                window.AppStore.categories[idx] = catName;
+            }
+            // Migrate products with the old category name
+            window.AppStore.products.forEach(p => {
+                if (p.category === originalName) {
+                    p.category = catName;
+                }
+            });
+            // Update description store
+            if (originalName !== catName) {
+                delete window.AppStore.categoryInfo[originalName];
+            }
+            window.AppStore.categoryInfo[catName] = catDesc;
+
+            localStorage.setItem('rms_product_categories', JSON.stringify(window.AppStore.categories));
+            localStorage.setItem('rms_category_info', JSON.stringify(window.AppStore.categoryInfo));
+            localStorage.setItem('rms_inventory_products', JSON.stringify(window.AppStore.products));
+
+            showToast(`Category "${catName}" updated successfully!`);
+        } else {
+            // Add Mode
+            window.AppStore.categories.push(catName);
+            window.AppStore.categoryInfo[catName] = catDesc;
+            localStorage.setItem('rms_product_categories', JSON.stringify(window.AppStore.categories));
+            localStorage.setItem('rms_category_info', JSON.stringify(window.AppStore.categoryInfo));
+            showToast(`Category "${catName}" created successfully!`);
+        }
 
         syncCategoryControls();
         renderMasterList();
         closeNewCategoryModal();
-        showToast(`Category "${catName}" created successfully!`);
+    };
+
+    window.confirmDeleteCategory = function(catName, itemCount) {
+        if (catName === 'Uncategorized') {
+            showToast('The "Uncategorized" section cannot be deleted.');
+            return;
+        }
+
+        const confirmText = itemCount > 0 
+            ? `Are you sure you want to delete category "${catName}"? ${itemCount} ${itemCount === 1 ? 'item' : 'items'} under it will be moved to the "Uncategorized" section.`
+            : `Are you sure you want to delete category "${catName}"?`;
+
+        if (!confirm(confirmText)) return;
+
+        // Ensure 'Uncategorized' exists in categories
+        if (!window.AppStore.categories.includes('Uncategorized')) {
+            window.AppStore.categories.push('Uncategorized');
+        }
+
+        // Reassign products
+        window.AppStore.products.forEach(p => {
+            if (p.category === catName) {
+                p.category = 'Uncategorized';
+            }
+        });
+
+        // Remove category from array
+        window.AppStore.categories = window.AppStore.categories.filter(c => c !== catName);
+        delete window.AppStore.categoryInfo[catName];
+
+        localStorage.setItem('rms_product_categories', JSON.stringify(window.AppStore.categories));
+        localStorage.setItem('rms_category_info', JSON.stringify(window.AppStore.categoryInfo));
+        localStorage.setItem('rms_inventory_products', JSON.stringify(window.AppStore.products));
+
+        syncCategoryControls();
+        renderMasterList();
+        showToast(`Category "${catName}" deleted. Items moved to Uncategorized.`);
     };
 
     searchInput.addEventListener('input', function(e) {
@@ -2974,11 +3613,249 @@ body.is-column-resizing * {
     });
 
     // =========================================================================
+    // SLIDE-OUT DETAIL DRAWER: PAGINATION & SUBTABLE CONTROLLERS
+    // =========================================================================
+    let currentDrawerBranches = [];
+    let currentDrawerLedgers = [];
+
+    function renderBranchSubtablePage() {
+        const page = window.AppStore.branchPage;
+        const size = window.AppStore.branchPageSize;
+        const total = currentDrawerBranches.length;
+        const totalPages = Math.max(1, Math.ceil(total / size));
+        const start = (page - 1) * size;
+        const pageItems = currentDrawerBranches.slice(start, start + size);
+
+        document.getElementById('branchStockPageInfo').textContent = `Page ${page} of ${totalPages} (${total} total)`;
+        document.getElementById('btnBranchPrev').disabled = (page <= 1);
+        document.getElementById('btnBranchNext').disabled = (page >= totalPages);
+
+        if (pageItems.length > 0) {
+            branchSubtableBody.innerHTML = pageItems.map(b => {
+                const isLow = b.onHand <= b.reorder;
+                return `
+                    <tr>
+                        <td><strong>${b.name}</strong></td>
+                        <td class="td-right" style="font-weight: 600;">${b.onHand}</td>
+                        <td class="td-right" style="color: var(--inv-text-muted);">${b.reserved || 0}</td>
+                        <td class="td-right">
+                            <span class="inv-stock-status-pill ${isLow ? 'low-stock' : 'in-stock'}">
+                                ${isLow ? 'Low Stock' : 'Optimal'}
+                            </span>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        } else {
+            branchSubtableBody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 16px; color: var(--inv-text-muted);">No branch inventory mapped.</td></tr>`;
+        }
+    }
+
+    window.navigateBranchPage = function(delta) {
+        const totalPages = Math.max(1, Math.ceil(currentDrawerBranches.length / window.AppStore.branchPageSize));
+        const newPage = window.AppStore.branchPage + delta;
+        if (newPage >= 1 && newPage <= totalPages) {
+            window.AppStore.branchPage = newPage;
+            renderBranchSubtablePage();
+        }
+    };
+
+    function renderLedgerSubtablePage() {
+        const page = window.AppStore.ledgerPage;
+        const size = window.AppStore.ledgerPageSize;
+        const total = currentDrawerLedgers.length;
+        const totalPages = Math.max(1, Math.ceil(total / size));
+        const start = (page - 1) * size;
+        const pageItems = currentDrawerLedgers.slice(start, start + size);
+
+        document.getElementById('ledgerLogPageInfo').textContent = `Page ${page} of ${totalPages} (${total} total)`;
+        document.getElementById('btnLedgerPrev').disabled = (page <= 1);
+        document.getElementById('btnLedgerNext').disabled = (page >= totalPages);
+
+        if (pageItems.length > 0) {
+            ledgerSubtableBody.innerHTML = pageItems.map(l => `
+                <tr>
+                    <td><strong>${l.ref}</strong></td>
+                    <td>${l.type}</td>
+                    <td class="td-right" style="font-weight: 600; color: ${String(l.qty).startsWith('+') ? 'var(--inv-success)' : 'var(--inv-danger)'};">${l.qty}</td>
+                    <td class="td-right" style="font-weight: 700;">${l.balance}</td>
+                </tr>
+            `).join('');
+        } else {
+            ledgerSubtableBody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 16px; color: var(--inv-text-muted);">No recent ledger activity recorded.</td></tr>`;
+        }
+    }
+
+    window.navigateLedgerPage = function(delta) {
+        const totalPages = Math.max(1, Math.ceil(currentDrawerLedgers.length / window.AppStore.ledgerPageSize));
+        const newPage = window.AppStore.ledgerPage + delta;
+        if (newPage >= 1 && newPage <= totalPages) {
+            window.AppStore.ledgerPage = newPage;
+            renderLedgerSubtablePage();
+        }
+    };
+
+    // =========================================================================
+    // PRICING TAB: COLUMN CHART & SUPPLIER BENCHMARKS (LAST 3 MONTHS)
+    // =========================================================================
+    function getMonthLabels3Mos() {
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const d = new Date();
+        const res = [];
+        for (let i = 2; i >= 0; i--) {
+            const pastDate = new Date(d.getFullYear(), d.getMonth() - i, 1);
+            res.push(`${monthNames[pastDate.getMonth()]} ${pastDate.getFullYear()}`);
+        }
+        return res;
+    }
+
+    function renderPriceHistoryChart(baseCost, baseSelling) {
+        const canvas = document.getElementById('priceHistoryChart');
+        if (!canvas) return;
+
+        if (window.AppStore.activePriceChart) {
+            window.AppStore.activePriceChart.destroy();
+            window.AppStore.activePriceChart = null;
+        }
+
+        const months = getMonthLabels3Mos();
+        document.getElementById('chartMonthsBadge').textContent = `${months[0]} - ${months[2]}`;
+
+        // Compute realistic monthly trend points for past 3 months
+        const cVal = Number(baseCost) || 50;
+        const sVal = Number(baseSelling) || (cVal * 1.6);
+
+        const costData = [
+            Math.round(cVal * 0.94 * 100) / 100,
+            Math.round(cVal * 0.97 * 100) / 100,
+            Math.round(cVal * 1.00 * 100) / 100
+        ];
+        const sellingData = [
+            Math.round(sVal * 0.98 * 100) / 100,
+            Math.round(sVal * 1.00 * 100) / 100,
+            Math.round(sVal * 1.00 * 100) / 100
+        ];
+
+        const ctx = canvas.getContext('2d');
+        window.AppStore.activePriceChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: months,
+                datasets: [
+                    {
+                        label: 'Cost Price (₱)',
+                        data: costData,
+                        backgroundColor: 'rgba(168, 85, 247, 0.75)',
+                        borderColor: '#a855f7',
+                        borderWidth: 1.5,
+                        borderRadius: 6,
+                        barPercentage: 0.65,
+                        categoryPercentage: 0.75
+                    },
+                    {
+                        label: 'Selling Price (₱)',
+                        data: sellingData,
+                        backgroundColor: 'rgba(59, 130, 246, 0.65)',
+                        borderColor: '#3b82f6',
+                        borderWidth: 1.5,
+                        borderRadius: 6,
+                        barPercentage: 0.65,
+                        categoryPercentage: 0.75
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            boxWidth: 12,
+                            font: { family: 'Poppins', size: 11, weight: '600' }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return ` ${context.dataset.label}: ₱${Number(context.raw).toFixed(2)}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) { return '₱' + value; },
+                            font: { size: 10 }
+                        },
+                        grid: { color: 'rgba(226, 232, 240, 0.6)' }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { family: 'Poppins', size: 11, weight: '500' } }
+                    }
+                }
+            }
+        });
+    }
+
+    function renderSupplierPriceSection(product, isNew) {
+        let suppliers = [];
+        const baseCost = Number(product?.costPrice) || 50;
+
+        if (product && product.supplierBenchmarks && product.supplierBenchmarks.length > 0) {
+            suppliers = product.supplierBenchmarks;
+        } else {
+            // Generate standard mock supplier quotes based on product context
+            const primarySup = (product && product.supplier) ? product.supplier : 'Direct Import Supply Corp';
+            suppliers = [
+                { name: primarySup, price: Math.round(baseCost * 100) / 100, updated: '2 days ago' },
+                { name: 'Apex Premier Distro', price: Math.round(baseCost * 1.08 * 100) / 100, updated: '1 week ago' },
+                { name: 'Global Goods Wholesale Hub', price: Math.round(baseCost * 0.95 * 100) / 100, updated: 'Yesterday' }
+            ];
+        }
+
+        // Find lowest affordable price
+        const minPrice = Math.min(...suppliers.map(s => Number(s.price)));
+
+        // Automatically fill Cost Price = Lowest Price + 5% Margin if new or user requests
+        const recommendedCost = (minPrice * 1.05).toFixed(2);
+        if (isNew || !formCostPrice.value || Number(formCostPrice.value) === 0) {
+            formCostPrice.value = recommendedCost;
+            updateMarginCalculation();
+        }
+
+        supplierPricesListBody.innerHTML = suppliers.map(s => {
+            const isLowest = (Number(s.price) === minPrice);
+            return `
+                <div class="inv-supplier-item ${isLowest ? 'is-lowest' : ''}">
+                    <div>
+                        <div class="inv-supplier-name">
+                            ${s.name}
+                            ${isLowest ? '<span class="inv-supplier-best-badge">Most Affordable</span>' : ''}
+                        </div>
+                        <div class="inv-supplier-updated">Updated: ${s.updated}</div>
+                    </div>
+                    <div class="inv-supplier-price-box">
+                        <div class="inv-supplier-price">${formatPHP(s.price)}</div>
+                        ${isLowest ? '<div style="font-size: 0.64rem; color: var(--inv-success); font-weight: 600;">+5% = ₱' + (s.price * 1.05).toFixed(2) + '</div>' : ''}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // =========================================================================
     // SLIDE-OUT DETAIL DRAWER LOGIC
     // =========================================================================
     window.openProductDrawer = function(idOrMode, defaultCategory) {
         switchPrimaryTab('tab-general');
         switchSubTab('sub-branch');
+
+        window.AppStore.branchPage = 1;
+        window.AppStore.ledgerPage = 1;
 
         if (idOrMode === 'new') {
             window.AppStore.selectedProductId = null;
@@ -2991,34 +3868,38 @@ body.is-column-resizing * {
             formSku.value = 'PRD-' + Math.floor(1000 + Math.random() * 9000);
             formBarcode.value = '4800' + Math.floor(100000000 + Math.random() * 900000000);
             formName.value = '';
-            formCategory.value = defaultCategory || (window.AppStore.categories[0] || 'Beverages');
-            formSubcategory.value = '';
+            
+            const defCat = defaultCategory || (window.AppStore.categories[0] || 'Beverages');
+            formCategory.value = defCat;
+            syncSubcategoryDropdown(defCat);
+            if (formSubcategorySelect && formSubcategorySelect.options.length > 0) {
+                formSubcategory.value = formSubcategorySelect.options[0].value;
+            } else {
+                formSubcategory.value = 'Standard';
+            }
+
             formUnit.value = 'Piece';
-            formPackSize.value = '1 pc';
+            formPackSize.value = '1';
             formDescription.value = '';
             formAllergens.value = '';
             formIsActive.checked = true;
             formTrackStock.checked = true;
             formReorderPoint.value = 15;
             formTargetStock.value = 50;
-            formCostPrice.value = '';
             formSellingPrice.value = '';
             formTaxRate.value = '12% VAT';
             formSupplier.value = '';
             formProfitMargin.value = '0.0%';
 
-            branchSubtableBody.innerHTML = `
-                <tr>
-                    <td>Power Mac Center - Main HQ</td>
-                    <td class="td-right">0</td>
-                    <td class="td-right">0</td>
-                    <td class="td-right"><span class="inv-stock-status-pill low-stock">Awaiting Stock</span></td>
-                </tr>
-            `;
+            currentDrawerBranches = [
+                { name: 'Power Mac Center - Main HQ', onHand: 0, reserved: 0, reorder: 15 }
+            ];
+            currentDrawerLedgers = [];
 
-            ledgerSubtableBody.innerHTML = `
-                <tr><td colspan="4" style="text-align: center; color: var(--inv-text-muted); padding: 14px;">New product &bull; No ledger history recorded yet.</td></tr>
-            `;
+            renderBranchSubtablePage();
+            renderLedgerSubtablePage();
+            renderSupplierPriceSection(null, true);
+            renderPriceHistoryChart(parseFloat(formCostPrice.value) || 45, 120);
 
         } else {
             const product = window.AppStore.products.find(p => p.id === Number(idOrMode));
@@ -3035,9 +3916,26 @@ body.is-column-resizing * {
             formBarcode.value = product.barcode || '';
             formName.value = product.name;
             formCategory.value = product.category;
-            formSubcategory.value = product.subcategory || '';
+            
+            syncSubcategoryDropdown(product.category);
+            formSubcategory.value = product.subcategory || 'Standard';
+            if (formSubcategorySelect) {
+                const hasOpt = Array.from(formSubcategorySelect.options).some(o => o.value === product.subcategory);
+                if (hasOpt) {
+                    formSubcategorySelect.value = product.subcategory;
+                    formSubcategory.style.display = 'none';
+                    formSubcategorySelect.style.display = 'block';
+                } else {
+                    formSubcategorySelect.style.display = 'none';
+                    formSubcategory.style.display = 'block';
+                }
+            }
+
             formUnit.value = product.unit;
-            formPackSize.value = product.packSize || '1 pc';
+            // Extract numeric value from pack size if string had units
+            const numericPackSize = parseFloat(String(product.packSize || '1').replace(/[^0-9.]/g, '')) || 1;
+            formPackSize.value = numericPackSize;
+
             formDescription.value = product.description || '';
             formAllergens.value = (product.allergens || []).join(', ');
             formIsActive.checked = product.isActive !== false;
@@ -3050,38 +3948,17 @@ body.is-column-resizing * {
             formSupplier.value = product.supplier || '';
             updateMarginCalculation();
 
-            if (product.branches && product.branches.length > 0) {
-                branchSubtableBody.innerHTML = product.branches.map(b => {
-                    const isLow = b.onHand <= b.reorder;
-                    return `
-                        <tr>
-                            <td><strong>${b.name}</strong></td>
-                            <td class="td-right" style="font-weight: 600;">${b.onHand}</td>
-                            <td class="td-right" style="color: var(--inv-text-muted);">${b.reserved || 0}</td>
-                            <td class="td-right">
-                                <span class="inv-stock-status-pill ${isLow ? 'low-stock' : 'in-stock'}">
-                                    ${isLow ? 'Low Stock' : 'Optimal'}
-                                </span>
-                            </td>
-                        </tr>
-                    `;
-                }).join('');
-            } else {
-                branchSubtableBody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 12px;">No branch locations mapped.</td></tr>`;
-            }
+            currentDrawerBranches = product.branches || [
+                { name: 'Power Mac Center - Main HQ', onHand: 24, reserved: 0, reorder: product.reorderPoint || 15 }
+            ];
+            currentDrawerLedgers = product.ledger || [
+                { ref: 'PO-2026-0041', type: 'Stock In', qty: '+50', balance: 95 }
+            ];
 
-            if (product.ledger && product.ledger.length > 0) {
-                ledgerSubtableBody.innerHTML = product.ledger.map(l => `
-                    <tr>
-                        <td><strong>${l.ref}</strong></td>
-                        <td>${l.type}</td>
-                        <td class="td-right" style="font-weight: 600; color: ${l.qty.startsWith('+') ? 'var(--inv-success)' : 'var(--inv-danger)'};">${l.qty}</td>
-                        <td class="td-right" style="font-weight: 700;">${l.balance}</td>
-                    </tr>
-                `).join('');
-            } else {
-                ledgerSubtableBody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 12px;">No recent ledger activity.</td></tr>`;
-            }
+            renderBranchSubtablePage();
+            renderLedgerSubtablePage();
+            renderSupplierPriceSection(product, false);
+            renderPriceHistoryChart(product.costPrice, product.sellingPrice);
         }
 
         drawerBackdrop.classList.add('is-open');
@@ -3099,6 +3976,10 @@ body.is-column-resizing * {
         drawerBackdrop.classList.remove('is-open');
         drawerContainer.classList.remove('is-open');
         window.AppStore.selectedProductId = null;
+        if (window.AppStore.activePriceChart) {
+            window.AppStore.activePriceChart.destroy();
+            window.AppStore.activePriceChart = null;
+        }
         renderMasterList();
         setTimeout(() => searchInput.focus(), 150);
     };
@@ -3110,6 +3991,15 @@ body.is-column-resizing * {
         document.querySelectorAll('.drawer-tab-pane').forEach(pane => {
             pane.style.display = (pane.id === 'pane-' + tabId) ? 'block' : 'none';
         });
+
+        // Trigger chart render if pricing tab opened
+        if (tabId === 'tab-pricing') {
+            setTimeout(() => {
+                const cost = parseFloat(formCostPrice.value) || 50;
+                const selling = parseFloat(formSellingPrice.value) || (cost * 1.5);
+                renderPriceHistoryChart(cost, selling);
+            }, 50);
+        }
     }
 
     document.querySelectorAll('.inv-drawer-tab-btn').forEach(btn => {
@@ -3125,6 +4015,11 @@ body.is-column-resizing * {
         document.querySelectorAll('.inv-subtable-wrapper').forEach(wrapper => {
             wrapper.style.display = (wrapper.id === 'subpane-' + subtabId) ? 'block' : 'none';
         });
+
+        const branchPagination = document.getElementById('branchStockPagination');
+        const ledgerPagination = document.getElementById('ledgerLogPagination');
+        if (branchPagination) branchPagination.style.display = (subtabId === 'sub-branch') ? 'flex' : 'none';
+        if (ledgerPagination) ledgerPagination.style.display = (subtabId === 'sub-movements') ? 'flex' : 'none';
     }
 
     document.querySelectorAll('.inv-subtab-btn').forEach(btn => {
@@ -3157,7 +4052,7 @@ body.is-column-resizing * {
             category: formCategory.value,
             subcategory: formSubcategory.value.trim() || 'Standard',
             unit: formUnit.value,
-            packSize: formPackSize.value.trim() || '1 pc',
+            packSize: formPackSize.value.trim() || '1',
             description: formDescription.value.trim(),
             allergens: allergenArray,
             isActive: formIsActive.checked,
@@ -3481,6 +4376,17 @@ body.is-column-resizing * {
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
     };
+
+    // Close Category Autocomplete on outside click
+    document.addEventListener('click', function(e) {
+        const drop = document.getElementById('catAutocompleteDropdown');
+        const inputWrap = document.querySelector('.inv-cat-input-wrapper');
+        if (drop && drop.classList.contains('is-open')) {
+            if (inputWrap && !inputWrap.contains(e.target)) {
+                drop.classList.remove('is-open');
+            }
+        }
+    });
 
     // Keyboard Shortcuts
     document.addEventListener('keydown', function(e) {

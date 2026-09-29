@@ -195,8 +195,8 @@
                     'url' => route('inventory.product-categories'),
                     'icon' => 'ph-pizza',
                     'items' => [
-                        ['title' => 'Product / Categories', 'url' => route('inventory.product-categories'), 'icon' => 'ph-folder-simple', 'route' => 'inventory.product-categories'],
-                        ['title' => 'Recipe / Menu Management', 'url' => route('inventory.recipe-management'), 'icon' => 'ph-book-open', 'route' => 'inventory.recipe-management']
+                        ['title' => 'Item Master', 'url' => route('inventory.product-categories'), 'icon' => 'ph-folder-simple', 'route' => 'inventory.product-categories'],
+                        ['title' => 'Bill of Materials (BOM)', 'url' => route('inventory.recipe-management'), 'icon' => 'ph-book-open', 'route' => 'inventory.recipe-management']
                     ]
                 ]
             ]

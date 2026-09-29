@@ -239,8 +239,8 @@
                     <button class="add-btn"><i class="ph {{ $prodMgtActive ? 'ph-minus' : 'ph-plus' }}"></i></button>
                 </div>
                 <div class="sub-nav{{ $prodMgtActive ? ' expanded' : '' }}">
-                    <a href="{{ route('inventory.product-categories') }}" class="sub-nav-item{{ request()->routeIs('inventory.product-categories') ? ' active' : '' }}"><span>Product / Categories</span></a>
-                    <a href="{{ route('inventory.recipe-management') }}" class="sub-nav-item{{ request()->routeIs('inventory.recipe-management') ? ' active' : '' }}"><span>Recipe / Menu Management</span></a>
+                    <a href="{{ route('inventory.product-categories') }}" class="sub-nav-item{{ request()->routeIs('inventory.product-categories') ? ' active' : '' }}" title="Centralized catalog for managing raw materials, packaging, suppliers, units of measure (UOM), and stock pricing."><span>Item Master</span></a>
+                    <a href="{{ route('inventory.recipe-management') }}" class="sub-nav-item{{ request()->routeIs('inventory.recipe-management') ? ' active' : '' }}" title="Configure product recipes, component quantities, automated inventory deductions, and production costing."><span>Bill of Materials (BOM)</span></a>
                 </div>
             </div>
         </div>

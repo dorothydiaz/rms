@@ -5,6 +5,7 @@
 2. **Contract-First Development:** Downstream agents (Dev & UI) are strictly bound to `schema.md` and Gherkin acceptance criteria produced by the PM. Modifying contracts requires PM re-approval.
 3. **Red-Green Test Verification:** Code is considered unverified until automated tests run and pass in the environment. Hallucinating test results will cause the Auditor to reject the step.
 4. **Blackboard Isolation:** Agents must read input only from `.agents/state.md` and write their outputs to it. Do not rely on loose chat memory.
+5. **Strict Grep-First Protocol & Token Cap:** Never call `view_file` on unverified line ranges or read full files. Always locate targets using `grep_search` (multi-target regex). Read slices limited to ≤80 lines (`view_file` with StartLine/EndLine). Batch edits in one shot with `multi_replace_file_content`. Verify with cheap shell scripts instead of post-edit file reads. Details: `.agents/rules/token_efficiency.md`.
 
 ---
 

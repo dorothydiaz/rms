@@ -2,12 +2,14 @@
 
 ## Current Execution State
 - **Active Phase:** 5_AUDITOR_COMPLETE
-- **Module:** Inventory Operations -> Product Management (`product-categories.blade.php`)
+- **Module:** System Architecture -> Token Efficiency & Grep-First Reconnaissance Protocol
 - **Audit Status:** APPROVED
 
 ## Artifact Registry
 - **Prompt Spec:** `.agents/artifacts/prompt_spec.md` (Approved)
 - **PRD:** `.agents/artifacts/PRD.md` (Approved)
+- **Token Efficiency Rules:** `.agents/rules/token_efficiency.md` (Locked & Enforced)
+- **System Directives:** `.agents/AGENTS.md` (Directive 5 Active)
 - **Design Tokens:** `public/assets/css/styles.css` & inline blade tokens (Integrated)
 - **Target View:** `resources/views/inventory/product-categories.blade.php` (Verified)
 
