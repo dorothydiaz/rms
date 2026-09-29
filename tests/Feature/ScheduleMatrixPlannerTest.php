@@ -57,5 +57,10 @@ class ScheduleMatrixPlannerTest extends TestCase
         // Verify entire shift card is clickable to open custom options
         $response->assertSee('sched-shift-card sched-theme-o" onclick="openCellCustomDropdown(', false);
         $response->assertSee('event.stopPropagation(); clearCellShift(', false);
+
+        // Verify scheduled shift time stands out with elevated pill styling and tabular nums
+        $response->assertSee('.sched-card-time {', false);
+        $response->assertSee('font-variant-numeric: tabular-nums;', false);
+        $response->assertSee('.sched-theme-o .sched-card-time { background: #ffffff;', false);
     }
 }

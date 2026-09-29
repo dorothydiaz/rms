@@ -1527,18 +1527,26 @@
 }
 
 .sched-card-time {
-    font-size: 11.5px;
-    font-weight: 700;
-    font-family: monospace;
-    display: flex;
+    font-size: 12px;
+    font-weight: 800;
+    font-family: var(--font-heading, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.25px;
+    display: inline-flex;
     align-items: center;
-    gap: 4.5px;
-    line-height: 1.2;
-    padding: 1px 1px;
+    gap: 5px;
+    line-height: 1;
+    padding: 2.5px 7px;
+    border-radius: 6px;
+    width: fit-content;
+    max-width: 100%;
+    box-sizing: border-box;
+    transition: all 0.15s ease;
 }
 .sched-card-time i {
-    font-size: 12.5px;
-    opacity: 0.9;
+    font-size: 13.5px;
+    opacity: 1;
+    flex-shrink: 0;
 }
 
 /* Detail box inside card (Integrated Hairline Layout matching Clean Image) */
@@ -1632,7 +1640,8 @@
 .sched-theme-o { border: 1.5px solid #86efac; background: #f0fdf4; }
 .sched-theme-o .sched-badge-code { background: #059669; color: #ffffff; box-shadow: 0 1px 2px rgba(5, 150, 105, 0.25); }
 .sched-theme-o .sched-badge-name { color: #065f46; font-size: 11px; font-weight: 800; }
-.sched-theme-o .sched-card-time { color: #047857; }
+.sched-theme-o .sched-card-time { background: #ffffff; border: 1px solid #86efac; color: #064e3b; box-shadow: 0 1px 2px rgba(5, 150, 105, 0.08); }
+.sched-theme-o .sched-card-time i { color: #059669; }
 .sched-theme-o .sched-card-detail-box { border-top: 1px solid #bbf7d0 !important; }
 .sched-theme-o .sched-detail-punch { color: #065f46; }
 .sched-theme-o .sched-detail-hours { color: #047857; }
@@ -1642,7 +1651,8 @@
 .sched-theme-md { border: 1.5px solid #93c5fd; background: #f0f7ff; }
 .sched-theme-md .sched-badge-code { background: #2563eb; color: #ffffff; box-shadow: 0 1px 2px rgba(37, 99, 235, 0.25); }
 .sched-theme-md .sched-badge-name { color: #1e40af; font-size: 11px; font-weight: 800; }
-.sched-theme-md .sched-card-time { color: #1d4ed8; }
+.sched-theme-md .sched-card-time { background: #ffffff; border: 1px solid #93c5fd; color: #1e3a8a; box-shadow: 0 1px 2px rgba(37, 99, 235, 0.08); }
+.sched-theme-md .sched-card-time i { color: #2563eb; }
 .sched-theme-md .sched-card-detail-box { border-top: 1px solid #bfdbfe !important; }
 .sched-theme-md .sched-detail-punch { color: #1e40af; }
 .sched-theme-md .sched-detail-hours { color: #1d4ed8; }
@@ -1652,7 +1662,8 @@
 .sched-theme-ld { border: 1.5px solid #fcd34d; background: #fffdf5; }
 .sched-theme-ld .sched-badge-code { background: #d97706; color: #ffffff; box-shadow: 0 1px 2px rgba(217, 119, 6, 0.25); }
 .sched-theme-ld .sched-badge-name { color: #92400e; font-size: 11px; font-weight: 800; }
-.sched-theme-ld .sched-card-time { color: #b45309; }
+.sched-theme-ld .sched-card-time { background: #ffffff; border: 1px solid #fcd34d; color: #78350f; box-shadow: 0 1px 2px rgba(217, 119, 6, 0.08); }
+.sched-theme-ld .sched-card-time i { color: #d97706; }
 .sched-theme-ld .sched-card-detail-box { border-top: 1px solid #fde68a !important; }
 .sched-theme-ld .sched-detail-punch { color: #92400e; }
 .sched-theme-ld .sched-detail-hours { color: #b45309; }
@@ -1662,7 +1673,8 @@
 .sched-theme-c { border: 1.5px solid #d8b4fe; background: #faf5ff; }
 .sched-theme-c .sched-badge-code { background: #9333ea; color: #ffffff; box-shadow: 0 1px 2px rgba(147, 51, 234, 0.25); }
 .sched-theme-c .sched-badge-name { color: #6b21a8; font-size: 11px; font-weight: 800; }
-.sched-theme-c .sched-card-time { color: #7e22ce; }
+.sched-theme-c .sched-card-time { background: #ffffff; border: 1px solid #d8b4fe; color: #581c87; box-shadow: 0 1px 2px rgba(147, 51, 234, 0.08); }
+.sched-theme-c .sched-card-time i { color: #9333ea; }
 .sched-theme-c .sched-card-detail-box { border-top: 1px solid #e9d5ff !important; }
 .sched-theme-c .sched-detail-punch { color: #6b21a8; }
 .sched-theme-c .sched-detail-hours { color: #7e22ce; }
@@ -1672,7 +1684,8 @@
 .sched-card-rest { border: 1.5px solid #cbd5e1; background: #f8fafc; }
 .sched-card-rest .sched-badge-code { background: #64748b; color: #ffffff; }
 .sched-card-rest .sched-badge-name { color: #334155; font-size: 11px; font-weight: 800; }
-.sched-card-rest .sched-card-time { color: #64748b; }
+.sched-card-rest .sched-card-time { background: #ffffff; border: 1px solid #cbd5e1; color: #1e293b; box-shadow: 0 1px 2px rgba(100, 116, 139, 0.08); }
+.sched-card-rest .sched-card-time i { color: #64748b; }
 .sched-card-rest .sched-card-detail-box { border-top: 1px solid #e2e8f0 !important; }
 .sched-card-rest .sched-detail-punch { color: #475569; }
 .sched-card-rest .sched-detail-hours { color: #64748b; }
@@ -1682,7 +1695,8 @@
 .sched-card-custom { border: 1.5px solid #c4b5fd; background: #f5f3ff; }
 .sched-card-custom .sched-badge-code { background: #7c3aed; color: #ffffff; }
 .sched-card-custom .sched-badge-name { color: #5b21b6; font-size: 11px; font-weight: 800; }
-.sched-card-custom .sched-card-time { color: #6d28d9; }
+.sched-card-custom .sched-card-time { background: #ffffff; border: 1px solid #c4b5fd; color: #4c1d95; box-shadow: 0 1px 2px rgba(124, 58, 237, 0.08); }
+.sched-card-custom .sched-card-time i { color: #7c3aed; }
 .sched-card-custom .sched-card-detail-box { border-top: 1px solid #ddd6fe !important; }
 .sched-card-custom .sched-detail-punch { color: #5b21b6; }
 .sched-card-custom .sched-detail-hours { color: #6d28d9; }
