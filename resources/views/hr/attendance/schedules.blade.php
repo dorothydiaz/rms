@@ -1850,6 +1850,18 @@
     flex-direction: column;
     overflow-y: auto;
     overflow-x: hidden;
+    animation: schedPopoverFlyout 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes schedPopoverFlyout {
+    from {
+        opacity: 0;
+        transform: scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
 }
 
 .sched-custom-dd-header {
@@ -2345,30 +2357,28 @@ function openCellCustomDropdown(empId, date) {
     const viewportHeight = window.innerHeight;
     const viewportWidth = window.innerWidth;
 
-    // Vertical placement: detect bottom collision and flip upward when needed
-    const spaceBelow = viewportHeight - rect.bottom;
-    const spaceAbove = rect.top;
+    // Horizontal side placement: Open to the right of the cell by default, or flip to the left if near screen edge
+    const spaceRight = viewportWidth - rect.right;
+    const spaceLeft = rect.left;
 
-    let top;
-    if (spaceBelow < ddHeight && spaceAbove > spaceBelow) {
-        // Not enough room below -> open ABOVE the cell
-        top = rect.top - ddHeight - 6;
-        if (top < 10) top = 10;
+    let left;
+    if (spaceRight >= ddWidth + 10 || spaceRight >= spaceLeft) {
+        // Sufficient room on right side of the cell
+        left = rect.right + 10;
     } else {
-        // Sufficient room below -> open BELOW the cell
-        top = rect.bottom + 6;
-        if (top + ddHeight > viewportHeight - 10) {
-            top = Math.max(10, viewportHeight - ddHeight - 10);
-        }
+        // Not enough room on the right -> flip to the left side of the cell
+        left = rect.left - ddWidth - 10;
     }
+    // Prevent clipping past viewport edges
+    left = Math.max(12, Math.min(left, viewportWidth - ddWidth - 12));
 
-    // Horizontal placement: align with cell, prevent clipping on right/left edges
-    let left = rect.left;
-    if (left + ddWidth > viewportWidth - 14) {
-        left = viewportWidth - ddWidth - 14;
+    // Vertical placement: Align with cell top, clamped so window never overflows top/bottom of screen
+    let top = rect.top - 6;
+    if (top + ddHeight > viewportHeight - 12) {
+        top = Math.max(12, viewportHeight - ddHeight - 12);
     }
-    if (left < 14) {
-        left = 14;
+    if (top < 12) {
+        top = 12;
     }
 
     dd.style.top = `${Math.round(top)}px`;

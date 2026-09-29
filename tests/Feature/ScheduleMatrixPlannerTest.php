@@ -48,10 +48,11 @@ class ScheduleMatrixPlannerTest extends TestCase
         );
         $response->assertSee('.sched-row-dropdown.open { display: block !important; }', false);
 
-        // Verify custom dropdown popover uses fixed viewport positioning and smart collision detection
+        // Verify custom dropdown popover uses fixed viewport positioning and horizontal side placement with collision detection
         $response->assertSee('position: fixed !important;', false);
-        $response->assertSee('spaceBelow < ddHeight', false);
-        $response->assertSee('rect.top - ddHeight', false);
+        $response->assertSee('spaceRight', false);
+        $response->assertSee('rect.right + 10', false);
+        $response->assertSee('rect.left - ddWidth - 10', false);
 
         // Verify entire shift card is clickable to open custom options
         $response->assertSee('sched-shift-card sched-theme-o" onclick="openCellCustomDropdown(', false);
