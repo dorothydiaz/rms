@@ -726,11 +726,17 @@ class AttendanceController extends Controller
             ->get()
             ->groupBy('employee_id');
 
+        // Load attendance records for these employees for this week
+        $attendanceRecords = AttendanceRecord::whereIn('employee_id', $employees->pluck('id'))
+            ->whereIn('date', $dates)
+            ->get()
+            ->groupBy('employee_id');
+
         $branches = Branch::where('is_active', true)->get();
         $departments = Department::where('is_active', true)->orderBy('name')->get();
         $allEmployees = Employee::with(['branch', 'department', 'position'])->orderBy('first_name')->get();
 
-        return view('hr.attendance.schedules', compact('employees', 'dates', 'schedules', 'shiftTemplates', 'weekStart', 'branches', 'departments', 'allEmployees'));
+        return view('hr.attendance.schedules', compact('employees', 'dates', 'schedules', 'attendanceRecords', 'shiftTemplates', 'weekStart', 'branches', 'departments', 'allEmployees'));
     }
 
     public function scheduleStore(Request $request): RedirectResponse
