@@ -8,6 +8,7 @@
     $prevWeek = $cWeek->copy()->subDays(7)->toDateString();
     $nextWeek = $cWeek->copy()->addDays(7)->toDateString();
     $thisWeek = \Carbon\Carbon::now()->startOfWeek()->toDateString();
+    $weekEnd = $cWeek->copy()->addDays(6)->toDateString();
 
     // Collect available category names from departments, branches, or positions
     $categories = collect();
@@ -21,12 +22,12 @@
 <x-hr-tabs parent="time-attendance">
     <x-slot:actions>
         <div style="display: flex; gap: 8px; align-items: center;">
-            <button type="button" class="hr-btn hr-btn-secondary" onclick="openModal('addShiftModal')" style="padding: 6px 13px; font-size: 12.5px; font-weight: 700;">
-                <i class="ph ph-clock-afternoon" style="font-size: 15px;"></i>
+            <button type="button" class="hr-btn hr-btn-secondary" onclick="openModal('addShiftModal')" style="height: 38px; padding: 0 16px; font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; gap: 7px; border-radius: 10px;">
+                <i class="ph ph-clock-afternoon" style="font-size: 16px;"></i>
                 <span>Add Shift Template</span>
             </button>
-            <button type="button" class="hr-btn hr-btn-primary" onclick="openAssignModal()" style="padding: 6px 15px; font-size: 12.5px; font-weight: 700;">
-                <i class="ph ph-calendar-plus" style="font-size: 15px;"></i>
+            <button type="button" class="hr-btn hr-btn-primary" onclick="openAssignModal()" style="height: 38px; padding: 0 18px; font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; gap: 7px; border-radius: 10px;">
+                <i class="ph ph-calendar-plus" style="font-size: 16px;"></i>
                 <span>Bulk Assign Schedule</span>
             </button>
         </div>
@@ -57,14 +58,14 @@
                     <i class="ph ph-caret-left"></i>
                 </a>
 
-                <form method="GET" action="{{ route('hr.attendance.schedules') }}" id="weekPickerForm" class="sched-week-picker-form">
+                <form method="GET" action="{{ route('hr.attendance.schedules') }}" id="weekPickerForm" class="sched-week-date-trigger" title="Click to choose another week" onclick="const inp = this.querySelector('input[type=date]'); if(inp && typeof inp.showPicker === 'function') { try { inp.showPicker(); } catch(e){} }">
                     @if(request('branch_id'))
                         <input type="hidden" name="branch_id" value="{{ request('branch_id') }}">
                     @endif
-                    <label for="schedWeekInput" class="sched-week-nav-tag">
-                        Week:
-                    </label>
-                    <input type="date" name="week_start" id="schedWeekInput" value="{{ $weekStart }}" onchange="this.form.submit()" class="sched-week-nav-input">
+                    <i class="ph ph-calendar-blank sched-week-cal-icon"></i>
+                    <span class="sched-week-label-range">{{ $cWeek->format('M d') }} – {{ \Carbon\Carbon::parse($weekEnd)->format('M d, Y') }}</span>
+                    <i class="ph ph-caret-down sched-week-dropdown-arrow"></i>
+                    <input type="date" name="week_start" id="schedWeekInput" value="{{ $weekStart }}" onchange="this.form.submit()" class="no-custom-datepicker sched-invisible-date-input" aria-label="Select week">
                 </form>
 
                 <a href="{{ route('hr.attendance.schedules', array_merge(request()->query(), ['week_start' => $nextWeek])) }}" 
@@ -74,7 +75,7 @@
 
                 @if($weekStart !== $thisWeek)
                     <a href="{{ route('hr.attendance.schedules', array_merge(request()->query(), ['week_start' => $thisWeek])) }}" 
-                       class="sched-preset-btn sched-nav-btn-current">
+                       class="sched-nav-btn-current" title="Jump to Current Week">
                         Current
                     </a>
                 @endif
@@ -339,7 +340,7 @@
 
                                 <!-- ⚡ Quick Fill Menu for this row -->
                                 <div class="sched-row-action-menu" style="position: relative;">
-                                    <button type="button" class="sched-row-btn" onclick="toggleRowMenu({{ $emp->id }})" title="Quick fill week for {{ $emp->full_name }}">
+                                    <button type="button" class="sched-row-btn" onclick="toggleRowMenu({{ $emp->id }}, this)" title="Quick fill week for {{ $emp->full_name }}">
                                         <i class="ph ph-lightning"></i>
                                     </button>
                                     
@@ -480,7 +481,7 @@
                                                 <div class="sched-detail-row">
                                                     <span class="sched-detail-dot dot-no-inout">●</span>
                                                     <span class="sched-detail-punch">Rest Day</span>
-                                                    <span class="sched-detail-badge" style="background:#f1f5f9;color:#475569;border:1px solid #cbd5e1;">OFF DUTY</span>
+                                                    <span class="sched-detail-badge badge-off-duty">OFF DUTY</span>
                                                 </div>
                                                 <div class="sched-detail-row sched-detail-hours">
                                                     <span>Hours Worked:</span>
@@ -950,44 +951,50 @@
     overflow: hidden !important;
     display: flex !important;
     flex-direction: column !important;
-    padding: 8px 16px 6px 16px !important;
+    padding: 14px 20px 12px 20px !important;
     box-sizing: border-box !important;
 }
 
-/* Compact Parent Header on Schedule Planner */
+/* Spacious Parent Header matching standard Time & Attendance (Picture 1) */
 .hr-parent-header {
-    margin-bottom: 8px !important;
+    margin-bottom: 12px !important;
     padding-bottom: 0 !important;
     flex-shrink: 0 !important;
 }
 .hr-parent-title-row {
-    margin-bottom: 4px !important;
-    gap: 10px !important;
+    margin-bottom: 8px !important;
+    gap: 16px !important;
 }
 .hr-parent-title {
-    font-size: 19px !important;
-    gap: 10px !important;
+    font-size: 23px !important;
+    font-weight: 800 !important;
+    gap: 12px !important;
 }
 .hr-parent-title i {
-    width: 32px !important;
-    height: 32px !important;
-    font-size: 17px !important;
-    border-radius: 9px !important;
+    width: 40px !important;
+    height: 40px !important;
+    font-size: 21px !important;
+    border-radius: 12px !important;
 }
 .hr-parent-subtitle {
-    display: none !important;
+    display: block !important;
+    font-size: 13px !important;
+    color: #64748b !important;
+    margin-top: 4px !important;
+    font-weight: 400 !important;
 }
 .hr-tabs-wrapper {
-    margin-top: 4px !important;
-    margin-bottom: 8px !important;
-    padding: 4px 6px !important;
-    border-radius: 12px !important;
+    margin-top: 10px !important;
+    margin-bottom: 12px !important;
+    padding: 6px !important;
+    border-radius: 14px !important;
     flex-shrink: 0 !important;
 }
 .hr-tab-item {
-    padding: 6px 13px !important;
-    font-size: 12.5px !important;
-    border-radius: 8px !important;
+    padding: 8px 18px !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    border-radius: 10px !important;
 }
 
 /* Schedule Planner Card: Full Flex Column */
@@ -1018,7 +1025,7 @@
     background: #f8fafc !important;
     z-index: 20 !important;
     box-shadow: 0 2px 4px rgba(0,0,0,0.04);
-    padding: 10px 8px !important;
+    padding: 8px 6px !important;
 }
 .sched-matrix-table thead th.sched-sticky-th {
     z-index: 35 !important;
@@ -1027,7 +1034,7 @@
 
 /* Sub Toolbar (Add Employee Row + Category Checkboxes + Search + Clear) */
 .sched-sub-toolbar {
-    padding: 7px 16px;
+    padding: 6px 16px;
     background: #f8fafc;
     border-bottom: 1.5px solid #e2e8f0;
     display: flex;
@@ -1260,7 +1267,7 @@
     border-right: 2px solid #e2e8f0 !important;
     box-shadow: 3px 0 6px rgba(0,0,0,0.03);
     overflow: hidden;
-    padding: 11px 12px !important;
+    padding: 8px 12px !important;
 }
 .sched-sticky-td {
     position: sticky !important;
@@ -1269,8 +1276,8 @@
     border-right: 2px solid #e2e8f0 !important;
     box-shadow: 3px 0 6px rgba(0,0,0,0.02);
     z-index: 10;
-    overflow: hidden;
-    padding: 10px 14px !important;
+    overflow: visible !important;
+    padding: 7px 12px !important;
 }
 .sched-row:hover .sched-sticky-td {
     background: #f8fafc !important;
@@ -1318,11 +1325,11 @@
 
 /* Cell Preset Buttons (Spacious & Breathable Grid) */
 .sched-cell-td {
-    padding: 5px 3.5px !important;
+    padding: 4px 3px !important;
     vertical-align: middle !important;
     text-align: center;
     position: relative;
-    min-height: 108px !important;
+    min-height: 88px !important;
     box-sizing: border-box;
 }
 
@@ -1340,15 +1347,15 @@
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    gap: 3.5px;
+    gap: 3px;
     width: 100%;
     height: 100%;
-    min-height: 96px;
-    max-height: 102px;
+    min-height: 84px;
+    max-height: 90px;
     margin: 0;
     border: 1.5px dashed #93c5fd;
-    border-radius: 9px;
-    padding: 5px 6px;
+    border-radius: 8px;
+    padding: 4px 5px;
     background: #ffffff;
     box-sizing: border-box;
     transition: all 0.15s ease;
@@ -1428,18 +1435,18 @@
 /* Assigned Shift Card (Spacious, Airy, Rich in Details & Distinct Colors) */
 .sched-shift-card {
     position: relative;
-    border-radius: 9px;
-    padding: 6px 6px;
+    border-radius: 8px;
+    padding: 5px 6px;
     transition: all 0.15s ease;
     cursor: pointer;
     text-align: left;
     height: 100%;
-    min-height: 96px;
-    max-height: 102px;
+    min-height: 84px;
+    max-height: 90px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    gap: 3px;
+    gap: 2.5px;
     box-sizing: border-box;
     width: 100%;
     overflow: hidden;
@@ -1532,21 +1539,35 @@
     font-family: var(--font-heading, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
     font-variant-numeric: tabular-nums;
     letter-spacing: 0.25px;
-    display: inline-flex;
+    display: flex;
     align-items: center;
-    gap: 5px;
-    line-height: 1;
-    padding: 2.5px 7px;
+    justify-content: center;
+    text-align: center;
+    gap: 5.5px;
+    height: 24px;
+    padding: 0 8px;
     border-radius: 6px;
-    width: fit-content;
-    max-width: 100%;
+    width: 100%;
+    margin: 1px auto;
     box-sizing: border-box;
     transition: all 0.15s ease;
 }
 .sched-card-time i {
-    font-size: 13.5px;
+    font-size: 12.5px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
     opacity: 1;
     flex-shrink: 0;
+}
+.sched-card-time span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    position: relative;
+    top: 0.5px;
 }
 
 /* Detail box inside card (Integrated Hairline Layout matching Clean Image) */
@@ -1578,26 +1599,26 @@
 }
 
 .sched-detail-dot {
-    font-size: 6.5px;
+    font-size: 7.5px;
     line-height: 1;
     flex-shrink: 0;
     display: inline-flex;
     align-items: center;
 }
-.dot-regular { color: #10b981; }
-.dot-tardiness { color: #f59e0b; }
-.dot-no-inout { color: #ef4444; }
-.dot-overtime { color: #8b5cf6; }
-.dot-planned { color: #059669; }
+.dot-regular { color: #059669; }
+.dot-tardiness { color: #b45309; }
+.dot-no-inout { color: #dc2626; }
+.dot-overtime { color: #7c3aed; }
+.dot-planned { color: #2563eb; }
 
 .sched-detail-punch {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     font-variant-numeric: tabular-nums;
     font-weight: 700;
-    font-size: 8.5px;
+    font-size: 9.5px;
     color: #1e293b;
     white-space: nowrap;
-    letter-spacing: -0.3px;
+    letter-spacing: -0.2px;
     flex: 1 1 auto;
     min-width: 0;
     overflow: hidden;
@@ -1605,26 +1626,33 @@
 }
 
 .sched-detail-badge {
-    font-size: 7.5px;
+    font-size: 9.5px;
     font-weight: 800;
-    padding: 1px 3.5px;
-    border-radius: 3px;
+    padding: 2px 6px;
+    border-radius: 4px;
     text-transform: uppercase;
-    letter-spacing: 0.1px;
-    line-height: 1.2;
+    letter-spacing: 0.3px;
+    line-height: 1.25;
     white-space: nowrap;
     flex-shrink: 0;
     box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff !important;
+    border: none !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
 }
-.badge-regular { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
-.badge-tardiness { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
-.badge-no-inout { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
-.badge-overtime { background: #f3e8ff; color: #7e22ce; border: 1px solid #e9d5ff; }
-.badge-planned { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+.badge-regular { background: #059669 !important; color: #ffffff !important; }
+.badge-tardiness { background: #b45309 !important; color: #ffffff !important; }
+.badge-no-inout { background: #dc2626 !important; color: #ffffff !important; }
+.badge-overtime { background: #7c3aed !important; color: #ffffff !important; }
+.badge-planned { background: #2563eb !important; color: #ffffff !important; }
+.badge-off-duty { background: #64748b !important; color: #ffffff !important; }
 
 .sched-detail-hours {
     color: #64748b;
-    font-size: 9px;
+    font-size: 9.5px;
     font-weight: 600;
     padding-top: 1px;
 }
@@ -1632,7 +1660,7 @@
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     font-variant-numeric: tabular-nums;
     font-weight: 800;
-    font-size: 9.5px;
+    font-size: 10px;
 }
 
 /* Theme Variations - Clean Seamless Integrated Look */
@@ -1702,16 +1730,9 @@
 .sched-card-custom .sched-detail-hours { color: #6d28d9; }
 .sched-card-custom .sched-detail-hours strong { color: #5b21b6; }
 
-/* Custom background inline fallback */
-.sched-badge-wrap[style*="background"] {
-    border: none !important;
-}
-.sched-badge-wrap[style*="background"] .sched-badge-code {
-    background: rgba(255, 255, 255, 0.25) !important;
-    color: #ffffff !important;
-}
-.sched-badge-wrap[style*="background"] .sched-badge-name {
-    color: #ffffff !important;
+/* Custom badge code fallback */
+.sched-badge-code[style*="background"] {
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
 }
 
 /* Top Controller Toolbar Layout */
@@ -1743,8 +1764,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #475569;
-    font-size: 14px;
+    color: #64748b;
+    font-size: 15px;
     text-decoration: none;
     transition: all 0.15s ease;
     flex-shrink: 0;
@@ -1754,79 +1775,89 @@
     color: #0f172a;
 }
 
-.sched-week-picker-form {
+.sched-week-date-trigger {
+    position: relative;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    margin: 0;
+    gap: 6.5px;
+    margin: 0 1px;
     height: 28px;
-    padding: 0 8px;
+    padding: 0 9px;
     border-radius: 6px;
     background: #f8fafc;
     border: 1px solid #e2e8f0;
+    cursor: pointer;
     transition: all 0.15s ease;
     box-sizing: border-box;
 }
-.sched-week-picker-form:hover {
+.sched-week-date-trigger:hover {
     background: #f1f5f9;
     border-color: #cbd5e1;
 }
-.sched-week-picker-form:focus-within {
+.sched-week-date-trigger:focus-within {
     background: #ffffff;
     border-color: #7c3aed;
     box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.12);
 }
 
-.sched-week-nav-tag {
-    font-size: 11px;
-    font-weight: 800;
-    color: #64748b;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    cursor: pointer;
-    user-select: none;
+.sched-week-cal-icon {
+    color: #7c3aed;
+    font-size: 14.5px;
     line-height: 1;
-    display: flex;
-    align-items: center;
+    flex-shrink: 0;
 }
 
-.sched-week-nav-input {
-    border: none !important;
-    border-radius: 0 !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    height: 100% !important;
+.sched-week-label-range {
     font-size: 12.5px;
     font-weight: 800;
     font-family: var(--font-heading, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
     font-variant-numeric: tabular-nums;
+    letter-spacing: 0.2px;
     color: #0f172a;
-    background: transparent !important;
-    outline: none !important;
-    box-shadow: none !important;
-    cursor: pointer;
+    white-space: nowrap;
     line-height: 1;
+    user-select: none;
 }
-.sched-week-nav-input::-webkit-calendar-picker-indicator {
-    cursor: pointer;
-    opacity: 0.75;
-    margin-left: 2px;
-    transition: opacity 0.15s ease;
+
+.sched-week-dropdown-arrow {
+    color: #94a3b8;
+    font-size: 11px;
+    line-height: 1;
+    margin-left: -1px;
+    transition: transform 0.15s ease;
+    flex-shrink: 0;
 }
-.sched-week-nav-input::-webkit-calendar-picker-indicator:hover {
-    opacity: 1;
+.sched-week-date-trigger:hover .sched-week-dropdown-arrow {
+    color: #64748b;
+}
+
+.sched-invisible-date-input {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    opacity: 0 !important;
+    cursor: pointer !important;
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    z-index: 2;
 }
 
 .sched-nav-btn-current {
-    margin-left: 4px;
+    margin-left: 2px;
     font-size: 11px;
-    font-weight: 700;
-    padding: 3px 8px;
+    font-weight: 800;
+    padding: 3.5px 8px;
     border-radius: 6px;
     background: #ede9fe;
     color: #7c3aed;
     text-decoration: none;
     transition: all 0.15s ease;
+    line-height: 1;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 .sched-nav-btn-current:hover {
     background: #ddd6fe;
@@ -2229,18 +2260,17 @@
 .sched-row-btn:hover { background: #fef3c7; border-color: #f59e0b; color: #b45309; }
 
 .sched-row-dropdown {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    margin-top: 4px;
+    position: fixed !important;
     background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.12);
-    min-width: 220px;
-    z-index: 100;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 12px;
+    box-shadow: 0 16px 36px -4px rgba(15, 23, 42, 0.22), 0 6px 14px -2px rgba(15, 23, 42, 0.08);
+    min-width: 230px;
+    max-width: 280px;
+    z-index: 999999;
     display: none;
-    padding: 4px 0;
+    padding: 6px 0;
+    animation: schedPopoverFlyout 0.15s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .sched-row-dropdown.open { display: block !important; }
 .sched-row-dd-item {
@@ -2638,25 +2668,59 @@ function clearCellShift(empId, date) {
 // -------------------------------------------------------------
 // Card & Empty Cell HTML Renderers
 // -------------------------------------------------------------
-function renderAssignedCardHTML(cell, empId, date, code, label, time, themeClass, customColor = null) {
-    const colorStyle = customColor ? `style="background: ${customColor}; color: #fff;"` : '';
-    const upperCode = (code || '').toUpperCase();
-    const upperLabel = (label || '').toUpperCase();
-    
-    // Ensure Opening shifts are always Green (sched-theme-o)
-    let finalTheme = themeClass;
-    if (upperCode === 'O' || upperLabel.includes('OPEN') || time.startsWith('07:') || time.startsWith('06:') || time.startsWith('08:') || time.startsWith('10:00')) {
-        finalTheme = 'sched-theme-o';
+function classifyShift(rawCode, rawLabel, timeStr) {
+    const code = (rawCode || '').trim().toUpperCase();
+    const label = (rawLabel || '').trim();
+    const upperLabel = label.toUpperCase();
+
+    // Extract start time "HH:MM"
+    let startTime = '';
+    if (timeStr && timeStr.includes('-')) {
+        startTime = timeStr.split('-')[0].trim().substring(0, 5);
+    } else if (timeStr && timeStr.includes(':')) {
+        startTime = timeStr.trim().substring(0, 5);
+    }
+
+    if (code === 'OFF' || upperLabel === 'RESTDAY' || upperLabel.includes('REST') || upperLabel.includes('OFF')) {
+        return { code: 'OFF', label: 'RESTDAY', theme: 'sched-card-rest', isCustom: false };
+    }
+    if (code === 'O' || code.includes('OPEN') || upperLabel.includes('OPEN') || (startTime && startTime <= '10:30') || ['0600', '0700', '0800', '0900', '1000'].includes(code)) {
+        return { code: 'O', label: 'OPENING', theme: 'sched-theme-o', isCustom: false };
+    }
+    if (code === 'MD' || code.includes('MID') || upperLabel.includes('MID') || (startTime && startTime > '10:30' && startTime <= '13:30') || ['1100', '1200', '1300', '1400'].includes(code)) {
+        return { code: 'MD', label: 'MID DAY', theme: 'sched-theme-md', isCustom: false };
+    }
+    if (code === 'LD' || code.includes('LATE') || upperLabel.includes('LATE') || (startTime && startTime > '13:30' && startTime <= '16:30') || ['1500', '1600', '1700'].includes(code)) {
+        return { code: 'LD', label: 'LATE DAY', theme: 'sched-theme-ld', isCustom: false };
+    }
+    if (code === 'C' || code.includes('CLOS') || upperLabel.includes('CLOS') || (startTime && startTime > '16:30') || ['1800', '1900', '2000', '2100', '2200', '2300'].includes(code)) {
+        return { code: 'C', label: 'CLOSING', theme: 'sched-theme-c', isCustom: false };
+    }
+    return { code: code || 'CUSTOM', label: label || 'CUSTOM', theme: 'sched-card-custom', isCustom: true };
+}
+
+function renderAssignedCardHTML(cell, empId, date, rawCode, rawLabel, time, themeClass = null, customColor = null) {
+    const classified = classifyShift(rawCode, rawLabel, time);
+    const code = classified.code;
+    const label = classified.label;
+    const finalTheme = classified.theme;
+    const displayTime = (classified.code === 'OFF') ? 'OFF DUTY' : time;
+
+    let codeStyle = '';
+    let nameStyle = '';
+    if (classified.isCustom && customColor) {
+        codeStyle = `style="background: ${customColor}; color: #ffffff;"`;
+        nameStyle = `style="color: ${customColor};"`;
     }
 
     let detailBoxHTML = '';
-    if (upperCode === 'OFF' || upperLabel === 'RESTDAY') {
+    if (classified.code === 'OFF') {
         detailBoxHTML = `
             <div class="sched-card-detail-box">
                 <div class="sched-detail-row">
                     <span class="sched-detail-dot dot-no-inout">●</span>
                     <span class="sched-detail-punch">Rest Day</span>
-                    <span class="sched-detail-badge" style="background:#f1f5f9;color:#475569;border:1px solid #cbd5e1;">OFF DUTY</span>
+                    <span class="sched-detail-badge badge-off-duty">OFF DUTY</span>
                 </div>
                 <div class="sched-detail-row sched-detail-hours">
                     <span>Hours Worked:</span>
@@ -2683,9 +2747,9 @@ function renderAssignedCardHTML(cell, empId, date, code, label, time, themeClass
     cell.innerHTML = `
         <div class="sched-shift-card ${finalTheme}" onclick="openCellCustomDropdown(${empId}, '${date}')">
             <div class="sched-card-top">
-                <div class="sched-badge-wrap" ${colorStyle}>
-                    <span class="sched-badge-code">${escapeHtml(code)}</span>
-                    <span class="sched-badge-name">${escapeHtml(label)}</span>
+                <div class="sched-badge-wrap">
+                    <span class="sched-badge-code" ${codeStyle}>${escapeHtml(code)}</span>
+                    <span class="sched-badge-name" ${nameStyle}>${escapeHtml(label)}</span>
                 </div>
                 <button type="button" class="sched-card-clear" onclick="event.stopPropagation(); clearCellShift(${empId}, '${date}')" title="Clear Shift">
                     &times;
@@ -2693,7 +2757,7 @@ function renderAssignedCardHTML(cell, empId, date, code, label, time, themeClass
             </div>
             <div class="sched-card-time">
                 <i class="ph ph-clock"></i>
-                <span>${escapeHtml(time)}</span>
+                <span>${escapeHtml(displayTime)}</span>
             </div>
             ${detailBoxHTML}
         </div>
@@ -3073,7 +3137,7 @@ function appendEmployeeRowToTable(emp) {
                     </div>
                 </div>
                 <div class="sched-row-action-menu" style="position: relative;">
-                    <button type="button" class="sched-row-btn" onclick="toggleRowMenu(${emp.id})" title="Quick fill week">
+                    <button type="button" class="sched-row-btn" onclick="toggleRowMenu(${emp.id}, this)" title="Quick fill week">
                         <i class="ph ph-lightning"></i>
                     </button>
                     <div class="sched-row-dropdown" id="rowMenu_${emp.id}" style="display: none;">
@@ -3235,27 +3299,102 @@ function showSchedToast(msg, isSuccess = true) {
 // -------------------------------------------------------------
 // Row Lightning Quick Fill Logic
 // -------------------------------------------------------------
-function toggleRowMenu(empId) {
-    document.querySelectorAll('.sched-row-dropdown').forEach(d => {
-        if (d.id !== `rowMenu_${empId}`) {
-            d.classList.remove('open');
-            d.style.display = 'none';
-        }
-    });
+function toggleRowMenu(empId, btnElement = null) {
     const dd = document.getElementById(`rowMenu_${empId}`);
-    if (dd) {
-        const isOpen = dd.classList.toggle('open');
-        dd.style.display = isOpen ? 'block' : 'none';
+    if (!dd) return;
+
+    const isAlreadyOpen = dd.classList.contains('open') && dd.style.display !== 'none';
+
+    // Close all open row dropdowns first
+    document.querySelectorAll('.sched-row-dropdown').forEach(d => {
+        d.classList.remove('open');
+        d.style.display = 'none';
+        d.style.visibility = 'hidden';
+    });
+
+    if (isAlreadyOpen) {
+        return;
     }
+
+    let btn = btnElement;
+    if (!btn) {
+        const row = document.getElementById(`schedRow_${empId}`);
+        btn = row ? row.querySelector('.sched-row-btn') : dd.parentElement?.querySelector('.sched-row-btn');
+    }
+    if (!btn) return;
+
+    // Attach to document.body so position: fixed coordinates are always 100% relative to viewport
+    // and never affected by containing blocks, sticky columns, or table scroll
+    if (dd.parentElement !== document.body) {
+        document.body.appendChild(dd);
+    }
+
+    // Show invisibly to measure real dimensions
+    dd.style.visibility = 'hidden';
+    dd.style.display = 'block';
+    dd.classList.add('open');
+
+    const rect = btn.getBoundingClientRect();
+    const ddWidth = dd.offsetWidth || 230;
+    const ddHeight = dd.offsetHeight || 220;
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    // Horizontal placement: Open directly BESIDE the button (to the right of the button)
+    const spaceRight = viewportWidth - rect.right;
+    const spaceLeft = rect.left;
+
+    let left;
+    if (spaceRight >= ddWidth + 12 || spaceRight >= spaceLeft) {
+        // Sufficient room on the right side of the button
+        left = rect.right + 8;
+    } else {
+        // Not enough room on the right -> flip to the left side of the button
+        left = rect.left - ddWidth - 8;
+    }
+    // Prevent clipping past viewport edges
+    left = Math.max(12, Math.min(left, viewportWidth - ddWidth - 12));
+
+    // Vertical placement: Align with the top of the button, clamped within viewport
+    let top = rect.top - 6;
+    if (top + ddHeight > viewportHeight - 12) {
+        top = Math.max(12, viewportHeight - ddHeight - 12);
+    }
+    if (top < 12) {
+        top = 12;
+    }
+
+    dd.style.top = `${Math.round(top)}px`;
+    dd.style.left = `${Math.round(left)}px`;
+    dd.style.visibility = 'visible';
 }
 
 document.addEventListener('click', function(e) {
-    if (!e.target.closest('.sched-row-action-menu')) {
+    if (!e.target.closest('.sched-row-action-menu') && !e.target.closest('.sched-row-btn') && !e.target.closest('.sched-row-dropdown')) {
         document.querySelectorAll('.sched-row-dropdown').forEach(d => {
             d.classList.remove('open');
             d.style.display = 'none';
+            d.style.visibility = 'hidden';
         });
     }
+});
+
+document.addEventListener('scroll', function(e) {
+    if (!e.target.closest('.sched-row-dropdown')) {
+        document.querySelectorAll('.sched-row-dropdown.open').forEach(d => {
+            d.classList.remove('open');
+            d.style.display = 'none';
+            d.style.visibility = 'hidden';
+        });
+    }
+}, true);
+
+window.addEventListener('resize', function() {
+    document.querySelectorAll('.sched-row-dropdown.open').forEach(d => {
+        d.classList.remove('open');
+        d.style.display = 'none';
+        d.style.visibility = 'hidden';
+    });
 });
 
 function quickFillRowPreset(empId, shiftCode, restDays) {
