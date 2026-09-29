@@ -2124,22 +2124,48 @@ body.is-column-resizing * {
                         <input type="text" id="formAllergens" class="inv-form-input" placeholder="e.g. Dairy, Gluten Free, Vegan, Nut Free">
                     </div>
 
-                    <!-- Checkboxes with associated labels -->
-                    <label class="inv-checkbox-card">
-                        <input type="checkbox" id="formIsActive" checked>
-                        <div>
-                            <div class="inv-checkbox-title">Active Product Status</div>
-                            <div class="inv-checkbox-desc">Visible on POS order screens and active across inventory records</div>
-                        </div>
-                    </label>
+                    <!-- Product Operational Flags & BOM Rules -->
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <label class="inv-checkbox-card">
+                            <input type="checkbox" id="formCanBeSold" checked>
+                            <div>
+                                <div class="inv-checkbox-title">Can be Sold (POS / Sales Menu)</div>
+                                <div class="inv-checkbox-desc">Makes this item available for ordering on POS and online catalog.</div>
+                            </div>
+                        </label>
 
-                    <label class="inv-checkbox-card">
-                        <input type="checkbox" id="formTrackStock" checked>
-                        <div>
-                            <div class="inv-checkbox-title">Track Perpetual Stock</div>
-                            <div class="inv-checkbox-desc">Deduct stock automatically on POS checkout or menu recipe deduction</div>
-                        </div>
-                    </label>
+                        <label class="inv-checkbox-card">
+                            <input type="checkbox" id="formCanBePurchased" checked>
+                            <div>
+                                <div class="inv-checkbox-title">Can be Purchased (Procurement)</div>
+                                <div class="inv-checkbox-desc">Allows this item to be ordered from suppliers and added to POs.</div>
+                            </div>
+                        </label>
+
+                        <label class="inv-checkbox-card">
+                            <input type="checkbox" id="formHasBom">
+                            <div>
+                                <div class="inv-checkbox-title">Has Bill of Materials (BOM / Recipe)</div>
+                                <div class="inv-checkbox-desc">Deducts sub-ingredients upon sale instead of deducting this item.</div>
+                            </div>
+                        </label>
+
+                        <label class="inv-checkbox-card">
+                            <input type="checkbox" id="formIsActive" checked>
+                            <div>
+                                <div class="inv-checkbox-title">Active Product Status</div>
+                                <div class="inv-checkbox-desc">Visible across active inventory catalog and reporting.</div>
+                            </div>
+                        </label>
+
+                        <label class="inv-checkbox-card">
+                            <input type="checkbox" id="formTrackStock" checked>
+                            <div>
+                                <div class="inv-checkbox-title">Track Perpetual Stock</div>
+                                <div class="inv-checkbox-desc">Deduct stock automatically on POS checkout or menu recipe deduction.</div>
+                            </div>
+                        </label>
+                    </div>
                 </div>
             </div>
 
@@ -2835,6 +2861,9 @@ body.is-column-resizing * {
     const formPackSize = document.getElementById('formPackSize');
     const formDescription = document.getElementById('formDescription');
     const formAllergens = document.getElementById('formAllergens');
+    const formCanBeSold = document.getElementById('formCanBeSold');
+    const formCanBePurchased = document.getElementById('formCanBePurchased');
+    const formHasBom = document.getElementById('formHasBom');
     const formIsActive = document.getElementById('formIsActive');
     const formTrackStock = document.getElementById('formTrackStock');
     const formReorderPoint = document.getElementById('formReorderPoint');
@@ -2850,7 +2879,11 @@ body.is-column-resizing * {
 
     // Helper: Currency Formatter
     function formatPHP(amount) {
-        return '₱' + Number(amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const num = Number(amount);
+        if (isNaN(num)) return '₱0.00';
+        const isNeg = num < 0;
+        const formatted = Math.abs(num).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        return isNeg ? `-₱${formatted}` : `₱${formatted}`;
     }
 
     // Helper: Toast
@@ -3882,6 +3915,9 @@ body.is-column-resizing * {
             formPackSize.value = '1';
             formDescription.value = '';
             formAllergens.value = '';
+            formCanBeSold.checked = true;
+            formCanBePurchased.checked = true;
+            formHasBom.checked = false;
             formIsActive.checked = true;
             formTrackStock.checked = true;
             formReorderPoint.value = 15;
@@ -3938,6 +3974,9 @@ body.is-column-resizing * {
 
             formDescription.value = product.description || '';
             formAllergens.value = (product.allergens || []).join(', ');
+            formCanBeSold.checked = product.canBeSold !== false;
+            formCanBePurchased.checked = product.canBePurchased !== false;
+            formHasBom.checked = product.hasBom === true;
             formIsActive.checked = product.isActive !== false;
             formTrackStock.checked = product.trackStock !== false;
             formReorderPoint.value = product.reorderPoint || 10;
@@ -4055,6 +4094,9 @@ body.is-column-resizing * {
             packSize: formPackSize.value.trim() || '1',
             description: formDescription.value.trim(),
             allergens: allergenArray,
+            canBeSold: formCanBeSold.checked,
+            canBePurchased: formCanBePurchased.checked,
+            hasBom: formHasBom.checked,
             isActive: formIsActive.checked,
             trackStock: formTrackStock.checked,
             reorderPoint: Number(formReorderPoint.value) || 0,
@@ -4087,6 +4129,30 @@ body.is-column-resizing * {
         }
 
         localStorage.setItem('rms_inventory_products', JSON.stringify(window.AppStore.products));
+
+        // Auto-sync BOM catalog entry with rms_boms
+        try {
+            let boms = JSON.parse(localStorage.getItem('rms_boms')) || [];
+            const existingBomIdx = boms.findIndex(b => b.productId === newId);
+            if (updatedRecord.hasBom) {
+                if (existingBomIdx === -1) {
+                    boms.unshift({
+                        productId: newId,
+                        yield: 1,
+                        ingredients: []
+                    });
+                    localStorage.setItem('rms_boms', JSON.stringify(boms));
+                }
+            } else {
+                if (existingBomIdx !== -1 && (!boms[existingBomIdx].ingredients || boms[existingBomIdx].ingredients.length === 0)) {
+                    boms.splice(existingBomIdx, 1);
+                    localStorage.setItem('rms_boms', JSON.stringify(boms));
+                }
+            }
+        } catch (e) {
+            console.warn('BOM storage sync:', e);
+        }
+
         closeProductDrawer();
     }
 
