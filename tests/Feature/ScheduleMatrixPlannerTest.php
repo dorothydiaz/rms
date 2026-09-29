@@ -30,5 +30,22 @@ class ScheduleMatrixPlannerTest extends TestCase
         $response->assertSee('height: calc(100vh - 64px) !important', false);
         $response->assertSee('overflow: hidden !important', false);
         $response->assertSee('border: 1.5px dashed #93c5fd', false);
+
+        // Verify anti-FOUC: CSS is pushed to <head> before closing </head>
+        $content = $response->getContent();
+        $headPos = strpos($content, '</head>');
+        $stylePos = strpos($content, '.sched-matrix-table');
+        $this->assertNotFalse($headPos, 'Closing head tag exists');
+        $this->assertNotFalse($stylePos, 'Schedule CSS exists in response');
+        $this->assertTrue($stylePos < $headPos, 'Schedule CSS is loaded in <head> to prevent FOUC');
+
+        // Verify dropdowns default to hidden to prevent flashing open during load
+        $response->assertSee('class="sched-row-dropdown" id="rowMenu_', false);
+        $this->assertMatchesRegularExpression(
+            '/class="sched-row-dropdown"[^>]*style="[^"]*display:\s*none;?[^"]*"/',
+            $content,
+            'Dropdowns have inline display:none to prevent unstyled flash'
+        );
+        $response->assertSee('.sched-row-dropdown.open { display: block !important; }', false);
     }
 }

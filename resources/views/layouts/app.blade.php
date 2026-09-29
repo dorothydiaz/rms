@@ -6,8 +6,8 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@hasSection('title'){{ Str::contains($__env->yieldContent('title'), 'Restaurant Management System') ? $__env->yieldContent('title') : $__env->yieldContent('title') . ' - Restaurant Management System' }}@else Restaurant Management System @endif</title>
 
-    <!-- Custom RMS Stylesheet -->
-    <link rel="stylesheet" href="{{ asset('assets/css/styles.css') }}?v={{ time() }}">
+    <!-- Custom RMS Stylesheet (Cached with filemtime to prevent FOUC on page refresh) -->
+    <link rel="stylesheet" href="{{ asset('assets/css/styles.css') }}?v={{ file_exists(public_path('assets/css/styles.css')) ? filemtime(public_path('assets/css/styles.css')) : '1.0' }}">
 
     <!-- Phosphor Icons -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>

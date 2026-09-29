@@ -342,7 +342,7 @@
                                         <i class="ph ph-lightning"></i>
                                     </button>
                                     
-                                    <div class="sched-row-dropdown" id="rowMenu_{{ $emp->id }}">
+                                    <div class="sched-row-dropdown" id="rowMenu_{{ $emp->id }}" style="display: none;">
                                         <div style="padding: 6px 10px; font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; border-bottom: 1px solid #f1f5f9;">
                                             Quick Fill: {{ Str::limit($emp->first_name, 12) }}
                                         </div>
@@ -895,6 +895,7 @@
     </div>
 </div>
 
+@push('styles')
 <style>
 /* 1. Viewport & Container Lock: Fit Weekly Table to Screen with Zero Page Scroll */
 .content-area {
@@ -1804,7 +1805,7 @@
     display: none;
     padding: 4px 0;
 }
-.sched-row-dropdown.open { display: block; }
+.sched-row-dropdown.open { display: block !important; }
 .sched-row-dd-item {
     width: 100%;
     text-align: left;
@@ -1889,6 +1890,7 @@
     color: #ffffff;
 }
 </style>
+@endpush
 
 @push('scripts')
 <script>
@@ -2584,7 +2586,7 @@ function appendEmployeeRowToTable(emp) {
                     <button type="button" class="sched-row-btn" onclick="toggleRowMenu(${emp.id})" title="Quick fill week">
                         <i class="ph ph-lightning"></i>
                     </button>
-                    <div class="sched-row-dropdown" id="rowMenu_${emp.id}">
+                    <div class="sched-row-dropdown" id="rowMenu_${emp.id}" style="display: none;">
                         <div style="padding: 6px 10px; font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; border-bottom: 1px solid #f1f5f9;">
                             Quick Fill: ${escapeHtml(emp.first_name || name)}
                         </div>
@@ -2745,21 +2747,33 @@ function showSchedToast(msg, isSuccess = true) {
 // -------------------------------------------------------------
 function toggleRowMenu(empId) {
     document.querySelectorAll('.sched-row-dropdown').forEach(d => {
-        if (d.id !== `rowMenu_${empId}`) d.classList.remove('open');
+        if (d.id !== `rowMenu_${empId}`) {
+            d.classList.remove('open');
+            d.style.display = 'none';
+        }
     });
     const dd = document.getElementById(`rowMenu_${empId}`);
-    if (dd) dd.classList.toggle('open');
+    if (dd) {
+        const isOpen = dd.classList.toggle('open');
+        dd.style.display = isOpen ? 'block' : 'none';
+    }
 }
 
 document.addEventListener('click', function(e) {
     if (!e.target.closest('.sched-row-action-menu')) {
-        document.querySelectorAll('.sched-row-dropdown').forEach(d => d.classList.remove('open'));
+        document.querySelectorAll('.sched-row-dropdown').forEach(d => {
+            d.classList.remove('open');
+            d.style.display = 'none';
+        });
     }
 });
 
 function quickFillRowPreset(empId, shiftCode, restDays) {
     const weekStart = document.getElementById('schedWeekInput').value;
-    document.querySelectorAll('.sched-row-dropdown').forEach(d => d.classList.remove('open'));
+    document.querySelectorAll('.sched-row-dropdown').forEach(d => {
+        d.classList.remove('open');
+        d.style.display = 'none';
+    });
 
     const dates = @json($dates);
     const rowEl = document.getElementById(`schedRow_${empId}`);
@@ -2799,7 +2813,10 @@ function quickFillRowPreset(empId, shiftCode, restDays) {
 
 function clearEmployeeWeek(empId) {
     if (!confirm('Clear all shifts for this employee this week?')) return;
-    document.querySelectorAll('.sched-row-dropdown').forEach(d => d.classList.remove('open'));
+    document.querySelectorAll('.sched-row-dropdown').forEach(d => {
+        d.classList.remove('open');
+        d.style.display = 'none';
+    });
 
     const dates = @json($dates);
     const promises = dates.map(d => {
