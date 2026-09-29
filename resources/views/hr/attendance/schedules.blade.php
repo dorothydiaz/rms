@@ -48,60 +48,61 @@
             </span>
         </div>
 
-        <!-- Navigation Controls Toolbar -->
-        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; margin-left: auto;">
-            <!-- Week Navigation Controls -->
-            <div style="display: flex; align-items: center; background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 9px; padding: 3px 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+        <!-- Navigation Controls Toolbar (Spacious, Elegant & Aligned) -->
+        <div class="sched-top-nav-wrap">
+            <!-- Week Navigation Controls Pill -->
+            <div class="sched-week-nav-pill">
                 <a href="{{ route('hr.attendance.schedules', array_merge(request()->query(), ['week_start' => $prevWeek])) }}" 
-                   class="sched-nav-btn" title="Previous Week ({{ \Carbon\Carbon::parse($prevWeek)->format('M d') }})" style="padding: 3px 6px; font-size: 13px;">
+                   class="sched-nav-btn-icon" title="Previous Week ({{ \Carbon\Carbon::parse($prevWeek)->format('M d') }})">
                     <i class="ph ph-caret-left"></i>
                 </a>
 
-                <form method="GET" action="{{ route('hr.attendance.schedules') }}" id="weekPickerForm" style="display: inline-flex; align-items: center; margin: 0 4px;">
+                <form method="GET" action="{{ route('hr.attendance.schedules') }}" id="weekPickerForm" class="sched-week-picker-form">
                     @if(request('branch_id'))
                         <input type="hidden" name="branch_id" value="{{ request('branch_id') }}">
                     @endif
-                    <label for="schedWeekInput" style="font-size: 12px; font-weight: 700; color: #475569; margin-right: 5px; cursor: pointer;">
+                    <label for="schedWeekInput" class="sched-week-nav-tag">
                         Week:
                     </label>
-                    <input type="date" name="week_start" id="schedWeekInput" value="{{ $weekStart }}" onchange="this.form.submit()" 
-                           style="border: none; background: transparent; font-size: 12.5px; font-weight: 800; color: #0f172a; outline: none; cursor: pointer; padding: 2px;">
+                    <input type="date" name="week_start" id="schedWeekInput" value="{{ $weekStart }}" onchange="this.form.submit()" class="sched-week-nav-input">
                 </form>
 
                 <a href="{{ route('hr.attendance.schedules', array_merge(request()->query(), ['week_start' => $nextWeek])) }}" 
-                   class="sched-nav-btn" title="Next Week ({{ \Carbon\Carbon::parse($nextWeek)->format('M d') }})" style="padding: 3px 6px; font-size: 13px;">
+                   class="sched-nav-btn-icon" title="Next Week ({{ \Carbon\Carbon::parse($nextWeek)->format('M d') }})">
                     <i class="ph ph-caret-right"></i>
                 </a>
 
                 @if($weekStart !== $thisWeek)
                     <a href="{{ route('hr.attendance.schedules', array_merge(request()->query(), ['week_start' => $thisWeek])) }}" 
-                       class="sched-preset-btn" style="margin-left: 5px; font-size: 11px; font-weight: 700; padding: 2px 7px;">
+                       class="sched-preset-btn sched-nav-btn-current">
                         Current
                     </a>
                 @endif
             </div>
 
-            <!-- Toolbar buttons matching Picture 2 -->
-            <button type="button" class="hr-btn hr-btn-secondary" onclick="openModal('addShiftModal')" title="Add Custom Shift Template" style="font-size: 12px; font-weight: 700; padding: 6px 12px;">
-                <i class="ph ph-clock-afternoon" style="color: #7c3aed; font-size: 14px;"></i>
-                <span>Add Template</span>
-            </button>
-            <button type="button" class="hr-btn hr-btn-secondary" onclick="openAssignModal()" title="Fill Weekly Grid" style="font-size: 12px; font-weight: 700; padding: 6px 12px;">
-                <i class="ph ph-magic-wand" style="color: #d97706; font-size: 14px;"></i>
-                <span>Fill Grid</span>
-            </button>
-            <button type="button" class="hr-btn hr-btn-secondary" onclick="triggerCopyPreviousWeek()" title="Copy schedules from previous week" style="font-size: 12px; font-weight: 700; padding: 6px 12px;">
-                <i class="ph ph-copy" style="color: #2563eb; font-size: 14px;"></i>
-                <span>Copy Prev</span>
-            </button>
-            <button type="button" class="hr-btn hr-btn-secondary" onclick="openShiftMasterModal()" title="Shift Settings" style="font-size: 12px; font-weight: 700; padding: 6px 12px;">
-                <i class="ph ph-sliders" style="color: #64748b; font-size: 14px;"></i>
-                <span>Shift Settings</span>
-            </button>
-            <button type="button" class="hr-btn hr-btn-primary" onclick="showSchedToast('All shift changes saved and active!')" title="Save Grid" style="font-size: 12px; font-weight: 800; padding: 6px 14px;">
-                <i class="ph ph-floppy-disk" style="font-size: 14px;"></i>
-                <span>Save</span>
-            </button>
+            <!-- Toolbar Action Buttons (Spacious & Clean) -->
+            <div class="sched-top-actions">
+                <button type="button" class="sched-top-btn sched-top-btn-secondary" onclick="openModal('addShiftModal')" title="Add Custom Shift Template">
+                    <i class="ph ph-plus-circle" style="color: #7c3aed; font-size: 15px;"></i>
+                    <span>Add Template</span>
+                </button>
+                <button type="button" class="sched-top-btn sched-top-btn-secondary" onclick="openAssignModal()" title="Fill Weekly Grid">
+                    <i class="ph ph-magic-wand" style="color: #d97706; font-size: 15px;"></i>
+                    <span>Fill Grid</span>
+                </button>
+                <button type="button" class="sched-top-btn sched-top-btn-secondary" onclick="triggerCopyPreviousWeek()" title="Copy schedules from previous week">
+                    <i class="ph ph-copy" style="color: #2563eb; font-size: 15px;"></i>
+                    <span>Copy Prev</span>
+                </button>
+                <button type="button" class="sched-top-btn sched-top-btn-secondary" onclick="openShiftMasterModal()" title="Shift Settings">
+                    <i class="ph ph-sliders" style="color: #64748b; font-size: 15px;"></i>
+                    <span>Shift Settings</span>
+                </button>
+                <button type="button" class="sched-top-btn sched-top-btn-save" onclick="showSchedToast('All shift changes saved and active!')" title="Save Grid">
+                    <i class="ph ph-floppy-disk" style="font-size: 15px;"></i>
+                    <span>Save</span>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -549,44 +550,89 @@
     </div>
 </div>
 
-<!-- Floating Cell Custom Schedule Dropdown Popover (Attached to active cell) -->
+<!-- Floating Cell Custom Schedule Dropdown Popover (Attached to active cell - Spacious & Modern) -->
 <div id="cellCustomDropdown" class="sched-custom-dropdown" style="display: none;">
+    <!-- Spacious Header -->
     <div class="sched-custom-dd-header">
-        <span style="font-weight: 800; font-size: 11px; color: #0f172a; text-transform: uppercase;">Other Schedule / Custom</span>
-        <button type="button" class="sched-btn-close-sm" onclick="closeCellCustomDropdown()">&times;</button>
+        <div style="display: flex; align-items: center; gap: 9px;">
+            <div class="sched-dd-icon-box">
+                <i class="ph ph-clock"></i>
+            </div>
+            <div>
+                <div style="font-weight: 800; font-size: 13px; color: #0f172a; letter-spacing: -0.2px; line-height: 1.2;">
+                    Other Schedule / Custom
+                </div>
+                <div style="font-size: 10.5px; font-weight: 600; color: #64748b; line-height: 1.2;">
+                    Select a preset shift or specify custom hours
+                </div>
+            </div>
+        </div>
+        <button type="button" class="sched-btn-close-sm" onclick="closeCellCustomDropdown()" title="Close popover">
+            <i class="ph ph-x"></i>
+        </button>
     </div>
     
     <!-- Standard Templates Quick List -->
-    <div style="padding: 6px 10px; border-bottom: 1px solid #f1f5f9; font-size: 11px; max-height: 140px; overflow-y: auto;">
-        <div style="font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 4px;">Registered Shifts:</div>
-        @foreach($shiftTemplates as $st)
-            <button type="button" class="sched-dd-shift-item" onclick="applyTemplateToActiveCell({{ $st->id }}, '{{ $st->code }}', '{{ $st->name }}', '{{ substr($st->start_time,0,5) }}', '{{ substr($st->end_time,0,5) }}', '{{ $st->color ?? '#7c3aed' }}')">
-                <span class="sched-card-pill" style="background: {{ $st->color ?? '#7c3aed' }}; color: #fff; font-size: 8.5px;">{{ $st->code ?: substr($st->name, 0, 4) }}</span>
-                <span style="font-weight: 700; color: #1e293b; font-size: 11px;">{{ $st->formatted_label ?? $st->name }}</span>
-            </button>
-        @endforeach
+    <div class="sched-custom-dd-section">
+        <div class="sched-custom-dd-label">
+            <i class="ph ph-list-bullets" style="color: #6366f1;"></i>
+            <span>Registered Shifts</span>
+        </div>
+        <div class="sched-dd-shifts-scroll">
+            @foreach($shiftTemplates as $st)
+                <button type="button" class="sched-dd-shift-item" onclick="applyTemplateToActiveCell({{ $st->id }}, '{{ $st->code }}', '{{ $st->name }}', '{{ substr($st->start_time,0,5) }}', '{{ substr($st->end_time,0,5) }}', '{{ $st->color ?? '#7c3aed' }}')">
+                    <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
+                        <span class="sched-card-pill" style="background: {{ $st->color ?? '#7c3aed' }}; color: #fff; font-size: 9px; font-weight: 800; padding: 2.5px 7px; border-radius: 5px; flex-shrink: 0;">
+                            {{ $st->code ?: substr($st->name, 0, 4) }}
+                        </span>
+                        <span style="font-weight: 700; color: #1e293b; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            {{ $st->formatted_label ?? $st->name }}
+                        </span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+                        <span style="font-size: 11px; font-weight: 600; color: #64748b; font-variant-numeric: tabular-nums;">
+                            {{ substr($st->start_time,0,5) }}–{{ substr($st->end_time,0,5) }}
+                        </span>
+                        <i class="ph ph-caret-right" style="font-size: 11px; color: #cbd5e1;"></i>
+                    </div>
+                </button>
+            @endforeach
+        </div>
     </div>
 
     <!-- Custom Time Inputs -->
-    <div style="padding: 10px; background: #faf5ff; border-bottom: 1px solid #e9d5ff;">
-        <div style="font-size: 10px; font-weight: 800; color: #7c3aed; text-transform: uppercase; margin-bottom: 6px;">
-            + Custom Time Field:
+    <div class="sched-custom-time-card">
+        <div class="sched-custom-time-header">
+            <i class="ph ph-plus-circle" style="color: #9333ea; font-size: 14px;"></i>
+            <span>Custom Time Range</span>
         </div>
-        <div style="display: flex; gap: 6px; align-items: center; margin-bottom: 6px;">
-            <input type="time" id="customCellStart" value="08:00" class="sched-input-time" title="Start Time">
-            <span style="font-size: 10px; color: #7c3aed; font-weight: bold;">→</span>
-            <input type="time" id="customCellEnd" value="17:00" class="sched-input-time" title="End Time">
+        <div class="sched-time-inputs-row">
+            <div class="sched-time-input-wrap">
+                <span class="sched-time-field-tag">Start</span>
+                <input type="time" id="customCellStart" value="08:00" class="sched-input-time" title="Start Time">
+            </div>
+            <div class="sched-time-arrow">
+                <i class="ph ph-arrow-right"></i>
+            </div>
+            <div class="sched-time-input-wrap">
+                <span class="sched-time-field-tag">End</span>
+                <input type="time" id="customCellEnd" value="17:00" class="sched-input-time" title="End Time">
+            </div>
         </div>
-        <input type="text" id="customCellLabel" placeholder="Label (e.g. Split Shift)" class="sched-input-text-sm" style="margin-bottom: 6px;">
-        <button type="button" class="hr-btn hr-btn-primary hr-btn-sm" style="width: 100%; justify-content: center;" onclick="applyCustomTimeToActiveCell()">
-            Apply Custom Shift
+        <div style="margin-bottom: 10px;">
+            <input type="text" id="customCellLabel" placeholder="Shift Label (e.g. Split Shift, Mid Afternoon)" class="sched-input-text-sm">
+        </div>
+        <button type="button" class="sched-btn-apply-custom" onclick="applyCustomTimeToActiveCell()">
+            <i class="ph ph-check-circle" style="font-size: 15px;"></i>
+            <span>Apply Custom Shift</span>
         </button>
     </div>
 
     <!-- Edit Shift Times Button -->
-    <div style="padding: 8px 10px; background: #f8fafc; text-align: center;">
+    <div class="sched-custom-dd-footer">
         <button type="button" class="sched-btn-edit-times" onclick="openShiftMasterModal(); closeCellCustomDropdown();">
-            <i class="ph ph-sliders"></i> Edit Shift Times (O, MD, LD, C)
+            <i class="ph ph-sliders"></i>
+            <span>Edit Shift Times (O, MD, LD, C)</span>
         </button>
     </div>
 </div>
@@ -1645,15 +1691,150 @@
     color: #ffffff !important;
 }
 
-/* Floating Cell Custom Dropdown */
+/* Top Controller Toolbar Layout */
+.sched-top-nav-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+    flex-wrap: nowrap;
+}
+
+.sched-week-nav-pill {
+    height: 38px;
+    display: inline-flex;
+    align-items: center;
+    background: #ffffff;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 0 4px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    gap: 2px;
+}
+
+.sched-nav-btn-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #475569;
+    font-size: 14px;
+    text-decoration: none;
+    transition: all 0.15s ease;
+}
+.sched-nav-btn-icon:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+}
+
+.sched-week-picker-form {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin: 0 3px;
+}
+
+.sched-week-nav-tag {
+    font-size: 12px;
+    font-weight: 700;
+    color: #475569;
+    cursor: pointer;
+    user-select: none;
+}
+
+.sched-week-nav-input {
+    border: 1px solid #e2e8f0;
+    border-radius: 7px;
+    padding: 4px 8px;
+    font-size: 12.5px;
+    font-weight: 800;
+    color: #0f172a;
+    background: #f8fafc;
+    outline: none;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.sched-week-nav-input:focus {
+    border-color: #7c3aed;
+    background: #ffffff;
+    box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.15);
+}
+
+.sched-nav-btn-current {
+    margin-left: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: #ede9fe;
+    color: #7c3aed;
+    text-decoration: none;
+    transition: all 0.15s ease;
+}
+.sched-nav-btn-current:hover {
+    background: #ddd6fe;
+}
+
+.sched-top-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.sched-top-btn {
+    height: 38px;
+    padding: 0 13px;
+    font-size: 12.5px;
+    font-weight: 700;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+    text-decoration: none;
+}
+
+.sched-top-btn-secondary {
+    background: #ffffff;
+    border: 1.5px solid #cbd5e1;
+    color: #334155;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+.sched-top-btn-secondary:hover {
+    background: #f8fafc;
+    border-color: #94a3b8;
+    color: #0f172a;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(0,0,0,0.06);
+}
+
+.sched-top-btn-save {
+    background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+    color: #ffffff;
+    border: none;
+    font-weight: 800;
+    padding: 0 18px;
+    box-shadow: 0 4px 14px rgba(168, 85, 247, 0.35);
+}
+.sched-top-btn-save:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(168, 85, 247, 0.45);
+    filter: brightness(1.05);
+}
+
+/* Floating Cell Custom Dropdown (Spacious & Modern) */
 .sched-custom-dropdown {
     position: fixed !important;
     background: #ffffff;
     border: 1.5px solid #cbd5e1;
-    border-radius: 12px;
-    box-shadow: 0 16px 36px rgba(0,0,0,0.22), 0 4px 12px rgba(0,0,0,0.08);
-    width: 260px;
-    max-width: min(290px, 92vw);
+    border-radius: 16px;
+    box-shadow: 0 20px 45px -10px rgba(15, 23, 42, 0.22), 0 8px 18px -4px rgba(15, 23, 42, 0.08);
+    width: 330px;
+    max-width: min(360px, 94vw);
     max-height: calc(100vh - 20px);
     z-index: 99999;
     display: none;
@@ -1663,62 +1844,233 @@
 }
 
 .sched-custom-dd-header {
-    padding: 8px 10px;
-    background: #f8fafc;
-    border-bottom: 1px solid #e2e8f0;
+    padding: 14px 18px;
+    background: #ffffff;
+    border-bottom: 1.5px solid #f1f5f9;
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
-.sched-dd-shift-item {
-    width: 100%;
-    text-align: left;
-    padding: 5px 6px;
-    border: none;
-    background: transparent;
+.sched-dd-icon-box {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: #ede9fe;
+    color: #7c3aed;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    flex-shrink: 0;
+}
+
+.sched-btn-close-sm {
+    width: 26px;
+    height: 26px;
+    border-radius: 7px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
     cursor: pointer;
+    transition: all 0.15s ease;
+}
+.sched-btn-close-sm:hover {
+    background: #fee2e2;
+    color: #ef4444;
+    border-color: #fca5a5;
+}
+
+.sched-custom-dd-section {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.sched-custom-dd-label {
+    font-size: 10.5px;
+    font-weight: 800;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 8px;
     display: flex;
     align-items: center;
     gap: 6px;
-    border-radius: 6px;
-    transition: background 0.1s;
+}
+
+.sched-dd-shifts-scroll {
+    max-height: 170px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding-right: 2px;
+}
+
+.sched-dd-shift-item {
+    width: 100%;
+    text-align: left;
+    padding: 7px 10px;
+    border: 1px solid #f1f5f9;
+    background: #ffffff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-radius: 8px;
+    transition: all 0.15s ease;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
 }
 .sched-dd-shift-item:hover {
-    background: #f1f5f9;
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+}
+
+.sched-custom-time-card {
+    padding: 12px 14px;
+    background: #fdf4ff;
+    border: 1.5px dashed #e879f9;
+    border-radius: 12px;
+    margin: 12px 14px;
+}
+
+.sched-custom-time-header {
+    font-size: 10.5px;
+    font-weight: 800;
+    color: #9333ea;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 9px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.sched-time-inputs-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 9px;
+}
+
+.sched-time-input-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.sched-time-field-tag {
+    font-size: 9.5px;
+    font-weight: 800;
+    color: #a855f7;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
 }
 
 .sched-input-time {
-    border: 1px solid #cbd5e1;
-    border-radius: 6px;
-    padding: 4px 6px;
-    font-size: 11px;
+    width: 100%;
+    height: 36px;
+    border: 1.5px solid #e9d5ff;
+    border-radius: 8px;
+    padding: 4px 8px;
+    font-size: 12px;
     font-weight: 700;
-    font-family: monospace;
+    color: #3b0764;
+    background: #ffffff;
     outline: none;
+    box-sizing: border-box;
+    transition: all 0.15s ease;
 }
+.sched-input-time:focus {
+    border-color: #9333ea;
+    box-shadow: 0 0 0 2px rgba(147, 51, 234, 0.15);
+}
+
+.sched-time-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #c084fc;
+    font-size: 14px;
+    padding-top: 14px;
+    flex-shrink: 0;
+}
+
 .sched-input-text-sm {
     width: 100%;
-    border: 1px solid #cbd5e1;
-    border-radius: 6px;
-    padding: 4px 8px;
-    font-size: 11px;
+    height: 36px;
+    border: 1.5px solid #e9d5ff;
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #3b0764;
+    background: #ffffff;
     outline: none;
+    box-sizing: border-box;
+    transition: all 0.15s ease;
+}
+.sched-input-text-sm:focus {
+    border-color: #9333ea;
+    box-shadow: 0 0 0 2px rgba(147, 51, 234, 0.15);
+}
+
+.sched-btn-apply-custom {
+    width: 100%;
+    height: 38px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%);
+    color: #ffffff;
+    font-weight: 800;
+    font-size: 12.5px;
+    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    transition: all 0.15s ease;
+}
+.sched-btn-apply-custom:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(124, 58, 237, 0.35);
+    filter: brightness(1.05);
+}
+
+.sched-custom-dd-footer {
+    padding: 10px 14px;
+    background: #f8fafc;
+    border-top: 1.5px solid #f1f5f9;
+    text-align: center;
+    border-radius: 0 0 16px 16px;
 }
 
 .sched-btn-edit-times {
-    border: none;
-    background: transparent;
-    color: #7c3aed;
-    font-size: 11px;
+    border: 1.5px solid #c7d2fe;
+    background: #eef2ff;
+    color: #4f46e5;
+    font-size: 11.5px;
     font-weight: 700;
+    padding: 6px 14px;
+    border-radius: 8px;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
+    transition: all 0.15s ease;
 }
 .sched-btn-edit-times:hover {
-    text-decoration: underline;
+    background: #e0e7ff;
+    border-color: #a5b4fc;
+    transform: translateY(-1px);
 }
 
 /* Master Settings Modal */
@@ -1979,8 +2331,8 @@ function openCellCustomDropdown(empId, date) {
     dd.style.display = 'flex';
 
     const rect = cell.getBoundingClientRect();
-    const ddHeight = dd.offsetHeight || 330;
-    const ddWidth = dd.offsetWidth || 260;
+    const ddHeight = dd.offsetHeight || 380;
+    const ddWidth = dd.offsetWidth || 330;
     const viewportHeight = window.innerHeight;
     const viewportWidth = window.innerWidth;
 
