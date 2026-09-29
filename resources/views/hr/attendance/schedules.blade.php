@@ -1647,16 +1647,19 @@
 
 /* Floating Cell Custom Dropdown */
 .sched-custom-dropdown {
-    position: absolute;
+    position: fixed !important;
     background: #ffffff;
-    border: 1.5px solid #e2e8f0;
+    border: 1.5px solid #cbd5e1;
     border-radius: 12px;
-    box-shadow: 0 12px 30px rgba(0,0,0,0.18);
-    width: 250px;
-    z-index: 1000;
-    display: flex;
+    box-shadow: 0 16px 36px rgba(0,0,0,0.22), 0 4px 12px rgba(0,0,0,0.08);
+    width: 260px;
+    max-width: min(290px, 92vw);
+    max-height: calc(100vh - 20px);
+    z-index: 99999;
+    display: none;
     flex-direction: column;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .sched-custom-dd-header {
@@ -1965,15 +1968,53 @@ function openCellCustomDropdown(empId, date) {
     const dd = document.getElementById('cellCustomDropdown');
     if (!cell || !dd) return;
 
-    const rect = cell.getBoundingClientRect();
+    // Show invisibly to measure real height and width
+    dd.style.visibility = 'hidden';
     dd.style.display = 'flex';
-    dd.style.top = `${rect.bottom + window.scrollY + 4}px`;
-    dd.style.left = `${Math.min(rect.left + window.scrollX, window.innerWidth - 270)}px`;
+
+    const rect = cell.getBoundingClientRect();
+    const ddHeight = dd.offsetHeight || 330;
+    const ddWidth = dd.offsetWidth || 260;
+    const viewportHeight = window.innerHeight;
+    const viewportWidth = window.innerWidth;
+
+    // Vertical placement: detect bottom collision and flip upward when needed
+    const spaceBelow = viewportHeight - rect.bottom;
+    const spaceAbove = rect.top;
+
+    let top;
+    if (spaceBelow < ddHeight && spaceAbove > spaceBelow) {
+        // Not enough room below -> open ABOVE the cell
+        top = rect.top - ddHeight - 6;
+        if (top < 10) top = 10;
+    } else {
+        // Sufficient room below -> open BELOW the cell
+        top = rect.bottom + 6;
+        if (top + ddHeight > viewportHeight - 10) {
+            top = Math.max(10, viewportHeight - ddHeight - 10);
+        }
+    }
+
+    // Horizontal placement: align with cell, prevent clipping on right/left edges
+    let left = rect.left;
+    if (left + ddWidth > viewportWidth - 14) {
+        left = viewportWidth - ddWidth - 14;
+    }
+    if (left < 14) {
+        left = 14;
+    }
+
+    dd.style.top = `${Math.round(top)}px`;
+    dd.style.left = `${Math.round(left)}px`;
+    dd.style.visibility = 'visible';
 }
 
 function closeCellCustomDropdown() {
     const dd = document.getElementById('cellCustomDropdown');
-    if (dd) dd.style.display = 'none';
+    if (dd) {
+        dd.style.display = 'none';
+        dd.style.visibility = 'hidden';
+    }
     activeCellEmpId = null;
     activeCellDate = null;
 }
@@ -1986,6 +2027,17 @@ document.addEventListener('click', function(e) {
         }
     }
 });
+
+window.addEventListener('resize', function() {
+    closeCellCustomDropdown();
+});
+
+document.addEventListener('scroll', function(e) {
+    const dd = document.getElementById('cellCustomDropdown');
+    if (dd && dd.style.display !== 'none' && !e.target.closest('#cellCustomDropdown')) {
+        closeCellCustomDropdown();
+    }
+}, true);
 
 function applyCustomTimeToActiveCell() {
     if (!activeCellEmpId || !activeCellDate) return;

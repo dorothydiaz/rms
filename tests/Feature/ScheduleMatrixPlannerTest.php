@@ -47,5 +47,10 @@ class ScheduleMatrixPlannerTest extends TestCase
             'Dropdowns have inline display:none to prevent unstyled flash'
         );
         $response->assertSee('.sched-row-dropdown.open { display: block !important; }', false);
+
+        // Verify custom dropdown popover uses fixed viewport positioning and smart collision detection
+        $response->assertSee('position: fixed !important;', false);
+        $response->assertSee('spaceBelow < ddHeight', false);
+        $response->assertSee('rect.top - ddHeight', false);
     }
 }
