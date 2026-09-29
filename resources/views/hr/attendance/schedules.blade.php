@@ -232,16 +232,16 @@
     <div class="hr-table-wrapper" style="flex: 1 1 0%; height: 100%; min-height: 0; max-height: none; overflow-y: auto; overflow-x: auto; width: 100%; position: relative;">
         <table class="hr-table sched-matrix-table" id="schedMatrixTable" role="grid" style="border-collapse: separate; border-spacing: 0; table-layout: fixed; width: 100%;">
             <colgroup>
-                <col style="width: 17%; min-width: 200px;">
-                <col class="sched-col-week" style="width: 7%; min-width: 85px;">
-                <col style="width: 10.4%; min-width: 140px;">
-                <col style="width: 10.4%; min-width: 140px;">
-                <col style="width: 10.4%; min-width: 140px;">
-                <col style="width: 10.4%; min-width: 140px;">
-                <col style="width: 10.4%; min-width: 140px;">
-                <col style="width: 10.4%; min-width: 140px;">
-                <col style="width: 10.4%; min-width: 140px;">
-                <col style="width: 3.2%; min-width: 40px;">
+                <col style="width: 15%; min-width: 180px;">
+                <col class="sched-col-week" style="width: 6.5%; min-width: 75px;">
+                <col style="width: 10.7%; min-width: 146px;">
+                <col style="width: 10.7%; min-width: 146px;">
+                <col style="width: 10.7%; min-width: 146px;">
+                <col style="width: 10.7%; min-width: 146px;">
+                <col style="width: 10.7%; min-width: 146px;">
+                <col style="width: 10.7%; min-width: 146px;">
+                <col style="width: 10.7%; min-width: 146px;">
+                <col style="width: 3.5%; min-width: 38px;">
             </colgroup>
             <thead>
                 <tr>
@@ -1272,7 +1272,7 @@
 
 /* Cell Preset Buttons (Spacious & Breathable Grid) */
 .sched-cell-td {
-    padding: 6px 5px !important;
+    padding: 5px 3.5px !important;
     vertical-align: middle !important;
     text-align: center;
     position: relative;
@@ -1383,7 +1383,7 @@
 .sched-shift-card {
     position: relative;
     border-radius: 9px;
-    padding: 7px 9px;
+    padding: 6px 6px;
     transition: all 0.15s ease;
     cursor: pointer;
     text-align: left;
@@ -1393,9 +1393,10 @@
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    gap: 4px;
+    gap: 3px;
     box-sizing: border-box;
     width: 100%;
+    overflow: hidden;
     box-shadow: 0 1px 3px rgba(0,0,0,0.03);
 }
 .sched-shift-card:hover {
@@ -1497,27 +1498,34 @@
 .sched-card-detail-box {
     background: #ffffff;
     border-radius: 6px;
-    padding: 4.5px 7.5px;
+    padding: 3.5px 5.5px;
     display: flex;
     flex-direction: column;
-    gap: 3px;
-    margin-top: 2px;
+    gap: 2.5px;
+    margin-top: 1px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    box-sizing: border-box;
+    overflow: hidden;
+    width: 100%;
 }
 
 .sched-detail-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 5px;
-    font-size: 9.5px;
+    gap: 3px;
+    font-size: 9px;
     line-height: 1.25;
+    min-width: 0;
+    width: 100%;
 }
 
 .sched-detail-dot {
-    font-size: 7.5px;
+    font-size: 6.5px;
     line-height: 1;
     flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
 }
 .dot-regular { color: #10b981; }
 .dot-tardiness { color: #f59e0b; }
@@ -1526,24 +1534,30 @@
 .dot-planned { color: #059669; }
 
 .sched-detail-punch {
-    font-family: monospace;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-variant-numeric: tabular-nums;
     font-weight: 700;
-    font-size: 10px;
+    font-size: 8.5px;
     color: #1e293b;
     white-space: nowrap;
-    letter-spacing: -0.2px;
-    flex: 1;
+    letter-spacing: -0.3px;
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: clip;
 }
 
 .sched-detail-badge {
-    font-size: 8.5px;
+    font-size: 7.5px;
     font-weight: 800;
-    padding: 1.5px 5px;
-    border-radius: 3.5px;
+    padding: 1px 3.5px;
+    border-radius: 3px;
     text-transform: uppercase;
-    letter-spacing: 0.25px;
+    letter-spacing: 0.1px;
+    line-height: 1.2;
     white-space: nowrap;
     flex-shrink: 0;
+    box-sizing: border-box;
 }
 .badge-regular { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
 .badge-tardiness { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
@@ -1553,14 +1567,15 @@
 
 .sched-detail-hours {
     color: #64748b;
-    font-size: 9.5px;
+    font-size: 9px;
     font-weight: 600;
     padding-top: 1px;
 }
 .sched-detail-hours strong {
-    font-family: monospace;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-variant-numeric: tabular-nums;
     font-weight: 800;
-    font-size: 10px;
+    font-size: 9.5px;
 }
 
 /* Theme Variations */
