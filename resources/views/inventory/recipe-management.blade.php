@@ -642,6 +642,43 @@
     gap: 12px;
 }
 
+/* Inventory Movement & BOM Behavior Checkbox Cards */
+.bom-checkbox-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 9px;
+    background: #f8fafc;
+    border: 1px solid var(--bom-border-subtle);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.bom-checkbox-card:hover {
+    background: #f1f5f9;
+}
+
+.bom-checkbox-card input[type="checkbox"] {
+    width: 17px;
+    height: 17px;
+    accent-color: var(--bom-primary);
+    cursor: pointer;
+}
+
+.bom-checkbox-title {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--bom-text-strong);
+    margin: 0;
+}
+
+.bom-checkbox-desc {
+    font-size: 0.72rem;
+    color: var(--bom-text-muted);
+    margin: 0;
+}
+
 /* Mode Switcher Tabs */
 .bom-mode-switcher {
     display: flex;
@@ -814,6 +851,277 @@
     color: var(--bom-text-muted);
     border: 1px solid #e2e8f0;
 }
+
+/* BOM Drawer Tab Navigation */
+.bom-drawer-nav {
+    display: flex;
+    background: #f8fafc;
+    border-bottom: 1px solid var(--bom-border-subtle);
+    padding: 0 24px;
+    gap: 8px;
+}
+
+.bom-drawer-tab-btn {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 12px 14px;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--bom-text-muted);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.bom-drawer-tab-btn:hover {
+    color: var(--bom-text-strong);
+}
+
+.bom-drawer-tab-btn.active {
+    color: var(--bom-primary);
+    border-bottom-color: var(--bom-primary);
+    font-weight: 700;
+}
+
+/* =========================================================================
+   AUDIT LOGS & TIMELINE SYSTEM (BOM)
+   ========================================================================= */
+.audit-overview-card {
+    background: #ffffff;
+    border: 1px solid var(--bom-border-subtle);
+    border-radius: 12px;
+    padding: 14px 16px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.audit-metric-box {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.audit-metric-label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: var(--bom-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.audit-metric-val {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--bom-text-strong);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.audit-timeline-container {
+    position: relative;
+    padding-left: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.audit-timeline-container::before {
+    content: '';
+    position: absolute;
+    top: 6px;
+    bottom: 6px;
+    left: 11px;
+    width: 2px;
+    background: #e2e8f0;
+}
+
+.audit-timeline-item {
+    position: relative;
+    background: #ffffff;
+    border: 1px solid var(--bom-border-subtle);
+    border-radius: 10px;
+    padding: 14px 16px;
+    transition: all 0.15s ease;
+}
+
+.audit-timeline-item:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+
+.audit-timeline-node-icon {
+    position: absolute;
+    left: -28px;
+    top: 14px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 2px solid var(--bom-primary);
+    color: var(--bom-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    transform: translateX(-50%);
+    z-index: 2;
+}
+
+.audit-timeline-node-icon.is-created {
+    border-color: var(--bom-success);
+    color: var(--bom-success);
+}
+
+.audit-timeline-node-icon.is-price {
+    border-color: #3b82f6;
+    color: #2563eb;
+}
+
+.audit-timeline-node-icon.is-bom {
+    border-color: #8b5cf6;
+    color: #7c3aed;
+}
+
+.audit-timeline-node-icon.is-status {
+    border-color: #f59e0b;
+    color: #d97706;
+}
+
+.audit-item-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+}
+
+.audit-user-profile {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+}
+
+.audit-user-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #ede9fe;
+    color: #6d28d9;
+    font-weight: 700;
+    font-size: 0.72rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.audit-user-name {
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--bom-text-strong);
+    line-height: 1.2;
+}
+
+.audit-user-role {
+    font-size: 0.70rem;
+    color: var(--bom-text-muted);
+}
+
+.audit-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 7px;
+    border-radius: 12px;
+    font-size: 0.66rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.audit-badge.badge-created {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.audit-badge.badge-updated {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.audit-badge.badge-price {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.audit-badge.badge-bom {
+    background: #ede9fe;
+    color: #6b21a8;
+}
+
+.audit-summary-text {
+    font-size: 0.79rem;
+    font-weight: 600;
+    color: var(--bom-text-strong);
+    margin-bottom: 8px;
+}
+
+.audit-diff-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.74rem;
+    margin-top: 6px;
+    border: 1px solid #f1f5f9;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.audit-diff-table th {
+    background: #f8fafc;
+    padding: 6px 10px;
+    text-align: left;
+    font-size: 0.67rem;
+    font-weight: 600;
+    color: var(--bom-text-muted);
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.audit-diff-table td {
+    padding: 6px 10px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.audit-diff-table tr:last-child td {
+    border-bottom: none;
+}
+
+.diff-val-old {
+    color: #ef4444;
+    text-decoration: line-through;
+    background: #fef2f2;
+    padding: 2px 5px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.72rem;
+}
+
+.diff-val-new {
+    color: #15803d;
+    font-weight: 600;
+    background: #f0fdf4;
+    padding: 2px 5px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.72rem;
+}
 </style>
 @endpush
 
@@ -940,10 +1248,24 @@
         </button>
     </header>
 
+    <!-- BOM Drawer Tab Navigation -->
+    <nav class="bom-drawer-nav" id="bomDrawerNav">
+        <button type="button" class="bom-drawer-tab-btn active" data-tab="tab-bom-builder" onclick="switchBomDrawerTab('tab-bom-builder')">
+            <i class="ph ph-cooking-pot"></i>
+            <span>Recipe Builder</span>
+        </button>
+        <button type="button" class="bom-drawer-tab-btn" data-tab="tab-bom-audit" onclick="switchBomDrawerTab('tab-bom-audit')">
+            <i class="ph ph-clock-counter-clockwise"></i>
+            <span>Audit Logs</span>
+        </button>
+    </nav>
+
     <div class="bom-drawer-body">
         
-        <!-- Mode Switcher: Link Existing vs Create New Product -->
-        <div class="bom-mode-switcher" id="bomModeSwitcher">
+        <!-- Tab 1: Recipe Builder Pane -->
+        <div class="bom-tab-pane active" id="pane-tab-bom-builder">
+            <!-- Mode Switcher: Link Existing vs Create New Product -->
+            <div class="bom-mode-switcher" id="bomModeSwitcher">
             <button type="button" class="bom-mode-btn active" id="btnModeExisting" onclick="switchBomDrawerMode('existing')">
                 <i class="ph ph-link"></i>
                 <span>Existing Item Master</span>
@@ -1014,6 +1336,25 @@
                 </div>
             </div>
 
+            <!-- Inventory Movement & BOM Behavior Settings -->
+            <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 12px;">
+                <label class="bom-checkbox-card">
+                    <input type="checkbox" id="bomTrackPhysicalStock" checked>
+                    <div>
+                        <div class="bom-checkbox-title">Track Physical Stock</div>
+                        <div class="bom-checkbox-desc">Maintains on-hand balance, low-stock alerts, and shows in Stocks Overview for counting/receiving.</div>
+                    </div>
+                </label>
+
+                <label class="bom-checkbox-card">
+                    <input type="checkbox" id="bomExplodeBomOnSale" checked>
+                    <div>
+                        <div class="bom-checkbox-title">Explode Recipe / BOM on Sale</div>
+                        <div class="bom-checkbox-desc">When sold on POS, deducts sub-ingredients from Item Master instead of deducting this item directly.</div>
+                    </div>
+                </label>
+            </div>
+
             <!-- Raw Materials / Ingredients Builder Repeater -->
             <div class="bom-builder-card" style="margin-top: 14px;">
                 <div class="bom-builder-header">
@@ -1074,6 +1415,17 @@
                 </button>
             </div>
         </form>
+        </div>
+
+        <!-- Tab 2: Audit Logs Pane -->
+        <div class="bom-tab-pane" id="pane-tab-bom-audit" style="display: none; padding-top: 4px;">
+            <div id="bomAuditLogsContainer" style="display: flex; flex-direction: column; gap: 14px;">
+                <!-- Populated dynamically via renderBomAuditLogs -->
+            </div>
+            <div style="margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--bom-border-subtle); display: flex; justify-content: flex-end;">
+                <button type="button" class="bom-action-btn-secondary" onclick="closeBomDrawer()">Close</button>
+            </div>
+        </div>
     </div>
 </aside>
 
@@ -1128,8 +1480,45 @@
         }
     ];
 
+    const CATEGORY_PALETTES = {
+        purple: { label: 'Purple / Violet', bg: '#faf5ff', text: '#7e22ce', border: '#e9d5ff', dot: '#a855f7' },
+        amber: { label: 'Amber / Gold', bg: '#fffbeb', text: '#b45309', border: '#fde68a', dot: '#f59e0b' },
+        rose: { label: 'Rose / Pink', bg: '#fdf2f8', text: '#be185d', border: '#fbcfe8', dot: '#ec4899' },
+        emerald: { label: 'Emerald / Green', bg: '#f0fdf4', text: '#15803d', border: '#bbf7d0', dot: '#10b981' },
+        blue: { label: 'Ocean / Blue', bg: '#eff6ff', text: '#1d4ed8', border: '#bfdbfe', dot: '#3b82f6' },
+        orange: { label: 'Tangerine / Orange', bg: '#fff7ed', text: '#c2410c', border: '#fed7aa', dot: '#f97316' },
+        teal: { label: 'Teal / Cyan', bg: '#f0fdfa', text: '#0f766e', border: '#99f6e4', dot: '#14b8a6' },
+        indigo: { label: 'Indigo / Navy', bg: '#eef2ff', text: '#4338ca', border: '#c7d2fe', dot: '#6366f1' },
+        slate: { label: 'Slate / Neutral', bg: '#f8fafc', text: '#475569', border: '#cbd5e1', dot: '#64748b' }
+    };
+
+    const DEFAULT_CATEGORY_META = {
+        'Beverages': { icon: 'ph-coffee', color: 'purple' },
+        'Main Course': { icon: 'ph-fork-knife', color: 'amber' },
+        'Pastries & Desserts': { icon: 'ph-cookie', color: 'rose' },
+        'Raw Ingredients': { icon: 'ph-plant', color: 'emerald' },
+        'Packaging & Disposables': { icon: 'ph-box', color: 'blue' },
+        'Syrups & Flavors': { icon: 'ph-drop', color: 'orange' },
+        'Uncategorized': { icon: 'ph-tag', color: 'slate' }
+    };
+
+    function getCategoryMeta(cat) {
+        if (window.AppStore && window.AppStore.categoryMeta && window.AppStore.categoryMeta[cat]) {
+            return window.AppStore.categoryMeta[cat];
+        }
+        if (DEFAULT_CATEGORY_META[cat]) {
+            return DEFAULT_CATEGORY_META[cat];
+        }
+        return { icon: 'ph-tag', color: 'purple' };
+    }
+
+    function getCategoryPalette(colorKey) {
+        return CATEGORY_PALETTES[colorKey] || CATEGORY_PALETTES.purple;
+    }
+
     window.AppStore = {
         categories: JSON.parse(localStorage.getItem('rms_product_categories')) || DEFAULT_CATEGORIES,
+        categoryMeta: Object.assign({}, DEFAULT_CATEGORY_META, JSON.parse(localStorage.getItem('rms_category_meta')) || {}),
         products: JSON.parse(localStorage.getItem('rms_inventory_products')) || [],
         boms: JSON.parse(localStorage.getItem('rms_boms')) || INITIAL_BOMS,
         searchQuery: '',
@@ -1223,6 +1612,214 @@
         const total = bom.ingredients.reduce((acc, ing) => acc + (Number(ing.qty || 0) * Number(ing.unitCost || 0)), 0);
         const yieldVal = Number(bom.yield) || 1;
         return yieldVal > 0 ? (total / yieldVal) : total;
+    }
+
+    // Auto-seed baseline audit logs for existing products if not present
+    window.AppStore.products.forEach(p => {
+        if (!p.auditLogs || p.auditLogs.length === 0) {
+            p.createdAt = p.createdAt || 'Sep 15, 2026 • 09:30 AM';
+            p.createdBy = p.createdBy || 'Dorothy Diaz (System Admin)';
+            p.auditLogs = [
+                {
+                    id: 'LOG-INIT-' + p.id,
+                    formattedDate: p.createdAt,
+                    user: { name: 'Dorothy Diaz', email: 'dorothy@dorothydiaz.internal', role: 'System Administrator', avatar: 'DD' },
+                    actionType: 'CREATED',
+                    summary: `Initial catalog record created for "${p.name}"`,
+                    changes: [
+                        { field: 'SKU Code', oldValue: '—', newValue: p.sku },
+                        { field: 'Product Name', oldValue: '—', newValue: p.name },
+                        { field: 'Selling Price', oldValue: '—', newValue: formatPHP(p.sellingPrice) },
+                        { field: 'Cost Price', oldValue: '—', newValue: formatPHP(p.costPrice) },
+                        { field: 'Has BOM', oldValue: '—', newValue: p.hasBom ? 'Yes (Recipe Active)' : 'No' }
+                    ]
+                }
+            ];
+        }
+    });
+
+    function createAuditEntry(user, actionType, summary, changes = []) {
+        const now = new Date();
+        const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        const month = months[now.getMonth()];
+        const day = String(now.getDate()).padStart(2, '0');
+        const year = now.getFullYear();
+        let hours = now.getHours();
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        hours = hours % 12;
+        hours = hours ? hours : 12;
+        const formattedHours = String(hours).padStart(2, '0');
+        const formattedDate = `${month} ${day}, ${year} • ${formattedHours}:${minutes} ${ampm}`;
+
+        return {
+            id: 'LOG-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
+            timestamp: now.toISOString(),
+            formattedDate: formattedDate,
+            user: {
+                name: user?.name || 'John Abiguero',
+                email: user?.email || 'jabiguero@dorothydiaz.internal',
+                role: user?.role || 'Lead Inventory Admin',
+                avatar: (user?.name || 'JA').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
+            },
+            actionType: actionType || 'UPDATED',
+            summary: summary || 'Recipe updated',
+            changes: changes || []
+        };
+    }
+
+    window.switchBomDrawerTab = function(tabId) {
+        document.querySelectorAll('.bom-drawer-tab-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.getAttribute('data-tab') === tabId);
+        });
+        document.querySelectorAll('.bom-tab-pane').forEach(pane => {
+            pane.style.display = (pane.id === 'pane-' + tabId) ? 'block' : 'none';
+        });
+
+        if (tabId === 'tab-bom-audit') {
+            const pId = Number(bomProductId.value || selectExistingItem.value);
+            const product = window.AppStore.products.find(p => p.id === pId);
+            const bom = window.AppStore.boms.find(b => b.productId === pId);
+            renderBomAuditLogs(product, bom);
+        }
+    };
+
+    function renderBomAuditLogs(product, bom) {
+        const container = document.getElementById('bomAuditLogsContainer');
+        if (!container) return;
+
+        if (!product || currentDrawerMode === 'new_product') {
+            container.innerHTML = `
+                <div class="audit-overview-card" style="grid-template-columns: 1fr; text-align: center; padding: 28px 16px;">
+                    <div style="color: var(--bom-text-muted); display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                        <i class="ph ph-sparkle" style="font-size: 2rem; color: var(--bom-primary);"></i>
+                        <h4 style="margin: 0; font-size: 0.95rem; font-weight: 700; color: var(--bom-text-strong);">New BOM Recipe Draft</h4>
+                        <p style="margin: 0; font-size: 0.8rem; max-width: 320px; line-height: 1.4;">
+                            Audit trail will automatically initialize with recipe creation timestamp and user identity upon saving.
+                        </p>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
+        const logs = product.auditLogs || [];
+        const createdAt = product.createdAt || 'Sep 15, 2026 • 09:30 AM';
+        const createdBy = product.createdBy || 'Dorothy Diaz (System Admin)';
+        const lastModified = logs.length > 0 ? logs[0].formattedDate : createdAt;
+
+        let overviewHtml = `
+            <div class="audit-overview-card">
+                <div class="audit-metric-box">
+                    <span class="audit-metric-label"><i class="ph ph-calendar-plus"></i> Creation Date</span>
+                    <span class="audit-metric-val" title="${createdAt}">${createdAt}</span>
+                </div>
+                <div class="audit-metric-box">
+                    <span class="audit-metric-label"><i class="ph ph-user-circle"></i> Registered By</span>
+                    <span class="audit-metric-val" title="${createdBy}">${createdBy}</span>
+                </div>
+                <div class="audit-metric-box">
+                    <span class="audit-metric-label"><i class="ph ph-clock-counter-clockwise"></i> Total Revisions</span>
+                    <span class="audit-metric-val">${logs.length} ${logs.length === 1 ? 'Entry' : 'Entries'}</span>
+                </div>
+                <div class="audit-metric-box">
+                    <span class="audit-metric-label"><i class="ph ph-arrows-clockwise"></i> Last Modified</span>
+                    <span class="audit-metric-val" title="${lastModified}">${lastModified}</span>
+                </div>
+            </div>
+        `;
+
+        if (logs.length === 0) {
+            container.innerHTML = overviewHtml + `
+                <div style="text-align: center; padding: 24px; color: var(--bom-text-muted); font-size: 0.82rem;">
+                    No revision history recorded yet for this recipe.
+                </div>
+            `;
+            return;
+        }
+
+        let timelineHtml = '<div class="audit-timeline-container">';
+
+        logs.forEach(log => {
+            let iconClass = '';
+            let iconGlyph = 'ph-clock-counter-clockwise';
+            let badgeClass = 'badge-updated';
+            let badgeText = log.actionType || 'UPDATED';
+
+            if (log.actionType === 'CREATED') {
+                iconClass = 'is-created';
+                iconGlyph = 'ph-plus-circle';
+                badgeClass = 'badge-created';
+                badgeText = 'RECIPE CREATED';
+            } else if (log.actionType === 'PRICE_CHANGE') {
+                iconClass = 'is-price';
+                iconGlyph = 'ph-currency-circle-dollar';
+                badgeClass = 'badge-price';
+                badgeText = 'PRICE ADJUSTED';
+            } else if (log.actionType === 'BOM_CHANGE' || log.actionType === 'BOM_MODIFIED') {
+                iconClass = 'is-bom';
+                iconGlyph = 'ph-cooking-pot';
+                badgeClass = 'badge-bom';
+                badgeText = 'RECIPE MODIFIED';
+            }
+
+            const userName = log.user?.name || 'Dorothy Diaz';
+            const userRole = log.user?.role || 'Staff Member';
+            const userEmail = log.user?.email || '';
+            const userAvatar = log.user?.avatar || userName.substring(0, 2).toUpperCase();
+
+            let diffRows = '';
+            if (log.changes && log.changes.length > 0) {
+                diffRows = `
+                    <table class="audit-diff-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 32%;">Property / Field</th>
+                                <th style="width: 34%;">Previous Value</th>
+                                <th style="width: 34%;">New Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${log.changes.map(ch => `
+                                <tr>
+                                    <td style="font-weight: 600; color: var(--bom-text-strong);">${ch.field}</td>
+                                    <td><span class="diff-val-old">${ch.oldValue || '—'}</span></td>
+                                    <td><span class="diff-val-new">${ch.newValue || '—'}</span></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            }
+
+            timelineHtml += `
+                <div class="audit-timeline-item">
+                    <div class="audit-timeline-node-icon ${iconClass}">
+                        <i class="ph ${iconGlyph}"></i>
+                    </div>
+                    <div class="audit-item-header">
+                        <div class="audit-user-profile">
+                            <div class="audit-user-avatar" title="${userEmail}">${userAvatar}</div>
+                            <div>
+                                <div class="audit-user-name">${userName}</div>
+                                <div class="audit-user-role">${userRole}</div>
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span class="audit-badge ${badgeClass}">${badgeText}</span>
+                            <span style="font-size: 0.72rem; color: var(--bom-text-muted); font-weight: 500;">
+                                <i class="ph ph-clock" style="vertical-align: middle;"></i> ${log.formattedDate}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="audit-summary-text">${log.summary || 'Recipe modified'}</div>
+                    ${diffRows}
+                </div>
+            `;
+        });
+
+        timelineHtml += '</div>';
+        container.innerHTML = overviewHtml + timelineHtml;
     }
 
     // =========================================================================
@@ -1370,7 +1967,12 @@
                             </div>
                         </div>
                     </td>
-                    <td><span style="font-weight: 600; color: var(--bom-text-medium); font-size: 0.78rem;">${product.category}</span></td>
+                    <td>
+                        <span style="display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px; border-radius: 6px; font-size: 0.72rem; font-weight: 700; background: ${getCategoryPalette(getCategoryMeta(product.category).color).bg}; color: ${getCategoryPalette(getCategoryMeta(product.category).color).text}; border: 1px solid ${getCategoryPalette(getCategoryMeta(product.category).color).border};">
+                            <i class="ph ${getCategoryMeta(product.category).icon}"></i>
+                            <span>${product.category}</span>
+                        </span>
+                    </td>
                     <td class="td-right" style="font-weight: 700; color: var(--bom-text-strong);">
                         ${hasIngredients ? formatPHP(totalCost) : '<span style="color:var(--bom-text-muted); font-size:0.74rem;">Pending Setup</span>'}
                     </td>
@@ -1560,6 +2162,9 @@
         bomProductId.value = prod.id;
         bomSellingPrice.value = Number(prod.sellingPrice || 0).toFixed(2);
 
+        document.getElementById('bomTrackPhysicalStock').checked = prod.trackPhysicalStock !== undefined ? prod.trackPhysicalStock : (prod.trackStock !== false);
+        document.getElementById('bomExplodeBomOnSale').checked = prod.explodeBomOnSale !== undefined ? prod.explodeBomOnSale : (prod.hasBom !== false);
+
         // If this product already has a configured BOM recipe, sync its yield and ingredients
         const existingBom = window.AppStore.boms.find(b => b.productId === prod.id);
         if (existingBom) {
@@ -1577,6 +2182,7 @@
     window.openBomDrawer = function(idOrMode) {
         syncCategoryDropdowns();
         populateExistingItemsDropdown();
+        switchBomDrawerTab('tab-bom-builder');
 
         if (idOrMode === 'new') {
             document.getElementById('drawerBomTitle').textContent = 'Create BOM & Recipe';
@@ -1587,6 +2193,8 @@
             bomProductId.value = '';
             bomSellingPrice.value = '';
             bomBatchYield.value = 1;
+            document.getElementById('bomTrackPhysicalStock').checked = true;
+            document.getElementById('bomExplodeBomOnSale').checked = true;
             bomIngredientRowsContainer.innerHTML = '';
 
             // Add 2 initial ingredient rows
@@ -1605,6 +2213,8 @@
             bomProductId.value = product.id;
             selectExistingItem.value = product.id;
             bomSellingPrice.value = Number(product.sellingPrice || 0).toFixed(2);
+            document.getElementById('bomTrackPhysicalStock').checked = product.trackPhysicalStock !== undefined ? product.trackPhysicalStock : (product.trackStock !== false);
+            document.getElementById('bomExplodeBomOnSale').checked = product.explodeBomOnSale !== undefined ? product.explodeBomOnSale : (product.hasBom !== false);
 
             const bom = window.AppStore.boms.find(b => b.productId === product.id);
             bomBatchYield.value = (bom && bom.yield) ? bom.yield : 1;
@@ -1631,6 +2241,7 @@
         bomDrawerBackdrop.classList.remove('is-open');
         bomDrawer.classList.remove('is-open');
         document.getElementById('bomModeSwitcher').style.display = 'flex';
+        switchBomDrawerTab('tab-bom-builder');
     };
 
     function populateExistingItemsDropdown() {
@@ -1883,8 +2494,16 @@
         const yieldVal = Math.max(0.0001, parseFloat(bomBatchYield.value) || 1);
         const unitBomCost = totalRawCost / yieldVal;
         const sellingPrice = parseFloat(bomSellingPrice.value) || 0;
+        const trackPhysicalStock = document.getElementById('bomTrackPhysicalStock').checked;
+        const explodeBomOnSale = document.getElementById('bomExplodeBomOnSale').checked;
 
         let targetProduct = null;
+
+        const currentUser = {
+            name: 'John Abiguero',
+            email: 'jabiguero@dorothydiaz.internal',
+            role: 'Lead Inventory Admin'
+        };
 
         if (currentDrawerMode === 'new_product') {
             // Create New Product directly into Item Master
@@ -1909,10 +2528,12 @@
                 supplier: 'In-House Production (BOM)',
                 allergens: [],
                 isActive: true,
-                trackStock: true,
+                trackPhysicalStock: trackPhysicalStock,
+                trackStock: trackPhysicalStock,
+                explodeBomOnSale: explodeBomOnSale,
+                hasBom: explodeBomOnSale,
                 canBeSold: true,
                 canBePurchased: false,
-                hasBom: true,
                 reorderPoint: 10,
                 targetStock: 50,
                 branches: [
@@ -1923,6 +2544,21 @@
                 ]
             };
 
+            const initialLog = createAuditEntry(currentUser, 'CREATED', `Initial BOM recipe and catalog registration for "${targetProduct.name}"`, [
+                { field: 'Product Name', oldValue: '—', newValue: targetProduct.name },
+                { field: 'SKU Code', oldValue: '—', newValue: targetProduct.sku },
+                { field: 'Category', oldValue: '—', newValue: targetProduct.category },
+                { field: 'Batch Yield', oldValue: '—', newValue: `${yieldVal} ${targetProduct.unit}` },
+                { field: 'Calculated Unit Cost', oldValue: '—', newValue: formatPHP(unitBomCost) },
+                { field: 'Selling Price', oldValue: '—', newValue: formatPHP(sellingPrice) },
+                { field: 'Track Physical Stock', oldValue: '—', newValue: targetProduct.trackPhysicalStock ? 'Yes (Counted in Stocks Overview)' : 'No (Non-Physical / Service)' },
+                { field: 'Explode Recipe on Sale', oldValue: '—', newValue: targetProduct.explodeBomOnSale ? 'Yes (Deducts Sub-ingredients)' : 'No (Deducts Item Directly)' },
+                { field: 'Recipe Ingredients', oldValue: '—', newValue: `${ingredients.length} items (${ingredients.map(i => i.name).join(', ')})` }
+            ]);
+            targetProduct.createdAt = initialLog.formattedDate;
+            targetProduct.createdBy = `${currentUser.name} (${currentUser.role})`;
+            targetProduct.auditLogs = [initialLog];
+
             window.AppStore.products.unshift(targetProduct);
             showToast(`Product "${targetProduct.name}" and BOM created!`);
         } else {
@@ -1930,7 +2566,58 @@
             const pId = Number(bomProductId.value || selectExistingItem.value);
             targetProduct = window.AppStore.products.find(p => p.id === pId);
             if (targetProduct) {
-                targetProduct.hasBom = true;
+                const existingBom = window.AppStore.boms.find(b => b.productId === targetProduct.id);
+                const changes = [];
+                const oldPrice = Number(targetProduct.sellingPrice || 0);
+                const oldCost = Number(targetProduct.costPrice || 0);
+                const oldYield = existingBom ? Number(existingBom.yield || 1) : 1;
+                const oldIngredients = (existingBom && existingBom.ingredients) ? existingBom.ingredients : [];
+
+                if (Math.abs(oldPrice - sellingPrice) > 0.009) {
+                    changes.push({ field: 'Selling Price', oldValue: formatPHP(oldPrice), newValue: formatPHP(sellingPrice) });
+                }
+                if (Math.abs(oldCost - unitBomCost) > 0.009) {
+                    changes.push({ field: 'Calculated Unit Cost', oldValue: formatPHP(oldCost), newValue: formatPHP(unitBomCost) });
+                }
+                if (Math.abs(oldYield - yieldVal) > 0.009) {
+                    changes.push({ field: 'Batch Yield', oldValue: `${oldYield} ${targetProduct.unit || 'unit(s)'}`, newValue: `${yieldVal} ${targetProduct.unit || 'unit(s)'}` });
+                }
+                if ((targetProduct.trackPhysicalStock ?? targetProduct.trackStock) !== trackPhysicalStock) {
+                    changes.push({
+                        field: 'Track Physical Stock',
+                        oldValue: (targetProduct.trackPhysicalStock ?? targetProduct.trackStock) ? 'Yes' : 'No',
+                        newValue: trackPhysicalStock ? 'Yes' : 'No'
+                    });
+                }
+                if ((targetProduct.explodeBomOnSale ?? targetProduct.hasBom) !== explodeBomOnSale) {
+                    changes.push({
+                        field: 'Explode Recipe on Sale',
+                        oldValue: (targetProduct.explodeBomOnSale ?? targetProduct.hasBom) ? 'Yes' : 'No',
+                        newValue: explodeBomOnSale ? 'Yes' : 'No'
+                    });
+                }
+                
+                const oldIngNames = oldIngredients.map(i => `${i.name} (${i.qty} ${i.unit})`).join('; ');
+                const newIngNames = ingredients.map(i => `${i.name} (${i.qty} ${i.unit})`).join('; ');
+                if (oldIngNames !== newIngNames) {
+                    changes.push({
+                        field: 'Recipe Ingredients',
+                        oldValue: oldIngNames || 'None (Unconfigured)',
+                        newValue: newIngNames
+                    });
+                }
+
+                if (changes.length > 0) {
+                    let actionType = 'BOM_MODIFIED';
+                    if (changes.some(c => c.field === 'Selling Price')) actionType = 'PRICE_CHANGE';
+                    const log = createAuditEntry(currentUser, actionType, `Updated recipe BOM (${changes.length} propert${changes.length === 1 ? 'y' : 'ies'} altered)`, changes);
+                    targetProduct.auditLogs = [log, ...(targetProduct.auditLogs || [])];
+                }
+
+                targetProduct.trackPhysicalStock = trackPhysicalStock;
+                targetProduct.trackStock = trackPhysicalStock;
+                targetProduct.explodeBomOnSale = explodeBomOnSale;
+                targetProduct.hasBom = explodeBomOnSale;
                 targetProduct.canBeSold = true;
                 targetProduct.costPrice = unitBomCost;
                 targetProduct.sellingPrice = sellingPrice;
@@ -1955,6 +2642,7 @@
         // Persist to localStorage for Item Master and BOM reactivity
         localStorage.setItem('rms_inventory_products', JSON.stringify(window.AppStore.products));
         localStorage.setItem('rms_boms', JSON.stringify(window.AppStore.boms));
+        localStorage.removeItem('rms_stocks_ledger');
 
         // Re-render
         window.AppStore.expandedProductIds.add(targetProduct.id);

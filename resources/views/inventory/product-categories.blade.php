@@ -1411,7 +1411,7 @@ body.is-column-resizing * {
 .inv-modal-card {
     background: #ffffff;
     border-radius: 16px;
-    width: min(440px, 92vw);
+    width: min(520px, 94vw);
     box-shadow: 0 20px 40px rgba(15, 23, 42, 0.2);
     border: 1px solid var(--inv-border-subtle);
     overflow: hidden;
@@ -1574,6 +1574,127 @@ body.is-column-resizing * {
     background: rgba(239, 68, 68, 0.1);
     color: var(--inv-danger);
     border-color: rgba(239, 68, 68, 0.4);
+}
+
+/* Category Modal Icon & Color Customizer */
+.inv-cat-icon-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 8px;
+}
+
+.inv-cat-icon-btn {
+    height: 42px;
+    border-radius: 9px;
+    border: 1.5px solid var(--inv-border-subtle);
+    background: #f8fafc;
+    color: var(--inv-text-medium);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 19px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.inv-cat-icon-btn:hover {
+    background: #ffffff;
+    border-color: var(--inv-border-focus);
+    color: var(--inv-primary-dark);
+    transform: translateY(-1px);
+}
+
+.inv-cat-icon-btn.is-active {
+    background: #f3e8ff;
+    border-color: var(--inv-primary);
+    color: var(--inv-primary-dark);
+    box-shadow: 0 0 0 3px var(--inv-primary-glow);
+}
+
+.inv-cat-color-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.inv-cat-color-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    border-radius: 8px;
+    border: 1.5px solid var(--inv-border-subtle);
+    background: #ffffff;
+    cursor: pointer;
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: var(--inv-text-strong);
+    transition: all 0.15s ease;
+}
+
+.inv-cat-color-chip:hover {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+}
+
+.inv-cat-color-chip.is-active {
+    border-color: var(--inv-primary);
+    background: #faf5ff;
+    box-shadow: 0 0 0 2px var(--inv-primary-glow);
+}
+
+.inv-cat-color-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.inv-cat-preview-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-radius: 10px;
+    background: #f8fafc;
+    border: 1px dashed #cbd5e1;
+}
+
+.inv-cat-preview-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 5px 12px;
+    border-radius: 8px;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    border: 1px solid;
+    transition: all 0.2s ease;
+}
+
+/* Category Avatar in Group Accordion Header */
+.inv-cat-avatar-icon {
+    width: 26px;
+    height: 26px;
+    border-radius: 7px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    flex-shrink: 0;
+}
+
+/* Category Badge Pill inside table column */
+.inv-category-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    width: fit-content;
+    white-space: nowrap;
 }
 
 /* Custom Category Dropdown in Drawer */
@@ -1912,7 +2033,241 @@ body.is-column-resizing * {
     }
     .inv-form-row-2 {
         grid-template-columns: 1fr;
-    }
+/* =========================================================================
+   AUDIT LOGS & TIMELINE SYSTEM
+   ========================================================================= */
+.audit-overview-card {
+    background: #ffffff;
+    border: 1px solid var(--inv-border-subtle);
+    border-radius: 12px;
+    padding: 14px 16px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.audit-metric-box {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.audit-metric-label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: var(--inv-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.audit-metric-val {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--inv-text-strong);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.audit-timeline-container {
+    position: relative;
+    padding-left: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.audit-timeline-container::before {
+    content: '';
+    position: absolute;
+    top: 6px;
+    bottom: 6px;
+    left: 11px;
+    width: 2px;
+    background: #e2e8f0;
+}
+
+.audit-timeline-item {
+    position: relative;
+    background: #ffffff;
+    border: 1px solid var(--inv-border-subtle);
+    border-radius: 10px;
+    padding: 14px 16px;
+    transition: all 0.15s ease;
+}
+
+.audit-timeline-item:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+
+.audit-timeline-node-icon {
+    position: absolute;
+    left: -28px;
+    top: 14px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 2px solid var(--inv-primary);
+    color: var(--inv-primary-dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    transform: translateX(-50%);
+    z-index: 2;
+}
+
+.audit-timeline-node-icon.is-created {
+    border-color: var(--inv-success);
+    color: var(--inv-success);
+}
+
+.audit-timeline-node-icon.is-price {
+    border-color: #3b82f6;
+    color: #2563eb;
+}
+
+.audit-timeline-node-icon.is-bom {
+    border-color: #8b5cf6;
+    color: #7c3aed;
+}
+
+.audit-timeline-node-icon.is-status {
+    border-color: #f59e0b;
+    color: #d97706;
+}
+
+.audit-item-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+}
+
+.audit-user-profile {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+}
+
+.audit-user-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #ede9fe;
+    color: #6d28d9;
+    font-weight: 700;
+    font-size: 0.72rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.audit-user-name {
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--inv-text-strong);
+    line-height: 1.2;
+}
+
+.audit-user-role {
+    font-size: 0.70rem;
+    color: var(--inv-text-muted);
+}
+
+.audit-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 7px;
+    border-radius: 12px;
+    font-size: 0.66rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.audit-badge.badge-created {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.audit-badge.badge-updated {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.audit-badge.badge-price {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.audit-badge.badge-bom {
+    background: #ede9fe;
+    color: #6b21a8;
+}
+
+.audit-summary-text {
+    font-size: 0.79rem;
+    font-weight: 600;
+    color: var(--inv-text-strong);
+    margin-bottom: 8px;
+}
+
+.audit-diff-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.74rem;
+    margin-top: 6px;
+    border: 1px solid #f1f5f9;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.audit-diff-table th {
+    background: #f8fafc;
+    padding: 6px 10px;
+    text-align: left;
+    font-size: 0.67rem;
+    font-weight: 600;
+    color: var(--inv-text-muted);
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.audit-diff-table td {
+    padding: 6px 10px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.audit-diff-table tr:last-child td {
+    border-bottom: none;
+}
+
+.diff-val-old {
+    color: #ef4444;
+    text-decoration: line-through;
+    background: #fef2f2;
+    padding: 2px 5px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.72rem;
+}
+
+.diff-val-new {
+    color: #15803d;
+    font-weight: 600;
+    background: #f0fdf4;
+    padding: 2px 5px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.72rem;
 }
 </style>
 @endpush
@@ -2038,6 +2393,10 @@ body.is-column-resizing * {
             <i class="ph ph-currency-circle-dollar"></i>
             <span>Pricing & Suppliers</span>
         </button>
+        <button type="button" class="inv-drawer-tab-btn" data-tab="tab-audit">
+            <i class="ph ph-clock-counter-clockwise"></i>
+            <span>Audit Logs</span>
+        </button>
     </nav>
 
     <!-- Form Content (Vertical Stack) -->
@@ -2071,6 +2430,9 @@ body.is-column-resizing * {
                                 <select id="formCategory" class="inv-form-select" required onchange="handleDrawerCategoryChange(this.value)">
                                     <!-- Categories populated dynamically -->
                                 </select>
+                                <button type="button" class="inv-btn-quick-create" onclick="openEditCategoryModal(document.getElementById('formCategory').value)" title="Edit selected category visuals and name" style="padding: 0 8px;">
+                                    <i class="ph ph-pencil-simple"></i>
+                                </button>
                                 <button type="button" class="inv-btn-quick-create" onclick="openNewCategoryModal()" title="Add new product category">
                                     <i class="ph ph-plus"></i>
                                     <span>New</span>
@@ -2143,10 +2505,18 @@ body.is-column-resizing * {
                         </label>
 
                         <label class="inv-checkbox-card">
+                            <input type="checkbox" id="formTrackStock" checked>
+                            <div>
+                                <div class="inv-checkbox-title">Track Physical Stock</div>
+                                <div class="inv-checkbox-desc">Maintains on-hand balance, low-stock alerts, and shows in Stocks Overview for counting/receiving.</div>
+                            </div>
+                        </label>
+
+                        <label class="inv-checkbox-card">
                             <input type="checkbox" id="formHasBom">
                             <div>
-                                <div class="inv-checkbox-title">Has Bill of Materials (BOM / Recipe)</div>
-                                <div class="inv-checkbox-desc">Deducts sub-ingredients upon sale instead of deducting this item.</div>
+                                <div class="inv-checkbox-title">Explode Recipe / BOM on Sale</div>
+                                <div class="inv-checkbox-desc">When sold on POS, deducts sub-ingredients from Item Master instead of deducting this item directly.</div>
                             </div>
                         </label>
 
@@ -2155,14 +2525,6 @@ body.is-column-resizing * {
                             <div>
                                 <div class="inv-checkbox-title">Active Product Status</div>
                                 <div class="inv-checkbox-desc">Visible across active inventory catalog and reporting.</div>
-                            </div>
-                        </label>
-
-                        <label class="inv-checkbox-card">
-                            <input type="checkbox" id="formTrackStock" checked>
-                            <div>
-                                <div class="inv-checkbox-title">Track Perpetual Stock</div>
-                                <div class="inv-checkbox-desc">Deduct stock automatically on POS checkout or menu recipe deduction.</div>
                             </div>
                         </label>
                     </div>
@@ -2318,6 +2680,13 @@ body.is-column-resizing * {
 
                 </div>
             </div>
+
+            <!-- Tab 4: Audit Logs -->
+            <div class="drawer-tab-pane" id="pane-tab-audit" style="display: none;">
+                <div id="productAuditLogsContainer" style="display: flex; flex-direction: column; gap: 14px;">
+                    <!-- Dynamically populated by renderProductAuditLogs -->
+                </div>
+            </div>
         </form>
     </div>
 
@@ -2365,7 +2734,43 @@ body.is-column-resizing * {
                 </div>
                 <div class="inv-form-group">
                     <label for="modalCategoryDesc">Category Info / Description</label>
-                    <textarea id="modalCategoryDesc" class="inv-form-textarea" style="min-height: 80px;" placeholder="e.g. Cold bar ingredients, syrups, and beverage packaging"></textarea>
+                    <textarea id="modalCategoryDesc" class="inv-form-textarea" style="min-height: 60px;" placeholder="e.g. Cold bar ingredients, syrups, and beverage packaging"></textarea>
+                </div>
+
+                <!-- Category Icon Selector -->
+                <div class="inv-form-group">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <label>Category Icon *</label>
+                        <span id="selectedIconLabel" style="font-size: 0.70rem; color: var(--inv-primary-dark); font-weight: 600;">Coffee / Drink</span>
+                    </div>
+                    <input type="hidden" id="modalCategoryIcon" value="ph-tag">
+                    <div class="inv-cat-icon-grid" id="catIconGrid">
+                        <!-- Populated dynamically via JS renderCategoryIconGrid() -->
+                    </div>
+                </div>
+
+                <!-- Category Color Palette Selector -->
+                <div class="inv-form-group">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <label>Category Color Palette *</label>
+                        <span id="selectedColorLabel" style="font-size: 0.70rem; color: var(--inv-primary-dark); font-weight: 600;">Purple / Violet</span>
+                    </div>
+                    <input type="hidden" id="modalCategoryColor" value="purple">
+                    <div class="inv-cat-color-grid" id="catColorGrid">
+                        <!-- Populated dynamically via JS renderCategoryColorGrid() -->
+                    </div>
+                </div>
+
+                <!-- Live Badge Preview -->
+                <div class="inv-form-group">
+                    <label>Badge Preview</label>
+                    <div class="inv-cat-preview-box">
+                        <span style="font-size: 0.74rem; color: var(--inv-text-muted);">Preview in catalog & stocks:</span>
+                        <div class="inv-cat-preview-pill" id="catLivePreviewBadge">
+                            <i id="previewBadgeIcon" class="ph ph-tag"></i>
+                            <span id="previewBadgeText">New Category</span>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="inv-modal-footer">
@@ -2482,6 +2887,60 @@ body.is-column-resizing * {
             return savedColumnWidths[col.id];
         }
         return col.width || col.minWidth || '140px';
+    }
+
+    // Modular Visual Category Palette Dictionary
+    const CATEGORY_PALETTES = {
+        purple:  { label: 'Purple / Violet', bg: '#faf5ff', text: '#7e22ce', border: '#e9d5ff', dot: '#a855f7' },
+        amber:   { label: 'Amber / Gold',    bg: '#fffbeb', text: '#b45309', border: '#fde68a', dot: '#f59e0b' },
+        rose:    { label: 'Pink / Rose',     bg: '#fdf2f8', text: '#be185d', border: '#fbcfe8', dot: '#ec4899' },
+        emerald: { label: 'Emerald / Green', bg: '#f0fdf4', text: '#15803d', border: '#bbf7d0', dot: '#10b981' },
+        blue:    { label: 'Blue / Sky',      bg: '#eff6ff', text: '#1d4ed8', border: '#bfdbfe', dot: '#3b82f6' },
+        orange:  { label: 'Orange / Coral',  bg: '#fff7ed', text: '#c2410c', border: '#fed7aa', dot: '#f97316' },
+        teal:    { label: 'Teal / Cyan',     bg: '#f0fdfa', text: '#0f766e', border: '#99f6e4', dot: '#14b8a6' },
+        indigo:  { label: 'Indigo / Navy',   bg: '#eef2ff', text: '#4338ca', border: '#c7d2fe', dot: '#6366f1' },
+        slate:   { label: 'Slate / Neutral', bg: '#f8fafc', text: '#475569', border: '#cbd5e1', dot: '#64748b' }
+    };
+
+    const CATEGORY_ICONS = [
+        { id: 'ph-coffee', label: 'Coffee / Drink' },
+        { id: 'ph-fork-knife', label: 'Fork & Knife' },
+        { id: 'ph-cookie', label: 'Cookie / Pastry' },
+        { id: 'ph-plant', label: 'Plant / Raw' },
+        { id: 'ph-box', label: 'Box / Packaging' },
+        { id: 'ph-drop', label: 'Drop / Syrup' },
+        { id: 'ph-wine', label: 'Wine / Bar' },
+        { id: 'ph-pizza', label: 'Pizza / Snack' },
+        { id: 'ph-package', label: 'Package / Goods' },
+        { id: 'ph-t-shirt', label: 'Merchandise' },
+        { id: 'ph-wrench', label: 'Tools / Hardware' },
+        { id: 'ph-tag', label: 'Tag / General' }
+    ];
+
+    const DEFAULT_CATEGORY_META = {
+        'Beverages': { icon: 'ph-coffee', color: 'purple' },
+        'Main Course': { icon: 'ph-fork-knife', color: 'amber' },
+        'Pastries & Desserts': { icon: 'ph-cookie', color: 'rose' },
+        'Raw Ingredients': { icon: 'ph-plant', color: 'emerald' },
+        'Appetizers & Starters': { icon: 'ph-pizza', color: 'orange' },
+        'Side Dishes': { icon: 'ph-fork-knife', color: 'amber' },
+        'Packaging & Disposables': { icon: 'ph-box', color: 'blue' },
+        'Syrups & Flavors': { icon: 'ph-drop', color: 'orange' },
+        'Uncategorized': { icon: 'ph-tag', color: 'slate' }
+    };
+
+    function getCategoryMeta(catName) {
+        if (window.AppStore && window.AppStore.categoryMeta && window.AppStore.categoryMeta[catName]) {
+            return window.AppStore.categoryMeta[catName];
+        }
+        if (DEFAULT_CATEGORY_META[catName]) {
+            return DEFAULT_CATEGORY_META[catName];
+        }
+        return { icon: 'ph-tag', color: 'purple' };
+    }
+
+    function getCategoryPalette(colorKey) {
+        return CATEGORY_PALETTES[colorKey] || CATEGORY_PALETTES.purple;
     }
 
     // Initial Mock Catalog Data - Includes multiple categories to showcase horizontal scrolling
@@ -2819,6 +3278,7 @@ body.is-column-resizing * {
     window.AppStore = {
         categories: JSON.parse(localStorage.getItem('rms_product_categories')) || INITIAL_CATEGORIES,
         categoryInfo: JSON.parse(localStorage.getItem('rms_category_info')) || {},
+        categoryMeta: Object.assign({}, DEFAULT_CATEGORY_META, JSON.parse(localStorage.getItem('rms_category_meta')) || {}),
         products: JSON.parse(localStorage.getItem('rms_inventory_products')) || INITIAL_PRODUCTS,
         activeCategory: 'ALL',
         searchQuery: '',
@@ -2830,6 +3290,30 @@ body.is-column-resizing * {
         ledgerPageSize: 4,
         activePriceChart: null
     };
+
+    // Auto-seed baseline audit logs for existing products if not present
+    window.AppStore.products.forEach(p => {
+        if (!p.auditLogs || p.auditLogs.length === 0) {
+            p.createdAt = p.createdAt || 'Sep 15, 2026 • 09:30 AM';
+            p.createdBy = p.createdBy || 'Dorothy Diaz (System Admin)';
+            p.auditLogs = [
+                {
+                    id: 'LOG-INIT-' + p.id,
+                    formattedDate: p.createdAt,
+                    user: { name: 'Dorothy Diaz', email: 'dorothy@dorothydiaz.internal', role: 'System Administrator', avatar: 'DD' },
+                    actionType: 'CREATED',
+                    summary: `Initial catalog record created for "${p.name}"`,
+                    changes: [
+                        { field: 'SKU Code', oldValue: '—', newValue: p.sku },
+                        { field: 'Category', oldValue: '—', newValue: p.category },
+                        { field: 'Cost Price', oldValue: '—', newValue: formatPHP(p.costPrice) },
+                        { field: 'Selling Price', oldValue: '—', newValue: formatPHP(p.sellingPrice) },
+                        { field: 'Has BOM', oldValue: '—', newValue: p.hasBom ? 'Yes (Recipe Active)' : 'No' }
+                    ]
+                }
+            ];
+        }
+    });
 
     // DOM Caches
     const masterColgroup = document.getElementById('masterTableColgroup');
@@ -3307,6 +3791,9 @@ body.is-column-resizing * {
 
             // 1. Accordion Group Header Row
             const isUncategorized = (categoryName === 'Uncategorized');
+            const catMeta = getCategoryMeta(categoryName);
+            const catPal = getCategoryPalette(catMeta.color);
+
             html += `
                 <tr class="inv-group-row ${isCollapsed ? 'collapsed' : ''}" onclick="toggleAccordionCategory('${categoryName}')">
                     <td colspan="${totalVisibleCols}" class="inv-group-header-cell">
@@ -3315,12 +3802,14 @@ body.is-column-resizing * {
                                 <div class="inv-accordion-chevron">
                                     <i class="ph ph-caret-down"></i>
                                 </div>
-                                <span class="inv-group-indicator"></span>
+                                <div class="inv-cat-avatar-icon" style="background: ${catPal.bg}; color: ${catPal.text}; border: 1px solid ${catPal.border};">
+                                    <i class="ph ${catMeta.icon}"></i>
+                                </div>
                                 <span class="inv-group-title">${categoryName}</span>
-                                <span class="inv-group-count-badge">${items.length} ${items.length === 1 ? 'item' : 'items'}</span>
+                                <span class="inv-group-count-badge" style="background: ${catPal.bg}; color: ${catPal.text}; border: 1px solid ${catPal.border};">${items.length} ${items.length === 1 ? 'item' : 'items'}</span>
                             </div>
                             <div class="inv-group-actions-box" onclick="event.stopPropagation()">
-                                <button type="button" class="inv-group-action-btn" title="Edit Category Info" onclick="openEditCategoryModal('${categoryName}')">
+                                <button type="button" class="inv-group-action-btn" title="Edit Category Details & Visuals" onclick="openEditCategoryModal('${categoryName}')">
                                     <i class="ph ph-pencil-simple"></i>
                                 </button>
                                 ${!isUncategorized ? `
@@ -3375,7 +3864,16 @@ body.is-column-resizing * {
                             `;
                             break;
                         case 'category':
-                            html += `<td style="${style}"><span style="font-weight: 500;">${item.category}</span></td>`;
+                            const itemCatMeta = getCategoryMeta(item.category);
+                            const itemCatPal = getCategoryPalette(itemCatMeta.color);
+                            html += `
+                                <td style="${style}">
+                                    <span class="inv-category-pill" style="background: ${itemCatPal.bg}; color: ${itemCatPal.text}; border: 1px solid ${itemCatPal.border};">
+                                        <i class="ph ${itemCatMeta.icon}"></i>
+                                        <span>${item.category}</span>
+                                    </span>
+                                </td>
+                            `;
                             break;
                         case 'subcategory':
                             html += `<td style="${style}"><span class="inv-badge-subcat">${item.subcategory || 'Standard'}</span></td>`;
@@ -3455,8 +3953,83 @@ body.is-column-resizing * {
     };
 
     // =========================================================================
-    // NEW / EDIT CATEGORY MODAL LOGIC & DUPLICATE DETECTION
+    // NEW / EDIT CATEGORY MODAL LOGIC & VISUAL CUSTOMIZATION
     // =========================================================================
+    function renderCategoryIconGrid(selectedIcon) {
+        const grid = document.getElementById('catIconGrid');
+        if (!grid) return;
+        grid.innerHTML = CATEGORY_ICONS.map(item => {
+            const isActive = (item.id === selectedIcon);
+            return `
+                <button type="button" 
+                    class="inv-cat-icon-btn ${isActive ? 'is-active' : ''}" 
+                    title="${item.label}" 
+                    onclick="handleSelectCategoryIcon('${item.id}')">
+                    <i class="ph ${item.id}"></i>
+                </button>
+            `;
+        }).join('');
+        
+        const iconObj = CATEGORY_ICONS.find(i => i.id === selectedIcon) || { label: 'General / Tag' };
+        const labelEl = document.getElementById('selectedIconLabel');
+        if (labelEl) labelEl.textContent = iconObj.label;
+    }
+
+    function renderCategoryColorGrid(selectedColor) {
+        const grid = document.getElementById('catColorGrid');
+        if (!grid) return;
+        grid.innerHTML = Object.entries(CATEGORY_PALETTES).map(([key, pal]) => {
+            const isActive = (key === selectedColor);
+            return `
+                <div class="inv-cat-color-chip ${isActive ? 'is-active' : ''}" onclick="handleSelectCategoryColor('${key}')">
+                    <span class="inv-cat-color-dot" style="background: ${pal.dot};"></span>
+                    <span>${pal.label.split(' / ')[0]}</span>
+                </div>
+            `;
+        }).join('');
+
+        const palObj = CATEGORY_PALETTES[selectedColor] || CATEGORY_PALETTES.purple;
+        const labelEl = document.getElementById('selectedColorLabel');
+        if (labelEl) labelEl.textContent = palObj.label;
+    }
+
+    function updateCategoryLivePreview() {
+        const iconInput = document.getElementById('modalCategoryIcon');
+        const colorInput = document.getElementById('modalCategoryColor');
+        const nameInput = document.getElementById('modalCategoryName');
+        const previewBadge = document.getElementById('catLivePreviewBadge');
+        const previewIcon = document.getElementById('previewBadgeIcon');
+        const previewText = document.getElementById('previewBadgeText');
+
+        if (!previewBadge || !iconInput || !colorInput) return;
+
+        const icon = iconInput.value || 'ph-tag';
+        const colorKey = colorInput.value || 'purple';
+        const pal = getCategoryPalette(colorKey);
+        const catName = (nameInput && nameInput.value.trim()) ? nameInput.value.trim() : 'New Category';
+
+        previewBadge.style.background = pal.bg;
+        previewBadge.style.color = pal.text;
+        previewBadge.style.borderColor = pal.border;
+
+        if (previewIcon) previewIcon.className = `ph ${icon}`;
+        if (previewText) previewText.textContent = catName;
+    }
+
+    window.handleSelectCategoryIcon = function(iconId) {
+        const input = document.getElementById('modalCategoryIcon');
+        if (input) input.value = iconId;
+        renderCategoryIconGrid(iconId);
+        updateCategoryLivePreview();
+    };
+
+    window.handleSelectCategoryColor = function(colorKey) {
+        const input = document.getElementById('modalCategoryColor');
+        if (input) input.value = colorKey;
+        renderCategoryColorGrid(colorKey);
+        updateCategoryLivePreview();
+    };
+
     window.openNewCategoryModal = function() {
         document.getElementById('modalCategoryOriginalName').value = '';
         document.getElementById('modalCategoryTitle').textContent = 'Add Product Category';
@@ -3464,6 +4037,16 @@ body.is-column-resizing * {
         document.getElementById('modalCategoryHeaderIcon').className = 'ph ph-folder-plus';
         document.getElementById('modalCategoryName').value = '';
         document.getElementById('modalCategoryDesc').value = '';
+
+        // Initialize default icon and color
+        const defaultIcon = 'ph-tag';
+        const defaultColor = 'purple';
+        document.getElementById('modalCategoryIcon').value = defaultIcon;
+        document.getElementById('modalCategoryColor').value = defaultColor;
+        renderCategoryIconGrid(defaultIcon);
+        renderCategoryColorGrid(defaultColor);
+        updateCategoryLivePreview();
+
         hideCategoryDuplicateWarning();
         hideCategoryAutocomplete();
         newCategoryModal.classList.add('is-open');
@@ -3471,12 +4054,24 @@ body.is-column-resizing * {
     };
 
     window.openEditCategoryModal = function(catName) {
+        if (!catName) {
+            catName = window.AppStore.categories[0] || 'Beverages';
+        }
         document.getElementById('modalCategoryOriginalName').value = catName;
         document.getElementById('modalCategoryTitle').textContent = `Edit Category: ${catName}`;
         document.getElementById('btnSaveCategoryText').textContent = 'Update Category';
         document.getElementById('modalCategoryHeaderIcon').className = 'ph ph-pencil-simple';
         document.getElementById('modalCategoryName').value = catName;
         document.getElementById('modalCategoryDesc').value = window.AppStore.categoryInfo[catName] || '';
+
+        // Hydrate existing metadata
+        const meta = getCategoryMeta(catName);
+        document.getElementById('modalCategoryIcon').value = meta.icon;
+        document.getElementById('modalCategoryColor').value = meta.color;
+        renderCategoryIconGrid(meta.icon);
+        renderCategoryColorGrid(meta.color);
+        updateCategoryLivePreview();
+
         hideCategoryDuplicateWarning();
         hideCategoryAutocomplete();
         newCategoryModal.classList.add('is-open');
@@ -3503,6 +4098,7 @@ body.is-column-resizing * {
     }
 
     window.handleCategoryInputCheck = function(typedVal) {
+        updateCategoryLivePreview();
         const originalName = document.getElementById('modalCategoryOriginalName').value;
         const val = typedVal.trim().toLowerCase();
         const warn = document.getElementById('catDuplicateWarning');
@@ -3550,6 +4146,8 @@ body.is-column-resizing * {
         e.preventDefault();
         const catName = document.getElementById('modalCategoryName').value.trim();
         const catDesc = document.getElementById('modalCategoryDesc').value.trim();
+        const catIcon = document.getElementById('modalCategoryIcon').value.trim() || 'ph-tag';
+        const catColor = document.getElementById('modalCategoryColor').value.trim() || 'purple';
         const originalName = document.getElementById('modalCategoryOriginalName').value;
 
         if (!catName) return;
@@ -3578,23 +4176,32 @@ body.is-column-resizing * {
                     p.category = catName;
                 }
             });
-            // Update description store
+            // Update description and meta stores
             if (originalName !== catName) {
                 delete window.AppStore.categoryInfo[originalName];
+                delete window.AppStore.categoryMeta[originalName];
             }
             window.AppStore.categoryInfo[catName] = catDesc;
+            window.AppStore.categoryMeta[catName] = { icon: catIcon, color: catColor };
 
             localStorage.setItem('rms_product_categories', JSON.stringify(window.AppStore.categories));
             localStorage.setItem('rms_category_info', JSON.stringify(window.AppStore.categoryInfo));
+            localStorage.setItem('rms_category_meta', JSON.stringify(window.AppStore.categoryMeta));
             localStorage.setItem('rms_inventory_products', JSON.stringify(window.AppStore.products));
+            localStorage.removeItem('rms_stocks_ledger'); // Invalidate cached stocks ledger so stocks overview picks up new category/meta
 
             showToast(`Category "${catName}" updated successfully!`);
         } else {
             // Add Mode
             window.AppStore.categories.push(catName);
             window.AppStore.categoryInfo[catName] = catDesc;
+            window.AppStore.categoryMeta[catName] = { icon: catIcon, color: catColor };
+
             localStorage.setItem('rms_product_categories', JSON.stringify(window.AppStore.categories));
             localStorage.setItem('rms_category_info', JSON.stringify(window.AppStore.categoryInfo));
+            localStorage.setItem('rms_category_meta', JSON.stringify(window.AppStore.categoryMeta));
+            localStorage.removeItem('rms_stocks_ledger'); // Invalidate cached stocks ledger
+
             showToast(`Category "${catName}" created successfully!`);
         }
 
@@ -3630,10 +4237,13 @@ body.is-column-resizing * {
         // Remove category from array
         window.AppStore.categories = window.AppStore.categories.filter(c => c !== catName);
         delete window.AppStore.categoryInfo[catName];
+        delete window.AppStore.categoryMeta[catName];
 
         localStorage.setItem('rms_product_categories', JSON.stringify(window.AppStore.categories));
         localStorage.setItem('rms_category_info', JSON.stringify(window.AppStore.categoryInfo));
+        localStorage.setItem('rms_category_meta', JSON.stringify(window.AppStore.categoryMeta));
         localStorage.setItem('rms_inventory_products', JSON.stringify(window.AppStore.products));
+        localStorage.removeItem('rms_stocks_ledger');
 
         syncCategoryControls();
         renderMasterList();
@@ -3976,9 +4586,9 @@ body.is-column-resizing * {
             formAllergens.value = (product.allergens || []).join(', ');
             formCanBeSold.checked = product.canBeSold !== false;
             formCanBePurchased.checked = product.canBePurchased !== false;
-            formHasBom.checked = product.hasBom === true;
+            formHasBom.checked = product.explodeBomOnSale !== undefined ? product.explodeBomOnSale : (product.hasBom === true);
             formIsActive.checked = product.isActive !== false;
-            formTrackStock.checked = product.trackStock !== false;
+            formTrackStock.checked = product.trackPhysicalStock !== undefined ? product.trackPhysicalStock : (product.trackStock !== false);
             formReorderPoint.value = product.reorderPoint || 10;
             formTargetStock.value = product.targetStock || 50;
             formCostPrice.value = Number(product.costPrice).toFixed(2);
@@ -4039,6 +4649,11 @@ body.is-column-resizing * {
                 renderPriceHistoryChart(cost, selling);
             }, 50);
         }
+
+        if (tabId === 'tab-audit') {
+            const prod = window.AppStore.products.find(p => p.id === window.AppStore.selectedProductId);
+            renderProductAuditLogs(prod);
+        }
     }
 
     document.querySelectorAll('.inv-drawer-tab-btn').forEach(btn => {
@@ -4046,6 +4661,174 @@ body.is-column-resizing * {
             switchPrimaryTab(this.getAttribute('data-tab'));
         });
     });
+
+    function createAuditEntry(user, actionType, summary, changes = []) {
+        const now = new Date();
+        const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        const month = months[now.getMonth()];
+        const day = String(now.getDate()).padStart(2, '0');
+        const year = now.getFullYear();
+        let hours = now.getHours();
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        hours = hours % 12;
+        hours = hours ? hours : 12;
+        const formattedHours = String(hours).padStart(2, '0');
+        const formattedDate = `${month} ${day}, ${year} • ${formattedHours}:${minutes} ${ampm}`;
+
+        return {
+            id: 'LOG-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
+            timestamp: now.toISOString(),
+            formattedDate: formattedDate,
+            user: {
+                name: user?.name || 'John Abiguero',
+                email: user?.email || 'jabiguero@dorothydiaz.internal',
+                role: user?.role || 'Lead Inventory Admin',
+                avatar: (user?.name || 'JA').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
+            },
+            actionType: actionType || 'UPDATED',
+            summary: summary || 'Product record updated',
+            changes: changes || []
+        };
+    }
+
+    function renderProductAuditLogs(product) {
+        const container = document.getElementById('productAuditLogsContainer');
+        if (!container) return;
+
+        if (!product) {
+            container.innerHTML = `
+                <div class="audit-overview-card" style="grid-template-columns: 1fr; text-align: center; padding: 28px 16px;">
+                    <div style="color: var(--inv-text-muted); display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                        <i class="ph ph-sparkle" style="font-size: 2rem; color: var(--inv-primary);"></i>
+                        <h4 style="margin: 0; font-size: 0.95rem; font-weight: 700; color: var(--inv-text-strong);">New Item Draft</h4>
+                        <p style="margin: 0; font-size: 0.8rem; max-width: 320px; line-height: 1.4;">
+                            Audit trail will automatically initialize with registration timestamp and user identity upon clicking "Create Product".
+                        </p>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
+        const logs = product.auditLogs || [];
+        const createdAt = product.createdAt || 'Sep 15, 2026 • 09:30 AM';
+        const createdBy = product.createdBy || 'Dorothy Diaz (System Admin)';
+        const lastModified = logs.length > 0 ? logs[0].formattedDate : createdAt;
+
+        let overviewHtml = `
+            <div class="audit-overview-card">
+                <div class="audit-metric-box">
+                    <span class="audit-metric-label"><i class="ph ph-calendar-plus"></i> Creation Date</span>
+                    <span class="audit-metric-val" title="${createdAt}">${createdAt}</span>
+                </div>
+                <div class="audit-metric-box">
+                    <span class="audit-metric-label"><i class="ph ph-user-circle"></i> Registered By</span>
+                    <span class="audit-metric-val" title="${createdBy}">${createdBy}</span>
+                </div>
+                <div class="audit-metric-box">
+                    <span class="audit-metric-label"><i class="ph ph-clock-counter-clockwise"></i> Total Revisions</span>
+                    <span class="audit-metric-val">${logs.length} ${logs.length === 1 ? 'Entry' : 'Entries'}</span>
+                </div>
+                <div class="audit-metric-box">
+                    <span class="audit-metric-label"><i class="ph ph-arrows-clockwise"></i> Last Modified</span>
+                    <span class="audit-metric-val" title="${lastModified}">${lastModified}</span>
+                </div>
+            </div>
+        `;
+
+        if (logs.length === 0) {
+            container.innerHTML = overviewHtml + `
+                <div style="text-align: center; padding: 24px; color: var(--inv-text-muted); font-size: 0.82rem;">
+                    No revision history recorded yet for this item.
+                </div>
+            `;
+            return;
+        }
+
+        let timelineHtml = '<div class="audit-timeline-container">';
+
+        logs.forEach((log) => {
+            let iconClass = '';
+            let iconGlyph = 'ph-clock-counter-clockwise';
+            let badgeClass = 'badge-updated';
+            let badgeText = log.actionType || 'UPDATED';
+
+            if (log.actionType === 'CREATED') {
+                iconClass = 'is-created';
+                iconGlyph = 'ph-plus-circle';
+                badgeClass = 'badge-created';
+                badgeText = 'CREATED';
+            } else if (log.actionType === 'PRICE_CHANGE') {
+                iconClass = 'is-price';
+                iconGlyph = 'ph-currency-circle-dollar';
+                badgeClass = 'badge-price';
+                badgeText = 'PRICE ADJUSTED';
+            } else if (log.actionType === 'BOM_CHANGE') {
+                iconClass = 'is-bom';
+                iconGlyph = 'ph-tree-structure';
+                badgeClass = 'badge-bom';
+                badgeText = 'BOM UPDATED';
+            }
+
+            const userName = log.user?.name || 'Dorothy Diaz';
+            const userRole = log.user?.role || 'Staff Member';
+            const userEmail = log.user?.email || '';
+            const userAvatar = log.user?.avatar || userName.substring(0, 2).toUpperCase();
+
+            let diffRows = '';
+            if (log.changes && log.changes.length > 0) {
+                diffRows = `
+                    <table class="audit-diff-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 32%;">Property / Field</th>
+                                <th style="width: 34%;">Previous Value</th>
+                                <th style="width: 34%;">New Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${log.changes.map(ch => `
+                                <tr>
+                                    <td style="font-weight: 600; color: var(--inv-text-strong);">${ch.field}</td>
+                                    <td><span class="diff-val-old">${ch.oldValue || '—'}</span></td>
+                                    <td><span class="diff-val-new">${ch.newValue || '—'}</span></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            }
+
+            timelineHtml += `
+                <div class="audit-timeline-item">
+                    <div class="audit-timeline-node-icon ${iconClass}">
+                        <i class="ph ${iconGlyph}"></i>
+                    </div>
+                    <div class="audit-item-header">
+                        <div class="audit-user-profile">
+                            <div class="audit-user-avatar" title="${userEmail}">${userAvatar}</div>
+                            <div>
+                                <div class="audit-user-name">${userName}</div>
+                                <div class="audit-user-role">${userRole}</div>
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span class="audit-badge ${badgeClass}">${badgeText}</span>
+                            <span style="font-size: 0.72rem; color: var(--inv-text-muted); font-weight: 500;">
+                                <i class="ph ph-clock" style="vertical-align: middle;"></i> ${log.formattedDate}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="audit-summary-text">${log.summary || 'Item modified'}</div>
+                    ${diffRows}
+                </div>
+            `;
+        });
+
+        timelineHtml += '</div>';
+        container.innerHTML = overviewHtml + timelineHtml;
+    }
 
     function switchSubTab(subtabId) {
         document.querySelectorAll('.inv-subtab-btn').forEach(btn => {
@@ -4096,9 +4879,11 @@ body.is-column-resizing * {
             allergens: allergenArray,
             canBeSold: formCanBeSold.checked,
             canBePurchased: formCanBePurchased.checked,
+            trackPhysicalStock: formTrackStock.checked,
+            trackStock: formTrackStock.checked,
+            explodeBomOnSale: formHasBom.checked,
             hasBom: formHasBom.checked,
             isActive: formIsActive.checked,
-            trackStock: formTrackStock.checked,
             reorderPoint: Number(formReorderPoint.value) || 0,
             targetStock: Number(formTargetStock.value) || 0,
             costPrice: parseFloat(formCostPrice.value) || 0,
@@ -4115,20 +4900,70 @@ body.is-column-resizing * {
             ]
         };
 
+        const currentUser = {
+            name: 'John Abiguero',
+            email: 'jabiguero@dorothydiaz.internal',
+            role: 'Lead Inventory Admin'
+        };
+
         if (isNew) {
+            const initialLog = createAuditEntry(currentUser, 'CREATED', `Initial catalog registration for "${updatedRecord.name}"`, [
+                { field: 'SKU Code', oldValue: '—', newValue: updatedRecord.sku },
+                { field: 'Product Name', oldValue: '—', newValue: updatedRecord.name },
+                { field: 'Category', oldValue: '—', newValue: updatedRecord.category },
+                { field: 'Unit of Measure', oldValue: '—', newValue: `${updatedRecord.unit} (${updatedRecord.packSize})` },
+                { field: 'Cost Price', oldValue: '—', newValue: formatPHP(updatedRecord.costPrice) },
+                { field: 'Selling Price', oldValue: '—', newValue: formatPHP(updatedRecord.sellingPrice) },
+                { field: 'Track Physical Stock', oldValue: '—', newValue: updatedRecord.trackPhysicalStock ? 'Yes (Counted in Stocks Overview)' : 'No (Non-Physical / Service)' },
+                { field: 'Explode Recipe on Sale', oldValue: '—', newValue: updatedRecord.explodeBomOnSale ? 'Yes (Deducts Sub-ingredients)' : 'No (Deducts Item Directly)' }
+            ]);
+            updatedRecord.createdAt = initialLog.formattedDate;
+            updatedRecord.createdBy = `${currentUser.name} (${currentUser.role})`;
+            updatedRecord.auditLogs = [initialLog];
             window.AppStore.products.unshift(updatedRecord);
             showToast(`Product "${updatedRecord.name}" successfully created!`);
         } else {
             const index = window.AppStore.products.findIndex(p => p.id === newId);
             if (index !== -1) {
-                updatedRecord.branches = window.AppStore.products[index].branches || updatedRecord.branches;
-                updatedRecord.ledger = window.AppStore.products[index].ledger || updatedRecord.ledger;
+                const existingProd = window.AppStore.products[index];
+                updatedRecord.branches = existingProd.branches || updatedRecord.branches;
+                updatedRecord.ledger = existingProd.ledger || updatedRecord.ledger;
+                updatedRecord.createdAt = existingProd.createdAt || 'Sep 15, 2026 • 09:30 AM';
+                updatedRecord.createdBy = existingProd.createdBy || 'Dorothy Diaz (System Admin)';
+
+                const changes = [];
+                if (existingProd.name !== updatedRecord.name) changes.push({ field: 'Product Name', oldValue: existingProd.name, newValue: updatedRecord.name });
+                if (existingProd.sku !== updatedRecord.sku) changes.push({ field: 'SKU Code', oldValue: existingProd.sku, newValue: updatedRecord.sku });
+                if (existingProd.category !== updatedRecord.category) changes.push({ field: 'Category', oldValue: existingProd.category, newValue: updatedRecord.category });
+                if (existingProd.subcategory !== updatedRecord.subcategory) changes.push({ field: 'Subcategory', oldValue: existingProd.subcategory || 'Standard', newValue: updatedRecord.subcategory || 'Standard' });
+                if (existingProd.unit !== updatedRecord.unit) changes.push({ field: 'Unit of Measure', oldValue: existingProd.unit, newValue: updatedRecord.unit });
+                if (String(existingProd.packSize) !== String(updatedRecord.packSize)) changes.push({ field: 'Pack Size', oldValue: String(existingProd.packSize), newValue: String(updatedRecord.packSize) });
+                if (Number(existingProd.costPrice) !== Number(updatedRecord.costPrice)) changes.push({ field: 'Cost Price', oldValue: formatPHP(existingProd.costPrice), newValue: formatPHP(updatedRecord.costPrice) });
+                if (Number(existingProd.sellingPrice) !== Number(updatedRecord.sellingPrice)) changes.push({ field: 'Selling Price', oldValue: formatPHP(existingProd.sellingPrice), newValue: formatPHP(updatedRecord.sellingPrice) });
+                if (existingProd.canBeSold !== updatedRecord.canBeSold) changes.push({ field: 'Can be Sold', oldValue: existingProd.canBeSold ? 'Yes' : 'No', newValue: updatedRecord.canBeSold ? 'Yes' : 'No' });
+                if (existingProd.canBePurchased !== updatedRecord.canBePurchased) changes.push({ field: 'Can be Purchased', oldValue: existingProd.canBePurchased ? 'Yes' : 'No', newValue: updatedRecord.canBePurchased ? 'Yes' : 'No' });
+                if ((existingProd.trackPhysicalStock ?? existingProd.trackStock) !== updatedRecord.trackPhysicalStock) changes.push({ field: 'Track Physical Stock', oldValue: (existingProd.trackPhysicalStock ?? existingProd.trackStock) ? 'Yes' : 'No', newValue: updatedRecord.trackPhysicalStock ? 'Yes' : 'No' });
+                if ((existingProd.explodeBomOnSale ?? existingProd.hasBom) !== updatedRecord.explodeBomOnSale) changes.push({ field: 'Explode Recipe on Sale', oldValue: (existingProd.explodeBomOnSale ?? existingProd.hasBom) ? 'Yes' : 'No', newValue: updatedRecord.explodeBomOnSale ? 'Yes' : 'No' });
+                if (existingProd.isActive !== updatedRecord.isActive) changes.push({ field: 'Status', oldValue: existingProd.isActive ? 'Active' : 'Inactive', newValue: updatedRecord.isActive ? 'Active' : 'Inactive' });
+
+                if (changes.length > 0) {
+                    let actionType = 'UPDATED';
+                    if (changes.some(c => c.field === 'Selling Price' || c.field === 'Cost Price')) actionType = 'PRICE_CHANGE';
+                    if (changes.some(c => c.field === 'Explode Recipe on Sale' || c.field === 'Has BOM')) actionType = 'BOM_CHANGE';
+
+                    const log = createAuditEntry(currentUser, actionType, `Updated ${changes.length} product propert${changes.length === 1 ? 'y' : 'ies'}`, changes);
+                    updatedRecord.auditLogs = [log, ...(existingProd.auditLogs || [])];
+                } else {
+                    updatedRecord.auditLogs = existingProd.auditLogs || [];
+                }
+
                 window.AppStore.products[index] = updatedRecord;
             }
             showToast(`Product "${updatedRecord.name}" successfully updated!`);
         }
 
         localStorage.setItem('rms_inventory_products', JSON.stringify(window.AppStore.products));
+        localStorage.removeItem('rms_stocks_ledger');
 
         // Auto-sync BOM catalog entry with rms_boms
         try {
