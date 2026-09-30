@@ -10,6 +10,8 @@ class PayrollAdjustment extends Model
 {
     use HasFactory;
 
+    protected $table = 'hr_payroll_adjustments';
+
     protected $fillable = [
         'payroll_record_id',
         'adjustment_type',

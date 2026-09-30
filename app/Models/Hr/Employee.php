@@ -15,7 +15,7 @@ class Employee extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $table = 'employees';
+    protected $table = 'hr_employees';
 
     protected $fillable = [
         'employee_id',
@@ -177,7 +177,7 @@ class Employee extends Model
 
     public function permissions(): BelongsToMany
     {
-        return $this->belongsToMany(Permission::class, 'employee_permissions');
+        return $this->belongsToMany(Permission::class, 'hr_employee_permissions');
     }
 
     public function getAssignedRoleAttribute(): ?Role

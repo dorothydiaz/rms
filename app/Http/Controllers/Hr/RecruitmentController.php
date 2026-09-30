@@ -47,9 +47,9 @@ class RecruitmentController extends Controller
     {
         $validated = $request->validate([
             'title' => 'required|string|max:150',
-            'position_id' => 'nullable|exists:positions,id',
-            'department_id' => 'nullable|exists:departments,id',
-            'branch_id' => 'nullable|exists:branches,id',
+            'position_id' => 'nullable|exists:hr_positions,id',
+            'department_id' => 'nullable|exists:hr_departments,id',
+            'branch_id' => 'nullable|exists:hr_branches,id',
             'number_of_openings' => 'required|integer|min:1',
             'employment_type' => 'required|in:Regular,Probationary,Part-time,Casual,Contractual',
             'salary_range_min' => 'nullable|numeric|min:0',
@@ -72,9 +72,9 @@ class RecruitmentController extends Controller
         $vacancy = JobVacancy::findOrFail($id);
         $validated = $request->validate([
             'title' => 'required|string|max:150',
-            'position_id' => 'nullable|exists:positions,id',
-            'department_id' => 'nullable|exists:departments,id',
-            'branch_id' => 'nullable|exists:branches,id',
+            'position_id' => 'nullable|exists:hr_positions,id',
+            'department_id' => 'nullable|exists:hr_departments,id',
+            'branch_id' => 'nullable|exists:hr_branches,id',
             'number_of_openings' => 'required|integer|min:1',
             'employment_type' => 'required|in:Regular,Probationary,Part-time,Casual,Contractual',
             'salary_range_min' => 'nullable|numeric|min:0',
@@ -126,7 +126,7 @@ class RecruitmentController extends Controller
     public function applicantStore(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'job_vacancy_id' => 'nullable|exists:job_vacancies,id',
+            'job_vacancy_id' => 'nullable|exists:hr_job_vacancies,id',
             'first_name' => 'required|string|max:60',
             'last_name' => 'required|string|max:60',
             'contact_number' => 'nullable|string|max:30',
@@ -180,10 +180,10 @@ class RecruitmentController extends Controller
         }
 
         $validated = $request->validate([
-            'employee_id' => 'required|string|max:30|unique:employees,employee_id',
-            'branch_id' => 'required|exists:branches,id',
-            'department_id' => 'nullable|exists:departments,id',
-            'position_id' => 'nullable|exists:positions,id',
+            'employee_id' => 'required|string|max:30|unique:hr_employees,employee_id',
+            'branch_id' => 'required|exists:hr_branches,id',
+            'department_id' => 'nullable|exists:hr_departments,id',
+            'position_id' => 'nullable|exists:hr_positions,id',
             'date_hired' => 'required|date',
             'employment_status' => 'required|in:Active,Probationary',
             'employment_type' => 'required|in:Regular,Probationary,Part-time,Casual,Contractual',
@@ -245,7 +245,7 @@ class RecruitmentController extends Controller
     public function interviewStore(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'applicant_id' => 'required|exists:applicants,id',
+            'applicant_id' => 'required|exists:hr_applicants,id',
             'interview_date' => 'required|date',
             'interviewer_id' => 'nullable|exists:users,id',
             'interviewer_name' => 'nullable|string|max:100',

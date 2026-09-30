@@ -106,8 +106,8 @@ class PerformanceController extends Controller
     public function evaluationStore(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'performance_period_id' => 'required|exists:performance_periods,id',
-            'employee_id' => 'required|exists:employees,id',
+            'performance_period_id' => 'required|exists:hr_performance_periods,id',
+            'employee_id' => 'required|exists:hr_employees,id',
             'ratings' => 'required|array',
             'ratings.*' => 'required|integer|min:1|max:5',
             'manager_comments' => 'nullable|string',

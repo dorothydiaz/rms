@@ -11,7 +11,7 @@ class AttendanceCorrection extends Model
 {
     use HasFactory;
 
-    protected $table = 'attendance_corrections';
+    protected $table = 'hr_attendance_corrections';
 
     protected $fillable = [
         'attendance_record_id',

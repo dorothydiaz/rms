@@ -9,6 +9,8 @@ class PerformanceRating extends Model
 {
     use HasFactory;
 
+    protected $table = 'hr_performance_ratings';
+
     protected $fillable = [
         'evaluation_id',
         'criterion_id',

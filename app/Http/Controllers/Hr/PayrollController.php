@@ -119,8 +119,8 @@ class PayrollController extends Controller
     public function processRun(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'payroll_period_id' => 'required|exists:payroll_periods,id',
-            'branch_id' => 'nullable|exists:branches,id',
+            'payroll_period_id' => 'required|exists:hr_payroll_periods,id',
+            'branch_id' => 'nullable|exists:hr_branches,id',
         ]);
 
         $period = PayrollPeriod::findOrFail($validated['payroll_period_id']);
@@ -247,7 +247,7 @@ class PayrollController extends Controller
     public function adjustmentStore(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'payroll_record_id' => 'required|exists:payroll_records,id',
+            'payroll_record_id' => 'required|exists:hr_payroll_records,id',
             'adjustment_type' => 'required|in:Earning,Deduction',
             'name' => 'required|string|max:100',
             'amount' => 'required|numeric|min:0.01',

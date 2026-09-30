@@ -9,6 +9,8 @@ class PayrollRecord extends Model
 {
     use HasFactory;
 
+    protected $table = 'hr_payroll_records';
+
     protected $fillable = [
         'payroll_period_id',
         'employee_id',

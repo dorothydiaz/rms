@@ -9,6 +9,8 @@ class JobVacancy extends Model
 {
     use HasFactory;
 
+    protected $table = 'hr_job_vacancies';
+
     protected $fillable = [
         'title',
         'position_id',

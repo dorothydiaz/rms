@@ -10,7 +10,7 @@ class ShiftTemplate extends Model
 {
     use HasFactory;
 
-    protected $table = 'shift_templates';
+    protected $table = 'hr_shift_templates';
 
     protected $fillable = [
         'name',

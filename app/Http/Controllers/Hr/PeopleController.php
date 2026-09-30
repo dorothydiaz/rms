@@ -95,7 +95,7 @@ class PeopleController extends Controller
     {
         $user = Auth::user();
         $validated = $request->validate([
-            'employee_id' => 'required|string|max:30|unique:employees,employee_id',
+            'employee_id' => 'required|string|max:30|unique:hr_employees,employee_id',
             'first_name' => 'required|string|max:60',
             'middle_name' => 'nullable|string|max:60',
             'last_name' => 'required|string|max:60',
@@ -109,16 +109,16 @@ class PeopleController extends Controller
             'address' => 'nullable|string',
             'photo' => 'nullable|file|mimes:jpeg,png,jpg,webp,gif|max:5120',
             'user_id' => 'nullable|exists:users,id',
-            'branch_id' => 'required|exists:branches,id',
-            'department_id' => 'nullable|exists:departments,id',
-            'position_id' => 'nullable|exists:positions,id',
+            'branch_id' => 'required|exists:hr_branches,id',
+            'department_id' => 'nullable|exists:hr_departments,id',
+            'position_id' => 'nullable|exists:hr_positions,id',
             'assigned_department_ids' => 'nullable|array',
-            'assigned_department_ids.*' => 'exists:departments,id',
+            'assigned_department_ids.*' => 'exists:hr_departments,id',
             'assigned_branch_ids' => 'nullable|array',
-            'assigned_branch_ids.*' => 'exists:branches,id',
+            'assigned_branch_ids.*' => 'exists:hr_branches,id',
             'assigned_position_ids' => 'nullable|array',
-            'assigned_position_ids.*' => 'exists:positions,id',
-            'supervisor_id' => 'nullable|exists:employees,id',
+            'assigned_position_ids.*' => 'exists:hr_positions,id',
+            'supervisor_id' => 'nullable|exists:hr_employees,id',
             'date_hired' => 'required|date',
             'employment_status' => 'required|in:Active,Probationary,On Leave,Suspended,Resigned,Terminated,Retired',
             'employment_type' => 'required|in:Regular,Probationary,Part-time,Casual,Contractual',
@@ -260,16 +260,16 @@ class PeopleController extends Controller
             'photo' => 'nullable|file|mimes:jpeg,png,jpg,webp,gif|max:5120',
             'remove_photo' => 'nullable|boolean',
             'user_id' => 'nullable|exists:users,id',
-            'branch_id' => 'nullable|exists:branches,id',
-            'department_id' => 'nullable|exists:departments,id',
-            'position_id' => 'nullable|exists:positions,id',
+            'branch_id' => 'nullable|exists:hr_branches,id',
+            'department_id' => 'nullable|exists:hr_departments,id',
+            'position_id' => 'nullable|exists:hr_positions,id',
             'assigned_department_ids' => 'nullable|array',
-            'assigned_department_ids.*' => 'exists:departments,id',
+            'assigned_department_ids.*' => 'exists:hr_departments,id',
             'assigned_branch_ids' => 'nullable|array',
-            'assigned_branch_ids.*' => 'exists:branches,id',
+            'assigned_branch_ids.*' => 'exists:hr_branches,id',
             'assigned_position_ids' => 'nullable|array',
-            'assigned_position_ids.*' => 'exists:positions,id',
-            'supervisor_id' => 'nullable|exists:employees,id',
+            'assigned_position_ids.*' => 'exists:hr_positions,id',
+            'supervisor_id' => 'nullable|exists:hr_employees,id',
             'date_hired' => 'nullable|date',
             'employment_status' => 'required|in:Active,Probationary,On Leave,Suspended,Resigned,Terminated,Retired',
             'employment_type' => 'required|in:Regular,Probationary,Part-time,Casual,Contractual',
@@ -431,8 +431,8 @@ class PeopleController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:100',
-            'code' => 'required|string|max:30|unique:departments,code',
-            'branch_id' => 'nullable|exists:branches,id',
+            'code' => 'required|string|max:30|unique:hr_departments,code',
+            'branch_id' => 'nullable|exists:hr_branches,id',
             'description' => 'nullable|string',
         ]);
 
@@ -447,8 +447,8 @@ class PeopleController extends Controller
         $dept = Department::findOrFail($id);
         $validated = $request->validate([
             'name' => 'required|string|max:100',
-            'code' => 'required|string|max:30|unique:departments,code,' . $id,
-            'branch_id' => 'nullable|exists:branches,id',
+            'code' => 'required|string|max:30|unique:hr_departments,code,' . $id,
+            'branch_id' => 'nullable|exists:hr_branches,id',
             'description' => 'nullable|string',
         ]);
 
@@ -473,8 +473,8 @@ class PeopleController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:100',
-            'code' => 'required|string|max:30|unique:positions,code',
-            'department_id' => 'nullable|exists:departments,id',
+            'code' => 'required|string|max:30|unique:hr_positions,code',
+            'department_id' => 'nullable|exists:hr_departments,id',
             'description' => 'nullable|string',
         ]);
 
@@ -489,8 +489,8 @@ class PeopleController extends Controller
         $pos = Position::findOrFail($id);
         $validated = $request->validate([
             'name' => 'required|string|max:100',
-            'code' => 'required|string|max:30|unique:positions,code,' . $id,
-            'department_id' => 'nullable|exists:departments,id',
+            'code' => 'required|string|max:30|unique:hr_positions,code,' . $id,
+            'department_id' => 'nullable|exists:hr_departments,id',
             'description' => 'nullable|string',
         ]);
 
@@ -515,8 +515,8 @@ class PeopleController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:100',
-            'code' => 'required|string|max:30|unique:branches,code',
-            'company_id' => 'nullable|exists:companies,id',
+            'code' => 'required|string|max:30|unique:hr_branches,code',
+            'company_id' => 'nullable|exists:hr_companies,id',
             'address' => 'nullable|string',
             'phone' => 'nullable|string|max:50',
             'email' => 'nullable|email|max:100',
@@ -534,7 +534,7 @@ class PeopleController extends Controller
         $branch = Branch::findOrFail($id);
         $validated = $request->validate([
             'name' => 'required|string|max:100',
-            'code' => 'required|string|max:30|unique:branches,code,' . $id,
+            'code' => 'required|string|max:30|unique:hr_branches,code,' . $id,
             'address' => 'nullable|string',
             'phone' => 'nullable|string|max:50',
             'email' => 'nullable|email|max:100',
@@ -586,7 +586,7 @@ class PeopleController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:150',
             'type' => 'required|in:Company,Agency',
-            'code' => 'required|string|max:50|unique:companies,code',
+            'code' => 'required|string|max:50|unique:hr_companies,code',
             'tin' => 'nullable|string|max:30',
             'contact_person' => 'nullable|string|max:100',
             'email' => 'nullable|email|max:100',
@@ -611,7 +611,7 @@ class PeopleController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:150',
             'type' => 'required|in:Company,Agency',
-            'code' => 'required|string|max:50|unique:companies,code,' . $id,
+            'code' => 'required|string|max:50|unique:hr_companies,code,' . $id,
             'tin' => 'nullable|string|max:30',
             'contact_person' => 'nullable|string|max:100',
             'email' => 'nullable|email|max:100',
@@ -688,7 +688,7 @@ class PeopleController extends Controller
     public function documentStore(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'employee_id' => 'required|exists:employees,id',
+            'employee_id' => 'required|exists:hr_employees,id',
             'document_type' => 'required|string|max:50',
             'title' => 'required|string|max:150',
             'file' => 'required|file|max:10240', // 10MB

@@ -102,8 +102,8 @@ class TrainingController extends Controller
     public function enrollmentStore(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'training_program_id' => 'required|exists:training_programs,id',
-            'employee_id' => 'required|exists:employees,id',
+            'training_program_id' => 'required|exists:hr_training_programs,id',
+            'employee_id' => 'required|exists:hr_employees,id',
             'enrollment_date' => 'required|date',
             'completion_status' => 'required|in:Assigned,Scheduled,In Progress,Completed,Failed,Cancelled',
             'score' => 'nullable|numeric|min:0|max:100',
