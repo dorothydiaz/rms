@@ -9,6 +9,8 @@ class StatutoryContributionRule extends Model
 {
     use HasFactory;
 
+    protected $table = 'hr_statutory_contribution_rules';
+
     protected $fillable = [
         'rule_name',
         'rule_type',

@@ -5,21 +5,22 @@ namespace App\Models\Hr;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class PerformanceCriterion extends Model
+class DtrAbsenceCode extends Model
 {
     use HasFactory;
 
-    protected $table = 'hr_performance_criteria';
+    protected $table = 'hr_dtr_absence_codes';
 
     protected $fillable = [
+        'code',
         'name',
         'description',
-        'weight_percentage',
+        'is_absence',
         'is_active',
     ];
 
     protected $casts = [
-        'weight_percentage' => 'integer',
+        'is_absence' => 'boolean',
         'is_active' => 'boolean',
     ];
 }

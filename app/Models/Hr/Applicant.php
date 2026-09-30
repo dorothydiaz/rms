@@ -9,6 +9,8 @@ class Applicant extends Model
 {
     use HasFactory;
 
+    protected $table = 'hr_applicants';
+
     protected $fillable = [
         'job_vacancy_id',
         'first_name',

@@ -9,6 +9,8 @@ class TrainingEnrollment extends Model
 {
     use HasFactory;
 
+    protected $table = 'hr_training_enrollments';
+
     protected $fillable = [
         'training_program_id',
         'employee_id',

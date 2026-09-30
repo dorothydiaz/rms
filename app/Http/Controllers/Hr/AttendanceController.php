@@ -71,7 +71,7 @@ class AttendanceController extends Controller
         }
 
         $validated = $request->validate([
-            'employee_id' => 'required|exists:employees,id',
+            'employee_id' => 'required|exists:hr_employees,id',
             'date' => 'required|date',
             'punch_type' => 'required|in:in,time_in,break_out,break_in,coffee_break_out,coffee_break_in,final_out,time_out',
             'time' => 'required|date_format:H:i',
@@ -752,7 +752,7 @@ class AttendanceController extends Controller
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date',
             'schedule_date' => 'nullable|date',
-            'shift_template_id' => 'nullable|exists:shift_templates,id',
+            'shift_template_id' => 'nullable|exists:hr_shift_templates,id',
             'is_rest_day' => 'nullable|boolean',
             'rest_days' => 'nullable|array',
             'apply_mode' => 'nullable|string',
@@ -855,9 +855,9 @@ class AttendanceController extends Controller
     public function scheduleQuickAssign(Request $request): JsonResponse
     {
         $request->validate([
-            'employee_id' => 'required|exists:employees,id',
+            'employee_id' => 'required|exists:hr_employees,id',
             'date' => 'required|date',
-            'shift_template_id' => 'nullable|exists:shift_templates,id',
+            'shift_template_id' => 'nullable|exists:hr_shift_templates,id',
             'is_rest_day' => 'nullable|boolean',
             'clear' => 'nullable|boolean',
             'custom_start_time' => 'nullable|string',
@@ -1018,9 +1018,9 @@ class AttendanceController extends Controller
     public function scheduleQuickFillRow(Request $request): JsonResponse
     {
         $request->validate([
-            'employee_id' => 'required|exists:employees,id',
+            'employee_id' => 'required|exists:hr_employees,id',
             'week_start' => 'required|date',
-            'shift_template_id' => 'required|exists:shift_templates,id',
+            'shift_template_id' => 'required|exists:hr_shift_templates,id',
             'rest_days' => 'nullable|array',
         ]);
 
@@ -1070,9 +1070,9 @@ class AttendanceController extends Controller
     {
         $request->validate([
             'schedules' => 'required|array|min:1',
-            'schedules.*.employee_id' => 'required|exists:employees,id',
+            'schedules.*.employee_id' => 'required|exists:hr_employees,id',
             'schedules.*.date' => 'required|date',
-            'schedules.*.shift_template_id' => 'nullable|exists:shift_templates,id',
+            'schedules.*.shift_template_id' => 'nullable|exists:hr_shift_templates,id',
             'schedules.*.custom_start_time' => 'nullable|string',
             'schedules.*.custom_end_time' => 'nullable|string',
             'schedules.*.notes' => 'nullable|string',
@@ -1134,8 +1134,8 @@ class AttendanceController extends Controller
     public function updateEmployeeDepartment(Request $request): JsonResponse
     {
         $request->validate([
-            'employee_id' => 'required|exists:employees,id',
-            'department_id' => 'nullable|exists:departments,id',
+            'employee_id' => 'required|exists:hr_employees,id',
+            'department_id' => 'nullable|exists:hr_departments,id',
             'department_name' => 'nullable|string',
         ]);
 
@@ -1401,7 +1401,7 @@ class AttendanceController extends Controller
     public function correctionStore(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'employee_id' => 'required|exists:employees,id',
+            'employee_id' => 'required|exists:hr_employees,id',
             'date' => 'required|date',
             'time_in' => 'nullable',
             'break_out' => 'nullable',

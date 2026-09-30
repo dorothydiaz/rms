@@ -10,6 +10,8 @@ class PayrollPeriod extends Model
 {
     use HasFactory;
 
+    protected $table = 'hr_payroll_periods';
+
     protected $fillable = [
         'name',
         'start_date',

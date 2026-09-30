@@ -11,7 +11,7 @@ class Department extends Model
 {
     use HasFactory;
 
-    protected $table = 'departments';
+    protected $table = 'hr_departments';
 
     protected $fillable = [
         'branch_id',

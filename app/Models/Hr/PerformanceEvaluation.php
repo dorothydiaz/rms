@@ -10,6 +10,8 @@ class PerformanceEvaluation extends Model
 {
     use HasFactory;
 
+    protected $table = 'hr_performance_evaluations';
+
     protected $fillable = [
         'performance_period_id',
         'employee_id',

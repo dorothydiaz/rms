@@ -53,8 +53,8 @@ class HrAdminController extends Controller
             'email' => 'required|email|max:100|unique:users,email',
             'password' => 'required|string|min:8',
             'role_id' => 'required|exists:roles,id',
-            'branch_id' => 'nullable|exists:branches,id',
-            'employee_id' => 'nullable|exists:employees,id',
+            'branch_id' => 'nullable|exists:hr_branches,id',
+            'employee_id' => 'nullable|exists:hr_employees,id',
             'status' => 'required|in:Active,Inactive',
         ]);
 
@@ -91,8 +91,8 @@ class HrAdminController extends Controller
             'full_name' => 'required|string|max:100',
             'email' => 'required|email|max:100|unique:users,email,' . $id,
             'role_id' => 'required|exists:roles,id',
-            'branch_id' => 'nullable|exists:branches,id',
-            'employee_id' => 'nullable|exists:employees,id',
+            'branch_id' => 'nullable|exists:hr_branches,id',
+            'employee_id' => 'nullable|exists:hr_employees,id',
             'status' => 'required|in:Active,Inactive',
         ]);
 

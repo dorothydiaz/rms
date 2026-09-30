@@ -57,8 +57,8 @@ class LeaveController extends Controller
     public function requestStore(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'employee_id' => 'required|exists:employees,id',
-            'leave_type_id' => 'required|exists:leave_types,id',
+            'employee_id' => 'required|exists:hr_employees,id',
+            'leave_type_id' => 'required|exists:hr_leave_types,id',
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
             'number_of_days' => 'required|numeric|min:0.5',
@@ -151,7 +151,7 @@ class LeaveController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:100',
-            'code' => 'required|string|max:30|unique:leave_types,code',
+            'code' => 'required|string|max:30|unique:hr_leave_types,code',
             'description' => 'nullable|string',
             'is_paid' => 'boolean',
             'default_credits' => 'required|numeric|min:0',
@@ -172,7 +172,7 @@ class LeaveController extends Controller
         $type = LeaveType::findOrFail($id);
         $validated = $request->validate([
             'name' => 'required|string|max:100',
-            'code' => 'required|string|max:30|unique:leave_types,code,' . $id,
+            'code' => 'required|string|max:30|unique:hr_leave_types,code,' . $id,
             'description' => 'nullable|string',
             'is_paid' => 'boolean',
             'default_credits' => 'required|numeric|min:0',
@@ -219,8 +219,8 @@ class LeaveController extends Controller
     public function creditsAdjust(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'employee_id' => 'required|exists:employees,id',
-            'leave_type_id' => 'required|exists:leave_types,id',
+            'employee_id' => 'required|exists:hr_employees,id',
+            'leave_type_id' => 'required|exists:hr_leave_types,id',
             'year' => 'required|integer',
             'beginning_balance' => 'required|numeric|min:0',
             'earned' => 'required|numeric|min:0',

@@ -11,7 +11,7 @@ class Company extends Model
 {
     use HasFactory;
 
-    protected $table = 'companies';
+    protected $table = 'hr_companies';
 
     protected $fillable = [
         'name',

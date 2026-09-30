@@ -9,6 +9,8 @@ class PerformancePeriod extends Model
 {
     use HasFactory;
 
+    protected $table = 'hr_performance_periods';
+
     protected $fillable = [
         'name',
         'start_date',

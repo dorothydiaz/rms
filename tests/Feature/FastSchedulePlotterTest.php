@@ -132,7 +132,7 @@ class FastSchedulePlotterTest extends TestCase
             'success' => true,
         ]);
 
-        $this->assertDatabaseMissing('employee_schedules', [
+        $this->assertDatabaseMissing('hr_employee_schedules', [
             'employee_id' => $this->employee->id,
             'schedule_date' => $date,
         ]);

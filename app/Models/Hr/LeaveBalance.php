@@ -9,6 +9,8 @@ class LeaveBalance extends Model
 {
     use HasFactory;
 
+    protected $table = 'hr_leave_balances';
+
     protected $fillable = [
         'employee_id',
         'leave_type_id',
