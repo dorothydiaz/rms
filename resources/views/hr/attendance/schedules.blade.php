@@ -209,23 +209,12 @@
         </div>
 
         <!-- 3. Real-time Search Input -->
-<<<<<<< HEAD
-        <div style="position: relative; min-width: 300px; margin-left: auto;">
-            <i class="ph ph-magnifying-glass" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 15px;"></i>
-            <input type="text" id="liveEmployeeSearch" placeholder="Search employees, position, branch…" 
-                   oninput="filterMatrixRowsBySearch()"
-                   style="width: 100%; font-size: 13px; padding: 9px 32px 9px 34px; border: 1.5px solid #e2e8f0; border-radius: 10px; outline: none; height: 40px; box-sizing: border-box;">
-            <button type="button" id="clearSearchBtn" onclick="clearLiveSearch()" 
-                    style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); border: none; background: transparent; color: #94a3b8; cursor: pointer; display: none; font-size: 16px; line-height: 1;">
-                &times;
-=======
-        <div class="sched-live-search-wrap">
+        <div class="sched-live-search-wrap" style="min-width: 300px;">
             <i class="ph ph-magnifying-glass sched-live-search-icon"></i>
-            <input type="text" id="liveEmployeeSearch" class="sched-live-search-input" placeholder="Search visible rows..." 
+            <input type="text" id="liveEmployeeSearch" class="sched-live-search-input" placeholder="Search employees, position, branch…" 
                    oninput="filterMatrixRowsBySearch()">
             <button type="button" id="clearSearchBtn" class="sched-live-search-clear" onclick="clearLiveSearch()" title="Clear search">
                 <i class="ph ph-x" style="font-size: 11px;"></i>
->>>>>>> 47136233d8ae9b70fa4a774f00b4f5830090e299
             </button>
         </div>
 
@@ -448,27 +437,61 @@
                                             : ($daySched->shiftTemplate ? \Carbon\Carbon::parse($daySched->shiftTemplate->end_time)->format('H:i') : '');
                                         $sTime = $isRest ? 'OFF DUTY' : ($startTime && $endTime ? "{$startTime} - {$endTime}" : '10:00 - 19:00');
 
-                                        // Theme & Code Classification: Opening should ALWAYS be Green (sched-theme-o)
+                                        // Theme & Code Classification: Exact preset matching has highest priority
                                         if ($isRest) {
                                             $sCode = 'OFF';
                                             $sLabel = 'RESTDAY';
                                             $themeClass = 'sched-card-rest';
-                                        } elseif ($rawCode === 'O' || str_contains($rawCode, 'OPEN') || str_contains($tmplName, 'OPEN') || ($startTime && $startTime <= '10:30') || in_array($rawCode, ['0600', '0700', '0800', '0900', '1000'])) {
-                                            $sCode = 'O';
-                                            $sLabel = 'OPENING';
-                                            $themeClass = 'sched-theme-o';
-                                        } elseif ($rawCode === 'MD' || str_contains($rawCode, 'MID') || str_contains($tmplName, 'MID') || ($startTime && $startTime > '10:30' && $startTime <= '13:30') || in_array($rawCode, ['1100', '1200', '1300', '1400'])) {
+                                        } elseif ($rawCode === 'MD' || str_contains($rawCode, 'MID') || str_contains($tmplName, 'MID')) {
                                             $sCode = 'MD';
                                             $sLabel = 'MID DAY';
                                             $themeClass = 'sched-theme-md';
-                                        } elseif ($rawCode === 'LD' || str_contains($rawCode, 'LATE') || str_contains($tmplName, 'LATE') || ($startTime && $startTime > '13:30' && $startTime <= '16:30') || in_array($rawCode, ['1500', '1600', '1700'])) {
+                                        } elseif ($rawCode === 'LD' || str_contains($rawCode, 'LATE') || str_contains($tmplName, 'LATE')) {
                                             $sCode = 'LD';
                                             $sLabel = 'LATE DAY';
                                             $themeClass = 'sched-theme-ld';
-                                        } elseif ($rawCode === 'C' || str_contains($rawCode, 'CLOS') || str_contains($tmplName, 'CLOS') || ($startTime && $startTime > '16:30') || in_array($rawCode, ['1800', '1900', '2000', '2100', '2200', '2300'])) {
+                                        } elseif ($rawCode === 'C' || str_contains($rawCode, 'CLOS') || str_contains($tmplName, 'CLOS')) {
                                             $sCode = 'C';
                                             $sLabel = 'CLOSING';
                                             $themeClass = 'sched-theme-c';
+                                        } elseif ($rawCode === 'O' || str_contains($rawCode, 'OPEN') || str_contains($tmplName, 'OPEN')) {
+                                            $sCode = 'O';
+                                            $sLabel = 'OPENING';
+                                            $themeClass = 'sched-theme-o';
+                                        } elseif (in_array($rawCode, ['0600', '0700', '0800', '0900'])) {
+                                            $sCode = 'O';
+                                            $sLabel = 'OPENING';
+                                            $themeClass = 'sched-theme-o';
+                                        } elseif (in_array($rawCode, ['1000', '1100'])) {
+                                            $sCode = 'MD';
+                                            $sLabel = 'MID DAY';
+                                            $themeClass = 'sched-theme-md';
+                                        } elseif (in_array($rawCode, ['1200'])) {
+                                            $sCode = 'LD';
+                                            $sLabel = 'LATE DAY';
+                                            $themeClass = 'sched-theme-ld';
+                                        } elseif (in_array($rawCode, ['1300', '1400', '1500', '1600', '1700', '1800', '1900', '2000', '2100', '2200', '2300'])) {
+                                            $sCode = 'C';
+                                            $sLabel = 'CLOSING';
+                                            $themeClass = 'sched-theme-c';
+                                        } elseif (!$rawCode && $startTime) {
+                                            if ($startTime < '10:00') {
+                                                $sCode = 'O';
+                                                $sLabel = 'OPENING';
+                                                $themeClass = 'sched-theme-o';
+                                            } elseif ($startTime < '12:00') {
+                                                $sCode = 'MD';
+                                                $sLabel = 'MID DAY';
+                                                $themeClass = 'sched-theme-md';
+                                            } elseif ($startTime < '13:00') {
+                                                $sCode = 'LD';
+                                                $sLabel = 'LATE DAY';
+                                                $themeClass = 'sched-theme-ld';
+                                            } else {
+                                                $sCode = 'C';
+                                                $sLabel = 'CLOSING';
+                                                $themeClass = 'sched-theme-c';
+                                            }
                                         } else {
                                             $sCode = $rawCode ?: 'CUSTOM';
                                             $sLabel = $daySched->shiftTemplate?->name ?: ($daySched->notes ?: 'CUSTOM');
@@ -4108,21 +4131,54 @@ function classifyShift(rawCode, rawLabel, timeStr) {
         startTime = timeStr.trim().substring(0, 5);
     }
 
+    // 1. Rest Day
     if (code === 'OFF' || upperLabel === 'RESTDAY' || upperLabel.includes('REST') || upperLabel.includes('OFF')) {
         return { code: 'OFF', label: 'RESTDAY', theme: 'sched-card-rest', isCustom: false };
     }
-    if (code === 'O' || code.includes('OPEN') || upperLabel.includes('OPEN') || (startTime && startTime <= '10:30') || ['0600', '0700', '0800', '0900', '1000'].includes(code)) {
+
+    // 2. Explicit Preset Codes & Labels (Exact matching takes highest priority)
+    if (code === 'MD' || code.includes('MID') || upperLabel.includes('MID')) {
+        return { code: 'MD', label: label || 'MID DAY', theme: 'sched-theme-md', isCustom: false };
+    }
+    if (code === 'LD' || code.includes('LATE') || upperLabel.includes('LATE')) {
+        return { code: 'LD', label: label || 'LATE DAY', theme: 'sched-theme-ld', isCustom: false };
+    }
+    if (code === 'C' || code.includes('CLOS') || upperLabel.includes('CLOS')) {
+        return { code: 'C', label: label || 'CLOSING', theme: 'sched-theme-c', isCustom: false };
+    }
+    if (code === 'O' || code.includes('OPEN') || upperLabel.includes('OPEN')) {
+        return { code: 'O', label: label || 'OPENING', theme: 'sched-theme-o', isCustom: false };
+    }
+
+    // 3. Military / Numeric 4-digit codes
+    if (['0600', '0700', '0800', '0900'].includes(code)) {
         return { code: 'O', label: 'OPENING', theme: 'sched-theme-o', isCustom: false };
     }
-    if (code === 'MD' || code.includes('MID') || upperLabel.includes('MID') || (startTime && startTime > '10:30' && startTime <= '13:30') || ['1100', '1200', '1300', '1400'].includes(code)) {
+    if (['1000', '1100'].includes(code)) {
         return { code: 'MD', label: 'MID DAY', theme: 'sched-theme-md', isCustom: false };
     }
-    if (code === 'LD' || code.includes('LATE') || upperLabel.includes('LATE') || (startTime && startTime > '13:30' && startTime <= '16:30') || ['1500', '1600', '1700'].includes(code)) {
+    if (['1200'].includes(code)) {
         return { code: 'LD', label: 'LATE DAY', theme: 'sched-theme-ld', isCustom: false };
     }
-    if (code === 'C' || code.includes('CLOS') || upperLabel.includes('CLOS') || (startTime && startTime > '16:30') || ['1800', '1900', '2000', '2100', '2200', '2300'].includes(code)) {
+    if (['1300', '1400', '1500', '1600', '1700', '1800', '1900', '2000', '2100', '2200', '2300'].includes(code)) {
         return { code: 'C', label: 'CLOSING', theme: 'sched-theme-c', isCustom: false };
     }
+
+    // 4. Fallback by start time ONLY if code and label are empty/unspecified
+    if (!code && !label && startTime) {
+        if (startTime < '10:00') {
+            return { code: 'O', label: 'OPENING', theme: 'sched-theme-o', isCustom: false };
+        }
+        if (startTime < '12:00') {
+            return { code: 'MD', label: 'MID DAY', theme: 'sched-theme-md', isCustom: false };
+        }
+        if (startTime < '13:00') {
+            return { code: 'LD', label: 'LATE DAY', theme: 'sched-theme-ld', isCustom: false };
+        }
+        return { code: 'C', label: 'CLOSING', theme: 'sched-theme-c', isCustom: false };
+    }
+
+    // 5. Custom Shift
     return { code: code || 'CUSTOM', label: label || 'CUSTOM', theme: 'sched-card-custom', isCustom: true };
 }
 
