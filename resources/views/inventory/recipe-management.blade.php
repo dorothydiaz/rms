@@ -30,56 +30,55 @@
 .bom-page-container {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 12px;
     padding-bottom: 40px;
 }
 
-/* Header Bar */
-.bom-header-bar {
+/* Header — HR-style flat title row (no box ribbon) */
+.bom-parent-header {
+    margin-bottom: 0;
+}
+
+.bom-parent-title-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    flex-wrap: wrap;
     gap: 16px;
-    background: var(--bom-glass-bg);
-    backdrop-filter: blur(12px);
-    border: 1px solid var(--bom-border-subtle);
-    border-radius: 16px;
-    padding: 20px 24px;
-    box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04);
+    margin-bottom: 0;
+    flex-wrap: wrap;
 }
 
-.bom-header-title-box {
+.bom-parent-title {
+    font-family: var(--font-heading, 'League Spartan', sans-serif);
+    font-size: 23px;
+    font-weight: 800;
+    color: #0f172a;
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 12px;
+    letter-spacing: -0.02em;
+    margin: 0;
 }
 
-.bom-header-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
-    background: var(--bom-primary-gradient);
-    color: #ffffff;
-    display: flex;
+.bom-parent-title i {
+    width: 40px;
+    height: 40px;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 24px;
-    box-shadow: 0 6px 16px var(--bom-primary-glow);
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.14), rgba(124, 58, 237, 0.20));
+    border: 1px solid rgba(168, 85, 247, 0.32);
+    color: #9333ea;
+    font-size: 21px;
+    box-shadow: 0 4px 14px rgba(168, 85, 247, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.8);
     flex-shrink: 0;
 }
 
-.bom-header-title-box h1 {
-    font-size: 1.35rem;
-    font-weight: 800;
-    color: var(--bom-text-strong);
-    margin: 0;
-    letter-spacing: -0.02em;
-}
-
-.bom-header-title-box p {
-    font-size: 0.82rem;
-    color: var(--bom-text-muted);
+.bom-parent-subtitle {
+    font-size: 13px;
+    color: #64748b;
+    font-weight: 400;
     margin: 3px 0 0 0;
 }
 
@@ -1128,28 +1127,28 @@
 @section('content')
 <div class="bom-page-container">
 
-    <!-- 1. Header Bar -->
-    <header class="bom-header-bar">
-        <div class="bom-header-title-box">
-            <div class="bom-header-icon">
-                <i class="ph ph-cooking-pot"></i>
-            </div>
+    <!-- 1. Page Header — HR-style flat title row -->
+    <div class="bom-parent-header">
+        <div class="bom-parent-title-row">
             <div>
-                <h1>Bill of Materials (BOM) & Recipe Management</h1>
-                <p>Configure product recipes, raw ingredient deductions, live component costing, and profit margin analysis.</p>
+                <h1 class="bom-parent-title">
+                    <i class="ph ph-cooking-pot"></i>
+                    <span>Bill of Materials (BOM) & Recipe Management</span>
+                </h1>
+                <p class="bom-parent-subtitle">Configure product recipes, raw ingredient deductions, live component costing, and profit margin analysis.</p>
+            </div>
+            <div class="bom-header-actions">
+                <a href="{{ route('inventory.product-categories') }}" class="bom-action-btn-secondary" title="View Item Master Catalog">
+                    <i class="ph ph-package"></i>
+                    <span>Item Master</span>
+                </a>
+                <button type="button" class="bom-action-btn-primary" onclick="openBomDrawer('new')" title="Configure new recipe or product (F2)">
+                    <i class="ph ph-plus-circle"></i>
+                    <span>New BOM Recipe</span>
+                </button>
             </div>
         </div>
-        <div class="bom-header-actions">
-            <a href="{{ route('inventory.product-categories') }}" class="bom-action-btn-secondary" title="View Item Master Catalog">
-                <i class="ph ph-package"></i>
-                <span>Item Master</span>
-            </a>
-            <button type="button" class="bom-action-btn-primary" onclick="openBomDrawer('new')" title="Configure new recipe or product (F2)">
-                <i class="ph ph-plus-circle"></i>
-                <span>New BOM Recipe</span>
-            </button>
-        </div>
-    </header>
+    </div>
 
     <!-- 2. KPI Metrics Bar -->
     <section class="bom-metrics-grid">

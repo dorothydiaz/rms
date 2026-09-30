@@ -43,59 +43,58 @@
 .inv-page-container {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 10px;
     width: 100%;
     position: relative;
     padding-bottom: 40px;
 }
 
-/* 1. Header Section */
-.inv-header-bar {
+/* 1. Header Section — HR-style flat title row (no box ribbon) */
+.inv-parent-header {
+    margin-bottom: 0;
+}
+
+.inv-parent-title-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 16px;
+    margin-bottom: 0;
     flex-wrap: wrap;
-    background: var(--inv-glass-bg);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid var(--inv-glass-border);
-    border-radius: 16px;
-    padding: 16px 22px;
-    box-shadow: var(--inv-glass-shadow);
 }
 
-.inv-header-title-box {
+.inv-parent-title {
+    font-family: var(--font-heading, 'League Spartan', sans-serif);
+    font-size: 23px;
+    font-weight: 800;
+    color: #0f172a;
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 12px;
+    letter-spacing: -0.02em;
+    margin: 0;
 }
 
-.inv-header-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    background: linear-gradient(135deg, rgba(236, 72, 153, 0.12), rgba(168, 85, 247, 0.16));
-    border: 1px solid rgba(168, 85, 247, 0.25);
-    display: flex;
+.inv-parent-title i {
+    width: 40px;
+    height: 40px;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    color: var(--inv-primary-dark);
-    font-size: 22px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(236, 72, 153, 0.14), rgba(168, 85, 247, 0.20));
+    border: 1px solid rgba(168, 85, 247, 0.32);
+    color: #9333ea;
+    font-size: 21px;
+    box-shadow: 0 4px 14px rgba(168, 85, 247, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.8);
+    flex-shrink: 0;
 }
 
-.inv-header-title-box h1 {
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: var(--inv-text-strong);
-    margin: 0;
-    letter-spacing: -0.01em;
-}
-
-.inv-header-title-box p {
-    font-size: 0.8125rem;
-    color: var(--inv-text-muted);
-    margin: 2px 0 0 0;
+.inv-parent-subtitle {
+    font-size: 13px;
+    color: #64748b;
+    font-weight: 400;
+    margin: 3px 0 0 0;
 }
 
 .inv-header-actions {
@@ -2275,45 +2274,44 @@ body.is-column-resizing * {
 @section('content')
 <div class="inv-page-container">
 
-    <!-- 1. The Background Layer (Master List) -->
-    <!-- Header Section: Full-width horizontal bar with page title on the left and primary buttons on the right -->
-    <header class="inv-header-bar">
-        <div class="inv-header-title-box">
-            <div class="inv-header-icon">
-                <i class="ph ph-package"></i>
-            </div>
+    <!-- 1. Page Header — HR-style flat title row -->
+    <div class="inv-parent-header">
+        <div class="inv-parent-title-row">
             <div>
-                <h1>Item Master</h1>
-                <p>Centralized catalog for managing raw materials, packaging, suppliers, units of measure (UOM), and stock pricing.</p>
+                <h1 class="inv-parent-title">
+                    <i class="ph ph-package"></i>
+                    <span>Item Master</span>
+                </h1>
+                <p class="inv-parent-subtitle">Centralized catalog for managing raw materials, packaging, suppliers, units of measure (UOM), and stock pricing.</p>
+            </div>
+            <div class="inv-header-actions">
+                <!-- Button to Export Products to CSV -->
+                <button type="button" class="inv-action-btn-secondary" onclick="exportProductsCSV()" title="Export Product Catalog to CSV">
+                    <i class="ph ph-file-arrow-down"></i>
+                    <span>Export</span>
+                </button>
+
+                <!-- Button to Import Products from CSV -->
+                <button type="button" class="inv-action-btn-secondary" onclick="openImportModal()" title="Import Products from CSV">
+                    <i class="ph ph-file-arrow-up"></i>
+                    <span>Import</span>
+                </button>
+
+                <!-- Button to Add New Category -->
+                <button type="button" class="inv-action-btn-secondary" onclick="openNewCategoryModal()" title="Create New Category Group">
+                    <i class="ph ph-folder-plus"></i>
+                    <span>Add Category</span>
+                </button>
+
+                <!-- Button for Add Products -->
+                <button type="button" class="inv-action-btn-primary" id="btnOpenNewProduct" onclick="openProductDrawer('new')" title="Add New Product (F2)">
+                    <i class="ph ph-plus-circle"></i>
+                    <span>Add Product</span>
+                    <span class="inv-hotkey-badge">F2</span>
+                </button>
             </div>
         </div>
-        <div class="inv-header-actions">
-            <!-- Button to Export Products to CSV -->
-            <button type="button" class="inv-action-btn-secondary" onclick="exportProductsCSV()" title="Export Product Catalog to CSV">
-                <i class="ph ph-file-arrow-down"></i>
-                <span>Export</span>
-            </button>
-
-            <!-- Button to Import Products from CSV -->
-            <button type="button" class="inv-action-btn-secondary" onclick="openImportModal()" title="Import Products from CSV">
-                <i class="ph ph-file-arrow-up"></i>
-                <span>Import</span>
-            </button>
-
-            <!-- Button to Add New Category -->
-            <button type="button" class="inv-action-btn-secondary" onclick="openNewCategoryModal()" title="Create New Category Group">
-                <i class="ph ph-folder-plus"></i>
-                <span>Add Category</span>
-            </button>
-
-            <!-- Button for Add Products -->
-            <button type="button" class="inv-action-btn-primary" id="btnOpenNewProduct" onclick="openProductDrawer('new')" title="Add New Product (F2)">
-                <i class="ph ph-plus-circle"></i>
-                <span>Add Product</span>
-                <span class="inv-hotkey-badge">F2</span>
-            </button>
-        </div>
-    </header>
+    </div>
 
     <!-- Filter Bar: Search input field, all categories horizontal scroll pills, and global collapse/expand -->
     <section class="inv-filter-bar">
