@@ -234,4 +234,127 @@ class FastSchedulePlotterTest extends TestCase
         $this->assertEquals('16:30:00', $sched->custom_end_time);
         $this->assertEquals('OPENING', $sched->notes);
     }
+
+    public function test_shift_template_can_be_updated(): void
+    {
+        $shift = ShiftTemplate::create([
+            'name' => '0530 = 5:30AM - 2:30PM',
+            'code' => '0530',
+            'start_time' => '05:30:00',
+            'end_time' => '14:30:00',
+            'is_overnight' => false,
+            'break_minutes' => 60,
+            'color' => '#3b82f6',
+        ]);
+
+        $response = $this->actingAs($this->hrAdmin)
+            ->putJson(route('hr.attendance.shifts.update', $shift->id), [
+                'start_time' => '05:45',
+                'end_time' => '14:45',
+                'break_minutes' => 45,
+                'color' => '#8b5cf6',
+            ]);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'success' => true,
+        ]);
+
+        $shift->refresh();
+        $this->assertEquals('0545', $shift->code);
+        $this->assertEquals('05:45:00', $shift->start_time);
+        $this->assertEquals('14:45:00', $shift->end_time);
+        $this->assertEquals(45, $shift->break_minutes);
+    }
+
+    public function test_shift_template_can_be_deleted(): void
+    {
+        $shift = ShiftTemplate::create([
+            'name' => '0515 = 5:15AM - 2:15PM',
+            'code' => '0515',
+            'start_time' => '05:15:00',
+            'end_time' => '14:15:00',
+            'is_overnight' => false,
+            'break_minutes' => 60,
+            'color' => '#ec4899',
+        ]);
+
+        $sched = EmployeeSchedule::updateOrCreate(
+            ['employee_id' => $this->employee->id, 'schedule_date' => '2029-12-31'],
+            [
+                'shift_template_id' => $shift->id,
+                'custom_start_time' => '05:15:00',
+                'custom_end_time' => '14:15:00',
+            ]
+        );
+
+        $response = $this->actingAs($this->hrAdmin)
+            ->deleteJson(route('hr.attendance.shifts.destroy', $shift->id));
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'success' => true,
+        ]);
+
+        $this->assertNull(ShiftTemplate::find($shift->id));
+        $sched->refresh();
+        $this->assertNull($sched->shift_template_id);
+        $this->assertEquals('05:15:00', $sched->custom_start_time);
+    }
+
+    public function test_employee_department_can_be_updated_via_ajax(): void
+    {
+        $newDept = Department::where('id', '!=', $this->employee->department_id)->first();
+        if (!$newDept) {
+            $newDept = Department::create([
+                'name' => 'Culinary Research',
+                'code' => 'CRD',
+                'is_active' => true,
+            ]);
+        }
+
+        $response = $this->actingAs($this->hrAdmin)
+            ->postJson(route('hr.attendance.schedules.update-employee-department'), [
+                'employee_id' => $this->employee->id,
+                'department_id' => $newDept->id,
+                'department_name' => $newDept->name,
+            ]);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'success' => true,
+            'employee_id' => $this->employee->id,
+            'department_id' => $newDept->id,
+            'department_name' => $newDept->name,
+        ]);
+
+        $this->employee->refresh();
+        $this->assertEquals($newDept->id, $this->employee->department_id);
+        $this->assertEquals($newDept->name, $this->employee->department?->name);
+    }
+
+    public function test_employee_department_can_be_updated_by_department_name(): void
+    {
+        $targetDept = Department::create([
+            'name' => 'Barista Operations',
+            'code' => 'BOP',
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($this->hrAdmin)
+            ->postJson(route('hr.attendance.schedules.update-employee-department'), [
+                'employee_id' => $this->employee->id,
+                'department_name' => 'Barista Operations',
+            ]);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'success' => true,
+            'employee_id' => $this->employee->id,
+            'department_name' => 'Barista Operations',
+        ]);
+
+        $this->employee->refresh();
+        $this->assertEquals($targetDept->id, $this->employee->department_id);
+    }
 }

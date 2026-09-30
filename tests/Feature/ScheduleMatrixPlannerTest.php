@@ -62,5 +62,9 @@ class ScheduleMatrixPlannerTest extends TestCase
         $response->assertSee('.sched-card-time {', false);
         $response->assertSee('font-variant-numeric: tabular-nums;', false);
         $response->assertSee('.sched-theme-o .sched-card-time { background: #ffffff;', false);
+
+        // Verify SweetAlert2 container has higher z-index than schedule manager dropdown (9999999 vs 99999)
+        $response->assertSee('.swal2-container {', false);
+        $response->assertSee('z-index: 9999999 !important;', false);
     }
 }

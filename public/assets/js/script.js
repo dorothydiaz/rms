@@ -907,5 +907,68 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     };
+
+    // -------------------------------------------------------------
+    // Global SweetAlert2 Confirmation Dialog Helpers & Auto-Interceptor
+    // -------------------------------------------------------------
+    window.rmsConfirm = function(options = {}) {
+        if (typeof Swal === 'undefined') {
+            return Promise.resolve(confirm(options.text || options.title || 'Are you sure?'));
+        }
+        const isDanger = options.isDanger !== false;
+        return Swal.fire({
+            title: options.title || 'Are you sure?',
+            html: options.html || options.text || '',
+            icon: options.icon || (isDanger ? 'warning' : 'question'),
+            showCancelButton: true,
+            confirmButtonColor: options.confirmColor || (isDanger ? '#dc2626' : '#7c3aed'),
+            cancelButtonColor: options.cancelColor || '#64748b',
+            confirmButtonText: options.confirmText || (isDanger ? 'Yes, proceed' : 'Confirm'),
+            cancelButtonText: options.cancelText || 'Cancel',
+            reverseButtons: true,
+            customClass: {
+                popup: 'rms-swal-popup',
+                confirmButton: isDanger ? 'swal2-danger' : ''
+            }
+        }).then(result => result.isConfirmed);
+    };
+
+    // Auto-upgrade native HTML forms with onsubmit="return confirm(...)"
+    document.querySelectorAll('form[onsubmit*="confirm("]').forEach(function(form) {
+        const onsubmitAttr = form.getAttribute('onsubmit') || '';
+        const match = onsubmitAttr.match(/confirm\((?:'|")([^'"]+)(?:'|")\)/);
+        if (match) {
+            const promptMsg = match[1].replace(/\\'/g, "'").replace(/\\"/g, '"');
+            form.removeAttribute('onsubmit');
+            form.addEventListener('submit', function(e) {
+                if (form.dataset.swalApproved === 'true') return;
+                e.preventDefault();
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: 'Are you sure?',
+                        html: promptMsg,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#dc2626',
+                        cancelButtonColor: '#64748b',
+                        confirmButtonText: 'Yes, Proceed',
+                        cancelButtonText: 'Cancel',
+                        reverseButtons: true,
+                        customClass: {
+                            confirmButton: 'swal2-danger'
+                        }
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            form.dataset.swalApproved = 'true';
+                            form.submit();
+                        }
+                    });
+                } else if (confirm(promptMsg)) {
+                    form.dataset.swalApproved = 'true';
+                    form.submit();
+                }
+            });
+        }
+    });
 });
 

@@ -3533,6 +3533,9 @@ select option {
 }
 
 /* SweetAlert2 Popup Clean Centered Dialog (Preserve Alert Dialog Nature) */
+.swal2-container {
+    z-index: 9999999 !important;
+}
 .swal2-popup {
     background: #ffffff !important;
     border-radius: 20px !important;

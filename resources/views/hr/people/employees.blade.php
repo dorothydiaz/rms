@@ -373,14 +373,7 @@
                     2. Employment & Organizational Information
                 </h4>
                 <div class="hr-form-grid">
-                    <div class="hr-form-group">
-                        <label class="hr-form-label">Assigned Branch *</label>
-                        <select name="branch_id" class="hr-select" required>
-                            @foreach($branches as $b)
-                                <option value="{{ $b->id }}">{{ $b->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
+                    <!-- Linked User Account -->
                     <div class="hr-form-group">
                         <label class="hr-form-label">Linked User Account (Optional)</label>
                         <select name="user_id" class="hr-select">
@@ -390,23 +383,85 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="hr-form-group">
-                        <label class="hr-form-label">Department</label>
-                        <select name="department_id" class="hr-select">
-                            <option value="">Select Department</option>
-                            @foreach($departments as $d)
-                                <option value="{{ $d->id }}">{{ $d->name }}</option>
+
+                    <!-- Multi-Branch Assignment -->
+                    <div class="hr-form-group" style="grid-column: 1 / -1; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 14px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+                            <label class="hr-form-label" style="font-weight: 700; color: #1e293b; margin: 0;">
+                                <i class="ph ph-map-pin" style="color: #6366f1;"></i> Branch Assignments *
+                            </label>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span style="font-size: 11px; color: #64748b; font-weight: 600;">Primary Branch:</span>
+                                <select name="branch_id" id="add_primary_branch_id" class="hr-select" style="padding: 4px 8px; font-size: 12px; width: auto;" onchange="syncAddPrimaryCheckbox('branch', this.value)" required>
+                                    @foreach($branches as $b)
+                                        <option value="{{ $b->id }}">{{ $b->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div style="font-size: 11px; color: #64748b; margin-bottom: 8px;">Assign one or multiple branches this employee will work in:</div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                            @foreach($branches as $b)
+                                <label style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; cursor: pointer; user-select: none;">
+                                    <input type="checkbox" name="assigned_branch_ids[]" value="{{ $b->id }}" id="cb_add_branch_{{ $b->id }}" {{ $loop->first ? 'checked' : '' }}>
+                                    <span>{{ $b->name }}</span>
+                                </label>
                             @endforeach
-                        </select>
+                        </div>
                     </div>
-                    <div class="hr-form-group">
-                        <label class="hr-form-label">Position</label>
-                        <select name="position_id" class="hr-select">
-                            <option value="">Select Position</option>
-                            @foreach($positions as $p)
-                                <option value="{{ $p->id }}">{{ $p->name }}</option>
+
+                    <!-- Multi-Department Assignment -->
+                    <div class="hr-form-group" style="grid-column: 1 / -1; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 14px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+                            <label class="hr-form-label" style="font-weight: 700; color: #1e293b; margin: 0;">
+                                <i class="ph ph-buildings" style="color: #8b5cf6;"></i> Department Assignments
+                            </label>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span style="font-size: 11px; color: #64748b; font-weight: 600;">Primary Dept:</span>
+                                <select name="department_id" id="add_primary_department_id" class="hr-select" style="padding: 4px 8px; font-size: 12px; width: auto;" onchange="syncAddPrimaryCheckbox('dept', this.value)">
+                                    <option value="">Select Primary</option>
+                                    @foreach($departments as $d)
+                                        <option value="{{ $d->id }}">{{ $d->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div style="font-size: 11px; color: #64748b; margin-bottom: 8px;">Assign multiple departments to enable dynamic &lt;&gt; navigation on Schedule:</div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                            @foreach($departments as $d)
+                                <label style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; cursor: pointer; user-select: none;">
+                                    <input type="checkbox" name="assigned_department_ids[]" value="{{ $d->id }}" id="cb_add_dept_{{ $d->id }}">
+                                    <span>{{ $d->name }}</span>
+                                </label>
                             @endforeach
-                        </select>
+                        </div>
+                    </div>
+
+                    <!-- Multi-Position Assignment -->
+                    <div class="hr-form-group" style="grid-column: 1 / -1; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 14px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+                            <label class="hr-form-label" style="font-weight: 700; color: #1e293b; margin: 0;">
+                                <i class="ph ph-briefcase" style="color: #3b82f6;"></i> Position & Role Assignments
+                            </label>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span style="font-size: 11px; color: #64748b; font-weight: 600;">Primary Position:</span>
+                                <select name="position_id" id="add_primary_position_id" class="hr-select" style="padding: 4px 8px; font-size: 12px; width: auto;" onchange="syncAddPrimaryCheckbox('pos', this.value)">
+                                    <option value="">Select Primary</option>
+                                    @foreach($positions as $p)
+                                        <option value="{{ $p->id }}">{{ $p->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div style="font-size: 11px; color: #64748b; margin-bottom: 8px;">Assign multiple positions / roles that this employee can perform:</div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                            @foreach($positions as $p)
+                                <label style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; cursor: pointer; user-select: none;">
+                                    <input type="checkbox" name="assigned_position_ids[]" value="{{ $p->id }}" id="cb_add_pos_{{ $p->id }}">
+                                    <span>{{ $p->name }}</span>
+                                </label>
+                            @endforeach
+                        </div>
                     </div>
                     <div class="hr-form-group">
                         <label class="hr-form-label">Date Hired *</label>
@@ -757,6 +812,11 @@ function sortEmployeesDirectory(colIndex, dataType, forceDir = null) {
     const noResultsRow = document.getElementById('noEmpResultsRow');
     rows.forEach(r => tableBody.appendChild(r));
     if (noResultsRow) tableBody.appendChild(noResultsRow);
+}
+function syncAddPrimaryCheckbox(type, id) {
+    if (!id) return;
+    const cb = document.getElementById('cb_add_' + type + '_' + id);
+    if (cb) cb.checked = true;
 }
 </script>
 @endpush

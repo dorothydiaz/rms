@@ -84,8 +84,11 @@ class PeopleController extends Controller
         $canViewSensitive = $user->isSuperAdmin() || $user->isHrAdmin() || $user->hasPermission('employees.sensitive');
         $companies = Company::where('type', 'Company')->where('is_active', true)->get();
         $agencies = Company::where('type', 'Agency')->where('is_active', true)->get();
+        $departments = Department::where('is_active', true)->orderBy('name')->get();
+        $branches = Branch::where('is_active', true)->orderBy('name')->get();
+        $positions = Position::orderBy('name')->get();
 
-        return view('hr.people.employee-detail', compact('employee', 'canViewSensitive', 'companies', 'agencies'));
+        return view('hr.people.employee-detail', compact('employee', 'canViewSensitive', 'companies', 'agencies', 'departments', 'branches', 'positions'));
     }
 
     public function employeeStore(Request $request): RedirectResponse
@@ -109,6 +112,12 @@ class PeopleController extends Controller
             'branch_id' => 'required|exists:branches,id',
             'department_id' => 'nullable|exists:departments,id',
             'position_id' => 'nullable|exists:positions,id',
+            'assigned_department_ids' => 'nullable|array',
+            'assigned_department_ids.*' => 'exists:departments,id',
+            'assigned_branch_ids' => 'nullable|array',
+            'assigned_branch_ids.*' => 'exists:branches,id',
+            'assigned_position_ids' => 'nullable|array',
+            'assigned_position_ids.*' => 'exists:positions,id',
             'supervisor_id' => 'nullable|exists:employees,id',
             'date_hired' => 'required|date',
             'employment_status' => 'required|in:Active,Probationary,On Leave,Suspended,Resigned,Terminated,Retired',
@@ -134,6 +143,48 @@ class PeopleController extends Controller
 
         if (!$user->canAccessBranch($validated['branch_id'])) {
             abort(403, 'Unauthorized to create employee in another branch.');
+        }
+
+        $deptIds = $request->input('assigned_department_ids', []);
+        if (!empty($deptIds)) {
+            $validated['assigned_department_ids'] = array_values(array_map('intval', $deptIds));
+            if (!empty($validated['department_id'])) {
+                if (!in_array((int)$validated['department_id'], $validated['assigned_department_ids'])) {
+                    array_unshift($validated['assigned_department_ids'], (int)$validated['department_id']);
+                }
+            } else {
+                $validated['department_id'] = $validated['assigned_department_ids'][0];
+            }
+        } elseif (!empty($validated['department_id'])) {
+            $validated['assigned_department_ids'] = [(int) $validated['department_id']];
+        }
+
+        $branchIds = $request->input('assigned_branch_ids', []);
+        if (!empty($branchIds)) {
+            $validated['assigned_branch_ids'] = array_values(array_map('intval', $branchIds));
+            if (!empty($validated['branch_id'])) {
+                if (!in_array((int)$validated['branch_id'], $validated['assigned_branch_ids'])) {
+                    array_unshift($validated['assigned_branch_ids'], (int)$validated['branch_id']);
+                }
+            } else {
+                $validated['branch_id'] = $validated['assigned_branch_ids'][0];
+            }
+        } elseif (!empty($validated['branch_id'])) {
+            $validated['assigned_branch_ids'] = [(int) $validated['branch_id']];
+        }
+
+        $posIds = $request->input('assigned_position_ids', []);
+        if (!empty($posIds)) {
+            $validated['assigned_position_ids'] = array_values(array_map('intval', $posIds));
+            if (!empty($validated['position_id'])) {
+                if (!in_array((int)$validated['position_id'], $validated['assigned_position_ids'])) {
+                    array_unshift($validated['assigned_position_ids'], (int)$validated['position_id']);
+                }
+            } else {
+                $validated['position_id'] = $validated['assigned_position_ids'][0];
+            }
+        } elseif (!empty($validated['position_id'])) {
+            $validated['assigned_position_ids'] = [(int) $validated['position_id']];
         }
 
         if (!empty($validated['company_id'])) {
@@ -212,6 +263,12 @@ class PeopleController extends Controller
             'branch_id' => 'required|exists:branches,id',
             'department_id' => 'nullable|exists:departments,id',
             'position_id' => 'nullable|exists:positions,id',
+            'assigned_department_ids' => 'nullable|array',
+            'assigned_department_ids.*' => 'exists:departments,id',
+            'assigned_branch_ids' => 'nullable|array',
+            'assigned_branch_ids.*' => 'exists:branches,id',
+            'assigned_position_ids' => 'nullable|array',
+            'assigned_position_ids.*' => 'exists:positions,id',
             'supervisor_id' => 'nullable|exists:employees,id',
             'date_hired' => 'required|date',
             'employment_status' => 'required|in:Active,Probationary,On Leave,Suspended,Resigned,Terminated,Retired',
@@ -231,6 +288,48 @@ class PeopleController extends Controller
             'pay_frequency' => 'required|in:Semi-Monthly,Monthly,Weekly',
             'allowances' => 'nullable|numeric|min:0',
         ]);
+
+        $deptIds = $request->input('assigned_department_ids', []);
+        if (!empty($deptIds)) {
+            $validated['assigned_department_ids'] = array_values(array_map('intval', $deptIds));
+            if (!empty($validated['department_id'])) {
+                if (!in_array((int)$validated['department_id'], $validated['assigned_department_ids'])) {
+                    array_unshift($validated['assigned_department_ids'], (int)$validated['department_id']);
+                }
+            } else {
+                $validated['department_id'] = $validated['assigned_department_ids'][0];
+            }
+        } elseif (!empty($validated['department_id'])) {
+            $validated['assigned_department_ids'] = [(int) $validated['department_id']];
+        }
+
+        $branchIds = $request->input('assigned_branch_ids', []);
+        if (!empty($branchIds)) {
+            $validated['assigned_branch_ids'] = array_values(array_map('intval', $branchIds));
+            if (!empty($validated['branch_id'])) {
+                if (!in_array((int)$validated['branch_id'], $validated['assigned_branch_ids'])) {
+                    array_unshift($validated['assigned_branch_ids'], (int)$validated['branch_id']);
+                }
+            } else {
+                $validated['branch_id'] = $validated['assigned_branch_ids'][0];
+            }
+        } elseif (!empty($validated['branch_id'])) {
+            $validated['assigned_branch_ids'] = [(int) $validated['branch_id']];
+        }
+
+        $posIds = $request->input('assigned_position_ids', []);
+        if (!empty($posIds)) {
+            $validated['assigned_position_ids'] = array_values(array_map('intval', $posIds));
+            if (!empty($validated['position_id'])) {
+                if (!in_array((int)$validated['position_id'], $validated['assigned_position_ids'])) {
+                    array_unshift($validated['assigned_position_ids'], (int)$validated['position_id']);
+                }
+            } else {
+                $validated['position_id'] = $validated['assigned_position_ids'][0];
+            }
+        } elseif (!empty($validated['position_id'])) {
+            $validated['assigned_position_ids'] = [(int) $validated['position_id']];
+        }
 
         if (!empty($request->input('company_id'))) {
             $validated['company_id'] = $request->input('company_id');

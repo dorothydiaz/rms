@@ -17,7 +17,9 @@
                 <a href="{{ route('hr.people.employees') }}" class="hr-btn hr-btn-secondary hr-btn-sm">
                     <i class="ph ph-arrow-left"></i> Back to Directory
                 </a>
-                <span class="hr-badge hr-badge-neutral">{{ $employee->branch?->name }}</span>
+                <span class="hr-badge hr-badge-neutral">
+                    <i class="ph ph-map-pin"></i> {{ $employee->branch?->name }}@if(count($employee->all_branch_ids) > 1) <span style="opacity: 0.75; font-size: 10px;">(+{{ count($employee->all_branch_ids) - 1 }} more)</span>@endif
+                </span>
                 @if($employee->employment_source === 'Agency')
                     <span class="hr-badge" style="background: rgba(168, 85, 247, 0.12); color: #7e22ce; border: 1px solid rgba(168, 85, 247, 0.25);">
                         <i class="ph ph-handshake"></i> Agency: {{ $employee->company_or_agency }}
@@ -380,8 +382,49 @@
                     <strong>{{ $employee->company_or_agency }}</strong>
                 </div>
                 <div>
-                    <span style="color: #64748b;">Branch:</span>
-                    <strong>{{ $employee->branch?->name }}</strong>
+                    <span style="color: #64748b;">Assigned Branches:</span>
+                    <div style="display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px;">
+                        @forelse($employee->assignedBranches() as $b)
+                            <span class="hr-badge hr-badge-neutral" style="font-size: 11.5px; padding: 2.5px 8px; display: inline-flex; align-items: center; gap: 4px;">
+                                <i class="ph ph-map-pin" style="color: #6366f1;"></i> {{ $b->name }}
+                                @if((int)$b->id === (int)$employee->branch_id)
+                                    <span style="font-size: 9px; background: #e0e7ff; color: #4338ca; padding: 1px 4px; border-radius: 4px; font-weight: 700; text-transform: uppercase;">Primary</span>
+                                @endif
+                            </span>
+                        @empty
+                            <strong>{{ $employee->branch?->name ?? 'N/A' }}</strong>
+                        @endforelse
+                    </div>
+                </div>
+                <div>
+                    <span style="color: #64748b;">Assigned Departments:</span>
+                    <div style="display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px;">
+                        @forelse($employee->assignedDepartments() as $d)
+                            <span class="hr-badge" style="font-size: 11.5px; padding: 2.5px 8px; background: rgba(168, 85, 247, 0.1); color: #7e22ce; border: 1px solid rgba(168, 85, 247, 0.25); display: inline-flex; align-items: center; gap: 4px;">
+                                <i class="ph ph-buildings"></i> {{ $d->name }}
+                                @if((int)$d->id === (int)$employee->department_id)
+                                    <span style="font-size: 9px; background: #f3e8ff; color: #6b21a8; padding: 1px 4px; border-radius: 4px; font-weight: 700; text-transform: uppercase;">Primary</span>
+                                @endif
+                            </span>
+                        @empty
+                            <strong>{{ $employee->department?->name ?? 'N/A' }}</strong>
+                        @endforelse
+                    </div>
+                </div>
+                <div>
+                    <span style="color: #64748b;">Assigned Positions / Roles:</span>
+                    <div style="display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px;">
+                        @forelse($employee->assignedPositions() as $p)
+                            <span class="hr-badge" style="font-size: 11.5px; padding: 2.5px 8px; background: rgba(59, 130, 246, 0.1); color: #1d4ed8; border: 1px solid rgba(59, 130, 246, 0.25); display: inline-flex; align-items: center; gap: 4px;">
+                                <i class="ph ph-briefcase"></i> {{ $p->name }}
+                                @if((int)$p->id === (int)$employee->position_id)
+                                    <span style="font-size: 9px; background: #dbeafe; color: #1e40af; padding: 1px 4px; border-radius: 4px; font-weight: 700; text-transform: uppercase;">Primary</span>
+                                @endif
+                            </span>
+                        @empty
+                            <strong>{{ $employee->position?->name ?? 'N/A' }}</strong>
+                        @endforelse
+                    </div>
                 </div>
                 <div>
                     <span style="color: #64748b;">Supervisor:</span>
@@ -474,10 +517,87 @@
                         <label class="hr-form-label">Email</label>
                         <input type="email" name="email" class="hr-input" value="{{ $employee->email }}">
                     </div>
-                    <div class="hr-form-group">
-                        <label class="hr-form-label">Branch *</label>
-                        <input type="hidden" name="branch_id" value="{{ $employee->branch_id }}">
-                        <input type="text" class="hr-input" value="{{ $employee->branch?->name }}" disabled>
+                    <!-- Multi-Branch Assignment -->
+                    <div class="hr-form-group" style="grid-column: 1 / -1; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 14px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+                            <label class="hr-form-label" style="font-weight: 700; color: #1e293b; margin: 0;">
+                                <i class="ph ph-map-pin" style="color: #6366f1;"></i> Branch Assignments *
+                            </label>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span style="font-size: 11px; color: #64748b; font-weight: 600;">Primary Branch:</span>
+                                <select name="branch_id" id="edit_primary_branch_id" class="hr-select" style="padding: 4px 8px; font-size: 12px; width: auto;" onchange="syncPrimaryCheckbox('branch', this.value)" required>
+                                    @foreach($branches as $b)
+                                        <option value="{{ $b->id }}" {{ (int)$employee->branch_id === (int)$b->id ? 'selected' : '' }}>{{ $b->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div style="font-size: 11px; color: #64748b; margin-bottom: 8px;">Assign one or multiple branches this employee is authorized to work in:</div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                            @foreach($branches as $b)
+                                @php $isAssignedBranch = in_array((int)$b->id, array_map('intval', $employee->all_branch_ids)); @endphp
+                                <label style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; cursor: pointer; user-select: none;">
+                                    <input type="checkbox" name="assigned_branch_ids[]" value="{{ $b->id }}" id="cb_branch_{{ $b->id }}" {{ $isAssignedBranch ? 'checked' : '' }}>
+                                    <span>{{ $b->name }}</span>
+                                </label>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <!-- Multi-Department Assignment -->
+                    <div class="hr-form-group" style="grid-column: 1 / -1; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 14px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+                            <label class="hr-form-label" style="font-weight: 700; color: #1e293b; margin: 0;">
+                                <i class="ph ph-buildings" style="color: #8b5cf6;"></i> Department Assignments
+                            </label>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span style="font-size: 11px; color: #64748b; font-weight: 600;">Primary Dept:</span>
+                                <select name="department_id" id="edit_primary_department_id" class="hr-select" style="padding: 4px 8px; font-size: 12px; width: auto;" onchange="syncPrimaryCheckbox('dept', this.value)">
+                                    <option value="">Select Primary</option>
+                                    @foreach($departments as $d)
+                                        <option value="{{ $d->id }}" {{ (int)$employee->department_id === (int)$d->id ? 'selected' : '' }}>{{ $d->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div style="font-size: 11px; color: #64748b; margin-bottom: 8px;">Assign multiple departments to enable dynamic &lt;&gt; navigation on Schedule Matrix:</div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                            @foreach($departments as $d)
+                                @php $isAssignedDept = in_array((int)$d->id, array_map('intval', $employee->all_department_ids)); @endphp
+                                <label style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; cursor: pointer; user-select: none;">
+                                    <input type="checkbox" name="assigned_department_ids[]" value="{{ $d->id }}" id="cb_dept_{{ $d->id }}" {{ $isAssignedDept ? 'checked' : '' }}>
+                                    <span>{{ $d->name }}</span>
+                                </label>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <!-- Multi-Position Assignment -->
+                    <div class="hr-form-group" style="grid-column: 1 / -1; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 14px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+                            <label class="hr-form-label" style="font-weight: 700; color: #1e293b; margin: 0;">
+                                <i class="ph ph-briefcase" style="color: #3b82f6;"></i> Position & Role Assignments
+                            </label>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span style="font-size: 11px; color: #64748b; font-weight: 600;">Primary Position:</span>
+                                <select name="position_id" id="edit_primary_position_id" class="hr-select" style="padding: 4px 8px; font-size: 12px; width: auto;" onchange="syncPrimaryCheckbox('pos', this.value)">
+                                    <option value="">Select Primary</option>
+                                    @foreach($positions as $p)
+                                        <option value="{{ $p->id }}" {{ (int)$employee->position_id === (int)$p->id ? 'selected' : '' }}>{{ $p->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div style="font-size: 11px; color: #64748b; margin-bottom: 8px;">Assign multiple positions / roles that this employee is qualified to perform:</div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                            @foreach($positions as $p)
+                                @php $isAssignedPos = in_array((int)$p->id, array_map('intval', $employee->all_position_ids)); @endphp
+                                <label style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; cursor: pointer; user-select: none;">
+                                    <input type="checkbox" name="assigned_position_ids[]" value="{{ $p->id }}" id="cb_pos_{{ $p->id }}" {{ $isAssignedPos ? 'checked' : '' }}>
+                                    <span>{{ $p->name }}</span>
+                                </label>
+                            @endforeach
+                        </div>
                     </div>
                     <div class="hr-form-group">
                         <label class="hr-form-label">Date Hired *</label>
@@ -692,6 +812,11 @@ function previewEditPhoto(input) {
         }
         reader.readAsDataURL(input.files[0]);
     }
+}
+function syncPrimaryCheckbox(type, id) {
+    if (!id) return;
+    const cb = document.getElementById('cb_' + type + '_' + id);
+    if (cb) cb.checked = true;
 }
 </script>
 @endpush

@@ -1122,6 +1122,48 @@ class AttendanceController extends Controller
         ]);
     }
 
+    public function updateEmployeeDepartment(Request $request): JsonResponse
+    {
+        $request->validate([
+            'employee_id' => 'required|exists:employees,id',
+            'department_id' => 'nullable|exists:departments,id',
+            'department_name' => 'nullable|string',
+        ]);
+
+        $emp = Employee::findOrFail($request->input('employee_id'));
+
+        $departmentId = $request->input('department_id');
+        if (!$departmentId && $request->filled('department_name')) {
+            $dept = Department::where('name', $request->input('department_name'))->first();
+            if ($dept) {
+                $departmentId = $dept->id;
+            }
+        }
+
+        $emp->department_id = $departmentId;
+        if ($departmentId) {
+            $assigned = is_array($emp->assigned_department_ids) ? $emp->assigned_department_ids : [];
+            if (!in_array((int) $departmentId, $assigned)) {
+                $assigned[] = (int) $departmentId;
+                $emp->assigned_department_ids = array_values(array_unique($assigned));
+            }
+        }
+        $emp->save();
+
+        $emp->refresh();
+        $deptName = $emp->department?->name ?? 'Front of House';
+
+        AuditLogger::log('Update', 'Employees', $emp->id, "Updated department for employee {$emp->full_name} to {$deptName}");
+
+        return response()->json([
+            'success' => true,
+            'message' => "Department for {$emp->full_name} updated to {$deptName}.",
+            'employee_id' => $emp->id,
+            'department_id' => $emp->department_id,
+            'department_name' => $deptName,
+        ]);
+    }
+
     public function shiftTemplateStore(Request $request): RedirectResponse
     {
         $validated = $request->validate([
@@ -1158,6 +1200,83 @@ class AttendanceController extends Controller
         AuditLogger::log('Create', 'Schedules', $shift->id, "Created shift template '{$shift->name}'");
 
         return redirect()->back()->with('success', "Shift template '{$shift->name}' saved.");
+    }
+
+    public function shiftTemplateUpdate(Request $request, int $id): RedirectResponse|JsonResponse
+    {
+        $shift = ShiftTemplate::findOrFail($id);
+
+        $validated = $request->validate([
+            'start_time' => 'required|date_format:H:i',
+            'end_time' => 'required|date_format:H:i',
+            'is_overnight' => 'nullable|boolean',
+            'break_minutes' => 'nullable|integer|min:0',
+            'color' => 'nullable|string|max:20',
+        ]);
+
+        $startTime = $validated['start_time'] . ':00';
+        $endTime = $validated['end_time'] . ':00';
+        $code = Carbon::parse($startTime)->format('Hi');
+        $formattedName = ShiftTemplate::formatShiftLabel($startTime, $endTime);
+
+        // Check if code is already used by another shift template
+        $existing = ShiftTemplate::where('code', $code)->where('id', '!=', $shift->id)->first();
+        if ($existing) {
+            $msg = "A shift template with code '{$code}' ({$existing->name}) already exists.";
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => $msg], 422);
+            }
+            return redirect()->back()->with('error', $msg);
+        }
+
+        $isOvernight = $request->boolean('is_overnight');
+        if (!$isOvernight && Carbon::parse($startTime)->gt(Carbon::parse($endTime))) {
+            $isOvernight = true;
+        }
+
+        $shift->update([
+            'code' => $code,
+            'name' => $formattedName,
+            'start_time' => $startTime,
+            'end_time' => $endTime,
+            'is_overnight' => $isOvernight,
+            'break_minutes' => $validated['break_minutes'] ?? 60,
+            'color' => $validated['color'] ?? '#8b5cf6',
+        ]);
+
+        AuditLogger::log('Update', 'Schedules', $shift->id, "Updated shift template '{$shift->name}'");
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => "Shift template '{$shift->name}' updated successfully.",
+                'shift' => $shift,
+            ]);
+        }
+
+        return redirect()->back()->with('success', "Shift template '{$shift->name}' updated successfully.");
+    }
+
+    public function shiftTemplateDestroy(Request $request, int $id): RedirectResponse|JsonResponse
+    {
+        $shift = ShiftTemplate::findOrFail($id);
+        $shiftName = $shift->name;
+
+        // Disassociate any schedules pointing to this template so schedules keep their times
+        EmployeeSchedule::where('shift_template_id', $shift->id)->update(['shift_template_id' => null]);
+
+        $shift->delete();
+
+        AuditLogger::log('Delete', 'Schedules', $id, "Deleted shift template '{$shiftName}'");
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => "Shift template '{$shiftName}' deleted successfully.",
+            ]);
+        }
+
+        return redirect()->back()->with('success', "Shift template '{$shiftName}' deleted successfully.");
     }
 
     // ==========================================

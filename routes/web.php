@@ -98,7 +98,10 @@ Route::middleware('auth')->group(function () {
             Route::post('/schedules/copy-week', [\App\Http\Controllers\Hr\AttendanceController::class, 'scheduleCopyWeek'])->name('schedules.copy-week');
             Route::post('/schedules/quick-fill-row', [\App\Http\Controllers\Hr\AttendanceController::class, 'scheduleQuickFillRow'])->name('schedules.quick-fill-row');
             Route::post('/schedules/batch', [\App\Http\Controllers\Hr\AttendanceController::class, 'scheduleBatchStore'])->name('schedules.batch');
+            Route::post('/schedules/update-employee-department', [\App\Http\Controllers\Hr\AttendanceController::class, 'updateEmployeeDepartment'])->name('schedules.update-employee-department');
             Route::post('/shifts', [\App\Http\Controllers\Hr\AttendanceController::class, 'shiftTemplateStore'])->name('shifts.store');
+            Route::put('/shifts/{id}', [\App\Http\Controllers\Hr\AttendanceController::class, 'shiftTemplateUpdate'])->name('shifts.update');
+            Route::delete('/shifts/{id}', [\App\Http\Controllers\Hr\AttendanceController::class, 'shiftTemplateDestroy'])->name('shifts.destroy');
 
             Route::get('/overtime', [\App\Http\Controllers\Hr\AttendanceController::class, 'overtimeIndex'])->name('overtime');
 

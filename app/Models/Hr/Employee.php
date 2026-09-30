@@ -56,6 +56,15 @@ class Employee extends Model
         'pay_frequency',
         'allowances',
         'other_compensation',
+        'assigned_department_ids',
+        'assigned_branch_ids',
+        'assigned_position_ids',
+    ];
+
+    protected $appends = [
+        'has_multiple_departments',
+        'all_department_ids',
+        'assigned_department_names',
     ];
 
     protected function casts(): array
@@ -68,7 +77,65 @@ class Employee extends Model
             'contract_end_date' => 'date',
             'basic_salary' => 'decimal:2',
             'allowances' => 'decimal:2',
+            'assigned_department_ids' => 'array',
+            'assigned_branch_ids' => 'array',
+            'assigned_position_ids' => 'array',
         ];
+    }
+
+    public function getAllDepartmentIdsAttribute(): array
+    {
+        $ids = is_array($this->assigned_department_ids) ? $this->assigned_department_ids : [];
+        if ($this->department_id && !in_array($this->department_id, $ids)) {
+            array_unshift($ids, $this->department_id);
+        }
+        return array_values(array_unique(array_filter($ids)));
+    }
+
+    public function getAllBranchIdsAttribute(): array
+    {
+        $ids = is_array($this->assigned_branch_ids) ? $this->assigned_branch_ids : [];
+        if ($this->branch_id && !in_array($this->branch_id, $ids)) {
+            array_unshift($ids, $this->branch_id);
+        }
+        return array_values(array_unique(array_filter($ids)));
+    }
+
+    public function getAllPositionIdsAttribute(): array
+    {
+        $ids = is_array($this->assigned_position_ids) ? $this->assigned_position_ids : [];
+        if ($this->position_id && !in_array($this->position_id, $ids)) {
+            array_unshift($ids, $this->position_id);
+        }
+        return array_values(array_unique(array_filter($ids)));
+    }
+
+    public function getHasMultipleDepartmentsAttribute(): bool
+    {
+        return count($this->all_department_ids) > 1;
+    }
+
+    public function getAssignedDepartmentNamesAttribute(): array
+    {
+        if (empty($this->all_department_ids)) {
+            return $this->department ? [$this->department->name] : [];
+        }
+        return Department::whereIn('id', $this->all_department_ids)->pluck('name')->toArray();
+    }
+
+    public function assignedDepartments()
+    {
+        return Department::whereIn('id', $this->all_department_ids)->get();
+    }
+
+    public function assignedBranches()
+    {
+        return Branch::whereIn('id', $this->all_branch_ids)->get();
+    }
+
+    public function assignedPositions()
+    {
+        return Position::whereIn('id', $this->all_position_ids)->get();
     }
 
     public function getFullNameAttribute(): string

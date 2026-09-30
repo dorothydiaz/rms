@@ -64,6 +64,8 @@
         </main>
     </div>
 
+    <!-- SweetAlert2 (Rich Interactive Alerts & Confirmation Modals) -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <!-- Chart.js for Analytics -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Client Interactive JS -->
