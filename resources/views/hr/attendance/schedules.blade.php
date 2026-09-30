@@ -209,14 +209,12 @@
         </div>
 
         <!-- 3. Real-time Search Input -->
-        <div style="position: relative; min-width: 180px; margin-left: auto;">
-            <i class="ph ph-magnifying-glass" style="position: absolute; left: 8px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 12px;"></i>
-            <input type="text" id="liveEmployeeSearch" placeholder="Search visible rows..." 
-                   oninput="filterMatrixRowsBySearch()"
-                   style="width: 100%; font-size: 11.5px; padding: 5px 22px 5px 26px; border: 1.5px solid #e2e8f0; border-radius: 8px; outline: none;">
-            <button type="button" id="clearSearchBtn" onclick="clearLiveSearch()" 
-                    style="position: absolute; right: 6px; top: 50%; transform: translateY(-50%); border: none; background: transparent; color: #94a3b8; cursor: pointer; display: none;">
-                &times;
+        <div class="sched-live-search-wrap">
+            <i class="ph ph-magnifying-glass sched-live-search-icon"></i>
+            <input type="text" id="liveEmployeeSearch" class="sched-live-search-input" placeholder="Search visible rows..." 
+                   oninput="filterMatrixRowsBySearch()">
+            <button type="button" id="clearSearchBtn" class="sched-live-search-clear" onclick="clearLiveSearch()" title="Clear search">
+                <i class="ph ph-x" style="font-size: 11px;"></i>
             </button>
         </div>
 
@@ -1762,6 +1760,90 @@
 }
 .sched-btn-clear-grid:hover {
     background: #fef2f2;
+}
+
+/* Real-time Search Input (Prominent, High-Contrast & Standout) */
+.sched-live-search-wrap {
+    position: relative;
+    min-width: 260px;
+    max-width: 380px;
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+}
+
+.sched-live-search-input {
+    width: 100%;
+    height: 38px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #0f172a;
+    padding: 0 34px 0 38px;
+    background: #ffffff;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 9px;
+    outline: none;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    box-sizing: border-box;
+}
+
+.sched-live-search-input::placeholder {
+    color: #64748b;
+    font-weight: 500;
+    font-size: 12.5px;
+}
+
+.sched-live-search-wrap:hover .sched-live-search-input {
+    border-color: #8b5cf6;
+    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.12);
+}
+
+.sched-live-search-input:focus {
+    border-color: #7c3aed;
+    background: #ffffff;
+    box-shadow: 0 0 0 3.5px rgba(124, 58, 237, 0.18), 0 2px 8px rgba(124, 58, 237, 0.1);
+}
+
+.sched-live-search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #7c3aed;
+    font-size: 16px;
+    pointer-events: none;
+    transition: color 0.15s ease;
+}
+
+.sched-live-search-input:focus ~ .sched-live-search-icon {
+    color: #6d28d9;
+}
+
+.sched-live-search-clear {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: none;
+    background: #f1f5f9;
+    color: #64748b;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    line-height: 1;
+    transition: all 0.15s ease;
+    padding: 0;
+}
+
+.sched-live-search-clear:hover {
+    background: #fee2e2;
+    color: #ef4444;
 }
 
 .sched-btn-row-del {
@@ -4640,7 +4722,7 @@ function filterMatrixByCategory() {
 function filterMatrixRowsBySearch() {
     const q = (document.getElementById('liveEmployeeSearch')?.value || '').toLowerCase().trim();
     const clearBtn = document.getElementById('clearSearchBtn');
-    if (clearBtn) clearBtn.style.display = q ? 'block' : 'none';
+    if (clearBtn) clearBtn.style.display = q ? 'inline-flex' : 'none';
 
     const checkedCats = Array.from(document.querySelectorAll('.sched-cat-cb:checked')).map(cb => cb.value);
     const rows = document.querySelectorAll('.sched-row');
