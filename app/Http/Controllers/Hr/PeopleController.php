@@ -252,15 +252,15 @@ class PeopleController extends Controller
             'suffix' => 'nullable|string|max:15',
             'date_of_birth' => 'nullable|date',
             'gender' => 'nullable|in:Male,Female,Other',
-            'civil_status' => 'required|in:Single,Married,Widowed,Divorced,Separated',
-            'nationality' => 'required|string|max:50',
+            'civil_status' => 'nullable|in:Single,Married,Widowed,Divorced,Separated',
+            'nationality' => 'nullable|string|max:50',
             'mobile_number' => 'nullable|string|max:30',
             'email' => 'nullable|email|max:100',
             'address' => 'nullable|string',
             'photo' => 'nullable|file|mimes:jpeg,png,jpg,webp,gif|max:5120',
             'remove_photo' => 'nullable|boolean',
             'user_id' => 'nullable|exists:users,id',
-            'branch_id' => 'required|exists:branches,id',
+            'branch_id' => 'nullable|exists:branches,id',
             'department_id' => 'nullable|exists:departments,id',
             'position_id' => 'nullable|exists:positions,id',
             'assigned_department_ids' => 'nullable|array',
@@ -270,7 +270,7 @@ class PeopleController extends Controller
             'assigned_position_ids' => 'nullable|array',
             'assigned_position_ids.*' => 'exists:positions,id',
             'supervisor_id' => 'nullable|exists:employees,id',
-            'date_hired' => 'required|date',
+            'date_hired' => 'nullable|date',
             'employment_status' => 'required|in:Active,Probationary,On Leave,Suspended,Resigned,Terminated,Retired',
             'employment_type' => 'required|in:Regular,Probationary,Part-time,Casual,Contractual',
             'employment_source' => 'nullable|in:Company,Agency',
@@ -284,10 +284,30 @@ class PeopleController extends Controller
             'pagibig_number' => 'nullable|string|max:30',
             'tin' => 'nullable|string|max:30',
             'basic_salary' => 'nullable|numeric|min:0',
-            'salary_type' => 'required|in:Monthly,Daily,Hourly',
-            'pay_frequency' => 'required|in:Semi-Monthly,Monthly,Weekly',
+            'salary_type' => 'nullable|in:Monthly,Daily,Hourly',
+            'pay_frequency' => 'nullable|in:Semi-Monthly,Monthly,Weekly',
             'allowances' => 'nullable|numeric|min:0',
         ]);
+
+        if (empty($validated['branch_id'])) {
+            $validated['branch_id'] = $employee->branch_id;
+        }
+        if (empty($validated['date_hired'])) {
+            $validated['date_hired'] = $employee->getRawOriginal('date_hired') ?: date('Y-m-d');
+        }
+        if (empty($validated['civil_status'])) {
+            $validated['civil_status'] = $employee->civil_status ?: 'Single';
+        }
+        if (empty($validated['nationality'])) {
+            $validated['nationality'] = $employee->nationality ?: 'Filipino';
+        }
+        if (empty($validated['salary_type'])) {
+            $validated['salary_type'] = $employee->salary_type ?: 'Monthly';
+        }
+        if (empty($validated['pay_frequency'])) {
+            $validated['pay_frequency'] = $employee->pay_frequency ?: 'Semi-Monthly';
+        }
+
 
         $deptIds = $request->input('assigned_department_ids', []);
         if (!empty($deptIds)) {

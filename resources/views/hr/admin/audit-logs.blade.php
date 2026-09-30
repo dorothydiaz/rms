@@ -164,9 +164,16 @@ function renderLogsPage() {
     nav.innerHTML = h;
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+window.refreshLogsPage = function() {
     _logsRows = Array.from(document.querySelectorAll('#logsTableBody tr.log-row'));
     renderLogsPage();
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    window.refreshLogsPage();
+});
+document.addEventListener('rmsTableSorted', () => {
+    window.refreshLogsPage();
 });
 </script>
 @endpush

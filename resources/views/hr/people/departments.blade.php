@@ -152,8 +152,10 @@ function filterDeptsTable() {
     _deptPage = 1;
     renderDeptPage();
 }
+window.filterDeptsTable = filterDeptsTable;
 
 document.addEventListener('DOMContentLoaded', () => { filterDeptsTable(); });
+document.addEventListener('rmsTableSorted', () => { filterDeptsTable(); });
 </script>
 @endpush
 @endsection

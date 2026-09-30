@@ -3,6 +3,25 @@
 @section('title', $employee->full_name . ' - Employee Profile')
 
 @section('content')
+@if($errors->any())
+    <div style="background: #fee2e2; border: 1.5px solid #ef4444; border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; color: #991b1b; box-shadow: 0 2px 8px rgba(239, 68, 68, 0.15);">
+        <div style="font-weight: 700; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
+            <i class="ph ph-warning-circle" style="font-size: 18px;"></i>
+            <span>Unable to update profile. Please review the following:</span>
+        </div>
+        <ul style="margin: 0; padding-left: 24px; font-size: 13px;">
+            @foreach($errors->all() as $err)
+                <li>{{ $err }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
+@if(session('success'))
+    <div style="background: #dcfce7; border: 1.5px solid #22c55e; border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; color: #166534; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 8px rgba(34, 197, 94, 0.15);">
+        <i class="ph ph-check-circle" style="font-size: 20px;"></i>
+        <span style="font-weight: 600;">{{ session('success') }}</span>
+    </div>
+@endif
 <div class="hr-page-header">
     <div style="display: flex; align-items: center; gap: 20px;">
         @if($employee->photo_url)
@@ -601,7 +620,7 @@
                     </div>
                     <div class="hr-form-group">
                         <label class="hr-form-label">Date Hired *</label>
-                        <input type="date" name="date_hired" class="hr-input" required value="{{ $employee->date_hired }}">
+                        <input type="date" name="date_hired" class="hr-input" required value="{{ $employee->date_hired ? \Carbon\Carbon::parse($employee->date_hired)->format('Y-m-d') : date('Y-m-d') }}">
                     </div>
                     <div class="hr-form-group">
                         <label class="hr-form-label">Status *</label>
@@ -818,6 +837,11 @@ function syncPrimaryCheckbox(type, id) {
     const cb = document.getElementById('cb_' + type + '_' + id);
     if (cb) cb.checked = true;
 }
+@if($errors->any())
+document.addEventListener('DOMContentLoaded', () => {
+    openModal('editEmployeeModal');
+});
+@endif
 </script>
 @endpush
 @endsection

@@ -142,9 +142,16 @@ function renderPosPage() {
     nav.innerHTML = h;
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+window.refreshPosPage = function() {
     _posRows = Array.from(document.querySelectorAll('#posTableBody tr.pos-row'));
     renderPosPage();
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    window.refreshPosPage();
+});
+document.addEventListener('rmsTableSorted', () => {
+    window.refreshPosPage();
 });
 </script>
 @endpush

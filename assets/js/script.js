@@ -907,5 +907,359 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     };
+
+    // -------------------------------------------------------------
+    // Global SweetAlert2 Confirmation Dialog Helpers & Auto-Interceptor
+    // -------------------------------------------------------------
+    window.rmsConfirm = function(options = {}) {
+        if (typeof Swal === 'undefined') {
+            return Promise.resolve(confirm(options.text || options.title || 'Are you sure?'));
+        }
+        const isDanger = options.isDanger !== false;
+        return Swal.fire({
+            title: options.title || 'Are you sure?',
+            html: options.html || options.text || '',
+            icon: options.icon || (isDanger ? 'warning' : 'question'),
+            showCancelButton: true,
+            confirmButtonColor: options.confirmColor || (isDanger ? '#dc2626' : '#7c3aed'),
+            cancelButtonColor: options.cancelColor || '#64748b',
+            confirmButtonText: options.confirmText || (isDanger ? 'Yes, proceed' : 'Confirm'),
+            cancelButtonText: options.cancelText || 'Cancel',
+            reverseButtons: true,
+            customClass: {
+                popup: 'rms-swal-popup',
+                confirmButton: isDanger ? 'swal2-danger' : ''
+            }
+        }).then(result => result.isConfirmed);
+    };
+
+    // Auto-upgrade native HTML forms with onsubmit="return confirm(...)"
+    document.querySelectorAll('form[onsubmit*="confirm("]').forEach(function(form) {
+        const onsubmitAttr = form.getAttribute('onsubmit') || '';
+        const match = onsubmitAttr.match(/confirm\((?:'|")([^'"]+)(?:'|")\)/);
+        if (match) {
+            const promptMsg = match[1].replace(/\\'/g, "'").replace(/\\"/g, '"');
+            form.removeAttribute('onsubmit');
+            form.addEventListener('submit', function(e) {
+                if (form.dataset.swalApproved === 'true') return;
+                e.preventDefault();
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: 'Are you sure?',
+                        html: promptMsg,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#dc2626',
+                        cancelButtonColor: '#64748b',
+                        confirmButtonText: 'Yes, Proceed',
+                        cancelButtonText: 'Cancel',
+                        reverseButtons: true,
+                        customClass: {
+                            confirmButton: 'swal2-danger'
+                        }
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            form.dataset.swalApproved = 'true';
+                            form.submit();
+                        }
+                    });
+                } else if (confirm(promptMsg)) {
+                    form.dataset.swalApproved = 'true';
+                    form.submit();
+                }
+            });
+        }
+    });
+
+    // Initialize Universal DataTables-style Table Sorter
+    if (typeof window.initRmsTableSorting === 'function') {
+        window.initRmsTableSorting();
+    }
 });
+
+// =========================================================================
+// Universal DataTables-Style Table Sorter for All RMS Tables
+// =========================================================================
+function initRmsTableSorting() {
+    const tableSelectors = [
+        'table.hr-table',
+        'table.datatable',
+        'table.table-sortable',
+        'table.vendor-table',
+        'table.rfq-table',
+        'table.po-table',
+        'table.stk-table',
+        'table.bom-table',
+        'table.inv-master-table',
+        'table.hr-recent-table',
+        'table.rms-table'
+    ].join(', ');
+
+    const tables = document.querySelectorAll(tableSelectors);
+
+    tables.forEach(table => {
+        // Skip tables explicitly marked as non-sortable or matrix grid schedules
+        if (table.classList.contains('sched-matrix-table') || 
+            table.classList.contains('no-sort') || 
+            table.getAttribute('data-no-sort') === 'true' ||
+            table.closest('.sched-matrix-wrapper') ||
+            table.closest('.sched-matrix-container')) {
+            return;
+        }
+
+        // Skip tables with their own custom sorting implementation
+        if (table.getAttribute('data-custom-sort') === 'true' ||
+            table.id === 'employeesDirectoryTable' ||
+            table.id === 'companiesTable' ||
+            table.id === 'documentsTable') {
+            return;
+        }
+
+        const thead = table.querySelector('thead');
+        const tbody = table.querySelector('tbody');
+        if (!thead || !tbody) return;
+
+        // Target last row of headers
+        const headerRow = thead.querySelector('tr:last-child');
+        if (!headerRow) return;
+
+        const ths = Array.from(headerRow.querySelectorAll('th'));
+        
+        ths.forEach((th, colIndex) => {
+            // Check if column is an action column or explicitly non-sortable
+            const rawText = th.textContent.trim().toUpperCase();
+            const actionLabels = ['ACTIONS', 'ACTION', 'WORKFLOW ACTIONS', 'MANUAL PUNCH', 'MANUAL', 'ADJUST', 'SELECT', 'ALL', '#', '', 'OPERATIONS', 'PREVIEW'];
+            const isActionCol = th.classList.contains('no-sort') || 
+                                th.classList.contains('non-sortable') ||
+                                th.getAttribute('data-sortable') === 'false' ||
+                                th.hasAttribute('onclick') ||
+                                actionLabels.includes(rawText) ||
+                                th.querySelector('input[type="checkbox"]');
+
+            if (isActionCol) return;
+
+            // Mark as sortable if not already
+            if (!th.classList.contains('sortable')) {
+                th.classList.add('sortable');
+                th.setAttribute('title', `Click to sort by ${th.textContent.trim()} (Ascending / Descending)`);
+
+                // If not already wrapped with sort-icon
+                if (!th.querySelector('.sort-icon')) {
+                    const currentHtml = th.innerHTML.trim();
+                    th.innerHTML = `
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%;">
+                            <span>${currentHtml}</span>
+                            <span style="display: inline-flex; align-items: center; flex-shrink: 0;">
+                                <span class="sort-badge asc">ASC</span>
+                                <span class="sort-badge desc">DESC</span>
+                                <span class="sort-icon"><i class="ph ph-arrows-down-up"></i></span>
+                            </span>
+                        </div>
+                    `;
+                }
+            }
+
+            // Avoid attaching duplicate click listeners
+            if (th.dataset.rmsSortBound === 'true') return;
+            th.dataset.rmsSortBound = 'true';
+
+            th.addEventListener('click', (e) => {
+                // Don't trigger if clicked on an input, button, select, or link inside th
+                if (e.target.closest('input, button, select, a, label')) return;
+
+                // Cycle sort state: none -> asc -> desc -> none
+                let currentDir = th.dataset.sortDir || 'none';
+                let nextDir = 'asc';
+                if (currentDir === 'asc') nextDir = 'desc';
+                else if (currentDir === 'desc') nextDir = 'none';
+
+                // Reset all other headers in this table
+                ths.forEach(otherTh => {
+                    otherTh.classList.remove('sorted-asc', 'sorted-desc');
+                    otherTh.dataset.sortDir = 'none';
+                    const icon = otherTh.querySelector('.sort-icon i');
+                    if (icon) icon.className = 'ph ph-arrows-down-up';
+                });
+
+                if (nextDir !== 'none') {
+                    th.classList.add(nextDir === 'asc' ? 'sorted-asc' : 'sorted-desc');
+                    th.dataset.sortDir = nextDir;
+                    const icon = th.querySelector('.sort-icon i');
+                    if (icon) {
+                        icon.className = nextDir === 'asc' ? 'ph ph-caret-up' : 'ph ph-caret-down';
+                    }
+                }
+
+                // Perform sorting on tbody rows
+                sortHtmlTable(table, tbody, colIndex, nextDir);
+            });
+        });
+    });
+}
+
+window.initRmsTableSorting = initRmsTableSorting;
+
+// Automatically run if script loads after DOM is ready
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    setTimeout(initRmsTableSorting, 1);
+}
+
+function sortHtmlTable(table, tbody, colIndex, direction) {
+    const allRows = Array.from(tbody.querySelectorAll('tr'));
+    
+    // Separate data rows from special empty/no-results rows
+    const dataRows = [];
+    const pinnedRows = [];
+
+    allRows.forEach((row, idx) => {
+        // Tag original index if not already
+        if (typeof row._origSortIndex === 'undefined') {
+            row._origSortIndex = idx;
+        }
+
+        const isPinned = row.classList.contains('no-results-row') ||
+                         row.classList.contains('empty-row') ||
+                         row.id === 'noEmpResultsRow' ||
+                         row.querySelector('td[colspan]');
+
+        if (isPinned) {
+            pinnedRows.push(row);
+        } else {
+            dataRows.push(row);
+        }
+    });
+
+    if (direction === 'none') {
+        // Reset to original DOM order
+        dataRows.sort((a, b) => a._origSortIndex - b._origSortIndex);
+    } else {
+        dataRows.sort((rowA, rowB) => {
+            const cellA = rowA.children[colIndex];
+            const cellB = rowB.children[colIndex];
+
+            if (!cellA && !cellB) return 0;
+            if (!cellA) return 1;
+            if (!cellB) return -1;
+
+            const valA = getCellSortValue(cellA);
+            const valB = getCellSortValue(cellB);
+
+            // Compare parsed values
+            let cmp = 0;
+            if (valA.type === 'number' && valB.type === 'number') {
+                cmp = valA.value - valB.value;
+            } else if (valA.type === 'date' && valB.type === 'date') {
+                cmp = valA.value - valB.value;
+            } else {
+                cmp = String(valA.value).localeCompare(String(valB.value), undefined, { 
+                    numeric: true, 
+                    sensitivity: 'base' 
+                });
+            }
+
+            return direction === 'asc' ? cmp : -cmp;
+        });
+    }
+
+    // Re-append in sorted order
+    dataRows.forEach(row => tbody.appendChild(row));
+    pinnedRows.forEach(row => tbody.appendChild(row));
+
+    // Dispatch custom event for views to listen to
+    table.dispatchEvent(new CustomEvent('rmsTableSorted', {
+        bubbles: true,
+        detail: { table, tbody, colIndex, direction }
+    }));
+
+    // If table has custom filter / pagination callback, trigger it
+    if (typeof window.filterTimekeepingRows === 'function' && table.querySelector('.timekeeping-row')) {
+        window.filterTimekeepingRows();
+    }
+    if (typeof window.filterDeptsTable === 'function' && table.querySelector('.dept-row')) {
+        window.filterDeptsTable();
+    }
+    if (typeof window.refreshBranchPage === 'function' && table.querySelector('.branch-row')) {
+        window.refreshBranchPage();
+    }
+    if (typeof window.refreshPosPage === 'function' && table.querySelector('.pos-row')) {
+        window.refreshPosPage();
+    }
+    if (typeof window.refreshUsersPage === 'function' && table.querySelector('.user-row')) {
+        window.refreshUsersPage();
+    }
+    if (typeof window.refreshLogsPage === 'function' && table.querySelector('.log-row')) {
+        window.refreshLogsPage();
+    }
+}
+
+function getCellSortValue(cell) {
+    // 1. Check explicit data attributes
+    const attrVal = cell.getAttribute('data-sort-value') || 
+                    cell.getAttribute('data-sort') || 
+                    cell.getAttribute('data-value') || 
+                    cell.getAttribute('data-date') || 
+                    cell.getAttribute('data-timestamp') || 
+                    cell.getAttribute('data-id');
+    if (attrVal !== null && attrVal !== '') {
+        const num = Number(attrVal);
+        if (!isNaN(num)) return { type: 'number', value: num };
+        const d = Date.parse(attrVal);
+        if (!isNaN(d)) return { type: 'date', value: d };
+        return { type: 'text', value: attrVal.trim().toLowerCase() };
+    }
+
+    // 2. Check form inputs or selects inside cell
+    const input = cell.querySelector('input, select');
+    if (input && (input.type === 'text' || input.type === 'number' || input.tagName === 'SELECT')) {
+        const v = (input.value || '').trim();
+        const n = Number(v);
+        if (!isNaN(n) && v !== '') return { type: 'number', value: n };
+        return { type: 'text', value: v.toLowerCase() };
+    }
+
+    // 3. Extract plain text content
+    let rawText = cell.innerText.trim();
+    if (!rawText) return { type: 'text', value: '' };
+
+    // Check for negative currency / accounting format: "(₱ 500.00)" or "(120.50)"
+    let isNegative = false;
+    if (/^\(.*\)$/.test(rawText)) {
+        isNegative = true;
+        rawText = rawText.replace(/^\(|\)$/g, '').trim();
+    }
+
+    // Check for currency or numeric with unit: e.g. "₱ 12,500.00", "8.5 hrs", "10%", "$45.00", "15 day(s)"
+    const cleanedNumStr = rawText.replace(/[₱$,%\s]/g, '')
+                                 .replace(/hrs?|days?|mins?|day\(s\)|hours?|staff|items?|pcs?|employees/gi, '')
+                                 .trim();
+    if (cleanedNumStr !== '' && !isNaN(Number(cleanedNumStr)) && /^[\d.-]+$/.test(cleanedNumStr)) {
+        let val = parseFloat(cleanedNumStr);
+        if (isNegative) val = -val;
+        return { type: 'number', value: val };
+    }
+
+    // Check for date ranges or standard date formats: "2026-09-30", "Sep 30, 2026", "Sep 25 - Sep 30, 2026", "09/30/2026"
+    const dateMatch = rawText.match(/\b([a-zA-Z]{3,9}\s+\d{1,2}(?:,\s+\d{4})?|\d{4}-\d{2}-\d{2}|\d{1,2}\/\d{1,2}\/\d{4})\b/);
+    if (dateMatch) {
+        const parsedDate = Date.parse(dateMatch[1]);
+        if (!isNaN(parsedDate)) {
+            return { type: 'date', value: parsedDate };
+        }
+    }
+
+    // Check for time: e.g. "08:00 - 17:00", "10:30", "14:15:00", "08:00 AM"
+    const timeMatch = rawText.match(/^(\d{1,2}):(\d{2})(?::\d{2})?(?:\s*(AM|PM))?/i);
+    if (timeMatch && !rawText.includes('/')) {
+        let hrs = parseInt(timeMatch[1], 10);
+        const mins = parseInt(timeMatch[2], 10);
+        const meridiem = timeMatch[3] ? timeMatch[3].toUpperCase() : null;
+        if (meridiem === 'PM' && hrs < 12) hrs += 12;
+        if (meridiem === 'AM' && hrs === 12) hrs = 0;
+        return { type: 'number', value: hrs * 60 + mins };
+    }
+
+    return { type: 'text', value: rawText.toLowerCase() };
+}
+
+
 

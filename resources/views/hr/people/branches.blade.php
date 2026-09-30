@@ -153,9 +153,16 @@ function renderBranchPage() {
     nav.innerHTML = h;
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+window.refreshBranchPage = function() {
     _branchRows = Array.from(document.querySelectorAll('#branchTableBody tr.branch-row'));
     renderBranchPage();
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    window.refreshBranchPage();
+});
+document.addEventListener('rmsTableSorted', () => {
+    window.refreshBranchPage();
 });
 </script>
 @endpush

@@ -2603,15 +2603,26 @@ a {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
-.hr-table th.sortable {
+th.sortable,
+.hr-table th.sortable,
+.datatable th.sortable,
+.table-sortable th.sortable,
+.vendor-table th.sortable,
+.rfq-table th.sortable,
+.po-table th.sortable,
+.stk-table th.sortable,
+.bom-table th.sortable,
+.inv-master-table th.sortable {
     cursor: pointer;
     user-select: none;
     transition: background 0.15s, color 0.15s;
 }
+th.sortable:hover,
 .hr-table th.sortable:hover {
     background: #f1f5f9 !important;
     color: #7c3aed;
 }
+th.sortable .sort-icon,
 .hr-table th.sortable .sort-icon {
     display: inline-flex;
     align-items: center;
@@ -2620,15 +2631,20 @@ a {
     color: #94a3b8;
     transition: color 0.15s;
 }
+th.sortable.sorted-asc,
+th.sortable.sorted-desc,
 .hr-table th.sortable.sorted-asc,
 .hr-table th.sortable.sorted-desc {
     color: #7c3aed;
     background: #f3e8ff !important;
 }
+th.sortable.sorted-asc .sort-icon,
+th.sortable.sorted-desc .sort-icon,
 .hr-table th.sortable.sorted-asc .sort-icon,
 .hr-table th.sortable.sorted-desc .sort-icon {
     color: #7c3aed;
 }
+th.sortable .sort-badge,
 .hr-table th.sortable .sort-badge {
     font-size: 9.5px;
     font-weight: 700;
@@ -2640,9 +2656,11 @@ a {
     display: none;
     letter-spacing: 0.04em;
 }
+th.sortable.sorted-asc .sort-badge.asc,
 .hr-table th.sortable.sorted-asc .sort-badge.asc {
     display: inline-block;
 }
+th.sortable.sorted-desc .sort-badge.desc,
 .hr-table th.sortable.sorted-desc .sort-badge.desc {
     display: inline-block;
 }

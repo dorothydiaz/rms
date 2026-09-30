@@ -341,9 +341,16 @@ function renderUsersPage() {
     nav.innerHTML = h;
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+window.refreshUsersPage = function() {
     _usersRows = Array.from(document.querySelectorAll('#usersTableBody tr.user-row'));
     renderUsersPage();
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    window.refreshUsersPage();
+});
+document.addEventListener('rmsTableSorted', () => {
+    window.refreshUsersPage();
 });
 
 function editUser(user) {
