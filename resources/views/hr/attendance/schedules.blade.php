@@ -83,21 +83,18 @@
                     <i class="ph ph-plus-circle" style="color: #7c3aed; font-size: 15px;"></i>
                     <span>Add Template</span>
                 </button>
-                <button type="button" class="sched-top-btn sched-top-btn-secondary" onclick="openScheduleManagerTab('fill_grid')" title="Fill Weekly Grid">
+                <button type="button" class="sched-top-btn sched-top-btn-secondary" onclick="openBatchFillGridModal()" title="Fill Weekly Grid for Multiple or All Employees">
                     <i class="ph ph-magic-wand" style="color: #d97706; font-size: 15px;"></i>
                     <span>Fill Grid</span>
-                </button>
-                <button type="button" class="sched-top-btn sched-top-btn-secondary" onclick="triggerCopyPreviousWeek()" title="Copy schedules from previous week">
-                    <i class="ph ph-copy" style="color: #2563eb; font-size: 15px;"></i>
-                    <span>Copy Prev</span>
                 </button>
                 <button type="button" class="sched-top-btn sched-top-btn-secondary" onclick="openShiftMasterModal()" title="Shift Settings">
                     <i class="ph ph-sliders" style="color: #64748b; font-size: 15px;"></i>
                     <span>Shift Settings</span>
                 </button>
-                <button type="button" class="sched-top-btn sched-top-btn-save" onclick="showSchedToast('All shift changes saved and active!')" title="Save Grid">
+                <button type="button" class="sched-top-btn sched-top-btn-save" id="btnSaveGrid" onclick="saveDraftSchedules()" title="Save Grid Schedules">
                     <i class="ph ph-floppy-disk" style="font-size: 15px;"></i>
-                    <span>Save</span>
+                    <span id="saveBtnLabel">Save</span>
+                    <span id="saveBtnBadge" class="sched-badge-count" style="display: none; background: #ffffff; color: #7c3aed; font-weight: 800; margin-left: 5px; padding: 1px 7px; border-radius: 999px; font-size: 10.5px;">0</span>
                 </button>
             </div>
         </div>
@@ -212,6 +209,7 @@
         </div>
 
         <!-- 3. Real-time Search Input -->
+<<<<<<< HEAD
         <div style="position: relative; min-width: 300px; margin-left: auto;">
             <i class="ph ph-magnifying-glass" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 15px;"></i>
             <input type="text" id="liveEmployeeSearch" placeholder="Search employees, position, branch…" 
@@ -220,6 +218,14 @@
             <button type="button" id="clearSearchBtn" onclick="clearLiveSearch()" 
                     style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); border: none; background: transparent; color: #94a3b8; cursor: pointer; display: none; font-size: 16px; line-height: 1;">
                 &times;
+=======
+        <div class="sched-live-search-wrap">
+            <i class="ph ph-magnifying-glass sched-live-search-icon"></i>
+            <input type="text" id="liveEmployeeSearch" class="sched-live-search-input" placeholder="Search visible rows..." 
+                   oninput="filterMatrixRowsBySearch()">
+            <button type="button" id="clearSearchBtn" class="sched-live-search-clear" onclick="clearLiveSearch()" title="Clear search">
+                <i class="ph ph-x" style="font-size: 11px;"></i>
+>>>>>>> 47136233d8ae9b70fa4a774f00b4f5830090e299
             </button>
         </div>
 
@@ -608,10 +614,6 @@
             </div>
         </div>
         <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
-            <button type="button" class="sched-top-btn sched-top-btn-secondary" onclick="triggerCopyPreviousWeek()" title="Copy schedules from previous week" style="height: 28px; padding: 0 8px; font-size: 11px; font-weight: 700; border-radius: 7px;">
-                <i class="ph ph-copy" style="color: #2563eb; font-size: 12px;"></i>
-                <span>Copy Prev</span>
-            </button>
             <button type="button" class="sched-btn-close-sm" onclick="closeCellCustomDropdown()" title="Close manager">
                 <i class="ph ph-x"></i>
             </button>
@@ -727,10 +729,15 @@
         </div>
     </div>
 
-    <!-- Tab 2: Fill Grid (Locked to Selected Schedule Owner, No Option for All) -->
+    <!-- Tab 2: Fill Grid -->
     <div class="sched-mgr-tab-panel" id="tabPanel_fill_grid" style="display: none;">
-        <form method="POST" action="{{ route('hr.attendance.schedules.store') }}" id="scheduleManagerAssignForm" style="display: flex; flex-direction: column; flex: 1; min-height: 0; gap: 10px;">
+        <form method="POST" action="javascript:void(0);" id="scheduleManagerAssignForm" onsubmit="event.preventDefault(); applySingleEmpFillGridDraft();" style="display: flex; flex-direction: column; flex: 1; min-height: 0; gap: 10px;">
             @csrf
+            <div style="display: flex; justify-content: flex-end; margin-bottom: -4px;">
+                <button type="button" class="sched-preset-btn" style="color: #7c3aed; font-weight: 700; border-color: #ddd6fe; background: #faf5ff; font-size: 10.5px; padding: 3px 8px;" onclick="closeCellCustomDropdown(); openBatchFillGridModal();">
+                    <i class="ph ph-users"></i> Fill Multiple / All Staff
+                </button>
+            </div>
             <!-- Employee Info Card (Connected Directly to Clicked Employee) -->
             <div class="sched-owner-card">
                 <div class="sched-owner-avatar" id="fillGridOwnerAvatar">BV</div>
@@ -815,7 +822,7 @@
             <!-- Submit Button (anchored at bottom) -->
             <button type="submit" class="sched-btn-apply-custom" style="margin-top: auto;">
                 <i class="ph ph-magic-wand" style="font-size: 14px;"></i>
-                <span>Assign Schedule for <span id="fillGridSubmitName">Employee</span></span>
+                <span>Apply Schedule for <span id="fillGridSubmitName">Employee</span> (Draft)</span>
             </button>
         </form>
     </div>
@@ -882,6 +889,174 @@
                 </button>
             </div>
         </form>
+    </div>
+</div>
+
+<!-- Modal: Batch Fill Schedule Grid (Multi or All Employees as Draft) -->
+<div id="batchFillGridModal" class="hr-modal-overlay">
+    <div class="hr-modal" style="max-width: 580px; width: 95%;">
+        <!-- Header -->
+        <div class="hr-modal-header" style="background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%); border-bottom: 1.5px solid #e9d5ff; padding: 14px 18px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%); color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 18px; box-shadow: 0 4px 10px rgba(217, 119, 6, 0.25);">
+                    <i class="ph ph-magic-wand"></i>
+                </div>
+                <div>
+                    <h3 style="font-size: 15px; font-weight: 800; color: #1e1b4b; margin: 0; letter-spacing: -0.2px;">Fill Schedule Grid</h3>
+                    <p style="font-size: 11.5px; color: #6b21a8; margin: 0; font-weight: 600;">Select multiple or all employees to fill shifts as draft</p>
+                </div>
+            </div>
+            <button type="button" class="icon-btn" onclick="closeModal('batchFillGridModal')" title="Close"><i class="ph ph-x"></i></button>
+        </div>
+
+        <div class="hr-modal-body" style="padding: 16px 20px; display: flex; flex-direction: column; gap: 14px; max-height: calc(85vh - 120px); overflow-y: auto;">
+            
+            <!-- Employee Scope Selection: All vs Multiple Specific -->
+            <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 12px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                    <label style="font-size: 11px; font-weight: 800; color: #0f172a; text-transform: uppercase; margin: 0; letter-spacing: 0.3px; display: flex; align-items: center; gap: 6px;">
+                        <i class="ph ph-users" style="color: #7c3aed; font-size: 14px;"></i>
+                        Target Employees *
+                    </label>
+                    <span id="batchEmpSelectedSummaryBadge" class="sched-badge-count" style="background: #ede9fe; color: #6d28d9; font-weight: 800; padding: 2px 8px; border-radius: 999px; font-size: 11px;">
+                        All in Grid
+                    </span>
+                </div>
+
+                <!-- Scope Toggle Tabs -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 10px;">
+                    <button type="button" id="btnBatchScopeAll" class="sched-scope-btn active" onclick="setBatchFillScope('all')">
+                        <i class="ph ph-check-circle" id="iconBatchScopeAll"></i>
+                        <span>All Employees in Grid</span>
+                    </button>
+                    <button type="button" id="btnBatchScopeCustom" class="sched-scope-btn" onclick="setBatchFillScope('custom')">
+                        <i class="ph ph-list-checks" id="iconBatchScopeCustom"></i>
+                        <span>Select Specific Employees</span>
+                    </button>
+                </div>
+
+                <!-- Custom Employee Selector Box (Collapsible / Toggleable) -->
+                <div id="batchCustomEmpWrap" style="display: none; flex-direction: column; gap: 8px; border-top: 1px dashed #cbd5e1; padding-top: 10px;">
+                    <!-- Search & Quick Selection Row -->
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <div style="position: relative; flex: 1;">
+                            <i class="ph ph-magnifying-glass" style="position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 12px;"></i>
+                            <input type="text" id="batchEmpSearchInput" placeholder="Filter by name, ID, position..." class="sched-input-search" style="padding-left: 28px; height: 32px; font-size: 11.5px;" oninput="filterBatchModalEmployees()">
+                        </div>
+                        <div style="display: flex; gap: 4px; flex-shrink: 0;">
+                            <button type="button" class="sched-preset-btn" onclick="batchSelectAllEmps(true)">Select All</button>
+                            <button type="button" class="sched-preset-btn" onclick="batchSelectAllEmps(false)">Clear</button>
+                        </div>
+                    </div>
+
+                    <!-- Department Category Filter Pills -->
+                    <div style="display: flex; gap: 4px; overflow-x: auto; padding-bottom: 2px;" id="batchDeptFilterBar">
+                        <button type="button" class="batch-dept-pill active" onclick="filterBatchEmpsByDept('all', this)">All</button>
+                        @foreach($categories as $cat)
+                            <button type="button" class="batch-dept-pill" onclick="filterBatchEmpsByDept('{{ strtolower($cat) }}', this)">{{ $cat }}</button>
+                        @endforeach
+                    </div>
+
+                    <!-- Scrollable Employee Checklist -->
+                    <div id="batchEmpChecklist" class="custom-scrollbar" style="max-height: 150px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 6px; background: #ffffff;">
+                        <!-- Rendered dynamically from grid employees -->
+                    </div>
+                </div>
+
+                <div id="batchAllEmpNotice" style="display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: #475569; font-weight: 600; padding: 4px 6px;">
+                    <i class="ph ph-sparkle" style="color: #d97706; font-size: 14px;"></i>
+                    <span>Will apply to <strong id="batchAllEmpCountText">all employees</strong> currently displayed on your schedule matrix.</span>
+                </div>
+            </div>
+
+            <!-- Date Range Selection with Presets -->
+            <div class="hr-form-group" style="margin-top: 0; margin-bottom: 0;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                    <label class="hr-form-label" style="font-size: 11px; font-weight: 800; color: #0f172a; margin-bottom: 0; text-transform: uppercase;">
+                        Date Range *
+                    </label>
+                    <div style="display: flex; gap: 3px;">
+                        <button type="button" class="sched-preset-btn" onclick="presetBatchDateRange('today')">Today</button>
+                        <button type="button" class="sched-preset-btn" onclick="presetBatchDateRange('this_week')">This Week</button>
+                        <button type="button" class="sched-preset-btn" onclick="presetBatchDateRange('next_week')">Next Week</button>
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <div>
+                        <small style="font-size: 9.5px; color: #64748b; font-weight: 700; display: block; margin-bottom: 2px;">Start Date</small>
+                        <input type="date" id="batchSchedStartDate" class="sched-input-text-sm" required value="{{ $weekStart }}" onchange="syncBatchDateRange()">
+                    </div>
+                    <div>
+                        <small style="font-size: 9.5px; color: #64748b; font-weight: 700; display: block; margin-bottom: 2px;">End Date</small>
+                        <input type="date" id="batchSchedEndDate" class="sched-input-text-sm" required value="{{ end($dates) }}">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Shift Format Selection -->
+            <div class="hr-form-group" style="margin-top: 0; margin-bottom: 0;">
+                <label class="hr-form-label" style="font-size: 11px; font-weight: 800; color: #0f172a; margin-bottom: 3px; text-transform: uppercase;">
+                    Shift Format *
+                </label>
+                <select id="batchSchedShiftTemplateId" class="sched-input-text-sm" style="font-weight: 700; height: 36px;">
+                    <option value="">Select Shift Format</option>
+                    @foreach($shiftTemplates as $st)
+                        <option value="{{ $st->id }}" 
+                                data-code="{{ $st->code }}" 
+                                data-name="{{ $st->name }}" 
+                                data-start="{{ substr($st->start_time, 0, 5) }}" 
+                                data-end="{{ substr($st->end_time, 0, 5) }}"
+                                data-color="{{ $st->color ?? '#7c3aed' }}"
+                                {{ $loop->first ? 'selected' : '' }}>
+                            {{ $st->formatted_label ?? $st->name }}
+                        </option>
+                    @endforeach
+                    <option value="OFF" data-code="OFF" data-name="RESTDAY" data-start="" data-end="" data-color="#64748b">
+                        RESTDAY = OFF DUTY (Rest Day)
+                    </option>
+                </select>
+            </div>
+
+            <!-- Weekly Rest Days Selection -->
+            <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 10px 12px; margin-top: 0;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                    <div style="font-size: 10.5px; font-weight: 800; color: #0f172a; text-transform: uppercase;">
+                        Rest Days (Off Duty)
+                    </div>
+                    <div style="display: flex; gap: 3px;">
+                        <button type="button" class="sched-preset-btn" onclick="setBatchRestDaysPreset(['Sat', 'Sun'])">Sat & Sun</button>
+                        <button type="button" class="sched-preset-btn" onclick="setBatchRestDaysPreset(['Sun'])">Sunday</button>
+                        <button type="button" class="sched-preset-btn" onclick="clearBatchRestDaysPreset()">Clear</button>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 5px; flex-wrap: wrap; margin-top: 6px;">
+                    @foreach(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as $day)
+                        <label style="display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 700; color: #334155; padding: 4px 8px; background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 7px; cursor: pointer; user-select: none;">
+                            <input type="checkbox" value="{{ $day }}" id="batch_rest_day_{{ $day }}" class="batch-rest-day-cb" style="cursor: pointer;">
+                            {{ $day }}
+                        </label>
+                    @endforeach
+                </div>
+            </div>
+
+            <!-- Draft Notice Banner -->
+            <div style="background: #fffbeb; border: 1.5px solid #fde68a; border-radius: 9px; padding: 8px 12px; display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: #92400e; font-weight: 600;">
+                <i class="ph ph-info" style="font-size: 16px; color: #d97706; flex-shrink: 0;"></i>
+                <span><strong>Draft Mode:</strong> Shifts will be plotted into the grid as draft. They will NOT be saved to the database until you click the <strong>"Save"</strong> button in the toolbar.</span>
+            </div>
+
+        </div>
+
+        <!-- Footer -->
+        <div class="hr-modal-footer" style="padding: 12px 20px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between;">
+            <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="closeModal('batchFillGridModal')">
+                Cancel
+            </button>
+            <button type="button" class="sched-btn-apply-custom" onclick="applyBatchFillGridDraft()" style="margin: 0; padding: 0 18px; height: 38px;">
+                <i class="ph ph-magic-wand" style="font-size: 15px;"></i>
+                <span id="batchApplyBtnText">Apply to Grid (Draft)</span>
+            </button>
+        </div>
     </div>
 </div>
 
@@ -1596,6 +1771,90 @@
 }
 .sched-btn-clear-grid:hover {
     background: #fef2f2;
+}
+
+/* Real-time Search Input (Prominent, High-Contrast & Standout) */
+.sched-live-search-wrap {
+    position: relative;
+    min-width: 260px;
+    max-width: 380px;
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+}
+
+.sched-live-search-input {
+    width: 100%;
+    height: 38px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #0f172a;
+    padding: 0 34px 0 38px;
+    background: #ffffff;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 9px;
+    outline: none;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    box-sizing: border-box;
+}
+
+.sched-live-search-input::placeholder {
+    color: #64748b;
+    font-weight: 500;
+    font-size: 12.5px;
+}
+
+.sched-live-search-wrap:hover .sched-live-search-input {
+    border-color: #8b5cf6;
+    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.12);
+}
+
+.sched-live-search-input:focus {
+    border-color: #7c3aed;
+    background: #ffffff;
+    box-shadow: 0 0 0 3.5px rgba(124, 58, 237, 0.18), 0 2px 8px rgba(124, 58, 237, 0.1);
+}
+
+.sched-live-search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #7c3aed;
+    font-size: 16px;
+    pointer-events: none;
+    transition: color 0.15s ease;
+}
+
+.sched-live-search-input:focus ~ .sched-live-search-icon {
+    color: #6d28d9;
+}
+
+.sched-live-search-clear {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: none;
+    background: #f1f5f9;
+    color: #64748b;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    line-height: 1;
+    transition: all 0.15s ease;
+    padding: 0;
+}
+
+.sched-live-search-clear:hover {
+    background: #fee2e2;
+    color: #ef4444;
 }
 
 .sched-btn-row-del {
@@ -2375,6 +2634,84 @@
     filter: brightness(1.05);
 }
 
+/* Draft Mode & Batch Fill Styles */
+.sched-shift-card.is-draft {
+    border: 2px dashed #f59e0b !important;
+    position: relative;
+    background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(245, 158, 11, 0.04) 10px, rgba(245, 158, 11, 0.04) 20px) !important;
+}
+.sched-draft-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    background: #fef3c7;
+    color: #b45309;
+    border: 1px solid #fde68a;
+    font-size: 9px;
+    font-weight: 800;
+    padding: 1px 5px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    line-height: 1.2;
+}
+.sched-top-btn-save.has-drafts {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+    color: #ffffff !important;
+    border-color: #047857 !important;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3), 0 4px 14px rgba(5, 150, 105, 0.35) !important;
+    animation: schedSavePulse 2s infinite ease-in-out;
+}
+@keyframes schedSavePulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.03); }
+}
+.sched-scope-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 7px 12px;
+    border-radius: 8px;
+    font-size: 11.5px;
+    font-weight: 700;
+    cursor: pointer;
+    border: 1.5px solid #e2e8f0;
+    background: #ffffff;
+    color: #64748b;
+    transition: all 0.15s ease;
+}
+.sched-scope-btn:hover {
+    border-color: #cbd5e1;
+    color: #1e293b;
+}
+.sched-scope-btn.active {
+    background: #f5f3ff;
+    border-color: #8b5cf6;
+    color: #6d28d9;
+    box-shadow: 0 1px 3px rgba(139, 92, 246, 0.15);
+}
+.batch-dept-pill {
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 10.5px;
+    font-weight: 700;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #64748b;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+}
+.batch-dept-pill:hover {
+    background: #f1f5f9;
+}
+.batch-dept-pill.active {
+    background: #7c3aed;
+    color: #ffffff;
+    border-color: #7c3aed;
+}
+
 /* SweetAlert2 Popup must always appear in front of Schedule Manager Window and Overlays */
 .swal2-container {
     z-index: 9999999 !important;
@@ -3044,6 +3381,11 @@ const QUICK_ASSIGN_URL = '{{ route('hr.attendance.schedules.quick-assign') }}';
 const COPY_WEEK_URL = '{{ route('hr.attendance.schedules.copy-week') }}';
 const QUICK_FILL_ROW_URL = '{{ route('hr.attendance.schedules.quick-fill-row') }}';
 const UPDATE_DEPT_URL = '{{ route('hr.attendance.schedules.update-employee-department') }}';
+const BATCH_SCHEDULE_URL = '{{ route('hr.attendance.schedules.batch') }}';
+let draftSchedules = {}; // Key: "empId_date", Value: { employee_id, date, shift_template_id, is_rest_day, custom_start_time, custom_end_time, notes, is_draft }
+let savedOriginalCells = {}; // Key: "empId_date", Value: original innerHTML before draft
+let batchSelectedEmpIds = [];
+let batchFillScope = 'all'; // 'all' or 'custom'
 const ALL_EMPLOYEES = @json(isset($allEmployees) ? $allEmployees : $employees);
 const ALL_DEPARTMENTS = @json($departmentsJson);
 const DEPT_COLORS = {
@@ -3208,6 +3550,10 @@ function switchScheduleManagerTab(tabKey, btnElement = null) {
 }
 
 function openScheduleManagerTab(tabKey) {
+    if (tabKey === 'fill_grid' && !activeCellEmpId) {
+        openBatchFillGridModal();
+        return;
+    }
     if (tabKey === 'shift_settings' || tabKey === 'category_defaults') {
         openShiftMasterModal();
         return;
@@ -3698,8 +4044,22 @@ function directPlotPreset(empId, date, code) {
 }
 
 function clearCellShift(empId, date) {
+    const draftKey = `${empId}_${date}`;
     const cell = document.getElementById(`cell_${empId}_${date}`);
     if (!cell) return;
+
+    if (typeof draftSchedules !== 'undefined' && draftSchedules[draftKey]) {
+        delete draftSchedules[draftKey];
+        if (typeof savedOriginalCells !== 'undefined' && savedOriginalCells[draftKey]) {
+            cell.innerHTML = savedOriginalCells[draftKey];
+            delete savedOriginalCells[draftKey];
+        } else {
+            renderEmptyCellHTML(cell, empId, date);
+        }
+        updateSaveButtonState();
+        showSchedToast('Draft shift removed');
+        return;
+    }
 
     const prevHTML = cell.innerHTML;
     renderEmptyCellHTML(cell, empId, date);
@@ -4409,7 +4769,7 @@ function _fuzzyMatch(haystack, query) {
 function filterMatrixRowsBySearch() {
     const q = (document.getElementById('liveEmployeeSearch')?.value || '').toLowerCase().trim();
     const clearBtn = document.getElementById('clearSearchBtn');
-    if (clearBtn) clearBtn.style.display = q ? 'block' : 'none';
+    if (clearBtn) clearBtn.style.display = q ? 'inline-flex' : 'none';
 
     const checkedCats = Array.from(document.querySelectorAll('.sched-cat-cb:checked')).map(cb => cb.value);
     const rows = document.querySelectorAll('.sched-row');
@@ -4845,6 +5205,545 @@ function escapeHtml(str) {
     if (!str) return '';
     return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
 }
+
+// -------------------------------------------------------------
+// Batch Fill Grid & Draft Schedules Engine
+// -------------------------------------------------------------
+function openBatchFillGridModal() {
+    setBatchFillScope('all');
+
+    const dates = @json($dates);
+    if (dates && dates.length > 0) {
+        const sInput = document.getElementById('batchSchedStartDate');
+        const eInput = document.getElementById('batchSchedEndDate');
+        if (sInput) sInput.value = dates[0];
+        if (eInput) eInput.value = dates[dates.length - 1];
+    }
+
+    renderBatchEmpChecklist();
+    openModal('batchFillGridModal');
+}
+
+function setBatchFillScope(scope) {
+    batchFillScope = scope;
+    const btnAll = document.getElementById('btnBatchScopeAll');
+    const btnCustom = document.getElementById('btnBatchScopeCustom');
+    const customWrap = document.getElementById('batchCustomEmpWrap');
+    const noticeAll = document.getElementById('batchAllEmpNotice');
+    const badge = document.getElementById('batchEmpSelectedSummaryBadge');
+    const allEmpCountText = document.getElementById('batchAllEmpCountText');
+
+    const gridRows = document.querySelectorAll('.sched-row[data-emp-id]');
+    const allIds = Array.from(gridRows).map(r => parseInt(r.getAttribute('data-emp-id'))).filter(Boolean);
+
+    if (allEmpCountText) {
+        allEmpCountText.textContent = `all ${allIds.length} employees`;
+    }
+
+    if (scope === 'all') {
+        if (btnAll) btnAll.classList.add('active');
+        if (btnCustom) btnCustom.classList.remove('active');
+        if (customWrap) customWrap.style.display = 'none';
+        if (noticeAll) noticeAll.style.display = 'flex';
+        
+        batchSelectedEmpIds = [...allIds];
+        if (badge) {
+            badge.textContent = `All in Grid (${batchSelectedEmpIds.length})`;
+            badge.style.background = '#ede9fe';
+            badge.style.color = '#6d28d9';
+        }
+    } else {
+        if (btnAll) btnAll.classList.remove('active');
+        if (btnCustom) btnCustom.classList.add('active');
+        if (customWrap) customWrap.style.display = 'flex';
+        if (noticeAll) noticeAll.style.display = 'none';
+
+        if (batchSelectedEmpIds.length === 0) {
+            batchSelectedEmpIds = [...allIds];
+        }
+
+        if (badge) {
+            badge.textContent = `${batchSelectedEmpIds.length} Selected`;
+            badge.style.background = '#f1f5f9';
+            badge.style.color = '#334155';
+        }
+        renderBatchEmpChecklist();
+    }
+
+    const applyText = document.getElementById('batchApplyBtnText');
+    if (applyText) {
+        applyText.textContent = `Apply to Grid (Draft)`;
+    }
+}
+
+function renderBatchEmpChecklist() {
+    const listEl = document.getElementById('batchEmpChecklist');
+    if (!listEl) return;
+
+    const q = (document.getElementById('batchEmpSearchInput')?.value || '').toLowerCase().trim();
+    const activeDeptBtn = document.querySelector('#batchDeptFilterBar .batch-dept-pill.active');
+    const activeDept = activeDeptBtn ? activeDeptBtn.textContent.trim().toLowerCase() : 'all';
+
+    const gridRows = document.querySelectorAll('.sched-row[data-emp-id]');
+    const gridEmps = [];
+    gridRows.forEach(r => {
+        const id = parseInt(r.getAttribute('data-emp-id'));
+        const name = r.querySelector('.sched-emp-name-text')?.textContent || r.getAttribute('data-emp-name') || 'Employee';
+        const dept = r.getAttribute('data-emp-cat') || 'General';
+        const branch = r.getAttribute('data-emp-branch') || 'Branch';
+        const initials = r.querySelector('.sched-emp-avatar')?.textContent?.trim() || name.substring(0, 2).toUpperCase();
+        gridEmps.push({ id, name, dept, branch, initials });
+    });
+
+    const filtered = gridEmps.filter(emp => {
+        const matchQ = !q || emp.name.toLowerCase().includes(q) || String(emp.id).includes(q) || emp.dept.toLowerCase().includes(q);
+        const matchDept = (activeDept === 'all') || emp.dept.toLowerCase().includes(activeDept);
+        return matchQ && matchDept;
+    });
+
+    if (filtered.length === 0) {
+        listEl.innerHTML = `<div style="padding: 14px; text-align: center; color: #94a3b8; font-size: 11px;">No employees match filter</div>`;
+        return;
+    }
+
+    let html = '';
+    filtered.forEach(emp => {
+        const isChecked = batchSelectedEmpIds.includes(emp.id);
+        html += `
+            <label style="display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; border-radius: 6px; background: ${isChecked ? '#f5f3ff' : '#f8fafc'}; border: 1px solid ${isChecked ? '#c4b5fd' : '#e2e8f0'}; cursor: pointer; user-select: none;">
+                <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
+                    <input type="checkbox" value="${emp.id}" ${isChecked ? 'checked' : ''} onchange="toggleBatchEmpSelection(${emp.id}, this.checked)" style="cursor: pointer;">
+                    <div class="sched-emp-avatar" style="width: 22px; height: 22px; font-size: 9px;">${escapeHtml(emp.initials)}</div>
+                    <div style="min-width: 0;">
+                        <div style="font-size: 11.5px; font-weight: 700; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(emp.name)}</div>
+                    </div>
+                </div>
+                <span style="font-size: 9.5px; font-weight: 700; color: #64748b; background: #e2e8f0; padding: 1px 6px; border-radius: 4px; text-transform: uppercase;">${escapeHtml(emp.dept)}</span>
+            </label>
+        `;
+    });
+    listEl.innerHTML = html;
+}
+
+function toggleBatchEmpSelection(empId, isChecked) {
+    if (isChecked) {
+        if (!batchSelectedEmpIds.includes(empId)) batchSelectedEmpIds.push(empId);
+    } else {
+        batchSelectedEmpIds = batchSelectedEmpIds.filter(id => id !== empId);
+    }
+    updateBatchEmpSelectionBadge();
+}
+
+function updateBatchEmpSelectionBadge() {
+    const badge = document.getElementById('batchEmpSelectedSummaryBadge');
+    if (badge) {
+        badge.textContent = `${batchSelectedEmpIds.length} Selected`;
+    }
+    const applyText = document.getElementById('batchApplyBtnText');
+    if (applyText) {
+        applyText.textContent = `Apply to Grid (Draft)`;
+    }
+}
+
+function batchSelectAllEmps(selectAll) {
+    const gridRows = document.querySelectorAll('.sched-row[data-emp-id]');
+    if (selectAll) {
+        batchSelectedEmpIds = Array.from(gridRows).map(r => parseInt(r.getAttribute('data-emp-id'))).filter(Boolean);
+    } else {
+        batchSelectedEmpIds = [];
+    }
+    renderBatchEmpChecklist();
+    updateBatchEmpSelectionBadge();
+}
+
+function filterBatchEmpsByDept(dept, btn) {
+    document.querySelectorAll('#batchDeptFilterBar .batch-dept-pill').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    renderBatchEmpChecklist();
+}
+
+function filterBatchModalEmployees() {
+    renderBatchEmpChecklist();
+}
+
+function presetBatchDateRange(type) {
+    var now = new Date();
+    var formatDate = function(d) {
+        var year = d.getFullYear();
+        var month = String(d.getMonth() + 1).padStart(2, '0');
+        var day = String(d.getDate()).padStart(2, '0');
+        return year + '-' + month + '-' + day;
+    };
+    var start = new Date();
+    var end = new Date();
+    if (type === 'today') {
+    } else if (type === 'this_week') {
+        var dayOfWeek = now.getDay();
+        var diffToMon = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+        start.setDate(now.getDate() + diffToMon);
+        end.setDate(start.getDate() + 6);
+    } else if (type === 'next_week') {
+        var dayOfWeek = now.getDay();
+        var diffToMon = dayOfWeek === 0 ? 1 : 8 - dayOfWeek;
+        start.setDate(now.getDate() + diffToMon);
+        end.setDate(start.getDate() + 6);
+    }
+    var sInput = document.getElementById('batchSchedStartDate');
+    var eInput = document.getElementById('batchSchedEndDate');
+    if (sInput) sInput.value = formatDate(start);
+    if (eInput) eInput.value = formatDate(end);
+}
+
+function syncBatchDateRange() {
+    var start = document.getElementById('batchSchedStartDate')?.value;
+    var end = document.getElementById('batchSchedEndDate')?.value;
+    if (start && (!end || end < start)) {
+        document.getElementById('batchSchedEndDate').value = start;
+    }
+}
+
+function setBatchRestDaysPreset(days) {
+    ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].forEach(function(d) {
+        var cb = document.getElementById('batch_rest_day_' + d);
+        if (cb) cb.checked = days.includes(d);
+    });
+}
+
+function clearBatchRestDaysPreset() {
+    ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].forEach(function(d) {
+        var cb = document.getElementById('batch_rest_day_' + d);
+        if (cb) cb.checked = false;
+    });
+}
+
+function applyBatchFillGridDraft() {
+    let targetEmpIds = [];
+    if (batchFillScope === 'all') {
+        const gridRows = document.querySelectorAll('.sched-row[data-emp-id]');
+        targetEmpIds = Array.from(gridRows).map(r => parseInt(r.getAttribute('data-emp-id'))).filter(Boolean);
+    } else {
+        targetEmpIds = [...batchSelectedEmpIds];
+    }
+
+    if (targetEmpIds.length === 0) {
+        showSchedToast('Please select at least one employee to fill', false);
+        return;
+    }
+
+    const startDate = document.getElementById('batchSchedStartDate')?.value;
+    const endDate = document.getElementById('batchSchedEndDate')?.value;
+    if (!startDate || !endDate) {
+        showSchedToast('Please select valid start and end dates', false);
+        return;
+    }
+
+    const templateSelect = document.getElementById('batchSchedShiftTemplateId');
+    const selectedOpt = templateSelect?.selectedOptions[0];
+    const val = templateSelect?.value;
+    if (!val) {
+        showSchedToast('Please select a shift format or rest day', false);
+        return;
+    }
+
+    const isAllRest = val === 'OFF';
+    const tmplCode = isAllRest ? 'OFF' : (selectedOpt?.getAttribute('data-code') || 'CUSTOM');
+    const tmplName = isAllRest ? 'RESTDAY' : (selectedOpt?.getAttribute('data-name') || selectedOpt?.text || 'Shift');
+    const tmplStart = selectedOpt?.getAttribute('data-start') || '';
+    const tmplEnd = selectedOpt?.getAttribute('data-end') || '';
+    const tmplColor = selectedOpt?.getAttribute('data-color') || '#7c3aed';
+    const tmplId = isAllRest ? null : (parseInt(val) || null);
+
+    const restDays = [];
+    ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].forEach(d => {
+        if (document.getElementById('batch_rest_day_' + d)?.checked) {
+            restDays.push(d);
+        }
+    });
+
+    const gridDates = @json($dates);
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    let plottedCount = 0;
+
+    targetEmpIds.forEach(empId => {
+        gridDates.forEach(d => {
+            if (d >= startDate && d <= endDate) {
+                const dateObj = new Date(d + 'T00:00:00');
+                const dayName = dayNames[dateObj.getDay()];
+                const isRest = isAllRest || restDays.includes(dayName);
+
+                const draftKey = `${empId}_${d}`;
+                const cell = document.getElementById(`cell_${empId}_${d}`);
+                if (cell) {
+                    if (!savedOriginalCells[draftKey]) {
+                        savedOriginalCells[draftKey] = cell.innerHTML;
+                    }
+
+                    const code = isRest ? 'OFF' : tmplCode;
+                    const label = isRest ? 'RESTDAY' : tmplName;
+                    const time = isRest ? 'OFF DUTY' : (tmplStart && tmplEnd ? `${tmplStart} - ${tmplEnd}` : '08:00 - 17:00');
+                    const themeClass = isRest ? 'sched-card-rest' : `sched-theme-${code.toLowerCase()}`;
+
+                    draftSchedules[draftKey] = {
+                        employee_id: empId,
+                        date: d,
+                        shift_template_id: isRest ? null : tmplId,
+                        is_rest_day: isRest,
+                        custom_start_time: isRest ? null : tmplStart,
+                        custom_end_time: isRest ? null : tmplEnd,
+                        notes: isRest ? 'RESTDAY' : tmplName,
+                        is_draft: true
+                    };
+
+                    renderAssignedCardHTML(cell, empId, d, code, label, time, themeClass, tmplColor);
+
+                    const card = cell.querySelector('.sched-shift-card');
+                    if (card) {
+                        card.classList.add('is-draft');
+                        const badgeWrap = card.querySelector('.sched-badge-wrap');
+                        if (badgeWrap && !badgeWrap.querySelector('.sched-draft-pill')) {
+                            const draftPill = document.createElement('span');
+                            draftPill.className = 'sched-draft-pill';
+                            draftPill.innerHTML = '<i class="ph ph-pencil-simple" style="font-size: 8px;"></i> Draft';
+                            badgeWrap.appendChild(draftPill);
+                        }
+                        const detailBadge = card.querySelector('.sched-detail-badge');
+                        if (detailBadge) {
+                            detailBadge.className = 'sched-detail-badge badge-draft';
+                            detailBadge.textContent = 'DRAFT';
+                            detailBadge.style.cssText = 'background: #fef3c7; color: #b45309; border: 1px solid #fcd34d; font-weight: 800;';
+                        }
+                    }
+                    plottedCount++;
+                }
+            }
+        });
+    });
+
+    closeModal('batchFillGridModal');
+    updateSaveButtonState();
+    showSchedToast(`Plotted ${plottedCount} shifts as draft across ${targetEmpIds.length} employee(s). Click "Save" to save.`);
+}
+
+function applySingleEmpFillGridDraft() {
+    const empId = document.getElementById('schedEmployeeIdModal')?.value || activeCellEmpId;
+    if (!empId) {
+        showSchedToast('No employee selected', false);
+        return;
+    }
+
+    const startDate = document.getElementById('schedStartDateModal')?.value;
+    const endDate = document.getElementById('schedEndDateModal')?.value;
+    if (!startDate || !endDate) {
+        showSchedToast('Please select valid start and end dates', false);
+        return;
+    }
+
+    const templateSelect = document.getElementById('schedShiftTemplateIdModal');
+    const selectedOpt = templateSelect?.selectedOptions[0];
+    const val = templateSelect?.value;
+    if (!val) {
+        showSchedToast('Please select a shift format', false);
+        return;
+    }
+
+    const tmplCode = selectedOpt?.getAttribute('data-code') || (selectedOpt ? selectedOpt.text.split('=')[0].trim() : 'CUSTOM');
+    const tmplName = selectedOpt?.getAttribute('data-name') || selectedOpt?.text || 'Shift';
+    const tmplStart = selectedOpt?.getAttribute('data-start') || '';
+    const tmplEnd = selectedOpt?.getAttribute('data-end') || '';
+    const tmplColor = selectedOpt?.getAttribute('data-color') || '#7c3aed';
+    const tmplId = parseInt(val) || null;
+
+    const restDays = [];
+    ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].forEach(d => {
+        if (document.getElementById('rest_day_modal_' + d)?.checked) {
+            restDays.push(d);
+        }
+    });
+
+    const gridDates = @json($dates);
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    let plottedCount = 0;
+
+    gridDates.forEach(d => {
+        if (d >= startDate && d <= endDate) {
+            const dateObj = new Date(d + 'T00:00:00');
+            const dayName = dayNames[dateObj.getDay()];
+            const isRest = restDays.includes(dayName);
+
+            const draftKey = `${empId}_${d}`;
+            const cell = document.getElementById(`cell_${empId}_${d}`);
+            if (cell) {
+                if (!savedOriginalCells[draftKey]) {
+                    savedOriginalCells[draftKey] = cell.innerHTML;
+                }
+
+                const code = isRest ? 'OFF' : tmplCode;
+                const label = isRest ? 'RESTDAY' : tmplName;
+                const time = isRest ? 'OFF DUTY' : (tmplStart && tmplEnd ? `${tmplStart} - ${tmplEnd}` : '08:00 - 17:00');
+                const themeClass = isRest ? 'sched-card-rest' : `sched-theme-${code.toLowerCase()}`;
+
+                draftSchedules[draftKey] = {
+                    employee_id: parseInt(empId),
+                    date: d,
+                    shift_template_id: isRest ? null : tmplId,
+                    is_rest_day: isRest,
+                    custom_start_time: isRest ? null : tmplStart,
+                    custom_end_time: isRest ? null : tmplEnd,
+                    notes: isRest ? 'RESTDAY' : tmplName,
+                    is_draft: true
+                };
+
+                renderAssignedCardHTML(cell, empId, d, code, label, time, themeClass, tmplColor);
+
+                const card = cell.querySelector('.sched-shift-card');
+                if (card) {
+                    card.classList.add('is-draft');
+                    const badgeWrap = card.querySelector('.sched-badge-wrap');
+                    if (badgeWrap && !badgeWrap.querySelector('.sched-draft-pill')) {
+                        const draftPill = document.createElement('span');
+                        draftPill.className = 'sched-draft-pill';
+                        draftPill.innerHTML = '<i class="ph ph-pencil-simple" style="font-size: 8px;"></i> Draft';
+                        badgeWrap.appendChild(draftPill);
+                    }
+                    const detailBadge = card.querySelector('.sched-detail-badge');
+                    if (detailBadge) {
+                        detailBadge.className = 'sched-detail-badge badge-draft';
+                        detailBadge.textContent = 'DRAFT';
+                        detailBadge.style.cssText = 'background: #fef3c7; color: #b45309; border: 1px solid #fcd34d; font-weight: 800;';
+                    }
+                }
+                plottedCount++;
+            }
+        }
+    });
+
+    closeCellCustomDropdown();
+    updateSaveButtonState();
+    showSchedToast(`Plotted ${plottedCount} draft shifts for employee. Click "Save" to save.`);
+}
+
+function updateSaveButtonState() {
+    const count = Object.keys(draftSchedules).length;
+    const saveBtn = document.getElementById('btnSaveGrid');
+    const badge = document.getElementById('saveBtnBadge');
+    const label = document.getElementById('saveBtnLabel');
+    if (!saveBtn) return;
+
+    if (count > 0) {
+        saveBtn.classList.add('has-drafts');
+        if (badge) {
+            badge.style.display = 'inline-flex';
+            badge.textContent = count;
+        }
+        if (label) {
+            label.textContent = `Save (${count})`;
+        }
+    } else {
+        saveBtn.classList.remove('has-drafts');
+        if (badge) {
+            badge.style.display = 'none';
+            badge.textContent = '0';
+        }
+        if (label) {
+            label.textContent = 'Save';
+        }
+    }
+}
+
+function saveDraftSchedules() {
+    const draftKeys = Object.keys(draftSchedules);
+    if (draftKeys.length === 0) {
+        showSchedToast('All shift changes are saved and active!');
+        return;
+    }
+
+    const saveBtn = document.getElementById('btnSaveGrid');
+    const saveLabel = document.getElementById('saveBtnLabel');
+    
+    if (saveBtn) {
+        saveBtn.disabled = true;
+    }
+    if (saveLabel) {
+        saveLabel.textContent = 'Saving...';
+    }
+
+    const payload = {
+        schedules: Object.values(draftSchedules).map(item => ({
+            employee_id: item.employee_id,
+            date: item.date,
+            shift_template_id: item.shift_template_id || null,
+            is_rest_day: !!item.is_rest_day,
+            custom_start_time: item.custom_start_time || null,
+            custom_end_time: item.custom_end_time || null,
+            notes: item.notes || null,
+            clear: !!item.clear
+        }))
+    };
+
+    fetch(BATCH_SCHEDULE_URL, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': CSRF_TOKEN,
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            draftKeys.forEach(key => {
+                const parts = key.split('_');
+                const empId = parts[0];
+                const date = parts[1];
+                const cell = document.getElementById(`cell_${empId}_${date}`);
+                if (cell) {
+                    const card = cell.querySelector('.sched-shift-card');
+                    if (card) {
+                        card.classList.remove('is-draft');
+                        const draftPill = card.querySelector('.sched-draft-pill');
+                        if (draftPill) draftPill.remove();
+                        const draftBadge = card.querySelector('.badge-draft');
+                        if (draftBadge) {
+                            draftBadge.className = 'sched-detail-badge badge-planned';
+                            draftBadge.textContent = 'SCHEDULED';
+                            draftBadge.removeAttribute('style');
+                        }
+                    }
+                }
+            });
+
+            const count = data.saved_count || draftKeys.length;
+            draftSchedules = {};
+            savedOriginalCells = {};
+            updateSaveButtonState();
+            showSchedToast(`Successfully saved ${count} schedule entries!`);
+        } else {
+            showSchedToast(data.message || 'Failed to save schedules', false);
+            updateSaveButtonState();
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        showSchedToast('Network error while saving schedules', false);
+        updateSaveButtonState();
+    })
+    .finally(() => {
+        if (saveBtn) {
+            saveBtn.disabled = false;
+        }
+        if (saveLabel && Object.keys(draftSchedules).length === 0) {
+            saveLabel.textContent = 'Save';
+        }
+    });
+}
+
+window.addEventListener('beforeunload', function(e) {
+    if (typeof draftSchedules !== 'undefined' && Object.keys(draftSchedules).length > 0) {
+        e.preventDefault();
+        e.returnValue = '';
+    }
+});
 </script>
 @endpush
 @endsection
