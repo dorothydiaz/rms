@@ -49,7 +49,7 @@ class LeaveController extends Controller
         $perPage = (int) $request->get('per_page', 10);
         $requests = $query->orderBy('created_at', 'desc')->paginate($perPage)->withQueryString();
         $leaveTypes = LeaveType::all();
-        $employees = Employee::where('employment_status', 'Active')->get();
+        $employees = Employee::activeWorkforce()->orderBy('first_name')->get();
 
         return view('hr.leave.requests', compact('requests', 'leaveTypes', 'employees'));
     }
@@ -211,7 +211,7 @@ class LeaveController extends Controller
         $perPage = (int) $request->get('per_page', 10);
         $balances = $query->paginate($perPage)->withQueryString();
         $leaveTypes = LeaveType::all();
-        $employees = Employee::where('employment_status', 'Active')->get();
+        $employees = Employee::activeWorkforce()->orderBy('first_name')->get();
 
         return view('hr.leave.credits', compact('balances', 'year', 'leaveTypes', 'employees'));
     }

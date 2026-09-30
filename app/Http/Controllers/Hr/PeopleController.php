@@ -659,7 +659,7 @@ class PeopleController extends Controller
 
         $perPage = (int) $request->get('per_page', 50);
         $documents = $query->orderBy('created_at', 'desc')->paginate($perPage)->withQueryString();
-        $employees = Employee::where('employment_status', 'Active')->orderBy('first_name')->get();
+        $employees = Employee::activeWorkforce()->orderBy('first_name')->get();
         $branches = Branch::where('is_active', true)->orderBy('name')->get();
 
         return view('hr.people.documents', compact('documents', 'employees', 'branches'));

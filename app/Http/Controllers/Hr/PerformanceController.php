@@ -90,7 +90,7 @@ class PerformanceController extends Controller
         $perPage = (int) $request->get('per_page', 10);
         $evaluations = $query->orderBy('created_at', 'desc')->paginate($perPage)->withQueryString();
         $periods = PerformancePeriod::all();
-        $employees = Employee::where('employment_status', 'Active')->get();
+        $employees = Employee::activeWorkforce()->orderBy('first_name')->get();
         $criteria = PerformanceCriterion::where('is_active', true)->get();
 
         return view('hr.performance.evaluations', compact('evaluations', 'periods', 'employees', 'criteria'));

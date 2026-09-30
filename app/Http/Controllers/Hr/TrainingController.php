@@ -94,7 +94,7 @@ class TrainingController extends Controller
         $perPage = (int) $request->get('per_page', 10);
         $records = $query->orderBy('enrollment_date', 'desc')->paginate($perPage)->withQueryString();
         $programs = TrainingProgram::all();
-        $employees = Employee::where('employment_status', 'Active')->get();
+        $employees = Employee::activeWorkforce()->orderBy('first_name')->get();
 
         return view('hr.training.records', compact('records', 'programs', 'employees'));
     }

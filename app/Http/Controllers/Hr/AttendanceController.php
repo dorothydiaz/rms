@@ -42,7 +42,7 @@ class AttendanceController extends Controller
         $user = Auth::user();
         $date = $request->get('date', Carbon::today()->toDateString());
 
-        $query = Employee::where('employment_status', 'Active')->with(['branch', 'department']);
+        $query = Employee::activeWorkforce()->with(['branch', 'department']);
         if (!$user->isSuperAdmin() && !$user->isHrAdmin() && $user->branch_id) {
             $query->where('branch_id', $user->branch_id);
         } elseif ($request->filled('branch_id')) {
@@ -210,7 +210,7 @@ class AttendanceController extends Controller
         $perPage = (int) $request->get('per_page', 10);
         $records = $query->orderBy('date', 'desc')->paginate($perPage)->withQueryString();
         $branches = Branch::where('is_active', true)->get();
-        $employees = Employee::where('employment_status', 'Active')->get();
+        $employees = Employee::activeWorkforce()->get();
 
         // Totals
         $totals = [
@@ -226,7 +226,7 @@ class AttendanceController extends Controller
     public function dtrTags(Request $request): JsonResponse
     {
         $user = Auth::user();
-        $query = Employee::where('employment_status', 'Active')
+        $query = Employee::activeWorkforce()
             ->with(['branch.company', 'department', 'position']);
 
         if (!$user->isSuperAdmin() && !$user->isHrAdmin() && $user->branch_id) {
@@ -366,7 +366,7 @@ class AttendanceController extends Controller
         }
 
         // Query active employees
-        $empQuery = Employee::where('employment_status', 'Active')
+        $empQuery = Employee::activeWorkforce()
             ->with(['branch.company', 'department', 'position']);
 
         if (!$user->isSuperAdmin() && !$user->isHrAdmin() && $user->branch_id) {
@@ -712,7 +712,7 @@ class AttendanceController extends Controller
             $dates[] = $start->copy()->addDays($i)->toDateString();
         }
 
-        $empQuery = Employee::where('employment_status', 'Active')->with(['branch', 'department', 'position']);
+        $empQuery = Employee::activeWorkforce()->with(['branch', 'department', 'position']);
         if (!$user->isSuperAdmin() && !$user->isHrAdmin() && $user->branch_id) {
             $empQuery->where('branch_id', $user->branch_id);
         } elseif ($request->filled('branch_id')) {
@@ -737,7 +737,7 @@ class AttendanceController extends Controller
 
         $branches = Branch::where('is_active', true)->get();
         $departments = Department::where('is_active', true)->orderBy('name')->get();
-        $allEmployees = Employee::with(['branch', 'department', 'position'])->orderBy('first_name')->get();
+        $allEmployees = Employee::activeWorkforce()->with(['branch', 'department', 'position'])->orderBy('first_name')->get();
 
         return view('hr.attendance.schedules', compact('employees', 'dates', 'schedules', 'attendanceRecords', 'shiftTemplates', 'weekStart', 'branches', 'departments', 'allEmployees'));
     }
@@ -775,7 +775,7 @@ class AttendanceController extends Controller
         // Resolve target employees
         $employeeIds = [];
         if ($request->input('employee_id') === 'all') {
-            $empQuery = Employee::where('employment_status', 'Active');
+            $empQuery = Employee::activeWorkforce();
             if (!$user->isSuperAdmin() && !$user->isHrAdmin() && $user->branch_id) {
                 $empQuery->where('branch_id', $user->branch_id);
             } elseif ($request->filled('branch_id')) {
@@ -1355,7 +1355,7 @@ class AttendanceController extends Controller
         $corrections = AttendanceCorrection::with(['employee.branch', 'attendanceRecord', 'requester', 'reviewer'])
             ->orderBy('created_at', 'desc')->paginate(10);
 
-        $employees = Employee::where('employment_status', 'Active')
+        $employees = Employee::activeWorkforce()
             ->when(!$user->isSuperAdmin() && !$user->isHrAdmin() && $user->branch_id, fn($q) => $q->where('branch_id', $user->branch_id))
             ->orderBy('first_name')
             ->get();

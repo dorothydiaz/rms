@@ -86,7 +86,7 @@ class LeaveCalculationService
      */
     public function initializeYearlyBalances(int $year): int
     {
-        $employees = Employee::where('employment_status', 'Active')->get();
+        $employees = Employee::activeWorkforce()->get();
         $leaveTypes = LeaveType::all();
         $count = 0;
 

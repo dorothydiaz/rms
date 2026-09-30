@@ -312,4 +312,21 @@ class Employee extends Model
 
         return $query;
     }
+
+    /**
+     * Scope query to all active workforce employees
+     * (includes Active, Probationary, On Leave, Suspended; excludes separated staff: Resigned, Terminated, Retired).
+     */
+    public function scopeActiveWorkforce(Builder $query): Builder
+    {
+        return $query->whereNotIn('employment_status', ['Resigned', 'Terminated', 'Retired']);
+    }
+
+    /**
+     * Scope to active workforce as an alias.
+     */
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->whereNotIn('employment_status', ['Resigned', 'Terminated', 'Retired']);
+    }
 }

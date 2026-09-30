@@ -36,7 +36,7 @@ class PayrollCalculationService
         }
 
         return DB::transaction(function () use ($period, $branchId) {
-            $employeesQuery = Employee::where('employment_status', 'Active');
+            $employeesQuery = Employee::activeWorkforce();
             if ($branchId) {
                 $employeesQuery->where('branch_id', $branchId);
             }
