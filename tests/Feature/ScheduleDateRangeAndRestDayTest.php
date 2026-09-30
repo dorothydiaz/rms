@@ -147,4 +147,59 @@ class ScheduleDateRangeAndRestDayTest extends TestCase
             $this->assertNull($sched->shift_template_id);
         }
     }
+
+    public function test_schedules_page_has_batch_fill_grid_and_no_copy_prev_buttons(): void
+    {
+        $response = $this->actingAs($this->hrAdmin)->get(route('hr.attendance.schedules'));
+
+        $response->assertStatus(200);
+        // Fill Grid button opens the batch modal
+        $response->assertSee('openBatchFillGridModal()', false);
+        $response->assertSee('id="batchFillGridModal"', false);
+        $response->assertSee('All Employees in Grid');
+        $response->assertSee('Select Specific Employees');
+        $response->assertSee('id="btnSaveGrid"', false);
+        $response->assertSee('Apply to Grid (Draft)');
+        // Copy Prev buttons must be removed
+        $response->assertDontSee('<span>Copy Prev</span>', false);
+    }
+
+    public function test_batch_schedule_store_saves_multiple_draft_schedules_on_save(): void
+    {
+        $date1 = '2026-10-05';
+        $date2 = '2026-10-06';
+
+        $response = $this->actingAs($this->hrAdmin)->postJson(route('hr.attendance.schedules.batch'), [
+            'schedules' => [
+                [
+                    'employee_id' => $this->employee->id,
+                    'date' => $date1,
+                    'shift_template_id' => $this->shift->id,
+                    'is_rest_day' => false,
+                ],
+                [
+                    'employee_id' => $this->employee->id,
+                    'date' => $date2,
+                    'shift_template_id' => null,
+                    'is_rest_day' => true,
+                ],
+            ]
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'success' => true,
+            'saved_count' => 2,
+        ]);
+
+        $sched1 = EmployeeSchedule::where('employee_id', $this->employee->id)->where('schedule_date', $date1)->first();
+        $this->assertNotNull($sched1);
+        $this->assertEquals($this->shift->id, $sched1->shift_template_id);
+        $this->assertFalse((bool)$sched1->is_rest_day);
+
+        $sched2 = EmployeeSchedule::where('employee_id', $this->employee->id)->where('schedule_date', $date2)->first();
+        $this->assertNotNull($sched2);
+        $this->assertTrue((bool)$sched2->is_rest_day);
+        $this->assertNull($sched2->shift_template_id);
+    }
 }

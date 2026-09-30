@@ -1070,6 +1070,9 @@ class AttendanceController extends Controller
             'schedules.*.employee_id' => 'required|exists:employees,id',
             'schedules.*.date' => 'required|date',
             'schedules.*.shift_template_id' => 'nullable|exists:shift_templates,id',
+            'schedules.*.custom_start_time' => 'nullable|string',
+            'schedules.*.custom_end_time' => 'nullable|string',
+            'schedules.*.notes' => 'nullable|string',
             'schedules.*.is_rest_day' => 'nullable|boolean',
             'schedules.*.clear' => 'nullable|boolean',
         ]);
@@ -1106,6 +1109,9 @@ class AttendanceController extends Controller
                     [
                         'branch_id' => $emp->branch_id,
                         'shift_template_id' => $shiftId,
+                        'custom_start_time' => $isRest ? null : ($item['custom_start_time'] ?? null),
+                        'custom_end_time' => $isRest ? null : ($item['custom_end_time'] ?? null),
+                        'notes' => $isRest ? 'RESTDAY' : ($item['notes'] ?? null),
                         'is_rest_day' => $isRest,
                     ]
                 );
