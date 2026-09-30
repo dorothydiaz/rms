@@ -1297,6 +1297,7 @@ a {
     display: flex;
     flex-direction: column;
     background-color: transparent;
+    min-width: 0;
 }
 
 .main-header {
@@ -1797,6 +1798,7 @@ a {
     display: flex;
     flex-direction: column;
     min-height: 0;
+    min-width: 0;
 }
 
 /* Responsive Design */
@@ -2664,6 +2666,7 @@ th.sortable.sorted-desc .sort-badge.desc,
 .hr-table th.sortable.sorted-desc .sort-badge.desc {
     display: inline-block;
 }
+
 
 .hr-table td {
     padding: 14px 18px;
@@ -3591,8 +3594,78 @@ select option {
     border-radius: 20px !important;
     border: 1px solid #e2e8f0 !important;
     box-shadow: 0 20px 45px -10px rgba(15, 23, 42, 0.22) !important;
-    padding: 28px !important;
+    padding: 24px 26px !important;
     max-width: 440px !important;
+    font-family: 'Outfit', 'Poppins', sans-serif !important;
+}
+
+.swal2-title {
+    font-size: 19px !important;
+    font-weight: 800 !important;
+    color: #0f172a !important;
+    padding: 0 0 6px !important;
+    line-height: 1.3 !important;
+}
+
+.swal2-html-container {
+    font-size: 13.5px !important;
+    color: #475569 !important;
+    line-height: 1.55 !important;
+    margin: 8px 0 16px !important;
+}
+
+.swal2-icon {
+    margin: 4px auto 14px !important;
+    transform: scale(0.9);
+}
+
+.swal2-actions {
+    gap: 10px !important;
+    margin-top: 12px !important;
+    width: 100% !important;
+    justify-content: center !important;
+}
+
+.swal2-confirm,
+.swal2-cancel {
+    border-radius: 9px !important;
+    font-weight: 700 !important;
+    font-size: 13px !important;
+    padding: 9px 20px !important;
+    box-shadow: none !important;
+    transition: all 0.15s ease !important;
+    outline: none !important;
+}
+
+.swal2-confirm {
+    background-color: #7c3aed !important;
+    color: #ffffff !important;
+    border: none !important;
+}
+.swal2-confirm:hover {
+    background-color: #6d28d9 !important;
+    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3) !important;
+}
+
+.swal2-confirm.swal2-danger {
+    background-color: #dc2626 !important;
+    color: #ffffff !important;
+    border: none !important;
+}
+.swal2-confirm.swal2-danger:hover {
+    background-color: #b91c1c !important;
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3) !important;
+}
+
+.swal2-cancel {
+    background-color: #f8fafc !important;
+    color: #475569 !important;
+    border: 1.5px solid #cbd5e1 !important;
+}
+.swal2-cancel:hover {
+    background-color: #f1f5f9 !important;
+    color: #0f172a !important;
+    border-color: #94a3b8 !important;
 }
 
 /* Right Modal Responsive Support */
