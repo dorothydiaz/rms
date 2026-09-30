@@ -218,7 +218,7 @@
     </div>
 
     <!-- Weekly Interactive Schedule Table Matrix (Spacious & Breathable Layout) -->
-    <div class="hr-table-wrapper" style="flex: 1 1 0%; height: 100%; min-height: 0; max-height: none; overflow-y: auto; overflow-x: auto; width: 100%; position: relative;">
+    <div class="hr-table-wrapper" style="flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: auto; width: 100%; position: relative;">
         <table class="hr-table sched-matrix-table" id="schedMatrixTable" role="grid" style="border-collapse: separate; border-spacing: 0; table-layout: fixed; width: 100%;">
             <colgroup>
                 <col style="width: 15%; min-width: 180px;">
@@ -986,7 +986,7 @@
 
 /* Schedule Planner Card: Full Flex Column */
 #schedPlannerCard {
-    flex: 1 1 0% !important;
+    flex: 1 1 auto !important;
     min-height: 0 !important;
     display: flex !important;
     flex-direction: column !important;
@@ -996,13 +996,32 @@
 }
 
 #schedPlannerCard .hr-table-wrapper {
-    flex: 1 1 0% !important;
-    height: 100% !important;
+    flex: 1 1 auto !important;
     min-height: 0 !important;
+    height: auto !important;
     max-height: none !important;
     overflow-y: auto !important;
     overflow-x: auto !important;
     position: relative !important;
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 #f8fafc;
+}
+
+#schedPlannerCard .hr-table-wrapper::-webkit-scrollbar {
+    width: 8px !important;
+    height: 8px !important;
+}
+#schedPlannerCard .hr-table-wrapper::-webkit-scrollbar-track {
+    background: #f8fafc !important;
+    border-radius: 4px;
+}
+#schedPlannerCard .hr-table-wrapper::-webkit-scrollbar-thumb {
+    background: #cbd5e1 !important;
+    border-radius: 4px;
+    border: 2px solid #f8fafc;
+}
+#schedPlannerCard .hr-table-wrapper::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8 !important;
 }
 
 /* Sticky thead for matrix table (Spacious padding) */
@@ -1265,6 +1284,12 @@
     z-index: 10;
     overflow: visible !important;
     padding: 7px 12px !important;
+}
+.sched-row {
+    height: 104px !important;
+}
+.sched-row td {
+    height: 104px;
 }
 .sched-row:hover .sched-sticky-td {
     background: #f8fafc !important;
