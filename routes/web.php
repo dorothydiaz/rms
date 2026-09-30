@@ -247,6 +247,7 @@ Route::middleware('auth')->group(function () {
     Route::prefix('purchase')->name('purchase.')->group(function () {
         Route::get('/dashboard', [PurchaseController::class, 'dashboard'])->name('dashboard');
         Route::get('/request-quotations', [PurchaseController::class, 'requestQuotations'])->name('request-quotations');
+        Route::post('/request-quotations/send-email', [PurchaseController::class, 'sendQuotationEmail'])->name('request-quotations.send-email');
         Route::get('/purchase-orders', [PurchaseController::class, 'purchaseOrders'])->name('purchase-orders');
         Route::get('/vendor-masterlist', [PurchaseController::class, 'vendorMasterlist'])->name('vendor-masterlist');
         Route::get('/vendor-bills', [PurchaseController::class, 'vendorBills'])->name('vendor-bills');
