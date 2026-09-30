@@ -70,11 +70,11 @@
 
             <!-- Toolbar Action Buttons (Spacious & Clean) -->
             <div class="sched-top-actions">
-                <button type="button" class="sched-top-btn sched-top-btn-secondary" onclick="openModal('addShiftModal')" title="Add Custom Shift Template">
+                <button type="button" class="sched-top-btn sched-top-btn-secondary" onclick="openScheduleManagerTab('add_template')" title="Add Custom Shift Template">
                     <i class="ph ph-plus-circle" style="color: #7c3aed; font-size: 15px;"></i>
                     <span>Add Template</span>
                 </button>
-                <button type="button" class="sched-top-btn sched-top-btn-secondary" onclick="openAssignModal()" title="Fill Weekly Grid">
+                <button type="button" class="sched-top-btn sched-top-btn-secondary" onclick="openScheduleManagerTab('fill_grid')" title="Fill Weekly Grid">
                     <i class="ph ph-magic-wand" style="color: #d97706; font-size: 15px;"></i>
                     <span>Fill Grid</span>
                 </button>
@@ -82,7 +82,7 @@
                     <i class="ph ph-copy" style="color: #2563eb; font-size: 15px;"></i>
                     <span>Copy Prev</span>
                 </button>
-                <button type="button" class="sched-top-btn sched-top-btn-secondary" onclick="openShiftMasterModal()" title="Shift Settings">
+                <button type="button" class="sched-top-btn sched-top-btn-secondary" onclick="openScheduleManagerTab('shift_settings')" title="Shift Settings">
                     <i class="ph ph-sliders" style="color: #64748b; font-size: 15px;"></i>
                     <span>Shift Settings</span>
                 </button>
@@ -538,90 +538,357 @@
     </div>
 </div>
 
-<!-- Floating Cell Custom Schedule Dropdown Popover (Attached to active cell - Spacious & Modern) -->
+<!-- Background Dimming Overlay for Schedule Manager Window -->
+<div id="cellCustomBackdrop" class="sched-custom-backdrop" onclick="closeCellCustomDropdown()"></div>
+
+<!-- Floating / Centered Unified Schedule & Shift Manager Window (Spacious, Clean, Tabbed Layout) -->
 <div id="cellCustomDropdown" class="sched-custom-dropdown" style="display: none;">
     <!-- Spacious Header -->
     <div class="sched-custom-dd-header">
-        <div style="display: flex; align-items: center; gap: 9px;">
+        <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
             <div class="sched-dd-icon-box">
-                <i class="ph ph-clock"></i>
+                <i class="ph ph-calendar-plus" style="font-size: 16px;"></i>
             </div>
-            <div>
-                <div style="font-weight: 800; font-size: 13px; color: #0f172a; letter-spacing: -0.2px; line-height: 1.2;">
-                    Other Schedule / Custom
+            <div style="min-width: 0;">
+                <div style="font-weight: 800; font-size: 14px; color: #0f172a; letter-spacing: -0.2px; line-height: 1.2;">
+                    Schedule & Shift Manager
                 </div>
-                <div style="font-size: 10.5px; font-weight: 600; color: #64748b; line-height: 1.2;">
+                <div id="cellCustomContextText" style="font-size: 11px; font-weight: 600; color: #64748b; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                     Select a preset shift or specify custom hours
                 </div>
             </div>
         </div>
-        <button type="button" class="sched-btn-close-sm" onclick="closeCellCustomDropdown()" title="Close popover">
-            <i class="ph ph-x"></i>
-        </button>
-    </div>
-    
-    <!-- Standard Templates Quick List -->
-    <div class="sched-custom-dd-section">
-        <div class="sched-custom-dd-label">
-            <i class="ph ph-list-bullets" style="color: #6366f1;"></i>
-            <span>Registered Shifts</span>
-        </div>
-        <div class="sched-dd-shifts-scroll">
-            @foreach($shiftTemplates as $st)
-                <button type="button" class="sched-dd-shift-item" onclick="applyTemplateToActiveCell({{ $st->id }}, '{{ $st->code }}', '{{ $st->name }}', '{{ substr($st->start_time,0,5) }}', '{{ substr($st->end_time,0,5) }}', '{{ $st->color ?? '#7c3aed' }}')">
-                    <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
-                        <span class="sched-card-pill" style="background: {{ $st->color ?? '#7c3aed' }}; color: #fff; font-size: 9px; font-weight: 800; padding: 2.5px 7px; border-radius: 5px; flex-shrink: 0;">
-                            {{ $st->code ?: substr($st->name, 0, 4) }}
-                        </span>
-                        <span style="font-weight: 700; color: #1e293b; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                            {{ $st->formatted_label ?? $st->name }}
-                        </span>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
-                        <span style="font-size: 11px; font-weight: 600; color: #64748b; font-variant-numeric: tabular-nums;">
-                            {{ substr($st->start_time,0,5) }}–{{ substr($st->end_time,0,5) }}
-                        </span>
-                        <i class="ph ph-caret-right" style="font-size: 11px; color: #cbd5e1;"></i>
-                    </div>
-                </button>
-            @endforeach
+        <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+            <button type="button" class="sched-top-btn sched-top-btn-secondary" onclick="triggerCopyPreviousWeek()" title="Copy schedules from previous week" style="height: 30px; padding: 0 10px; font-size: 11.5px; font-weight: 700; border-radius: 8px;">
+                <i class="ph ph-copy" style="color: #2563eb; font-size: 13px;"></i>
+                <span>Copy Prev</span>
+            </button>
+            <button type="button" class="sched-btn-close-sm" onclick="closeCellCustomDropdown()" title="Close manager">
+                <i class="ph ph-x"></i>
+            </button>
         </div>
     </div>
 
-    <!-- Custom Time Inputs -->
-    <div class="sched-custom-time-card">
-        <div class="sched-custom-time-header">
-            <i class="ph ph-plus-circle" style="color: #9333ea; font-size: 14px;"></i>
-            <span>Custom Time Range</span>
-        </div>
-        <div class="sched-time-inputs-row">
-            <div class="sched-time-input-wrap">
-                <span class="sched-time-field-tag">Start</span>
-                <input type="time" id="customCellStart" value="08:00" class="sched-input-time" title="Start Time">
-            </div>
-            <div class="sched-time-arrow">
-                <i class="ph ph-arrow-right"></i>
-            </div>
-            <div class="sched-time-input-wrap">
-                <span class="sched-time-field-tag">End</span>
-                <input type="time" id="customCellEnd" value="17:00" class="sched-input-time" title="End Time">
-            </div>
-        </div>
-        <div style="margin-bottom: 10px;">
-            <input type="text" id="customCellLabel" placeholder="Shift Label (e.g. Split Shift, Mid Afternoon)" class="sched-input-text-sm">
-        </div>
-        <button type="button" class="sched-btn-apply-custom" onclick="applyCustomTimeToActiveCell()">
-            <i class="ph ph-check-circle" style="font-size: 15px;"></i>
-            <span>Apply Custom Shift</span>
+    <!-- Segmented Navigation Tabs -->
+    <div class="sched-mgr-tabs">
+        <button type="button" class="sched-mgr-tab-btn active" id="tabBtn_shift_custom" onclick="switchScheduleManagerTab('shift_custom', this)">
+            <i class="ph ph-clock"></i>
+            <span>Shift & Custom</span>
         </button>
-    </div>
-
-    <!-- Edit Shift Times Button -->
-    <div class="sched-custom-dd-footer">
-        <button type="button" class="sched-btn-edit-times" onclick="openShiftMasterModal(); closeCellCustomDropdown();">
+        <button type="button" class="sched-mgr-tab-btn" id="tabBtn_fill_grid" onclick="switchScheduleManagerTab('fill_grid', this)">
+            <i class="ph ph-magic-wand"></i>
+            <span>Fill Grid</span>
+        </button>
+        <button type="button" class="sched-mgr-tab-btn" id="tabBtn_add_template" onclick="switchScheduleManagerTab('add_template', this)">
+            <i class="ph ph-plus-circle"></i>
+            <span>Add Template</span>
+        </button>
+        <button type="button" class="sched-mgr-tab-btn" id="tabBtn_shift_settings" onclick="switchScheduleManagerTab('shift_settings', this)">
             <i class="ph ph-sliders"></i>
-            <span>Edit Shift Times (O, MD, LD, C)</span>
+            <span>Shift Settings</span>
         </button>
+    </div>
+
+    <!-- Tab 1: Shift & Custom -->
+    <div class="sched-mgr-tab-panel active" id="tabPanel_shift_custom">
+        <div class="sched-mgr-split-grid">
+            <!-- Left: Registered Shifts List -->
+            <div style="display: flex; flex-direction: column; gap: 8px; min-width: 0;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div class="sched-custom-dd-label" style="margin-bottom: 0;">
+                        <i class="ph ph-list-bullets" style="color: #6366f1;"></i>
+                        <span>Registered Shifts</span>
+                    </div>
+                    <span style="font-size: 10.5px; font-weight: 700; color: #7c3aed; background: #ede9fe; padding: 1.5px 7px; border-radius: 6px;">
+                        {{ count($shiftTemplates) }} Available
+                    </span>
+                </div>
+                <!-- Search input for shifts -->
+                <div style="position: relative;">
+                    <i class="ph ph-magnifying-glass" style="position: absolute; left: 9px; top: 50%; transform: translateY(-50%); font-size: 12px; color: #94a3b8;"></i>
+                    <input type="text" placeholder="Search shifts (e.g. 0600, 0800)..." oninput="filterRegisteredShifts(this.value)" 
+                           style="width: 100%; height: 32px; padding: 0 10px 0 28px; font-size: 11.5px; border: 1.5px solid #e2e8f0; border-radius: 8px; outline: none; background: #f8fafc; font-family: inherit; box-sizing: border-box;">
+                </div>
+                <div class="sched-dd-shifts-scroll">
+                    @foreach($shiftTemplates as $st)
+                        <button type="button" class="sched-dd-shift-item" data-shift-name="{{ strtolower($st->name) }}" data-shift-code="{{ strtolower($st->code) }}" onclick="applyTemplateToActiveCell({{ $st->id }}, '{{ $st->code }}', '{{ $st->name }}', '{{ substr($st->start_time,0,5) }}', '{{ substr($st->end_time,0,5) }}', '{{ $st->color ?? '#7c3aed' }}')">
+                            <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
+                                <span class="sched-card-pill" style="background: {{ $st->color ?? '#7c3aed' }}; color: #fff; font-size: 9px; font-weight: 800; padding: 2.5px 7px; border-radius: 5px; flex-shrink: 0;">
+                                    {{ $st->code ?: substr($st->name, 0, 4) }}
+                                </span>
+                                <span style="font-weight: 700; color: #1e293b; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                    {{ $st->formatted_label ?? $st->name }}
+                                </span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+                                <span style="font-size: 11px; font-weight: 600; color: #64748b; font-variant-numeric: tabular-nums;">
+                                    {{ substr($st->start_time,0,5) }}–{{ substr($st->end_time,0,5) }}
+                                </span>
+                                <i class="ph ph-caret-right" style="font-size: 11px; color: #cbd5e1;"></i>
+                            </div>
+                        </button>
+                    @endforeach
+                </div>
+            </div>
+
+            <!-- Right: Custom Time Range Builder -->
+            <div style="display: flex; flex-direction: column;">
+                <div class="sched-custom-time-card" style="margin: 0; height: 100%; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <div class="sched-custom-time-header">
+                            <i class="ph ph-plus-circle" style="color: #9333ea; font-size: 14px;"></i>
+                            <span>Custom Time Range</span>
+                        </div>
+                        <div class="sched-time-inputs-row">
+                            <div class="sched-time-input-wrap">
+                                <span class="sched-time-field-tag">Start Time</span>
+                                <input type="time" id="customCellStart" value="08:00" class="sched-input-time" title="Start Time">
+                            </div>
+                            <div class="sched-time-arrow">
+                                <i class="ph ph-arrow-right"></i>
+                            </div>
+                            <div class="sched-time-input-wrap">
+                                <span class="sched-time-field-tag">End Time</span>
+                                <input type="time" id="customCellEnd" value="17:00" class="sched-input-time" title="End Time">
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 12px;">
+                            <span class="sched-time-field-tag" style="display: block; margin-bottom: 3px;">Shift Label</span>
+                            <input type="text" id="customCellLabel" placeholder="e.g. Split Shift, Mid Afternoon" class="sched-input-text-sm">
+                        </div>
+                    </div>
+                    <button type="button" class="sched-btn-apply-custom" onclick="applyCustomTimeToActiveCell()" style="margin-top: 8px;">
+                        <i class="ph ph-check-circle" style="font-size: 15px;"></i>
+                        <span>Apply Custom Shift</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab 2: Fill Grid (Bulk Assign) -->
+    <div class="sched-mgr-tab-panel" id="tabPanel_fill_grid">
+        <form method="POST" action="{{ route('hr.attendance.schedules.store') }}" id="scheduleManagerAssignForm">
+            @csrf
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <!-- Employee Selection -->
+                <div class="hr-form-group" style="margin-bottom: 0;">
+                    <label class="hr-form-label" style="font-size: 12px; font-weight: 700; color: #0f172a; margin-bottom: 4px;">Assign To Employee *</label>
+                    <select name="employee_id" id="schedEmployeeIdModal" class="hr-select" required style="height: 38px; font-size: 13px;">
+                        <option value="all">★ All Active Employees</option>
+                        @foreach($employees as $e)
+                            <option value="{{ $e->id }}">{{ $e->full_name }} ({{ $e->position?->name ?? 'Staff' }} - {{ $e->branch?->name }})</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <!-- Date Range Selection with Presets -->
+                <div class="hr-form-group" style="margin-bottom: 0;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                        <label class="hr-form-label" style="font-size: 12px; font-weight: 700; color: #0f172a; margin-bottom: 0;">Date Range *</label>
+                        <div style="display: flex; gap: 4px;">
+                            <button type="button" class="sched-preset-btn" onclick="presetDateRangeModal('today')">Today</button>
+                            <button type="button" class="sched-preset-btn" onclick="presetDateRangeModal('this_week')">This Week</button>
+                            <button type="button" class="sched-preset-btn" onclick="presetDateRangeModal('next_week')">Next Week</button>
+                            <button type="button" class="sched-preset-btn" onclick="presetDateRangeModal('month')">Full Month</button>
+                        </div>
+                    </div>
+                    <div class="hr-form-grid" style="grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div>
+                            <small style="font-size: 10.5px; color: #64748b; font-weight: 700; display: block; margin-bottom: 2px;">Start Date</small>
+                            <input type="date" name="start_date" id="schedStartDateModal" class="hr-input" required value="{{ date('Y-m-d') }}" onchange="syncDateRangeModal()" style="height: 36px; font-size: 12.5px;">
+                        </div>
+                        <div>
+                            <small style="font-size: 10.5px; color: #64748b; font-weight: 700; display: block; margin-bottom: 2px;">End Date</small>
+                            <input type="date" name="end_date" id="schedEndDateModal" class="hr-input" required value="{{ date('Y-m-d') }}" style="height: 36px; font-size: 12.5px;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Work Shift Selection -->
+                <div class="hr-form-group" style="margin-bottom: 0;">
+                    <label class="hr-form-label" style="font-size: 12px; font-weight: 700; color: #0f172a; margin-bottom: 4px;">Shift Format *</label>
+                    <select name="shift_template_id" id="schedShiftTemplateIdModal" class="hr-select" style="height: 38px; font-size: 13px;">
+                        <option value="">Select Shift Format</option>
+                        @foreach($shiftTemplates as $st)
+                            <option value="{{ $st->id }}" {{ $loop->first ? 'selected' : '' }}>
+                                {{ $st->formatted_label ?? $st->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <!-- Rest Days Row -->
+                <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 12px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <div>
+                            <div style="font-size: 11.5px; font-weight: 800; color: #0f172a; text-transform: uppercase;">
+                                Weekly Rest Days (Mon – Sun)
+                            </div>
+                            <div style="font-size: 10.5px; color: #64748b;">
+                                Selected days will be marked as <strong>Rest Day (Off Duty)</strong>.
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 4px;">
+                            <button type="button" class="sched-preset-btn" onclick="setRestDaysPresetModal(['Sat', 'Sun'])">Sat & Sun</button>
+                            <button type="button" class="sched-preset-btn" onclick="setRestDaysPresetModal(['Sun'])">Sunday</button>
+                            <button type="button" class="sched-preset-btn" onclick="clearRestDaysPresetModal()">Clear</button>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px;">
+                        @foreach(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as $day)
+                            <label style="display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; color: #334155; padding: 5px 9px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 7px; cursor: pointer;">
+                                <input type="checkbox" name="rest_days[]" value="{{ $day }}" id="rest_day_modal_{{ $day }}" class="modal-rest-day-cb">
+                                {{ $day }}
+                            </label>
+                        @endforeach
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" class="hr-btn hr-btn-primary" style="height: 40px; font-size: 13.5px; font-weight: 800; border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i class="ph ph-magic-wand" style="font-size: 16px;"></i>
+                    <span>Assign Schedule Across Range</span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tab 3: Add Template -->
+    <div class="sched-mgr-tab-panel" id="tabPanel_add_template">
+        <form method="POST" action="{{ route('hr.attendance.shifts.store') }}">
+            @csrf
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <div class="hr-form-grid" style="grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div class="hr-form-group" style="margin-bottom: 0;">
+                        <label class="hr-form-label" style="font-size: 12px; font-weight: 700;">Start Time (24h) *</label>
+                        <input type="time" name="start_time" id="newShiftStartModal" class="hr-input" required value="06:00" onchange="updateShiftPreviewModal()" style="height: 38px;">
+                    </div>
+                    <div class="hr-form-group" style="margin-bottom: 0;">
+                        <label class="hr-form-label" style="font-size: 12px; font-weight: 700;">End Time (24h) *</label>
+                        <input type="time" name="end_time" id="newShiftEndModal" class="hr-input" required value="15:00" onchange="updateShiftPreviewModal()" style="height: 38px;">
+                    </div>
+                </div>
+
+                <!-- Live Auto-Format Preview -->
+                <div class="hr-form-group" style="margin-bottom: 0;">
+                    <label class="hr-form-label" style="font-size: 12px; font-weight: 700;">Generated Format Preview</label>
+                    <div id="shiftFormatPreviewModal" style="font-family: monospace; font-size: 15px; font-weight: 800; color: #7e22ce; padding: 10px 14px; background: rgba(168, 85, 247, 0.1); border: 1.5px solid rgba(168, 85, 247, 0.25); border-radius: 10px; text-align: center;">
+                        0600 = 6AM - 3PM
+                    </div>
+                    <small style="color: #64748b; font-size: 11px; margin-top: 3px; display: block;">
+                        Standardized 24h code and AM/PM time range format.
+                    </small>
+                </div>
+
+                <div style="background: rgba(168, 85, 247, 0.08); padding: 10px 14px; border-radius: 10px; display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" name="is_overnight" id="isOvernightModal" value="1">
+                    <label for="isOvernightModal" style="font-size: 12px; font-weight: 600; color: #6b21a8; cursor: pointer; margin: 0;">
+                        Overnight Shift (End time crosses into the following calendar day)
+                    </label>
+                </div>
+
+                <div class="hr-form-grid" style="grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div class="hr-form-group" style="margin-bottom: 0;">
+                        <label class="hr-form-label" style="font-size: 12px; font-weight: 700;">Break Duration (Minutes)</label>
+                        <input type="number" name="break_minutes" class="hr-input" required value="60" min="0" style="height: 38px;">
+                    </div>
+                    <div class="hr-form-group" style="margin-bottom: 0;">
+                        <label class="hr-form-label" style="font-size: 12px; font-weight: 700;">Shift Badge Color</label>
+                        <input type="color" name="color" class="hr-input" value="#8b5cf6" style="height: 38px; padding: 2px;">
+                    </div>
+                </div>
+
+                <button type="submit" class="hr-btn hr-btn-primary" style="height: 40px; font-size: 13.5px; font-weight: 800; border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i class="ph ph-plus-circle" style="font-size: 16px;"></i>
+                    <span>Save Shift Template</span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tab 4: Shift Settings -->
+    <div class="sched-mgr-tab-panel" id="tabPanel_shift_settings">
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+            <!-- Category Tabs -->
+            <div>
+                <label style="font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-bottom: 6px; display: block;">
+                    Select Position Category
+                </label>
+                <div class="sched-cat-tabs" id="shiftModalCatTabsInline">
+                    @foreach($categories as $idx => $cat)
+                        <button type="button" class="sched-cat-tab-btn {{ $loop->first ? 'active' : '' }}" 
+                                onclick="switchShiftModalCategoryInline('{{ $cat }}', this)">
+                            <span>{{ $cat }}</span>
+                        </button>
+                    @endforeach
+                </div>
+            </div>
+
+            <!-- Informational Banner -->
+            <div style="background: #f1f5f9; border-left: 3px solid #6366f1; padding: 8px 12px; border-radius: 6px;">
+                <p style="font-size: 11px; color: #334155; margin: 0; line-height: 1.4;">
+                    <i class="ph ph-info" style="color: #6366f1;"></i>
+                    Configures the quick 1-click default hours for <strong>O</strong>, <strong>MD</strong>, <strong>LD</strong>, and <strong>C</strong> shifts.
+                </p>
+            </div>
+
+            <!-- 4 Shift Inputs Cards Grid -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <!-- OPENING -->
+                <div style="border: 1.5px solid #bbf7d0; background: #f0fdf4; border-radius: 10px; padding: 10px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                        <span style="background: #059669; color: #fff; font-size: 9.5px; font-weight: 800; padding: 2px 6px; border-radius: 4px;">O</span>
+                        <span style="font-size: 11px; font-weight: 800; color: #065f46;">OPENING</span>
+                    </div>
+                    <div style="display: flex; gap: 6px;">
+                        <input type="time" id="inline_shift_O_start" value="10:00" class="hr-input" style="height: 32px; font-size: 11px; padding: 2px 4px;">
+                        <input type="time" id="inline_shift_O_end" value="19:00" class="hr-input" style="height: 32px; font-size: 11px; padding: 2px 4px;">
+                    </div>
+                </div>
+
+                <!-- MID DAY -->
+                <div style="border: 1.5px solid #bfdbfe; background: #f0f7ff; border-radius: 10px; padding: 10px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                        <span style="background: #2563eb; color: #fff; font-size: 9.5px; font-weight: 800; padding: 2px 6px; border-radius: 4px;">MD</span>
+                        <span style="font-size: 11px; font-weight: 800; color: #1e40af;">MID DAY</span>
+                    </div>
+                    <div style="display: flex; gap: 6px;">
+                        <input type="time" id="inline_shift_MD_start" value="12:00" class="hr-input" style="height: 32px; font-size: 11px; padding: 2px 4px;">
+                        <input type="time" id="inline_shift_MD_end" value="21:00" class="hr-input" style="height: 32px; font-size: 11px; padding: 2px 4px;">
+                    </div>
+                </div>
+
+                <!-- LATE DAY -->
+                <div style="border: 1.5px solid #fde68a; background: #fffdf5; border-radius: 10px; padding: 10px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                        <span style="background: #d97706; color: #fff; font-size: 9.5px; font-weight: 800; padding: 2px 6px; border-radius: 4px;">LD</span>
+                        <span style="font-size: 11px; font-weight: 800; color: #92400e;">LATE DAY</span>
+                    </div>
+                    <div style="display: flex; gap: 6px;">
+                        <input type="time" id="inline_shift_LD_start" value="14:00" class="hr-input" style="height: 32px; font-size: 11px; padding: 2px 4px;">
+                        <input type="time" id="inline_shift_LD_end" value="23:00" class="hr-input" style="height: 32px; font-size: 11px; padding: 2px 4px;">
+                    </div>
+                </div>
+
+                <!-- CLOSING -->
+                <div style="border: 1.5px solid #e9d5ff; background: #faf5ff; border-radius: 10px; padding: 10px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                        <span style="background: #9333ea; color: #fff; font-size: 9.5px; font-weight: 800; padding: 2px 6px; border-radius: 4px;">C</span>
+                        <span style="font-size: 11px; font-weight: 800; color: #6b21a8;">CLOSING</span>
+                    </div>
+                    <div style="display: flex; gap: 6px;">
+                        <input type="time" id="inline_shift_C_start" value="16:00" class="hr-input" style="height: 32px; font-size: 11px; padding: 2px 4px;">
+                        <input type="time" id="inline_shift_C_end" value="01:00" class="hr-input" style="height: 32px; font-size: 11px; padding: 2px 4px;">
+                    </div>
+                </div>
+            </div>
+
+            <button type="button" class="hr-btn hr-btn-primary" onclick="showSchedToast('Shift master settings saved successfully!'); closeCellCustomDropdown();" style="height: 40px; font-size: 13.5px; font-weight: 800; border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <i class="ph ph-check-circle" style="font-size: 16px;"></i>
+                <span>Save Category Shift Defaults</span>
+            </button>
+        </div>
     </div>
 </div>
 
@@ -1922,22 +2189,31 @@
     filter: brightness(1.05);
 }
 
-/* Floating Cell Custom Dropdown (Spacious & Modern) */
+/* Floating / Centered Cell Custom Dropdown (Spacious & Modern) */
 .sched-custom-dropdown {
     position: fixed !important;
     background: #ffffff;
     border: 1.5px solid #cbd5e1;
-    border-radius: 16px;
-    box-shadow: 0 20px 45px -10px rgba(15, 23, 42, 0.22), 0 8px 18px -4px rgba(15, 23, 42, 0.08);
-    width: 330px;
-    max-width: min(360px, 94vw);
-    max-height: calc(100vh - 20px);
+    border-radius: 18px;
+    box-shadow: 0 25px 60px -12px rgba(15, 23, 42, 0.28), 0 10px 24px -6px rgba(15, 23, 42, 0.1);
+    width: 660px;
+    max-width: min(720px, 95vw);
+    max-height: min(780px, 92vh);
     z-index: 99999;
     display: none;
     flex-direction: column;
-    overflow-y: auto;
-    overflow-x: hidden;
-    animation: schedPopoverFlyout 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+    overflow: hidden;
+    animation: schedPopoverFlyout 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sched-custom-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.25);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    z-index: 99990;
+    display: none;
 }
 
 @keyframes schedPopoverFlyout {
@@ -1952,7 +2228,7 @@
 }
 
 .sched-custom-dd-header {
-    padding: 14px 18px;
+    padding: 12px 18px;
     background: #ffffff;
     border-bottom: 1.5px solid #f1f5f9;
     display: flex;
@@ -1960,30 +2236,87 @@
     align-items: center;
 }
 
+.sched-mgr-tabs {
+    display: flex;
+    align-items: center;
+    background: #f8fafc;
+    border-bottom: 1.5px solid #e2e8f0;
+    padding: 6px 14px;
+    gap: 6px;
+    overflow-x: auto;
+}
+
+.sched-mgr-tab-btn {
+    padding: 8px 14px;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #64748b;
+    border: 1px solid transparent;
+    background: transparent;
+    border-radius: 10px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+.sched-mgr-tab-btn:hover {
+    color: #7c3aed;
+    background: rgba(124, 58, 237, 0.06);
+}
+.sched-mgr-tab-btn.active {
+    color: #7c3aed;
+    background: #ffffff;
+    border-color: #e2e8f0;
+    box-shadow: 0 2px 6px rgba(124, 58, 237, 0.12);
+}
+
+.sched-mgr-tab-panel {
+    display: none;
+    padding: 18px 20px;
+    overflow-y: auto;
+    max-height: calc(92vh - 130px);
+}
+.sched-mgr-tab-panel.active {
+    display: block;
+}
+
+.sched-mgr-split-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+@media (max-width: 640px) {
+    .sched-mgr-split-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 .sched-dd-icon-box {
-    width: 28px;
-    height: 28px;
-    border-radius: 8px;
-    background: #ede9fe;
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
     color: #7c3aed;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 15px;
+    font-size: 17px;
     flex-shrink: 0;
 }
 
 .sched-btn-close-sm {
-    width: 26px;
-    height: 26px;
-    border-radius: 7px;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
     border: 1px solid #e2e8f0;
     background: #f8fafc;
     color: #64748b;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 14px;
+    font-size: 15px;
     cursor: pointer;
     transition: all 0.15s ease;
 }
@@ -2011,18 +2344,18 @@
 }
 
 .sched-dd-shifts-scroll {
-    max-height: 170px;
+    max-height: 250px;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
     gap: 5px;
-    padding-right: 2px;
+    padding-right: 4px;
 }
 
 .sched-dd-shift-item {
     width: 100%;
     text-align: left;
-    padding: 7px 10px;
+    padding: 8px 10px;
     border: 1px solid #f1f5f9;
     background: #ffffff;
     cursor: pointer;
@@ -2419,8 +2752,50 @@ function getShiftConfig(category, code) {
 let activeCellEmpId = null;
 let activeCellDate = null;
 
+function switchScheduleManagerTab(tabKey, btnElement = null) {
+    document.querySelectorAll('.sched-mgr-tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.sched-mgr-tab-btn').forEach(b => b.classList.remove('active'));
+
+    const panel = document.getElementById(`tabPanel_${tabKey}`);
+    if (panel) panel.classList.add('active');
+
+    let btn = btnElement || document.getElementById(`tabBtn_${tabKey}`);
+    if (btn) btn.classList.add('active');
+}
+
+function openScheduleManagerTab(tabKey) {
+    const dd = document.getElementById('cellCustomDropdown');
+    const backdrop = document.getElementById('cellCustomBackdrop');
+    if (!dd) return;
+
+    switchScheduleManagerTab(tabKey);
+
+    activeCellEmpId = null;
+    activeCellDate = null;
+    const cText = document.getElementById('cellCustomContextText');
+    if (cText) cText.textContent = 'Manage templates, settings, and bulk schedule assignments';
+
+    dd.style.visibility = 'hidden';
+    dd.style.display = 'flex';
+
+    const ddHeight = dd.offsetHeight || 560;
+    const ddWidth = dd.offsetWidth || 660;
+    const viewportHeight = window.innerHeight;
+    const viewportWidth = window.innerWidth;
+
+    const left = Math.max(12, Math.round((viewportWidth - ddWidth) / 2));
+    const top = Math.max(12, Math.round((viewportHeight - ddHeight) / 2));
+
+    dd.style.top = `${top}px`;
+    dd.style.left = `${left}px`;
+    dd.style.visibility = 'visible';
+
+    if (backdrop) backdrop.style.display = 'block';
+}
+
 function openCellCustomDropdown(empId, date) {
     const dd = document.getElementById('cellCustomDropdown');
+    const backdrop = document.getElementById('cellCustomBackdrop');
     // If clicking the same active cell that is already open, toggle it closed
     if (dd && dd.style.display !== 'none' && activeCellEmpId === empId && activeCellDate === date) {
         closeCellCustomDropdown();
@@ -2433,13 +2808,36 @@ function openCellCustomDropdown(empId, date) {
     const cell = document.getElementById(`cell_${empId}_${date}`);
     if (!cell || !dd) return;
 
+    // Default to first tab: shift_custom
+    switchScheduleManagerTab('shift_custom');
+
+    // Context text with employee name and date
+    const row = document.getElementById(`schedRow_${empId}`);
+    const empName = row ? (row.querySelector('.sched-emp-name-text')?.textContent || row.getAttribute('data-emp-name') || 'Employee') : 'Employee';
+    const cText = document.getElementById('cellCustomContextText');
+    if (cText) {
+        cText.innerHTML = `<span style="color:#7c3aed;font-weight:700;"><i class="ph ph-user"></i> ${empName.trim()}</span> &bull; <span>${date}</span>`;
+    }
+
+    // Also pre-select this employee and date in the Fill Grid tab!
+    const empSelect = document.getElementById('schedEmployeeIdModal');
+    if (empSelect) empSelect.value = empId;
+    const startDateInput = document.getElementById('schedStartDateModal');
+    if (startDateInput) {
+        startDateInput.value = date;
+        const endDateInput = document.getElementById('schedEndDateModal');
+        if (endDateInput && (!endDateInput.value || endDateInput.value < date)) {
+            endDateInput.value = date;
+        }
+    }
+
     // Show invisibly to measure real height and width
     dd.style.visibility = 'hidden';
     dd.style.display = 'flex';
 
     const rect = cell.getBoundingClientRect();
-    const ddHeight = dd.offsetHeight || 380;
-    const ddWidth = dd.offsetWidth || 330;
+    const ddHeight = dd.offsetHeight || 560;
+    const ddWidth = dd.offsetWidth || 660;
     const viewportHeight = window.innerHeight;
     const viewportWidth = window.innerWidth;
 
@@ -2470,22 +2868,115 @@ function openCellCustomDropdown(empId, date) {
     dd.style.top = `${Math.round(top)}px`;
     dd.style.left = `${Math.round(left)}px`;
     dd.style.visibility = 'visible';
+
+    if (backdrop) backdrop.style.display = 'block';
 }
 
 function closeCellCustomDropdown() {
     const dd = document.getElementById('cellCustomDropdown');
+    const backdrop = document.getElementById('cellCustomBackdrop');
     if (dd) {
         dd.style.display = 'none';
         dd.style.visibility = 'hidden';
+    }
+    if (backdrop) {
+        backdrop.style.display = 'none';
     }
     activeCellEmpId = null;
     activeCellDate = null;
 }
 
+function syncDateRangeModal() {
+    var start = document.getElementById('schedStartDateModal')?.value;
+    var end = document.getElementById('schedEndDateModal')?.value;
+    if (start && (!end || end < start)) {
+        document.getElementById('schedEndDateModal').value = start;
+    }
+}
+
+function presetDateRangeModal(type) {
+    var now = new Date();
+    var formatDate = function(d) {
+        var year = d.getFullYear();
+        var month = String(d.getMonth() + 1).padStart(2, '0');
+        var day = String(d.getDate()).padStart(2, '0');
+        return year + '-' + month + '-' + day;
+    };
+    var start = new Date();
+    var end = new Date();
+    if (type === 'today') {
+    } else if (type === 'this_week') {
+        var dayOfWeek = now.getDay();
+        var diffToMon = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+        start.setDate(now.getDate() + diffToMon);
+        end.setDate(start.getDate() + 6);
+    } else if (type === 'next_week') {
+        var dayOfWeek = now.getDay();
+        var diffToMon = dayOfWeek === 0 ? 1 : 8 - dayOfWeek;
+        start.setDate(now.getDate() + diffToMon);
+        end.setDate(start.getDate() + 6);
+    } else if (type === 'month') {
+        start = new Date(now.getFullYear(), now.getMonth(), 1);
+        end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    }
+    var sInput = document.getElementById('schedStartDateModal');
+    var eInput = document.getElementById('schedEndDateModal');
+    if (sInput) sInput.value = formatDate(start);
+    if (eInput) eInput.value = formatDate(end);
+}
+
+function setRestDaysPresetModal(days) {
+    ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].forEach(function(d) {
+        var cb = document.getElementById('rest_day_modal_' + d);
+        if (cb) cb.checked = days.includes(d);
+    });
+}
+
+function clearRestDaysPresetModal() {
+    ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].forEach(function(d) {
+        var cb = document.getElementById('rest_day_modal_' + d);
+        if (cb) cb.checked = false;
+    });
+}
+
+function filterRegisteredShifts(query) {
+    const q = (query || '').toLowerCase().trim();
+    document.querySelectorAll('.sched-dd-shift-item').forEach(btn => {
+        const name = (btn.getAttribute('data-shift-name') || '').toLowerCase();
+        const code = (btn.getAttribute('data-shift-code') || '').toLowerCase();
+        if (!q || name.includes(q) || code.includes(q)) {
+            btn.style.display = 'flex';
+        } else {
+            btn.style.display = 'none';
+        }
+    });
+}
+
+function updateShiftPreviewModal() {
+    const start = document.getElementById('newShiftStartModal')?.value || '06:00';
+    const end = document.getElementById('newShiftEndModal')?.value || '15:00';
+    const code = start.replace(':', '');
+    const to12h = (t) => {
+        let [h, m] = t.split(':').map(Number);
+        let ampm = h >= 12 ? 'PM' : 'AM';
+        h = h % 12 || 12;
+        return m === 0 ? `${h}${ampm}` : `${h}:${m < 10 ? '0' : ''}${m}${ampm}`;
+    };
+    const prev = document.getElementById('shiftFormatPreviewModal');
+    if (prev) {
+        prev.textContent = `${code} = ${to12h(start)} - ${to12h(end)}`;
+    }
+}
+
+function switchShiftModalCategoryInline(cat, btn) {
+    document.querySelectorAll('#shiftModalCatTabsInline .sched-cat-tab-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+}
+
 document.addEventListener('click', function(e) {
     const dd = document.getElementById('cellCustomDropdown');
     if (dd && dd.style.display !== 'none') {
-        if (!e.target.closest('#cellCustomDropdown') && !e.target.closest('.sched-pill-custom') && !e.target.closest('.sched-shift-card')) {
+        if (!e.target.closest('#cellCustomDropdown') && !e.target.closest('.sched-pill-custom') && !e.target.closest('.sched-shift-card') && !e.target.closest('.sched-top-actions')) {
             closeCellCustomDropdown();
         }
     }
