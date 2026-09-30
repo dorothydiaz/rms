@@ -6,15 +6,37 @@
 <x-hr-tabs parent="time-attendance">
     <x-slot:actions>
         <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-            <form method="GET" action="{{ route('hr.attendance.timekeeping') }}" style="display: flex; gap: 8px; align-items: center;">
+            <form method="GET" action="{{ route('hr.attendance.timekeeping') }}" style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
                 <label style="font-size: 12px; font-weight: 600; color: #475569;">Select Date:</label>
-                <input type="date" name="date" class="hr-input" value="{{ $date }}" onchange="this.form.submit()" style="height: 38px;">
+                <div style="display: flex; gap: 3px; align-items: center;">
+                    <a href="{{ route('hr.attendance.timekeeping', array_merge(request()->query(), ['date' => \Carbon\Carbon::parse($date)->subDay()->toDateString()])) }}" class="hr-btn hr-btn-secondary" style="height: 38px; padding: 0 10px;" title="Previous Day">
+                        <i class="ph ph-caret-left"></i>
+                    </a>
+                    <input type="date" name="date" class="hr-input" value="{{ $date }}" onchange="this.form.submit()" style="height: 38px;">
+                    <a href="{{ route('hr.attendance.timekeeping', array_merge(request()->query(), ['date' => \Carbon\Carbon::parse($date)->addDay()->toDateString()])) }}" class="hr-btn hr-btn-secondary" style="height: 38px; padding: 0 10px;" title="Next Day">
+                        <i class="ph ph-caret-right"></i>
+                    </a>
+                    @if($date !== \Carbon\Carbon::today()->toDateString())
+                        <a href="{{ route('hr.attendance.timekeeping', array_merge(request()->query(), ['date' => \Carbon\Carbon::today()->toDateString()])) }}" class="hr-btn hr-btn-secondary" style="height: 38px; padding: 0 10px; font-size: 12px; font-weight: 600;" title="Jump to Today">
+                            Today
+                        </a>
+                    @endif
+                </div>
+
+                @if(isset($branches) && $branches->count() > 1)
+                    <select name="branch_id" class="hr-select" onchange="this.form.submit()" style="height: 38px;">
+                        <option value="">All Branches</option>
+                        @foreach($branches as $b)
+                            <option value="{{ $b->id }}" {{ request('branch_id') == $b->id ? 'selected' : '' }}>{{ $b->name }}</option>
+                        @endforeach
+                    </select>
+                @endif
             </form>
             <a href="{{ route('hr.attendance.corrections', ['date' => $date]) }}" class="hr-btn hr-btn-secondary" style="height: 38px; display: inline-flex; align-items: center; gap: 6px;" title="View all manual entries for this date">
                 <i class="ph ph-pencil-line"></i>
                 <span>Manual Time Entries</span>
             </a>
-            <button type="button" class="hr-btn hr-btn-primary" onclick="openTimekeepingEncodeModal()" style="height: 38px; display: inline-flex; align-items: center; gap: 6px;">
+            <button type="button" class="hr-btn hr-btn-primary" onclick="openTimekeepingEncodeModal()" style="height: 38px; display: inline-flex; align-items: center; gap: 6px;" title="Encode Manual Time Entry (Hotkey: F2)">
                 <i class="ph ph-plus-circle"></i>
                 <span>Encode Time Entry</span>
             </button>
@@ -22,10 +44,17 @@
     </x-slot:actions>
 </x-hr-tabs>
 
-<div class="hr-table-card">
-    <div class="hr-table-header">
-        <span class="hr-table-title"><i class="ph ph-calendar-blank"></i> Staff Time Logs for {{ \Carbon\Carbon::parse($date)->format('F d, Y') }}</span>
-        <span class="hr-badge hr-badge-neutral">{{ count($employees) }} Scheduled Staff</span>
+<div class="hr-table-card hr-table-card-full">
+    <div class="hr-table-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <span class="hr-table-title"><i class="ph ph-calendar-blank"></i> Staff Time Logs for {{ \Carbon\Carbon::parse($date)->format('F d, Y') }}</span>
+            <span class="hr-badge hr-badge-neutral" id="tkStaffCountBadge">{{ count($employees) }} Staff</span>
+        </div>
+        <div style="position: relative; min-width: 260px; margin-left: auto;">
+            <i class="ph ph-magnifying-glass" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 14px;"></i>
+            <input type="text" id="tkSearchInput" placeholder="Search staff name, ID, branch..." oninput="filterTimekeepingRows()" style="width: 100%; font-size: 12.5px; padding: 7px 28px 7px 30px; border: 1.5px solid #e2e8f0; border-radius: 8px; outline: none; height: 36px; box-sizing: border-box;">
+            <button type="button" id="tkClearSearchBtn" onclick="clearTkSearch()" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); border: none; background: transparent; color: #94a3b8; cursor: pointer; display: none; font-size: 16px; line-height: 1;">&times;</button>
+        </div>
     </div>
     <div class="hr-table-wrapper">
         <table class="hr-table">
@@ -45,7 +74,7 @@
                     <th style="text-align: right;">Manual Punch</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="timekeepingTableBody">
                 @forelse($employees as $emp)
                     @php
                         $att = $attendanceMap->get($emp->id);
@@ -67,7 +96,12 @@
                             'notes' => $att?->notes ?? '',
                         ];
                     @endphp
-                    <tr>
+                    <tr class="timekeeping-row"
+                        data-emp-id="{{ strtolower($emp->employee_id) }}"
+                        data-emp-name="{{ strtolower($emp->full_name) }}"
+                        data-emp-branch="{{ strtolower($emp->branch?->name ?? '') }}"
+                        data-emp-dept="{{ strtolower($emp->department?->name ?? '') }}"
+                        data-emp-pos="{{ strtolower($emp->position?->name ?? '') }}">
                         <td><strong style="color: #9333ea; font-family: monospace;">{{ $emp->employee_id }}</strong></td>
                         <td>
                             <div class="hr-emp-avatar-wrap">
@@ -177,6 +211,24 @@
                 @endforelse
             </tbody>
         </table>
+    </div>
+
+    <!-- Client-side Pagination Bar -->
+    <div class="hr-table-footer" id="timekeepingPaginationBar" style="display:none;">
+        <div class="hr-pagination-left">
+            <div class="hr-pagination-info" id="timekeepingPaginationInfo"></div>
+            <div class="hr-per-page-wrap">
+                <span class="hr-per-page-label">Show</span>
+                <select class="hr-per-page-select" id="timekeepingPerPageSelect" onchange="tkChangePerPage()" aria-label="Rows per page">
+                    <option value="15" selected>15</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+                <span class="hr-per-page-label">rows</span>
+            </div>
+        </div>
+        <nav class="hr-pagination-nav" role="navigation" aria-label="Pagination Navigation" id="timekeepingPageNav"></nav>
     </div>
 </div>
 
@@ -580,6 +632,150 @@ function openTimekeepingEncodeModal() {
     switchPunchTab('encode');
     openModal('punchModal');
 }
+
+// =========================================================================
+// Fuzzy Search & Client-Side Pagination for Timekeeping
+// =========================================================================
+function _tkLevenshtein(a, b) {
+    const m = a.length, n = b.length;
+    const dp = Array.from({ length: m + 1 }, (_, i) =>
+        Array.from({ length: n + 1 }, (_, j) => (i === 0 ? j : j === 0 ? i : 0))
+    );
+    for (let i = 1; i <= m; i++) {
+        for (let j = 1; j <= n; j++) {
+            dp[i][j] = a[i-1] === b[j-1]
+                ? dp[i-1][j-1]
+                : 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
+        }
+    }
+    return dp[m][n];
+}
+
+function _tkFuzzyMatch(haystack, query) {
+    if (!query) return true;
+    if (haystack.includes(query)) return true;
+    const tokens = haystack.split(/[\s,._\-\/]+/).filter(Boolean);
+    const qLen = query.length;
+    for (const token of tokens) {
+        if (token.length < 2) continue;
+        const threshold = Math.floor(Math.min(token.length, qLen) / 4) + 1;
+        if (_tkLevenshtein(token, query) <= threshold) return true;
+    }
+    return false;
+}
+
+let _tkPage = 1, _tkRows = [];
+
+function tkGetPerPage() {
+    return parseInt(document.getElementById('timekeepingPerPageSelect')?.value || '15', 10);
+}
+
+function tkChangePerPage() {
+    _tkPage = 1;
+    renderTkPage();
+}
+
+function tkGoToPage(p) {
+    _tkPage = p;
+    renderTkPage();
+    const w = document.getElementById('timekeepingTableBody')?.closest('.hr-table-wrapper');
+    if (w) w.scrollTop = 0;
+}
+
+function renderTkPage() {
+    const pp = tkGetPerPage(), total = _tkRows.length;
+    const totalPages = Math.max(1, Math.ceil(total / pp));
+    if (_tkPage > totalPages) _tkPage = totalPages;
+    const start = (_tkPage - 1) * pp, end = Math.min(start + pp, total);
+
+    document.querySelectorAll('#timekeepingTableBody tr.timekeeping-row').forEach(r => r.style.display = 'none');
+    _tkRows.forEach((r, i) => {
+        r.style.display = (i >= start && i < end) ? '' : 'none';
+    });
+
+    const bar = document.getElementById('timekeepingPaginationBar');
+    if (bar) bar.style.display = total > 0 ? 'flex' : 'none';
+
+    const info = document.getElementById('timekeepingPaginationInfo');
+    if (info) info.innerHTML = `Showing <strong>${total === 0 ? 0 : start + 1}</strong> to <strong>${end}</strong> of <strong>${total}</strong> staff`;
+
+    const badge = document.getElementById('tkStaffCountBadge');
+    if (badge) badge.innerText = `${total} Staff`;
+
+    const nav = document.getElementById('timekeepingPageNav');
+    if (!nav) return;
+
+    let h = _tkPage === 1
+        ? `<span class="hr-page-btn disabled"><i class="ph ph-caret-left"></i><span>Prev</span></span>`
+        : `<span class="hr-page-btn" onclick="tkGoToPage(${_tkPage-1})" style="cursor:pointer"><i class="ph ph-caret-left"></i><span>Prev</span></span>`;
+
+    h += `<div class="hr-page-numbers">`;
+    let ps = Math.max(1, _tkPage - 2), pe = Math.min(totalPages, _tkPage + 2);
+    if (ps > 1) {
+        h += `<span class="hr-page-num" onclick="tkGoToPage(1)" style="cursor:pointer">1</span>`;
+        if (ps > 2) h += `<span class="hr-page-num dots">…</span>`;
+    }
+    for (let p = ps; p <= pe; p++) {
+        h += p === _tkPage
+            ? `<span class="hr-page-num active">${p}</span>`
+            : `<span class="hr-page-num" onclick="tkGoToPage(${p})" style="cursor:pointer">${p}</span>`;
+    }
+    if (pe < totalPages) {
+        if (pe < totalPages - 1) h += `<span class="hr-page-num dots">…</span>`;
+        h += `<span class="hr-page-num" onclick="tkGoToPage(${totalPages})" style="cursor:pointer">${totalPages}</span>`;
+    }
+    h += `</div>`;
+
+    h += _tkPage >= totalPages
+        ? `<span class="hr-page-btn disabled"><span>Next</span><i class="ph ph-caret-right"></i></span>`
+        : `<span class="hr-page-btn" onclick="tkGoToPage(${_tkPage+1})" style="cursor:pointer"><span>Next</span><i class="ph ph-caret-right"></i></span>`;
+
+    nav.innerHTML = h;
+}
+
+function filterTimekeepingRows() {
+    const q = (document.getElementById('tkSearchInput')?.value || '').toLowerCase().trim();
+    const clearBtn = document.getElementById('tkClearSearchBtn');
+    if (clearBtn) clearBtn.style.display = q ? 'block' : 'none';
+
+    const allRows = Array.from(document.querySelectorAll('#timekeepingTableBody tr.timekeeping-row'));
+    if (!q) {
+        _tkRows = allRows;
+    } else {
+        _tkRows = allRows.filter(r => {
+            const id = r.getAttribute('data-emp-id') || '';
+            const name = r.getAttribute('data-emp-name') || '';
+            const branch = r.getAttribute('data-emp-branch') || '';
+            const dept = r.getAttribute('data-emp-dept') || '';
+            const pos = r.getAttribute('data-emp-pos') || '';
+            return _tkFuzzyMatch(id, q) || _tkFuzzyMatch(name, q) || _tkFuzzyMatch(branch, q) || _tkFuzzyMatch(dept, q) || _tkFuzzyMatch(pos, q);
+        });
+    }
+
+    _tkPage = 1;
+    renderTkPage();
+}
+
+function clearTkSearch() {
+    const inp = document.getElementById('tkSearchInput');
+    if (inp) inp.value = '';
+    filterTimekeepingRows();
+    inp?.focus();
+}
+
+// Hotkey support: F2 to encode time entry, Escape to close
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'F2') {
+        e.preventDefault();
+        openTimekeepingEncodeModal();
+    } else if (e.key === 'Escape') {
+        closeModal('punchModal');
+    }
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    filterTimekeepingRows();
+});
 </script>
 @endpush
 @endsection

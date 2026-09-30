@@ -106,8 +106,8 @@
 </div>
 
 <!-- Table Card with Sticky Headers and Vertical Scrollbar -->
-<div class="hr-table-card">
-    <div class="hr-table-wrapper" id="companiesTableWrapper" style="max-height: 560px; overflow-y: auto; overflow-x: auto;">
+<div class="hr-table-card hr-table-card-full">
+    <div class="hr-table-wrapper" id="companiesTableWrapper" style="overflow-y:auto; overflow-x:auto;">
         <table class="hr-table" id="companiesTable">
             <thead>
                 <tr>
@@ -276,6 +276,24 @@
                 </tr>
             </tbody>
         </table>
+    </div>
+
+    <!-- Client-side Pagination Bar -->
+    <div class="hr-table-footer" id="compPaginationBar" style="display:none;">
+        <div class="hr-pagination-left">
+            <div class="hr-pagination-info" id="compPaginationInfo"></div>
+            <div class="hr-per-page-wrap">
+                <span class="hr-per-page-label">Show</span>
+                <select class="hr-per-page-select" id="compPerPageSelect" onchange="compChangePerPage()" aria-label="Rows per page">
+                    <option value="15" selected>15</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+                <span class="hr-per-page-label">rows</span>
+            </div>
+        </div>
+        <nav class="hr-pagination-nav" role="navigation" aria-label="Pagination Navigation" id="compPageNav"></nav>
     </div>
 </div>
 
@@ -493,58 +511,100 @@ function openEditCompanyModal(data) {
     openModal('editCompanyModal');
 }
 
+
 // =========================================================================
-// Real-Time Table Filter (No Enter Key or Submit Button Required)
+// Client-Side Pagination State — Companies
+// =========================================================================
+let _compCurrentPage = 1;
+let _compFilteredRows = [];
+
+function compGetPerPage() { return parseInt(document.getElementById('compPerPageSelect')?.value || '15', 10); }
+function compChangePerPage() { _compCurrentPage = 1; renderCompPage(); }
+function compGoToPage(p) {
+    _compCurrentPage = p;
+    renderCompPage();
+    const w = document.getElementById('companiesTableWrapper');
+    if (w) w.scrollTop = 0;
+}
+
+function renderCompPage() {
+    const pp = compGetPerPage(), total = _compFilteredRows.length;
+    const totalPages = Math.max(1, Math.ceil(total / pp));
+    if (_compCurrentPage > totalPages) _compCurrentPage = totalPages;
+    const start = (_compCurrentPage - 1) * pp, end = Math.min(start + pp, total);
+
+    document.querySelectorAll('#companiesTableBody tr.company-row').forEach(r => r.style.display = 'none');
+    _compFilteredRows.forEach((r, i) => { r.style.display = (i >= start && i < end) ? '' : 'none'; });
+
+
+    const noResultsRow = document.getElementById('noCompanyResultsRow');
+    if (noResultsRow) noResultsRow.style.display = total === 0 ? '' : 'none';
+
+    const countElem = document.getElementById('companyVisibleCount');
+    if (countElem) countElem.textContent = total;
+
+    const bar = document.getElementById('compPaginationBar');
+    if (bar) bar.style.display = total > 0 ? 'flex' : 'none';
+
+    const info = document.getElementById('compPaginationInfo');
+    if (info) info.innerHTML = `Showing <strong>${total === 0 ? 0 : start + 1}</strong> to <strong>${end}</strong> of <strong>${total}</strong> entities`;
+
+    const nav = document.getElementById('compPageNav');
+    if (!nav) return;
+    let h = _compCurrentPage === 1
+        ? `<span class="hr-page-btn disabled"><i class="ph ph-caret-left"></i><span>Prev</span></span>`
+        : `<span class="hr-page-btn" onclick="compGoToPage(${_compCurrentPage-1})" style="cursor:pointer"><i class="ph ph-caret-left"></i><span>Prev</span></span>`;
+    h += `<div class="hr-page-numbers">`;
+    let ps = Math.max(1, _compCurrentPage-2), pe = Math.min(totalPages, _compCurrentPage+2);
+    if (ps > 1) { h += `<span class="hr-page-num" onclick="compGoToPage(1)" style="cursor:pointer">1</span>`; if (ps > 2) h += `<span class="hr-page-num dots">…</span>`; }
+    for (let p = ps; p <= pe; p++) h += p === _compCurrentPage ? `<span class="hr-page-num active">${p}</span>` : `<span class="hr-page-num" onclick="compGoToPage(${p})" style="cursor:pointer">${p}</span>`;
+    if (pe < totalPages) { if (pe < totalPages-1) h += `<span class="hr-page-num dots">…</span>`; h += `<span class="hr-page-num" onclick="compGoToPage(${totalPages})" style="cursor:pointer">${totalPages}</span>`; }
+    h += `</div>`;
+    h += _compCurrentPage >= totalPages
+        ? `<span class="hr-page-btn disabled"><span>Next</span><i class="ph ph-caret-right"></i></span>`
+        : `<span class="hr-page-btn" onclick="compGoToPage(${_compCurrentPage+1})" style="cursor:pointer"><span>Next</span><i class="ph ph-caret-right"></i></span>`;
+    nav.innerHTML = h;
+}
+
+// =========================================================================
+// Real-Time Table Filter
 // =========================================================================
 function filterCompaniesTable() {
     const searchVal = (document.getElementById('companySearchInput')?.value || '').toLowerCase().trim();
-    const typeVal = (document.getElementById('companyTypeFilter')?.value || '').trim();
+    const typeVal   = (document.getElementById('companyTypeFilter')?.value || '').trim();
     const statusVal = (document.getElementById('companyStatusFilter')?.value || '').trim();
 
-    const rows = document.querySelectorAll('#companiesTableBody tr.company-row');
-    const noResultsRow = document.getElementById('noCompanyResultsRow');
-    let visibleCount = 0;
+    const allRows = document.querySelectorAll('#companiesTableBody tr.company-row');
 
-    rows.forEach(row => {
-        const code = row.getAttribute('data-code') || '';
-        const name = row.getAttribute('data-name') || '';
-        const type = row.getAttribute('data-type') || '';
+    _compFilteredRows = Array.from(allRows).filter(row => {
+        const code    = row.getAttribute('data-code')    || '';
+        const name    = row.getAttribute('data-name')    || '';
+        const type    = row.getAttribute('data-type')    || '';
         const contact = row.getAttribute('data-contact') || '';
-        const email = row.getAttribute('data-email') || '';
-        const phone = row.getAttribute('data-phone') || '';
-        const tin = row.getAttribute('data-tin') || '';
-        const status = row.getAttribute('data-status') || '';
+        const email   = row.getAttribute('data-email')   || '';
+        const phone   = row.getAttribute('data-phone')   || '';
+        const tin     = row.getAttribute('data-tin')     || '';
+        const status  = row.getAttribute('data-status')  || '';
 
-        const matchesSearch = !searchVal || 
-            code.includes(searchVal) || 
-            name.includes(searchVal) || 
-            contact.includes(searchVal) || 
-            email.includes(searchVal) || 
-            phone.includes(searchVal) || 
+        const matchesSearch = !searchVal ||
+            code.includes(searchVal) ||
+            name.includes(searchVal) ||
+            contact.includes(searchVal) ||
+            email.includes(searchVal) ||
+            phone.includes(searchVal) ||
             tin.includes(searchVal);
 
-        const matchesType = !typeVal || type === typeVal;
+        const matchesType   = !typeVal   || type === typeVal;
         const matchesStatus = !statusVal || status === statusVal;
 
-        if (matchesSearch && matchesType && matchesStatus) {
-            row.style.display = '';
-            visibleCount++;
-        } else {
-            row.style.display = 'none';
-        }
+        return matchesSearch && matchesType && matchesStatus;
     });
 
-    const countElem = document.getElementById('companyVisibleCount');
-    if (countElem) countElem.textContent = visibleCount;
-
-    if (noResultsRow) {
-        if (visibleCount === 0 && rows.length > 0) {
-            noResultsRow.style.display = '';
-        } else {
-            noResultsRow.style.display = 'none';
-        }
-    }
+    _compCurrentPage = 1;
+    renderCompPage();
 }
+
+document.addEventListener('DOMContentLoaded', () => { filterCompaniesTable(); });
 
 function resetCompaniesFilters() {
     const s = document.getElementById('companySearchInput');
@@ -678,6 +738,9 @@ function sortCompaniesTable(colIndex, dataType, forceDir = null) {
     const noResultsRow = document.getElementById('noCompanyResultsRow');
     rows.forEach(r => tableBody.appendChild(r));
     if (noResultsRow) tableBody.appendChild(noResultsRow);
+
+    // Re-apply filter + pagination after sort reorders DOM
+    filterCompaniesTable();
 }
 </script>
 @endpush

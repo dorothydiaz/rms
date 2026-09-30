@@ -80,8 +80,8 @@
 </div>
 
 <!-- Employees Data Table with Sticky Headers and Vertical Scrollbar -->
-<div class="hr-table-card">
-    <div class="hr-table-wrapper" id="employeesTableWrapper" style="max-height: 560px; overflow-y: auto; overflow-x: auto;">
+<div class="hr-table-card hr-table-card-full">
+    <div class="hr-table-wrapper" id="employeesTableWrapper" style="overflow-y: auto; overflow-x: auto;">
         <table class="hr-table" id="employeesDirectoryTable">
             <thead>
                 <tr>
@@ -272,11 +272,23 @@
         </table>
     </div>
 
-    @if($employees->hasPages())
-        <div style="padding: 14px 20px; border-top: 1px solid #e2e8f0;">
-            {{ $employees->links() }}
+    <!-- Client-side Pagination Bar -->
+    <div class="hr-table-footer" id="empPaginationBar" style="display:none;">
+        <div class="hr-pagination-left">
+            <div class="hr-pagination-info" id="empPaginationInfo"></div>
+            <div class="hr-per-page-wrap">
+                <span class="hr-per-page-label">Show</span>
+                <select class="hr-per-page-select" id="empPerPageSelect" onchange="empChangePerPage()" aria-label="Rows per page">
+                    <option value="15" selected>15</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+                <span class="hr-per-page-label">rows</span>
+            </div>
         </div>
-    @endif
+        <nav class="hr-pagination-nav" role="navigation" aria-label="Pagination Navigation" id="empPageNav"></nav>
+    </div>
 </div>
 
 <!-- Modal: Add New Employee -->
@@ -619,59 +631,157 @@ function previewAddPhoto(input) {
 }
 
 // =========================================================================
+// Client-Side Pagination State
+// =========================================================================
+let _empCurrentPage  = 1;
+let _empFilteredRows = []; // holds references to all currently-matching <tr> elements
+
+function empGetPerPage() {
+    return parseInt(document.getElementById('empPerPageSelect')?.value || '15', 10);
+}
+
+function empChangePerPage() {
+    _empCurrentPage = 1;
+    renderEmpPage();
+}
+
+/**
+ * Renders the current page of _empFilteredRows into the tbody
+ * and updates the pagination bar.
+ */
+function renderEmpPage() {
+    const perPage    = empGetPerPage();
+    const total      = _empFilteredRows.length;
+    const totalPages = Math.max(1, Math.ceil(total / perPage));
+    if (_empCurrentPage > totalPages) _empCurrentPage = totalPages;
+
+    const start = (_empCurrentPage - 1) * perPage; // 0-based
+    const end   = Math.min(start + perPage, total);
+
+    // Show/hide rows
+    const allRows = document.querySelectorAll('#employeesTableBody tr.emp-row');
+    allRows.forEach(r => { r.style.display = 'none'; });
+    _empFilteredRows.forEach((r, idx) => {
+        r.style.display = (idx >= start && idx < end) ? '' : 'none';
+    });
+
+    // No-results row
+    const noResultsRow = document.getElementById('noEmpResultsRow');
+    if (noResultsRow) {
+        noResultsRow.style.display = (total === 0) ? '' : 'none';
+    }
+
+    // Visible count badge
+    const countElem = document.getElementById('empVisibleCount');
+    if (countElem) countElem.textContent = total;
+
+    // Pagination bar visibility
+    const bar = document.getElementById('empPaginationBar');
+    if (bar) bar.style.display = total > 0 ? 'flex' : 'none';
+
+    // Info text
+    const info = document.getElementById('empPaginationInfo');
+    if (info) {
+        const from = total === 0 ? 0 : start + 1;
+        info.innerHTML = `Showing <strong>${from}</strong> to <strong>${end}</strong> of <strong>${total}</strong> employees`;
+    }
+
+    // Build page-number nav
+    const nav = document.getElementById('empPageNav');
+    if (!nav) return;
+
+    let html = '';
+
+    // Prev button
+    if (_empCurrentPage === 1) {
+        html += `<span class="hr-page-btn disabled" aria-disabled="true"><i class="ph ph-caret-left"></i><span>Prev</span></span>`;
+    } else {
+        html += `<span class="hr-page-btn" onclick="empGoToPage(${_empCurrentPage - 1})" style="cursor:pointer;"><i class="ph ph-caret-left"></i><span>Prev</span></span>`;
+    }
+
+    // Page numbers (windowed: show up to 5 around current)
+    html += `<div class="hr-page-numbers">`;
+    const window_size = 2;
+    let pageStart = Math.max(1, _empCurrentPage - window_size);
+    let pageEnd   = Math.min(totalPages, _empCurrentPage + window_size);
+    if (pageStart > 1) {
+        html += `<span class="hr-page-num" onclick="empGoToPage(1)" style="cursor:pointer;">1</span>`;
+        if (pageStart > 2) html += `<span class="hr-page-num dots">…</span>`;
+    }
+    for (let p = pageStart; p <= pageEnd; p++) {
+        if (p === _empCurrentPage) {
+            html += `<span class="hr-page-num active" aria-current="page">${p}</span>`;
+        } else {
+            html += `<span class="hr-page-num" onclick="empGoToPage(${p})" style="cursor:pointer;">${p}</span>`;
+        }
+    }
+    if (pageEnd < totalPages) {
+        if (pageEnd < totalPages - 1) html += `<span class="hr-page-num dots">…</span>`;
+        html += `<span class="hr-page-num" onclick="empGoToPage(${totalPages})" style="cursor:pointer;">${totalPages}</span>`;
+    }
+    html += `</div>`;
+
+    // Next button
+    if (_empCurrentPage >= totalPages) {
+        html += `<span class="hr-page-btn disabled" aria-disabled="true"><span>Next</span><i class="ph ph-caret-right"></i></span>`;
+    } else {
+        html += `<span class="hr-page-btn" onclick="empGoToPage(${_empCurrentPage + 1})" style="cursor:pointer;"><span>Next</span><i class="ph ph-caret-right"></i></span>`;
+    }
+
+    nav.innerHTML = html;
+}
+
+function empGoToPage(page) {
+    _empCurrentPage = page;
+    renderEmpPage();
+    // Scroll table back to top on page change
+    const wrapper = document.getElementById('employeesTableWrapper');
+    if (wrapper) wrapper.scrollTop = 0;
+}
+
+// =========================================================================
 // Real-Time Table Filter (No Enter Key or Submit Button Required)
 // =========================================================================
 function filterEmployeesDirectory() {
     const searchVal = (document.getElementById('empSearchInput')?.value || '').toLowerCase().trim();
     const branchVal = (document.getElementById('empBranchFilter')?.value || '').trim();
-    const deptVal = (document.getElementById('empDeptFilter')?.value || '').trim();
+    const deptVal   = (document.getElementById('empDeptFilter')?.value || '').trim();
     const statusVal = (document.getElementById('empStatusFilter')?.value || '').trim();
 
-    const rows = document.querySelectorAll('#employeesTableBody tr.emp-row');
-    const noResultsRow = document.getElementById('noEmpResultsRow');
-    let visibleCount = 0;
+    const allRows = document.querySelectorAll('#employeesTableBody tr.emp-row');
 
-    rows.forEach(row => {
-        const id = row.getAttribute('data-id') || '';
-        const name = row.getAttribute('data-name') || '';
-        const email = row.getAttribute('data-email') || '';
-        const branch = row.getAttribute('data-branch') || '';
-        const dept = row.getAttribute('data-dept') || '';
-        const pos = row.getAttribute('data-position') || '';
-        const type = row.getAttribute('data-type') || '';
-        const status = row.getAttribute('data-status') || '';
+    _empFilteredRows = Array.from(allRows).filter(row => {
+        const id     = row.getAttribute('data-id')       || '';
+        const name   = row.getAttribute('data-name')     || '';
+        const email  = row.getAttribute('data-email')    || '';
+        const branch = row.getAttribute('data-branch')   || '';
+        const dept   = row.getAttribute('data-dept')     || '';
+        const pos    = row.getAttribute('data-position') || '';
+        const status = row.getAttribute('data-status')   || '';
 
-        const matchesSearch = !searchVal || 
-            id.includes(searchVal) || 
-            name.includes(searchVal) || 
-            email.includes(searchVal) || 
+        const matchesSearch = !searchVal ||
+            id.includes(searchVal) ||
+            name.includes(searchVal) ||
+            email.includes(searchVal) ||
             pos.includes(searchVal) ||
             dept.toLowerCase().includes(searchVal) ||
             branch.toLowerCase().includes(searchVal);
 
         const matchesBranch = !branchVal || branch === branchVal;
-        const matchesDept = !deptVal || dept === deptVal;
+        const matchesDept   = !deptVal   || dept === deptVal;
         const matchesStatus = !statusVal || status === statusVal;
 
-        if (matchesSearch && matchesBranch && matchesDept && matchesStatus) {
-            row.style.display = '';
-            visibleCount++;
-        } else {
-            row.style.display = 'none';
-        }
+        return matchesSearch && matchesBranch && matchesDept && matchesStatus;
     });
 
-    const countElem = document.getElementById('empVisibleCount');
-    if (countElem) countElem.textContent = visibleCount;
-
-    if (noResultsRow) {
-        if (visibleCount === 0 && rows.length > 0) {
-            noResultsRow.style.display = '';
-        } else {
-            noResultsRow.style.display = 'none';
-        }
-    }
+    _empCurrentPage = 1;
+    renderEmpPage();
 }
+
+// Run pagination on page load
+document.addEventListener('DOMContentLoaded', () => {
+    filterEmployeesDirectory();
+});
 
 function resetEmployeesDirectory() {
     const s = document.getElementById('empSearchInput');
@@ -812,6 +922,9 @@ function sortEmployeesDirectory(colIndex, dataType, forceDir = null) {
     const noResultsRow = document.getElementById('noEmpResultsRow');
     rows.forEach(r => tableBody.appendChild(r));
     if (noResultsRow) tableBody.appendChild(noResultsRow);
+
+    // Re-apply filter + pagination after sort reorders the DOM
+    filterEmployeesDirectory();
 }
 function syncAddPrimaryCheckbox(type, id) {
     if (!id) return;

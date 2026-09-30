@@ -59,6 +59,11 @@ class AttendanceRecord extends Model
         ];
     }
 
+    public function setDateAttribute($value): void
+    {
+        $this->attributes['date'] = $value ? \Carbon\Carbon::parse($value)->toDateString() : null;
+    }
+
     public function employee(): BelongsTo
     {
         return $this->belongsTo(Employee::class);

@@ -1794,6 +1794,9 @@ a {
     padding: 24px;
     flex: 1;
     overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
 }
 
 /* Responsive Design */
@@ -2660,19 +2663,48 @@ a {
     border-bottom: none;
 }
 
-/* Glassmorphic Table Footer & Pagination (90% Transparency) */
+/* Phantom filler rows — removed, no longer used */
+
+/* Full-viewport Table Cards — Pinned bottom footer with independent vertical scroll */
+.hr-table-card.hr-table-card-full,
+.hr-table-card:has(.hr-table-footer) {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 340px;
+    margin-bottom: 0;
+    overflow: hidden;
+}
+
+.hr-table-card.hr-table-card-full > .hr-table-wrapper,
+.hr-table-card:has(.hr-table-footer) > .hr-table-wrapper {
+    flex: 1;
+    min-height: 0;
+    max-height: none;
+    overflow-y: auto;
+    overflow-x: auto;
+    border-radius: 18px 18px 0 0;
+}
+
+/* Glassmorphic Table Footer & Pagination — frozen at card/viewport bottom */
 .hr-table-footer {
-    padding: 12px 20px;
-    background: rgba(255, 255, 255, 0.90);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-top: 1px solid rgba(226, 232, 240, 0.85);
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+    padding: 10px 20px;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-top: 1px solid rgba(226, 232, 240, 0.9);
+    box-shadow: 0 -2px 12px rgba(15, 23, 42, 0.06);
     display: flex;
     align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
-    gap: 12px;
+    gap: 10px;
     border-radius: 0 0 18px 18px;
+    flex-shrink: 0;
+    margin-top: auto;
 }
 
 .hr-pagination-container {

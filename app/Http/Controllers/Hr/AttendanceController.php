@@ -54,7 +54,7 @@ class AttendanceController extends Controller
         // Load today's attendance for these employees
         $empIds = $employees->pluck('id');
         $attendanceMap = AttendanceRecord::whereIn('employee_id', $empIds)
-            ->where('date', $date)
+            ->whereDate('date', $date)
             ->get()
             ->keyBy('employee_id');
 
@@ -81,10 +81,13 @@ class AttendanceController extends Controller
         $employee = Employee::findOrFail($validated['employee_id']);
         $timeStr = $validated['time'] . ':00';
 
-        $record = AttendanceRecord::firstOrNew([
-            'employee_id' => $employee->id,
-            'date' => $validated['date'],
-        ]);
+        $cleanDate = Carbon::parse($validated['date'])->toDateString();
+        $record = AttendanceRecord::where('employee_id', $employee->id)
+            ->whereDate('date', $cleanDate)
+            ->first() ?? new AttendanceRecord([
+                'employee_id' => $employee->id,
+                'date' => $cleanDate,
+            ]);
 
         $record->branch_id = $employee->branch_id;
         $record->source = 'Manual';
@@ -1365,8 +1368,9 @@ class AttendanceController extends Controller
             return response()->json(['exists' => false]);
         }
 
+        $cleanDate = Carbon::parse($date)->toDateString();
         $att = AttendanceRecord::where('employee_id', $employeeId)
-            ->where('date', $date)
+            ->whereDate('date', $cleanDate)
             ->first();
 
         if (!$att) {
@@ -1432,10 +1436,13 @@ class AttendanceController extends Controller
         $coffeeOutFmt = $formatTime($coffeeBreakOut);
         $coffeeInFmt = $formatTime($coffeeBreakIn);
 
-        $record = AttendanceRecord::firstOrNew([
-            'employee_id' => $employee->id,
-            'date' => $date,
-        ]);
+        $cleanDate = Carbon::parse($date)->toDateString();
+        $record = AttendanceRecord::where('employee_id', $employee->id)
+            ->whereDate('date', $cleanDate)
+            ->first() ?? new AttendanceRecord([
+                'employee_id' => $employee->id,
+                'date' => $cleanDate,
+            ]);
 
         $prev = $record->toArray();
         $record->branch_id = $employee->branch_id;

@@ -212,13 +212,13 @@
         </div>
 
         <!-- 3. Real-time Search Input -->
-        <div style="position: relative; min-width: 180px; margin-left: auto;">
-            <i class="ph ph-magnifying-glass" style="position: absolute; left: 8px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 12px;"></i>
-            <input type="text" id="liveEmployeeSearch" placeholder="Search visible rows..." 
+        <div style="position: relative; min-width: 300px; margin-left: auto;">
+            <i class="ph ph-magnifying-glass" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 15px;"></i>
+            <input type="text" id="liveEmployeeSearch" placeholder="Search employees, position, branch…" 
                    oninput="filterMatrixRowsBySearch()"
-                   style="width: 100%; font-size: 11.5px; padding: 5px 22px 5px 26px; border: 1.5px solid #e2e8f0; border-radius: 8px; outline: none;">
+                   style="width: 100%; font-size: 13px; padding: 9px 32px 9px 34px; border: 1.5px solid #e2e8f0; border-radius: 10px; outline: none; height: 40px; box-sizing: border-box;">
             <button type="button" id="clearSearchBtn" onclick="clearLiveSearch()" 
-                    style="position: absolute; right: 6px; top: 50%; transform: translateY(-50%); border: none; background: transparent; color: #94a3b8; cursor: pointer; display: none;">
+                    style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); border: none; background: transparent; color: #94a3b8; cursor: pointer; display: none; font-size: 16px; line-height: 1;">
                 &times;
             </button>
         </div>
@@ -4370,6 +4370,42 @@ function filterMatrixByCategory() {
     updateVisibleRosterCount();
 }
 
+/**
+ * Levenshtein distance for fuzzy employee search.
+ * Returns the edit-distance between two strings.
+ */
+function _levenshtein(a, b) {
+    const m = a.length, n = b.length;
+    const dp = Array.from({ length: m + 1 }, (_, i) =>
+        Array.from({ length: n + 1 }, (_, j) => (i === 0 ? j : j === 0 ? i : 0))
+    );
+    for (let i = 1; i <= m; i++) {
+        for (let j = 1; j <= n; j++) {
+            dp[i][j] = a[i-1] === b[j-1]
+                ? dp[i-1][j-1]
+                : 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
+        }
+    }
+    return dp[m][n];
+}
+
+/**
+ * Fuzzy match: returns true if query loosely matches any token in the haystack.
+ * Allows exact substring OR Levenshtein distance ≤ floor(token.length/4)+1.
+ */
+function _fuzzyMatch(haystack, query) {
+    if (!query) return true;
+    if (haystack.includes(query)) return true;
+    const tokens = haystack.split(/[\s,._\-\/]+/).filter(Boolean);
+    const qLen = query.length;
+    for (const token of tokens) {
+        if (token.length < 2) continue;
+        const threshold = Math.floor(Math.min(token.length, qLen) / 4) + 1;
+        if (_levenshtein(token, query) <= threshold) return true;
+    }
+    return false;
+}
+
 function filterMatrixRowsBySearch() {
     const q = (document.getElementById('liveEmployeeSearch')?.value || '').toLowerCase().trim();
     const clearBtn = document.getElementById('clearSearchBtn');
@@ -4379,19 +4415,15 @@ function filterMatrixRowsBySearch() {
     const rows = document.querySelectorAll('.sched-row');
 
     rows.forEach(r => {
-        const name = r.getAttribute('data-emp-name') || '';
-        const branch = r.getAttribute('data-emp-branch') || '';
-        const pos = r.getAttribute('data-emp-pos') || '';
-        const cat = r.getAttribute('data-emp-cat') || '';
+        const name   = (r.getAttribute('data-emp-name')   || '').toLowerCase();
+        const branch = (r.getAttribute('data-emp-branch') || '').toLowerCase();
+        const pos    = (r.getAttribute('data-emp-pos')    || '').toLowerCase();
+        const cat    = r.getAttribute('data-emp-cat') || '';
 
         const matchCat = checkedCats.length === 0 || checkedCats.includes(cat);
-        const matchQ = !q || name.includes(q) || branch.includes(q) || pos.includes(q);
+        const matchQ   = !q || _fuzzyMatch(name, q) || _fuzzyMatch(branch, q) || _fuzzyMatch(pos, q);
 
-        if (matchCat && matchQ) {
-            r.style.display = '';
-        } else {
-            r.style.display = 'none';
-        }
+        r.style.display = (matchCat && matchQ) ? '' : 'none';
     });
 
     updateVisibleRosterCount();

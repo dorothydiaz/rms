@@ -49,9 +49,9 @@
     </form>
 </div>
 
-<div class="hr-table-card">
-    <div class="hr-table-wrapper">
-        <table class="hr-table">
+<div class="hr-table-card hr-table-card-full">
+    <div class="hr-table-wrapper" id="logsTableWrapper" style="overflow-y:auto; overflow-x:auto;">
+        <table class="hr-table" id="logsTable">
             <thead>
                 <tr>
                     <th>Timestamp</th>
@@ -63,9 +63,9 @@
                     <th>Activity Details</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="logsTableBody">
                 @forelse($logs as $log)
-                    <tr>
+                    <tr class="log-row">
                         <td style="white-space: nowrap; font-size: 12px; color: #94a3b8;">
                             {{ $log->created_at->format('M d, Y h:i:s A') }}
                         </td>
@@ -103,10 +103,71 @@
             </tbody>
         </table>
     </div>
-    @if($logs->hasPages())
-        <div style="padding: 16px;">
-            {{ $logs->links() }}
+
+    <!-- Client-side Pagination Bar -->
+    <div class="hr-table-footer" id="logsPaginationBar" style="display:none;">
+        <div class="hr-pagination-left">
+            <div class="hr-pagination-info" id="logsPaginationInfo"></div>
+            <div class="hr-per-page-wrap">
+                <span class="hr-per-page-label">Show</span>
+                <select class="hr-per-page-select" id="logsPerPageSelect" onchange="logsChangePerPage()" aria-label="Rows per page">
+                    <option value="15" selected>15</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+                <span class="hr-per-page-label">rows</span>
+            </div>
         </div>
-    @endif
+        <nav class="hr-pagination-nav" role="navigation" aria-label="Pagination Navigation" id="logsPageNav"></nav>
+    </div>
 </div>
+
+@push('scripts')
+<script>
+// =========================================================================
+// Client-Side Pagination — Audit Logs
+// =========================================================================
+let _logsPage = 1, _logsRows = [];
+function logsGetPerPage() { return parseInt(document.getElementById('logsPerPageSelect')?.value || '15', 10); }
+function logsChangePerPage() { _logsPage = 1; renderLogsPage(); }
+function logsGoToPage(p) { _logsPage = p; renderLogsPage(); const w = document.getElementById('logsTableWrapper'); if(w) w.scrollTop = 0; }
+
+function renderLogsPage() {
+    const pp = logsGetPerPage(), total = _logsRows.length;
+    const totalPages = Math.max(1, Math.ceil(total / pp));
+    if (_logsPage > totalPages) _logsPage = totalPages;
+    const start = (_logsPage - 1) * pp, end = Math.min(start + pp, total);
+
+    document.querySelectorAll('#logsTableBody tr.log-row').forEach(r => r.style.display = 'none');
+    _logsRows.forEach((r, i) => { r.style.display = (i >= start && i < end) ? '' : 'none'; });
+
+
+    const bar = document.getElementById('logsPaginationBar');
+    if (bar) bar.style.display = total > 0 ? 'flex' : 'none';
+    const info = document.getElementById('logsPaginationInfo');
+    if (info) info.innerHTML = `Showing <strong>${total === 0 ? 0 : start+1}</strong> to <strong>${end}</strong> of <strong>${total}</strong> log entries`;
+    const nav = document.getElementById('logsPageNav');
+    if (!nav) return;
+    let h = _logsPage === 1
+        ? `<span class="hr-page-btn disabled"><i class="ph ph-caret-left"></i><span>Prev</span></span>`
+        : `<span class="hr-page-btn" onclick="logsGoToPage(${_logsPage-1})" style="cursor:pointer"><i class="ph ph-caret-left"></i><span>Prev</span></span>`;
+    h += `<div class="hr-page-numbers">`;
+    let ps = Math.max(1, _logsPage-2), pe = Math.min(totalPages, _logsPage+2);
+    if (ps > 1) { h += `<span class="hr-page-num" onclick="logsGoToPage(1)" style="cursor:pointer">1</span>`; if (ps > 2) h += `<span class="hr-page-num dots">…</span>`; }
+    for (let p = ps; p <= pe; p++) h += p === _logsPage ? `<span class="hr-page-num active">${p}</span>` : `<span class="hr-page-num" onclick="logsGoToPage(${p})" style="cursor:pointer">${p}</span>`;
+    if (pe < totalPages) { if (pe < totalPages-1) h += `<span class="hr-page-num dots">…</span>`; h += `<span class="hr-page-num" onclick="logsGoToPage(${totalPages})" style="cursor:pointer">${totalPages}</span>`; }
+    h += `</div>`;
+    h += _logsPage >= totalPages
+        ? `<span class="hr-page-btn disabled"><span>Next</span><i class="ph ph-caret-right"></i></span>`
+        : `<span class="hr-page-btn" onclick="logsGoToPage(${_logsPage+1})" style="cursor:pointer"><span>Next</span><i class="ph ph-caret-right"></i></span>`;
+    nav.innerHTML = h;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    _logsRows = Array.from(document.querySelectorAll('#logsTableBody tr.log-row'));
+    renderLogsPage();
+});
+</script>
+@endpush
 @endsection
