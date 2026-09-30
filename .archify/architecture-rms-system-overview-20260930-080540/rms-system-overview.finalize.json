@@ -1,0 +1,399 @@
+{
+  "schemaVersion": 1,
+  "ok": false,
+  "command": "finalize",
+  "status": "fail",
+  "type": "architecture",
+  "quality": "showcase",
+  "startedAt": "2026-09-30T00:09:23.446Z",
+  "specification": {
+    "path": "C:\\Users\\JABIGUERO\\Documents\\GitHub\\rms\\.archify\\architecture-rms-system-overview-20260930-080540\\candidate.json",
+    "sha256": "514965c1db12d6488f7717f848457419327ea5875b1f2b1c3d57dfb39323444a",
+    "bytes": 9820
+  },
+  "artifact": {
+    "path": "C:\\Users\\JABIGUERO\\Documents\\GitHub\\rms\\.archify\\architecture-rms-system-overview-20260930-080540\\rms-system-overview.html",
+    "sha256": "d37149ea9a5f208eeef200c6d88e06f04ad55309c362deffc6ef94d5789308f7",
+    "bytes": 774487
+  },
+  "stages": {
+    "validate": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": null,
+      "execution": "embedded-in-deliver",
+      "command": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "C:\\Users\\JABIGUERO\\.gemini\\config\\skills\\archify\\bin\\archify.mjs",
+        "deliver",
+        "architecture",
+        "C:\\Users\\JABIGUERO\\Documents\\GitHub\\rms\\.archify\\architecture-rms-system-overview-20260930-080540\\candidate.json",
+        "C:\\Users\\JABIGUERO\\Documents\\GitHub\\rms\\.archify\\architecture-rms-system-overview-20260930-080540\\rms-system-overview.html",
+        "--quality",
+        "showcase",
+        "--repo-root",
+        "C:\\Users\\JABIGUERO\\Documents\\GitHub\\rms",
+        "--json"
+      ],
+      "receipt": {
+        "schemaVersion": 1,
+        "ok": true,
+        "command": "validate",
+        "specification": {
+          "sha256": "514965c1db12d6488f7717f848457419327ea5875b1f2b1c3d57dfb39323444a",
+          "bytes": 9820
+        },
+        "validation": {
+          "checksPassed": 9,
+          "checkCount": 9,
+          "compositionProfile": "showcase",
+          "compositionStatus": "pass",
+          "errors": 0,
+          "warnings": 0
+        }
+      }
+    },
+    "deliver": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": 1047,
+      "command": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "C:\\Users\\JABIGUERO\\.gemini\\config\\skills\\archify\\bin\\archify.mjs",
+        "deliver",
+        "architecture",
+        "C:\\Users\\JABIGUERO\\Documents\\GitHub\\rms\\.archify\\architecture-rms-system-overview-20260930-080540\\candidate.json",
+        "C:\\Users\\JABIGUERO\\Documents\\GitHub\\rms\\.archify\\architecture-rms-system-overview-20260930-080540\\rms-system-overview.html",
+        "--quality",
+        "showcase",
+        "--repo-root",
+        "C:\\Users\\JABIGUERO\\Documents\\GitHub\\rms",
+        "--json"
+      ],
+      "receipt": {
+        "schemaVersion": 1,
+        "receiptId": "a990b294-94d3-46c1-9a82-35d8bb4f5def",
+        "ok": true,
+        "command": "deliver",
+        "type": "architecture",
+        "input": "C:\\Users\\JABIGUERO\\Documents\\GitHub\\rms\\.archify\\architecture-rms-system-overview-20260930-080540\\candidate.json",
+        "output": "C:\\Users\\JABIGUERO\\Documents\\GitHub\\rms\\.archify\\architecture-rms-system-overview-20260930-080540\\rms-system-overview.html",
+        "specification": {
+          "sha256": "514965c1db12d6488f7717f848457419327ea5875b1f2b1c3d57dfb39323444a",
+          "bytes": 9820
+        },
+        "artifact": {
+          "sha256": "d37149ea9a5f208eeef200c6d88e06f04ad55309c362deffc6ef94d5789308f7",
+          "bytes": 774487
+        },
+        "validation": {
+          "checksPassed": 9,
+          "checkCount": 9,
+          "compositionProfile": "showcase",
+          "compositionStatus": "pass",
+          "errors": 0,
+          "warnings": 0
+        },
+        "evidence": {
+          "verified": true,
+          "repository": "https://github.com/dorothydiaz/rms",
+          "revision": "8855bab043a687ebc59e5be308436f9ddd79f339",
+          "references": 16
+        },
+        "update": {
+          "status": "unavailable",
+          "installedVersion": null,
+          "availableVersion": null,
+          "releaseNotes": null,
+          "checkedAt": null,
+          "source": null,
+          "noticeRequired": false,
+          "noticeText": null,
+          "reason": "disabled"
+        }
+      }
+    },
+    "check": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": 211,
+      "command": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "C:\\Users\\JABIGUERO\\.gemini\\config\\skills\\archify\\bin\\archify.mjs",
+        "check",
+        "C:\\Users\\JABIGUERO\\Documents\\GitHub\\rms\\.archify\\architecture-rms-system-overview-20260930-080540\\rms-system-overview.html",
+        "--require-provenance"
+      ],
+      "receipt": {
+        "ok": true,
+        "file": "C:\\Users\\JABIGUERO\\Documents\\GitHub\\rms\\.archify\\architecture-rms-system-overview-20260930-080540\\rms-system-overview.html",
+        "artifact": {
+          "sha256": "d37149ea9a5f208eeef200c6d88e06f04ad55309c362deffc6ef94d5789308f7",
+          "bytes": 774487
+        },
+        "checks": [
+          {
+            "name": "single_svg",
+            "ok": true,
+            "details": [
+              "found 1 <svg> block(s)"
+            ]
+          },
+          {
+            "name": "finite_svg",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "orthogonal_arrows",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "label_route_clearance",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "relationship_crossings",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "relationship_corridors",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "container_border_runs",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "route_rhythm",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "legend_clearance",
+            "ok": true,
+            "details": []
+          }
+        ],
+        "composition": {
+          "schemaVersion": 1,
+          "profile": "showcase",
+          "status": "pass",
+          "summary": {
+            "errors": 0,
+            "warnings": 0
+          },
+          "metrics": {
+            "properCrossings": 0,
+            "resolvedCrossovers": 0,
+            "ambiguousCorridors": 0,
+            "arrowheadCollisions": 0,
+            "containerBorderRuns": 0,
+            "labelRouteClearanceIssues": 0,
+            "labelCanvasOverflowIssues": 0,
+            "minLabelRouteClearance": 12,
+            "desktopReadabilityIssues": 0,
+            "viewportHeightIssues": 0,
+            "minProjectedNodeTextPx": 7.5,
+            "maxBends": 3,
+            "routesOverSuggestedBends": 1,
+            "maxStretch": 1,
+            "routesOverSuggestedStretch": 0,
+            "minSegmentPx": 24,
+            "minInteriorSegmentPx": 36,
+            "shortSegmentCount": 0,
+            "shortEndpointSegmentCount": 0,
+            "shortInteriorSegmentCount": 0,
+            "microSegmentCount": 0
+          },
+          "suggestedLimits": {
+            "bendsPerRelationship": 2,
+            "stretch": 1.35,
+            "segmentPx": 16,
+            "microSegmentPx": 8
+          },
+          "routeReview": {
+            "crossings": [],
+            "detours": [
+              {
+                "relationship": {
+                  "id": "ops-to-sales",
+                  "from": "ops_hub",
+                  "to": "sales_module",
+                  "label": "Orders",
+                  "collectionIndex": 3,
+                  "artifactIndex": 4
+                },
+                "bends": 3,
+                "stretch": 1
+              }
+            ]
+          },
+          "leadingSpace": {
+            "measured": true,
+            "emptyTopPx": 40,
+            "emptyTopRatio": 0.068,
+            "occupiedTop": 40,
+            "viewBoxTop": 0,
+            "canvasHeight": 586,
+            "typicalNodeHeight": 68,
+            "reviewSuggested": false
+          },
+          "desktopReadability": {
+            "budgetBasis": "recognized-declared-wide",
+            "readerContract": "declared-wide-v1",
+            "availableDiagramWidth": 1162.5,
+            "actualBudgetPx": 1162.5,
+            "actualReaderWidth": 1192.5,
+            "desiredReaderWidth": 1192.5,
+            "viewportCap": 1376,
+            "limit": "source-size",
+            "requestedTargetPx": 7.5,
+            "requestedTargetMet": true,
+            "hardFloorPx": 6,
+            "hardFloorMet": true,
+            "minimumOwner": {
+              "kind": "edge",
+              "id": "staff-to-auth",
+              "from": "staff",
+              "to": "auth_guard"
+            },
+            "minimumSourceTextPx": 8,
+            "minimumProjectedTextPx": 7.5,
+            "semanticTextCount": 34
+          },
+          "issues": []
+        },
+        "provenance": "current",
+        "deliveryReceiptId": "a990b294-94d3-46c1-9a82-35d8bb4f5def"
+      }
+    },
+    "browser-check": {
+      "status": "fail",
+      "exitCode": 1,
+      "durationMs": 29,
+      "command": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "C:\\Users\\JABIGUERO\\.gemini\\config\\skills\\archify\\bin\\archify.mjs",
+        "browser-check",
+        "C:\\Users\\JABIGUERO\\Documents\\GitHub\\rms\\.archify\\architecture-rms-system-overview-20260930-080540\\rms-system-overview.html",
+        "--json",
+        "--require-provenance"
+      ],
+      "execution": "in-process",
+      "receipt": {
+        "schemaVersion": 1,
+        "ok": false,
+        "command": "browser-check",
+        "evidenceKind": "automated-browser",
+        "status": "fail",
+        "visualReview": "not-requested",
+        "provenance": "current",
+        "deliveryReceiptId": "a990b294-94d3-46c1-9a82-35d8bb4f5def",
+        "artifact": {
+          "path": "C:\\Users\\JABIGUERO\\Documents\\GitHub\\rms\\.archify\\architecture-rms-system-overview-20260930-080540\\rms-system-overview.html",
+          "sha256": "d37149ea9a5f208eeef200c6d88e06f04ad55309c362deffc6ef94d5789308f7",
+          "bytes": 774487
+        },
+        "state": {
+          "detail": "read",
+          "motion": "still"
+        },
+        "chrome": {
+          "status": "not-checked",
+          "executable": null
+        },
+        "diagnostics": [
+          {
+            "code": "viewer/evidence-path-conflict",
+            "severity": "error",
+            "message": "browser-check will not replace the existing unowned evidence path \"C:\\Users\\JABIGUERO\\Documents\\GitHub\\rms\\.archify\\architecture-rms-system-overview-20260930-080540\\rms-system-overview.browser-check.json\".",
+            "subject": {
+              "artifact": "C:\\Users\\JABIGUERO\\Documents\\GitHub\\rms\\.archify\\architecture-rms-system-overview-20260930-080540\\rms-system-overview.html",
+              "evidencePath": "C:\\Users\\JABIGUERO\\Documents\\GitHub\\rms\\.archify\\architecture-rms-system-overview-20260930-080540\\rms-system-overview.browser-check.json"
+            },
+            "evidence": {
+              "reason": {
+                "code": "ownership-artifact-mismatch"
+              }
+            },
+            "supportedFixes": [
+              "move the conflicting file aside, or choose a separate --out-dir, then rerun browser-check"
+            ]
+          }
+        ],
+        "containment": {
+          "status": "fail",
+          "policy": "fit-or-reader-declared-readable-vertical-scroll",
+          "viewports": []
+        },
+        "themeStates": {
+          "status": "fail",
+          "viewports": []
+        },
+        "readability": {
+          "status": "fail",
+          "minimumProjectedNodeTextPx": 6,
+          "viewports": []
+        },
+        "viewerChrome": {
+          "status": "fail",
+          "viewports": []
+        },
+        "captures": {
+          "status": "not-requested",
+          "screenshots": [],
+          "contactSheet": null
+        },
+        "sidecars": {
+          "receipt": "rms-system-overview.browser-check.json",
+          "files": []
+        },
+        "error": "browser-check will not replace the existing unowned evidence path \"C:\\Users\\JABIGUERO\\Documents\\GitHub\\rms\\.archify\\architecture-rms-system-overview-20260930-080540\\rms-system-overview.browser-check.json\"."
+      }
+    }
+  },
+  "diagnostics": [
+    {
+      "code": "viewer/evidence-path-conflict",
+      "severity": "error",
+      "message": "browser-check will not replace the existing unowned evidence path \"C:\\Users\\JABIGUERO\\Documents\\GitHub\\rms\\.archify\\architecture-rms-system-overview-20260930-080540\\rms-system-overview.browser-check.json\".",
+      "subject": {
+        "artifact": "C:\\Users\\JABIGUERO\\Documents\\GitHub\\rms\\.archify\\architecture-rms-system-overview-20260930-080540\\rms-system-overview.html",
+        "evidencePath": "C:\\Users\\JABIGUERO\\Documents\\GitHub\\rms\\.archify\\architecture-rms-system-overview-20260930-080540\\rms-system-overview.browser-check.json"
+      },
+      "evidence": {
+        "reason": {
+          "code": "ownership-artifact-mismatch"
+        }
+      },
+      "supportedFixes": [
+        "move the conflicting file aside, or choose a separate --out-dir, then rerun browser-check"
+      ]
+    }
+  ],
+  "evidence": {
+    "receipt": "C:\\Users\\JABIGUERO\\Documents\\GitHub\\rms\\.archify\\architecture-rms-system-overview-20260930-080540\\rms-system-overview.finalize.json",
+    "summaryReceipt": "C:\\Users\\JABIGUERO\\Documents\\GitHub\\rms\\.archify\\architecture-rms-system-overview-20260930-080540\\rms-system-overview.finalize-summary.json",
+    "browserCheckReceipt": "C:\\Users\\JABIGUERO\\Documents\\GitHub\\rms\\.archify\\architecture-rms-system-overview-20260930-080540\\rms-system-overview.browser-check.json"
+  },
+  "visualReview": "not-requested",
+  "failedStage": "browser-check",
+  "finishedAt": "2026-09-30T00:09:25.390Z",
+  "durationMs": 1943,
+  "update": {
+    "status": "current",
+    "installedVersion": "3.0.1",
+    "availableVersion": "3.0.1",
+    "releaseNotes": null,
+    "checkedAt": "2026-09-30T00:07:53.950Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  }
+}

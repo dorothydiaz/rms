@@ -18,7 +18,7 @@
 <div class="sidebar-overlay"></div>
 
 <!-- Sidebar Container -->
-<aside id="app-sidebar" class="sidebar{{ ($isHome || $isAccountSettings) ? ' collapsed' : '' }}">
+<aside id="app-sidebar" class="sidebar no-nav-transition{{ ($isHome || $isAccountSettings) ? ' collapsed' : '' }}">
     <script>
         (function() {
             try {
@@ -87,60 +87,69 @@
                 </a>
             </div>
 
-            <!-- CORE HR & ADMINISTRATION -->
-            <div class="nav-category-header">Core HR & Administration</div>
+            <!-- HR & Administration -->
             <div class="nav-section">
-                <a href="{{ route('hr.people.employees') }}" class="nav-item{{ request()->routeIs('hr.people.*', 'hr.employee') ? ' active' : '' }}">
-                    <i class="ph ph-users"></i>
-                    <span>Employee Management</span>
-                </a>
-                <a href="{{ route('hr.admin.users') }}" class="nav-item{{ request()->routeIs('hr.admin.*', 'hr.users-auth') ? ' active' : '' }}">
-                    <i class="ph ph-shield-check"></i>
-                    <span>System Administration</span>
-                </a>
+                @php $coreHrActive = request()->routeIs('hr.people.*', 'hr.employee', 'hr.admin.*', 'hr.users-auth'); @endphp
+                <div class="nav-item-group" data-group-id="hr-core">
+                    <a href="#" class="nav-item">
+                        <i class="ph ph-users"></i>
+                        <span>HR & Administration</span>
+                    </a>
+                    <button type="button" class="add-btn"><i class="ph {{ $coreHrActive ? 'ph-minus' : 'ph-plus' }}"></i></button>
+                </div>
+                <div class="sub-nav{{ $coreHrActive ? ' expanded' : '' }}">
+                    <a href="{{ route('hr.people.employees') }}" class="sub-nav-item{{ request()->routeIs('hr.people.*', 'hr.employee') ? ' active' : '' }}" title="Employee profiles, 201-files, departments, positions, branches, and staff documentation"><span>Employee Management</span></a>
+                    <a href="{{ route('hr.admin.users') }}" class="sub-nav-item{{ request()->routeIs('hr.admin.*', 'hr.users-auth') ? ' active' : '' }}" title="User accounts, role assignments, security permissions, and audit logs"><span>System Administration</span></a>
+                </div>
             </div>
 
-            <!-- TIME & COMPENSATION -->
-            <div class="nav-category-header">Time & Compensation</div>
+            <!-- Time & Compensation -->
             <div class="nav-section">
-                <a href="{{ route('hr.attendance.timekeeping') }}" class="nav-item{{ request()->routeIs('hr.attendance.*', 'hr.attendance-schedule', 'hr.attendance-checkin') ? ' active' : '' }}">
-                    <i class="ph ph-clock"></i>
-                    <span>Time & Attendance</span>
-                </a>
-                <a href="{{ route('hr.leave.requests') }}" class="nav-item{{ request()->routeIs('hr.leave.*', 'hr.employee-leave') ? ' active' : '' }}">
-                    <i class="ph ph-calendar-blank"></i>
-                    <span>Leave & Absences</span>
-                </a>
-                <a href="{{ route('hr.payroll.periods') }}" class="nav-item{{ request()->routeIs('hr.payroll.*') ? ' active' : '' }}">
-                    <i class="ph ph-wallet"></i>
-                    <span>Payroll</span>
-                </a>
+                @php $timeCompActive = request()->routeIs('hr.attendance.*', 'hr.attendance-schedule', 'hr.attendance-checkin', 'hr.leave.*', 'hr.employee-leave', 'hr.payroll.*'); @endphp
+                <div class="nav-item-group" data-group-id="hr-time">
+                    <a href="#" class="nav-item">
+                        <i class="ph ph-clock"></i>
+                        <span>Time & Compensation</span>
+                    </a>
+                    <button type="button" class="add-btn"><i class="ph {{ $timeCompActive ? 'ph-minus' : 'ph-plus' }}"></i></button>
+                </div>
+                <div class="sub-nav{{ $timeCompActive ? ' expanded' : '' }}">
+                    <a href="{{ route('hr.attendance.timekeeping') }}" class="sub-nav-item{{ request()->routeIs('hr.attendance.*', 'hr.attendance-schedule', 'hr.attendance-checkin') ? ' active' : '' }}" title="Daily time records, punch logs, schedules, and overtime"><span>Time & Attendance</span></a>
+                    <a href="{{ route('hr.leave.requests') }}" class="sub-nav-item{{ request()->routeIs('hr.leave.*', 'hr.employee-leave') ? ' active' : '' }}" title="Leave requests, leave types, balances, and accrual credits"><span>Leave & Absences</span></a>
+                    <a href="{{ route('hr.payroll.periods') }}" class="sub-nav-item{{ request()->routeIs('hr.payroll.*') ? ' active' : '' }}" title="Pay period processing, automated statutory deductions, and payslips"><span>Payroll</span></a>
+                </div>
             </div>
 
-            <!-- TALENT LIFECYCLE & DEVELOPMENT -->
-            <div class="nav-category-header">Talent Lifecycle & Development</div>
+            <!-- Talent Lifecycle & Development -->
             <div class="nav-section">
-                <a href="{{ route('hr.recruitment.vacancies') }}" class="nav-item{{ request()->routeIs('hr.recruitment.*') ? ' active' : '' }}">
-                    <i class="ph ph-user-plus"></i>
-                    <span>Talent Acquisition</span>
-                </a>
-                <a href="{{ route('hr.performance.periods') }}" class="nav-item{{ request()->routeIs('hr.performance.*') ? ' active' : '' }}">
-                    <i class="ph ph-star"></i>
-                    <span>Performance Management</span>
-                </a>
-                <a href="{{ route('hr.training.programs') }}" class="nav-item{{ request()->routeIs('hr.training.*') ? ' active' : '' }}">
-                    <i class="ph ph-graduation-cap"></i>
-                    <span>Learning & Development</span>
-                </a>
+                @php $talentActive = request()->routeIs('hr.recruitment.*', 'hr.performance.*', 'hr.training.*'); @endphp
+                <div class="nav-item-group" data-group-id="hr-talent">
+                    <a href="#" class="nav-item">
+                        <i class="ph ph-sparkle"></i>
+                        <span>Talent Lifecycle & Development</span>
+                    </a>
+                    <button type="button" class="add-btn"><i class="ph {{ $talentActive ? 'ph-minus' : 'ph-plus' }}"></i></button>
+                </div>
+                <div class="sub-nav{{ $talentActive ? ' expanded' : '' }}">
+                    <a href="{{ route('hr.recruitment.vacancies') }}" class="sub-nav-item{{ request()->routeIs('hr.recruitment.*') ? ' active' : '' }}" title="Job vacancy postings, applicant pipeline, and candidate evaluations"><span>Talent Acquisition</span></a>
+                    <a href="{{ route('hr.performance.periods') }}" class="sub-nav-item{{ request()->routeIs('hr.performance.*') ? ' active' : '' }}" title="Staff performance appraisal cycles, competency evaluations, and reviews"><span>Performance Management</span></a>
+                    <a href="{{ route('hr.training.programs') }}" class="sub-nav-item{{ request()->routeIs('hr.training.*') ? ' active' : '' }}" title="Staff training programs, certifications, hygiene compliance, and course records"><span>Learning & Development</span></a>
+                </div>
             </div>
 
-            <!-- ANALYTICS HUB -->
-            <div class="nav-category-header">Analytics Hub</div>
+            <!-- Analytics Hub -->
             <div class="nav-section">
-                <a href="{{ route('hr.reports.index') }}" class="nav-item{{ request()->routeIs('hr.reports.*') ? ' active' : '' }}">
-                    <i class="ph ph-chart-polar"></i>
-                    <span>Analytics Hub</span>
-                </a>
+                @php $analyticsActive = request()->routeIs('hr.reports.*'); @endphp
+                <div class="nav-item-group" data-group-id="hr-analytics">
+                    <a href="#" class="nav-item">
+                        <i class="ph ph-chart-polar"></i>
+                        <span>Analytics Hub</span>
+                    </a>
+                    <button type="button" class="add-btn"><i class="ph {{ $analyticsActive ? 'ph-minus' : 'ph-plus' }}"></i></button>
+                </div>
+                <div class="sub-nav{{ $analyticsActive ? ' expanded' : '' }}">
+                    <a href="{{ route('hr.reports.index') }}" class="sub-nav-item{{ request()->routeIs('hr.reports.*') ? ' active' : '' }}" title="Centralized export center for employee masterlist, attendance time logs, and statutory payroll registers"><span>Reports & Exports</span></a>
+                </div>
             </div>
         </div>
 
@@ -157,7 +166,7 @@
             </div>
             <div class="nav-section">
                 @php $salesMgtActive = request()->routeIs('sales.daily-sales', 'sales.payment-report', 'sales.reconciliations'); @endphp
-                <div class="nav-item-group">
+                <div class="nav-item-group" data-group-id="sales-mgt">
                     <a href="#" class="nav-item">
                         <i class="ph ph-currency-dollar"></i>
                         <span>Sales Management</span>
@@ -172,7 +181,7 @@
             </div>
             <div class="nav-section">
                 @php $promoActive = request()->routeIs('sales.discount-config', 'sales.voucher-config', 'sales.bundle-promotions'); @endphp
-                <div class="nav-item-group">
+                <div class="nav-item-group" data-group-id="sales-promo">
                     <a href="#" class="nav-item">
                         <i class="ph ph-tag"></i>
                         <span>Promotion Management</span>
@@ -187,7 +196,7 @@
             </div>
             <div class="nav-section">
                 @php $crmActive = request()->routeIs('sales.customer-masterlist'); @endphp
-                <div class="nav-item-group">
+                <div class="nav-item-group" data-group-id="sales-crm">
                     <a href="#" class="nav-item">
                         <i class="ph ph-address-book"></i>
                         <span>Customer Relation Mgt.</span>
@@ -213,7 +222,7 @@
             </div>
             <div class="nav-section">
                 @php $invMgtActive = request()->routeIs('inventory.stocks-overview', 'inventory.beg-balance', 'inventory.stock-in', 'inventory.stock-out', 'inventory.stock-adjustment', 'inventory.waste-expiry'); @endphp
-                <div class="nav-item-group">
+                <div class="nav-item-group" data-group-id="inv-mgt">
                     <a href="#" class="nav-item">
                         <i class="ph ph-package"></i>
                         <span>Inventory Management</span>
@@ -231,7 +240,7 @@
             </div>
             <div class="nav-section">
                 @php $prodMgtActive = request()->routeIs('inventory.product-categories', 'inventory.recipe-management'); @endphp
-                <div class="nav-item-group">
+                <div class="nav-item-group" data-group-id="inv-prod">
                     <a href="#" class="nav-item">
                         <i class="ph ph-pizza"></i>
                         <span>Product Management</span>
@@ -258,7 +267,7 @@
             </div>
             <div class="nav-section">
                 @php $purchMgtActive = request()->routeIs('purchase.request-quotations', 'purchase.purchase-orders'); @endphp
-                <div class="nav-item-group">
+                <div class="nav-item-group" data-group-id="purch-mgt">
                     <a href="#" class="nav-item">
                         <i class="ph ph-shopping-cart"></i>
                         <span>Purchase Management</span>
@@ -272,7 +281,7 @@
             </div>
             <div class="nav-section">
                 @php $vendorMgtActive = request()->routeIs('purchase.vendor-masterlist', 'purchase.vendor-bills'); @endphp
-                <div class="nav-item-group">
+                <div class="nav-item-group" data-group-id="purch-vendor">
                     <a href="#" class="nav-item">
                         <i class="ph ph-truck"></i>
                         <span>Vendor Management</span>
@@ -381,4 +390,65 @@
             </div>
         </div>
     </div>
+
+    <!-- Immediate Pre-Paint Accordion State Restoration & Anti-Flicker Script -->
+    <script>
+        (function() {
+            try {
+                var sb = document.getElementById('app-sidebar');
+                if (!sb) return;
+
+                // 1. Immediately restore all expanded accordion groups from localStorage before paint
+                var saved = [];
+                try {
+                    var raw = localStorage.getItem('rms_expanded_accordions');
+                    saved = raw ? JSON.parse(raw) : [];
+                    if (!Array.isArray(saved)) saved = [];
+                } catch(e) {
+                    saved = [];
+                }
+
+                var groups = sb.querySelectorAll('.nav-item-group[data-group-id]');
+                var activeSet = new Set(saved);
+
+                groups.forEach(function(g) {
+                    var gid = g.getAttribute('data-group-id');
+                    var sub = g.nextElementSibling;
+                    if (!sub || !sub.classList.contains('sub-nav')) return;
+
+                    var hasActive = !!sub.querySelector('.sub-nav-item.active');
+                    if (hasActive) {
+                        activeSet.add(gid);
+                    }
+
+                    if (activeSet.has(gid)) {
+                        sub.classList.add('expanded');
+                        var icon = g.querySelector('.add-btn i');
+                        if (icon) {
+                            icon.classList.remove('ph-plus', 'ph-caret-down');
+                            icon.classList.add('ph-minus', 'ph-caret-up');
+                        }
+                    } else {
+                        sub.classList.remove('expanded');
+                        var icon = g.querySelector('.add-btn i');
+                        if (icon) {
+                            icon.classList.remove('ph-minus', 'ph-caret-up');
+                            icon.classList.add('ph-plus', 'ph-caret-down');
+                        }
+                    }
+                });
+
+                try {
+                    localStorage.setItem('rms_expanded_accordions', JSON.stringify(Array.from(activeSet)));
+                } catch(e) {}
+
+                // 2. Remove initial no-nav-transition after paint so clicks animate smoothly but tab switches never flicker
+                requestAnimationFrame(function() {
+                    requestAnimationFrame(function() {
+                        sb.classList.remove('no-nav-transition');
+                    });
+                });
+            } catch(e) {}
+        })();
+    </script>
 </aside>

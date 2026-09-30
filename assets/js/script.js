@@ -144,24 +144,55 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     });
 
-    // Dropdown Toggles (Accordion expansion)
+    // Dropdown Toggles (Accordion expansion with persistence across page/tab switching)
     const dropdownGroups = document.querySelectorAll('.nav-item-group');
+    
+    function getExpandedAccordionIds() {
+        try {
+            const raw = localStorage.getItem('rms_expanded_accordions');
+            const arr = raw ? JSON.parse(raw) : [];
+            return Array.isArray(arr) ? arr : [];
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function saveExpandedAccordionIds(ids) {
+        try {
+            localStorage.setItem('rms_expanded_accordions', JSON.stringify(ids));
+        } catch (e) {}
+    }
+
     dropdownGroups.forEach(group => {
         const subNav = group.nextElementSibling;
         if (subNav && subNav.classList.contains('sub-nav')) {
             group.onclick = (e) => {
                 e.preventDefault();
-                subNav.classList.toggle('expanded');
+                const isNowExpanded = subNav.classList.toggle('expanded');
                 
                 const btnIcon = group.querySelector('.add-btn i');
                 if (btnIcon) {
-                    if (subNav.classList.contains('expanded')) {
-                        btnIcon.classList.replace('ph-plus', 'ph-minus');
-                        btnIcon.classList.replace('ph-caret-down', 'ph-caret-up');
+                    if (isNowExpanded) {
+                        btnIcon.classList.remove('ph-plus', 'ph-caret-down');
+                        btnIcon.classList.add('ph-minus', 'ph-caret-up');
                     } else {
-                        btnIcon.classList.replace('ph-minus', 'ph-plus');
-                        btnIcon.classList.replace('ph-caret-up', 'ph-caret-down');
+                        btnIcon.classList.remove('ph-minus', 'ph-caret-up');
+                        btnIcon.classList.add('ph-plus', 'ph-caret-down');
                     }
+                }
+
+                // Persist state to localStorage so non-active groups stay open across tab/page switches
+                const groupId = group.getAttribute('data-group-id');
+                if (groupId) {
+                    let currentIds = getExpandedAccordionIds();
+                    if (isNowExpanded) {
+                        if (!currentIds.includes(groupId)) {
+                            currentIds.push(groupId);
+                        }
+                    } else {
+                        currentIds = currentIds.filter(id => id !== groupId);
+                    }
+                    saveExpandedAccordionIds(currentIds);
                 }
             };
         }

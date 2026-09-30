@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "5b7a11c7-e2ca-45ec-83c7-397c3123dedd",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "C:\\Users\\JABIGUERO\\Documents\\GitHub\\rms\\.archify\\architecture-rms-system-overview-20260930-080540\\candidate.json",
+  "output": "C:\\Users\\JABIGUERO\\Documents\\GitHub\\rms\\.archify\\architecture-rms-system-overview-20260930-080540\\rms-system-overview.html",
+  "specification": {
+    "sha256": "514965c1db12d6488f7717f848457419327ea5875b1f2b1c3d57dfb39323444a",
+    "bytes": 9820
+  },
+  "artifact": {
+    "sha256": "d37149ea9a5f208eeef200c6d88e06f04ad55309c362deffc6ef94d5789308f7",
+    "bytes": 774487
+  }
+}
