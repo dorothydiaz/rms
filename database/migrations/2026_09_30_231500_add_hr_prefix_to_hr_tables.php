@@ -49,7 +49,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        Schema::disableForeignKeyConstraints();
 
         try {
             foreach ($this->tables as $old => $new) {
@@ -58,7 +58,7 @@ return new class extends Migration
                 }
             }
         } finally {
-            DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+            Schema::enableForeignKeyConstraints();
         }
     }
 
@@ -67,7 +67,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        Schema::disableForeignKeyConstraints();
 
         try {
             foreach ($this->tables as $old => $new) {
@@ -76,7 +76,7 @@ return new class extends Migration
                 }
             }
         } finally {
-            DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+            Schema::enableForeignKeyConstraints();
         }
     }
 };

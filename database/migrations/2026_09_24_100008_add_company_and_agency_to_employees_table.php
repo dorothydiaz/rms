@@ -10,11 +10,17 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('employees', function (Blueprint $table) {
+            if (!Schema::hasColumn('employees', 'employment_source')) {
+                $table->string('employment_source', 50)->nullable()->after('employment_type');
+            }
             if (!Schema::hasColumn('employees', 'company_name')) {
-                $table->string('company_name', 150)->nullable()->after('employment_type');
+                $table->string('company_name', 150)->nullable()->after('employment_source');
             }
             if (!Schema::hasColumn('employees', 'agency_name')) {
                 $table->string('agency_name', 150)->nullable()->after('company_name');
+            }
+            if (!Schema::hasColumn('employees', 'company_agency_name')) {
+                $table->string('company_agency_name', 150)->nullable()->after('agency_name');
             }
         });
 
@@ -28,11 +34,17 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('employees', function (Blueprint $table) {
-            if (Schema::hasColumn('employees', 'company_name')) {
-                $table->dropColumn('company_name');
+            if (Schema::hasColumn('employees', 'company_agency_name')) {
+                $table->dropColumn('company_agency_name');
             }
             if (Schema::hasColumn('employees', 'agency_name')) {
                 $table->dropColumn('agency_name');
+            }
+            if (Schema::hasColumn('employees', 'company_name')) {
+                $table->dropColumn('company_name');
+            }
+            if (Schema::hasColumn('employees', 'employment_source')) {
+                $table->dropColumn('employment_source');
             }
         });
     }
