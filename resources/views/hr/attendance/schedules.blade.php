@@ -19,20 +19,7 @@
     }
 @endphp
 
-<x-hr-tabs parent="time-attendance">
-    <x-slot:actions>
-        <div style="display: flex; gap: 8px; align-items: center;">
-            <button type="button" class="hr-btn hr-btn-secondary" onclick="openModal('addShiftModal')" style="height: 38px; padding: 0 16px; font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; gap: 7px; border-radius: 10px;">
-                <i class="ph ph-clock-afternoon" style="font-size: 16px;"></i>
-                <span>Add Shift Template</span>
-            </button>
-            <button type="button" class="hr-btn hr-btn-primary" onclick="openAssignModal()" style="height: 38px; padding: 0 18px; font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; gap: 7px; border-radius: 10px;">
-                <i class="ph ph-calendar-plus" style="font-size: 16px;"></i>
-                <span>Bulk Assign Schedule</span>
-            </button>
-        </div>
-    </x-slot:actions>
-</x-hr-tabs>
+<x-hr-tabs parent="time-attendance" />
 
 <!-- Main Accelerated Weekly Schedule Planner Matrix Card -->
 <div class="hr-table-card" id="schedPlannerCard">
@@ -1329,7 +1316,7 @@
     vertical-align: middle !important;
     text-align: center;
     position: relative;
-    min-height: 88px !important;
+    min-height: 104px !important;
     box-sizing: border-box;
 }
 
@@ -1350,8 +1337,7 @@
     gap: 3px;
     width: 100%;
     height: 100%;
-    min-height: 84px;
-    max-height: 90px;
+    min-height: 100px;
     margin: 0;
     border: 1.5px dashed #93c5fd;
     border-radius: 8px;
@@ -1436,20 +1422,18 @@
 .sched-shift-card {
     position: relative;
     border-radius: 8px;
-    padding: 5px 6px;
+    padding: 5px 6px 6px 6px;
     transition: all 0.15s ease;
     cursor: pointer;
     text-align: left;
     height: 100%;
-    min-height: 84px;
-    max-height: 90px;
+    min-height: 100px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     gap: 2.5px;
     box-sizing: border-box;
     width: 100%;
-    overflow: hidden;
     box-shadow: 0 1px 3px rgba(0,0,0,0.03);
 }
 .sched-shift-card:hover {
@@ -1576,14 +1560,13 @@
     border: none !important;
     border-top: 1px solid rgba(0, 0, 0, 0.08) !important;
     border-radius: 0 !important;
-    padding: 4px 1px 0 1px !important;
+    padding: 4px 1px 2px 1px !important;
     display: flex;
     flex-direction: column;
     gap: 2.5px;
     margin-top: 1px;
     box-shadow: none !important;
     box-sizing: border-box;
-    overflow: hidden;
     width: 100%;
 }
 
@@ -1592,8 +1575,8 @@
     align-items: center;
     justify-content: space-between;
     gap: 3px;
-    font-size: 9px;
-    line-height: 1.25;
+    font-size: 9.5px;
+    line-height: 1.3;
     min-width: 0;
     width: 100%;
 }
@@ -1651,16 +1634,18 @@
 .badge-off-duty { background: #64748b !important; color: #ffffff !important; }
 
 .sched-detail-hours {
-    color: #64748b;
-    font-size: 9.5px;
-    font-weight: 600;
-    padding-top: 1px;
+    color: #475569;
+    font-size: 10px;
+    font-weight: 700;
+    padding-top: 2px;
+    padding-bottom: 1px;
+    line-height: 1.25;
 }
 .sched-detail-hours strong {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     font-variant-numeric: tabular-nums;
     font-weight: 800;
-    font-size: 10px;
+    font-size: 10.5px;
 }
 
 /* Theme Variations - Clean Seamless Integrated Look */
@@ -1716,8 +1701,8 @@
 .sched-card-rest .sched-card-time i { color: #64748b; }
 .sched-card-rest .sched-card-detail-box { border-top: 1px solid #e2e8f0 !important; }
 .sched-card-rest .sched-detail-punch { color: #475569; }
-.sched-card-rest .sched-detail-hours { color: #64748b; }
-.sched-card-rest .sched-detail-hours strong { color: #334155; }
+.sched-card-rest .sched-detail-hours { color: #475569; }
+.sched-card-rest .sched-detail-hours strong { color: #1e293b; }
 
 /* CUSTOM - VIOLET */
 .sched-card-custom { border: 1.5px solid #c4b5fd; background: #f5f3ff; }
