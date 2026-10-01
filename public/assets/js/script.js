@@ -1261,5 +1261,147 @@ function getCellSortValue(cell) {
     return { type: 'text', value: rawText.toLowerCase() };
 }
 
+// =========================================================================
+// Global 2-Digit Year Auto-Correction for Date & Datetime Inputs
+// Maps 2-digit year entries (e.g. '01' to '10' -> 2001 to 2010, 00-99 -> 2000-2099)
+// Automatically fixes browser native year interpretation ('0001' -> '2001')
+// Supports typing formats like 10/21/01 or MMDDYY + Tab
+// =========================================================================
+(function() {
+    const inputBuffers = new WeakMap();
+
+    function autoCorrect2DigitYear(input) {
+        if (!input) return;
+        const val = input.value;
+        if (!val) return;
+
+        // 1. Browser native ISO date / datetime starting with 00XX-
+        // e.g. 0001-10-21 or 0001-10-01T01:00 or 0010-05-15
+        const isoMatch = val.match(/^00([0-9]{2})-(.*)$/);
+        if (isoMatch) {
+            const yy = parseInt(isoMatch[1], 10);
+            if (yy >= 0 && yy <= 99) {
+                const fullYear = 2000 + yy; // 01-10 -> 2001-2010
+                input.value = `${fullYear}-${isoMatch[2]}`;
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+                input.dispatchEvent(new Event('change', { bubbles: true }));
+                return;
+            }
+        }
+
+        // 2. Text input formats like 10/21/01 -> 10/21/2001
+        if (input.type === 'text' || !input.type) {
+            const textMatch = val.match(/^(\d{1,2})([\/\-\.])(\d{1,2})\2(\d{2})$/);
+            if (textMatch) {
+                const m = textMatch[1].padStart(2, '0');
+                const sep = textMatch[2];
+                const d = textMatch[3].padStart(2, '0');
+                const yy = parseInt(textMatch[4], 10);
+                if (yy >= 0 && yy <= 99) {
+                    const fullYear = 2000 + yy;
+                    input.value = `${m}${sep}${d}${sep}${fullYear}`;
+                    input.dispatchEvent(new Event('input', { bubbles: true }));
+                    input.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            }
+        }
+    }
+
+    // Capture standard browser events
+    ['input', 'change', 'keyup', 'blur'].forEach(evt => {
+        document.addEventListener(evt, function(e) {
+            const target = e.target;
+            if (target && (target.type === 'date' || target.type === 'datetime-local' || (target.type === 'text' && target.name && target.name.includes('date')))) {
+                autoCorrect2DigitYear(target);
+                setTimeout(() => autoCorrect2DigitYear(target), 0);
+            }
+        }, true);
+    });
+
+    // Track keystrokes for Tab completion
+    document.addEventListener('keydown', function(e) {
+        const target = e.target;
+        if (!target || (target.type !== 'date' && target.type !== 'datetime-local')) return;
+
+        let buf = inputBuffers.get(target);
+        if (!buf) {
+            buf = { raw: '', digits: '' };
+            inputBuffers.set(target, buf);
+        }
+
+        if ((e.key >= '0' && e.key <= '9') || e.key === '/' || e.key === '-' || e.key === '.') {
+            buf.raw += e.key;
+            if (e.key >= '0' && e.key <= '9') {
+                buf.digits += e.key;
+            }
+            return;
+        }
+
+        if (e.key === 'Backspace' || e.key === 'Delete') {
+            buf.raw = '';
+            buf.digits = '';
+            return;
+        }
+
+        if (e.key === 'Tab' || e.key === 'Enter') {
+            autoCorrect2DigitYear(target);
+            setTimeout(() => autoCorrect2DigitYear(target), 0);
+            setTimeout(() => autoCorrect2DigitYear(target), 50);
+
+            // Buffer parsing: slash/dash/dot format (e.g. 10/21/01)
+            const slashMatch = buf.raw.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{1,4})(?:[T\s](\d{1,2})(?::(\d{1,2}))?)?$/);
+            if (slashMatch) {
+                const m = parseInt(slashMatch[1], 10);
+                const d = parseInt(slashMatch[2], 10);
+                let y = parseInt(slashMatch[3], 10);
+                if (m >= 1 && m <= 12 && d >= 1 && d <= 31) {
+                    if (y >= 0 && y <= 99) {
+                        y = 2000 + y; // 01-10 -> 2001-2010
+                    }
+                    const datePart = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                    if (target.type === 'date') {
+                        target.value = datePart;
+                    } else if (target.type === 'datetime-local') {
+                        let timePart = '00:00';
+                        if (slashMatch[4]) {
+                            const hh = String(parseInt(slashMatch[4], 10)).padStart(2, '0');
+                            const mm = slashMatch[5] ? String(parseInt(slashMatch[5], 10)).padStart(2, '0') : '00';
+                            timePart = `${hh}:${mm}`;
+                        } else if (target.value && target.value.includes('T')) {
+                            timePart = target.value.split('T')[1].substring(0, 5);
+                        }
+                        target.value = `${datePart}T${timePart}`;
+                    }
+                    target.dispatchEvent(new Event('input', { bubbles: true }));
+                    target.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            } else if (buf.digits.length === 6) {
+                // 6 digits: MMDDYY (e.g. 102101 -> 2001-10-21)
+                const m = parseInt(buf.digits.substring(0, 2), 10);
+                const d = parseInt(buf.digits.substring(2, 4), 10);
+                let y = parseInt(buf.digits.substring(4, 6), 10);
+                if (m >= 1 && m <= 12 && d >= 1 && d <= 31) {
+                    if (y >= 0 && y <= 99) y = 2000 + y;
+                    const datePart = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                    if (target.type === 'date') {
+                        target.value = datePart;
+                    } else if (target.type === 'datetime-local') {
+                        let timePart = '00:00';
+                        if (target.value && target.value.includes('T')) {
+                            timePart = target.value.split('T')[1].substring(0, 5);
+                        }
+                        target.value = `${datePart}T${timePart}`;
+                    }
+                    target.dispatchEvent(new Event('input', { bubbles: true }));
+                    target.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            }
+
+            buf.raw = '';
+            buf.digits = '';
+        }
+    }, true);
+})();
+
 
 

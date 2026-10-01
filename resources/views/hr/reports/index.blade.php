@@ -136,7 +136,7 @@
 </div>
 
 <!-- Timekeeping, Overtime & Schedule Change Audit Ledgers -->
-<div class="hr-card" style="margin-bottom: 24px;">
+<div class="hr-card" style="margin-bottom: 24px; flex-shrink: 0; min-height: min-content;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 10px;">
         <h3 style="font-family: var(--font-heading); font-size: 16px; font-weight: 700; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 8px;">
             <i class="ph ph-clock-counter-clockwise" style="color: #6366f1;"></i> Schedule, Overtime & Timekeeping Audit Ledgers
@@ -221,7 +221,7 @@
 </div>
 
 <!-- Attendance Analytics & Compliance Reports -->
-<div class="hr-card" style="margin-bottom: 24px;">
+<div class="hr-card" style="margin-bottom: 24px; flex-shrink: 0; min-height: min-content;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 10px;">
         <h3 style="font-family: var(--font-heading); font-size: 16px; font-weight: 700; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 8px;">
             <i class="ph ph-chart-bar" style="color: #0284c7;"></i> Attendance Compliance, Tardiness & Summaries
@@ -372,7 +372,7 @@
 </div>
 
 <!-- Additional Reporting Modules -->
-<div class="hr-card">
+<div class="hr-card" style="flex-shrink: 0; min-height: min-content;">
     <h3 style="font-family: var(--font-heading); font-size: 16px; font-weight: 700; color: #0f172a; margin-bottom: 18px; display: flex; align-items: center; gap: 8px;">
         <i class="ph ph-squares-four" style="color: #9333ea;"></i> Dedicated Analytics & Audit Ledgers
     </h3>
@@ -422,6 +422,5 @@
             </div>
         </a>
     </div>
-</div>
 </div>
 @endsection

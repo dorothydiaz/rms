@@ -547,16 +547,26 @@ function openEncodeModal() {
 function getActivePunchDate() {
     const ids = ['encTimeIn', 'encTimeOut', 'encBreakOut', 'encBreakIn', 'encCoffeeOut', 'encCoffeeIn'];
     for (const id of ids) {
-        const val = document.getElementById(id)?.value;
-        if (val && val.includes('T')) {
-            return val.split('T')[0];
-        }
-        if (val && val.includes('-') && val.length >= 10) {
-            return val.substring(0, 10);
+        let val = document.getElementById(id)?.value;
+        if (val) {
+            if (/^00([0-9]{2})-/.test(val)) {
+                val = val.replace(/^00([0-9]{2})-/, '20$1-');
+            }
+            if (val.includes('T')) {
+                return val.split('T')[0];
+            }
+            if (val.includes('-') && val.length >= 10) {
+                return val.substring(0, 10);
+            }
         }
     }
-    const encDate = document.getElementById('encDate')?.value;
-    if (encDate) return encDate;
+    let encDate = document.getElementById('encDate')?.value;
+    if (encDate) {
+        if (/^00([0-9]{2})-/.test(encDate)) {
+            encDate = encDate.replace(/^00([0-9]{2})-/, '20$1-');
+        }
+        return encDate;
+    }
     return new Date().toISOString().slice(0, 10);
 }
 
@@ -767,14 +777,29 @@ function resetManualFilters() {
     filterManualTable();
 }
 
-// Smart Tab Auto-Complete for Time Punches (e.g. typing 18 and pressing Tab -> 18:00)
+// Smart Tab Auto-Complete for Time Punches & 2-Digit Dates
+// (e.g. typing 18 and pressing Tab -> 18:00, or dates like 10/21/01 -> 2001-10-21, 01-10 -> 2001-2010)
 (function() {
     const punchInputIds = ['encTimeIn', 'encBreakOut', 'encBreakIn', 'encCoffeeOut', 'encCoffeeIn', 'encTimeOut'];
     const punchBuffers = {};
 
+    function normalizePunchYear(input) {
+        if (!input || !input.value) return;
+        const val = input.value;
+        const match = val.match(/^00([0-9]{2})-(.*)$/);
+        if (match) {
+            const yy = parseInt(match[1], 10);
+            if (yy >= 0 && yy <= 99) {
+                const fullY = 2000 + yy; // 01-10 -> 2001-2010, 00-99 -> 2000-2099
+                input.value = `${fullY}-${match[2]}`;
+                syncDateFromPunches();
+            }
+        }
+    }
+
     window.resetAllPunchBuffers = function() {
         punchInputIds.forEach(id => {
-            punchBuffers[id] = { digits: '', colon: false };
+            punchBuffers[id] = { digits: '', raw: '', colon: false };
         });
     };
 
@@ -783,107 +808,217 @@ function resetManualFilters() {
             const input = document.getElementById(id);
             if (!input) return;
 
-            punchBuffers[id] = { digits: '', colon: false };
+            punchBuffers[id] = { digits: '', raw: '', colon: false };
 
             input.addEventListener('focus', function() {
-                punchBuffers[id] = { digits: '', colon: false };
+                punchBuffers[id] = { digits: '', raw: '', colon: false };
+            });
+
+            // Normalize whenever input or change fires (captures browser native 0001-0010 values)
+            input.addEventListener('input', function() {
+                normalizePunchYear(this);
+            });
+            input.addEventListener('change', function() {
+                normalizePunchYear(this);
+            });
+            input.addEventListener('keyup', function() {
+                normalizePunchYear(this);
             });
 
             input.addEventListener('keydown', function(e) {
-                const buf = punchBuffers[id] || (punchBuffers[id] = { digits: '', colon: false });
+                const buf = punchBuffers[id] || (punchBuffers[id] = { digits: '', raw: '', colon: false });
 
-                if (e.key >= '0' && e.key <= '9') {
-                    buf.digits += e.key;
+                if ((e.key >= '0' && e.key <= '9') || e.key === '/' || e.key === '-' || e.key === '.') {
+                    buf.raw += e.key;
+                    if (e.key >= '0' && e.key <= '9') {
+                        buf.digits += e.key;
+                    }
                     return;
                 }
                 if (e.key === ':') {
                     buf.colon = true;
+                    buf.raw += ':';
                     return;
                 }
                 if (e.key === 'Backspace' || e.key === 'Delete') {
                     buf.digits = '';
+                    buf.raw = '';
                     buf.colon = false;
                     return;
                 }
 
                 if ((e.key === 'Tab' && !e.shiftKey) || e.key === 'Enter') {
-                    if (buf.digits.length > 0) {
+                    // Check and fix if current value already has 2-digit year (0001-0010 -> 2001-2010)
+                    normalizePunchYear(this);
+
+                    let targetDate = null;
+                    let targetTime = null;
+
+                    // 1. Check slash/dash/dot format in raw buffer: e.g. "10/21/01", "10-21-01", "10/01/01"
+                    const slashMatch = buf.raw.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{1,4})(?:[T\s](\d{1,2})(?::(\d{1,2}))?)?$/);
+                    if (slashMatch) {
+                        const m = parseInt(slashMatch[1], 10);
+                        const d = parseInt(slashMatch[2], 10);
+                        let y = parseInt(slashMatch[3], 10);
+                        if (m >= 1 && m <= 12 && d >= 1 && d <= 31) {
+                            if (y >= 0 && y <= 99) {
+                                y = 2000 + y; // e.g. 01 -> 2001, 10 -> 2010
+                            }
+                            targetDate = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                            if (slashMatch[4]) {
+                                const hh = String(parseInt(slashMatch[4], 10)).padStart(2, '0');
+                                const mm = slashMatch[5] ? String(parseInt(slashMatch[5], 10)).padStart(2, '0') : '00';
+                                targetTime = `${hh}:${mm}`;
+                            }
+                        }
+                    }
+
+                    // 2. Check numeric buffer:
+                    // 6 digits: MMDDYY (e.g. "102101" -> 10/21/2001, "100101" -> 10/01/2001)
+                    if (!targetDate && buf.digits.length === 6) {
+                        const m = parseInt(buf.digits.substring(0, 2), 10);
+                        const d = parseInt(buf.digits.substring(2, 4), 10);
+                        let y = parseInt(buf.digits.substring(4, 6), 10);
+                        if (m >= 1 && m <= 12 && d >= 1 && d <= 31) {
+                            if (y >= 0 && y <= 99) {
+                                y = 2000 + y; // 01 -> 2001, 10 -> 2010
+                            }
+                            targetDate = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                        }
+                    }
+
+                    // 8 digits: MMDDYYYY (e.g. "10212001") or MMDDYYHH (e.g. "10210118")
+                    if (!targetDate && buf.digits.length === 8) {
+                        const m = parseInt(buf.digits.substring(0, 2), 10);
+                        const d = parseInt(buf.digits.substring(2, 4), 10);
+                        const possibleY = parseInt(buf.digits.substring(4, 8), 10);
+                        if (m >= 1 && m <= 12 && d >= 1 && d <= 31) {
+                            if (possibleY >= 1970 && possibleY <= 2100) {
+                                targetDate = `${possibleY}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                            } else {
+                                let yy = parseInt(buf.digits.substring(4, 6), 10);
+                                const hh = parseInt(buf.digits.substring(6, 8), 10);
+                                if (yy >= 0 && yy <= 99 && hh >= 0 && hh <= 23) {
+                                    yy = 2000 + yy;
+                                    targetDate = `${yy}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                                    targetTime = `${String(hh).padStart(2, '0')}:00`;
+                                }
+                            }
+                        }
+                    }
+
+                    // 10 digits: MMDDYYHHmm (e.g. "1021011800")
+                    if (!targetDate && buf.digits.length === 10) {
+                        const m = parseInt(buf.digits.substring(0, 2), 10);
+                        const d = parseInt(buf.digits.substring(2, 4), 10);
+                        let yy = parseInt(buf.digits.substring(4, 6), 10);
+                        const hh = parseInt(buf.digits.substring(6, 8), 10);
+                        const mm = parseInt(buf.digits.substring(8, 10), 10);
+                        if (m >= 1 && m <= 12 && d >= 1 && d <= 31 && hh >= 0 && hh <= 23 && mm >= 0 && mm <= 59) {
+                            if (yy >= 0 && yy <= 99) yy = 2000 + yy;
+                            targetDate = `${yy}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                            targetTime = `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+                        }
+                    }
+
+                    // 12 digits: MMDDYYYYHHmm
+                    if (!targetDate && buf.digits.length === 12) {
+                        const m = parseInt(buf.digits.substring(0, 2), 10);
+                        const d = parseInt(buf.digits.substring(2, 4), 10);
+                        const y = parseInt(buf.digits.substring(4, 8), 10);
+                        const hh = parseInt(buf.digits.substring(8, 10), 10);
+                        const mm = parseInt(buf.digits.substring(10, 12), 10);
+                        if (m >= 1 && m <= 12 && d >= 1 && d <= 31 && y >= 1970 && y <= 2100 && hh >= 0 && hh <= 23 && mm >= 0 && mm <= 59) {
+                            targetDate = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                            targetTime = `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+                        }
+                    }
+
+                    // 3. Check time-only buffers:
+                    if (!targetDate && !targetTime && buf.digits.length > 0) {
                         let hour = null;
                         let minute = '00';
 
-                        // If user typed 1 or 2 digits (e.g. "18", "8", "9", "12", "17")
+                        // 1 or 2 digits: e.g. "18" -> 18:00
                         if (buf.digits.length === 1 || buf.digits.length === 2) {
                             hour = parseInt(buf.digits, 10);
                             minute = '00';
                         } else if (buf.digits.length === 3) {
-                            // e.g. "830" -> 08:30, "800" -> 08:00
+                            // "830" -> 08:30
                             hour = parseInt(buf.digits.substring(0, 1), 10);
                             minute = buf.digits.substring(1, 3);
                         } else if (buf.digits.length === 4) {
-                            // e.g. "1800" -> 18:00, "1830" -> 18:30
+                            // "1800" -> 18:00, "1830" -> 18:30
                             hour = parseInt(buf.digits.substring(0, 2), 10);
                             minute = buf.digits.substring(2, 4);
-                        } else if (buf.digits.length >= 9) {
-                            // When user typed full MMDDYYYY before hour
-                            const timePart = buf.digits.substring(8);
-                            if (timePart.length === 1 || timePart.length === 2) {
-                                hour = parseInt(timePart, 10);
-                                minute = '00';
-                            } else if (timePart.length >= 3) {
-                                hour = parseInt(timePart.substring(0, 2), 10);
-                                minute = timePart.substring(2, 4);
-                            }
                         }
-
                         if (hour !== null && !isNaN(hour) && hour >= 0 && hour <= 23) {
-                            e.preventDefault();
-                            const baseDate = getActivePunchDate();
-                            const hh = String(hour).padStart(2, '0');
-                            const mm = String(minute).padStart(2, '0');
-                            this.value = `${baseDate}T${hh}:${mm}`;
-
-                            buf.digits = '';
-                            buf.colon = false;
-
-                            syncDateFromPunches();
-                            if (id === 'encTimeIn') {
-                                lookupPunchesForDate();
-                            }
-
-                            // Advance focus to next punch input
-                            if (idx < punchInputIds.length - 1) {
-                                const nextInput = document.getElementById(punchInputIds[idx + 1]);
-                                if (nextInput) {
-                                    nextInput.focus();
-                                    if (punchBuffers[punchInputIds[idx + 1]]) {
-                                        punchBuffers[punchInputIds[idx + 1]].digits = '';
-                                    }
-                                }
-                            } else {
-                                const statusSelect = document.getElementById('encStatus');
-                                if (statusSelect) statusSelect.focus();
-                            }
-                            return;
+                            targetTime = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
                         }
                     }
+
+                    if (targetDate || targetTime) {
+                        e.preventDefault();
+                        const baseDate = targetDate || getActivePunchDate();
+                        let finalTime = targetTime;
+                        if (!finalTime) {
+                            if (this.value && this.value.includes('T')) {
+                                finalTime = this.value.split('T')[1].substring(0, 5);
+                            } else {
+                                finalTime = id === 'encTimeOut' ? '17:00' : '08:00';
+                            }
+                        }
+                        this.value = `${baseDate}T${finalTime}`;
+                        normalizePunchYear(this);
+
+                        buf.digits = '';
+                        buf.raw = '';
+                        buf.colon = false;
+
+                        syncDateFromPunches();
+                        if (id === 'encTimeIn') {
+                            lookupPunchesForDate();
+                        }
+
+                        // Advance focus to next punch input
+                        if (idx < punchInputIds.length - 1) {
+                            const nextInput = document.getElementById(punchInputIds[idx + 1]);
+                            if (nextInput) {
+                                nextInput.focus();
+                                if (punchBuffers[punchInputIds[idx + 1]]) {
+                                    punchBuffers[punchInputIds[idx + 1]].digits = '';
+                                    punchBuffers[punchInputIds[idx + 1]].raw = '';
+                                }
+                            }
+                        } else {
+                            const statusSelect = document.getElementById('encStatus');
+                            if (statusSelect) statusSelect.focus();
+                        }
+                        return;
+                    }
+
                     buf.digits = '';
+                    buf.raw = '';
                     buf.colon = false;
                 }
             });
 
             input.addEventListener('blur', function() {
+                normalizePunchYear(this);
                 const buf = punchBuffers[id];
-                if (buf && (buf.digits.length === 1 || buf.digits.length === 2)) {
-                    const hour = parseInt(buf.digits, 10);
-                    if (!isNaN(hour) && hour >= 0 && hour <= 23) {
-                        const baseDate = getActivePunchDate();
-                        const hh = String(hour).padStart(2, '0');
-                        this.value = `${baseDate}T${hh}:00`;
-                        syncDateFromPunches();
-                    }
-                }
                 if (buf) {
+                    if (buf.digits.length === 1 || buf.digits.length === 2) {
+                        const hour = parseInt(buf.digits, 10);
+                        if (!isNaN(hour) && hour >= 0 && hour <= 23) {
+                            const baseDate = getActivePunchDate();
+                            const hh = String(hour).padStart(2, '0');
+                            this.value = `${baseDate}T${hh}:00`;
+                            normalizePunchYear(this);
+                            syncDateFromPunches();
+                        }
+                    }
                     buf.digits = '';
+                    buf.raw = '';
                     buf.colon = false;
                 }
             });

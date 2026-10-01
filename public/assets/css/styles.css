@@ -1799,6 +1799,10 @@ a {
     min-height: 0;
 }
 
+.content-area > * {
+    flex-shrink: 0;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .sidebar {
@@ -2527,6 +2531,8 @@ a {
     position: relative;
     z-index: 1;
     padding: 22px;
+    flex-shrink: 0;
+    min-height: min-content;
 }
 
 .hr-table-card {
