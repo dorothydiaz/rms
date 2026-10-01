@@ -324,8 +324,8 @@
         </table>
     </div>
 
-    @if($records->hasPages())
-        <div style="padding: 14px 20px; border-top: 1px solid #e2e8f0;">
+    @if($records->total() > 0)
+        <div class="hr-table-footer">
             {{ $records->links() }}
         </div>
     @endif
@@ -355,38 +355,34 @@
             @csrf
             <div class="hr-modal-body" style="padding: 20px 24px; background: #ffffff !important; flex: 1 1 auto; overflow-y: auto; min-height: 0;">
                 
-                <!-- Step 1: Staff & Chosen Date Selection -->
+                <!-- Step 1: Staff Member Selection -->
                 <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 16px; margin-bottom: 18px;">
                     <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: #475569; letter-spacing: 0.5px; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
-                        <i class="ph ph-user"></i> 1. Select Staff & Chosen Date
+                        <i class="ph ph-user"></i> 1. Select Staff Member
                     </div>
 
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
-                        <div class="hr-form-group" style="margin-bottom: 0;">
-                            <label class="hr-form-label" style="font-size: 12.5px; font-weight: 600; color: #0f172a;">Staff Member *</label>
-                            <select name="employee_id" id="encEmployeeId" class="hr-select" required onchange="lookupPunchesForDate()" style="height: 38px;">
-                                <option value="">-- Select Employee --</option>
-                                @foreach($employees as $e)
-                                    <option value="{{ $e->id }}">{{ $e->full_name }} ({{ $e->employee_id }}) - {{ $e->branch?->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <div class="hr-form-group" style="margin-bottom: 0;">
-                            <label class="hr-form-label" style="font-size: 12.5px; font-weight: 600; color: #0f172a;">Chosen Attendance Date *</label>
-                            <input type="date" name="date" id="encDate" class="hr-input" required value="{{ date('Y-m-d') }}" onchange="lookupPunchesForDate()">
-                        </div>
+                    <div class="hr-form-group" style="margin-bottom: 0;">
+                        <label class="hr-form-label" style="font-size: 12.5px; font-weight: 600; color: #0f172a;">Staff Member *</label>
+                        <select name="employee_id" id="encEmployeeId" class="hr-select" required onchange="lookupPunchesForDate()" style="height: 38px; width: 100%;">
+                            <option value="">-- Select Employee --</option>
+                            @foreach($employees as $e)
+                                <option value="{{ $e->id }}">{{ $e->full_name }} ({{ $e->employee_id }}) - {{ $e->branch?->name }}</option>
+                            @endforeach
+                        </select>
                     </div>
+
+                    <!-- Hidden sync date input -->
+                    <input type="hidden" name="date" id="encDate" value="{{ date('Y-m-d') }}">
 
                     <!-- Live Date/Record Lookup Status Alert -->
                     <div id="lookupAlert" style="display: none; margin-top: 12px; padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 600;"></div>
                 </div>
 
-                <!-- Step 2: Time Punches Encoding Grid -->
+                <!-- Step 2: Time Punches Encoding Grid (Date & Time in All Fields) -->
                 <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 16px; margin-bottom: 18px;">
                     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
                         <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: #475569; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
-                            <i class="ph ph-fingerprint"></i> 2. Encode Time Punches (24-Hour Format)
+                            <i class="ph ph-fingerprint"></i> 2. Encode Time Punches (Date & Time Format)
                         </div>
                         <div style="display: flex; gap: 6px;">
                             <button type="button" class="hr-btn hr-btn-secondary" style="font-size: 11px; padding: 3px 8px; height: auto;" onclick="applyStandardShiftPreset()">
@@ -398,15 +394,15 @@
                         </div>
                     </div>
 
-                    <!-- 6-Punch Responsive Grid -->
-                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+                    <!-- 6-Punch Responsive Grid with Date & Time in All Fields -->
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
                         <!-- 1. Shift In -->
                         <div class="hr-form-group" style="margin-bottom: 0;">
                             <label class="hr-form-label" style="font-size: 12px; font-weight: 600; color: #059669; display: flex; align-items: center; justify-content: space-between;">
                                 <span>1. Shift In</span>
                                 <span style="font-size: 10px; cursor: pointer; color: #7c3aed;" onclick="setNowPunch('encTimeIn')">Now</span>
                             </label>
-                            <input type="time" name="time_in" id="encTimeIn" class="hr-input" style="height: 38px; font-family: monospace; font-size: 14px; font-weight: 600;">
+                            <input type="datetime-local" step="60" name="time_in" id="encTimeIn" class="hr-input" onchange="syncDateFromPunches(); lookupPunchesForDate();" style="height: 38px; font-family: monospace; font-size: 13px; font-weight: 600;">
                         </div>
 
                         <!-- 2. Break Out -->
@@ -415,7 +411,7 @@
                                 <span>2. Break Out</span>
                                 <span style="font-size: 10px; cursor: pointer; color: #7c3aed;" onclick="setNowPunch('encBreakOut')">Now</span>
                             </label>
-                            <input type="time" name="break_out" id="encBreakOut" class="hr-input" style="height: 38px; font-family: monospace; font-size: 14px;">
+                            <input type="datetime-local" step="60" name="break_out" id="encBreakOut" class="hr-input" onchange="syncDateFromPunches()" style="height: 38px; font-family: monospace; font-size: 13px;">
                         </div>
 
                         <!-- 3. Break In -->
@@ -424,7 +420,7 @@
                                 <span>3. Break In</span>
                                 <span style="font-size: 10px; cursor: pointer; color: #7c3aed;" onclick="setNowPunch('encBreakIn')">Now</span>
                             </label>
-                            <input type="time" name="break_in" id="encBreakIn" class="hr-input" style="height: 38px; font-family: monospace; font-size: 14px;">
+                            <input type="datetime-local" step="60" name="break_in" id="encBreakIn" class="hr-input" onchange="syncDateFromPunches()" style="height: 38px; font-family: monospace; font-size: 13px;">
                         </div>
 
                         <!-- 4. Coffee Break Out -->
@@ -433,7 +429,7 @@
                                 <span>4. Coffee Out</span>
                                 <span style="font-size: 10px; cursor: pointer; color: #7c3aed;" onclick="setNowPunch('encCoffeeOut')">Now</span>
                             </label>
-                            <input type="time" name="coffee_break_out" id="encCoffeeOut" class="hr-input" style="height: 38px; font-family: monospace; font-size: 14px;">
+                            <input type="datetime-local" step="60" name="coffee_break_out" id="encCoffeeOut" class="hr-input" onchange="syncDateFromPunches()" style="height: 38px; font-family: monospace; font-size: 13px;">
                         </div>
 
                         <!-- 5. Coffee Break In -->
@@ -442,7 +438,7 @@
                                 <span>5. Coffee In</span>
                                 <span style="font-size: 10px; cursor: pointer; color: #7c3aed;" onclick="setNowPunch('encCoffeeIn')">Now</span>
                             </label>
-                            <input type="time" name="coffee_break_in" id="encCoffeeIn" class="hr-input" style="height: 38px; font-family: monospace; font-size: 14px;">
+                            <input type="datetime-local" step="60" name="coffee_break_in" id="encCoffeeIn" class="hr-input" onchange="syncDateFromPunches()" style="height: 38px; font-family: monospace; font-size: 13px;">
                         </div>
 
                         <!-- 6. Final Out -->
@@ -451,7 +447,7 @@
                                 <span>6. Final Out</span>
                                 <span style="font-size: 10px; cursor: pointer; color: #7c3aed;" onclick="setNowPunch('encTimeOut')">Now</span>
                             </label>
-                            <input type="time" name="time_out" id="encTimeOut" class="hr-input" style="height: 38px; font-family: monospace; font-size: 14px; font-weight: 600;">
+                            <input type="datetime-local" step="60" name="time_out" id="encTimeOut" class="hr-input" onchange="syncDateFromPunches()" style="height: 38px; font-family: monospace; font-size: 13px; font-weight: 600;">
                         </div>
                     </div>
                 </div>
@@ -510,7 +506,9 @@ window.closeModal = function(id) {
 function openEncodeModal() {
     document.getElementById('modalTitle').innerText = 'Encode Manual Time Entry';
     document.getElementById('encEmployeeId').value = '';
-    document.getElementById('encDate').value = '{{ date("Y-m-d") }}';
+    const today = new Date().toISOString().slice(0, 10);
+    const encDate = document.getElementById('encDate');
+    if (encDate) encDate.value = today;
     clearAllPunches();
     document.getElementById('encStatus').value = 'Auto';
     document.getElementById('encNotes').value = '';
@@ -518,18 +516,55 @@ function openEncodeModal() {
     openModal('encodeModal');
 }
 
+function getActivePunchDate() {
+    const ids = ['encTimeIn', 'encTimeOut', 'encBreakOut', 'encBreakIn', 'encCoffeeOut', 'encCoffeeIn'];
+    for (const id of ids) {
+        const val = document.getElementById(id)?.value;
+        if (val && val.includes('T')) {
+            return val.split('T')[0];
+        }
+        if (val && val.includes('-') && val.length >= 10) {
+            return val.substring(0, 10);
+        }
+    }
+    const encDate = document.getElementById('encDate')?.value;
+    if (encDate) return encDate;
+    return new Date().toISOString().slice(0, 10);
+}
+
+function syncDateFromPunches() {
+    const d = getActivePunchDate();
+    const encDate = document.getElementById('encDate');
+    if (encDate && d) {
+        encDate.value = d;
+    }
+}
+
+function toDateTimeInputValue(dateStr, timeStr) {
+    if (!timeStr) return '';
+    if (timeStr.includes('T')) return timeStr.substring(0, 16);
+    if (timeStr.includes(' ') && timeStr.length >= 16) {
+        const parts = timeStr.split(' ');
+        return `${parts[0]}T${parts[1].substring(0, 5)}`;
+    }
+    const baseDate = dateStr || getActivePunchDate();
+    const cleanTime = timeStr.substring(0, 5);
+    return `${baseDate}T${cleanTime}`;
+}
+
 // Edit existing manual entry
 function editManualEntry(recordId, empId, empName, dateStr, punches) {
     document.getElementById('modalTitle').innerText = 'Edit Manual Time Entry - ' + empName;
     document.getElementById('encEmployeeId').value = empId;
-    document.getElementById('encDate').value = dateStr;
+    const encDate = document.getElementById('encDate');
+    if (encDate) encDate.value = dateStr;
 
-    document.getElementById('encTimeIn').value = punches.time_in || '';
-    document.getElementById('encBreakOut').value = punches.break_out || '';
-    document.getElementById('encBreakIn').value = punches.break_in || '';
-    document.getElementById('encCoffeeOut').value = punches.coffee_break_out || '';
-    document.getElementById('encCoffeeIn').value = punches.coffee_break_in || '';
-    document.getElementById('encTimeOut').value = punches.time_out || '';
+    document.getElementById('encTimeIn').value = toDateTimeInputValue(dateStr, punches.time_in);
+    document.getElementById('encBreakOut').value = toDateTimeInputValue(dateStr, punches.break_out);
+    document.getElementById('encBreakIn').value = toDateTimeInputValue(dateStr, punches.break_in);
+    document.getElementById('encCoffeeOut').value = toDateTimeInputValue(dateStr, punches.coffee_break_out);
+    document.getElementById('encCoffeeIn').value = toDateTimeInputValue(dateStr, punches.coffee_break_in);
+    document.getElementById('encTimeOut').value = toDateTimeInputValue(dateStr, punches.time_out);
 
     document.getElementById('encStatus').value = punches.status || 'Auto';
     document.getElementById('encNotes').value = punches.notes || '';
@@ -538,23 +573,37 @@ function editManualEntry(recordId, empId, empName, dateStr, punches) {
     openModal('encodeModal');
 }
 
-// Set time to current clock
-function setNowPunch(inputId) {
-    const now = new Date();
-    const hh = String(now.getHours()).padStart(2, '0');
-    const mm = String(now.getMinutes()).padStart(2, '0');
-    const input = document.getElementById(inputId);
-    if (input) { input.value = `${hh}:${mm}`; }
+function formatLocalDateTime(d) {
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const hh = String(d.getHours()).padStart(2, '0');
+    const min = String(d.getMinutes()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
 }
 
-// Preset standard 8-hr day
+// Set time to current clock (Date & Time format)
+function setNowPunch(inputId) {
+    const now = new Date();
+    const input = document.getElementById(inputId);
+    if (input) {
+        input.value = formatLocalDateTime(now);
+        syncDateFromPunches();
+        lookupPunchesForDate();
+    }
+}
+
+// Preset standard 8-hr day (Date & Time format)
 function applyStandardShiftPreset() {
-    document.getElementById('encTimeIn').value = '08:00';
-    document.getElementById('encBreakOut').value = '12:00';
-    document.getElementById('encBreakIn').value = '13:00';
+    const baseDate = getActivePunchDate();
+    document.getElementById('encTimeIn').value = `${baseDate}T08:00`;
+    document.getElementById('encBreakOut').value = `${baseDate}T12:00`;
+    document.getElementById('encBreakIn').value = `${baseDate}T13:00`;
     document.getElementById('encCoffeeOut').value = '';
     document.getElementById('encCoffeeIn').value = '';
-    document.getElementById('encTimeOut').value = '17:00';
+    document.getElementById('encTimeOut').value = `${baseDate}T17:00`;
+    syncDateFromPunches();
+    lookupPunchesForDate();
 }
 
 function clearAllPunches() {
@@ -587,10 +636,10 @@ function hideLookupAlert() {
     if (el) el.style.display = 'none';
 }
 
-// Dynamic lookup when employee or date changes in modal
+// Dynamic lookup when employee or punch date changes in modal
 async function lookupPunchesForDate() {
     const empId = document.getElementById('encEmployeeId').value;
-    const dateVal = document.getElementById('encDate').value;
+    const dateVal = getActivePunchDate();
 
     if (!empId || !dateVal) {
         hideLookupAlert();
@@ -602,16 +651,32 @@ async function lookupPunchesForDate() {
         const data = await res.json();
 
         if (data.exists) {
-            document.getElementById('encTimeIn').value = data.time_in || '';
-            document.getElementById('encBreakOut').value = data.break_out || '';
-            document.getElementById('encBreakIn').value = data.break_in || '';
-            document.getElementById('encCoffeeOut').value = data.coffee_break_out || '';
-            document.getElementById('encCoffeeIn').value = data.coffee_break_in || '';
-            document.getElementById('encTimeOut').value = data.time_out || '';
-            if (data.status) document.getElementById('encStatus').value = data.status;
-            if (data.notes) document.getElementById('encNotes').value = data.notes;
+            if (!document.getElementById('encTimeIn').value && data.time_in) {
+                document.getElementById('encTimeIn').value = toDateTimeInputValue(dateVal, data.time_in);
+            }
+            if (!document.getElementById('encBreakOut').value && data.break_out) {
+                document.getElementById('encBreakOut').value = toDateTimeInputValue(dateVal, data.break_out);
+            }
+            if (!document.getElementById('encBreakIn').value && data.break_in) {
+                document.getElementById('encBreakIn').value = toDateTimeInputValue(dateVal, data.break_in);
+            }
+            if (!document.getElementById('encCoffeeOut').value && data.coffee_break_out) {
+                document.getElementById('encCoffeeOut').value = toDateTimeInputValue(dateVal, data.coffee_break_out);
+            }
+            if (!document.getElementById('encCoffeeIn').value && data.coffee_break_in) {
+                document.getElementById('encCoffeeIn').value = toDateTimeInputValue(dateVal, data.coffee_break_in);
+            }
+            if (!document.getElementById('encTimeOut').value && data.time_out) {
+                document.getElementById('encTimeOut').value = toDateTimeInputValue(dateVal, data.time_out);
+            }
+            if (data.status && document.getElementById('encStatus').value === 'Auto') {
+                document.getElementById('encStatus').value = data.status;
+            }
+            if (data.notes && !document.getElementById('encNotes').value) {
+                document.getElementById('encNotes').value = data.notes;
+            }
 
-            showLookupAlert(`Found existing record for this date (${data.total_hours} hrs, Status: ${data.status}). You can edit or adjust punches directly.`, 'found');
+            showLookupAlert(`Found existing record for ${dateVal} (${data.total_hours} hrs, Status: ${data.status}). Punches mapped.`, 'found');
         } else {
             showLookupAlert(`No previous attendance record on ${dateVal}. You are encoding a new time entry.`, 'new');
         }

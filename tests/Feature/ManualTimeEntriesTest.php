@@ -72,6 +72,39 @@ class ManualTimeEntriesTest extends TestCase
         $this->assertEquals('Approved', $correction->status);
     }
 
+    public function test_can_encode_manual_time_entry_using_datetime_format_without_date_picker(): void
+    {
+        $admin = $this->getAdmin();
+        $employee = Employee::first();
+
+        // Datetime-local inputs without explicit date field
+        $payload = [
+            'employee_id' => $employee->id,
+            'time_in' => '2026-11-25T08:30',
+            'break_out' => '2026-11-25T12:00',
+            'break_in' => '2026-11-25T13:00',
+            'coffee_break_out' => '2026-11-25T15:00',
+            'coffee_break_in' => '2026-11-25T15:15',
+            'time_out' => '2026-11-25T17:30',
+            'status' => 'Present',
+            'notes' => 'Encoded with datetime format',
+        ];
+
+        $res = $this->actingAs($admin)->post(route('hr.attendance.corrections.store'), $payload);
+        $res->assertSessionHasNoErrors();
+        $res->assertRedirect();
+
+        $record = AttendanceRecord::where('employee_id', $employee->id)->where('date', '2026-11-25')->first();
+        $this->assertNotNull($record);
+        $this->assertEquals('08:30:00', $record->time_in);
+        $this->assertEquals('12:00:00', $record->break_out);
+        $this->assertEquals('13:00:00', $record->break_in);
+        $this->assertEquals('15:00:00', $record->coffee_break_out);
+        $this->assertEquals('15:15:00', $record->coffee_break_in);
+        $this->assertEquals('17:30:00', $record->time_out);
+        $this->assertEquals('Manual', $record->source);
+    }
+
     public function test_lookup_endpoint_returns_punches_for_chosen_date(): void
     {
         $admin = $this->getAdmin();

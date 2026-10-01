@@ -614,6 +614,28 @@
             </tbody>
         </table>
     </div>
+
+    <!-- Interactive Schedule Matrix Pagination Footer -->
+    <div class="hr-table-footer" id="schedPaginationBar" style="display: none;">
+        <div class="hr-pagination-left">
+            <div class="hr-pagination-info" id="schedPaginationInfo">
+                Showing <strong>1</strong> to <strong>{{ count($employees) }}</strong> of <strong>{{ count($employees) }}</strong> staff
+            </div>
+            <div class="hr-per-page-wrap">
+                <span class="hr-per-page-label">Show</span>
+                <select class="hr-per-page-select" id="schedPerPageSelect" onchange="schedChangePerPage()" aria-label="Rows per page">
+                    <option value="10">10</option>
+                    <option value="15" selected>15</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                    <option value="all">All</option>
+                </select>
+                <span class="hr-per-page-label">rows</span>
+            </div>
+        </div>
+        <nav class="hr-pagination-nav" role="navigation" aria-label="Pagination Navigation" id="schedPageNav"></nav>
+    </div>
 </div>
 
 <!-- Background Dimming Overlay for Schedule Manager Window -->
@@ -4781,20 +4803,136 @@ function clearRosterGrid() {
     }
 }
 
-function filterMatrixByCategory() {
-    const checkedCats = Array.from(document.querySelectorAll('.sched-cat-cb:checked')).map(cb => cb.value);
-    const rows = document.querySelectorAll('.sched-row');
+// =========================================================================
+// Client-Side Pagination & Matrix Filtering for Schedules
+// =========================================================================
+let _schedCurrentPage = 1;
+let _schedFilteredRows = [];
 
-    rows.forEach(r => {
-        const cat = r.getAttribute('data-emp-cat') || '';
-        if (checkedCats.length === 0 || checkedCats.includes(cat)) {
-            r.style.display = '';
-        } else {
-            r.style.display = 'none';
-        }
+function schedGetPerPage() {
+    const val = document.getElementById('schedPerPageSelect')?.value || '15';
+    return val === 'all' ? 999999 : parseInt(val, 10);
+}
+
+function schedChangePerPage() {
+    _schedCurrentPage = 1;
+    renderSchedPage();
+}
+
+function schedGoToPage(p) {
+    _schedCurrentPage = p;
+    renderSchedPage();
+    const w = document.getElementById('schedMatrixTable')?.closest('.hr-table-wrapper');
+    if (w) w.scrollTop = 0;
+}
+
+function renderSchedPage() {
+    const perPage    = schedGetPerPage();
+    const total      = _schedFilteredRows.length;
+    const totalPages = Math.max(1, Math.ceil(total / perPage));
+    if (_schedCurrentPage > totalPages) _schedCurrentPage = totalPages;
+
+    const start = (_schedCurrentPage - 1) * perPage;
+    const end   = Math.min(start + perPage, total);
+
+    // Hide all schedule rows
+    const allRows = document.querySelectorAll('.sched-row');
+    allRows.forEach(r => { r.style.display = 'none'; });
+
+    // Show only the slice for this page
+    _schedFilteredRows.forEach((r, idx) => {
+        r.style.display = (idx >= start && idx < end) ? '' : 'none';
     });
 
-    updateVisibleRosterCount();
+    // Empty state row
+    const emptyRow = document.getElementById('schedEmptyRow');
+    if (emptyRow) {
+        emptyRow.style.display = (total === 0) ? '' : 'none';
+    }
+
+    // Update roster count badge
+    const badge = document.getElementById('empCountBadge');
+    if (badge) badge.textContent = `${total} Staff`;
+
+    // Pagination bar visibility
+    const bar = document.getElementById('schedPaginationBar');
+    if (bar) bar.style.display = (total > 0 || allRows.length > 0) ? 'flex' : 'none';
+
+    // Info text
+    const info = document.getElementById('schedPaginationInfo');
+    if (info) {
+        const from = total === 0 ? 0 : start + 1;
+        info.innerHTML = `Showing <strong>${from}</strong> to <strong>${end}</strong> of <strong>${total}</strong> staff`;
+    }
+
+    // Page navigation
+    const nav = document.getElementById('schedPageNav');
+    if (!nav) return;
+
+    let html = '';
+    if (_schedCurrentPage === 1 || totalPages <= 1) {
+        html += `<span class="hr-page-btn disabled" aria-disabled="true"><i class="ph ph-caret-left"></i><span>Prev</span></span>`;
+    } else {
+        html += `<span class="hr-page-btn" onclick="schedGoToPage(${_schedCurrentPage - 1})" style="cursor:pointer;"><i class="ph ph-caret-left"></i><span>Prev</span></span>`;
+    }
+
+    html += `<div class="hr-page-numbers">`;
+    const window_size = 2;
+    let pageStart = Math.max(1, _schedCurrentPage - window_size);
+    let pageEnd   = Math.min(totalPages, _schedCurrentPage + window_size);
+
+    if (pageStart > 1) {
+        html += `<span class="hr-page-num" onclick="schedGoToPage(1)" style="cursor:pointer;">1</span>`;
+        if (pageStart > 2) html += `<span class="hr-page-num dots">…</span>`;
+    }
+
+    for (let p = pageStart; p <= pageEnd; p++) {
+        html += (p === _schedCurrentPage)
+            ? `<span class="hr-page-num active" aria-current="page">${p}</span>`
+            : `<span class="hr-page-num" onclick="schedGoToPage(${p})" style="cursor:pointer;">${p}</span>`;
+    }
+
+    if (pageEnd < totalPages) {
+        if (pageEnd < totalPages - 1) html += `<span class="hr-page-num dots">…</span>`;
+        html += `<span class="hr-page-num" onclick="schedGoToPage(${totalPages})" style="cursor:pointer;">${totalPages}</span>`;
+    }
+    html += `</div>`;
+
+    if (_schedCurrentPage >= totalPages) {
+        html += `<span class="hr-page-btn disabled" aria-disabled="true"><span>Next</span><i class="ph ph-caret-right"></i></span>`;
+    } else {
+        html += `<span class="hr-page-btn" onclick="schedGoToPage(${_schedCurrentPage + 1})" style="cursor:pointer;"><span>Next</span><i class="ph ph-caret-right"></i></span>`;
+    }
+
+    nav.innerHTML = html;
+}
+
+function filterMatrixRows(resetPage = true) {
+    const q = (document.getElementById('liveEmployeeSearch')?.value || '').toLowerCase().trim();
+    const clearBtn = document.getElementById('clearSearchBtn');
+    if (clearBtn) clearBtn.style.display = q ? 'inline-flex' : 'none';
+
+    const checkedCats = Array.from(document.querySelectorAll('.sched-cat-cb:checked')).map(cb => cb.value.toLowerCase());
+    const allRows = Array.from(document.querySelectorAll('.sched-row'));
+
+    _schedFilteredRows = allRows.filter(r => {
+        const name   = (r.getAttribute('data-emp-name')   || '').toLowerCase();
+        const branch = (r.getAttribute('data-emp-branch') || '').toLowerCase();
+        const pos    = (r.getAttribute('data-emp-pos')    || '').toLowerCase();
+        const cat    = (r.getAttribute('data-emp-cat')    || '').toLowerCase();
+
+        const matchCat = checkedCats.length === 0 || checkedCats.includes(cat);
+        const matchQ   = !q || _fuzzyMatch(name, q) || _fuzzyMatch(branch, q) || _fuzzyMatch(pos, q);
+
+        return matchCat && matchQ;
+    });
+
+    if (resetPage) _schedCurrentPage = 1;
+    renderSchedPage();
+}
+
+function filterMatrixByCategory() {
+    filterMatrixRows(true);
 }
 
 /**
@@ -4834,38 +4972,17 @@ function _fuzzyMatch(haystack, query) {
 }
 
 function filterMatrixRowsBySearch() {
-    const q = (document.getElementById('liveEmployeeSearch')?.value || '').toLowerCase().trim();
-    const clearBtn = document.getElementById('clearSearchBtn');
-    if (clearBtn) clearBtn.style.display = q ? 'inline-flex' : 'none';
-
-    const checkedCats = Array.from(document.querySelectorAll('.sched-cat-cb:checked')).map(cb => cb.value);
-    const rows = document.querySelectorAll('.sched-row');
-
-    rows.forEach(r => {
-        const name   = (r.getAttribute('data-emp-name')   || '').toLowerCase();
-        const branch = (r.getAttribute('data-emp-branch') || '').toLowerCase();
-        const pos    = (r.getAttribute('data-emp-pos')    || '').toLowerCase();
-        const cat    = r.getAttribute('data-emp-cat') || '';
-
-        const matchCat = checkedCats.length === 0 || checkedCats.includes(cat);
-        const matchQ   = !q || _fuzzyMatch(name, q) || _fuzzyMatch(branch, q) || _fuzzyMatch(pos, q);
-
-        r.style.display = (matchCat && matchQ) ? '' : 'none';
-    });
-
-    updateVisibleRosterCount();
+    filterMatrixRows(true);
 }
 
 function clearLiveSearch() {
     const inp = document.getElementById('liveEmployeeSearch');
     if (inp) inp.value = '';
-    filterMatrixRowsBySearch();
+    filterMatrixRows(true);
 }
 
 function updateVisibleRosterCount() {
-    const visible = Array.from(document.querySelectorAll('.sched-row')).filter(r => r.style.display !== 'none').length;
-    const badge = document.getElementById('empCountBadge');
-    if (badge) badge.textContent = `${visible} Staff`;
+    filterMatrixRows(false);
 }
 
 // -------------------------------------------------------------
@@ -5810,6 +5927,10 @@ window.addEventListener('beforeunload', function(e) {
         e.preventDefault();
         e.returnValue = '';
     }
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    filterMatrixRows(true);
 });
 </script>
 @endpush

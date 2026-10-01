@@ -1305,16 +1305,47 @@ class AttendanceController extends Controller
     public function overtimeIndex(Request $request): View
     {
         $user = Auth::user();
-        $query = AttendanceRecord::with(['employee.branch', 'employee.department'])
+        $query = AttendanceRecord::with(['employee.branch', 'employee.department', 'employee.position'])
             ->where('overtime_hours', '>', 0);
 
         if (!$user->isSuperAdmin() && !$user->isHrAdmin() && $user->branch_id) {
             $query->where('branch_id', $user->branch_id);
+        } elseif ($request->filled('branch_id')) {
+            $query->where('branch_id', $request->branch_id);
+        }
+
+        if ($request->filled('employee_id')) {
+            $query->where('employee_id', $request->employee_id);
+        }
+        if ($request->filled('date')) {
+            $query->where('date', $request->date);
+        }
+        if ($request->filled('date_from')) {
+            $query->where('date', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->where('date', '<=', $request->date_to);
+        }
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('employee', function ($eq) use ($search) {
+                    $eq->where('first_name', 'like', "%{$search}%")
+                        ->orWhere('last_name', 'like', "%{$search}%")
+                        ->orWhere('employee_id', 'like', "%{$search}%");
+                })->orWhereHas('employee.branch', function ($bq) use ($search) {
+                    $bq->where('name', 'like', "%{$search}%");
+                })->orWhereHas('employee.department', function ($dq) use ($search) {
+                    $dq->where('name', 'like', "%{$search}%");
+                });
+            });
         }
 
         $perPage = (int) $request->get('per_page', 10);
         $records = $query->orderBy('date', 'desc')->paginate($perPage)->withQueryString();
-        return view('hr.attendance.overtime', compact('records'));
+        $branches = Branch::where('is_active', true)->get();
+
+        return view('hr.attendance.overtime', compact('records', 'branches'));
     }
 
     // ==========================================
@@ -1331,6 +1362,8 @@ class AttendanceController extends Controller
 
         if (!$user->isSuperAdmin() && !$user->isHrAdmin() && $user->branch_id) {
             $query->where('branch_id', $user->branch_id);
+        } elseif ($request->filled('branch_id')) {
+            $query->where('branch_id', $request->branch_id);
         }
 
         if ($request->filled('date')) {
@@ -1346,11 +1379,21 @@ class AttendanceController extends Controller
         if ($request->filled('employee_id')) {
             $query->where('employee_id', $request->employee_id);
         }
-        if ($request->filled('branch_id')) {
-            $query->where('branch_id', $request->branch_id);
-        }
         if ($request->filled('status')) {
             $query->where('status', $request->status);
+        }
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('employee', function ($eq) use ($search) {
+                    $eq->where('first_name', 'like', "%{$search}%")
+                        ->orWhere('last_name', 'like', "%{$search}%")
+                        ->orWhere('employee_id', 'like', "%{$search}%");
+                })->orWhere('notes', 'like', "%{$search}%")
+                  ->orWhereHas('employee.branch', function ($bq) use ($search) {
+                      $bq->where('name', 'like', "%{$search}%");
+                  });
+            });
         }
 
         $perPage = (int) $request->get('per_page', 15);
@@ -1405,6 +1448,23 @@ class AttendanceController extends Controller
 
     public function correctionStore(Request $request): RedirectResponse
     {
+        // Resolve date: from explicit input, or auto-derived from any datetime punch, or today
+        $dateInput = $request->input('date');
+        if (empty($dateInput)) {
+            foreach (['time_in', 'requested_time_in', 'in_1', 'time_out', 'requested_time_out', 'break_out', 'break_in', 'coffee_break_out', 'coffee_break_in'] as $f) {
+                if ($request->filled($f)) {
+                    try {
+                        $dateInput = Carbon::parse($request->input($f))->toDateString();
+                        break;
+                    } catch (\Exception $e) {}
+                }
+            }
+            if (empty($dateInput)) {
+                $dateInput = Carbon::today()->toDateString();
+            }
+            $request->merge(['date' => $dateInput]);
+        }
+
         $validated = $request->validate([
             'employee_id' => 'required|exists:hr_employees,id',
             'date' => 'required|date',
@@ -1436,9 +1496,26 @@ class AttendanceController extends Controller
         $formatTime = function ($val) {
             if (!$val) return null;
             $val = trim($val);
-            if (strlen($val) === 5) return $val . ':00';
-            return $val;
+            try {
+                // If it contains date or T (datetime-local format), extract time part H:i:s
+                if (str_contains($val, 'T') || str_contains($val, '-') || strlen($val) > 8) {
+                    return Carbon::parse($val)->format('H:i:s');
+                }
+                if (strlen($val) === 5) {
+                    return $val . ':00';
+                }
+                return $val;
+            } catch (\Exception $e) {
+                return null;
+            }
         };
+
+        // If timeIn contains a date, use that as the primary attendance date
+        if ($timeIn && (str_contains($timeIn, 'T') || str_contains($timeIn, '-'))) {
+            try {
+                $date = Carbon::parse($timeIn)->toDateString();
+            } catch (\Exception $e) {}
+        }
 
         $timeInFmt = $formatTime($timeIn);
         $timeOutFmt = $formatTime($timeOut);
@@ -1496,6 +1573,17 @@ class AttendanceController extends Controller
         $schedStart = $schedule?->custom_start_time ?? $shift?->start_time;
         $schedEnd = $schedule?->custom_end_time ?? $shift?->end_time;
         $isOvernight = (bool) ($shift?->is_overnight ?? false);
+
+        // Auto-detect overnight shift if datetime punches span into the next day
+        if ($timeIn && $timeOut && (str_contains($timeIn, 'T') || str_contains($timeIn, '-')) && (str_contains($timeOut, 'T') || str_contains($timeOut, '-'))) {
+            try {
+                $dtIn = Carbon::parse($timeIn);
+                $dtOut = Carbon::parse($timeOut);
+                if ($dtOut->gt($dtIn) && $dtOut->toDateString() !== $dtIn->toDateString()) {
+                    $isOvernight = true;
+                }
+            } catch (\Exception $e) {}
+        }
 
         if ($record->time_in && $record->time_out) {
             $calc = $this->calcService->calculate(

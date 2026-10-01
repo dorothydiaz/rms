@@ -11,8 +11,13 @@
                     @php
                         $currPerPage = (int) $paginator->perPage();
                         if ($currPerPage <= 0) $currPerPage = 10;
+                        $perPageOptions = [5, 10, 15, 25, 50, 100];
+                        if (!in_array($currPerPage, $perPageOptions)) {
+                            $perPageOptions[] = $currPerPage;
+                            sort($perPageOptions);
+                        }
                     @endphp
-                    @foreach([10, 25, 50, 100] as $option)
+                    @foreach($perPageOptions as $option)
                         <option value="{{ $option }}" {{ $currPerPage === $option ? 'selected' : '' }}>
                             {{ $option }}
                         </option>
@@ -70,6 +75,20 @@
                         <i class="ph ph-caret-right"></i>
                     </span>
                 @endif
+            </nav>
+        @else
+            <nav class="hr-pagination-nav" role="navigation" aria-label="Pagination Navigation">
+                <span class="hr-page-btn disabled" aria-disabled="true">
+                    <i class="ph ph-caret-left"></i>
+                    <span>Prev</span>
+                </span>
+                <div class="hr-page-numbers">
+                    <span class="hr-page-num active" aria-current="page">1</span>
+                </div>
+                <span class="hr-page-btn disabled" aria-disabled="true">
+                    <span>Next</span>
+                    <i class="ph ph-caret-right"></i>
+                </span>
             </nav>
         @endif
     </div>
