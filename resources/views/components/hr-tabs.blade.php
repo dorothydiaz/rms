@@ -21,10 +21,10 @@
     $parentsConfig = [
         'employee-management' => [
             'title' => 'Employee Management',
-            'subtitle' => 'Manage employee profiles, organizational departments, staff positions, and branch assignments',
+            'subtitle' => 'Manage employee records, employment information, 201 files, and workforce details.',
             'icon' => 'ph-users',
             'tabs' => [
-                ['name' => 'Employee Profiles', 'route' => 'hr.people.employees', 'icon' => 'ph-user-list', 'active' => ['hr.people.employees*', 'hr.employee']],
+                ['name' => 'Employee Management', 'route' => 'hr.people.employees', 'icon' => 'ph-users', 'active' => ['hr.people.employees*', 'hr.employee']],
                 [
                     'name' => 'Organization',
                     'route' => 'hr.people.departments',
@@ -52,11 +52,10 @@
         ],
         'time-attendance' => [
             'title' => 'Time & Attendance',
-            'subtitle' => 'Track staff timekeeping logs, daily time records (DTR), schedules, overtime, and manual time entries',
+            'subtitle' => 'Track staff timekeeping logs, schedules, overtime, and manual time entries',
             'icon' => 'ph-clock',
             'tabs' => [
                 ['name' => 'Time-Keeping', 'route' => 'hr.attendance.timekeeping', 'icon' => 'ph-fingerprint', 'active' => ['hr.attendance.timekeeping*', 'hr.attendance-checkin']],
-                ['name' => 'Daily Time Records (DTR)', 'route' => 'hr.attendance.dtr', 'icon' => 'ph-calendar-check', 'active' => ['hr.attendance.dtr*']],
                 ['name' => 'Schedules', 'route' => 'hr.attendance.schedules', 'icon' => 'ph-calendar', 'active' => ['hr.attendance.schedules*', 'hr.attendance-schedule']],
                 ['name' => 'Overtime', 'route' => 'hr.attendance.overtime', 'icon' => 'ph-clock-countdown', 'active' => ['hr.attendance.overtime*']],
                 ['name' => 'Manual Time Entries', 'route' => 'hr.attendance.corrections', 'icon' => 'ph-pencil-line', 'active' => ['hr.attendance.corrections*', 'hr.attendance.manual-entries*']],

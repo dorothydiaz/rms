@@ -87,19 +87,20 @@
                 </a>
             </div>
 
-            <!-- HR & Administration -->
+            <!-- PEOPLE -->
             <div class="nav-section">
-                @php $coreHrActive = request()->routeIs('hr.people.*', 'hr.employee', 'hr.admin.*', 'hr.users-auth'); @endphp
-                <div class="nav-item-group" data-group-id="hr-core">
+                @php $peopleActive = request()->routeIs('hr.people.*', 'hr.employee', 'hr.recruitment.*'); @endphp
+                <div class="nav-item-group" data-group-id="hr-people">
                     <a href="#" class="nav-item">
                         <i class="ph ph-users"></i>
-                        <span>HR & Administration</span>
+                        <span>PEOPLE</span>
                     </a>
-                    <button type="button" class="add-btn"><i class="ph {{ $coreHrActive ? 'ph-minus' : 'ph-plus' }}"></i></button>
+                    <button type="button" class="add-btn"><i class="ph {{ $peopleActive ? 'ph-minus' : 'ph-plus' }}"></i></button>
                 </div>
-                <div class="sub-nav{{ $coreHrActive ? ' expanded' : '' }}">
-                    <a href="{{ route('hr.people.employees') }}" class="sub-nav-item{{ request()->routeIs('hr.people.*', 'hr.employee') ? ' active' : '' }}" title="Employee profiles, 201-files, departments, positions, branches, and staff documentation"><span>Employee Management</span></a>
-                    <a href="{{ route('hr.admin.users') }}" class="sub-nav-item{{ request()->routeIs('hr.admin.*', 'hr.users-auth') ? ' active' : '' }}" title="User accounts, role assignments, security permissions, and audit logs"><span>System Administration</span></a>
+                <div class="sub-nav{{ $peopleActive ? ' expanded' : '' }}">
+                    <a href="{{ route('hr.people.employees') }}" class="sub-nav-item{{ request()->routeIs('hr.people.*', 'hr.employee') ? ' active' : '' }}" title="Employee Management, 201-files, and workforce directory"><span>Employee Management</span></a>
+                    <a href="{{ route('hr.recruitment.vacancies') }}" class="sub-nav-item{{ request()->routeIs('hr.recruitment.vacancies') ? ' active' : '' }}" title="Job vacancy postings and hiring pipeline"><span>Recruitment</span></a>
+                    <a href="{{ route('hr.recruitment.applicants') }}" class="sub-nav-item{{ request()->routeIs('hr.recruitment.applicants', 'hr.recruitment.interviews') ? ' active' : '' }}" title="Candidate onboarding, applications, and conversion to employee"><span>Onboarding</span></a>
                 </div>
             </div>
 
@@ -122,7 +123,7 @@
 
             <!-- Talent Lifecycle & Development -->
             <div class="nav-section">
-                @php $talentActive = request()->routeIs('hr.recruitment.*', 'hr.performance.*', 'hr.training.*'); @endphp
+                @php $talentActive = request()->routeIs('hr.performance.*', 'hr.training.*'); @endphp
                 <div class="nav-item-group" data-group-id="hr-talent">
                     <a href="#" class="nav-item">
                         <i class="ph ph-sparkle"></i>
@@ -131,9 +132,23 @@
                     <button type="button" class="add-btn"><i class="ph {{ $talentActive ? 'ph-minus' : 'ph-plus' }}"></i></button>
                 </div>
                 <div class="sub-nav{{ $talentActive ? ' expanded' : '' }}">
-                    <a href="{{ route('hr.recruitment.vacancies') }}" class="sub-nav-item{{ request()->routeIs('hr.recruitment.*') ? ' active' : '' }}" title="Job vacancy postings, applicant pipeline, and candidate evaluations"><span>Talent Acquisition</span></a>
                     <a href="{{ route('hr.performance.periods') }}" class="sub-nav-item{{ request()->routeIs('hr.performance.*') ? ' active' : '' }}" title="Staff performance appraisal cycles, competency evaluations, and reviews"><span>Performance Management</span></a>
                     <a href="{{ route('hr.training.programs') }}" class="sub-nav-item{{ request()->routeIs('hr.training.*') ? ' active' : '' }}" title="Staff training programs, certifications, hygiene compliance, and course records"><span>Learning & Development</span></a>
+                </div>
+            </div>
+
+            <!-- Administration -->
+            <div class="nav-section">
+                @php $adminActive = request()->routeIs('hr.admin.*', 'hr.users-auth'); @endphp
+                <div class="nav-item-group" data-group-id="hr-admin">
+                    <a href="#" class="nav-item">
+                        <i class="ph ph-gear-six"></i>
+                        <span>Administration</span>
+                    </a>
+                    <button type="button" class="add-btn"><i class="ph {{ $adminActive ? 'ph-minus' : 'ph-plus' }}"></i></button>
+                </div>
+                <div class="sub-nav{{ $adminActive ? ' expanded' : '' }}">
+                    <a href="{{ route('hr.admin.users') }}" class="sub-nav-item{{ request()->routeIs('hr.admin.*', 'hr.users-auth') ? ' active' : '' }}" title="User accounts, role assignments, security permissions, and audit logs"><span>System Administration</span></a>
                 </div>
             </div>
 

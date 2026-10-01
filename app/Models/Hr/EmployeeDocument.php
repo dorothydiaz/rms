@@ -17,16 +17,38 @@ class EmployeeDocument extends Model
         'employee_id',
         'document_type',
         'document_name',
+        'category',
+        'issue_date',
         'file_path',
         'expiry_date',
+        'status',
+        'is_verified',
         'notes',
         'uploaded_by',
+        'verified_by',
+        'verified_at',
+        'remarks',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function ($doc) {
+            if (empty($doc->document_type)) {
+                $doc->document_type = $doc->category ?? 'General';
+            }
+            if (empty($doc->status)) {
+                $doc->status = 'Pending';
+            }
+        });
+    }
 
     protected function casts(): array
     {
         return [
             'expiry_date' => 'date',
+            'issue_date' => 'date',
+            'is_verified' => 'boolean',
+            'verified_at' => 'datetime',
         ];
     }
 

@@ -44,6 +44,28 @@ Route::middleware('auth')->group(function () {
             Route::put('/employees/{id}', [\App\Http\Controllers\Hr\PeopleController::class, 'employeeUpdate'])->name('employees.update');
             Route::delete('/employees/{id}', [\App\Http\Controllers\Hr\PeopleController::class, 'employeeDestroy'])->name('employees.destroy');
 
+            // Employee Life-cycle Actions & 201 File
+            Route::post('/employees/{id}/change-position', [\App\Http\Controllers\Hr\PeopleController::class, 'changePosition'])->name('employees.change-position');
+            Route::post('/employees/{id}/transfer', [\App\Http\Controllers\Hr\PeopleController::class, 'transferEmployee'])->name('employees.transfer');
+            Route::post('/employees/{id}/change-salary', [\App\Http\Controllers\Hr\PeopleController::class, 'changeSalary'])->name('employees.change-salary');
+            Route::post('/employees/{id}/change-status', [\App\Http\Controllers\Hr\PeopleController::class, 'changeStatus'])->name('employees.change-status');
+            Route::post('/employees/{id}/process-separation', [\App\Http\Controllers\Hr\PeopleController::class, 'processSeparation'])->name('employees.process-separation');
+            Route::post('/employees/{id}/archive', [\App\Http\Controllers\Hr\PeopleController::class, 'archiveEmployee'])->name('employees.archive');
+
+            // Family, Emergency Contacts & Education
+            Route::post('/employees/{id}/family', [\App\Http\Controllers\Hr\PeopleController::class, 'addFamilyMember'])->name('employees.family.store');
+            Route::delete('/employees/{id}/family/{index}', [\App\Http\Controllers\Hr\PeopleController::class, 'deleteFamilyMember'])->name('employees.family.destroy');
+            Route::post('/employees/{id}/emergency-contacts', [\App\Http\Controllers\Hr\PeopleController::class, 'addEmergencyContact'])->name('employees.emergency.store');
+            Route::delete('/employees/{id}/emergency-contacts/{contactId}', [\App\Http\Controllers\Hr\PeopleController::class, 'deleteEmergencyContact'])->name('employees.emergency.destroy');
+            Route::post('/employees/{id}/education', [\App\Http\Controllers\Hr\PeopleController::class, 'addEducation'])->name('employees.education.store');
+            Route::delete('/employees/{id}/education/{index}', [\App\Http\Controllers\Hr\PeopleController::class, 'deleteEducation'])->name('employees.education.destroy');
+
+            // Documents inside Profile
+            Route::post('/documents/{id}/verify', [\App\Http\Controllers\Hr\PeopleController::class, 'documentVerify'])->name('documents.verify');
+            Route::post('/documents/{id}/replace', [\App\Http\Controllers\Hr\PeopleController::class, 'documentReplace'])->name('documents.replace');
+            Route::get('/employees/{id}/coe', [\App\Http\Controllers\Hr\PeopleController::class, 'generateCoe'])->name('employees.coe');
+            Route::get('/employees/{id}/print-201', [\App\Http\Controllers\Hr\PeopleController::class, 'print201File'])->name('employees.print-201');
+
             Route::get('/organization', [\App\Http\Controllers\Hr\PeopleController::class, 'organizationIndex'])->name('organization');
 
             Route::get('/departments', [\App\Http\Controllers\Hr\PeopleController::class, 'departmentsIndex'])->name('departments');

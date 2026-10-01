@@ -1,269 +1,375 @@
 @extends('layouts.app')
 
-@section('title', 'Employees Directory - People Administration - Restaurant Management System')
+@section('title', 'Employee Management - Restaurant Management System')
 
 @section('content')
 <x-hr-tabs parent="employee-management">
     <x-slot:actions>
         <a href="{{ route('hr.reports.export.employees') }}" class="hr-btn hr-btn-secondary">
             <i class="ph ph-download-simple"></i>
-            <span>Export CSV</span>
+            <span>Export</span>
         </a>
         <button class="hr-btn hr-btn-primary" onclick="openModal('addEmployeeModal')">
-            <i class="ph ph-plus-circle"></i>
-            <span>Add New Employee</span>
+            <i class="ph ph-user-plus"></i>
+            <span>Add Employee</span>
         </button>
     </x-slot:actions>
 </x-hr-tabs>
 
-<!-- Real-Time Filter & Search Bar (No Enter Key Required) -->
-<div class="hr-filter-bar" style="margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
-    <!-- Filters & Search Controls Group -->
-    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; flex: 1;">
-        <!-- Search Input -->
-        <div style="position: relative; width: 260px; flex-shrink: 0;">
-            <i class="ph ph-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 16px; pointer-events: none;"></i>
-            <input type="text" id="empSearchInput" class="hr-input" placeholder="Search name, ID, position..." oninput="filterEmployeesDirectory()" style="width: 100%; box-sizing: border-box; padding-left: 36px; height: 38px;">
+<!-- 5 Compact Summary Cards -->
+<div class="hr-emp-summary-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 20px;">
+    <!-- Total Employees -->
+    <div class="hr-stat-card">
+        <div class="hr-stat-icon-wrap" style="background: rgba(124, 58, 237, 0.08); color: #7c3aed;">
+            <i class="ph ph-users"></i>
         </div>
-
-        @if(Auth::user()->isSuperAdmin() || Auth::user()->isHrAdmin())
-            <select id="empBranchFilter" class="hr-select" style="height: 38px; max-width: 190px;" onchange="filterEmployeesDirectory()">
-                <option value="">All Branches</option>
-                @foreach($branches as $b)
-                    <option value="{{ $b->name }}">{{ $b->name }}</option>
-                @endforeach
-            </select>
-        @endif
-
-        <select id="empDeptFilter" class="hr-select" style="height: 38px; max-width: 180px;" onchange="filterEmployeesDirectory()">
-            <option value="">All Departments</option>
-            @foreach($departments as $d)
-                <option value="{{ $d->name }}">{{ $d->name }}</option>
-            @endforeach
-        </select>
-
-        <select id="empStatusFilter" class="hr-select" style="height: 38px; max-width: 150px;" onchange="filterEmployeesDirectory()">
-            <option value="">All Statuses</option>
-            @foreach(['Active', 'Probationary', 'On Leave', 'Suspended', 'Resigned', 'Terminated', 'Retired'] as $st)
-                <option value="{{ $st }}">{{ $st }}</option>
-            @endforeach
-        </select>
-
-        <!-- Sort By Options in Table Toolbar -->
-        <select id="empSortSelect" class="hr-select" style="height: 38px; max-width: 200px;" onchange="applyEmpSortFromSelect(this.value)">
-            <option value="">Sort By: Default</option>
-            <option value="name_asc">Name (A &rarr; Z)</option>
-            <option value="name_desc">Name (Z &rarr; A)</option>
-            <option value="id_asc">Employee ID (Ascending)</option>
-            <option value="id_desc">Employee ID (Descending)</option>
-            <option value="branch_asc">Branch (A &rarr; Z)</option>
-            <option value="dept_asc">Department / Position (A &rarr; Z)</option>
-            <option value="type_asc">Employment Type (A &rarr; Z)</option>
-            <option value="status_asc">Status (Active First)</option>
-            <option value="date_desc">Date Hired (Newest First)</option>
-            <option value="date_asc">Date Hired (Oldest First)</option>
-        </select>
-
-        <!-- Reset Filter Button -->
-        <button type="button" class="hr-btn hr-btn-secondary" onclick="resetEmployeesDirectory()" title="Reset all filters" style="height: 38px; padding: 0 14px;">
-            <i class="ph ph-arrows-counter-clockwise"></i>
-            <span>Reset</span>
-        </button>
+        <div class="hr-stat-content">
+            <span class="hr-stat-label">Total Employees</span>
+            <div class="hr-stat-value">{{ $counts['total'] ?? $employees->total() }}</div>
+            <span class="hr-stat-sub">Active Workforce</span>
+        </div>
     </div>
 
-    <!-- Live Counter Badge -->
-    <div style="flex-shrink: 0;">
-        <span class="hr-badge hr-badge-neutral" style="font-size: 12px; font-weight: 600; padding: 7px 12px; border-radius: 8px; background: #f1f5f9; color: #475569; display: inline-flex; align-items: center; gap: 4px;">
-            Showing <strong id="empVisibleCount" style="color: #0f172a;">{{ $employees->count() }}</strong> of {{ $employees->count() }} employees
-        </span>
+    <!-- Active -->
+    <div class="hr-stat-card">
+        <div class="hr-stat-icon-wrap" style="background: rgba(16, 185, 129, 0.08); color: #10b981;">
+            <i class="ph ph-check-circle"></i>
+        </div>
+        <div class="hr-stat-content">
+            <span class="hr-stat-label">Active</span>
+            <div class="hr-stat-value" style="color: #059669;">{{ $counts['active'] ?? 0 }}</div>
+            <span class="hr-stat-sub">Regular & Duty</span>
+        </div>
+    </div>
+
+    <!-- Probationary -->
+    <div class="hr-stat-card">
+        <div class="hr-stat-icon-wrap" style="background: rgba(245, 158, 11, 0.08); color: #f59e0b;">
+            <i class="ph ph-hourglass-medium"></i>
+        </div>
+        <div class="hr-stat-content">
+            <span class="hr-stat-label">Probationary</span>
+            <div class="hr-stat-value" style="color: #d97706;">{{ $counts['probationary'] ?? 0 }}</div>
+            <span class="hr-stat-sub">Under Evaluation</span>
+        </div>
+    </div>
+
+    <!-- On Leave -->
+    <div class="hr-stat-card">
+        <div class="hr-stat-icon-wrap" style="background: rgba(59, 130, 246, 0.08); color: #3b82f6;">
+            <i class="ph ph-calendar-blank"></i>
+        </div>
+        <div class="hr-stat-content">
+            <span class="hr-stat-label">On Leave</span>
+            <div class="hr-stat-value" style="color: #2563eb;">{{ $counts['on_leave'] ?? 0 }}</div>
+            <span class="hr-stat-sub">Authorized Leave</span>
+        </div>
+    </div>
+
+    <!-- Separated -->
+    <div class="hr-stat-card">
+        <div class="hr-stat-icon-wrap" style="background: rgba(239, 68, 68, 0.08); color: #ef4444;">
+            <i class="ph ph-user-minus"></i>
+        </div>
+        <div class="hr-stat-content">
+            <span class="hr-stat-label">Separated</span>
+            <div class="hr-stat-value" style="color: #dc2626;">{{ $counts['separated'] ?? 0 }}</div>
+            <span class="hr-stat-sub">Resigned / Inactive</span>
+        </div>
     </div>
 </div>
 
-<!-- Employees Data Table with Sticky Headers and Vertical Scrollbar -->
+<!-- Real-Time Filter & Search Bar -->
+<div class="hr-filter-bar" style="margin-bottom: 16px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px 16px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
+        <!-- Filters & Search Controls Group -->
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; flex: 1;">
+            <!-- Search Input -->
+            <div style="position: relative; width: 240px; flex-shrink: 0;">
+                <i class="ph ph-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 16px; pointer-events: none;"></i>
+                <input type="text" id="empSearchInput" class="hr-input" placeholder="Search employee..." oninput="filterEmployeesDirectory()" style="width: 100%; box-sizing: border-box; padding-left: 36px; height: 36px; font-size: 13px;">
+            </div>
+
+            <!-- Department Filter -->
+            <select id="empDeptFilter" class="hr-select" style="height: 36px; max-width: 170px; font-size: 13px;" onchange="filterEmployeesDirectory()">
+                <option value="">All Departments</option>
+                @foreach($departments as $d)
+                    <option value="{{ $d->name }}">{{ $d->name }}</option>
+                @endforeach
+            </select>
+
+            <!-- Branch Filter -->
+            @if(Auth::user()->isSuperAdmin() || Auth::user()->isHrAdmin())
+                <select id="empBranchFilter" class="hr-select" style="height: 36px; max-width: 170px; font-size: 13px;" onchange="filterEmployeesDirectory()">
+                    <option value="">All Branches</option>
+                    @foreach($branches as $b)
+                        <option value="{{ $b->name }}">{{ $b->name }}</option>
+                    @endforeach
+                </select>
+            @endif
+
+            <!-- Position Filter -->
+            <select id="empPositionFilter" class="hr-select" style="height: 36px; max-width: 170px; font-size: 13px;" onchange="filterEmployeesDirectory()">
+                <option value="">All Positions</option>
+                @foreach($positions as $p)
+                    <option value="{{ $p->name }}">{{ $p->name }}</option>
+                @endforeach
+            </select>
+
+            <!-- Employment Type Filter -->
+            <select id="empTypeFilter" class="hr-select" style="height: 36px; max-width: 155px; font-size: 13px;" onchange="filterEmployeesDirectory()">
+                <option value="">All Types</option>
+                @foreach(['Regular', 'Probationary', 'Contractual', 'Part-time', 'Seasonal', 'Intern / OJT'] as $t)
+                    <option value="{{ $t }}">{{ $t }}</option>
+                @endforeach
+            </select>
+
+            <!-- Status Filter -->
+            <select id="empStatusFilter" class="hr-select" style="height: 36px; max-width: 145px; font-size: 13px;" onchange="filterEmployeesDirectory()">
+                <option value="">All Statuses</option>
+                @foreach(['Active', 'Probationary', 'On Leave', 'Suspended', 'Resigned', 'Terminated', 'Retired'] as $st)
+                    <option value="{{ $st }}">{{ $st }}</option>
+                @endforeach
+            </select>
+
+            <!-- More Filters Toggle -->
+            <button type="button" class="hr-btn hr-btn-secondary" onclick="toggleMoreFilters()" id="moreFiltersBtn" style="height: 36px; padding: 0 12px; font-size: 12.5px;">
+                <i class="ph ph-funnel"></i>
+                <span>More Filters</span>
+            </button>
+
+            <!-- Reset Filter Button -->
+            <button type="button" class="hr-btn hr-btn-secondary" onclick="resetEmployeesDirectory()" title="Reset all filters" style="height: 36px; padding: 0 12px; font-size: 12.5px;">
+                <i class="ph ph-arrows-counter-clockwise"></i>
+                <span>Reset</span>
+            </button>
+        </div>
+
+        <!-- Live Counter Badge -->
+        <div style="flex-shrink: 0;">
+            <span class="hr-badge hr-badge-neutral" style="font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 8px; background: #f8fafc; border: 1px solid #e2e8f0; color: #475569; display: inline-flex; align-items: center; gap: 4px;">
+                Showing <strong id="empVisibleCount" style="color: #0f172a;">{{ $employees->count() }}</strong> of {{ $employees->count() }} employees
+            </span>
+        </div>
+    </div>
+
+    <!-- Collapsible More Filters Panel -->
+    <div id="moreFiltersPanel" style="display: none; padding-top: 12px; border-top: 1px dashed #e2e8f0; align-items: center; gap: 14px; flex-wrap: wrap;">
+        <!-- Company / Agency Filter -->
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 12px; font-weight: 600; color: #64748b;">Source / Company:</span>
+            <select id="empCompanyFilter" class="hr-select" style="height: 34px; font-size: 12.5px;" onchange="filterEmployeesDirectory()">
+                <option value="">All Sources</option>
+                @foreach($companies as $c)
+                    <option value="{{ $c->name }}">{{ $c->name }} (Company)</option>
+                @endforeach
+                @foreach($agencies as $a)
+                    <option value="{{ $a->name }}">{{ $a->name }} (Agency)</option>
+                @endforeach
+            </select>
+        </div>
+
+        <!-- Sort By Options in Table Toolbar -->
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 12px; font-weight: 600; color: #64748b;">Sort By:</span>
+            <select id="empSortSelect" class="hr-select" style="height: 34px; font-size: 12.5px;" onchange="applyEmpSortFromSelect(this.value)">
+                <option value="">Default (Created Date)</option>
+                <option value="name_asc">Name (A &rarr; Z)</option>
+                <option value="name_desc">Name (Z &rarr; A)</option>
+                <option value="id_asc">Employee ID (Ascending)</option>
+                <option value="id_desc">Employee ID (Descending)</option>
+                <option value="dept_asc">Department (A &rarr; Z)</option>
+                <option value="pos_asc">Position (A &rarr; Z)</option>
+                <option value="branch_asc">Branch (A &rarr; Z)</option>
+                <option value="type_asc">Employment Type (A &rarr; Z)</option>
+                <option value="status_asc">Status (Active First)</option>
+                <option value="date_desc">Date Hired (Newest First)</option>
+                <option value="date_asc">Date Hired (Oldest First)</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<!-- Employee Directory Table -->
 <div class="hr-table-card hr-table-card-full">
     <div class="hr-table-wrapper" id="employeesTableWrapper" style="overflow-y: auto; overflow-x: auto;">
         <table class="hr-table" id="employeesDirectoryTable">
             <thead>
                 <tr>
-                    <th class="sortable" onclick="sortEmployeesDirectory(0, 'text')" title="Click to sort by Employee ID">
+                    <th class="sortable" onclick="sortEmployeesDirectory(0, 'text')" title="Click to sort by Employee ID" style="width: 120px;">
                         <div style="display: flex; align-items: center; justify-content: space-between;">
                             <span>Employee ID</span>
-                            <span style="display: inline-flex; align-items: center;">
-                                <span class="sort-badge asc">ASC</span>
-                                <span class="sort-badge desc">DESC</span>
-                                <span class="sort-icon"><i class="ph ph-arrows-down-up"></i></span>
-                            </span>
+                            <span class="sort-icon"><i class="ph ph-arrows-down-up"></i></span>
                         </div>
                     </th>
-                    <th class="sortable" onclick="sortEmployeesDirectory(1, 'text')" title="Click to sort by Full Name (A-Z / Z-A)">
+                    <th class="sortable" onclick="sortEmployeesDirectory(1, 'text')" title="Click to sort by Employee Name" style="min-width: 220px;">
                         <div style="display: flex; align-items: center; justify-content: space-between;">
-                            <span>Full Name</span>
-                            <span style="display: inline-flex; align-items: center;">
-                                <span class="sort-badge asc">ASC</span>
-                                <span class="sort-badge desc">DESC</span>
-                                <span class="sort-icon"><i class="ph ph-arrows-down-up"></i></span>
-                            </span>
+                            <span>Employee</span>
+                            <span class="sort-icon"><i class="ph ph-arrows-down-up"></i></span>
                         </div>
                     </th>
-                    <th class="sortable" style="min-width: 200px;" onclick="sortEmployeesDirectory(2, 'text')" title="Click to sort by Branch (A-Z / Z-A)">
+                    <th class="sortable" onclick="sortEmployeesDirectory(2, 'text')" title="Click to sort by Department">
                         <div style="display: flex; align-items: center; justify-content: space-between;">
-                            <span>Branch & Company</span>
-                            <span style="display: inline-flex; align-items: center;">
-                                <span class="sort-badge asc">ASC</span>
-                                <span class="sort-badge desc">DESC</span>
-                                <span class="sort-icon"><i class="ph ph-arrows-down-up"></i></span>
-                            </span>
+                            <span>Department</span>
+                            <span class="sort-icon"><i class="ph ph-arrows-down-up"></i></span>
                         </div>
                     </th>
-                    <th class="sortable" onclick="sortEmployeesDirectory(3, 'text')" title="Click to sort by Department & Position">
+                    <th class="sortable" onclick="sortEmployeesDirectory(3, 'text')" title="Click to sort by Position">
                         <div style="display: flex; align-items: center; justify-content: space-between;">
-                            <span>Department & Position</span>
-                            <span style="display: inline-flex; align-items: center;">
-                                <span class="sort-badge asc">ASC</span>
-                                <span class="sort-badge desc">DESC</span>
-                                <span class="sort-icon"><i class="ph ph-arrows-down-up"></i></span>
-                            </span>
+                            <span>Position</span>
+                            <span class="sort-icon"><i class="ph ph-arrows-down-up"></i></span>
                         </div>
                     </th>
-                    <th class="sortable" onclick="sortEmployeesDirectory(4, 'text')" title="Click to sort by Employment Type">
+                    <th class="sortable" onclick="sortEmployeesDirectory(4, 'text')" title="Click to sort by Branch">
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <span>Branch</span>
+                            <span class="sort-icon"><i class="ph ph-arrows-down-up"></i></span>
+                        </div>
+                    </th>
+                    <th class="sortable" onclick="sortEmployeesDirectory(5, 'text')" title="Click to sort by Employment Type">
                         <div style="display: flex; align-items: center; justify-content: space-between;">
                             <span>Employment Type</span>
-                            <span style="display: inline-flex; align-items: center;">
-                                <span class="sort-badge asc">ASC</span>
-                                <span class="sort-badge desc">DESC</span>
-                                <span class="sort-icon"><i class="ph ph-arrows-down-up"></i></span>
-                            </span>
-                        </div>
-                    </th>
-                    <th class="sortable" onclick="sortEmployeesDirectory(5, 'text')" title="Click to sort by Status">
-                        <div style="display: flex; align-items: center; justify-content: space-between;">
-                            <span>Status</span>
-                            <span style="display: inline-flex; align-items: center;">
-                                <span class="sort-badge asc">ASC</span>
-                                <span class="sort-badge desc">DESC</span>
-                                <span class="sort-icon"><i class="ph ph-arrows-down-up"></i></span>
-                            </span>
+                            <span class="sort-icon"><i class="ph ph-arrows-down-up"></i></span>
                         </div>
                     </th>
                     <th class="sortable" onclick="sortEmployeesDirectory(6, 'date')" title="Click to sort by Date Hired">
                         <div style="display: flex; align-items: center; justify-content: space-between;">
                             <span>Date Hired</span>
-                            <span style="display: inline-flex; align-items: center;">
-                                <span class="sort-badge asc">ASC</span>
-                                <span class="sort-badge desc">DESC</span>
-                                <span class="sort-icon"><i class="ph ph-arrows-down-up"></i></span>
-                            </span>
+                            <span class="sort-icon"><i class="ph ph-arrows-down-up"></i></span>
                         </div>
                     </th>
-                    <th style="text-align: right; width: 140px;">Actions</th>
+                    <th class="sortable" onclick="sortEmployeesDirectory(7, 'text')" title="Click to sort by Status" style="width: 110px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <span>Status</span>
+                            <span class="sort-icon"><i class="ph ph-arrows-down-up"></i></span>
+                        </div>
+                    </th>
+                    <th style="text-align: right; width: 80px;">Actions</th>
                 </tr>
             </thead>
             <tbody id="employeesTableBody">
                 @forelse($employees as $emp)
                     @php
-                        $deptName = $emp->department?->name ?? 'General';
-                        $posName = $emp->position?->name ?? 'N/A';
+                        $deptName = $emp->department?->name ?? 'Unassigned';
+                        $posName = $emp->position?->name ?? 'General Staff';
                         $branchName = $emp->branch?->name ?? 'Unassigned';
                         $dateHiredVal = $emp->date_hired ? \Carbon\Carbon::parse($emp->date_hired)->timestamp : 0;
+                        $initials = strtoupper(substr($emp->first_name ?? '', 0, 1) . substr($emp->last_name ?? '', 0, 1)) ?: 'EM';
                     @endphp
                     <tr class="emp-row" 
                         data-id="{{ strtolower($emp->employee_id) }}"
                         data-name="{{ strtolower($emp->full_name) }}"
                         data-email="{{ strtolower($emp->email ?? '') }}"
-                        data-branch="{{ $branchName }}"
                         data-dept="{{ $deptName }}"
-                        data-position="{{ strtolower($posName) }}"
-                        data-type="{{ strtolower($emp->employment_type ?? '') }}"
+                        data-position="{{ $posName }}"
+                        data-branch="{{ $branchName }}"
+                        data-type="{{ $emp->employment_type ?? 'Regular' }}"
                         data-status="{{ $emp->employment_status }}"
-                        data-date="{{ $dateHiredVal }}">
+                        data-company="{{ $emp->company_or_agency }}"
+                        data-date="{{ $dateHiredVal }}"
+                        onclick="if(!event.target.closest('.hr-action-menu-wrap, a, button, input')) window.location.href = '{{ route('hr.people.employees.show', $emp->id) }}';"
+                        style="cursor: pointer;">
                         <td>
-                            <strong style="color: #9333ea; font-family: monospace;">{{ $emp->employee_id }}</strong>
+                            <strong style="color: #7c3aed; font-family: monospace; font-size: 13px;">{{ $emp->employee_id }}</strong>
                         </td>
                         <td>
-                            <div class="hr-emp-avatar-wrap">
-                                @if($emp->photo_url)
-                                    <img src="{{ $emp->photo_url }}" alt="{{ $emp->full_name }}" class="hr-avatar-img">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                @if($emp->profile_photo_url)
+                                    <img src="{{ $emp->profile_photo_url }}" alt="{{ $emp->full_name }}" style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 1.5px solid #e2e8f0; flex-shrink: 0; box-shadow: 0 1px 4px rgba(0,0,0,0.05);">
                                 @else
-                                    <div class="hr-avatar-circle">
-                                        {{ $emp->initials }}
+                                    <div style="width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #7c3aed 0%, #db2777 100%); color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; box-shadow: 0 2px 6px rgba(124, 58, 237, 0.2);">
+                                        {{ $initials }}
                                     </div>
                                 @endif
-                                <div>
-                                    <div style="font-weight: 600; color: #0f172a; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-                                        <span>{{ $emp->full_name }}</span>
-                                        @if($emp->user)
-                                            <span class="hr-badge hr-badge-purple" style="font-size: 10.5px; padding: 1px 6px; font-weight: 600;" title="Linked User Account: @ {{ $emp->user->username }}">
-                                                <i class="ph ph-user-check"></i> {{ '@' . $emp->user->username }}
-                                            </span>
-                                        @endif
+                                <div style="min-width: 0;">
+                                    <div style="font-weight: 600; color: #0f172a; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                        <a href="{{ route('hr.people.employees.show', $emp->id) }}" style="color: inherit; text-decoration: none;" class="emp-name-link">
+                                            {{ $emp->full_name }}
+                                        </a>
                                     </div>
-                                    <div style="font-size: 11.5px; color: #64748b;">{{ $emp->email ?? 'No email' }} &bull; {{ $emp->mobile_number ?? 'No phone' }}</div>
-                                </div>
-                            </div>
-                        </td>
-                        <td style="white-space: nowrap; min-width: 200px;">
-                            <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 5px;">
-                                <div style="font-weight: 600; color: #0f172a; font-size: 13px; display: inline-flex; align-items: center; gap: 6px;">
-                                    <i class="ph ph-storefront" style="color: #64748b; font-size: 15px;"></i>
-                                    <span>{{ $branchName }}</span>
-                                </div>
-                                <div style="display: inline-flex; align-items: center;">
-                                    @if($emp->employment_source === 'Agency')
-                                        <span class="hr-badge hr-badge-purple" style="font-size: 10.5px; padding: 2.5px 8px; font-weight: 600;" title="Agency: {{ $emp->company_or_agency }}">
-                                            <i class="ph ph-handshake"></i> {{ $emp->company_or_agency }}
-                                        </span>
-                                    @else
-                                        <span class="hr-badge hr-badge-info" style="font-size: 10.5px; padding: 2.5px 8px; font-weight: 600;" title="Company: {{ $emp->company_or_agency }}">
-                                            <i class="ph ph-buildings"></i> {{ $emp->company_or_agency }}
-                                        </span>
-                                    @endif
+                                    <div style="font-size: 11.5px; color: #64748b; margin-top: 1px; display: flex; align-items: center; gap: 5px;">
+                                        <span style="color: #8b5cf6; font-weight: 500;">{{ $emp->employee_id }}</span>
+                                        <span>&bull;</span>
+                                        <span style="color: #475569;">{{ $posName }}</span>
+                                    </div>
                                 </div>
                             </div>
                         </td>
                         <td>
-                            <div>{{ $posName }}</div>
-                            <div style="font-size: 11.5px; color: #64748b;">{{ $deptName }}</div>
+                            <span style="font-weight: 500; color: #334155;">{{ $deptName }}</span>
                         </td>
-                        <td>{{ $emp->employment_type }}</td>
+                        <td>
+                            <span style="color: #0f172a; font-weight: 500;">{{ $posName }}</span>
+                        </td>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 5px; color: #475569;">
+                                <i class="ph ph-storefront" style="color: #94a3b8; font-size: 14px;"></i>
+                                <span>{{ $branchName }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="hr-badge hr-badge-neutral" style="font-size: 11px; padding: 2px 8px;">
+                                {{ $emp->employment_type ?? 'Regular' }}
+                            </span>
+                        </td>
+                        <td>
+                            <span style="font-size: 12px; color: #475569;">
+                                {{ $emp->date_hired ? \Carbon\Carbon::parse($emp->date_hired)->format('M d, Y') : '—' }}
+                            </span>
+                        </td>
                         <td>
                             @if($emp->employment_status === 'Active')
-                                <span class="hr-badge hr-badge-success">{{ $emp->employment_status }}</span>
+                                <span class="hr-badge hr-badge-success" style="font-size: 11px; padding: 2px 8px;">Active</span>
                             @elseif($emp->employment_status === 'Probationary')
-                                <span class="hr-badge hr-badge-warning">{{ $emp->employment_status }}</span>
+                                <span class="hr-badge hr-badge-warning" style="font-size: 11px; padding: 2px 8px;">Probationary</span>
                             @elseif($emp->employment_status === 'On Leave')
-                                <span class="hr-badge hr-badge-info">{{ $emp->employment_status }}</span>
+                                <span class="hr-badge hr-badge-info" style="font-size: 11px; padding: 2px 8px;">On Leave</span>
                             @else
-                                <span class="hr-badge hr-badge-danger">{{ $emp->employment_status }}</span>
+                                <span class="hr-badge hr-badge-danger" style="font-size: 11px; padding: 2px 8px;">{{ $emp->employment_status }}</span>
                             @endif
                         </td>
-                        <td>{{ \Carbon\Carbon::parse($emp->date_hired)->format('M d, Y') }}</td>
                         <td style="text-align: right;">
-                            <div style="display: inline-flex; gap: 6px;">
-                                <a href="{{ route('hr.people.employees.show', $emp->id) }}" class="hr-btn hr-btn-secondary hr-btn-sm" title="View Full Profile">
-                                    <i class="ph ph-eye"></i> View
-                                </a>
-                                @if(Auth::user()->isSuperAdmin() || Auth::user()->isHrAdmin())
-                                    <form method="POST" action="{{ route('hr.people.employees.destroy', $emp->id) }}" onsubmit="return confirm('Are you sure you want to delete employee {{ $emp->full_name }}?');" style="display: inline;">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="hr-btn hr-btn-danger hr-btn-sm" title="Delete Employee">
-                                            <i class="ph ph-trash"></i>
-                                        </button>
-                                    </form>
-                                @endif
+                            <div class="hr-action-menu-wrap" style="position: relative; display: inline-block;">
+                                <button type="button" class="hr-action-menu-btn" onclick="toggleEmpActionMenu(event, 'empMenu-{{ $emp->id }}')" title="Actions">
+                                    <i class="ph ph-dots-three-vertical"></i>
+                                </button>
+                                <div id="empMenu-{{ $emp->id }}" class="hr-action-dropdown" style="display: none; position: absolute; right: 0; top: calc(100% + 4px); z-index: 60; min-width: 175px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1); padding: 6px; font-size: 12.5px; text-align: left;">
+                                    <a href="{{ route('hr.people.employees.show', $emp->id) }}" class="hr-dropdown-item">
+                                        <i class="ph ph-user"></i> View Profile
+                                    </a>
+                                    <a href="{{ route('hr.people.employees.show', $emp->id) }}?action=edit" class="hr-dropdown-item">
+                                        <i class="ph ph-pencil-simple"></i> Edit Employee
+                                    </a>
+                                    <button type="button" class="hr-dropdown-item" onclick="openChangePositionModal({{ $emp->id }}, '{{ addslashes($emp->full_name) }}', {{ $emp->position_id ?? 'null' }})">
+                                        <i class="ph ph-briefcase"></i> Change Position
+                                    </button>
+                                    <button type="button" class="hr-dropdown-item" onclick="openTransferModal({{ $emp->id }}, '{{ addslashes($emp->full_name) }}', {{ $emp->department_id ?? 'null' }}, {{ $emp->branch_id ?? 'null' }})">
+                                        <i class="ph ph-arrows-left-right"></i> Transfer
+                                    </button>
+                                    <button type="button" class="hr-dropdown-item" onclick="openChangeStatusModal({{ $emp->id }}, '{{ addslashes($emp->full_name) }}', '{{ $emp->employment_status }}')">
+                                        <i class="ph ph-arrows-clockwise"></i> Change Status
+                                    </button>
+                                    <div style="height: 1px; background: #f1f5f9; margin: 4px 0;"></div>
+                                    <a href="{{ route('hr.people.employees.coe', $emp->id) }}" class="hr-dropdown-item" target="_blank">
+                                        <i class="ph ph-certificate"></i> Generate COE
+                                    </a>
+                                    <a href="{{ route('hr.people.employees.print-201', $emp->id) }}" class="hr-dropdown-item" target="_blank">
+                                        <i class="ph ph-printer"></i> Print 201 File
+                                    </a>
+                                </div>
                             </div>
                         </td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="8" style="text-align: center; color: #94a3b8; padding: 40px;">
+                        <td colspan="9" style="text-align: center; color: #94a3b8; padding: 40px;">
                             <i class="ph ph-users" style="font-size: 32px; display: block; margin-bottom: 8px;"></i>
                             No employees found matching the given filters.
                         </td>
                     </tr>
                 @endforelse
                 <tr id="noEmpResultsRow" style="display: none;">
-                    <td colspan="8" style="text-align: center; color: #94a3b8; padding: 40px;">
+                    <td colspan="9" style="text-align: center; color: #94a3b8; padding: 40px;">
                         <i class="ph ph-magnifying-glass" style="font-size: 32px; display: block; margin-bottom: 8px; color: #cbd5e1;"></i>
                         No employees match your filter criteria.
                     </td>
@@ -288,6 +394,238 @@
             </div>
         </div>
         <nav class="hr-pagination-nav" role="navigation" aria-label="Pagination Navigation" id="empPageNav"></nav>
+</div>
+
+<style>
+.hr-stat-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.hr-stat-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.08);
+}
+.hr-stat-icon-wrap {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+}
+.hr-stat-content {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+.hr-stat-label {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.hr-stat-value {
+    font-size: 22px;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.2;
+    margin: 2px 0 1px 0;
+}
+.hr-stat-sub {
+    font-size: 11px;
+    color: #94a3b8;
+}
+.emp-name-link:hover {
+    color: #7c3aed !important;
+    text-decoration: underline !important;
+}
+.hr-action-menu-btn {
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.hr-action-menu-btn:hover {
+    background: #f8fafc;
+    color: #0f172a;
+    border-color: #cbd5e1;
+}
+.hr-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 7px 10px;
+    color: #334155;
+    text-decoration: none;
+    font-size: 12.5px;
+    font-weight: 500;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.12s ease, color 0.12s ease;
+}
+.hr-dropdown-item:hover {
+    background: #f1f5f9;
+    color: #7c3aed;
+}
+.hr-dropdown-item i {
+    font-size: 14px;
+    color: #64748b;
+}
+.hr-dropdown-item:hover i {
+    color: #7c3aed;
+}
+</style>
+
+<!-- Quick Action Modal: Change Position -->
+<div id="changePositionQuickModal" class="hr-modal-overlay">
+    <div class="hr-modal" style="max-width: 480px;">
+        <div class="hr-modal-header">
+            <span class="hr-modal-title"><i class="ph ph-briefcase"></i> Change Position</span>
+            <button class="icon-btn" onclick="closeModal('changePositionQuickModal')"><i class="ph ph-x"></i></button>
+        </div>
+        <form id="changePositionQuickForm" method="POST" action="">
+            @csrf
+            <div class="hr-modal-body">
+                <div class="hr-form-group">
+                    <label class="hr-form-label">Employee</label>
+                    <input type="text" id="cpQuickEmpName" class="hr-input" readonly style="background: #f8fafc; font-weight: 600;">
+                </div>
+                <div class="hr-form-group" style="margin-top: 12px;">
+                    <label class="hr-form-label">New Position <span class="text-danger">*</span></label>
+                    <select name="position_id" id="cpQuickPositionId" class="hr-select" required>
+                        <option value="">-- Select Position --</option>
+                        @foreach($positions as $p)
+                            <option value="{{ $p->id }}">{{ $p->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="hr-form-group" style="margin-top: 12px;">
+                    <label class="hr-form-label">Effective Date <span class="text-danger">*</span></label>
+                    <input type="date" name="effective_date" class="hr-input" value="{{ date('Y-m-d') }}" required>
+                </div>
+                <div class="hr-form-group" style="margin-top: 12px;">
+                    <label class="hr-form-label">Reason / Notes</label>
+                    <textarea name="reason" class="hr-input" rows="2" placeholder="e.g. Promotion, Lateral Reassignment"></textarea>
+                </div>
+            </div>
+            <div class="hr-modal-footer">
+                <button type="button" class="hr-btn hr-btn-secondary" onclick="closeModal('changePositionQuickModal')">Cancel</button>
+                <button type="submit" class="hr-btn hr-btn-primary">Update Position</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Quick Action Modal: Transfer Branch / Department -->
+<div id="transferQuickModal" class="hr-modal-overlay">
+    <div class="hr-modal" style="max-width: 480px;">
+        <div class="hr-modal-header">
+            <span class="hr-modal-title"><i class="ph ph-arrows-left-right"></i> Transfer Employee</span>
+            <button class="icon-btn" onclick="closeModal('transferQuickModal')"><i class="ph ph-x"></i></button>
+        </div>
+        <form id="transferQuickForm" method="POST" action="">
+            @csrf
+            <div class="hr-modal-body">
+                <div class="hr-form-group">
+                    <label class="hr-form-label">Employee</label>
+                    <input type="text" id="trQuickEmpName" class="hr-input" readonly style="background: #f8fafc; font-weight: 600;">
+                </div>
+                <div class="hr-form-group" style="margin-top: 12px;">
+                    <label class="hr-form-label">Transfer Branch</label>
+                    <select name="branch_id" id="trQuickBranchId" class="hr-select">
+                        <option value="">-- Keep Current Branch --</option>
+                        @foreach($branches as $b)
+                            <option value="{{ $b->id }}">{{ $b->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="hr-form-group" style="margin-top: 12px;">
+                    <label class="hr-form-label">Transfer Department</label>
+                    <select name="department_id" id="trQuickDeptId" class="hr-select">
+                        <option value="">-- Keep Current Department --</option>
+                        @foreach($departments as $d)
+                            <option value="{{ $d->id }}">{{ $d->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="hr-form-group" style="margin-top: 12px;">
+                    <label class="hr-form-label">Effective Date <span class="text-danger">*</span></label>
+                    <input type="date" name="effective_date" class="hr-input" value="{{ date('Y-m-d') }}" required>
+                </div>
+                <div class="hr-form-group" style="margin-top: 12px;">
+                    <label class="hr-form-label">Reason / Justification</label>
+                    <textarea name="reason" class="hr-input" rows="2" placeholder="e.g. Branch Rebalancing, Department Transfer"></textarea>
+                </div>
+            </div>
+            <div class="hr-modal-footer">
+                <button type="button" class="hr-btn hr-btn-secondary" onclick="closeModal('transferQuickModal')">Cancel</button>
+                <button type="submit" class="hr-btn hr-btn-primary">Apply Transfer</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Quick Action Modal: Change Employment Status -->
+<div id="changeStatusQuickModal" class="hr-modal-overlay">
+    <div class="hr-modal" style="max-width: 480px;">
+        <div class="hr-modal-header">
+            <span class="hr-modal-title"><i class="ph ph-arrows-clockwise"></i> Change Status</span>
+            <button class="icon-btn" onclick="closeModal('changeStatusQuickModal')"><i class="ph ph-x"></i></button>
+        </div>
+        <form id="changeStatusQuickForm" method="POST" action="">
+            @csrf
+            <div class="hr-modal-body">
+                <div class="hr-form-group">
+                    <label class="hr-form-label">Employee</label>
+                    <input type="text" id="csQuickEmpName" class="hr-input" readonly style="background: #f8fafc; font-weight: 600;">
+                </div>
+                <div class="hr-form-group" style="margin-top: 12px;">
+                    <label class="hr-form-label">New Status <span class="text-danger">*</span></label>
+                    <select name="employment_status" id="csQuickStatus" class="hr-select" required>
+                        <option value="Active">Active</option>
+                        <option value="Probationary">Probationary</option>
+                        <option value="On Leave">On Leave</option>
+                        <option value="Suspended">Suspended</option>
+                        <option value="Resigned">Resigned</option>
+                        <option value="Terminated">Terminated</option>
+                        <option value="Retired">Retired</option>
+                    </select>
+                </div>
+                <div class="hr-form-group" style="margin-top: 12px;">
+                    <label class="hr-form-label">Effective Date <span class="text-danger">*</span></label>
+                    <input type="date" name="effective_date" class="hr-input" value="{{ date('Y-m-d') }}" required>
+                </div>
+                <div class="hr-form-group" style="margin-top: 12px;">
+                    <label class="hr-form-label">Reason / Notes</label>
+                    <textarea name="reason" class="hr-input" rows="2" placeholder="e.g. Regularization, Leave of Absence, Resignation"></textarea>
+                </div>
+            </div>
+            <div class="hr-modal-footer">
+                <button type="button" class="hr-btn hr-btn-secondary" onclick="closeModal('changeStatusQuickModal')">Cancel</button>
+                <button type="submit" class="hr-btn hr-btn-primary">Update Status</button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -742,36 +1080,57 @@ function empGoToPage(page) {
 // =========================================================================
 // Real-Time Table Filter (No Enter Key or Submit Button Required)
 // =========================================================================
+function toggleMoreFilters() {
+    const p = document.getElementById('moreFiltersPanel');
+    const b = document.getElementById('moreFiltersBtn');
+    if (!p) return;
+    if (p.style.display === 'none' || !p.style.display) {
+        p.style.display = 'flex';
+        b.classList.add('active');
+    } else {
+        p.style.display = 'none';
+        b.classList.remove('active');
+    }
+}
+
 function filterEmployeesDirectory() {
-    const searchVal = (document.getElementById('empSearchInput')?.value || '').toLowerCase().trim();
-    const branchVal = (document.getElementById('empBranchFilter')?.value || '').trim();
-    const deptVal   = (document.getElementById('empDeptFilter')?.value || '').trim();
-    const statusVal = (document.getElementById('empStatusFilter')?.value || '').trim();
+    const searchVal  = (document.getElementById('empSearchInput')?.value || '').toLowerCase().trim();
+    const branchVal  = (document.getElementById('empBranchFilter')?.value || '').trim();
+    const deptVal    = (document.getElementById('empDeptFilter')?.value || '').trim();
+    const posVal     = (document.getElementById('empPositionFilter')?.value || '').trim();
+    const typeVal    = (document.getElementById('empTypeFilter')?.value || '').trim();
+    const statusVal  = (document.getElementById('empStatusFilter')?.value || '').trim();
+    const companyVal = (document.getElementById('empCompanyFilter')?.value || '').trim();
 
     const allRows = document.querySelectorAll('#employeesTableBody tr.emp-row');
 
     _empFilteredRows = Array.from(allRows).filter(row => {
-        const id     = row.getAttribute('data-id')       || '';
-        const name   = row.getAttribute('data-name')     || '';
-        const email  = row.getAttribute('data-email')    || '';
-        const branch = row.getAttribute('data-branch')   || '';
-        const dept   = row.getAttribute('data-dept')     || '';
-        const pos    = row.getAttribute('data-position') || '';
-        const status = row.getAttribute('data-status')   || '';
+        const id      = row.getAttribute('data-id')       || '';
+        const name    = row.getAttribute('data-name')     || '';
+        const email   = row.getAttribute('data-email')    || '';
+        const branch  = row.getAttribute('data-branch')   || '';
+        const dept    = row.getAttribute('data-dept')     || '';
+        const pos     = row.getAttribute('data-position') || '';
+        const type    = row.getAttribute('data-type')     || '';
+        const status  = row.getAttribute('data-status')   || '';
+        const company = row.getAttribute('data-company')  || '';
 
         const matchesSearch = !searchVal ||
             id.includes(searchVal) ||
             name.includes(searchVal) ||
             email.includes(searchVal) ||
-            pos.includes(searchVal) ||
+            pos.toLowerCase().includes(searchVal) ||
             dept.toLowerCase().includes(searchVal) ||
             branch.toLowerCase().includes(searchVal);
 
-        const matchesBranch = !branchVal || branch === branchVal;
-        const matchesDept   = !deptVal   || dept === deptVal;
-        const matchesStatus = !statusVal || status === statusVal;
+        const matchesBranch  = !branchVal  || branch === branchVal;
+        const matchesDept    = !deptVal    || dept === deptVal;
+        const matchesPos     = !posVal     || pos === posVal;
+        const matchesType    = !typeVal    || type.toLowerCase() === typeVal.toLowerCase();
+        const matchesStatus  = !statusVal  || status === statusVal;
+        const matchesCompany = !companyVal || company === companyVal;
 
-        return matchesSearch && matchesBranch && matchesDept && matchesStatus;
+        return matchesSearch && matchesBranch && matchesDept && matchesPos && matchesType && matchesStatus && matchesCompany;
     });
 
     _empCurrentPage = 1;
@@ -790,8 +1149,14 @@ function resetEmployeesDirectory() {
     if (b) b.value = '';
     const d = document.getElementById('empDeptFilter');
     if (d) d.value = '';
+    const p = document.getElementById('empPositionFilter');
+    if (p) p.value = '';
+    const t = document.getElementById('empTypeFilter');
+    if (t) t.value = '';
     const st = document.getElementById('empStatusFilter');
     if (st) st.value = '';
+    const c = document.getElementById('empCompanyFilter');
+    if (c) c.value = '';
     const sel = document.getElementById('empSortSelect');
     if (sel) sel.value = '';
 
@@ -828,12 +1193,13 @@ function applyEmpSortFromSelect(val) {
         'name_desc': [1, 'text', 'desc'],
         'id_asc': [0, 'text', 'asc'],
         'id_desc': [0, 'text', 'desc'],
-        'branch_asc': [2, 'text', 'asc'],
-        'dept_asc': [3, 'text', 'asc'],
-        'type_asc': [4, 'text', 'asc'],
-        'status_asc': [5, 'text', 'asc'],
+        'dept_asc': [2, 'text', 'asc'],
+        'pos_asc': [3, 'text', 'asc'],
+        'branch_asc': [4, 'text', 'asc'],
+        'type_asc': [5, 'text', 'asc'],
         'date_desc': [6, 'date', 'desc'],
         'date_asc': [6, 'date', 'asc'],
+        'status_asc': [7, 'text', 'asc'],
     };
 
     if (sortMap[val]) {
@@ -880,11 +1246,12 @@ function sortEmployeesDirectory(colIndex, dataType, forceDir = null) {
         const keyMap = {
             '0_asc': 'id_asc', '0_desc': 'id_desc',
             '1_asc': 'name_asc', '1_desc': 'name_desc',
-            '2_asc': 'branch_asc', '2_desc': 'branch_asc',
-            '3_asc': 'dept_asc', '3_desc': 'dept_asc',
-            '4_asc': 'type_asc', '4_desc': 'type_asc',
-            '5_asc': 'status_asc', '5_desc': 'status_asc',
-            '6_asc': 'date_asc', '6_desc': 'date_desc'
+            '2_asc': 'dept_asc', '2_desc': 'dept_asc',
+            '3_asc': 'pos_asc', '3_desc': 'pos_asc',
+            '4_asc': 'branch_asc', '4_desc': 'branch_asc',
+            '5_asc': 'type_asc', '5_desc': 'type_asc',
+            '6_asc': 'date_asc', '6_desc': 'date_desc',
+            '7_asc': 'status_asc', '7_desc': 'status_asc'
         };
         sortSelect.value = keyMap[colIndex + '_' + empSortDir] || '';
     }
@@ -898,21 +1265,24 @@ function sortEmployeesDirectory(colIndex, dataType, forceDir = null) {
             valA = a.getAttribute('data-name') || '';
             valB = b.getAttribute('data-name') || '';
         } else if (colIndex === 2) {
+            valA = a.getAttribute('data-dept') || '';
+            valB = b.getAttribute('data-dept') || '';
+        } else if (colIndex === 3) {
+            valA = a.getAttribute('data-position') || '';
+            valB = b.getAttribute('data-position') || '';
+        } else if (colIndex === 4) {
             valA = a.getAttribute('data-branch') || '';
             valB = b.getAttribute('data-branch') || '';
-        } else if (colIndex === 3) {
-            valA = (a.getAttribute('data-dept') || '') + ' ' + (a.getAttribute('data-position') || '');
-            valB = (b.getAttribute('data-dept') || '') + ' ' + (b.getAttribute('data-position') || '');
-        } else if (colIndex === 4) {
+        } else if (colIndex === 5) {
             valA = a.getAttribute('data-type') || '';
             valB = b.getAttribute('data-type') || '';
-        } else if (colIndex === 5) {
-            valA = a.getAttribute('data-status') || '';
-            valB = b.getAttribute('data-status') || '';
         } else if (colIndex === 6) {
             valA = parseFloat(a.getAttribute('data-date')) || 0;
             valB = parseFloat(b.getAttribute('data-date')) || 0;
             return empSortDir === 'asc' ? valA - valB : valB - valA;
+        } else if (colIndex === 7) {
+            valA = a.getAttribute('data-status') || '';
+            valB = b.getAttribute('data-status') || '';
         }
 
         const cmp = valA.localeCompare(valB, undefined, { numeric: true, sensitivity: 'base' });
@@ -926,10 +1296,55 @@ function sortEmployeesDirectory(colIndex, dataType, forceDir = null) {
     // Re-apply filter + pagination after sort reorders the DOM
     filterEmployeesDirectory();
 }
+
 function syncAddPrimaryCheckbox(type, id) {
     if (!id) return;
     const cb = document.getElementById('cb_add_' + type + '_' + id);
     if (cb) cb.checked = true;
+}
+
+// Action dropdown & quick modals
+function toggleEmpActionMenu(event, menuId) {
+    event.stopPropagation();
+    event.preventDefault();
+    const current = document.getElementById(menuId);
+    if (!current) return;
+    const isVisible = current.style.display === 'block';
+    document.querySelectorAll('.hr-action-dropdown').forEach(d => d.style.display = 'none');
+    if (!isVisible) {
+        current.style.display = 'block';
+    }
+}
+
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.hr-action-menu-wrap')) {
+        document.querySelectorAll('.hr-action-dropdown').forEach(d => d.style.display = 'none');
+    }
+});
+
+function openChangePositionModal(empId, empName, currentPosId) {
+    const form = document.getElementById('changePositionQuickForm');
+    form.action = `/hr/people/employees/${empId}/change-position`;
+    document.getElementById('cpQuickEmpName').value = empName;
+    if (currentPosId) document.getElementById('cpQuickPositionId').value = currentPosId;
+    openModal('changePositionQuickModal');
+}
+
+function openTransferModal(empId, empName, currentDeptId, currentBranchId) {
+    const form = document.getElementById('transferQuickForm');
+    form.action = `/hr/people/employees/${empId}/transfer`;
+    document.getElementById('trQuickEmpName').value = empName;
+    if (currentDeptId) document.getElementById('trQuickDeptId').value = currentDeptId;
+    if (currentBranchId) document.getElementById('trQuickBranchId').value = currentBranchId;
+    openModal('transferQuickModal');
+}
+
+function openChangeStatusModal(empId, empName, currentStatus) {
+    const form = document.getElementById('changeStatusQuickForm');
+    form.action = `/hr/people/employees/${empId}/change-status`;
+    document.getElementById('csQuickEmpName').value = empName;
+    if (currentStatus) document.getElementById('csQuickStatus').value = currentStatus;
+    openModal('changeStatusQuickModal');
 }
 </script>
 @endpush
