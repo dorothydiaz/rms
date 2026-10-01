@@ -2,6 +2,243 @@
 
 @section('title', 'Wage Distortion Converter - Enterprise Philippine Payroll')
 
+@push('styles')
+<style>
+/* Wage Distortion Responsive Framework */
+.wage-distortion-container {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.wage-distortion-container .hr-table-card {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+    background: #ffffff;
+}
+
+.wage-distortion-container .hr-table-wrapper {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto !important;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+#empSelectionTable {
+    width: 100%;
+    min-width: 860px;
+}
+
+#resultsTable {
+    width: 100%;
+    min-width: 1080px;
+}
+
+/* Compliance Banner */
+.wd-banner {
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.08) 0%, rgba(79, 70, 229, 0.05) 100%);
+    border: 1px solid rgba(124, 58, 237, 0.2);
+    border-radius: 14px;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    min-width: 0;
+}
+
+.wd-banner-left {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    flex: 1 1 480px;
+    min-width: 0;
+}
+
+.wd-banner-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 900px) {
+    .wd-banner-right {
+        width: 100%;
+        justify-content: space-between;
+        border-top: 1px solid rgba(124, 58, 237, 0.15);
+        padding-top: 12px;
+        margin-top: 4px;
+    }
+}
+
+/* Section Header Bar */
+.wd-card-header {
+    padding: 16px 20px;
+    background: #ffffff;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.wd-card-title-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.wd-card-actions-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* Filter Controls Grid */
+.wd-filter-panel {
+    background: #f8fafc;
+    padding: 16px 20px;
+    border-bottom: 1px solid #e2e8f0;
+    box-sizing: border-box;
+    width: 100%;
+}
+
+.wd-filter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 12px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.wd-search-span {
+    grid-column: span 2;
+}
+
+@media (max-width: 768px) {
+    .wd-search-span {
+        grid-column: span 1 !important;
+    }
+    .wd-filter-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Section 2 Parameters Layout */
+.wd-params-body {
+    padding: 20px;
+    background: #ffffff;
+    box-sizing: border-box;
+    width: 100%;
+}
+
+.wd-formula-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 10px;
+    margin-bottom: 20px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.wd-params-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    align-items: start;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+@media (max-width: 992px) {
+    .wd-params-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Section 4 KPI Summary Grid */
+.wd-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+@media (max-width: 640px) {
+    .wd-kpi-grid {
+        grid-template-columns: 1fr;
+    }
+    .wd-card-header {
+        padding: 12px 14px;
+    }
+    .wd-filter-panel {
+        padding: 12px 14px;
+    }
+    .wd-params-body {
+        padding: 14px;
+    }
+}
+
+/* Modal 2-col Stats */
+.wd-modal-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    font-size: 13px;
+}
+
+@media (max-width: 480px) {
+    .wd-modal-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Horizontal Scroll Indicator */
+.wd-scroll-hint {
+    display: none;
+    font-size: 11px;
+    color: #64748b;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    background: #f1f5f9;
+    border-radius: 6px;
+    font-weight: 500;
+}
+
+@media (max-width: 1024px) {
+    .wd-scroll-hint {
+        display: inline-flex;
+    }
+}
+</style>
+@endpush
+
 @section('content')
 <x-hr-tabs parent="payroll">
     <x-slot:actions>
@@ -27,16 +264,16 @@
 </x-hr-tabs>
 
 <!-- Main Container -->
-<div class="wage-distortion-container" id="wageDistortionApp" style="display: flex; flex-direction: column; gap: 24px;">
+<div class="wage-distortion-container" id="wageDistortionApp">
 
     <!-- TOP ALERT / COMPLIANCE BANNER -->
-    <div style="background: linear-gradient(135deg, rgba(124, 58, 237, 0.08) 0%, rgba(79, 70, 229, 0.05) 100%); border: 1px solid rgba(124, 58, 237, 0.2); border-radius: 14px; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
-        <div style="display: flex; align-items: flex-start; gap: 14px;">
+    <div class="wd-banner">
+        <div class="wd-banner-left">
             <div style="width: 42px; height: 42px; border-radius: 10px; background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%); display: flex; align-items: center; justify-content: center; color: #ffffff; font-size: 22px; flex-shrink: 0; box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);">
                 <i class="ph ph-scales"></i>
             </div>
             <div>
-                <div style="font-size: 15px; font-weight: 700; color: #1e1b4b; display: flex; align-items: center; gap: 8px;">
+                <div style="font-size: 15px; font-weight: 700; color: #1e1b4b; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                     <span>DOLE Statutory Wage Distortion Converter</span>
                     <span class="hr-badge hr-badge-purple" style="font-size: 11px;">NWPC Guidelines</span>
                     <span class="hr-badge hr-badge-success" style="font-size: 11px;"><i class="ph ph-check-circle"></i> TRAIN Law Compliant</span>
@@ -46,7 +283,7 @@
                 </div>
             </div>
         </div>
-        <div style="display: flex; align-items: center; gap: 10px;">
+        <div class="wd-banner-right">
             <div style="text-align: right; border-right: 1px solid rgba(124, 58, 237, 0.2); padding-right: 14px;">
                 <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #64748b; font-weight: 600;">Workforce Scope</div>
                 <div style="font-size: 15px; font-weight: 700; color: #0f172a;"><span id="scopeSelectedCount">0</span> / {{ count($employeesData) }} Employees</div>
@@ -68,10 +305,10 @@
     <!-- ======================================================== -->
     <!-- SECTION 1: EMPLOYEE SELECTION & ADVANCED FILTERING       -->
     <!-- ======================================================== -->
-    <div class="hr-table-card" style="border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.03);">
-        <div class="hr-table-header" style="padding: 16px 20px; background: #ffffff; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <div style="width: 32px; height: 32px; border-radius: 8px; background: #f3e8ff; color: #7c3aed; display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 700;">
+    <div class="hr-table-card">
+        <div class="hr-table-header wd-card-header">
+            <div class="wd-card-title-group">
+                <div style="width: 32px; height: 32px; border-radius: 8px; background: #f3e8ff; color: #7c3aed; display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 700; flex-shrink: 0;">
                     1
                 </div>
                 <div>
@@ -81,7 +318,8 @@
             </div>
 
             <!-- Top Selection Helper Buttons -->
-            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <div class="wd-card-actions-group">
+                <span class="wd-scroll-hint"><i class="ph ph-arrows-left-right"></i> Scroll table</span>
                 <span class="hr-badge hr-badge-purple" id="selectedBadge" style="font-size: 12px; font-weight: 700; padding: 4px 10px;">
                     <i class="ph ph-users-three"></i> <span id="lblSelectedCount">0</span> of <span id="lblFilteredCount">{{ count($employeesData) }}</span> Selected
                 </span>
@@ -95,11 +333,11 @@
         </div>
 
         <!-- Filter Controls Panel -->
-        <div style="background: #f8fafc; padding: 16px 20px; border-bottom: 1px solid #e2e8f0;">
-            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px;">
+        <div class="wd-filter-panel">
+            <div class="wd-filter-grid">
                 
                 <!-- Quick Search -->
-                <div style="grid-column: span 2;">
+                <div class="wd-search-span">
                     <label style="display: block; font-size: 11.5px; font-weight: 600; color: #475569; margin-bottom: 4px;">
                         <i class="ph ph-magnifying-glass"></i> Search Employee (Name or ID)
                     </label>
@@ -264,8 +502,8 @@
         </div>
 
         <!-- Employee Selection Table -->
-        <div class="hr-table-wrapper" style="max-height: 420px; overflow-y: auto;">
-            <table class="hr-table" id="empSelectionTable">
+        <div class="hr-table-wrapper" style="max-height: 420px; overflow: auto; width: 100%; max-width: 100%;">
+            <table class="hr-table" id="empSelectionTable" style="min-width: 860px; width: 100%;">
                 <thead style="position: sticky; top: 0; background: #ffffff; z-index: 5; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
                     <tr>
                         <th style="width: 44px; text-align: center;">
@@ -327,9 +565,9 @@
     <!-- SECTION 2: WAGE DISTORTION PARAMETERS & FORMULAS         -->
     <!-- ======================================================== -->
     <div class="hr-table-card" style="border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.03);">
-        <div class="hr-table-header" style="padding: 16px 20px; background: #ffffff; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <div style="width: 32px; height: 32px; border-radius: 8px; background: #e0e7ff; color: #4338ca; display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 700;">
+        <div class="hr-table-header wd-card-header">
+            <div class="wd-card-title-group">
+                <div style="width: 32px; height: 32px; border-radius: 8px; background: #e0e7ff; color: #4338ca; display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 700; flex-shrink: 0;">
                     2
                 </div>
                 <div>
@@ -339,9 +577,9 @@
             </div>
 
             <!-- Formula Dropdown Selector Alternative -->
-            <div style="display: flex; align-items: center; gap: 8px;">
+            <div class="wd-card-actions-group">
                 <label style="font-size: 12px; font-weight: 600; color: #475569;">Active Formula:</label>
-                <select id="formulaDropdown" class="hr-select" onchange="selectFormula(this.value)" style="height: 32px; font-size: 12.5px; font-weight: 600; color: #4338ca; min-width: 260px;">
+                <select id="formulaDropdown" class="hr-select" onchange="selectFormula(this.value)" style="height: 32px; font-size: 12.5px; font-weight: 600; color: #4338ca; min-width: 180px; max-width: 100%;">
                     <option value="pineda">1. Pineda Formula</option>
                     <option value="pineda_cruz_so">2. Pineda-Cruz-So Formula</option>
                     <option value="percentile_carian">3. Percentile Approach / Carian Formula</option>
@@ -353,9 +591,9 @@
             </div>
         </div>
 
-        <div style="padding: 20px; background: #ffffff;">
+        <div class="wd-params-body">
             <!-- Formula Visual Card Grid (Clickable) -->
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 20px;">
+            <div class="wd-formula-cards-grid">
                 @foreach($formulas as $fKey => $f)
                     <div class="formula-card {{ $fKey === 'pineda' ? 'active' : '' }}" id="formulaCard_{{ $fKey }}" onclick="selectFormula('{{ $fKey }}')" 
                          style="border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 12px 14px; cursor: pointer; transition: all 0.2s ease; position: relative; background: #ffffff;">
@@ -372,7 +610,7 @@
             </div>
 
             <!-- Two-Column Configuration + Formula Specs -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start;">
+            <div class="wd-params-grid">
                 
                 <!-- Dynamic Input Fields Panel (Only Relevant Fields Shown!) -->
                 <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px;">
@@ -443,9 +681,9 @@
     <!-- SECTION 3: REAL-TIME CONVERSION RESULTS TABLE            -->
     <!-- ======================================================== -->
     <div class="hr-table-card" style="border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.03);">
-        <div class="hr-table-header" style="padding: 16px 20px; background: #ffffff; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <div style="width: 32px; height: 32px; border-radius: 8px; background: #dcfce7; color: #15803d; display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 700;">
+        <div class="hr-table-header wd-card-header">
+            <div class="wd-card-title-group">
+                <div style="width: 32px; height: 32px; border-radius: 8px; background: #dcfce7; color: #15803d; display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 700; flex-shrink: 0;">
                     3
                 </div>
                 <div>
@@ -454,7 +692,8 @@
                 </div>
             </div>
 
-            <div style="display: flex; align-items: center; gap: 8px;">
+            <div class="wd-card-actions-group">
+                <span class="wd-scroll-hint"><i class="ph ph-arrows-left-right"></i> Scroll table</span>
                 <span class="hr-badge hr-badge-success" id="liveBadge" style="font-size: 11px;">
                     <i class="ph ph-lightning"></i> Real-Time Active (0ms Latency)
                 </span>
@@ -465,8 +704,8 @@
         </div>
 
         <!-- Real-Time Results Table -->
-        <div class="hr-table-wrapper" style="max-height: 480px; overflow-y: auto;">
-            <table class="hr-table" id="resultsTable">
+        <div class="hr-table-wrapper" style="max-height: 480px; overflow: auto; width: 100%; max-width: 100%;">
+            <table class="hr-table" id="resultsTable" style="min-width: 1080px; width: 100%;">
                 <thead style="position: sticky; top: 0; background: #ffffff; z-index: 5; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
                     <tr>
                         <th style="width: 40px; text-align: center;">Action</th>
@@ -508,9 +747,9 @@
     <!-- SECTION 4: CONVERSION SUMMARY & ACTIONS                  -->
     <!-- ======================================================== -->
     <div class="hr-table-card" style="border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.03);">
-        <div class="hr-table-header" style="padding: 16px 20px; background: #ffffff; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <div style="width: 32px; height: 32px; border-radius: 8px; background: #fef3c7; color: #b45309; display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 700;">
+        <div class="hr-table-header wd-card-header">
+            <div class="wd-card-title-group">
+                <div style="width: 32px; height: 32px; border-radius: 8px; background: #fef3c7; color: #b45309; display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 700; flex-shrink: 0;">
                     4
                 </div>
                 <div>
@@ -520,9 +759,9 @@
             </div>
         </div>
 
-        <div style="padding: 24px; background: #ffffff;">
+        <div style="padding: 24px; background: #ffffff; width: 100%; box-sizing: border-box;">
             <!-- KPI Summary Cards Grid -->
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
+            <div class="wd-kpi-grid">
                 
                 <!-- Card 1: Selected Workforce -->
                 <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px;">
@@ -636,7 +875,7 @@
 
         <form id="frmApplyAdjustments" onsubmit="submitApplyAdjustments(event)" style="padding: 24px;">
             <div style="background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 12px; padding: 16px; margin-bottom: 20px;">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 13px;">
+                <div class="wd-modal-grid">
                     <div>
                         <span style="color: #64748b; display: block; font-size: 11.5px;">Target Employees:</span>
                         <strong style="color: #0f172a; font-size: 16px;" id="modalEmpCount">0</strong>
@@ -713,7 +952,7 @@
                 <div id="breakdownEquation" style="word-break: break-all; color: #0f172a; font-size: 13.5px; font-weight: 600;">(₱610.00 ÷ ₱1,000.00) × ₱35.00 = ₱21.35/day</div>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 12.5px; margin-bottom: 16px;">
+            <div class="wd-modal-grid" style="margin-bottom: 16px;">
                 <div style="background: #faf5ff; padding: 10px; border-radius: 8px; border: 1px solid #f3e8ff;">
                     <span style="color: #6b21a8; font-size: 11px; display: block;">Daily Adjustment:</span>
                     <strong style="color: #7c3aed; font-size: 15px;" id="breakdownDailyAdj">₱0.00</strong>

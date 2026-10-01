@@ -271,6 +271,9 @@ Route::middleware('auth')->group(function () {
             Route::get('/authorized-undertime', [\App\Http\Controllers\Hr\HrReportController::class, 'authorizedUndertimeReport'])->name('authorized-undertime');
             Route::get('/export/authorized-undertime', [\App\Http\Controllers\Hr\HrReportController::class, 'exportAuthorizedUndertime'])->name('export.authorized-undertime');
 
+            Route::get('/unauthorized-undertime', [\App\Http\Controllers\Hr\HrReportController::class, 'unauthorizedUndertimeReport'])->name('unauthorized-undertime');
+            Route::get('/export/unauthorized-undertime', [\App\Http\Controllers\Hr\HrReportController::class, 'exportUnauthorizedUndertime'])->name('export.unauthorized-undertime');
+
             Route::get('/unauthorized-absences', [\App\Http\Controllers\Hr\HrReportController::class, 'unauthorizedAbsencesReport'])->name('unauthorized-absences');
             Route::get('/export/unauthorized-absences', [\App\Http\Controllers\Hr\HrReportController::class, 'exportUnauthorizedAbsences'])->name('export.unauthorized-absences');
 

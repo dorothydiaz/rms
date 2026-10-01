@@ -578,19 +578,16 @@ class HrReportController extends Controller
     }
 
     // =========================================================================
-    // 4. AUTHORIZED & UNAUTHORIZED UNDERTIME REPORT
+    // 4. AUTHORIZED UNDERTIME REPORT (APPROVED / EXCUSED)
     // =========================================================================
 
     public function authorizedUndertimeReport(Request $request): View
     {
         $query = AttendanceRecord::with(['employee.branch', 'employee.department', 'employee.position', 'employee.company', 'undertimeApprover'])
             ->where('undertime_minutes', '>', 0)
+            ->where('undertime_status', 'Approved')
             ->orderBy('date', 'desc');
 
-        $status = $request->get('status', 'Approved');
-        if ($status && $status !== 'ALL') {
-            $query->where('undertime_status', $status);
-        }
         if ($request->filled('date_from')) {
             $query->where('date', '>=', $request->date_from);
         }
@@ -600,22 +597,32 @@ class HrReportController extends Controller
 
         $this->applyEmployeeFilters($query, $request, false);
 
+        // Summary KPI Metrics
+        $statsQuery = clone $query;
+        $totalRecords = $statsQuery->count();
+        $totalMinutes = (int) $statsQuery->sum('undertime_minutes');
+        $totalStaff = (int) $statsQuery->distinct('employee_id')->count('employee_id');
+        $avgMinutes = $totalRecords > 0 ? round($totalMinutes / $totalRecords, 1) : 0;
+
         $records = $query->paginate(20)->withQueryString();
         $filterOpts = $this->getFilterOptions();
 
-        return view('hr.reports.authorized-undertime', array_merge(['records' => $records, 'status' => $status], $filterOpts));
+        return view('hr.reports.authorized-undertime', array_merge([
+            'records' => $records,
+            'totalRecords' => $totalRecords,
+            'totalMinutes' => $totalMinutes,
+            'totalStaff' => $totalStaff,
+            'avgMinutes' => $avgMinutes,
+        ], $filterOpts));
     }
 
     public function exportAuthorizedUndertime(Request $request): StreamedResponse
     {
         $query = AttendanceRecord::with(['employee.branch', 'employee.department', 'employee.company', 'undertimeApprover'])
             ->where('undertime_minutes', '>', 0)
+            ->where('undertime_status', 'Approved')
             ->orderBy('date', 'desc');
 
-        $status = $request->get('status', 'Approved');
-        if ($status && $status !== 'ALL') {
-            $query->where('undertime_status', $status);
-        }
         if ($request->filled('date_from')) {
             $query->where('date', '>=', $request->date_from);
         }
@@ -629,13 +636,13 @@ class HrReportController extends Controller
 
         $headers = [
             'Content-Type' => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => 'attachment; filename="undertime_authorization_report_' . date('Ymd_His') . '.csv"',
+            'Content-Disposition' => 'attachment; filename="authorized_undertime_report_' . date('Ymd_His') . '.csv"',
         ];
 
         return response()->stream(function () use ($records) {
             $handle = fopen('php://output', 'w');
             fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF));
-            fputcsv($handle, ['Date', 'Employee ID', 'Employee Name', 'Company / Agency', 'Branch', 'Department', 'Time In', 'Time Out', 'Undertime (Mins)', 'Total Hours', 'Authorization Status', 'Authorized By', 'Remarks']);
+            fputcsv($handle, ['Date', 'Employee ID', 'Employee Name', 'Company / Agency', 'Branch', 'Department', 'Time In', 'Time Out', 'Authorized Undertime (Mins)', 'Total Work Hours', 'Status', 'Authorized By', 'Approval Date', 'Gate Pass / Remarks']);
 
             foreach ($records as $r) {
                 fputcsv($handle, [
@@ -649,9 +656,129 @@ class HrReportController extends Controller
                     $r->time_out,
                     $r->undertime_minutes,
                     $r->total_hours,
-                    $r->undertime_status === 'Approved' ? 'Authorized Undertime' : ($r->undertime_status === 'Rejected' ? 'Unauthorized Undertime' : 'Pending Review'),
+                    'Authorized Undertime',
                     $r->undertimeApprover?->name,
-                    $r->undertime_remarks,
+                    $r->undertime_approved_at ? date('Y-m-d H:i', strtotime($r->undertime_approved_at)) : '',
+                    $r->undertime_remarks ?: 'Excused by Management',
+                ]);
+            }
+            fclose($handle);
+        }, 200, $headers);
+    }
+
+    // =========================================================================
+    // 4B. UNAUTHORIZED UNDERTIME REPORT (UNEXCUSED / DEDUCTIBLE)
+    // =========================================================================
+
+    public function unauthorizedUndertimeReport(Request $request): View
+    {
+        $query = AttendanceRecord::with(['employee.branch', 'employee.department', 'employee.position', 'employee.company', 'undertimeApprover'])
+            ->where('undertime_minutes', '>', 0)
+            ->where(function ($q) {
+                $q->where('undertime_status', 'Rejected')
+                  ->orWhere('undertime_status', 'Pending')
+                  ->orWhereNull('undertime_status');
+            })
+            ->orderBy('date', 'desc');
+
+        $status = $request->get('status');
+        if ($status === 'Rejected') {
+            $query->where('undertime_status', 'Rejected');
+        } elseif ($status === 'Pending') {
+            $query->where(function ($q) {
+                $q->where('undertime_status', 'Pending')->orWhereNull('undertime_status');
+            });
+        }
+
+        if ($request->filled('date_from')) {
+            $query->where('date', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->where('date', '<=', $request->date_to);
+        }
+
+        $this->applyEmployeeFilters($query, $request, false);
+
+        // Summary KPI Metrics
+        $statsQuery = clone $query;
+        $totalRecords = $statsQuery->count();
+        $totalMinutes = (int) $statsQuery->sum('undertime_minutes');
+        $totalStaff = (int) $statsQuery->distinct('employee_id')->count('employee_id');
+        $unexcusedCount = (clone $statsQuery)->where('undertime_status', 'Rejected')->count();
+        $pendingCount = (clone $statsQuery)->where(function($q) {
+            $q->where('undertime_status', 'Pending')->orWhereNull('undertime_status');
+        })->count();
+
+        $records = $query->paginate(20)->withQueryString();
+        $filterOpts = $this->getFilterOptions();
+
+        return view('hr.reports.unauthorized-undertime', array_merge([
+            'records' => $records,
+            'status' => $status,
+            'totalRecords' => $totalRecords,
+            'totalMinutes' => $totalMinutes,
+            'totalStaff' => $totalStaff,
+            'unexcusedCount' => $unexcusedCount,
+            'pendingCount' => $pendingCount,
+        ], $filterOpts));
+    }
+
+    public function exportUnauthorizedUndertime(Request $request): StreamedResponse
+    {
+        $query = AttendanceRecord::with(['employee.branch', 'employee.department', 'employee.company', 'undertimeApprover'])
+            ->where('undertime_minutes', '>', 0)
+            ->where(function ($q) {
+                $q->where('undertime_status', 'Rejected')
+                  ->orWhere('undertime_status', 'Pending')
+                  ->orWhereNull('undertime_status');
+            })
+            ->orderBy('date', 'desc');
+
+        $status = $request->get('status');
+        if ($status === 'Rejected') {
+            $query->where('undertime_status', 'Rejected');
+        } elseif ($status === 'Pending') {
+            $query->where(function ($q) {
+                $q->where('undertime_status', 'Pending')->orWhereNull('undertime_status');
+            });
+        }
+
+        if ($request->filled('date_from')) {
+            $query->where('date', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->where('date', '<=', $request->date_to);
+        }
+
+        $this->applyEmployeeFilters($query, $request, false);
+
+        $records = $query->get();
+
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="unauthorized_undertime_report_' . date('Ymd_His') . '.csv"',
+        ];
+
+        return response()->stream(function () use ($records) {
+            $handle = fopen('php://output', 'w');
+            fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF));
+            fputcsv($handle, ['Date', 'Employee ID', 'Employee Name', 'Company / Agency', 'Branch', 'Department', 'Time In', 'Time Out', 'Unauthorized Undertime (Mins)', 'Total Work Hours', 'Infraction Status', 'Payroll Deduction Status', 'Remarks / Reason']);
+
+            foreach ($records as $r) {
+                fputcsv($handle, [
+                    $r->date?->toDateString(),
+                    $r->employee?->employee_id,
+                    $r->employee?->full_name,
+                    $r->employee?->company_or_agency,
+                    $r->employee?->branch?->name,
+                    $r->employee?->department?->name,
+                    $r->time_in,
+                    $r->time_out,
+                    $r->undertime_minutes,
+                    $r->total_hours,
+                    $r->undertime_status === 'Rejected' ? 'Unauthorized / Unexcused' : 'Unapproved (Pending Review)',
+                    'Deductible from Payroll',
+                    $r->undertime_remarks ?: 'Unapproved Early Departure',
                 ]);
             }
             fclose($handle);

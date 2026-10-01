@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Authorized Undertime Report - Reports & Analytics')
+@section('title', 'Unauthorized Undertime Report - Reports & Analytics')
 
 @section('content')
 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
@@ -10,24 +10,24 @@
                 <i class="ph ph-chart-polar"></i> Reports & Analytics
             </a>
             <i class="ph ph-caret-right" style="font-size: 11px;"></i>
-            <span style="color: #0f172a; font-weight: 600;">Authorized Undertime</span>
+            <span style="color: #0f172a; font-weight: 600;">Unauthorized Undertime</span>
         </div>
         <h1 style="font-family: var(--font-heading); font-size: 22px; font-weight: 700; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 8px;">
-            <i class="ph ph-timer" style="color: #059669;"></i> Authorized Undertime Report
+            <i class="ph ph-timer" style="color: #e11d48;"></i> Unauthorized Undertime Report
         </h1>
-        <p style="font-size: 13px; color: #64748b; margin: 3px 0 0 0;">Official audit trail of approved early departures, gate pass permits, manager authorizations, and excused undertime</p>
+        <p style="font-size: 13px; color: #64748b; margin: 3px 0 0 0;">Audit of unapproved early departures, unexcused undertime minutes, attendance infractions, and salary deductions</p>
     </div>
     <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-        <a href="{{ route('hr.reports.export.authorized-undertime', request()->query()) }}" class="hr-btn hr-btn-secondary" title="Export to CSV">
-            <i class="ph ph-download-simple" style="color: #059669;"></i>
+        <a href="{{ route('hr.reports.export.unauthorized-undertime', request()->query()) }}" class="hr-btn hr-btn-secondary" title="Export to CSV">
+            <i class="ph ph-download-simple" style="color: #e11d48;"></i>
             <span>Export CSV</span>
         </a>
-        <a href="{{ route('hr.reports.unauthorized-undertime') }}" class="hr-btn hr-btn-secondary" style="border-color: #fecdd3; color: #e11d48;" title="View Unauthorized Undertime Report">
-            <i class="ph ph-warning-circle"></i>
-            <span>Unauthorized Undertime Report</span>
+        <a href="{{ route('hr.reports.authorized-undertime') }}" class="hr-btn hr-btn-secondary" style="border-color: #bbf7d0; color: #15803d;" title="View Authorized Undertime Report">
+            <i class="ph ph-check-circle"></i>
+            <span>Authorized Undertime Report</span>
         </a>
-        <a href="{{ route('hr.attendance.undertime') }}" class="hr-btn hr-btn-primary">
-            <i class="ph ph-shield-check"></i>
+        <a href="{{ route('hr.attendance.undertime') }}" class="hr-btn hr-btn-primary" style="background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);">
+            <i class="ph ph-shield-warning"></i>
             <span>Undertime Portal</span>
         </a>
     </div>
@@ -35,58 +35,61 @@
 
 <!-- KPI Summary Cards -->
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-bottom: 20px;">
-    <!-- 1. Total Authorized Incidents -->
+    <!-- 1. Total Unauthorized Incidents -->
     <div class="hr-card" style="padding: 16px; display: flex; align-items: center; gap: 14px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 0;">
-        <div style="width: 44px; height: 44px; border-radius: 10px; background: #dcfce7; color: #15803d; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
-            <i class="ph ph-check-circle"></i>
+        <div style="width: 44px; height: 44px; border-radius: 10px; background: #ffe4e6; color: #e11d48; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
+            <i class="ph ph-warning-circle"></i>
         </div>
         <div>
-            <div style="font-size: 11.5px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Authorized Incidents</div>
+            <div style="font-size: 11.5px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Unauthorized Incidents</div>
             <div style="font-size: 22px; font-weight: 800; color: #0f172a; line-height: 1.2;">{{ number_format($totalRecords ?? $records->total()) }}</div>
-            <div style="font-size: 11px; color: #15803d; font-weight: 500;">Approved Early Outs</div>
+            <div style="font-size: 11px; color: #e11d48; font-weight: 500;">Unapproved Departures</div>
         </div>
     </div>
 
-    <!-- 2. Total Authorized Minutes -->
+    <!-- 2. Total Unexcused Minutes Lost -->
     <div class="hr-card" style="padding: 16px; display: flex; align-items: center; gap: 14px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 0;">
-        <div style="width: 44px; height: 44px; border-radius: 10px; background: #ede9fe; color: #7c3aed; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
-            <i class="ph ph-clock"></i>
+        <div style="width: 44px; height: 44px; border-radius: 10px; background: #fef2f2; color: #dc2626; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
+            <i class="ph ph-clock-countdown"></i>
         </div>
         <div>
-            <div style="font-size: 11.5px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Approved Minutes</div>
+            <div style="font-size: 11.5px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Unexcused Minutes</div>
             <div style="font-size: 22px; font-weight: 800; color: #0f172a; line-height: 1.2;">{{ number_format($totalMinutes ?? 0) }} <span style="font-size: 13px; font-weight: 600; color: #64748b;">mins</span></div>
-            <div style="font-size: 11px; color: #7c3aed; font-weight: 500;">~{{ number_format(($totalMinutes ?? 0) / 60, 1) }} Total Hours</div>
+            <div style="font-size: 11px; color: #dc2626; font-weight: 500;">~{{ number_format(($totalMinutes ?? 0) / 60, 1) }} Hours Lost</div>
         </div>
     </div>
 
-    <!-- 3. Staff Covered -->
-    <div class="hr-card" style="padding: 16px; display: flex; align-items: center; gap: 14px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 0;">
-        <div style="width: 44px; height: 44px; border-radius: 10px; background: #e0f2fe; color: #0369a1; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
-            <i class="ph ph-users"></i>
-        </div>
-        <div>
-            <div style="font-size: 11.5px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Covered Staff</div>
-            <div style="font-size: 22px; font-weight: 800; color: #0f172a; line-height: 1.2;">{{ number_format($totalStaff ?? 0) }}</div>
-            <div style="font-size: 11px; color: #0369a1; font-weight: 500;">Unique Employees</div>
-        </div>
-    </div>
-
-    <!-- 4. Average Early Out -->
+    <!-- 3. Staff with Infractions -->
     <div class="hr-card" style="padding: 16px; display: flex; align-items: center; gap: 14px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 0;">
         <div style="width: 44px; height: 44px; border-radius: 10px; background: #fef3c7; color: #b45309; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
-            <i class="ph ph-hourglass-medium"></i>
+            <i class="ph ph-users-three"></i>
         </div>
         <div>
-            <div style="font-size: 11.5px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Average Duration</div>
-            <div style="font-size: 22px; font-weight: 800; color: #0f172a; line-height: 1.2;">{{ $avgMinutes ?? 0 }} <span style="font-size: 13px; font-weight: 600; color: #64748b;">mins</span></div>
-            <div style="font-size: 11px; color: #b45309; font-weight: 500;">Per Early Departure</div>
+            <div style="font-size: 11.5px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Staff Involved</div>
+            <div style="font-size: 22px; font-weight: 800; color: #0f172a; line-height: 1.2;">{{ number_format($totalStaff ?? 0) }}</div>
+            <div style="font-size: 11px; color: #b45309; font-weight: 500;">Unique Employees</div>
+        </div>
+    </div>
+
+    <!-- 4. Review Breakdown -->
+    <div class="hr-card" style="padding: 16px; display: flex; align-items: center; gap: 14px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 0;">
+        <div style="width: 44px; height: 44px; border-radius: 10px; background: #f1f5f9; color: #475569; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
+            <i class="ph ph-receipt"></i>
+        </div>
+        <div>
+            <div style="font-size: 11.5px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Payroll Deductions</div>
+            <div style="font-size: 16px; font-weight: 800; color: #e11d48; line-height: 1.3;">
+                {{ $unexcusedCount ?? 0 }} <span style="font-size: 11.5px; font-weight: 600; color: #dc2626;">Rejected</span> &bull; 
+                {{ $pendingCount ?? 0 }} <span style="font-size: 11.5px; font-weight: 600; color: #b45309;">Pending</span>
+            </div>
+            <div style="font-size: 11px; color: #64748b; font-weight: 500;">Deductible Incidents</div>
         </div>
     </div>
 </div>
 
 <!-- Multi-Filters -->
 <x-report-filters 
-    :action="route('hr.reports.authorized-undertime')"
+    :action="route('hr.reports.unauthorized-undertime')"
     :branches="$branches"
     :departments="$departments"
     :companies="$companies"
@@ -95,16 +98,28 @@
     :endDate="request('date_to')"
     :showStatus="true"
     :showSource="true"
-/>
+>
+    <!-- Custom Infraction Filter Slot -->
+    <div style="min-width: 170px;">
+        <label class="hr-form-label" style="margin-bottom: 4px; font-size: 11.5px; font-weight: 600; color: #475569; display: flex; align-items: center; gap: 4px;">
+            <i class="ph ph-funnel"></i> Infraction Status
+        </label>
+        <select name="status" class="hr-select" style="padding: 6px 10px; font-size: 12.5px; height: 34px; width: 100%;">
+            <option value="">All Unauthorized & Unapproved</option>
+            <option value="Rejected" {{ request('status') === 'Rejected' ? 'selected' : '' }}>Rejected / Unauthorized</option>
+            <option value="Pending" {{ request('status') === 'Pending' ? 'selected' : '' }}>Pending Review (Unexcused)</option>
+        </select>
+    </div>
+</x-report-filters>
 
 <!-- Table Card -->
 <div class="hr-card" style="padding: 0; overflow: hidden; width: 100%; box-sizing: border-box;">
     <div style="padding: 14px 18px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
         <span style="font-size: 13px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px;">
-            <span>Authorized Early Departures</span>
-            <span class="hr-badge hr-badge-success" style="font-size: 11px;">{{ $records->total() }} Records</span>
+            <span>Unauthorized Early Departures & Deductions</span>
+            <span class="hr-badge hr-badge-danger" style="font-size: 11px;">{{ $records->total() }} Records</span>
         </span>
-        <span style="font-size: 12px; color: #64748b;">Showing official gate pass & manager approved undertime logs</span>
+        <span style="font-size: 12px; color: #64748b;">Subject to salary deduction under DOLE attendance guidelines</span>
     </div>
     <div class="hr-table-wrapper" style="overflow-x: auto; width: 100%;">
         <table class="hr-table" style="width: 100%; min-width: 950px; border-collapse: collapse;">
@@ -116,9 +131,9 @@
                     <th style="padding: 12px 16px;">Company / Agency</th>
                     <th style="padding: 12px 16px;">Time In & Out</th>
                     <th style="padding: 12px 16px; text-align: right;">Undertime</th>
-                    <th style="padding: 12px 16px; text-align: center;">Status</th>
-                    <th style="padding: 12px 16px;">Authorized By</th>
-                    <th style="padding: 12px 16px;">Gate Pass / Justification</th>
+                    <th style="padding: 12px 16px; text-align: center;">Infraction Status</th>
+                    <th style="padding: 12px 16px; text-align: center;">Payroll Impact</th>
+                    <th style="padding: 12px 16px;">Reason / Disciplinary Notes</th>
                 </tr>
             </thead>
             <tbody>
@@ -129,7 +144,7 @@
                         </td>
                         <td style="padding: 12px 16px;">
                             <div style="display: flex; align-items: center; gap: 10px;">
-                                <div style="width: 32px; height: 32px; border-radius: 50%; background: #dcfce7; color: #15803d; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; flex-shrink: 0;">
+                                <div style="width: 32px; height: 32px; border-radius: 50%; background: #ffe4e6; color: #e11d48; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; flex-shrink: 0;">
                                     {{ strtoupper(substr($r->employee?->first_name ?? 'E', 0, 1) . substr($r->employee?->last_name ?? 'M', 0, 1)) }}
                                 </div>
                                 <div>
@@ -146,10 +161,10 @@
                             {{ $r->employee?->company_or_agency ?? 'Direct' }}
                         </td>
                         <td style="padding: 12px 16px; font-size: 12px; color: #475569; white-space: nowrap;">
-                            {{ $r->time_in ? date('h:i A', strtotime($r->time_in)) : '—' }} &rarr; <strong style="color: #0f172a;">{{ $r->time_out ? date('h:i A', strtotime($r->time_out)) : '—' }}</strong>
+                            {{ $r->time_in ? date('h:i A', strtotime($r->time_in)) : '—' }} &rarr; <strong style="color: #e11d48;">{{ $r->time_out ? date('h:i A', strtotime($r->time_out)) : '—' }}</strong>
                         </td>
                         <td style="padding: 12px 16px; text-align: right;">
-                            <span class="hr-badge hr-badge-success" style="font-size: 12px; font-weight: 700; padding: 4px 9px;">
+                            <span class="hr-badge hr-badge-danger" style="font-size: 12px; font-weight: 700; padding: 4px 9px;">
                                 {{ $r->undertime_minutes }} mins
                                 @if($r->undertime_minutes >= 60)
                                     ({{ number_format($r->undertime_minutes / 60, 1) }}h)
@@ -157,27 +172,30 @@
                             </span>
                         </td>
                         <td style="padding: 12px 16px; text-align: center;">
-                            <span class="hr-badge hr-badge-success" style="font-size: 11.5px; padding: 4px 9px;">
-                                <i class="ph ph-check-circle"></i> Authorized
-                            </span>
-                        </td>
-                        <td style="padding: 12px 16px; font-size: 12px;">
-                            @if($r->undertimeApprover)
-                                <div style="font-weight: 600; color: #1e293b;">{{ $r->undertimeApprover->name }}</div>
-                                <div style="font-size: 11px; color: #64748b;">{{ $r->undertime_approved_at ? date('M d, Y h:i A', strtotime($r->undertime_approved_at)) : 'Approved' }}</div>
+                            @if($r->undertime_status === 'Rejected')
+                                <span class="hr-badge hr-badge-danger" style="font-size: 11.5px; padding: 4px 9px;">
+                                    <i class="ph ph-x-circle"></i> Unauthorized / Rejected
+                                </span>
                             @else
-                                <span style="color: #059669; font-weight: 500;">Approved</span>
+                                <span class="hr-badge hr-badge-warning" style="font-size: 11.5px; padding: 4px 9px;">
+                                    <i class="ph ph-clock-countdown"></i> Unapproved (Pending)
+                                </span>
                             @endif
                         </td>
-                        <td style="padding: 12px 16px; font-size: 12px; color: #475569; max-width: 200px;">
-                            {{ $r->undertime_remarks ?: 'Excused by Manager / Gate Pass Verified' }}
+                        <td style="padding: 12px 16px; text-align: center;">
+                            <span class="hr-badge" style="font-size: 11px; padding: 3px 8px; background: #fff1f2; color: #e11d48; border: 1px solid #fecdd3;">
+                                <i class="ph ph-receipt"></i> Deductible ({{ $r->undertime_minutes }}m)
+                            </span>
+                        </td>
+                        <td style="padding: 12px 16px; font-size: 12px; color: #475569; max-width: 220px;">
+                            {{ $r->undertime_remarks ?: 'Unapproved Early Departure without Official Gate Pass' }}
                         </td>
                     </tr>
                 @empty
                     <tr>
                         <td colspan="9" style="text-align: center; padding: 36px; color: #94a3b8;">
                             <i class="ph ph-check-circle" style="font-size: 32px; display: block; margin-bottom: 8px; color: #10b981;"></i>
-                            No authorized undertime records found for the selected filter criteria.
+                            No unauthorized undertime records found for the selected filter criteria.
                         </td>
                     </tr>
                 @endforelse

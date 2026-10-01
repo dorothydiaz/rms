@@ -1804,10 +1804,17 @@ a {
 
 .content-area > * {
     flex-shrink: 0;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
 }
 
 /* Responsive Design */
 @media (max-width: 768px) {
+    .content-area {
+        padding: 16px 12px;
+    }
+
     .sidebar {
         position: fixed;
         left: 0;
@@ -2536,6 +2543,10 @@ a {
     padding: 22px;
     flex-shrink: 0;
     min-height: min-content;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
 }
 
 .hr-table-card {
@@ -2549,6 +2560,10 @@ a {
     justify-content: space-between;
     align-items: center;
     background: rgba(248, 250, 252, 0.65);
+    flex-wrap: wrap;
+    gap: 12px;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .hr-table-title {
@@ -2562,12 +2577,15 @@ a {
 }
 
 .hr-table-wrapper {
-    overflow-x: auto;
+    overflow-x: auto !important;
     overflow-y: auto;
     max-height: 560px;
     width: 100%;
+    max-width: 100%;
+    min-width: 0;
     position: relative;
     border-radius: inherit;
+    -webkit-overflow-scrolling: touch;
 }
 
 .hr-table-wrapper::-webkit-scrollbar {
@@ -6712,6 +6730,10 @@ body > .hr-custom-select-menu {
    ============================================================ */
 .hr-parent-header {
     margin-bottom: 6px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
 }
 
 .hr-parent-title-row {
@@ -6720,6 +6742,17 @@ body > .hr-custom-select-menu {
     justify-content: space-between;
     gap: 12px;
     margin-bottom: 4px;
+    flex-wrap: wrap;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.hr-page-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     flex-wrap: wrap;
 }
 
@@ -6770,21 +6803,29 @@ body > .hr-custom-select-menu {
     display: flex;
     align-items: center;
     gap: 4px;
-    overflow: visible;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto;
     flex-wrap: wrap;
     position: relative;
     z-index: 40;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
 }
 
 .hr-tabs-wrapper::-webkit-scrollbar {
-    display: none;
+    height: 4px;
+}
+.hr-tabs-wrapper::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
 }
 
 .hr-tab-item {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 9px 18px;
+    padding: 8px 14px;
     border-radius: 10px;
     font-family: var(--font-family);
     font-size: 13px;
@@ -6795,6 +6836,40 @@ body > .hr-custom-select-menu {
     white-space: nowrap;
     position: relative;
     border: 1px solid transparent;
+    flex-shrink: 0;
+}
+
+@media (max-width: 1200px) {
+    .hr-tab-item {
+        padding: 6px 11px;
+        font-size: 12px;
+        gap: 6px;
+    }
+}
+
+@media (max-width: 768px) {
+    .hr-parent-title-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    .hr-page-actions {
+        width: 100%;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+    .hr-page-actions .hr-btn {
+        flex: 1 1 auto;
+        justify-content: center;
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+    .hr-tabs-wrapper {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding-bottom: 5px;
+    }
 }
 
 .hr-tab-item i {
