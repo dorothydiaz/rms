@@ -24,6 +24,7 @@
                     'icon' => 'ph-users',
                     'items' => [
                         ['title' => 'Employees Directory', 'url' => route('hr.people.employees'), 'icon' => 'ph-user-list', 'route' => 'hr.people.employees'],
+                        ['title' => 'Organization', 'url' => route('hr.people.organization'), 'icon' => 'ph-tree-structure', 'route' => 'hr.people.organization'],
                         ['title' => 'Departments', 'url' => route('hr.people.departments'), 'icon' => 'ph-tree-structure', 'route' => 'hr.people.departments'],
                         ['title' => 'Positions', 'url' => route('hr.people.positions'), 'icon' => 'ph-identification-card', 'route' => 'hr.people.positions'],
                         ['title' => 'Branches', 'url' => route('hr.people.branches'), 'icon' => 'ph-storefront', 'route' => 'hr.people.branches'],

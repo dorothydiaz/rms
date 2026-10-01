@@ -2,29 +2,132 @@
 
 @section('title', 'Timekeeping Station - Attendance Management')
 
+@push('styles')
+<style>
+/* Responsive Timekeeping Station Matrix */
+.hr-timekeeping-table {
+    width: 100% !important;
+    min-width: 960px;
+    table-layout: auto;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.hr-timekeeping-table th,
+.hr-timekeeping-table td {
+    padding: 10px 8px !important;
+    font-size: 12.5px;
+    vertical-align: middle;
+}
+
+.hr-timekeeping-table .tk-col-id {
+    width: 95px;
+    font-family: monospace;
+    font-size: 11.5px;
+    white-space: nowrap;
+}
+
+.hr-timekeeping-table .tk-col-staff {
+    min-width: 140px;
+    max-width: 190px;
+}
+
+.hr-timekeeping-table .tk-col-dept {
+    min-width: 120px;
+    max-width: 160px;
+}
+
+.hr-timekeeping-table .tk-col-punch-th {
+    text-align: center !important;
+    padding: 10px 4px !important;
+    font-size: 11px !important;
+    color: #475569;
+    font-weight: 700;
+    white-space: nowrap;
+    width: 58px;
+}
+
+.hr-timekeeping-table .tk-col-punch-td {
+    text-align: center !important;
+    padding: 10px 4px !important;
+    white-space: nowrap;
+    font-size: 12px;
+}
+
+.hr-timekeeping-table .tk-col-hours {
+    text-align: center !important;
+    white-space: nowrap;
+    width: 78px;
+    font-size: 12px;
+}
+
+.hr-timekeeping-table .tk-col-status {
+    text-align: center !important;
+    white-space: nowrap;
+    width: 82px;
+}
+
+.hr-timekeeping-table .tk-col-action {
+    text-align: right !important;
+    white-space: nowrap;
+    padding-right: 14px !important;
+    width: 88px;
+}
+
+.hr-timekeeping-table .tk-col-action .hr-btn {
+    white-space: nowrap;
+}
+
+@media (max-width: 1200px) {
+    .hr-timekeeping-table {
+        min-width: 900px;
+    }
+    .hr-timekeeping-table th,
+    .hr-timekeeping-table td {
+        padding: 9px 5px !important;
+        font-size: 12px;
+    }
+}
+</style>
+@endpush
+
 @section('content')
 <x-hr-tabs parent="time-attendance">
     <x-slot:actions>
-        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+        <button type="button" class="hr-btn hr-btn-primary" onclick="openTimekeepingEncodeModal()" style="height: 38px; display: inline-flex; align-items: center; gap: 6px;" title="Encode Manual Time Entry (Hotkey: F2)">
+            <i class="ph ph-plus-circle"></i>
+            <span>Encode Time Entry</span>
+        </button>
+    </x-slot:actions>
+</x-hr-tabs>
+
+<div class="hr-table-card hr-table-card-full">
+    <div class="hr-table-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 12px 18px;">
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="hr-table-title"><i class="ph ph-calendar-blank"></i> Staff Time Logs</span>
+                <span class="hr-badge hr-badge-neutral" id="tkStaffCountBadge">{{ count($employees) }} Staff</span>
+            </div>
+
+            <!-- Date Filter Form -->
             <form method="GET" action="{{ route('hr.attendance.timekeeping') }}" style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
-                <label style="font-size: 12px; font-weight: 600; color: #475569;">Select Date:</label>
                 <div style="display: flex; gap: 3px; align-items: center;">
-                    <a href="{{ route('hr.attendance.timekeeping', array_merge(request()->query(), ['date' => \Carbon\Carbon::parse($date)->subDay()->toDateString()])) }}" class="hr-btn hr-btn-secondary" style="height: 38px; padding: 0 10px;" title="Previous Day">
+                    <a href="{{ route('hr.attendance.timekeeping', array_merge(request()->query(), ['date' => \Carbon\Carbon::parse($date)->subDay()->toDateString()])) }}" class="hr-btn hr-btn-secondary" style="height: 34px; padding: 0 9px;" title="Previous Day">
                         <i class="ph ph-caret-left"></i>
                     </a>
-                    <input type="date" name="date" class="hr-input" value="{{ $date }}" onchange="this.form.submit()" style="height: 38px;">
-                    <a href="{{ route('hr.attendance.timekeeping', array_merge(request()->query(), ['date' => \Carbon\Carbon::parse($date)->addDay()->toDateString()])) }}" class="hr-btn hr-btn-secondary" style="height: 38px; padding: 0 10px;" title="Next Day">
+                    <input type="date" name="date" class="hr-input" value="{{ $date }}" onchange="this.form.submit()" style="height: 34px; padding: 4px 8px; font-size: 12.5px;">
+                    <a href="{{ route('hr.attendance.timekeeping', array_merge(request()->query(), ['date' => \Carbon\Carbon::parse($date)->addDay()->toDateString()])) }}" class="hr-btn hr-btn-secondary" style="height: 34px; padding: 0 9px;" title="Next Day">
                         <i class="ph ph-caret-right"></i>
                     </a>
                     @if($date !== \Carbon\Carbon::today()->toDateString())
-                        <a href="{{ route('hr.attendance.timekeeping', array_merge(request()->query(), ['date' => \Carbon\Carbon::today()->toDateString()])) }}" class="hr-btn hr-btn-secondary" style="height: 38px; padding: 0 10px; font-size: 12px; font-weight: 600;" title="Jump to Today">
+                        <a href="{{ route('hr.attendance.timekeeping', array_merge(request()->query(), ['date' => \Carbon\Carbon::today()->toDateString()])) }}" class="hr-btn hr-btn-secondary" style="height: 34px; padding: 0 9px; font-size: 11.5px; font-weight: 600;" title="Jump to Today">
                             Today
                         </a>
                     @endif
                 </div>
 
                 @if(isset($branches) && $branches->count() > 1)
-                    <select name="branch_id" class="hr-select" onchange="this.form.submit()" style="height: 38px;">
+                    <select name="branch_id" class="hr-select" onchange="this.form.submit()" style="height: 34px; font-size: 12px; padding: 4px 10px;">
                         <option value="">All Branches</option>
                         @foreach($branches as $b)
                             <option value="{{ $b->id }}" {{ request('branch_id') == $b->id ? 'selected' : '' }}>{{ $b->name }}</option>
@@ -32,46 +135,34 @@
                     </select>
                 @endif
             </form>
-            <a href="{{ route('hr.attendance.corrections', ['date' => $date]) }}" class="hr-btn hr-btn-secondary" style="height: 38px; display: inline-flex; align-items: center; gap: 6px;" title="View all manual entries for this date">
-                <i class="ph ph-pencil-line"></i>
-                <span>Manual Time Entries</span>
-            </a>
-            <button type="button" class="hr-btn hr-btn-primary" onclick="openTimekeepingEncodeModal()" style="height: 38px; display: inline-flex; align-items: center; gap: 6px;" title="Encode Manual Time Entry (Hotkey: F2)">
-                <i class="ph ph-plus-circle"></i>
-                <span>Encode Time Entry</span>
-            </button>
-        </div>
-    </x-slot:actions>
-</x-hr-tabs>
 
-<div class="hr-table-card hr-table-card-full">
-    <div class="hr-table-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
-        <div style="display: flex; align-items: center; gap: 10px;">
-            <span class="hr-table-title"><i class="ph ph-calendar-blank"></i> Staff Time Logs for {{ \Carbon\Carbon::parse($date)->format('F d, Y') }}</span>
-            <span class="hr-badge hr-badge-neutral" id="tkStaffCountBadge">{{ count($employees) }} Staff</span>
+            <a href="{{ route('hr.attendance.corrections', ['date' => $date]) }}" class="hr-btn hr-btn-secondary" style="height: 34px; display: inline-flex; align-items: center; gap: 5px; font-size: 12px; padding: 0 10px;" title="View all manual entries for this date">
+                <i class="ph ph-pencil-line"></i>
+                <span>Manual Entries</span>
+            </a>
         </div>
-        <div style="position: relative; min-width: 260px; margin-left: auto;">
+        <div style="position: relative; min-width: 240px; margin-left: auto;">
             <i class="ph ph-magnifying-glass" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 14px;"></i>
-            <input type="text" id="tkSearchInput" placeholder="Search staff name, ID, branch..." oninput="filterTimekeepingRows()" style="width: 100%; font-size: 12.5px; padding: 7px 28px 7px 30px; border: 1.5px solid #e2e8f0; border-radius: 8px; outline: none; height: 36px; box-sizing: border-box;">
+            <input type="text" id="tkSearchInput" placeholder="Search staff name, ID, branch..." oninput="filterTimekeepingRows()" style="width: 100%; font-size: 12.5px; padding: 6px 28px 6px 30px; border: 1.5px solid #e2e8f0; border-radius: 8px; outline: none; height: 34px; box-sizing: border-box;">
             <button type="button" id="tkClearSearchBtn" onclick="clearTkSearch()" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); border: none; background: transparent; color: #94a3b8; cursor: pointer; display: none; font-size: 16px; line-height: 1;">&times;</button>
         </div>
     </div>
     <div class="hr-table-wrapper">
-        <table class="hr-table">
+        <table class="hr-table hr-timekeeping-table" id="timekeepingTable">
             <thead>
                 <tr>
-                    <th>Employee ID</th>
-                    <th>Staff Name</th>
-                    <th>Branch & Dept</th>
-                    <th>In</th>
-                    <th>Break Out</th>
-                    <th>Break In</th>
-                    <th>CB Out</th>
-                    <th>CB In</th>
-                    <th>Final Out</th>
-                    <th>Total Hours</th>
-                    <th>Status</th>
-                    <th style="text-align: right;">Manual Punch</th>
+                    <th class="tk-col-id">Employee ID</th>
+                    <th class="tk-col-staff">Staff Name</th>
+                    <th class="tk-col-dept">Branch & Dept</th>
+                    <th class="tk-col-punch-th">In</th>
+                    <th class="tk-col-punch-th">Break Out</th>
+                    <th class="tk-col-punch-th">Break In</th>
+                    <th class="tk-col-punch-th">CB Out</th>
+                    <th class="tk-col-punch-th">CB In</th>
+                    <th class="tk-col-punch-th">Final Out</th>
+                    <th class="tk-col-hours">Total Hours</th>
+                    <th class="tk-col-status">Status</th>
+                    <th class="tk-col-action">Manual Punch</th>
                 </tr>
             </thead>
             <tbody id="timekeepingTableBody">
@@ -102,8 +193,8 @@
                         data-emp-branch="{{ strtolower($emp->branch?->name ?? '') }}"
                         data-emp-dept="{{ strtolower($emp->department?->name ?? '') }}"
                         data-emp-pos="{{ strtolower($emp->position?->name ?? '') }}">
-                        <td><strong style="color: #9333ea; font-family: monospace;">{{ $emp->employee_id }}</strong></td>
-                        <td>
+                        <td class="tk-col-id"><strong style="color: #9333ea; font-family: monospace;">{{ $emp->employee_id }}</strong></td>
+                        <td class="tk-col-staff">
                             <div class="hr-emp-avatar-wrap">
                                 @if($emp->photo_url)
                                     <img src="{{ $emp->photo_url }}" alt="{{ $emp->full_name }}" class="hr-avatar-img-sm">
@@ -112,19 +203,19 @@
                                         {{ $emp->initials }}
                                     </div>
                                 @endif
-                                <div>
-                                    <strong>{{ $emp->full_name }}</strong><br>
-                                    <small style="color: #64748b;">{{ $emp->position?->name }}</small>
+                                <div style="min-width: 0;">
+                                    <strong style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;" title="{{ $emp->full_name }}">{{ $emp->full_name }}</strong>
+                                    <small style="color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">{{ $emp->position?->name }}</small>
                                 </div>
                             </div>
                         </td>
-                        <td>
-                            <div>{{ $emp->branch?->name }}</div>
-                            <small style="color: #64748b;">{{ $emp->department?->name }}</small>
+                        <td class="tk-col-dept">
+                            <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ $emp->branch?->name }}">{{ $emp->branch?->name }}</div>
+                            <small style="color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;" title="{{ $emp->department?->name }}">{{ $emp->department?->name }}</small>
                         </td>
 
                         <!-- 1. In -->
-                        <td>
+                        <td class="tk-col-punch-td">
                             @if($pIn)
                                 <strong style="color: #059669;">{{ substr($pIn, 0, 5) }}</strong>
                             @else
@@ -133,7 +224,7 @@
                         </td>
 
                         <!-- 2. Break Out -->
-                        <td>
+                        <td class="tk-col-punch-td">
                             @if($pBreakOut)
                                 <span>{{ substr($pBreakOut, 0, 5) }}</span>
                             @else
@@ -142,7 +233,7 @@
                         </td>
 
                         <!-- 3. Break In -->
-                        <td>
+                        <td class="tk-col-punch-td">
                             @if($pBreakIn)
                                 <span>{{ substr($pBreakIn, 0, 5) }}</span>
                             @else
@@ -151,7 +242,7 @@
                         </td>
 
                         <!-- 4. Coffee Break Out -->
-                        <td>
+                        <td class="tk-col-punch-td">
                             @if($pCoffeeOut)
                                 <span style="color: #b45309;">{{ substr($pCoffeeOut, 0, 5) }}</span>
                             @else
@@ -160,7 +251,7 @@
                         </td>
 
                         <!-- 5. Coffee Break In -->
-                        <td>
+                        <td class="tk-col-punch-td">
                             @if($pCoffeeIn)
                                 <span style="color: #b45309;">{{ substr($pCoffeeIn, 0, 5) }}</span>
                             @else
@@ -169,7 +260,7 @@
                         </td>
 
                         <!-- 6. Final Out -->
-                        <td>
+                        <td class="tk-col-punch-td">
                             @if($pFinalOut)
                                 <strong style="color: #0284c7;">{{ substr($pFinalOut, 0, 5) }}</strong>
                             @else
@@ -178,12 +269,12 @@
                         </td>
 
                         <!-- Total Hours -->
-                        <td>
+                        <td class="tk-col-hours">
                             <strong>{{ number_format($att?->total_hours ?? 0, 2) }} hrs</strong>
                         </td>
 
                         <!-- Status Badge -->
-                        <td>
+                        <td class="tk-col-status">
                             @if($att)
                                 @if($att->status === 'Present')
                                     <span class="hr-badge hr-badge-success">{{ $att->status }}</span>
@@ -200,7 +291,7 @@
                         </td>
 
                         <!-- Action -->
-                        <td style="text-align: right;">
+                        <td class="tk-col-action">
                             <button class="hr-btn hr-btn-secondary hr-btn-sm" onclick='openPunchModal({{ $emp->id }}, "{{ addslashes($emp->full_name) }}", {{ json_encode($punchesData) }})'>
                                 <i class="ph ph-fingerprint"></i> Punch
                             </button>

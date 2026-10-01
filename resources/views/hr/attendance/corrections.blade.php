@@ -2,6 +2,87 @@
 
 @section('title', 'Manual Time Entries - Time & Attendance Management')
 
+@push('styles')
+<style>
+/* Responsive Manual Time Entries Matrix */
+.hr-corrections-table {
+    width: 100% !important;
+    min-width: 980px;
+    table-layout: fixed;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.hr-corrections-table th,
+.hr-corrections-table td {
+    padding: 8px 6px !important;
+    font-size: 12px;
+    vertical-align: middle;
+}
+
+.hr-corrections-table th {
+    font-size: 10.5px !important;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #475569;
+    background: #f8fafc !important;
+}
+
+.hr-corrections-table .cor-col-date {
+    width: 90px;
+}
+
+.hr-corrections-table .cor-col-staff {
+    width: 135px;
+}
+
+.hr-corrections-table .cor-col-dept {
+    width: 120px;
+}
+
+.hr-corrections-table .cor-col-punch-th {
+    text-align: center !important;
+    padding: 8px 2px !important;
+    font-size: 10px !important;
+    color: #475569;
+    font-weight: 700;
+    white-space: nowrap;
+    width: 52px;
+}
+
+.hr-corrections-table .cor-col-punch-td {
+    text-align: center !important;
+    padding: 8px 2px !important;
+    white-space: nowrap;
+    font-size: 11.5px;
+    width: 52px;
+}
+
+.hr-corrections-table .cor-col-hours {
+    text-align: center !important;
+    white-space: nowrap;
+    width: 70px;
+}
+
+.hr-corrections-table .cor-col-status {
+    text-align: center !important;
+    white-space: nowrap;
+    width: 78px;
+}
+
+.hr-corrections-table .cor-col-notes {
+    width: 115px;
+}
+
+.hr-corrections-table .cor-col-action {
+    text-align: right !important;
+    white-space: nowrap;
+    width: 82px;
+}
+</style>
+@endpush
+
 @section('content')
 <x-hr-tabs parent="time-attendance">
     <x-slot:actions>
@@ -63,24 +144,24 @@
 </div>
 
 <!-- Manual Time Entries Table -->
-<div class="hr-table-card">
-    <div class="hr-table-wrapper" style="max-height: 600px; overflow-y: auto; overflow-x: auto;">
-        <table class="hr-table" id="manualEntriesTable">
+<div class="hr-table-card" style="max-width: 100%; overflow: hidden;">
+    <div class="hr-table-wrapper" style="max-height: 600px; overflow-y: auto; overflow-x: auto; max-width: 100%; -webkit-overflow-scrolling: touch;">
+        <table class="hr-table hr-corrections-table" id="manualEntriesTable">
             <thead>
                 <tr>
-                    <th style="min-width: 120px;">Date</th>
-                    <th style="min-width: 180px;">Staff Member</th>
-                    <th style="min-width: 160px;">Branch & Dept</th>
-                    <th style="text-align: center; min-width: 75px;">1. In</th>
-                    <th style="text-align: center; min-width: 75px;">2. Break Out</th>
-                    <th style="text-align: center; min-width: 75px;">3. Break In</th>
-                    <th style="text-align: center; min-width: 75px;">4. Coffee Out</th>
-                    <th style="text-align: center; min-width: 75px;">5. Coffee In</th>
-                    <th style="text-align: center; min-width: 75px;">6. Final Out</th>
-                    <th style="min-width: 95px;">Total Hours</th>
-                    <th style="min-width: 100px;">Status</th>
-                    <th style="min-width: 180px;">Notes / Purpose</th>
-                    <th style="text-align: right; min-width: 130px;">Action</th>
+                    <th class="cor-col-date">Date</th>
+                    <th class="cor-col-staff">Staff Member</th>
+                    <th class="cor-col-dept">Branch & Dept</th>
+                    <th class="cor-col-punch-th">1. In</th>
+                    <th class="cor-col-punch-th">2. Break Out</th>
+                    <th class="cor-col-punch-th">3. Break In</th>
+                    <th class="cor-col-punch-th">4. Coffee Out</th>
+                    <th class="cor-col-punch-th">5. Coffee In</th>
+                    <th class="cor-col-punch-th">6. Final Out</th>
+                    <th class="cor-col-hours">Total Hours</th>
+                    <th class="cor-col-status">Status</th>
+                    <th class="cor-col-notes">Notes / Purpose</th>
+                    <th class="cor-col-action">Action</th>
                 </tr>
             </thead>
             <tbody id="manualEntriesTableBody">
@@ -117,115 +198,117 @@
                         data-date="{{ $dateStr }}"
                         data-branch="{{ $branchName }}"
                         data-status="{{ $r->status }}">
-                        <td>
-                            <strong style="color: #0f172a;">{{ $displayDate }}</strong>
-                            <div style="font-size: 11px; color: #64748b;">{{ \Carbon\Carbon::parse($r->date)->format('l') }}</div>
+                        <td class="cor-col-date">
+                            <strong style="color: #0f172a; font-size: 12px;">{{ $displayDate }}</strong>
+                            <div style="font-size: 10.5px; color: #64748b;">{{ \Carbon\Carbon::parse($r->date)->format('l') }}</div>
                         </td>
-                        <td>
-                            <div style="font-weight: 700; color: #0f172a;">{{ $empName }}</div>
-                            <div style="font-size: 11px; color: #64748b; font-family: monospace;">{{ $empId }} &bull; {{ $posName }}</div>
+                        <td class="cor-col-staff">
+                            <div style="font-weight: 700; color: #0f172a; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ $empName }}">{{ $empName }}</div>
+                            <div style="font-size: 10px; color: #64748b; font-family: monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ $empId }} &bull; {{ $posName }}</div>
                         </td>
-                        <td>
-                            <div style="font-weight: 600; color: #334155; font-size: 12.5px;">
+                        <td class="cor-col-dept">
+                            <div style="font-weight: 600; color: #334155; font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ $branchName }}">
                                 <i class="ph ph-storefront" style="color: #64748b;"></i> {{ $branchName }}
                             </div>
-                            <div style="font-size: 11px; color: #64748b;">{{ $deptName }}</div>
+                            <div style="font-size: 10px; color: #64748b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ $deptName }}">{{ $deptName }}</div>
                         </td>
 
                         <!-- 1. In -->
-                        <td style="text-align: center;">
+                        <td class="cor-col-punch-td">
                             @if($pIn)
-                                <strong style="color: #059669; font-family: monospace; font-size: 13px;">{{ substr($pIn, 0, 5) }}</strong>
+                                <strong style="color: #059669; font-family: monospace; font-size: 12px;">{{ substr($pIn, 0, 5) }}</strong>
                             @else
                                 <span style="color: #cbd5e1; font-family: monospace;">--:--</span>
                             @endif
                         </td>
 
                         <!-- 2. Break Out -->
-                        <td style="text-align: center;">
+                        <td class="cor-col-punch-td">
                             @if($pBreakOut)
-                                <span style="color: #334155; font-family: monospace; font-size: 12.5px;">{{ substr($pBreakOut, 0, 5) }}</span>
+                                <span style="color: #334155; font-family: monospace; font-size: 11.5px;">{{ substr($pBreakOut, 0, 5) }}</span>
                             @else
                                 <span style="color: #cbd5e1; font-family: monospace;">--:--</span>
                             @endif
                         </td>
 
                         <!-- 3. Break In -->
-                        <td style="text-align: center;">
+                        <td class="cor-col-punch-td">
                             @if($pBreakIn)
-                                <span style="color: #334155; font-family: monospace; font-size: 12.5px;">{{ substr($pBreakIn, 0, 5) }}</span>
+                                <span style="color: #334155; font-family: monospace; font-size: 11.5px;">{{ substr($pBreakIn, 0, 5) }}</span>
                             @else
                                 <span style="color: #cbd5e1; font-family: monospace;">--:--</span>
                             @endif
                         </td>
 
                         <!-- 4. Coffee Out -->
-                        <td style="text-align: center;">
+                        <td class="cor-col-punch-td">
                             @if($pCoffeeOut)
-                                <span style="color: #b45309; font-family: monospace; font-size: 12.5px;">{{ substr($pCoffeeOut, 0, 5) }}</span>
+                                <span style="color: #b45309; font-family: monospace; font-size: 11.5px;">{{ substr($pCoffeeOut, 0, 5) }}</span>
                             @else
                                 <span style="color: #cbd5e1; font-family: monospace;">--:--</span>
                             @endif
                         </td>
 
                         <!-- 5. Coffee In -->
-                        <td style="text-align: center;">
+                        <td class="cor-col-punch-td">
                             @if($pCoffeeIn)
-                                <span style="color: #b45309; font-family: monospace; font-size: 12.5px;">{{ substr($pCoffeeIn, 0, 5) }}</span>
+                                <span style="color: #b45309; font-family: monospace; font-size: 11.5px;">{{ substr($pCoffeeIn, 0, 5) }}</span>
                             @else
                                 <span style="color: #cbd5e1; font-family: monospace;">--:--</span>
                             @endif
                         </td>
 
                         <!-- 6. Final Out -->
-                        <td style="text-align: center;">
+                        <td class="cor-col-punch-td">
                             @if($pFinalOut)
-                                <strong style="color: #0284c7; font-family: monospace; font-size: 13px;">{{ substr($pFinalOut, 0, 5) }}</strong>
+                                <strong style="color: #0284c7; font-family: monospace; font-size: 12px;">{{ substr($pFinalOut, 0, 5) }}</strong>
                             @else
                                 <span style="color: #cbd5e1; font-family: monospace;">--:--</span>
                             @endif
                         </td>
 
                         <!-- Total Hours -->
-                        <td>
-                            <strong style="color: #0f172a; font-size: 13px;">{{ number_format($r->total_hours ?? 0, 2) }} hrs</strong>
+                        <td class="cor-col-hours">
+                            <strong style="color: #0f172a; font-size: 12px;">{{ number_format($r->total_hours ?? 0, 2) }} hrs</strong>
                         </td>
 
                         <!-- Status Badge -->
-                        <td>
+                        <td class="cor-col-status">
                             @if($r->status === 'Present')
-                                <span class="hr-badge hr-badge-success">{{ $r->status }}</span>
+                                <span class="hr-badge hr-badge-success" style="font-size: 10.5px; padding: 2px 6px;">{{ $r->status }}</span>
                             @elseif($r->status === 'Late')
-                                <span class="hr-badge hr-badge-warning">{{ $r->status }}</span>
+                                <span class="hr-badge hr-badge-warning" style="font-size: 10.5px; padding: 2px 6px;">{{ $r->status }}</span>
                             @elseif($r->status === 'Rest Day')
-                                <span class="hr-badge hr-badge-neutral">{{ $r->status }}</span>
+                                <span class="hr-badge hr-badge-neutral" style="font-size: 10.5px; padding: 2px 6px;">{{ $r->status }}</span>
                             @elseif($r->status === 'Overtime')
-                                <span class="hr-badge hr-badge-purple">{{ $r->status }}</span>
+                                <span class="hr-badge hr-badge-purple" style="font-size: 10.5px; padding: 2px 6px;">{{ $r->status }}</span>
                             @else
-                                <span class="hr-badge hr-badge-danger">{{ $r->status }}</span>
+                                <span class="hr-badge hr-badge-danger" style="font-size: 10.5px; padding: 2px 6px;">{{ $r->status }}</span>
                             @endif
                         </td>
 
                         <!-- Notes & Source -->
-                        <td>
-                            <div style="font-size: 12px; color: #334155;">{{ $r->notes ?: 'Manual time entry' }}</div>
-                            <span class="hr-badge hr-badge-info" style="font-size: 9.5px; padding: 1px 6px; margin-top: 3px;">
+                        <td class="cor-col-notes">
+                            <div style="font-size: 11px; color: #334155; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ $r->notes ?: 'Manual time entry' }}">{{ $r->notes ?: 'Manual time entry' }}</div>
+                            <span class="hr-badge hr-badge-info" style="font-size: 8.5px; padding: 1px 5px; margin-top: 2px;">
                                 <i class="ph ph-hand-pointing"></i> {{ $r->source ?? 'Manual' }}
                             </span>
                         </td>
 
                         <!-- Action Buttons -->
-                        <td style="text-align: right; white-space: nowrap;">
-                            <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick='editManualEntry({{ $r->id }}, {{ $r->employee_id }}, "{{ addslashes($empName) }}", "{{ $dateStr }}", {{ json_encode($punchesData) }})' title="Edit/re-encode punches for this date">
-                                <i class="ph ph-pencil-simple"></i> Edit
-                            </button>
-                            <form method="POST" action="{{ route('hr.attendance.corrections.destroy', $r->id) }}" onsubmit="return confirm('Are you sure you want to delete this manual time entry for {{ addslashes($empName) }} on {{ $displayDate }}?');" style="display: inline-block; margin-left: 4px;">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="hr-btn hr-btn-danger hr-btn-sm" title="Delete manual entry">
-                                    <i class="ph ph-trash"></i>
+                        <td class="cor-col-action">
+                            <div style="display: inline-flex; align-items: center; justify-content: flex-end; gap: 3px;">
+                                <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" style="padding: 3px 6px; font-size: 11px;" onclick='editManualEntry({{ $r->id }}, {{ $r->employee_id }}, "{{ addslashes($empName) }}", "{{ $dateStr }}", {{ json_encode($punchesData) }})' title="Edit punches">
+                                    <i class="ph ph-pencil-simple"></i>
                                 </button>
-                            </form>
+                                <form method="POST" action="{{ route('hr.attendance.corrections.destroy', $r->id) }}" onsubmit="return confirm('Are you sure you want to delete this manual time entry for {{ addslashes($empName) }} on {{ $displayDate }}?');" style="display: inline-block; margin: 0;">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="hr-btn hr-btn-danger hr-btn-sm" style="padding: 3px 6px; font-size: 11px;" title="Delete manual entry">
+                                        <i class="ph ph-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                 @empty

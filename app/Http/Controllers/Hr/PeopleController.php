@@ -417,8 +417,13 @@ class PeopleController extends Controller
     }
 
     // ==========================================
-    // 2. DEPARTMENTS
+    // 2. ORGANIZATION (DEPARTMENTS, POSITIONS, BRANCHES, COMPANIES)
     // ==========================================
+
+    public function organizationIndex(): RedirectResponse
+    {
+        return redirect()->route('hr.people.departments');
+    }
 
     public function departmentsIndex(): View
     {

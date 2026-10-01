@@ -187,8 +187,18 @@ class AttendanceController extends Controller
     public function dtrIndex(Request $request): View
     {
         $user = Auth::user();
-        $startDate = $request->get('start_date', Carbon::now()->startOfMonth()->toDateString());
-        $endDate = $request->get('end_date', Carbon::now()->toDateString());
+        $defaultEnd = Carbon::now();
+        if (!$request->has('start_date') && !$request->has('end_date')) {
+            $hasCurrentMonthRecords = AttendanceRecord::whereBetween('date', [$defaultEnd->copy()->startOfMonth()->toDateString(), $defaultEnd->toDateString()])->exists();
+            if (!$hasCurrentMonthRecords) {
+                $latestRecordDate = AttendanceRecord::max('date');
+                if ($latestRecordDate) {
+                    $defaultEnd = Carbon::parse($latestRecordDate);
+                }
+            }
+        }
+        $startDate = $request->get('start_date', $defaultEnd->copy()->startOfMonth()->toDateString());
+        $endDate = $request->get('end_date', $defaultEnd->toDateString());
 
         $query = AttendanceRecord::with(['employee.branch', 'employee.department', 'schedule.shiftTemplate'])
             ->whereBetween('date', [$startDate, $endDate]);

@@ -44,6 +44,8 @@ Route::middleware('auth')->group(function () {
             Route::put('/employees/{id}', [\App\Http\Controllers\Hr\PeopleController::class, 'employeeUpdate'])->name('employees.update');
             Route::delete('/employees/{id}', [\App\Http\Controllers\Hr\PeopleController::class, 'employeeDestroy'])->name('employees.destroy');
 
+            Route::get('/organization', [\App\Http\Controllers\Hr\PeopleController::class, 'organizationIndex'])->name('organization');
+
             Route::get('/departments', [\App\Http\Controllers\Hr\PeopleController::class, 'departmentsIndex'])->name('departments');
             Route::post('/departments', [\App\Http\Controllers\Hr\PeopleController::class, 'departmentStore'])->name('departments.store');
             Route::put('/departments/{id}', [\App\Http\Controllers\Hr\PeopleController::class, 'departmentUpdate'])->name('departments.update');

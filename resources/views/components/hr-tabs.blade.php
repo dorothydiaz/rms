@@ -25,10 +25,18 @@
             'icon' => 'ph-users',
             'tabs' => [
                 ['name' => 'Employee Profiles', 'route' => 'hr.people.employees', 'icon' => 'ph-user-list', 'active' => ['hr.people.employees*', 'hr.employee']],
-                ['name' => 'Departments', 'route' => 'hr.people.departments', 'icon' => 'ph-tree-structure', 'active' => ['hr.people.departments*']],
-                ['name' => 'Positions', 'route' => 'hr.people.positions', 'icon' => 'ph-identification-card', 'active' => ['hr.people.positions*']],
-                ['name' => 'Branches', 'route' => 'hr.people.branches', 'icon' => 'ph-storefront', 'active' => ['hr.people.branches*']],
-                ['name' => 'Agency / Company', 'route' => 'hr.people.companies', 'icon' => 'ph-buildings', 'active' => ['hr.people.companies*']],
+                [
+                    'name' => 'Organization',
+                    'route' => 'hr.people.departments',
+                    'icon' => 'ph-tree-structure',
+                    'active' => ['hr.people.departments*', 'hr.people.positions*', 'hr.people.branches*', 'hr.people.companies*', 'hr.people.organization*'],
+                    'subtabs' => [
+                        ['name' => 'Departments', 'route' => 'hr.people.departments', 'icon' => 'ph-tree-structure', 'active' => ['hr.people.departments*']],
+                        ['name' => 'Positions', 'route' => 'hr.people.positions', 'icon' => 'ph-identification-card', 'active' => ['hr.people.positions*']],
+                        ['name' => 'Branches', 'route' => 'hr.people.branches', 'icon' => 'ph-storefront', 'active' => ['hr.people.branches*']],
+                        ['name' => 'Company / Agency', 'route' => 'hr.people.companies', 'icon' => 'ph-buildings', 'active' => ['hr.people.companies*']],
+                    ],
+                ],
             ],
         ],
         'system-administration' => [
@@ -138,12 +146,73 @@
                         break;
                     }
                 }
+                $hasSubtabs = !empty($tab['subtabs']);
             @endphp
-            <a href="{{ route($tab['route']) }}" class="hr-tab-item {{ $isActive ? 'active' : '' }}">
-                <i class="ph {{ $tab['icon'] }}"></i>
-                <span>{{ $tab['name'] }}</span>
-            </a>
+
+            @if($hasSubtabs)
+                <div class="hr-tab-dropdown-wrap" onmouseleave="closeTabDropdown(this)">
+                    <div class="hr-tab-item hr-tab-dropdown-trigger {{ $isActive ? 'active' : '' }}">
+                        <a href="{{ route($tab['route']) }}" class="hr-tab-link">
+                            <i class="ph {{ $tab['icon'] }}"></i>
+                            <span>{{ $tab['name'] }}</span>
+                        </a>
+                        <button type="button" class="hr-tab-caret-btn" onclick="toggleHrTabDropdown(event, this)" aria-label="Toggle {{ $tab['name'] }} options" title="Switch organization section">
+                            <i class="ph ph-caret-down hr-tab-caret"></i>
+                        </button>
+                    </div>
+
+                    <div class="hr-tab-dropdown-menu">
+                        @foreach($tab['subtabs'] as $subtab)
+                            @php
+                                $isSubActive = false;
+                                foreach ((array)$subtab['active'] as $pattern) {
+                                    if (request()->routeIs($pattern)) {
+                                        $isSubActive = true;
+                                        break;
+                                    }
+                                }
+                            @endphp
+                            <a href="{{ route($subtab['route']) }}" class="hr-tab-dropdown-item {{ $isSubActive ? 'active' : '' }}">
+                                <span class="hr-tab-dropdown-icon-box">
+                                    <i class="ph {{ $subtab['icon'] }}"></i>
+                                </span>
+                                <span class="hr-tab-dropdown-label">{{ $subtab['name'] }}</span>
+                                @if($isSubActive)
+                                    <i class="ph ph-check hr-tab-dropdown-check"></i>
+                                @endif
+                            </a>
+                        @endforeach
+                    </div>
+                </div>
+            @else
+                <a href="{{ route($tab['route']) }}" class="hr-tab-item {{ $isActive ? 'active' : '' }}">
+                    <i class="ph {{ $tab['icon'] }}"></i>
+                    <span>{{ $tab['name'] }}</span>
+                </a>
+            @endif
         @endforeach
     </div>
 </div>
+
+<script>
+function toggleHrTabDropdown(e, btn) {
+    e.preventDefault();
+    e.stopPropagation();
+    const wrap = btn.closest('.hr-tab-dropdown-wrap');
+    if (!wrap) return;
+    const isOpen = wrap.classList.contains('open');
+    document.querySelectorAll('.hr-tab-dropdown-wrap.open').forEach(w => w.classList.remove('open'));
+    if (!isOpen) {
+        wrap.classList.add('open');
+    }
+}
+function closeTabDropdown(wrap) {
+    if (wrap) wrap.classList.remove('open');
+}
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.hr-tab-dropdown-wrap')) {
+        document.querySelectorAll('.hr-tab-dropdown-wrap.open').forEach(w => w.classList.remove('open'));
+    }
+});
+</script>
 @endif

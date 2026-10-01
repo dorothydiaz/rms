@@ -33,7 +33,7 @@
 <!-- Main Accelerated Weekly Schedule Planner Matrix Card -->
 <div class="hr-table-card" id="schedPlannerCard">
     <!-- Top Controller Toolbar -->
-    <div class="hr-table-header" style="flex-wrap: nowrap; gap: 12px; padding: 8px 16px; border-bottom: 1.5px solid #e2e8f0; background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);">
+    <div class="hr-table-header" style="flex-wrap: wrap; gap: 10px; padding: 8px 16px; border-bottom: 1.5px solid #e2e8f0; background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);">
         <!-- Title & Subtitle -->
         <div style="display: flex; align-items: center; gap: 9px; flex-shrink: 0;">
             <span class="hr-table-title" style="font-size: 17px; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 8px;">
@@ -226,18 +226,18 @@
 
     <!-- Weekly Interactive Schedule Table Matrix (Spacious & Breathable Layout) -->
     <div class="hr-table-wrapper" style="flex: 1 1 auto; min-height: 0; min-width: 0; width: 100%; max-width: 100%; overflow-y: auto; overflow-x: auto; position: relative;">
-        <table class="hr-table sched-matrix-table" id="schedMatrixTable" role="grid" style="border-collapse: separate; border-spacing: 0; table-layout: fixed; width: 100%; min-width: 1600px;">
+        <table class="hr-table sched-matrix-table" id="schedMatrixTable" role="grid" style="border-collapse: separate; border-spacing: 0; table-layout: fixed; width: 100%; min-width: 1080px;">
             <colgroup>
-                <col class="sched-col-emp" style="width: 220px; min-width: 220px;">
-                <col class="sched-col-week" style="width: 80px; min-width: 80px;">
-                <col class="sched-col-day" style="width: 180px; min-width: 175px;">
-                <col class="sched-col-day" style="width: 180px; min-width: 175px;">
-                <col class="sched-col-day" style="width: 180px; min-width: 175px;">
-                <col class="sched-col-day" style="width: 180px; min-width: 175px;">
-                <col class="sched-col-day" style="width: 180px; min-width: 175px;">
-                <col class="sched-col-day" style="width: 180px; min-width: 175px;">
-                <col class="sched-col-day" style="width: 180px; min-width: 175px;">
-                <col class="sched-col-action" style="width: 46px; min-width: 44px;">
+                <col class="sched-col-emp" style="width: 15%; min-width: 160px;">
+                <col class="sched-col-week" style="width: 5.5%; min-width: 55px;">
+                <col class="sched-col-day" style="width: 11%; min-width: 116px;">
+                <col class="sched-col-day" style="width: 11%; min-width: 116px;">
+                <col class="sched-col-day" style="width: 11%; min-width: 116px;">
+                <col class="sched-col-day" style="width: 11%; min-width: 116px;">
+                <col class="sched-col-day" style="width: 11%; min-width: 116px;">
+                <col class="sched-col-day" style="width: 11%; min-width: 116px;">
+                <col class="sched-col-day" style="width: 11%; min-width: 116px;">
+                <col class="sched-col-action" style="width: 3.5%; min-width: 36px;">
             </colgroup>
             <thead>
                 <tr>
@@ -1489,50 +1489,15 @@
     overflow: hidden !important;
     display: flex !important;
     flex-direction: column !important;
-    padding: 14px 20px 12px 20px !important;
+    padding: 24px !important;
     box-sizing: border-box !important;
 }
 
-/* Spacious Parent Header matching standard Time & Attendance (Picture 1) */
 .hr-parent-header {
-    margin-bottom: 12px !important;
-    padding-bottom: 0 !important;
     flex-shrink: 0 !important;
-}
-.hr-parent-title-row {
-    margin-bottom: 8px !important;
-    gap: 16px !important;
-}
-.hr-parent-title {
-    font-size: 23px !important;
-    font-weight: 800 !important;
-    gap: 12px !important;
-}
-.hr-parent-title i {
-    width: 40px !important;
-    height: 40px !important;
-    font-size: 21px !important;
-    border-radius: 12px !important;
-}
-.hr-parent-subtitle {
-    display: block !important;
-    font-size: 13px !important;
-    color: #64748b !important;
-    margin-top: 4px !important;
-    font-weight: 400 !important;
 }
 .hr-tabs-wrapper {
-    margin-top: 10px !important;
-    margin-bottom: 12px !important;
-    padding: 6px !important;
-    border-radius: 14px !important;
     flex-shrink: 0 !important;
-}
-.hr-tab-item {
-    padding: 8px 18px !important;
-    font-size: 13px !important;
-    font-weight: 600 !important;
-    border-radius: 10px !important;
 }
 
 /* Schedule Planner Card: Full Flex Column */
@@ -1895,42 +1860,88 @@
     transform: scale(1.15);
 }
 
-/* Matrix Table Fixed Layout (Spacious, Breathable & Fits Cleanly with Horizontal Scroll) */
+/* Matrix Table Fixed Layout (Spacious, Fluid & Fits Cleanly on Screen) */
 .sched-matrix-table {
     width: 100% !important;
-    min-width: 1600px !important;
+    min-width: 1080px !important;
     table-layout: fixed !important;
     border-collapse: separate !important;
     margin: 0 !important;
 }
 
-/* Enforce Column Widths so table never shrinks when sidebar is opened */
+/* Fluid responsive column widths: 100% distribution across all 7 days */
 .sched-col-emp,
 .sched-sticky-th,
 .sched-sticky-td {
-    width: 220px !important;
-    min-width: 220px !important;
+    width: 15% !important;
+    min-width: 160px !important;
+    max-width: 220px !important;
 }
 
 .sched-col-week {
-    width: 80px !important;
-    min-width: 80px !important;
+    width: 5.5% !important;
+    min-width: 55px !important;
+    max-width: 75px !important;
     text-align: center !important;
 }
 
 .sched-col-day,
 .sched-day-th,
 .sched-cell-td {
-    width: 180px !important;
-    min-width: 175px !important;
+    width: 11% !important;
+    min-width: 116px !important;
 }
 
 .sched-col-action,
 .sched-action-th,
 .sched-action-td {
-    width: 46px !important;
-    min-width: 44px !important;
+    width: 3.5% !important;
+    min-width: 36px !important;
+    max-width: 44px !important;
     text-align: center !important;
+}
+
+@media (min-width: 1600px) {
+    .sched-col-emp,
+    .sched-sticky-th,
+    .sched-sticky-td {
+        min-width: 190px !important;
+    }
+    .sched-col-day,
+    .sched-day-th,
+    .sched-cell-td {
+        min-width: 145px !important;
+    }
+}
+
+@media (max-width: 1366px) {
+    .sched-col-emp,
+    .sched-sticky-th,
+    .sched-sticky-td {
+        min-width: 155px !important;
+        padding: 6px 8px !important;
+    }
+    .sched-emp-avatar {
+        width: 32px !important;
+        height: 32px !important;
+        font-size: 11.5px !important;
+    }
+    .sched-col-day,
+    .sched-day-th,
+    .sched-cell-td {
+        min-width: 112px !important;
+    }
+    .sched-card-time {
+        font-size: 11px !important;
+        padding: 0 4px !important;
+    }
+    .sched-detail-row {
+        font-size: 8.5px !important;
+    }
+    .sched-detail-badge {
+        font-size: 8.5px !important;
+        padding: 1px 4px !important;
+    }
 }
 
 .sched-sticky-th {

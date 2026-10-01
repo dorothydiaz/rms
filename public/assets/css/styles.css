@@ -2682,6 +2682,91 @@ th.sortable.sorted-desc .sort-badge.desc,
     border-bottom: none;
 }
 
+/* Responsive Timekeeping Station Matrix */
+.hr-timekeeping-table {
+    width: 100% !important;
+    min-width: 960px;
+    table-layout: auto;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.hr-timekeeping-table th,
+.hr-timekeeping-table td {
+    padding: 10px 8px !important;
+    font-size: 12.5px;
+    vertical-align: middle;
+}
+
+.hr-timekeeping-table .tk-col-id {
+    width: 95px;
+    font-family: monospace;
+    font-size: 11.5px;
+    white-space: nowrap;
+}
+
+.hr-timekeeping-table .tk-col-staff {
+    min-width: 140px;
+    max-width: 190px;
+}
+
+.hr-timekeeping-table .tk-col-dept {
+    min-width: 120px;
+    max-width: 160px;
+}
+
+.hr-timekeeping-table .tk-col-punch-th {
+    text-align: center !important;
+    padding: 10px 4px !important;
+    font-size: 11px !important;
+    color: #475569;
+    font-weight: 700;
+    white-space: nowrap;
+    width: 58px;
+}
+
+.hr-timekeeping-table .tk-col-punch-td {
+    text-align: center !important;
+    padding: 10px 4px !important;
+    white-space: nowrap;
+    font-size: 12px;
+}
+
+.hr-timekeeping-table .tk-col-hours {
+    text-align: center !important;
+    white-space: nowrap;
+    width: 78px;
+    font-size: 12px;
+}
+
+.hr-timekeeping-table .tk-col-status {
+    text-align: center !important;
+    white-space: nowrap;
+    width: 82px;
+}
+
+.hr-timekeeping-table .tk-col-action {
+    text-align: right !important;
+    white-space: nowrap;
+    padding-right: 14px !important;
+    width: 88px;
+}
+
+.hr-timekeeping-table .tk-col-action .hr-btn {
+    white-space: nowrap;
+}
+
+@media (max-width: 1200px) {
+    .hr-timekeeping-table {
+        min-width: 900px;
+    }
+    .hr-timekeeping-table th,
+    .hr-timekeeping-table td {
+        padding: 9px 5px !important;
+        font-size: 12px;
+    }
+}
+
 /* Phantom filler rows — removed, no longer used */
 
 /* Full-viewport Table Cards — Pinned bottom footer with independent vertical scroll */
@@ -6406,8 +6491,10 @@ body > .hr-custom-select-menu {
     display: flex;
     align-items: center;
     gap: 6px;
-    overflow-x: auto;
-    scrollbar-width: none;
+    overflow: visible;
+    flex-wrap: wrap;
+    position: relative;
+    z-index: 40;
 }
 
 .hr-tabs-wrapper::-webkit-scrollbar {
@@ -6473,6 +6560,162 @@ body > .hr-custom-select-menu {
     border-radius: 3px 3px 0 0;
 }
 
+/* ============================================================
+   HR TAB DROPDOWN MENU (e.g. Organization Sub-menu)
+   ============================================================ */
+.hr-tab-dropdown-wrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.hr-tab-dropdown-wrap:hover .hr-tab-dropdown-menu,
+.hr-tab-dropdown-wrap.open .hr-tab-dropdown-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.hr-tab-dropdown-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0 8px 0 16px !important;
+}
+
+.hr-tab-dropdown-trigger .hr-tab-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    color: inherit;
+    padding: 9px 0;
+}
+
+.hr-tab-caret-btn {
+    background: transparent;
+    border: none;
+    padding: 6px 4px;
+    margin-left: 2px;
+    color: #94a3b8;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: all 0.15s ease;
+    font-size: 13px;
+    line-height: 1;
+}
+
+.hr-tab-caret-btn:hover {
+    color: #9333ea;
+    background: rgba(168, 85, 247, 0.12);
+}
+
+.hr-tab-item.active .hr-tab-caret-btn {
+    color: #9333ea;
+}
+
+.hr-tab-dropdown-wrap:hover .hr-tab-caret,
+.hr-tab-dropdown-wrap.open .hr-tab-caret {
+    transform: rotate(180deg);
+    color: #9333ea;
+}
+
+.hr-tab-caret {
+    transition: transform 0.2s ease, color 0.2s ease;
+}
+
+/* Floating Glassmorphic Dropdown Menu */
+.hr-tab-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    min-width: 220px;
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(226, 232, 240, 0.95);
+    border-radius: 14px;
+    padding: 6px;
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12), 0 2px 6px rgba(15, 23, 42, 0.04);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-6px);
+    transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.2s;
+    pointer-events: none;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+/* Dropdown Menu Item */
+.hr-tab-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 9px;
+    text-decoration: none;
+    color: #334155;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.15s ease;
+    border: 1px solid transparent;
+}
+
+.hr-tab-dropdown-icon-box {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    color: #64748b;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+}
+
+.hr-tab-dropdown-label {
+    flex: 1;
+}
+
+.hr-tab-dropdown-check {
+    font-size: 14px;
+    color: #9333ea;
+    font-weight: 800;
+    flex-shrink: 0;
+}
+
+.hr-tab-dropdown-item:hover {
+    background: rgba(168, 85, 247, 0.08);
+    color: #9333ea;
+}
+
+.hr-tab-dropdown-item:hover .hr-tab-dropdown-icon-box {
+    background: rgba(168, 85, 247, 0.15);
+    color: #9333ea;
+    transform: scale(1.08);
+}
+
+.hr-tab-dropdown-item.active {
+    background: rgba(168, 85, 247, 0.1);
+    color: #9333ea;
+    font-weight: 700;
+    border-color: rgba(168, 85, 247, 0.2);
+}
+
+.hr-tab-dropdown-item.active .hr-tab-dropdown-icon-box {
+    background: #9333ea;
+    color: #ffffff;
+    box-shadow: 0 2px 6px rgba(147, 51, 234, 0.3);
+}
+
 /* Sidebar section header category titles */
 .nav-category-header {
     font-size: 10.5px;
@@ -6487,6 +6730,187 @@ body > .hr-custom-select-menu {
     gap: 6px;
     user-select: none;
 }
+
+/* ============================================================
+   RESPONSIVE MANUAL TIME ENTRIES MATRIX (.hr-corrections-table)
+   ============================================================ */
+.hr-corrections-table {
+    width: 100% !important;
+    min-width: 980px;
+    table-layout: fixed;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.hr-corrections-table th,
+.hr-corrections-table td {
+    padding: 8px 6px !important;
+    font-size: 12px;
+    vertical-align: middle;
+}
+
+.hr-corrections-table th {
+    font-size: 10.5px !important;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #475569;
+    background: #f8fafc !important;
+}
+
+.hr-corrections-table .cor-col-date {
+    width: 90px;
+}
+
+.hr-corrections-table .cor-col-staff {
+    width: 135px;
+}
+
+.hr-corrections-table .cor-col-dept {
+    width: 120px;
+}
+
+.hr-corrections-table .cor-col-punch-th {
+    text-align: center !important;
+    padding: 8px 2px !important;
+    font-size: 10px !important;
+    color: #475569;
+    font-weight: 700;
+    white-space: nowrap;
+    width: 52px;
+}
+
+.hr-corrections-table .cor-col-punch-td {
+    text-align: center !important;
+    padding: 8px 2px !important;
+    white-space: nowrap;
+    font-size: 11.5px;
+    width: 52px;
+}
+
+.hr-corrections-table .cor-col-hours {
+    text-align: center !important;
+    white-space: nowrap;
+    width: 70px;
+}
+
+.hr-corrections-table .cor-col-status {
+    text-align: center !important;
+    white-space: nowrap;
+    width: 78px;
+}
+
+.hr-corrections-table .cor-col-notes {
+    width: 115px;
+}
+
+.hr-corrections-table .cor-col-action {
+    text-align: right !important;
+    white-space: nowrap;
+    width: 82px;
+}
+
+/* ============================================================
+   RESPONSIVE PAYROLL REGISTER TABLE (.hr-payroll-table)
+   ============================================================ */
+.hr-payroll-table {
+    width: 100% !important;
+    min-width: 1020px;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.hr-payroll-table th,
+.hr-payroll-table td {
+    padding: 8px 6px !important;
+    font-size: 12px;
+    vertical-align: middle;
+}
+
+.hr-payroll-table th {
+    font-size: 10.5px !important;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #475569;
+    background: #f8fafc !important;
+    white-space: nowrap;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+/* Sticky Staff Name (Left Column) */
+.hr-payroll-table th.py-col-name,
+.hr-payroll-table td.py-col-name {
+    position: sticky;
+    left: 0;
+    z-index: 5;
+    background: #ffffff;
+    width: 140px;
+    min-width: 130px;
+    max-width: 155px;
+    box-shadow: 3px 0 6px -2px rgba(0, 0, 0, 0.08);
+}
+.hr-payroll-table th.py-col-name {
+    background: #f8fafc !important;
+    z-index: 15;
+}
+
+/* Sticky Actions (Right Column) */
+.hr-payroll-table th.py-col-action,
+.hr-payroll-table td.py-col-action {
+    position: sticky;
+    right: 0;
+    z-index: 5;
+    background: #ffffff;
+    width: 78px;
+    min-width: 78px;
+    text-align: right;
+    box-shadow: -3px 0 6px -2px rgba(0, 0, 0, 0.08);
+}
+.hr-payroll-table th.py-col-action {
+    background: #f8fafc !important;
+    z-index: 15;
+}
+
+.hr-payroll-table tr:hover td.py-col-name,
+.hr-payroll-table tr:hover td.py-col-action {
+    background: #f8fafc !important;
+}
+
+/* Branch Column */
+.hr-payroll-table .py-col-branch {
+    width: 105px;
+    min-width: 95px;
+    max-width: 120px;
+    white-space: nowrap;
+}
+
+/* Numeric / Currency Columns */
+.hr-payroll-table .py-col-num {
+    text-align: right !important;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    font-size: 11.5px;
+    padding: 8px 5px !important;
+}
+
+.hr-payroll-table th.py-col-num {
+    text-align: right !important;
+    padding: 8px 5px !important;
+}
+
+.hr-payroll-table .py-col-basic { width: 75px; }
+.hr-payroll-table .py-col-ot { width: 55px; }
+.hr-payroll-table .py-col-nd { width: 55px; }
+.hr-payroll-table .py-col-allow { width: 65px; }
+.hr-payroll-table .py-col-gross { width: 80px; }
+.hr-payroll-table .py-col-att-ded { width: 75px; }
+.hr-payroll-table .py-col-sss { width: 60px; }
+.hr-payroll-table .py-col-phil { width: 62px; }
+.hr-payroll-table .py-col-pagibig { width: 58px; }
+.hr-payroll-table .py-col-tax { width: 58px; }
+.hr-payroll-table .py-col-net { width: 85px; }
+
 
 
 
