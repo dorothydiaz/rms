@@ -29,45 +29,18 @@
     </div>
 </div>
 
-<!-- Filters -->
-<div class="hr-card" style="margin-bottom: 18px; padding: 14px 18px;">
-    <form method="GET" action="{{ route('hr.reports.attendance-summary') }}" style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;">
-        <div style="min-width: 150px; flex: 1;">
-            <label class="hr-form-label" style="margin-bottom: 4px; font-size: 12px;">Date From</label>
-            <input type="date" name="date_from" value="{{ $startDate }}" class="hr-input" style="padding: 7px 10px; font-size: 13px;">
-        </div>
-        <div style="min-width: 150px; flex: 1;">
-            <label class="hr-form-label" style="margin-bottom: 4px; font-size: 12px;">Date To</label>
-            <input type="date" name="date_to" value="{{ $endDate }}" class="hr-input" style="padding: 7px 10px; font-size: 13px;">
-        </div>
-        <div style="min-width: 180px; flex: 1;">
-            <label class="hr-form-label" style="margin-bottom: 4px; font-size: 12px;">Branch</label>
-            <select name="branch_id" class="hr-select" style="padding: 7px 10px; font-size: 13px;">
-                <option value="">All Branches</option>
-                @foreach($branches as $b)
-                    <option value="{{ $b->id }}" {{ request('branch_id') == $b->id ? 'selected' : '' }}>{{ $b->name }}</option>
-                @endforeach
-            </select>
-        </div>
-        <div style="min-width: 200px; flex: 1;">
-            <label class="hr-form-label" style="margin-bottom: 4px; font-size: 12px;">Employee</label>
-            <select name="employee_id" class="hr-select" style="padding: 7px 10px; font-size: 13px;">
-                <option value="">All Employees</option>
-                @foreach($employees as $e)
-                    <option value="{{ $e->id }}" {{ request('employee_id') == $e->id ? 'selected' : '' }}>{{ $e->full_name }} ({{ $e->employee_id }})</option>
-                @endforeach
-            </select>
-        </div>
-        <div style="display: flex; gap: 8px;">
-            <button type="submit" class="hr-btn hr-btn-primary" style="padding: 8px 16px;">
-                <i class="ph ph-funnel"></i> Filter
-            </button>
-            <a href="{{ route('hr.reports.attendance-summary') }}" class="hr-btn hr-btn-secondary" style="padding: 8px 12px;">
-                Reset
-            </a>
-        </div>
-    </form>
-</div>
+<!-- Multi-Filters -->
+<x-report-filters 
+    :action="route('hr.reports.attendance-summary')"
+    :branches="$branches"
+    :departments="$departments"
+    :companies="$companies"
+    :employees="$employees"
+    :startDate="$startDate"
+    :endDate="$endDate"
+    :showStatus="true"
+    :showSource="true"
+/>
 
 <!-- Table Card -->
 <div class="hr-card" style="padding: 0; overflow: hidden;">
@@ -109,6 +82,9 @@
                         <td style="padding: 12px 14px; font-size: 12px;">
                             <div style="font-weight: 500; color: #334155;">{{ $s->employee?->branch?->name ?? '—' }}</div>
                             <div style="color: #64748b; font-size: 11px;">{{ $s->employee?->position?->name ?? 'Staff' }}</div>
+                            @if($s->employee?->company_or_agency)
+                                <div style="font-size: 10.5px; color: #6366f1; font-weight: 500;">{{ $s->employee->company_or_agency }}</div>
+                            @endif
                         </td>
                         <td style="padding: 12px 14px; text-align: center; font-weight: 500; font-size: 12.5px;">
                             {{ $s->logged_days }}

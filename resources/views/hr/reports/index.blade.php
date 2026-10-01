@@ -29,24 +29,54 @@
             </div>
             <form method="GET" action="{{ route('hr.reports.export.employees') }}" style="margin-top: 16px;">
                 <div class="hr-form-group">
-                    <label class="hr-form-label">Branch Filter</label>
-                    <select name="branch_id" class="hr-select">
-                        <option value="">-- All Branches --</option>
-                        @foreach($branches as $b)
-                            <option value="{{ $b->id }}">{{ $b->name }}</option>
-                        @endforeach
-                    </select>
+                    <label class="hr-form-label">Search Staff</label>
+                    <input type="text" name="search" class="hr-input" placeholder="Name or EMP ID..." style="font-size: 12.5px;">
                 </div>
-                <div class="hr-form-group" style="margin-top: 10px;">
-                    <label class="hr-form-label">Department Filter</label>
-                    <select name="department_id" class="hr-select">
-                        <option value="">-- All Departments --</option>
-                        @foreach($departments as $d)
-                            <option value="{{ $d->id }}">{{ $d->name }}</option>
-                        @endforeach
-                    </select>
+                <div class="hr-form-grid" style="margin-top: 8px;">
+                    <div class="hr-form-group">
+                        <label class="hr-form-label">Branch</label>
+                        <select name="branch_id" class="hr-select">
+                            <option value="">-- All Branches --</option>
+                            @foreach($branches as $b)
+                                <option value="{{ $b->id }}">{{ $b->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="hr-form-group">
+                        <label class="hr-form-label">Company / Agency</label>
+                        <select name="company_id" class="hr-select">
+                            <option value="">-- All Companies --</option>
+                            @foreach($companies as $c)
+                                <option value="{{ $c->id }}">{{ $c->name }} ({{ $c->type ?? 'Company' }})</option>
+                            @endforeach
+                        </select>
+                    </div>
                 </div>
-                <div style="margin-top: 22px;">
+                <div class="hr-form-grid" style="margin-top: 8px;">
+                    <div class="hr-form-group">
+                        <label class="hr-form-label">Department</label>
+                        <select name="department_id" class="hr-select">
+                            <option value="">-- All Departments --</option>
+                            @foreach($departments as $d)
+                                <option value="{{ $d->id }}">{{ $d->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="hr-form-group">
+                        <label class="hr-form-label">Status</label>
+                        <select name="employment_status" class="hr-select">
+                            <option value="">-- All Statuses --</option>
+                            <option value="ACTIVE_ALL">Active Staff Only</option>
+                            <option value="Active">Active</option>
+                            <option value="Probationary">Probationary</option>
+                            <option value="Regular">Regular</option>
+                            <option value="Contractual">Contractual</option>
+                            <option value="Resigned">Resigned</option>
+                            <option value="Terminated">Terminated</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="margin-top: 18px;">
                     <button type="submit" class="hr-btn hr-btn-primary" style="width: 100%; justify-content: center;">
                         <i class="ph ph-download-simple"></i>
                         <span>Download Employee CSV</span>
@@ -79,16 +109,43 @@
                         <input type="date" name="end_date" class="hr-input" value="{{ date('Y-m-d') }}">
                     </div>
                 </div>
-                <div class="hr-form-group" style="margin-top: 10px;">
-                    <label class="hr-form-label">Branch Filter</label>
-                    <select name="branch_id" class="hr-select">
-                        <option value="">-- All Branches --</option>
-                        @foreach($branches as $b)
-                            <option value="{{ $b->id }}">{{ $b->name }}</option>
-                        @endforeach
+                <div class="hr-form-group" style="margin-top: 8px;">
+                    <label class="hr-form-label">Search Staff</label>
+                    <input type="text" name="search" class="hr-input" placeholder="Name or EMP ID..." style="font-size: 12.5px;">
+                </div>
+                <div class="hr-form-grid" style="margin-top: 8px;">
+                    <div class="hr-form-group">
+                        <label class="hr-form-label">Branch</label>
+                        <select name="branch_id" class="hr-select">
+                            <option value="">-- All Branches --</option>
+                            @foreach($branches as $b)
+                                <option value="{{ $b->id }}">{{ $b->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="hr-form-group">
+                        <label class="hr-form-label">Company / Agency</label>
+                        <select name="company_id" class="hr-select">
+                            <option value="">-- All Companies --</option>
+                            @foreach($companies as $c)
+                                <option value="{{ $c->id }}">{{ $c->name }} ({{ $c->type ?? 'Company' }})</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="hr-form-group" style="margin-top: 8px;">
+                    <label class="hr-form-label">Status</label>
+                    <select name="employment_status" class="hr-select">
+                        <option value="">-- All Statuses --</option>
+                        <option value="ACTIVE_ALL">Active Staff Only</option>
+                        <option value="Active">Active</option>
+                        <option value="Probationary">Probationary</option>
+                        <option value="Regular">Regular</option>
+                        <option value="Contractual">Contractual</option>
+                        <option value="Resigned">Resigned</option>
                     </select>
                 </div>
-                <div style="margin-top: 22px;">
+                <div style="margin-top: 18px;">
                     <button type="submit" class="hr-btn hr-btn-primary" style="width: 100%; justify-content: center;">
                         <i class="ph ph-download-simple"></i>
                         <span>Download Attendance CSV</span>
@@ -120,10 +177,43 @@
                         @endforeach
                     </select>
                 </div>
-                <div style="padding: 10px 0; font-size: 12px; color: #64748b;">
-                    Includes both Employee and Employer share calculations for DOLE / BIR compliance audits.
+                <div class="hr-form-group" style="margin-top: 8px;">
+                    <label class="hr-form-label">Search Staff</label>
+                    <input type="text" name="search" class="hr-input" placeholder="Name or EMP ID..." style="font-size: 12.5px;">
                 </div>
-                <div style="margin-top: 22px;">
+                <div class="hr-form-grid" style="margin-top: 8px;">
+                    <div class="hr-form-group">
+                        <label class="hr-form-label">Branch</label>
+                        <select name="branch_id" class="hr-select">
+                            <option value="">-- All Branches --</option>
+                            @foreach($branches as $b)
+                                <option value="{{ $b->id }}">{{ $b->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="hr-form-group">
+                        <label class="hr-form-label">Company / Agency</label>
+                        <select name="company_id" class="hr-select">
+                            <option value="">-- All Companies --</option>
+                            @foreach($companies as $c)
+                                <option value="{{ $c->id }}">{{ $c->name }} ({{ $c->type ?? 'Company' }})</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="hr-form-group" style="margin-top: 8px;">
+                    <label class="hr-form-label">Status</label>
+                    <select name="employment_status" class="hr-select">
+                        <option value="">-- All Statuses --</option>
+                        <option value="ACTIVE_ALL">Active Staff Only</option>
+                        <option value="Active">Active</option>
+                        <option value="Probationary">Probationary</option>
+                        <option value="Regular">Regular</option>
+                        <option value="Contractual">Contractual</option>
+                        <option value="Resigned">Resigned</option>
+                    </select>
+                </div>
+                <div style="margin-top: 18px;">
                     <button type="submit" class="hr-btn hr-btn-primary" style="width: 100%; justify-content: center;">
                         <i class="ph ph-download-simple"></i>
                         <span>Download Payroll CSV</span>

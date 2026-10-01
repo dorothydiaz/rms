@@ -29,45 +29,18 @@
     </div>
 </div>
 
-<!-- Filters -->
-<div class="hr-card" style="margin-bottom: 18px; padding: 14px 18px;">
-    <form method="GET" action="{{ route('hr.reports.manual-entries-history') }}" style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;">
-        <div style="min-width: 150px; flex: 1;">
-            <label class="hr-form-label" style="margin-bottom: 4px; font-size: 12px;">Date From</label>
-            <input type="date" name="date_from" value="{{ request('date_from') }}" class="hr-input" style="padding: 7px 10px; font-size: 13px;">
-        </div>
-        <div style="min-width: 150px; flex: 1;">
-            <label class="hr-form-label" style="margin-bottom: 4px; font-size: 12px;">Date To</label>
-            <input type="date" name="date_to" value="{{ request('date_to') }}" class="hr-input" style="padding: 7px 10px; font-size: 13px;">
-        </div>
-        <div style="min-width: 180px; flex: 1;">
-            <label class="hr-form-label" style="margin-bottom: 4px; font-size: 12px;">Branch</label>
-            <select name="branch_id" class="hr-select" style="padding: 7px 10px; font-size: 13px;">
-                <option value="">All Branches</option>
-                @foreach($branches as $b)
-                    <option value="{{ $b->id }}" {{ request('branch_id') == $b->id ? 'selected' : '' }}>{{ $b->name }}</option>
-                @endforeach
-            </select>
-        </div>
-        <div style="min-width: 200px; flex: 1;">
-            <label class="hr-form-label" style="margin-bottom: 4px; font-size: 12px;">Employee</label>
-            <select name="employee_id" class="hr-select" style="padding: 7px 10px; font-size: 13px;">
-                <option value="">All Employees</option>
-                @foreach($employees as $e)
-                    <option value="{{ $e->id }}" {{ request('employee_id') == $e->id ? 'selected' : '' }}>{{ $e->full_name }} ({{ $e->employee_id }})</option>
-                @endforeach
-            </select>
-        </div>
-        <div style="display: flex; gap: 8px;">
-            <button type="submit" class="hr-btn hr-btn-primary" style="padding: 8px 16px;">
-                <i class="ph ph-funnel"></i> Filter
-            </button>
-            <a href="{{ route('hr.reports.manual-entries-history') }}" class="hr-btn hr-btn-secondary" style="padding: 8px 12px;">
-                Reset
-            </a>
-        </div>
-    </form>
-</div>
+<!-- Multi-Filters -->
+<x-report-filters 
+    :action="route('hr.reports.manual-entries-history')"
+    :branches="$branches"
+    :departments="$departments"
+    :companies="$companies"
+    :employees="$employees"
+    :startDate="request('date_from')"
+    :endDate="request('date_to')"
+    :showStatus="true"
+    :showSource="true"
+/>
 
 <!-- Table Card -->
 <div class="hr-card" style="padding: 0; overflow: hidden;">

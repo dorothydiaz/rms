@@ -31,35 +31,19 @@
     @endif
 </div>
 
-<!-- Employee & Date Selection Card -->
-<div class="hr-card" style="margin-bottom: 20px; padding: 16px 20px;">
-    <form method="GET" action="{{ route('hr.reports.individual-attendance-summary') }}" style="display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-end;">
-        <div style="min-width: 280px; flex: 2;">
-            <label class="hr-form-label" style="margin-bottom: 5px; font-size: 12.5px; font-weight: 600;">Select Employee *</label>
-            <select name="employee_id" class="hr-select" required style="padding: 8px 12px; font-size: 13.5px;">
-                <option value="">-- Choose Employee --</option>
-                @foreach($employees as $e)
-                    <option value="{{ $e->id }}" {{ ($employee && $employee->id == $e->id) || request('employee_id') == $e->id ? 'selected' : '' }}>
-                        {{ $e->full_name }} &bull; {{ $e->employee_id }} ({{ $e->branch?->name ?? 'All Branches' }})
-                    </option>
-                @endforeach
-            </select>
-        </div>
-        <div style="min-width: 150px; flex: 1;">
-            <label class="hr-form-label" style="margin-bottom: 5px; font-size: 12px;">Start Date</label>
-            <input type="date" name="date_from" value="{{ $startDate }}" class="hr-input" style="padding: 7px 10px; font-size: 13px;">
-        </div>
-        <div style="min-width: 150px; flex: 1;">
-            <label class="hr-form-label" style="margin-bottom: 5px; font-size: 12px;">End Date</label>
-            <input type="date" name="date_to" value="{{ $endDate }}" class="hr-input" style="padding: 7px 10px; font-size: 13px;">
-        </div>
-        <div style="display: flex; gap: 8px;">
-            <button type="submit" class="hr-btn hr-btn-primary" style="padding: 8px 18px;">
-                <i class="ph ph-magnifying-glass"></i> Generate Report
-            </button>
-        </div>
-    </form>
-</div>
+<!-- Multi-Filters -->
+<x-report-filters 
+    :action="route('hr.reports.individual-attendance-summary')"
+    :branches="$branches"
+    :departments="$departments"
+    :companies="$companies"
+    :employees="$employees"
+    :startDate="$startDate"
+    :endDate="$endDate"
+    :showStatus="true"
+    :showSource="true"
+    :showEmployeeDropdown="true"
+/>
 
 @if($employee)
     <!-- Employee Header Profile Info -->
@@ -73,8 +57,10 @@
                     <h2 style="font-family: var(--font-heading); font-size: 18px; font-weight: 700; color: #0f172a; margin: 0;">
                         {{ $employee->full_name }}
                     </h2>
-                    <div style="font-size: 12.5px; color: #64748b; margin-top: 3px; display: flex; gap: 12px; flex-wrap: wrap;">
+                    <div style="font-size: 12.5px; color: #64748b; margin-top: 3px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
                         <span><strong>ID:</strong> {{ $employee->employee_id }}</span>
+                        <span><span class="hr-badge hr-badge-purple" style="font-size: 11px;">{{ $employee->employment_status }}</span></span>
+                        <span><strong>Company/Agency:</strong> {{ $employee->company_or_agency }}</span>
                         <span><strong>Branch:</strong> {{ $employee->branch?->name ?? '—' }}</span>
                         <span><strong>Dept:</strong> {{ $employee->department?->name ?? '—' }}</span>
                         <span><strong>Position:</strong> {{ $employee->position?->name ?? 'Staff' }}</span>

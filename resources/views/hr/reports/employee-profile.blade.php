@@ -31,27 +31,18 @@
     @endif
 </div>
 
-<!-- Employee Selector -->
-<div class="hr-card" style="margin-bottom: 20px; padding: 16px 20px;">
-    <form method="GET" action="{{ route('hr.reports.employee-attendance-profile') }}" style="display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-end;">
-        <div style="min-width: 320px; flex: 1;">
-            <label class="hr-form-label" style="margin-bottom: 5px; font-size: 12.5px; font-weight: 600;">Select Employee Profile *</label>
-            <select name="employee_id" class="hr-select" required onchange="this.form.submit()" style="padding: 8px 12px; font-size: 13.5px;">
-                <option value="">-- Choose Employee --</option>
-                @foreach($employees as $e)
-                    <option value="{{ $e->id }}" {{ ($employee && $employee->id == $e->id) || request('employee_id') == $e->id ? 'selected' : '' }}>
-                        {{ $e->full_name }} &bull; {{ $e->employee_id }} ({{ $e->branch?->name ?? 'All Branches' }})
-                    </option>
-                @endforeach
-            </select>
-        </div>
-        <div>
-            <button type="submit" class="hr-btn hr-btn-primary" style="padding: 8px 18px;">
-                <i class="ph ph-magnifying-glass"></i> Load Profile
-            </button>
-        </div>
-    </form>
-</div>
+<!-- Multi-Filters -->
+<x-report-filters 
+    :action="route('hr.reports.employee-attendance-profile')"
+    :branches="$branches"
+    :departments="$departments"
+    :companies="$companies"
+    :employees="$employees"
+    :showDates="false"
+    :showStatus="true"
+    :showSource="true"
+    :showEmployeeDropdown="true"
+/>
 
 @if($employee)
     <!-- Employee 360 Card -->
@@ -65,8 +56,10 @@
                     <h2 style="font-family: var(--font-heading); font-size: 20px; font-weight: 700; color: #0f172a; margin: 0;">
                         {{ $employee->full_name }}
                     </h2>
-                    <div style="display: flex; gap: 12px; font-size: 13px; color: #64748b; margin-top: 4px; flex-wrap: wrap;">
+                    <div style="display: flex; gap: 12px; font-size: 13px; color: #64748b; margin-top: 4px; flex-wrap: wrap; align-items: center;">
                         <span><i class="ph ph-identification-badge"></i> {{ $employee->employee_id }}</span>
+                        <span><span class="hr-badge hr-badge-purple" style="font-size: 11px;">{{ $employee->employment_status }}</span></span>
+                        <span><i class="ph ph-buildings"></i> {{ $employee->company_or_agency }}</span>
                         <span>&bull;</span>
                         <span><i class="ph ph-storefront"></i> {{ $employee->branch?->name ?? 'No Branch' }}</span>
                         <span>&bull;</span>

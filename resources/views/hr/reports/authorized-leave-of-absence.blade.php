@@ -88,101 +88,58 @@
 
 </div>
 
-<!-- Filter Bar -->
-<div class="hr-card" style="margin-bottom: 20px; padding: 16px 20px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px;">
-    <form method="GET" action="{{ route('hr.reports.authorized-leave-of-absence') }}" style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;">
-        
-        <!-- Date From -->
-        <div style="min-width: 140px; flex: 1;">
-            <label class="hr-form-label" style="margin-bottom: 4px; font-size: 11.5px; font-weight: 600;">Date From</label>
-            <input type="date" name="date_from" value="{{ $startDate }}" class="hr-input" style="padding: 6px 10px; font-size: 12.5px; height: 34px;">
-        </div>
+<!-- Multi-Filter Bar -->
+<x-report-filters 
+    :action="route('hr.reports.authorized-leave-of-absence')"
+    :branches="$branches"
+    :departments="$departments"
+    :companies="$companies"
+    :employees="$employees"
+    :startDate="$startDate"
+    :endDate="$endDate"
+    :showStatus="true"
+    :showSource="true"
+>
+    <!-- Leave Type -->
+    <div style="min-width: 160px;">
+        <label class="hr-form-label" style="margin-bottom: 4px; font-size: 11.5px; font-weight: 600; color: #475569; display: flex; align-items: center; gap: 4px;">
+            <i class="ph ph-tag"></i> Leave Type
+        </label>
+        <select name="leave_type_id" class="hr-select" style="padding: 6px 10px; font-size: 12.5px; height: 34px; width: 100%;">
+            <option value="">All Leave Types</option>
+            @foreach($leaveTypes as $lt)
+                <option value="{{ $lt->id }}" {{ (string) request('leave_type_id') === (string) $lt->id ? 'selected' : '' }}>
+                    {{ $lt->name }} ({{ $lt->code }})
+                </option>
+            @endforeach
+        </select>
+    </div>
 
-        <!-- Date To -->
-        <div style="min-width: 140px; flex: 1;">
-            <label class="hr-form-label" style="margin-bottom: 4px; font-size: 11.5px; font-weight: 600;">Date To</label>
-            <input type="date" name="date_to" value="{{ $endDate }}" class="hr-input" style="padding: 6px 10px; font-size: 12.5px; height: 34px;">
-        </div>
+    <!-- Pay Status -->
+    <div style="min-width: 140px;">
+        <label class="hr-form-label" style="margin-bottom: 4px; font-size: 11.5px; font-weight: 600; color: #475569; display: flex; align-items: center; gap: 4px;">
+            <i class="ph ph-currency-circle-dollar"></i> Pay Status
+        </label>
+        <select name="is_paid" class="hr-select" style="padding: 6px 10px; font-size: 12.5px; height: 34px; width: 100%;">
+            <option value="">All (Paid & Unpaid)</option>
+            <option value="1" {{ request('is_paid') === '1' ? 'selected' : '' }}>Paid Leave</option>
+            <option value="0" {{ request('is_paid') === '0' ? 'selected' : '' }}>Unpaid Leave</option>
+        </select>
+    </div>
 
-        <!-- Leave Type -->
-        <div style="min-width: 160px; flex: 1;">
-            <label class="hr-form-label" style="margin-bottom: 4px; font-size: 11.5px; font-weight: 600;">Leave Type</label>
-            <select name="leave_type_id" class="hr-select" style="padding: 6px 10px; font-size: 12.5px; height: 34px;">
-                <option value="">All Leave Types</option>
-                @foreach($leaveTypes as $lt)
-                    <option value="{{ $lt->id }}" {{ request('leave_type_id') == $lt->id ? 'selected' : '' }}>
-                        {{ $lt->name }} ({{ $lt->code }})
-                    </option>
-                @endforeach
-            </select>
-        </div>
-
-        <!-- Pay Status -->
-        <div style="min-width: 130px; flex: 1;">
-            <label class="hr-form-label" style="margin-bottom: 4px; font-size: 11.5px; font-weight: 600;">Pay Status</label>
-            <select name="is_paid" class="hr-select" style="padding: 6px 10px; font-size: 12.5px; height: 34px;">
-                <option value="">All (Paid & Unpaid)</option>
-                <option value="1" {{ request('is_paid') === '1' ? 'selected' : '' }}>Paid Leave</option>
-                <option value="0" {{ request('is_paid') === '0' ? 'selected' : '' }}>Unpaid Leave</option>
-            </select>
-        </div>
-
-        <!-- Branch -->
-        <div style="min-width: 150px; flex: 1;">
-            <label class="hr-form-label" style="margin-bottom: 4px; font-size: 11.5px; font-weight: 600;">Branch</label>
-            <select name="branch_id" class="hr-select" style="padding: 6px 10px; font-size: 12.5px; height: 34px;">
-                <option value="">All Branches</option>
-                @foreach($branches as $b)
-                    <option value="{{ $b->id }}" {{ request('branch_id') == $b->id ? 'selected' : '' }}>{{ $b->name }}</option>
-                @endforeach
-            </select>
-        </div>
-
-        <!-- Department -->
-        <div style="min-width: 150px; flex: 1;">
-            <label class="hr-form-label" style="margin-bottom: 4px; font-size: 11.5px; font-weight: 600;">Department</label>
-            <select name="department_id" class="hr-select" style="padding: 6px 10px; font-size: 12.5px; height: 34px;">
-                <option value="">All Departments</option>
-                @foreach($departments as $d)
-                    <option value="{{ $d->id }}" {{ request('department_id') == $d->id ? 'selected' : '' }}>{{ $d->name }}</option>
-                @endforeach
-            </select>
-        </div>
-
-        <!-- Employee -->
-        <div style="min-width: 170px; flex: 1;">
-            <label class="hr-form-label" style="margin-bottom: 4px; font-size: 11.5px; font-weight: 600;">Employee</label>
-            <select name="employee_id" class="hr-select" style="padding: 6px 10px; font-size: 12.5px; height: 34px;">
-                <option value="">All Employees</option>
-                @foreach($employees as $e)
-                    <option value="{{ $e->id }}" {{ request('employee_id') == $e->id ? 'selected' : '' }}>
-                        {{ $e->full_name }} ({{ $e->employee_id }})
-                    </option>
-                @endforeach
-            </select>
-        </div>
-
-        <!-- Approval Status -->
-        <div style="min-width: 130px; flex: 1;">
-            <label class="hr-form-label" style="margin-bottom: 4px; font-size: 11.5px; font-weight: 600;">Authorization Status</label>
-            <select name="status" class="hr-select" style="padding: 6px 10px; font-size: 12.5px; height: 34px;">
-                <option value="Approved" {{ $status === 'Approved' ? 'selected' : '' }}>Approved (Authorized)</option>
-                <option value="ALL" {{ $status === 'ALL' ? 'selected' : '' }}>All Statuses</option>
-                <option value="Pending" {{ $status === 'Pending' ? 'selected' : '' }}>Pending Review</option>
-                <option value="Rejected" {{ $status === 'Rejected' ? 'selected' : '' }}>Rejected</option>
-            </select>
-        </div>
-
-        <div style="display: flex; gap: 8px;">
-            <button type="submit" class="hr-btn hr-btn-primary" style="height: 34px; padding: 0 16px; font-size: 12.5px;">
-                <i class="ph ph-funnel"></i> Filter
-            </button>
-            <a href="{{ route('hr.reports.authorized-leave-of-absence') }}" class="hr-btn hr-btn-secondary" style="height: 34px; padding: 0 12px; font-size: 12.5px;">
-                Reset
-            </a>
-        </div>
-    </form>
-</div>
+    <!-- Authorization Status -->
+    <div style="min-width: 150px;">
+        <label class="hr-form-label" style="margin-bottom: 4px; font-size: 11.5px; font-weight: 600; color: #475569; display: flex; align-items: center; gap: 4px;">
+            <i class="ph ph-shield-check"></i> Auth Status
+        </label>
+        <select name="status" class="hr-select" style="padding: 6px 10px; font-size: 12.5px; height: 34px; width: 100%;">
+            <option value="Approved" {{ ($status ?? request('status', 'Approved')) === 'Approved' ? 'selected' : '' }}>Approved (Authorized)</option>
+            <option value="ALL" {{ ($status ?? request('status')) === 'ALL' ? 'selected' : '' }}>All Statuses</option>
+            <option value="Pending" {{ ($status ?? request('status')) === 'Pending' ? 'selected' : '' }}>Pending Review</option>
+            <option value="Rejected" {{ ($status ?? request('status')) === 'Rejected' ? 'selected' : '' }}>Rejected</option>
+        </select>
+    </div>
+</x-report-filters>
 
 <!-- Table Card -->
 <div class="hr-card" style="padding: 0; overflow: hidden; border: 1px solid #e2e8f0; border-radius: 14px; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
@@ -251,6 +208,9 @@
                         <td style="padding: 12px 16px; font-size: 12.5px;">
                             <div style="font-weight: 500; color: #334155;">{{ $emp?->branch?->name ?? 'Head Office' }}</div>
                             <div style="font-size: 11.5px; color: #64748b;">{{ $emp?->department?->name ?? 'Unassigned' }}</div>
+                            @if($emp?->company_or_agency)
+                                <div style="font-size: 10.5px; color: #6366f1; font-weight: 500;">{{ $emp->company_or_agency }}</div>
+                            @endif
                         </td>
 
                         <!-- Leave Type -->
