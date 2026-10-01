@@ -2560,7 +2560,7 @@
             <div class="hr-modal-body">
                 <div class="hr-form-group">
                     <label class="hr-form-label">Current Basic Salary</label>
-                    <input type="text" class="hr-input" readonly value="₱{{ number_format($employee->basic_salary, 2) }}" style="background: #f8fafc; font-weight: 700; color: #7c3aed;">
+                    <input type="text" class="hr-input" readonly value="₱{{ number_format($employee->basic_salary, 2) }}" style="background: #f8fafc; font-weight: 400; color: #7c3aed;">
                 </div>
                 <div class="hr-form-group" style="margin-top: 12px;">
                     <label class="hr-form-label">New Basic Salary (₱) <span class="text-danger">*</span></label>
@@ -2606,7 +2606,7 @@
             <div class="hr-modal-body">
                 <div class="hr-form-group">
                     <label class="hr-form-label">Current Status</label>
-                    <input type="text" class="hr-input" readonly value="{{ $employee->employment_status }}" style="background: #f8fafc; font-weight: 600;">
+                    <input type="text" class="hr-input" readonly value="{{ $employee->employment_status }}" style="background: #f8fafc; font-weight: 400;">
                 </div>
                 <div class="hr-form-group" style="margin-top: 12px;">
                     <label class="hr-form-label">New Status <span class="text-danger">*</span></label>
@@ -2713,7 +2713,7 @@
             <div class="hr-modal-body">
                 <div class="hr-form-group">
                     <label class="hr-form-label">Employee</label>
-                    <input type="text" class="hr-input" readonly value="{{ $employee->full_name }}" style="background: #f8fafc; font-weight: 600;">
+                    <input type="text" class="hr-input" readonly value="{{ $employee->full_name }}" style="background: #f8fafc; font-weight: 400;">
                 </div>
                 <div class="hr-form-group" style="margin-top: 12px;">
                     <label class="hr-form-label">Stated Purpose <span class="text-danger">*</span></label>
@@ -2951,7 +2951,7 @@
             <div class="hr-modal-body">
                 <div class="hr-form-group">
                     <label class="hr-form-label">Replacing Document</label>
-                    <input type="text" id="replaceDocName" class="hr-input" readonly style="background: #f8fafc; font-weight: 600;">
+                    <input type="text" id="replaceDocName" class="hr-input" readonly style="background: #f8fafc; font-weight: 400;">
                 </div>
                 <div class="hr-form-group" style="margin-top: 12px;">
                     <label class="hr-form-label">New Document File <span class="text-danger">*</span></label>

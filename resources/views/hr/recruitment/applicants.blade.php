@@ -1151,7 +1151,7 @@
                 <input type="hidden" name="applicant_id" id="sched_applicant_id">
                 <div class="hr-form-group" style="margin-bottom: 12px;">
                     <label class="hr-form-label">Candidate</label>
-                    <input type="text" id="sched_applicant_display" class="hr-input" readonly style="background: #f8fafc; font-weight: 700;">
+                    <input type="text" id="sched_applicant_display" class="hr-input" readonly style="background: #f8fafc; font-weight: 400;">
                 </div>
 
                 <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 12px;">
@@ -1273,7 +1273,7 @@
                     <!-- Overall Rating -->
                     <div class="hr-rating-row" style="background: rgba(168, 85, 247, 0.06); border-color: rgba(168, 85, 247, 0.3);">
                         <span style="font-size: 13px; font-weight: 700; color: #9333ea;">Overall Score (1-5)</span>
-                        <select name="rating_overall" class="hr-select" style="width: 80px; font-weight: 800; color: #9333ea;" required>
+                        <select name="rating_overall" class="hr-select" style="width: 80px; font-weight: 400; color: #9333ea;" required>
                             @for($i=5; $i>=1; $i--) <option value="{{ $i }}">{{ $i }} / 5</option> @endfor
                         </select>
                     </div>
@@ -1314,7 +1314,7 @@
                 <input type="hidden" name="applicant_id" id="assess_applicant_id">
                 <div class="hr-form-group" style="margin-bottom: 12px;">
                     <label class="hr-form-label">Candidate</label>
-                    <input type="text" id="assess_applicant_display" class="hr-input" readonly style="background: #f8fafc; font-weight: 700;">
+                    <input type="text" id="assess_applicant_display" class="hr-input" readonly style="background: #f8fafc; font-weight: 400;">
                 </div>
 
                 <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 12px;">
@@ -1420,8 +1420,8 @@
 
                 <div class="hr-form-group" style="margin-bottom: 14px;">
                     <label class="hr-form-label">Final Hiring Decision *</label>
-                    <select name="decision" class="hr-select" required style="font-weight: 700;">
-                        <option value="Hire" style="color: #059669; font-weight: 700;">Hire (Proceed Automatically to Job Offer)</option>
+                    <select name="decision" class="hr-select" required style="font-weight: 400;">
+                        <option value="Hire" style="color: #059669; font-weight: 400;">Hire (Proceed Automatically to Job Offer)</option>
                         <option value="Hold" style="color: #d97706;">Hold (Wait for other candidates)</option>
                         <option value="Reject" style="color: #dc2626;">Reject Candidate</option>
                     </select>
@@ -1462,7 +1462,7 @@
                 <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 12px;">
                     <div class="hr-form-group">
                         <label class="hr-form-label">Auto-Generated Employee ID *</label>
-                        <input type="text" name="employee_id" id="convert_employee_id" class="hr-input" required style="font-weight: 800; color: #059669; letter-spacing: 0.5px;">
+                        <input type="text" name="employee_id" id="convert_employee_id" class="hr-input" required style="font-weight: 400; color: #059669; letter-spacing: 0.5px;">
                     </div>
 
                     <div class="hr-form-group">

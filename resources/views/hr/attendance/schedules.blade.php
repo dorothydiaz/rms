@@ -849,7 +849,7 @@
                 <label class="hr-form-label" style="font-size: 11px; font-weight: 800; color: #0f172a; margin-bottom: 3px; text-transform: uppercase;">
                     Shift Format *
                 </label>
-                <select name="shift_template_id" id="schedShiftTemplateIdModal" class="sched-input-text-sm" style="font-weight: 700;">
+                <select name="shift_template_id" id="schedShiftTemplateIdModal" class="sched-input-text-sm" style="font-weight: 400;">
                     <option value="">Select Shift Format</option>
                     @foreach($shiftTemplates as $st)
                         <option value="{{ $st->id }}" {{ $loop->first ? 'selected' : '' }}>
@@ -1125,7 +1125,7 @@
                 <label class="hr-form-label" style="font-size: 11px; font-weight: 600; color: #0f172a; margin-bottom: 3px; text-transform: uppercase;">
                     Shift Format *
                 </label>
-                <select id="batchSchedShiftTemplateId" class="sched-input-text-sm" style="font-weight: 600; height: 36px;">
+                <select id="batchSchedShiftTemplateId" class="sched-input-text-sm" style="font-weight: 400; height: 36px;">
                     <option value="">Select Shift Format</option>
                     @foreach($shiftTemplates as $st)
                         <option value="{{ $st->id }}" 
@@ -1763,7 +1763,7 @@
     background: #f8fafc;
     color: #334155;
     outline: none;
-    font-weight: 600;
+    font-weight: 400;
 }
 
 .sched-btn-clear-filters {
@@ -3214,7 +3214,7 @@
     border-radius: 8px;
     padding: 4px 8px;
     font-size: 12px;
-    font-weight: 700;
+    font-weight: 400;
     color: #3b0764;
     background: #ffffff;
     outline: none;
@@ -3255,7 +3255,7 @@
     border-radius: 8px;
     padding: 6px 10px;
     font-size: 12px;
-    font-weight: 600;
+    font-weight: 400;
     color: #3b0764;
     background: #ffffff;
     outline: none;

@@ -3473,9 +3473,10 @@ select option {
 .hr-modal form {
     display: flex !important;
     flex-direction: column !important;
-    flex: 1 1 auto !important;
+    flex: 1 1 0% !important;
     min-height: 0 !important;
-    height: 100% !important;
+    height: auto !important;
+    max-height: 100% !important;
     overflow: hidden !important;
     background: #ffffff !important;
     margin: 0 !important;
@@ -3696,21 +3697,43 @@ select option {
     position: relative !important;
 }
 
-/* HIGH-VISIBILITY INPUTS & DROPDOWNS INSIDE MODAL (Crisp, High-Contrast Borders) */
+/* HIGH-VISIBILITY INPUTS & DROPDOWNS INSIDE MODAL (Crisp, High-Contrast Borders, Regular Font Weight) */
 .hr-modal .hr-custom-select-trigger,
 .hr-modal .hr-input,
 .hr-modal .hr-select,
+.hr-modal .hr-textarea,
 .hr-modal select,
 .hr-modal textarea.hr-input,
 .hr-modal textarea,
 .hr-modal .form-control,
+.hr-modal .hr-custom-date-wrap input,
 .hr-modal .hr-custom-date-wrap input.hr-input,
 .hr-modal .hr-custom-date-wrap input[type="text"],
+.hr-modal input,
 .hr-modal input[type="date"],
+.hr-modal input[type="time"],
 .hr-modal input[type="text"],
 .hr-modal input[type="email"],
 .hr-modal input[type="number"],
-.hr-modal input[type="password"] {
+.hr-modal input[type="password"],
+.hr-modal input[type="search"],
+.hr-modal input[type="tel"],
+.hr-modal input[type="datetime-local"],
+.hr-modal-overlay input,
+.hr-modal-overlay textarea,
+.hr-modal-overlay select,
+.modal input,
+.modal textarea,
+.modal select,
+.modal-content input,
+.modal-content textarea,
+.modal-content select,
+.sched-custom-dropdown input,
+.sched-custom-dropdown select,
+.sched-custom-dropdown textarea,
+.swal2-modal .swal2-input,
+.swal2-modal .swal2-textarea,
+.swal2-modal .swal2-select {
     width: 100% !important;
     min-height: 42px !important;
     background: #ffffff !important;
@@ -3719,7 +3742,7 @@ select option {
     color: #0f172a !important;
     font-family: inherit !important;
     font-size: 13.5px !important;
-    font-weight: 600 !important;
+    font-weight: 400 !important;
     padding: 9px 14px !important;
     box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05), inset 0 1px 1px #ffffff !important;
     transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease !important;
@@ -3727,7 +3750,8 @@ select option {
 }
 
 /* Ensure flex alignment for the custom select trigger */
-.hr-modal .hr-custom-select-trigger {
+.hr-modal .hr-custom-select-trigger,
+.hr-modal-overlay .hr-custom-select-trigger {
     display: flex !important;
     align-items: center !important;
     justify-content: space-between !important;
@@ -3735,13 +3759,24 @@ select option {
     user-select: none !important;
 }
 
-.hr-modal .hr-custom-select-trigger .hr-select-trigger-text {
+.hr-modal .hr-custom-select-trigger .hr-select-trigger-text,
+.hr-modal-overlay .hr-custom-select-trigger .hr-select-trigger-text,
+.hr-modal .hr-custom-select-option,
+.hr-modal .hr-select-option {
     color: #0f172a !important;
     font-size: 13.5px !important;
-    font-weight: 600 !important;
+    font-weight: 400 !important;
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
+}
+
+.hr-modal input::placeholder,
+.hr-modal textarea::placeholder,
+.hr-modal-overlay input::placeholder,
+.hr-modal-overlay textarea::placeholder {
+    font-weight: 400 !important;
+    color: #94a3b8 !important;
 }
 
 /* Distinct Chevron for modal dropdowns */
@@ -5849,7 +5884,7 @@ select option {
     border: 1.5px solid #cbd5e1 !important;
     border-radius: 10px !important;
     font-size: 13.5px !important;
-    font-weight: 600 !important;
+    font-weight: 400 !important;
     color: #0f172a !important;
     box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05), inset 0 1px 1px #ffffff !important;
     cursor: pointer !important;
@@ -6087,7 +6122,7 @@ input[type="date"]::-webkit-calendar-picker-indicator,
     border-radius: 10px !important;
     padding: 9px 14px !important;
     font-size: 13.5px !important;
-    font-weight: 600 !important;
+    font-weight: 400 !important;
     color: #0f172a !important;
     display: flex !important;
     align-items: center !important;
@@ -6117,7 +6152,7 @@ input[type="date"]::-webkit-calendar-picker-indicator,
     overflow: hidden !important;
     text-overflow: ellipsis !important;
     color: #0f172a !important;
-    font-weight: 600 !important;
+    font-weight: 400 !important;
 }
 
 .hr-select-chevron {
@@ -7572,5 +7607,150 @@ body > .hr-custom-select-menu {
 .hr-timeline-desc {
     font-size: 12.5px;
     color: #475569;
+}
+
+/* ============================================================
+   UNIVERSAL REGULAR FONT WEIGHT FOR ALL MODAL TEXT BOXES & INPUTS
+   Across all pages under HR Operations with modals, all text boxes,
+   inputs, selects, dropdowns, and textareas must display regular
+   (not bolded) font weight.
+   ============================================================ */
+.hr-modal input,
+.hr-modal textarea,
+.hr-modal select,
+.hr-modal .form-control,
+.hr-modal .hr-input,
+.hr-modal .hr-select,
+.hr-modal .hr-textarea,
+.hr-modal .hr-custom-select-trigger,
+.hr-modal .hr-select-trigger-text,
+.hr-modal .hr-custom-date-wrap input,
+.hr-modal .hr-custom-date-wrap input.hr-input,
+.hr-modal .hr-custom-date-wrap input[type="text"],
+.hr-modal .sched-input-time,
+.hr-modal .sched-input-text-sm,
+.hr-modal .sched-input-search,
+.hr-modal .sched-select-filter,
+.hr-modal-overlay input,
+.hr-modal-overlay textarea,
+.hr-modal-overlay select,
+.hr-modal-overlay .form-control,
+.hr-modal-overlay .hr-input,
+.hr-modal-overlay .hr-select,
+.hr-modal-overlay .hr-textarea,
+.hr-modal-overlay .hr-custom-select-trigger,
+.hr-modal-overlay .hr-select-trigger-text,
+.hr-modal-overlay .hr-custom-date-wrap input,
+.hr-modal-overlay .hr-custom-date-wrap input.hr-input,
+.hr-modal-overlay .hr-custom-date-wrap input[type="text"],
+.hr-modal-overlay .sched-input-time,
+.hr-modal-overlay .sched-input-text-sm,
+.hr-modal-overlay .sched-input-search,
+.hr-modal-overlay .sched-select-filter,
+.hr-modal-body input,
+.hr-modal-body textarea,
+.hr-modal-body select,
+.hr-modal-body .form-control,
+.hr-modal-body .hr-input,
+.hr-modal-body .hr-select,
+.hr-modal-body .hr-textarea,
+.hr-modal-body .hr-custom-select-trigger,
+.hr-modal-body .hr-select-trigger-text,
+.hr-modal-body .hr-custom-date-wrap input,
+.hr-modal-body .sched-input-time,
+.hr-modal-body .sched-input-text-sm,
+.modal input,
+.modal textarea,
+.modal select,
+.modal .form-control,
+.modal .hr-input,
+.modal .hr-select,
+.modal .hr-textarea,
+.modal .hr-custom-select-trigger,
+.modal .hr-select-trigger-text,
+.modal-dialog input,
+.modal-dialog textarea,
+.modal-dialog select,
+.modal-dialog .form-control,
+.modal-dialog .hr-input,
+.modal-dialog .hr-select,
+.modal-dialog .hr-textarea,
+.modal-dialog .hr-custom-select-trigger,
+.modal-dialog .hr-select-trigger-text,
+.modal-content input,
+.modal-content textarea,
+.modal-content select,
+.modal-content .form-control,
+.modal-content .hr-input,
+.modal-content .hr-select,
+.modal-content .hr-textarea,
+.modal-content .hr-custom-select-trigger,
+.modal-content .hr-select-trigger-text,
+.modal-box input,
+.modal-box textarea,
+.modal-box select,
+.modal-box .form-control,
+.modal-box .hr-input,
+.modal-body input,
+.modal-body textarea,
+.modal-body select,
+.modal-body .form-control,
+.modal-body .hr-input,
+.modal-body .hr-select,
+.modal-body .hr-textarea,
+.modal-body .hr-custom-select-trigger,
+.modal-body .hr-select-trigger-text,
+[id*="Modal"] input,
+[id*="Modal"] textarea,
+[id*="Modal"] select,
+[id*="Modal"] .form-control,
+[id*="Modal"] .hr-input,
+[id*="Modal"] .hr-select,
+[id*="Modal"] .hr-textarea,
+[id*="Modal"] .hr-custom-select-trigger,
+[id*="Modal"] .hr-select-trigger-text,
+[id*="modal"] input,
+[id*="modal"] textarea,
+[id*="modal"] select,
+[id*="modal"] .form-control,
+[id*="modal"] .hr-input,
+[id*="modal"] .hr-select,
+[id*="modal"] .hr-textarea,
+[id*="modal"] .hr-custom-select-trigger,
+[id*="modal"] .hr-select-trigger-text,
+[class*="modal"] input,
+[class*="modal"] textarea,
+[class*="modal"] select,
+[class*="modal"] .form-control,
+[class*="modal"] .hr-input,
+[class*="modal"] .hr-select,
+[class*="modal"] .hr-textarea,
+[class*="modal"] .hr-custom-select-trigger,
+[class*="modal"] .hr-select-trigger-text,
+.swal2-modal input,
+.swal2-modal textarea,
+.swal2-modal select,
+.swal2-modal .swal2-input,
+.swal2-modal .swal2-textarea,
+.swal2-modal .swal2-select,
+.swal2-popup input,
+.swal2-popup textarea,
+.swal2-popup select {
+    font-weight: 400 !important;
+}
+
+.hr-modal input::placeholder,
+.hr-modal textarea::placeholder,
+.hr-modal-overlay input::placeholder,
+.hr-modal-overlay textarea::placeholder,
+.modal input::placeholder,
+.modal textarea::placeholder,
+.modal-content input::placeholder,
+.modal-content textarea::placeholder,
+[id*="Modal"] input::placeholder,
+[id*="Modal"] textarea::placeholder,
+[id*="modal"] input::placeholder,
+[id*="modal"] textarea::placeholder {
+    font-weight: 400 !important;
 }
 

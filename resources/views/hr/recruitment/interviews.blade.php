@@ -425,7 +425,7 @@
 
                     <div class="hr-rating-row" style="background: rgba(168, 85, 247, 0.06); border-color: rgba(168, 85, 247, 0.3);">
                         <span style="font-size: 13px; font-weight: 600; color: #9333ea;">Overall Score (1-5)</span>
-                        <select name="rating_overall" class="hr-select" style="width: 80px; font-weight: 650; color: #9333ea;" required>
+                        <select name="rating_overall" class="hr-select" style="width: 80px; font-weight: 400; color: #9333ea;" required>
                             @for($i=5; $i>=1; $i--) <option value="{{ $i }}">{{ $i }} / 5</option> @endfor
                         </select>
                     </div>
