@@ -535,12 +535,28 @@ class PeopleController extends Controller
         $employee = Employee::findOrFail($id);
         $request->validate([
             'position_id' => 'required|exists:hr_positions,id',
+            'assigned_position_ids' => 'nullable|array',
+            'assigned_position_ids.*' => 'exists:hr_positions,id',
             'effective_date' => 'required|date',
             'remarks' => 'nullable|string|max:255',
+            'reason' => 'nullable|string|max:255',
         ]);
 
         $oldPos = $employee->position?->name ?? 'Unassigned';
         $newPos = Position::findOrFail($request->position_id)->name;
+
+        $posIds = $request->input('assigned_position_ids');
+        if ($posIds !== null) {
+            $posIds = array_values(array_map('intval', $posIds));
+            if (!in_array((int)$request->position_id, $posIds)) {
+                array_unshift($posIds, (int)$request->position_id);
+            }
+        } else {
+            $posIds = $employee->all_position_ids;
+            if (!in_array((int)$request->position_id, $posIds)) {
+                $posIds[] = (int)$request->position_id;
+            }
+        }
 
         EmploymentHistory::create([
             'employee_id' => $employee->id,
@@ -552,7 +568,10 @@ class PeopleController extends Controller
             'recorded_by' => Auth::id(),
         ]);
 
-        $employee->update(['position_id' => $request->position_id]);
+        $employee->update([
+            'position_id' => $request->position_id,
+            'assigned_position_ids' => $posIds,
+        ]);
         AuditLogger::log('Update', 'Employees', $employee->id, "Position changed to {$newPos} for {$employee->full_name}");
 
         return redirect()->back()->with('success', "Position successfully changed to {$newPos}.");
@@ -564,8 +583,13 @@ class PeopleController extends Controller
         $request->validate([
             'branch_id' => 'required|exists:hr_branches,id',
             'department_id' => 'nullable|exists:hr_departments,id',
+            'assigned_branch_ids' => 'nullable|array',
+            'assigned_branch_ids.*' => 'exists:hr_branches,id',
+            'assigned_department_ids' => 'nullable|array',
+            'assigned_department_ids.*' => 'exists:hr_departments,id',
             'effective_date' => 'required|date',
             'remarks' => 'nullable|string|max:255',
+            'reason' => 'nullable|string|max:255',
         ]);
 
         $oldBranch = $employee->branch?->name ?? 'Unassigned';
@@ -573,12 +597,40 @@ class PeopleController extends Controller
         $oldDept = $employee->department?->name ?? 'None';
         $newDept = $request->department_id ? Department::findOrFail($request->department_id)->name : $oldDept;
 
+        $branchIds = $request->input('assigned_branch_ids');
+        if ($branchIds !== null) {
+            $branchIds = array_values(array_map('intval', $branchIds));
+            if (!in_array((int)$request->branch_id, $branchIds)) {
+                array_unshift($branchIds, (int)$request->branch_id);
+            }
+        } else {
+            $branchIds = $employee->all_branch_ids;
+            if (!in_array((int)$request->branch_id, $branchIds)) {
+                $branchIds[] = (int)$request->branch_id;
+            }
+        }
+
+        $deptIds = $request->input('assigned_department_ids');
+        if ($deptIds !== null) {
+            $deptIds = array_values(array_map('intval', $deptIds));
+            if ($request->department_id && !in_array((int)$request->department_id, $deptIds)) {
+                array_unshift($deptIds, (int)$request->department_id);
+            }
+        } elseif ($request->department_id) {
+            $deptIds = $employee->all_department_ids;
+            if (!in_array((int)$request->department_id, $deptIds)) {
+                $deptIds[] = (int)$request->department_id;
+            }
+        } else {
+            $deptIds = $employee->all_department_ids;
+        }
+
         EmploymentHistory::create([
             'employee_id' => $employee->id,
             'action_type' => 'Transferred',
             'previous_value' => "Branch: {$oldBranch}, Dept: {$oldDept}",
             'new_value' => "Branch: {$newBranch}, Dept: {$newDept}",
-            'remarks' => $request->remarks ?: "Transferred to {$newBranch} ({$newDept})",
+            'remarks' => $request->remarks ?: ($request->reason ?: "Transferred to {$newBranch} ({$newDept})"),
             'effective_date' => $request->effective_date,
             'recorded_by' => Auth::id(),
         ]);
@@ -586,6 +638,8 @@ class PeopleController extends Controller
         $employee->update([
             'branch_id' => $request->branch_id,
             'department_id' => $request->department_id ?: $employee->department_id,
+            'assigned_branch_ids' => $branchIds,
+            'assigned_department_ids' => $deptIds,
         ]);
         AuditLogger::log('Update', 'Employees', $employee->id, "Transferred {$employee->full_name} to {$newBranch}");
 

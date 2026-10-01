@@ -296,15 +296,34 @@
                             </div>
                         </td>
                         <td>
-                            <span style="font-weight: 500; color: #334155;">{{ $deptName }}</span>
+                            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                                <span style="font-weight: 500; color: #334155;">{{ $deptName }}</span>
+                                @if(count($emp->all_department_ids) > 1)
+                                    <span class="hr-badge hr-badge-neutral" style="font-size: 10px; padding: 1px 5px;" title="Assigned Departments: {{ implode(', ', $emp->assigned_department_names) }}">
+                                        +{{ count($emp->all_department_ids) - 1 }}
+                                    </span>
+                                @endif
+                            </div>
                         </td>
                         <td>
-                            <span style="color: #0f172a; font-weight: 500;">{{ $posName }}</span>
+                            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                                <span style="color: #0f172a; font-weight: 500;">{{ $posName }}</span>
+                                @if(count($emp->all_position_ids) > 1)
+                                    <span class="hr-badge hr-badge-neutral" style="font-size: 10px; padding: 1px 5px;" title="Assigned Roles: {{ implode(', ', $emp->assignedPositions()->pluck('name')->toArray()) }}">
+                                        +{{ count($emp->all_position_ids) - 1 }}
+                                    </span>
+                                @endif
+                            </div>
                         </td>
                         <td>
-                            <div style="display: flex; align-items: center; gap: 5px; color: #475569;">
+                            <div style="display: flex; align-items: center; gap: 5px; color: #475569; flex-wrap: wrap;">
                                 <i class="ph ph-storefront" style="color: #94a3b8; font-size: 14px;"></i>
                                 <span>{{ $branchName }}</span>
+                                @if(count($emp->all_branch_ids) > 1)
+                                    <span class="hr-badge hr-badge-neutral" style="font-size: 10px; padding: 1px 5px;" title="Assigned Branches: {{ implode(', ', $emp->assignedBranches()->pluck('name')->toArray()) }}">
+                                        +{{ count($emp->all_branch_ids) - 1 }}
+                                    </span>
+                                @endif
                             </div>
                         </td>
                         <td>
@@ -340,10 +359,10 @@
                                     <a href="{{ route('hr.people.employees.show', $emp->id) }}?action=edit" class="hr-dropdown-item">
                                         <i class="ph ph-pencil-simple"></i> Edit Employee
                                     </a>
-                                    <button type="button" class="hr-dropdown-item" onclick="openChangePositionModal({{ $emp->id }}, '{{ addslashes($emp->full_name) }}', {{ $emp->position_id ?? 'null' }})">
+                                    <button type="button" class="hr-dropdown-item" onclick="openChangePositionModal({{ $emp->id }}, '{{ addslashes($emp->full_name) }}', {{ $emp->position_id ?? 'null' }}, {{ json_encode($emp->all_position_ids) }})">
                                         <i class="ph ph-briefcase"></i> Change Position
                                     </button>
-                                    <button type="button" class="hr-dropdown-item" onclick="openTransferModal({{ $emp->id }}, '{{ addslashes($emp->full_name) }}', {{ $emp->department_id ?? 'null' }}, {{ $emp->branch_id ?? 'null' }})">
+                                    <button type="button" class="hr-dropdown-item" onclick="openTransferModal({{ $emp->id }}, '{{ addslashes($emp->full_name) }}', {{ $emp->department_id ?? 'null' }}, {{ $emp->branch_id ?? 'null' }}, {{ json_encode($emp->all_department_ids) }}, {{ json_encode($emp->all_branch_ids) }})">
                                         <i class="ph ph-arrows-left-right"></i> Transfer
                                     </button>
                                     <button type="button" class="hr-dropdown-item" onclick="openChangeStatusModal({{ $emp->id }}, '{{ addslashes($emp->full_name) }}', '{{ $emp->employment_status }}')">
@@ -512,13 +531,25 @@
                     <input type="text" id="cpQuickEmpName" class="hr-input" readonly style="background: #f8fafc; font-weight: 600;">
                 </div>
                 <div class="hr-form-group" style="margin-top: 12px;">
-                    <label class="hr-form-label">New Position <span class="text-danger">*</span></label>
-                    <select name="position_id" id="cpQuickPositionId" class="hr-select" required>
+                    <label class="hr-form-label">New Primary Position <span class="text-danger">*</span></label>
+                    <select name="position_id" id="cpQuickPositionId" class="hr-select" required onchange="const cb = document.getElementById('cp_quick_pos_' + this.value); if(cb) cb.checked = true;">
                         <option value="">-- Select Position --</option>
                         @foreach($positions as $p)
                             <option value="{{ $p->id }}">{{ $p->name }}</option>
                         @endforeach
                     </select>
+                </div>
+                <div class="hr-form-group" style="margin-top: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px;">
+                    <label class="hr-form-label" style="font-weight: 700; margin-bottom: 4px;">Assigned Positions & Roles</label>
+                    <div style="font-size: 11px; color: #64748b; margin-bottom: 6px;">Select all positions / roles this employee can perform:</div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                        @foreach($positions as $p)
+                            <label style="display: inline-flex; align-items: center; gap: 5px; padding: 4px 8px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 5px; font-size: 11.5px; cursor: pointer;">
+                                <input type="checkbox" name="assigned_position_ids[]" value="{{ $p->id }}" class="cp-quick-pos-cb" id="cp_quick_pos_{{ $p->id }}">
+                                <span>{{ $p->name }}</span>
+                            </label>
+                        @endforeach
+                    </div>
                 </div>
                 <div class="hr-form-group" style="margin-top: 12px;">
                     <label class="hr-form-label">Effective Date <span class="text-danger">*</span></label>
@@ -551,23 +582,41 @@
                     <label class="hr-form-label">Employee</label>
                     <input type="text" id="trQuickEmpName" class="hr-input" readonly style="background: #f8fafc; font-weight: 600;">
                 </div>
-                <div class="hr-form-group" style="margin-top: 12px;">
-                    <label class="hr-form-label">Transfer Branch</label>
-                    <select name="branch_id" id="trQuickBranchId" class="hr-select">
-                        <option value="">-- Keep Current Branch --</option>
+                <div class="hr-form-group" style="margin-top: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px;">
+                    <label class="hr-form-label" style="font-weight: 700; margin-bottom: 4px;">Primary Branch <span class="text-danger">*</span></label>
+                    <select name="branch_id" id="trQuickBranchId" class="hr-select" required onchange="const cb = document.getElementById('tr_quick_branch_' + this.value); if(cb) cb.checked = true;">
+                        <option value="">-- Select Primary Branch --</option>
                         @foreach($branches as $b)
                             <option value="{{ $b->id }}">{{ $b->name }}</option>
                         @endforeach
                     </select>
+                    <div style="font-size: 11px; color: #64748b; margin: 8px 0 6px 0;">Assigned Branches:</div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                        @foreach($branches as $b)
+                            <label style="display: inline-flex; align-items: center; gap: 5px; padding: 4px 8px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 5px; font-size: 11.5px; cursor: pointer;">
+                                <input type="checkbox" name="assigned_branch_ids[]" value="{{ $b->id }}" class="tr-quick-branch-cb" id="tr_quick_branch_{{ $b->id }}">
+                                <span>{{ $b->name }}</span>
+                            </label>
+                        @endforeach
+                    </div>
                 </div>
-                <div class="hr-form-group" style="margin-top: 12px;">
-                    <label class="hr-form-label">Transfer Department</label>
-                    <select name="department_id" id="trQuickDeptId" class="hr-select">
+                <div class="hr-form-group" style="margin-top: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px;">
+                    <label class="hr-form-label" style="font-weight: 700; margin-bottom: 4px;">Primary Department</label>
+                    <select name="department_id" id="trQuickDeptId" class="hr-select" onchange="const cb = document.getElementById('tr_quick_dept_' + this.value); if(cb) cb.checked = true;">
                         <option value="">-- Keep Current Department --</option>
                         @foreach($departments as $d)
                             <option value="{{ $d->id }}">{{ $d->name }}</option>
                         @endforeach
                     </select>
+                    <div style="font-size: 11px; color: #64748b; margin: 8px 0 6px 0;">Assigned Departments:</div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                        @foreach($departments as $d)
+                            <label style="display: inline-flex; align-items: center; gap: 5px; padding: 4px 8px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 5px; font-size: 11.5px; cursor: pointer;">
+                                <input type="checkbox" name="assigned_department_ids[]" value="{{ $d->id }}" class="tr-quick-dept-cb" id="tr_quick_dept_{{ $d->id }}">
+                                <span>{{ $d->name }}</span>
+                            </label>
+                        @endforeach
+                    </div>
                 </div>
                 <div class="hr-form-group" style="margin-top: 12px;">
                     <label class="hr-form-label">Effective Date <span class="text-danger">*</span></label>
@@ -1322,20 +1371,37 @@ document.addEventListener('click', (e) => {
     }
 });
 
-function openChangePositionModal(empId, empName, currentPosId) {
+function openChangePositionModal(empId, empName, currentPosId, assignedPosIds) {
     const form = document.getElementById('changePositionQuickForm');
     form.action = `/hr/people/employees/${empId}/change-position`;
     document.getElementById('cpQuickEmpName').value = empName;
     if (currentPosId) document.getElementById('cpQuickPositionId').value = currentPosId;
+
+    const assigned = Array.isArray(assignedPosIds) ? assignedPosIds : (currentPosId ? [currentPosId] : []);
+    document.querySelectorAll('.cp-quick-pos-cb').forEach(cb => {
+        cb.checked = assigned.includes(parseInt(cb.value));
+    });
+
     openModal('changePositionQuickModal');
 }
 
-function openTransferModal(empId, empName, currentDeptId, currentBranchId) {
+function openTransferModal(empId, empName, currentDeptId, currentBranchId, assignedDeptIds, assignedBranchIds) {
     const form = document.getElementById('transferQuickForm');
     form.action = `/hr/people/employees/${empId}/transfer`;
     document.getElementById('trQuickEmpName').value = empName;
     if (currentDeptId) document.getElementById('trQuickDeptId').value = currentDeptId;
     if (currentBranchId) document.getElementById('trQuickBranchId').value = currentBranchId;
+
+    const assignedBranches = Array.isArray(assignedBranchIds) ? assignedBranchIds : (currentBranchId ? [currentBranchId] : []);
+    document.querySelectorAll('.tr-quick-branch-cb').forEach(cb => {
+        cb.checked = assignedBranches.includes(parseInt(cb.value));
+    });
+
+    const assignedDepts = Array.isArray(assignedDeptIds) ? assignedDeptIds : (currentDeptId ? [currentDeptId] : []);
+    document.querySelectorAll('.tr-quick-dept-cb').forEach(cb => {
+        cb.checked = assignedDepts.includes(parseInt(cb.value));
+    });
+
     openModal('transferQuickModal');
 }
 

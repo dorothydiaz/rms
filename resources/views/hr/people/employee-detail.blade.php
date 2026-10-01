@@ -513,11 +513,26 @@
             <h1 class="hr-emp-name">{{ $employee->full_name }}</h1>
 
             <div class="hr-emp-meta">
-                <span><i class="ph ph-briefcase"></i> <strong>{{ $employee->position?->name ?? 'Unassigned Position' }}</strong></span>
+                <span>
+                    <i class="ph ph-briefcase"></i> <strong>{{ $employee->position?->name ?? 'Unassigned Position' }}</strong>
+                    @if(count($employee->all_position_ids) > 1)
+                        <span class="hr-badge hr-badge-neutral" style="font-size: 10px; padding: 1px 6px; margin-left: 4px;" title="Assigned Roles: {{ implode(', ', $employee->assignedPositions()->pluck('name')->toArray()) }}">+{{ count($employee->all_position_ids) - 1 }} more</span>
+                    @endif
+                </span>
                 <span class="meta-dot">&bull;</span>
-                <span><i class="ph ph-tree-structure"></i> {{ $employee->department?->name ?? 'General Department' }}</span>
+                <span>
+                    <i class="ph ph-tree-structure"></i> {{ $employee->department?->name ?? 'General Department' }}
+                    @if(count($employee->all_department_ids) > 1)
+                        <span class="hr-badge hr-badge-neutral" style="font-size: 10px; padding: 1px 6px; margin-left: 4px;" title="Assigned Departments: {{ implode(', ', $employee->assigned_department_names) }}">+{{ count($employee->all_department_ids) - 1 }} depts</span>
+                    @endif
+                </span>
                 <span class="meta-dot">&bull;</span>
-                <span><i class="ph ph-storefront"></i> {{ $employee->branch?->name ?? 'Main Branch' }}</span>
+                <span>
+                    <i class="ph ph-storefront"></i> {{ $employee->branch?->name ?? 'Main Branch' }}
+                    @if(count($employee->all_branch_ids) > 1)
+                        <span class="hr-badge hr-badge-neutral" style="font-size: 10px; padding: 1px 6px; margin-left: 4px;" title="Assigned Branches: {{ implode(', ', $employee->assignedBranches()->pluck('name')->toArray()) }}">+{{ count($employee->all_branch_ids) - 1 }} branches</span>
+                    @endif
+                </span>
                 <span class="meta-dot">&bull;</span>
                 <span><i class="ph ph-calendar"></i> Hired: <strong>{{ $employee->date_hired ? \Carbon\Carbon::parse($employee->date_hired)->format('M d, Y') : '—' }}</strong> ({{ $stats['years_of_service'] }})</span>
             </div>
@@ -726,16 +741,34 @@
                             <span class="detail-val">{{ $employee->company_or_agency ?? 'Direct Hire' }}</span>
                         </div>
                         <div class="detail-item">
-                            <span class="detail-label">Branch</span>
-                            <span class="detail-val">{{ $employee->branch?->name ?? 'Unassigned' }}</span>
+                            <span class="detail-label">Assigned Branches ({{ count($employee->all_branch_ids) }})</span>
+                            <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px;">
+                                @foreach($employee->assignedBranches() as $ab)
+                                    <span class="hr-badge {{ $ab->id == $employee->branch_id ? 'hr-badge-primary' : 'hr-badge-neutral' }}" style="font-size: 11px; padding: 2px 7px;">
+                                        {{ $ab->name }} @if($ab->id == $employee->branch_id) (Primary) @endif
+                                    </span>
+                                @endforeach
+                            </div>
                         </div>
                         <div class="detail-item">
-                            <span class="detail-label">Department</span>
-                            <span class="detail-val">{{ $employee->department?->name ?? 'Unassigned' }}</span>
+                            <span class="detail-label">Assigned Departments ({{ count($employee->all_department_ids) }})</span>
+                            <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px;">
+                                @foreach($employee->assignedDepartments() as $ad)
+                                    <span class="hr-badge {{ $ad->id == $employee->department_id ? 'hr-badge-primary' : 'hr-badge-neutral' }}" style="font-size: 11px; padding: 2px 7px;">
+                                        {{ $ad->name }} @if($ad->id == $employee->department_id) (Primary) @endif
+                                    </span>
+                                @endforeach
+                            </div>
                         </div>
                         <div class="detail-item">
-                            <span class="detail-label">Position</span>
-                            <span class="detail-val"><strong>{{ $employee->position?->name ?? 'N/A' }}</strong></span>
+                            <span class="detail-label">Assigned Positions / Roles ({{ count($employee->all_position_ids) }})</span>
+                            <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px;">
+                                @foreach($employee->assignedPositions() as $ap)
+                                    <span class="hr-badge {{ $ap->id == $employee->position_id ? 'hr-badge-primary' : 'hr-badge-neutral' }}" style="font-size: 11px; padding: 2px 7px;">
+                                        {{ $ap->name }} @if($ap->id == $employee->position_id) (Primary) @endif
+                                    </span>
+                                @endforeach
+                            </div>
                         </div>
                         <div class="detail-item">
                             <span class="detail-label">Direct Supervisor</span>
@@ -977,17 +1010,38 @@
                         <span class="detail-label">Company / Sourcing</span>
                         <span class="detail-val">{{ $employee->company_or_agency ?? 'Direct Hire' }}</span>
                     </div>
-                    <div class="detail-item">
-                        <span class="detail-label">Branch</span>
-                        <span class="detail-val">{{ $employee->branch?->name ?? 'Unassigned' }}</span>
+                    <div class="detail-item" style="grid-column: span 2;">
+                        <span class="detail-label">Assigned Branches ({{ count($employee->all_branch_ids) }})</span>
+                        <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px;">
+                            @foreach($employee->assignedBranches() as $ab)
+                                <span class="hr-badge {{ $ab->id == $employee->branch_id ? 'hr-badge-primary' : 'hr-badge-neutral' }}" style="font-size: 11.5px; padding: 3px 8px;">
+                                    <i class="ph ph-storefront"></i> {{ $ab->name }}
+                                    @if($ab->id == $employee->branch_id) <small>(Primary)</small> @endif
+                                </span>
+                            @endforeach
+                        </div>
                     </div>
-                    <div class="detail-item">
-                        <span class="detail-label">Department</span>
-                        <span class="detail-val">{{ $employee->department?->name ?? 'Unassigned' }}</span>
+                    <div class="detail-item" style="grid-column: span 2;">
+                        <span class="detail-label">Assigned Departments ({{ count($employee->all_department_ids) }})</span>
+                        <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px;">
+                            @foreach($employee->assignedDepartments() as $ad)
+                                <span class="hr-badge {{ $ad->id == $employee->department_id ? 'hr-badge-primary' : 'hr-badge-neutral' }}" style="font-size: 11.5px; padding: 3px 8px;">
+                                    <i class="ph ph-buildings"></i> {{ $ad->name }}
+                                    @if($ad->id == $employee->department_id) <small>(Primary)</small> @endif
+                                </span>
+                            @endforeach
+                        </div>
                     </div>
-                    <div class="detail-item">
-                        <span class="detail-label">Position</span>
-                        <span class="detail-val"><strong>{{ $employee->position?->name ?? 'Unassigned' }}</strong></span>
+                    <div class="detail-item" style="grid-column: span 2;">
+                        <span class="detail-label">Assigned Positions / Roles ({{ count($employee->all_position_ids) }})</span>
+                        <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px;">
+                            @foreach($employee->assignedPositions() as $ap)
+                                <span class="hr-badge {{ $ap->id == $employee->position_id ? 'hr-badge-primary' : 'hr-badge-neutral' }}" style="font-size: 11.5px; padding: 3px 8px;">
+                                    <i class="ph ph-briefcase"></i> {{ $ap->name }}
+                                    @if($ap->id == $employee->position_id) <small>(Primary)</small> @endif
+                                </span>
+                            @endforeach
+                        </div>
                     </div>
                     <div class="detail-item">
                         <span class="detail-label">Job Level</span>
@@ -2178,31 +2232,88 @@
                 </div>
 
                 <h4 class="modal-sec-title">3. Employment & Assignments</h4>
+
+                <!-- Multi-Branch Assignment -->
+                <div class="hr-form-group" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 14px; margin-bottom: 12px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+                        <label class="hr-form-label" style="font-weight: 700; color: #1e293b; margin: 0;">
+                            <i class="ph ph-storefront" style="color: #7c3aed;"></i> Branch Assignments
+                        </label>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="font-size: 11px; color: #64748b; font-weight: 600;">Primary Branch:</span>
+                            <select name="branch_id" id="edit_primary_branch_id" class="hr-select" style="padding: 4px 8px; font-size: 12px; width: auto;" onchange="syncEditPrimaryCheckbox('branch', this.value)" required>
+                                @foreach($branches as $b)
+                                    <option value="{{ $b->id }}" {{ $employee->branch_id === $b->id ? 'selected' : '' }}>{{ $b->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div style="font-size: 11px; color: #64748b; margin-bottom: 8px;">Assign one or multiple branches this employee works in:</div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                        @foreach($branches as $b)
+                            <label style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; cursor: pointer; user-select: none;">
+                                <input type="checkbox" name="assigned_branch_ids[]" value="{{ $b->id }}" id="cb_edit_branch_{{ $b->id }}" {{ in_array($b->id, $employee->all_branch_ids) ? 'checked' : '' }}>
+                                <span>{{ $b->name }}</span>
+                            </label>
+                        @endforeach
+                    </div>
+                </div>
+
+                <!-- Multi-Department Assignment -->
+                <div class="hr-form-group" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 14px; margin-bottom: 12px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+                        <label class="hr-form-label" style="font-weight: 700; color: #1e293b; margin: 0;">
+                            <i class="ph ph-buildings" style="color: #8b5cf6;"></i> Department Assignments
+                        </label>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="font-size: 11px; color: #64748b; font-weight: 600;">Primary Dept:</span>
+                            <select name="department_id" id="edit_primary_department_id" class="hr-select" style="padding: 4px 8px; font-size: 12px; width: auto;" onchange="syncEditPrimaryCheckbox('dept', this.value)">
+                                <option value="">Select Primary</option>
+                                @foreach($departments as $d)
+                                    <option value="{{ $d->id }}" {{ $employee->department_id === $d->id ? 'selected' : '' }}>{{ $d->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div style="font-size: 11px; color: #64748b; margin-bottom: 8px;">Assign one or multiple departments (enables multi-department schedule toggling):</div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                        @foreach($departments as $d)
+                            <label style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; cursor: pointer; user-select: none;">
+                                <input type="checkbox" name="assigned_department_ids[]" value="{{ $d->id }}" id="cb_edit_dept_{{ $d->id }}" {{ in_array($d->id, $employee->all_department_ids) ? 'checked' : '' }}>
+                                <span>{{ $d->name }}</span>
+                            </label>
+                        @endforeach
+                    </div>
+                </div>
+
+                <!-- Multi-Position Assignment -->
+                <div class="hr-form-group" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 14px; margin-bottom: 12px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+                        <label class="hr-form-label" style="font-weight: 700; color: #1e293b; margin: 0;">
+                            <i class="ph ph-briefcase" style="color: #3b82f6;"></i> Position & Role Assignments
+                        </label>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="font-size: 11px; color: #64748b; font-weight: 600;">Primary Position:</span>
+                            <select name="position_id" id="edit_primary_position_id" class="hr-select" style="padding: 4px 8px; font-size: 12px; width: auto;" onchange="syncEditPrimaryCheckbox('pos', this.value)">
+                                <option value="">Select Primary</option>
+                                @foreach($positions as $p)
+                                    <option value="{{ $p->id }}" {{ $employee->position_id === $p->id ? 'selected' : '' }}>{{ $p->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div style="font-size: 11px; color: #64748b; margin-bottom: 8px;">Assign one or multiple positions / roles this employee can perform:</div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                        @foreach($positions as $p)
+                            <label style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; cursor: pointer; user-select: none;">
+                                <input type="checkbox" name="assigned_position_ids[]" value="{{ $p->id }}" id="cb_edit_pos_{{ $p->id }}" {{ in_array($p->id, $employee->all_position_ids) ? 'checked' : '' }}>
+                                <span>{{ $p->name }}</span>
+                            </label>
+                        @endforeach
+                    </div>
+                </div>
+
                 <div class="hr-form-grid">
-                    <div class="hr-form-group">
-                        <label class="hr-form-label">Branch *</label>
-                        <select name="branch_id" class="hr-select" required>
-                            @foreach($branches as $b)
-                                <option value="{{ $b->id }}" {{ $employee->branch_id === $b->id ? 'selected' : '' }}>{{ $b->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="hr-form-group">
-                        <label class="hr-form-label">Department *</label>
-                        <select name="department_id" class="hr-select" required>
-                            @foreach($departments as $d)
-                                <option value="{{ $d->id }}" {{ $employee->department_id === $d->id ? 'selected' : '' }}>{{ $d->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="hr-form-group">
-                        <label class="hr-form-label">Position *</label>
-                        <select name="position_id" class="hr-select" required>
-                            @foreach($positions as $p)
-                                <option value="{{ $p->id }}" {{ $employee->position_id === $p->id ? 'selected' : '' }}>{{ $p->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
                     <div class="hr-form-group">
                         <label class="hr-form-label">Job Level</label>
                         <input type="text" name="job_level" class="hr-input" value="{{ $employee->job_level ?? 'Staff' }}">
@@ -2314,39 +2425,53 @@
 
 <!-- 2. Change Position Modal -->
 <div id="changePositionModal" class="hr-modal-overlay">
-    <div class="hr-modal" style="max-width: 480px;">
+    <div class="hr-modal" style="max-width: 520px;">
         <div class="hr-modal-header">
-            <span class="hr-modal-title"><i class="ph ph-briefcase"></i> Change Position</span>
+            <span class="hr-modal-title"><i class="ph ph-briefcase"></i> Change & Assign Positions / Roles</span>
             <button class="icon-btn" onclick="closeModal('changePositionModal')"><i class="ph ph-x"></i></button>
         </div>
         <form method="POST" action="{{ route('hr.people.employees.change-position', $employee->id) }}">
             @csrf
-            <div class="hr-modal-body">
+            <div class="hr-modal-body" style="max-height: 75vh; overflow-y: auto;">
                 <div class="hr-form-group">
-                    <label class="hr-form-label">Current Position</label>
+                    <label class="hr-form-label">Current Primary Position</label>
                     <input type="text" class="hr-input" readonly value="{{ $employee->position?->name ?? 'None' }}" style="background: #f8fafc;">
                 </div>
                 <div class="hr-form-group" style="margin-top: 12px;">
-                    <label class="hr-form-label">New Position <span class="text-danger">*</span></label>
-                    <select name="position_id" class="hr-select" required>
+                    <label class="hr-form-label">New Primary Position <span class="text-danger">*</span></label>
+                    <select name="position_id" id="cp_primary_position_id" class="hr-select" required onchange="const cb = document.getElementById('cb_cp_pos_' + this.value); if(cb) cb.checked = true;">
                         <option value="">-- Select Position --</option>
                         @foreach($positions as $p)
                             <option value="{{ $p->id }}" {{ $employee->position_id === $p->id ? 'selected' : '' }}>{{ $p->name }}</option>
                         @endforeach
                     </select>
                 </div>
+
+                <div class="hr-form-group" style="margin-top: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px;">
+                    <label class="hr-form-label" style="font-weight: 700; margin-bottom: 4px;">Assigned Positions & Roles</label>
+                    <div style="font-size: 11px; color: #64748b; margin-bottom: 6px;">Select all positions / roles this employee can perform:</div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                        @foreach($positions as $p)
+                            <label style="display: inline-flex; align-items: center; gap: 5px; padding: 4px 8px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 5px; font-size: 11.5px; cursor: pointer;">
+                                <input type="checkbox" name="assigned_position_ids[]" value="{{ $p->id }}" id="cb_cp_pos_{{ $p->id }}" {{ in_array($p->id, $employee->all_position_ids) ? 'checked' : '' }}>
+                                <span>{{ $p->name }}</span>
+                            </label>
+                        @endforeach
+                    </div>
+                </div>
+
                 <div class="hr-form-group" style="margin-top: 12px;">
                     <label class="hr-form-label">Effective Date <span class="text-danger">*</span></label>
                     <input type="date" name="effective_date" class="hr-input" value="{{ date('Y-m-d') }}" required>
                 </div>
                 <div class="hr-form-group" style="margin-top: 12px;">
                     <label class="hr-form-label">Reason / Justification</label>
-                    <textarea name="reason" class="hr-input" rows="2" placeholder="e.g. Promotion, Lateral Transfer"></textarea>
+                    <textarea name="reason" class="hr-input" rows="2" placeholder="e.g. Promotion, Lateral Transfer, Additional role assignment"></textarea>
                 </div>
             </div>
             <div class="hr-modal-footer">
                 <button type="button" class="hr-btn hr-btn-secondary" onclick="closeModal('changePositionModal')">Cancel</button>
-                <button type="submit" class="hr-btn hr-btn-primary">Update Position</button>
+                <button type="submit" class="hr-btn hr-btn-primary">Update Positions</button>
             </div>
         </form>
     </div>
@@ -2354,48 +2479,70 @@
 
 <!-- 3. Transfer Department / Branch Modal -->
 <div id="transferModal" class="hr-modal-overlay">
-    <div class="hr-modal" style="max-width: 480px;">
+    <div class="hr-modal" style="max-width: 540px;">
         <div class="hr-modal-header">
-            <span class="hr-modal-title"><i class="ph ph-arrows-left-right"></i> Transfer Employee</span>
+            <span class="hr-modal-title"><i class="ph ph-arrows-left-right"></i> Transfer & Assign Branches / Departments</span>
             <button class="icon-btn" onclick="closeModal('transferModal')"><i class="ph ph-x"></i></button>
         </div>
         <form method="POST" action="{{ route('hr.people.employees.transfer', $employee->id) }}">
             @csrf
-            <div class="hr-modal-body">
+            <div class="hr-modal-body" style="max-height: 75vh; overflow-y: auto;">
                 <div class="hr-form-group">
                     <label class="hr-form-label">Current Placement</label>
                     <input type="text" class="hr-input" readonly value="{{ $employee->department?->name ?? 'Dept' }} &bull; {{ $employee->branch?->name ?? 'Branch' }}" style="background: #f8fafc;">
                 </div>
-                <div class="hr-form-group" style="margin-top: 12px;">
-                    <label class="hr-form-label">New Branch</label>
-                    <select name="branch_id" class="hr-select">
-                        <option value="">-- Keep Current ({{ $employee->branch?->name ?? 'None' }}) --</option>
+
+                <!-- Primary Branch + Multiple Branches -->
+                <div class="hr-form-group" style="margin-top: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px;">
+                    <label class="hr-form-label" style="font-weight: 700; margin-bottom: 4px;">Primary Branch <span class="text-danger">*</span></label>
+                    <select name="branch_id" id="tr_primary_branch_id" class="hr-select" required onchange="const cb = document.getElementById('cb_tr_branch_' + this.value); if(cb) cb.checked = true;">
                         @foreach($branches as $b)
-                            <option value="{{ $b->id }}">{{ $b->name }}</option>
+                            <option value="{{ $b->id }}" {{ $employee->branch_id === $b->id ? 'selected' : '' }}>{{ $b->name }}</option>
                         @endforeach
                     </select>
+                    <div style="font-size: 11px; color: #64748b; margin: 8px 0 6px 0;">Assigned Branches:</div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                        @foreach($branches as $b)
+                            <label style="display: inline-flex; align-items: center; gap: 5px; padding: 4px 8px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 5px; font-size: 11.5px; cursor: pointer;">
+                                <input type="checkbox" name="assigned_branch_ids[]" value="{{ $b->id }}" id="cb_tr_branch_{{ $b->id }}" {{ in_array($b->id, $employee->all_branch_ids) ? 'checked' : '' }}>
+                                <span>{{ $b->name }}</span>
+                            </label>
+                        @endforeach
+                    </div>
                 </div>
-                <div class="hr-form-group" style="margin-top: 12px;">
-                    <label class="hr-form-label">New Department</label>
-                    <select name="department_id" class="hr-select">
+
+                <!-- Primary Dept + Multiple Depts -->
+                <div class="hr-form-group" style="margin-top: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px;">
+                    <label class="hr-form-label" style="font-weight: 700; margin-bottom: 4px;">Primary Department</label>
+                    <select name="department_id" id="tr_primary_dept_id" class="hr-select" onchange="const cb = document.getElementById('cb_tr_dept_' + this.value); if(cb) cb.checked = true;">
                         <option value="">-- Keep Current ({{ $employee->department?->name ?? 'None' }}) --</option>
                         @foreach($departments as $d)
-                            <option value="{{ $d->id }}">{{ $d->name }}</option>
+                            <option value="{{ $d->id }}" {{ $employee->department_id === $d->id ? 'selected' : '' }}>{{ $d->name }}</option>
                         @endforeach
                     </select>
+                    <div style="font-size: 11px; color: #64748b; margin: 8px 0 6px 0;">Assigned Departments:</div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                        @foreach($departments as $d)
+                            <label style="display: inline-flex; align-items: center; gap: 5px; padding: 4px 8px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 5px; font-size: 11.5px; cursor: pointer;">
+                                <input type="checkbox" name="assigned_department_ids[]" value="{{ $d->id }}" id="cb_tr_dept_{{ $d->id }}" {{ in_array($d->id, $employee->all_department_ids) ? 'checked' : '' }}>
+                                <span>{{ $d->name }}</span>
+                            </label>
+                        @endforeach
+                    </div>
                 </div>
+
                 <div class="hr-form-group" style="margin-top: 12px;">
                     <label class="hr-form-label">Effective Date <span class="text-danger">*</span></label>
                     <input type="date" name="effective_date" class="hr-input" value="{{ date('Y-m-d') }}" required>
                 </div>
                 <div class="hr-form-group" style="margin-top: 12px;">
-                    <label class="hr-form-label">Reason</label>
-                    <textarea name="reason" class="hr-input" rows="2" placeholder="e.g. Branch rebalancing, department reorganization"></textarea>
+                    <label class="hr-form-label">Reason / Justification</label>
+                    <textarea name="reason" class="hr-input" rows="2" placeholder="e.g. Branch rebalancing, department reorganization, additional assignment"></textarea>
                 </div>
             </div>
             <div class="hr-modal-footer">
                 <button type="button" class="hr-btn hr-btn-secondary" onclick="closeModal('transferModal')">Cancel</button>
-                <button type="submit" class="hr-btn hr-btn-primary">Apply Transfer</button>
+                <button type="submit" class="hr-btn hr-btn-primary">Apply Transfer & Assignments</button>
             </div>
         </form>
     </div>
@@ -2892,6 +3039,12 @@ document.addEventListener('click', (e) => {
         closeProfileMoreActions();
     }
 });
+
+function syncEditPrimaryCheckbox(type, id) {
+    if (!id) return;
+    const cb = document.getElementById('cb_edit_' + type + '_' + id);
+    if (cb) cb.checked = true;
+}
 
 // Sensitive Gov ID Masking Toggle
 let govIdMasked = true;

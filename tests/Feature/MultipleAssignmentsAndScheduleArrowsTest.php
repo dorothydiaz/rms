@@ -242,4 +242,98 @@ class MultipleAssignmentsAndScheduleArrowsTest extends TestCase
         $this->assertTrue(in_array($departments[1]->id, $emp->assigned_department_ids));
         $this->assertTrue($emp->has_multiple_departments);
     }
+
+    public function test_change_position_saves_multiple_assigned_positions(): void
+    {
+        $admin = User::where('username', 'peter')->first();
+        $this->actingAs($admin);
+
+        $branch = Branch::first();
+        $department = Department::first();
+        $positions = Position::take(3)->get();
+        $this->assertGreaterThanOrEqual(2, count($positions));
+
+        $emp = Employee::create([
+            'employee_id' => 'EMP-POS-TEST',
+            'first_name' => 'Pos',
+            'last_name' => 'Tester',
+            'civil_status' => 'Single',
+            'nationality' => 'Filipino',
+            'branch_id' => $branch->id,
+            'department_id' => $department->id,
+            'position_id' => $positions[0]->id,
+            'assigned_position_ids' => [$positions[0]->id],
+            'date_hired' => '2026-01-01',
+            'employment_status' => 'Active',
+            'employment_type' => 'Regular',
+            'salary_type' => 'Monthly',
+            'pay_frequency' => 'Semi-Monthly',
+        ]);
+
+        $response = $this->post(route('hr.people.employees.change-position', $emp->id), [
+            'position_id' => $positions[1]->id,
+            'assigned_position_ids' => [$positions[0]->id, $positions[1]->id],
+            'effective_date' => '2026-02-01',
+            'remarks' => 'Assigned secondary position as well',
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $emp->refresh();
+
+        $this->assertEquals($positions[1]->id, $emp->position_id);
+        $this->assertTrue(in_array($positions[0]->id, $emp->assigned_position_ids));
+        $this->assertTrue(in_array($positions[1]->id, $emp->assigned_position_ids));
+        $this->assertCount(2, $emp->all_position_ids);
+    }
+
+    public function test_transfer_employee_saves_multiple_assigned_branches_and_departments(): void
+    {
+        $admin = User::where('username', 'peter')->first();
+        $this->actingAs($admin);
+
+        $branches = Branch::take(2)->get();
+        $departments = Department::take(2)->get();
+        $position = Position::first();
+
+        $emp = Employee::create([
+            'employee_id' => 'EMP-XFER-TEST',
+            'first_name' => 'Transfer',
+            'last_name' => 'Tester',
+            'civil_status' => 'Single',
+            'nationality' => 'Filipino',
+            'branch_id' => $branches[0]->id,
+            'assigned_branch_ids' => [$branches[0]->id],
+            'department_id' => $departments[0]->id,
+            'assigned_department_ids' => [$departments[0]->id],
+            'position_id' => $position->id,
+            'date_hired' => '2026-01-01',
+            'employment_status' => 'Active',
+            'employment_type' => 'Regular',
+            'salary_type' => 'Monthly',
+            'pay_frequency' => 'Semi-Monthly',
+        ]);
+
+        $response = $this->post(route('hr.people.employees.transfer', $emp->id), [
+            'branch_id' => $branches[1]->id,
+            'assigned_branch_ids' => [$branches[0]->id, $branches[1]->id],
+            'department_id' => $departments[1]->id,
+            'assigned_department_ids' => [$departments[0]->id, $departments[1]->id],
+            'effective_date' => '2026-02-15',
+            'remarks' => 'Cross-branch and cross-department assignment',
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $emp->refresh();
+
+        $this->assertEquals($branches[1]->id, $emp->branch_id);
+        $this->assertTrue(in_array($branches[0]->id, $emp->assigned_branch_ids));
+        $this->assertTrue(in_array($branches[1]->id, $emp->assigned_branch_ids));
+        $this->assertCount(2, $emp->all_branch_ids);
+
+        $this->assertEquals($departments[1]->id, $emp->department_id);
+        $this->assertTrue(in_array($departments[0]->id, $emp->assigned_department_ids));
+        $this->assertTrue(in_array($departments[1]->id, $emp->assigned_department_ids));
+        $this->assertCount(2, $emp->all_department_ids);
+    }
 }
+
