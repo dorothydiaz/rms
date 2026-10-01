@@ -82,6 +82,7 @@
                 ['name' => 'Payroll Register', 'route' => 'hr.payroll.register', 'icon' => 'ph-receipt', 'active' => ['hr.payroll.register*']],
                 ['name' => 'Payslips', 'route' => 'hr.payroll.payslips', 'icon' => 'ph-file-text', 'active' => ['hr.payroll.payslips*']],
                 ['name' => 'Statutory Rules', 'route' => 'hr.payroll.statutory-rules', 'icon' => 'ph-sliders-horizontal', 'active' => ['hr.payroll.statutory-rules*']],
+                ['name' => 'Wage Distortion Converter', 'route' => 'hr.payroll.wage-distortion', 'icon' => 'ph-scales', 'active' => ['hr.payroll.wage-distortion*']],
             ],
         ],
         'talent-acquisition' => [

@@ -5,31 +5,41 @@ namespace App\Http\Controllers\Hr;
 use App\Http\Controllers\Controller;
 use App\Models\Hr\Branch;
 use App\Models\Hr\Employee;
+use App\Models\Hr\Company;
+use App\Models\Hr\Department;
+use App\Models\Hr\JobLevel;
 use App\Models\Hr\PayrollAdjustment;
 use App\Models\Hr\PayrollPeriod;
 use App\Models\Hr\PayrollRecord;
+use App\Models\Hr\Position;
 use App\Models\Hr\StatutoryContributionRule;
 use App\Services\AuditLogger;
 use App\Services\PayrollCalculationService;
 use App\Services\StatutoryContributionService;
+use App\Services\WageDistortionService;
 use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PayrollController extends Controller
 {
     protected PayrollCalculationService $payrollService;
     protected StatutoryContributionService $statutoryService;
+    protected WageDistortionService $wageDistortionService;
 
     public function __construct(
         PayrollCalculationService $payrollService,
-        StatutoryContributionService $statutoryService
+        StatutoryContributionService $statutoryService,
+        WageDistortionService $wageDistortionService
     ) {
         $this->payrollService = $payrollService;
         $this->statutoryService = $statutoryService;
+        $this->wageDistortionService = $wageDistortionService;
     }
 
     // ==========================================
@@ -325,5 +335,197 @@ class PayrollController extends Controller
         AuditLogger::log('Update', 'Payroll', $rule->id, "Updated statutory rule '{$rule->rule_name}'");
 
         return redirect()->back()->with('success', "Statutory contribution rule '{$rule->rule_name}' updated.");
+    }
+
+    // ==========================================
+    // 7. WAGE DISTORTION CONVERTER
+    // ==========================================
+
+    public function wageDistortionIndex(Request $request): View
+    {
+        $user = Auth::user();
+
+        // Retrieve workforce employees accessible by user
+        $employees = Employee::with(['department', 'position', 'branch', 'company'])
+            ->accessibleBy($user)
+            ->orderBy('first_name', 'asc')
+            ->get();
+
+        $defaultDivisor = WageDistortionService::DEFAULT_MONTHLY_DIVISOR;
+
+        $employeesData = $employees->map(function ($emp) use ($defaultDivisor) {
+            $basicSalary = (float) ($emp->basic_salary ?? 0.0);
+            $dailyRate = $emp->salary_type === 'Daily'
+                ? $basicSalary
+                : ($defaultDivisor > 0 ? round($basicSalary / $defaultDivisor, 2) : 0.0);
+
+            return [
+                'id' => $emp->id,
+                'employee_id' => $emp->employee_id,
+                'first_name' => $emp->first_name,
+                'last_name' => $emp->last_name,
+                'full_name' => $emp->full_name,
+                'photo_url' => $emp->photo_url,
+                'initials' => $emp->initials,
+                'department_id' => $emp->department_id,
+                'department_name' => $emp->department?->name ?? 'Unassigned',
+                'position_id' => $emp->position_id,
+                'position_name' => $emp->position?->name ?? 'Staff',
+                'branch_id' => $emp->branch_id,
+                'branch_name' => $emp->branch?->name ?? 'Head Office',
+                'company_name' => $emp->company_name ?? ($emp->company?->name ?? 'Company'),
+                'employment_status' => $emp->employment_status ?? 'Active',
+                'employment_type' => $emp->employment_type ?? 'Regular',
+                'pay_frequency' => $emp->pay_frequency ?? 'Semi-Monthly',
+                'salary_type' => $emp->salary_type ?? 'Monthly',
+                'basic_salary' => $basicSalary,
+                'daily_rate' => $dailyRate,
+                'job_level' => $emp->job_level ?: 'Rank and File',
+                'salary_grade' => $emp->job_level ?: 'Grade 1 - Rank & File',
+                'employment_source' => $emp->employment_source ?? 'Direct',
+                'date_hired' => $emp->date_hired ? $emp->date_hired->format('Y-m-d') : null,
+            ];
+        })->values();
+
+        $departments = Department::where('is_active', true)->orderBy('name')->get();
+        $positions = Position::orderBy('name')->get();
+        $branches = Branch::where('is_active', true)->orderBy('name')->get();
+        $companies = Company::orderBy('name')->get();
+        $jobLevels = JobLevel::orderBy('name')->get();
+        $periods = PayrollPeriod::orderBy('start_date', 'desc')->get();
+        $formulas = WageDistortionService::getFormulaDefinitions();
+
+        return view('hr.payroll.wage-distortion', compact(
+            'employees',
+            'employeesData',
+            'departments',
+            'positions',
+            'branches',
+            'companies',
+            'jobLevels',
+            'periods',
+            'formulas',
+            'defaultDivisor'
+        ));
+    }
+
+    public function wageDistortionCalculate(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'formula' => 'required|string',
+            'employee_ids' => 'required|array',
+            'employee_ids.*' => 'exists:hr_employees,id',
+            'params' => 'required|array',
+            'monthly_divisor' => 'nullable|numeric|min:1',
+        ]);
+
+        $divisor = (float) ($validated['monthly_divisor'] ?? WageDistortionService::DEFAULT_MONTHLY_DIVISOR);
+        $employees = Employee::with(['department', 'position', 'branch'])
+            ->whereIn('id', $validated['employee_ids'])
+            ->get();
+
+        $batch = $this->wageDistortionService->calculateBatch(
+            $employees,
+            $validated['formula'],
+            $validated['params'],
+            $divisor
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => $batch,
+        ]);
+    }
+
+    public function wageDistortionApply(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'formula_key' => 'required|string',
+            'adjustments' => 'required|array|min:1',
+            'adjustments.*.employee_id' => 'required|exists:hr_employees,id',
+            'adjustments.*.new_monthly_salary' => 'required|numeric|min:0',
+            'adjustments.*.monthly_adjustment' => 'required|numeric|min:0',
+            'adjustments.*.current_monthly_salary' => 'required|numeric|min:0',
+            'effective_date' => 'nullable|date',
+            'reason' => 'nullable|string|max:255',
+            'params' => 'nullable|array',
+        ]);
+
+        $count = $this->wageDistortionService->applyAdjustments(
+            $validated['adjustments'],
+            $validated['formula_key'],
+            $validated['params'] ?? [],
+            $validated['effective_date'] ?? null,
+            $validated['reason'] ?? null
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => "Successfully applied wage distortion adjustment to {$count} employees.",
+            'applied_count' => $count,
+        ]);
+    }
+
+    public function wageDistortionExport(Request $request): StreamedResponse
+    {
+        $payload = json_decode($request->input('export_data', '[]'), true);
+        if (!is_array($payload)) {
+            $payload = [];
+        }
+
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="Wage_Distortion_Adjustment_Report_' . now()->format('Ymd_His') . '.csv"',
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0',
+        ];
+
+        return response()->stream(function () use ($payload) {
+            $handle = fopen('php://output', 'w');
+            // Write UTF-8 BOM for Excel
+            fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+            // CSV Header
+            fputcsv($handle, [
+                'Employee ID',
+                'Full Name',
+                'Department',
+                'Position',
+                'Branch',
+                'Employment Status',
+                'Salary Type',
+                'Current Monthly Salary (PHP)',
+                'Current Daily Wage (PHP)',
+                'Formula Applied',
+                'Daily Adjustment (PHP)',
+                'Monthly Adjustment (PHP)',
+                'New Monthly Basic Salary (PHP)',
+                'Percent Increase (%)',
+                'Mathematical Breakdown',
+            ]);
+
+            foreach ($payload as $row) {
+                fputcsv($handle, [
+                    $row['employee_code'] ?? '',
+                    $row['employee_name'] ?? '',
+                    $row['department_name'] ?? '',
+                    $row['position_name'] ?? '',
+                    $row['branch_name'] ?? '',
+                    $row['employment_status'] ?? '',
+                    $row['salary_type'] ?? 'Monthly',
+                    number_format((float) ($row['current_monthly_salary'] ?? 0), 2, '.', ''),
+                    number_format((float) ($row['current_daily_wage'] ?? 0), 2, '.', ''),
+                    $row['formula_name'] ?? '',
+                    number_format((float) ($row['daily_adjustment'] ?? 0), 2, '.', ''),
+                    number_format((float) ($row['monthly_adjustment'] ?? 0), 2, '.', ''),
+                    number_format((float) ($row['new_monthly_salary'] ?? 0), 2, '.', ''),
+                    number_format((float) ($row['percent_increase'] ?? 0), 2, '.', '') . '%',
+                    $row['equation_breakdown'] ?? '',
+                ]);
+            }
+
+            fclose($handle);
+        }, 200, $headers);
     }
 }

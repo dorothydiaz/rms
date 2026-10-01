@@ -212,6 +212,13 @@ Route::middleware('auth')->group(function () {
             Route::get('/statutory-rules', [\App\Http\Controllers\Hr\PayrollController::class, 'statutoryRulesIndex'])->name('statutory-rules');
             Route::put('/statutory-rules/{id}', [\App\Http\Controllers\Hr\PayrollController::class, 'statutoryRuleUpdate'])->name('statutory-rules.update');
 
+            // Wage Distortion Converter
+            Route::get('/wage-distortion', [\App\Http\Controllers\Hr\PayrollController::class, 'wageDistortionIndex'])->name('wage-distortion');
+            Route::post('/wage-distortion/calculate', [\App\Http\Controllers\Hr\PayrollController::class, 'wageDistortionCalculate'])->name('wage-distortion.calculate');
+            Route::post('/wage-distortion/apply', [\App\Http\Controllers\Hr\PayrollController::class, 'wageDistortionApply'])->name('wage-distortion.apply');
+            Route::post('/wage-distortion/export', [\App\Http\Controllers\Hr\PayrollController::class, 'wageDistortionExport'])->name('wage-distortion.export');
+            Route::get('/wage-distortion/export', [\App\Http\Controllers\Hr\PayrollController::class, 'wageDistortionExport'])->name('wage-distortion.export.get');
+
             Route::get('/reports', [\App\Http\Controllers\Hr\PayrollController::class, 'registerIndex'])->name('reports');
         });
 

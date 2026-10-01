@@ -2251,7 +2251,7 @@
                     <div style="font-size: 11px; color: #64748b; margin-bottom: 8px;">Assign one or multiple branches this employee works in:</div>
                     <div style="display: flex; flex-wrap: wrap; gap: 8px;">
                         @foreach($branches as $b)
-                            <label style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; cursor: pointer; user-select: none;">
+                            <label class="hr-role-pill-label">
                                 <input type="checkbox" name="assigned_branch_ids[]" value="{{ $b->id }}" id="cb_edit_branch_{{ $b->id }}" {{ in_array($b->id, $employee->all_branch_ids) ? 'checked' : '' }}>
                                 <span>{{ $b->name }}</span>
                             </label>
@@ -2278,7 +2278,7 @@
                     <div style="font-size: 11px; color: #64748b; margin-bottom: 8px;">Assign one or multiple departments (enables multi-department schedule toggling):</div>
                     <div style="display: flex; flex-wrap: wrap; gap: 8px;">
                         @foreach($departments as $d)
-                            <label style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; cursor: pointer; user-select: none;">
+                            <label class="hr-role-pill-label">
                                 <input type="checkbox" name="assigned_department_ids[]" value="{{ $d->id }}" id="cb_edit_dept_{{ $d->id }}" {{ in_array($d->id, $employee->all_department_ids) ? 'checked' : '' }}>
                                 <span>{{ $d->name }}</span>
                             </label>
@@ -2305,7 +2305,7 @@
                     <div style="font-size: 11px; color: #64748b; margin-bottom: 8px;">Assign one or multiple positions / roles this employee can perform:</div>
                     <div style="display: flex; flex-wrap: wrap; gap: 8px;">
                         @foreach($positions as $p)
-                            <label style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; cursor: pointer; user-select: none;">
+                            <label class="hr-role-pill-label">
                                 <input type="checkbox" name="assigned_position_ids[]" value="{{ $p->id }}" id="cb_edit_pos_{{ $p->id }}" {{ in_array($p->id, $employee->all_position_ids) ? 'checked' : '' }}>
                                 <span>{{ $p->name }}</span>
                             </label>
@@ -2503,7 +2503,7 @@
                     <div style="font-size: 11px; color: #64748b; margin: 8px 0 6px 0;">Assigned Branches:</div>
                     <div style="display: flex; flex-wrap: wrap; gap: 6px;">
                         @foreach($branches as $b)
-                            <label style="display: inline-flex; align-items: center; gap: 5px; padding: 4px 8px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 5px; font-size: 11.5px; cursor: pointer;">
+                            <label class="hr-role-pill-label">
                                 <input type="checkbox" name="assigned_branch_ids[]" value="{{ $b->id }}" id="cb_tr_branch_{{ $b->id }}" {{ in_array($b->id, $employee->all_branch_ids) ? 'checked' : '' }}>
                                 <span>{{ $b->name }}</span>
                             </label>
@@ -2523,7 +2523,7 @@
                     <div style="font-size: 11px; color: #64748b; margin: 8px 0 6px 0;">Assigned Departments:</div>
                     <div style="display: flex; flex-wrap: wrap; gap: 6px;">
                         @foreach($departments as $d)
-                            <label style="display: inline-flex; align-items: center; gap: 5px; padding: 4px 8px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 5px; font-size: 11.5px; cursor: pointer;">
+                            <label class="hr-role-pill-label">
                                 <input type="checkbox" name="assigned_department_ids[]" value="{{ $d->id }}" id="cb_tr_dept_{{ $d->id }}" {{ in_array($d->id, $employee->all_department_ids) ? 'checked' : '' }}>
                                 <span>{{ $d->name }}</span>
                             </label>

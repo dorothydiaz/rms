@@ -1036,7 +1036,7 @@
                         <div style="font-size: 11px; color: #64748b; margin-bottom: 8px;">Assign one or multiple branches this employee will work in:</div>
                         <div style="display: flex; flex-wrap: wrap; gap: 8px;">
                             @foreach($branches as $b)
-                                <label style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; cursor: pointer; user-select: none;">
+                                <label class="hr-role-pill-label">
                                     <input type="checkbox" name="assigned_branch_ids[]" value="{{ $b->id }}" id="cb_add_branch_{{ $b->id }}" {{ $loop->first ? 'checked' : '' }}>
                                     <span>{{ $b->name }}</span>
                                 </label>
@@ -1063,7 +1063,7 @@
                         <div style="font-size: 11px; color: #64748b; margin-bottom: 8px;">Assign multiple departments to enable dynamic &lt;&gt; navigation on Schedule:</div>
                         <div style="display: flex; flex-wrap: wrap; gap: 8px;">
                             @foreach($departments as $d)
-                                <label style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; cursor: pointer; user-select: none;">
+                                <label class="hr-role-pill-label">
                                     <input type="checkbox" name="assigned_department_ids[]" value="{{ $d->id }}" id="cb_add_dept_{{ $d->id }}">
                                     <span>{{ $d->name }}</span>
                                 </label>
@@ -1090,7 +1090,7 @@
                         <div style="font-size: 11px; color: #64748b; margin-bottom: 8px;">Assign multiple positions / roles that this employee can perform:</div>
                         <div style="display: flex; flex-wrap: wrap; gap: 8px;">
                             @foreach($positions as $p)
-                                <label style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; cursor: pointer; user-select: none;">
+                                <label class="hr-role-pill-label">
                                     <input type="checkbox" name="assigned_position_ids[]" value="{{ $p->id }}" id="cb_add_pos_{{ $p->id }}">
                                     <span>{{ $p->name }}</span>
                                 </label>
@@ -1351,7 +1351,7 @@
                     <div style="font-size: 11px; color: #64748b; margin-bottom: 8px;">Assign one or multiple branches this employee works in:</div>
                     <div style="display: flex; flex-wrap: wrap; gap: 8px;">
                         @foreach($branches as $b)
-                            <label style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; cursor: pointer; user-select: none;">
+                            <label class="hr-role-pill-label">
                                 <input type="checkbox" name="assigned_branch_ids[]" value="{{ $b->id }}" id="cb_edit_emp_branch_{{ $b->id }}" class="edit-emp-branch-cb">
                                 <span>{{ $b->name }}</span>
                             </label>
@@ -1378,7 +1378,7 @@
                     <div style="font-size: 11px; color: #64748b; margin-bottom: 8px;">Assign one or multiple departments (enables multi-department schedule toggling):</div>
                     <div style="display: flex; flex-wrap: wrap; gap: 8px;">
                         @foreach($departments as $d)
-                            <label style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; cursor: pointer; user-select: none;">
+                            <label class="hr-role-pill-label">
                                 <input type="checkbox" name="assigned_department_ids[]" value="{{ $d->id }}" id="cb_edit_emp_dept_{{ $d->id }}" class="edit-emp-dept-cb">
                                 <span>{{ $d->name }}</span>
                             </label>
@@ -1405,7 +1405,7 @@
                     <div style="font-size: 11px; color: #64748b; margin-bottom: 8px;">Assign one or multiple positions / roles this employee can perform:</div>
                     <div style="display: flex; flex-wrap: wrap; gap: 8px;">
                         @foreach($positions as $p)
-                            <label style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; cursor: pointer; user-select: none;">
+                            <label class="hr-role-pill-label">
                                 <input type="checkbox" name="assigned_position_ids[]" value="{{ $p->id }}" id="cb_edit_emp_pos_{{ $p->id }}" class="edit-emp-pos-cb">
                                 <span>{{ $p->name }}</span>
                             </label>
