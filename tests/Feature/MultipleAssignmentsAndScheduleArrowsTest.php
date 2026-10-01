@@ -335,5 +335,53 @@ class MultipleAssignmentsAndScheduleArrowsTest extends TestCase
         $this->assertTrue(in_array($departments[1]->id, $emp->assigned_department_ids));
         $this->assertCount(2, $emp->all_department_ids);
     }
+
+    public function test_total_staff_links_open_members_in_new_window(): void
+    {
+        $initOb = ob_get_level();
+        $admin = User::where('username', 'peter')->first();
+        $this->actingAs($admin);
+
+        $department = Department::first();
+        $position = Position::first();
+        $branch = Branch::first();
+        $company = Company::first();
+
+        // 1. Department Index page has target="_blank" link to employees
+        $respDept = $this->get(route('hr.people.departments'));
+        $respDept->assertStatus(200);
+        $respDept->assertSee('target="_blank"', false);
+        $respDept->assertSee(route('hr.people.employees', ['department_id' => $department->id]), false);
+
+        // 2. Position Index page has target="_blank" link to employees
+        $respPos = $this->get(route('hr.people.positions'));
+        $respPos->assertStatus(200);
+        $respPos->assertSee('target="_blank"', false);
+        $respPos->assertSee(route('hr.people.employees', ['position_id' => $position->id]), false);
+
+        // 3. Branch Index page has target="_blank" link to employees
+        $respBranch = $this->get(route('hr.people.branches'));
+        $respBranch->assertStatus(200);
+        $respBranch->assertSee('target="_blank"', false);
+        $respBranch->assertSee(route('hr.people.employees', ['branch_id' => $branch->id]), false);
+
+        // 4. Company Index page has target="_blank" link to employees
+        $respComp = $this->get(route('hr.people.companies'));
+        $respComp->assertStatus(200);
+        $respComp->assertSee('target="_blank"', false);
+        $respComp->assertSee(route('hr.people.employees', ['company_id' => $company->id]), false);
+
+        // 5. Open Employees Directory with department filter (simulate new window destination)
+        $respFiltered = $this->get(route('hr.people.employees', ['department_id' => $department->id]));
+        $respFiltered->assertStatus(200);
+        $respFiltered->assertSee('Filtered Member View');
+        $respFiltered->assertSee($department->name);
+        $respFiltered->assertSee('Close Window');
+
+        while (ob_get_level() > $initOb) {
+            ob_end_clean();
+        }
+    }
 }
+
 

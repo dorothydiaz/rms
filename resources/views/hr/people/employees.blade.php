@@ -79,6 +79,40 @@
     </div>
 </div>
 
+@php
+    $activeDept = request('department_id') ? ($departments->firstWhere('id', request('department_id'))?->name ?? request('department')) : request('department');
+    $activeBranch = request('branch_id') ? ($branches->firstWhere('id', request('branch_id'))?->name ?? request('branch')) : request('branch');
+    $activePos = request('position_id') ? ($positions->firstWhere('id', request('position_id'))?->name ?? request('position')) : request('position');
+    $activeComp = request('company_id') ? ($companies->firstWhere('id', request('company_id'))?->name ?? $agencies->firstWhere('id', request('company_id'))?->name ?? request('company_name')) : request('company_name');
+@endphp
+
+@if(isset($filterContext) && $filterContext)
+    <div class="hr-active-filter-banner" style="margin-bottom: 14px; background: linear-gradient(135deg, rgba(124, 58, 237, 0.08) 0%, rgba(219, 39, 119, 0.06) 100%); border: 1.5px solid rgba(124, 58, 237, 0.25); border-radius: 12px; padding: 12px 18px; display: flex; align-items: center; justify-content: space-between; gap: 14px; box-shadow: 0 2px 6px rgba(124, 58, 237, 0.05);">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 36px; height: 36px; border-radius: 10px; background: #7c3aed; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">
+                <i class="ph ph-users"></i>
+            </div>
+            <div>
+                <div style="font-size: 11px; font-weight: 700; color: #7c3aed; text-transform: uppercase; letter-spacing: 0.5px;">Filtered Member View</div>
+                <div style="font-size: 14px; font-weight: 700; color: #0f172a;">
+                    {{ $filterContext['type'] }}: <span style="color: #7c3aed;">{{ $filterContext['name'] }}</span>
+                    <span style="font-size: 12.5px; font-weight: 600; color: #64748b; margin-left: 6px;">({{ $employees->total() }} {{ Str::plural('member', $employees->total()) }} found)</span>
+                </div>
+            </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <a href="{{ route('hr.people.employees') }}" class="hr-btn hr-btn-secondary" style="height: 32px; padding: 0 12px; font-size: 12px; background: #ffffff; border: 1px solid #cbd5e1; color: #475569; text-decoration: none;" title="Clear filter to view all employees">
+                <i class="ph ph-x"></i>
+                <span>Clear Filter</span>
+            </a>
+            <button type="button" class="hr-btn hr-btn-secondary" onclick="window.close()" style="height: 32px; padding: 0 12px; font-size: 12px; background: #ffffff; border: 1px solid #cbd5e1; color: #475569;" title="Close this window">
+                <i class="ph ph-x-circle"></i>
+                <span>Close Window</span>
+            </button>
+        </div>
+    </div>
+@endif
+
 <!-- Real-Time Filter & Search Bar -->
 <div class="hr-filter-bar" style="margin-bottom: 16px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px 16px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
     <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
@@ -94,7 +128,7 @@
             <select id="empDeptFilter" class="hr-select" style="height: 36px; max-width: 170px; font-size: 13px;" onchange="filterEmployeesDirectory()">
                 <option value="">All Departments</option>
                 @foreach($departments as $d)
-                    <option value="{{ $d->name }}">{{ $d->name }}</option>
+                    <option value="{{ $d->name }}" {{ $activeDept === $d->name ? 'selected' : '' }}>{{ $d->name }}</option>
                 @endforeach
             </select>
 
@@ -103,7 +137,7 @@
                 <select id="empBranchFilter" class="hr-select" style="height: 36px; max-width: 170px; font-size: 13px;" onchange="filterEmployeesDirectory()">
                     <option value="">All Branches</option>
                     @foreach($branches as $b)
-                        <option value="{{ $b->name }}">{{ $b->name }}</option>
+                        <option value="{{ $b->name }}" {{ $activeBranch === $b->name ? 'selected' : '' }}>{{ $b->name }}</option>
                     @endforeach
                 </select>
             @endif
@@ -112,7 +146,7 @@
             <select id="empPositionFilter" class="hr-select" style="height: 36px; max-width: 170px; font-size: 13px;" onchange="filterEmployeesDirectory()">
                 <option value="">All Positions</option>
                 @foreach($positions as $p)
-                    <option value="{{ $p->name }}">{{ $p->name }}</option>
+                    <option value="{{ $p->name }}" {{ $activePos === $p->name ? 'selected' : '' }}>{{ $p->name }}</option>
                 @endforeach
             </select>
 
@@ -161,10 +195,10 @@
             <select id="empCompanyFilter" class="hr-select" style="height: 34px; font-size: 12.5px;" onchange="filterEmployeesDirectory()">
                 <option value="">All Sources</option>
                 @foreach($companies as $c)
-                    <option value="{{ $c->name }}">{{ $c->name }} (Company)</option>
+                    <option value="{{ $c->name }}" {{ $activeComp === $c->name ? 'selected' : '' }}>{{ $c->name }} (Company)</option>
                 @endforeach
                 @foreach($agencies as $a)
-                    <option value="{{ $a->name }}">{{ $a->name }} (Agency)</option>
+                    <option value="{{ $a->name }}" {{ $activeComp === $a->name ? 'selected' : '' }}>{{ $a->name }} (Agency)</option>
                 @endforeach
             </select>
         </div>
@@ -255,14 +289,20 @@
                         $branchName = $emp->branch?->name ?? 'Unassigned';
                         $dateHiredVal = $emp->date_hired ? \Carbon\Carbon::parse($emp->date_hired)->timestamp : 0;
                         $initials = strtoupper(substr($emp->first_name ?? '', 0, 1) . substr($emp->last_name ?? '', 0, 1)) ?: 'EM';
+                        $allDeptsStr = strtolower($emp->assignedDepartments()->pluck('name')->push($deptName)->unique()->implode('|'));
+                        $allPosStr = strtolower($emp->assignedPositions()->pluck('name')->push($posName)->unique()->implode('|'));
+                        $allBranchesStr = strtolower($emp->assignedBranches()->pluck('name')->push($branchName)->unique()->implode('|'));
                     @endphp
                     <tr class="emp-row" 
                         data-id="{{ strtolower($emp->employee_id) }}"
                         data-name="{{ strtolower($emp->full_name) }}"
                         data-email="{{ strtolower($emp->email ?? '') }}"
                         data-dept="{{ $deptName }}"
+                        data-all-dept-names="{{ $allDeptsStr }}"
                         data-position="{{ $posName }}"
+                        data-all-pos-names="{{ $allPosStr }}"
                         data-branch="{{ $branchName }}"
+                        data-all-branch-names="{{ $allBranchesStr }}"
                         data-type="{{ $emp->employment_type ?? 'Regular' }}"
                         data-status="{{ $emp->employment_status }}"
                         data-company="{{ $emp->company_or_agency }}"
@@ -1172,12 +1212,16 @@ function filterEmployeesDirectory() {
             dept.toLowerCase().includes(searchVal) ||
             branch.toLowerCase().includes(searchVal);
 
-        const matchesBranch  = !branchVal  || branch === branchVal;
-        const matchesDept    = !deptVal    || dept === deptVal;
-        const matchesPos     = !posVal     || pos === posVal;
+        const allBranch = (row.getAttribute('data-all-branch-names') || branch).toLowerCase();
+        const allDept   = (row.getAttribute('data-all-dept-names')   || dept).toLowerCase();
+        const allPos    = (row.getAttribute('data-all-pos-names')    || pos).toLowerCase();
+
+        const matchesBranch  = !branchVal  || branch.toLowerCase() === branchVal.toLowerCase() || allBranch.includes(branchVal.toLowerCase());
+        const matchesDept    = !deptVal    || dept.toLowerCase() === deptVal.toLowerCase() || allDept.includes(deptVal.toLowerCase());
+        const matchesPos     = !posVal     || pos.toLowerCase() === posVal.toLowerCase() || allPos.includes(posVal.toLowerCase());
         const matchesType    = !typeVal    || type.toLowerCase() === typeVal.toLowerCase();
-        const matchesStatus  = !statusVal  || status === statusVal;
-        const matchesCompany = !companyVal || company === companyVal;
+        const matchesStatus  = !statusVal  || status.toLowerCase() === statusVal.toLowerCase();
+        const matchesCompany = !companyVal || company.toLowerCase() === companyVal.toLowerCase();
 
         return matchesSearch && matchesBranch && matchesDept && matchesPos && matchesType && matchesStatus && matchesCompany;
     });
@@ -1188,6 +1232,12 @@ function filterEmployeesDirectory() {
 
 // Run pagination on page load
 document.addEventListener('DOMContentLoaded', () => {
+    const cVal = document.getElementById('empCompanyFilter')?.value;
+    if (cVal) {
+        const p = document.getElementById('moreFiltersPanel');
+        const b = document.getElementById('moreFiltersBtn');
+        if (p) { p.style.display = 'flex'; if (b) b.classList.add('active'); }
+    }
     filterEmployeesDirectory();
 });
 

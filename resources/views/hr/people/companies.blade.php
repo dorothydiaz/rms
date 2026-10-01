@@ -9,8 +9,24 @@
             <i class="ph ph-plus-circle"></i>
             <span>Add Agency / Company</span>
         </button>
-    </x-slot:actions>
 </x-hr-tabs>
+
+<style>
+.hr-badge-staff-link {
+    text-decoration: none !important;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.18s ease;
+}
+.hr-badge-staff-link:hover {
+    background: #7c3aed !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 8px rgba(124, 58, 237, 0.35);
+    transform: translateY(-1px);
+}
+</style>
 
 <!-- Summary Metric Cards -->
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin-bottom: 22px;">
@@ -226,8 +242,14 @@
                             <span style="font-size: 12px; color: #475569; font-family: monospace;">{{ $item->tin ?: 'N/A' }}</span>
                         </td>
                         <td>
-                            <a href="{{ route('hr.people.employees', ['search' => $item->name]) }}" class="hr-badge hr-badge-purple" title="View assigned staff members">
-                                <i class="ph ph-users"></i> {{ $item->employees_count }} staff
+                            <a href="{{ route('hr.people.employees', ['company_id' => $item->id]) }}" 
+                               target="_blank" 
+                               rel="noopener noreferrer"
+                               class="hr-badge hr-badge-purple hr-badge-staff-link" 
+                               title="Click to view staff members assigned to {{ $item->name }} in a new window">
+                                <i class="ph ph-users"></i>
+                                <span>{{ $item->employees_count }} {{ Str::plural('staff', $item->employees_count) }}</span>
+                                <i class="ph ph-arrow-square-out" style="font-size: 11px; opacity: 0.75;"></i>
                             </a>
                         </td>
                         <td>

@@ -9,8 +9,24 @@
             <i class="ph ph-plus-circle"></i>
             <span>Add Department</span>
         </button>
-    </x-slot:actions>
 </x-hr-tabs>
+
+<style>
+.hr-badge-staff-link {
+    text-decoration: none !important;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.18s ease;
+}
+.hr-badge-staff-link:hover {
+    background: #7c3aed !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 8px rgba(124, 58, 237, 0.35);
+    transform: translateY(-1px);
+}
+</style>
 
 <div class="hr-table-card hr-table-card-full">
     <div class="hr-table-wrapper">
@@ -35,7 +51,17 @@
                         <td><strong>{{ $dept->name }}</strong></td>
                         <td>{{ $dept->branch?->name ?? 'All Branches' }}</td>
                         <td>{{ $dept->description ?? 'No description' }}</td>
-                        <td><span class="hr-badge hr-badge-purple">{{ $dept->employees_count }} employees</span></td>
+                        <td>
+                            <a href="{{ route('hr.people.employees', ['department_id' => $dept->id]) }}"
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               class="hr-badge hr-badge-purple hr-badge-staff-link"
+                               title="Click to view staff members of {{ $dept->name }} in a new window">
+                                <i class="ph ph-users"></i>
+                                <span>{{ $dept->employees_count }} {{ Str::plural('employee', $dept->employees_count) }}</span>
+                                <i class="ph ph-arrow-square-out" style="font-size: 11px; opacity: 0.75;"></i>
+                            </a>
+                        </td>
                         <td style="text-align: right;">
                             <span class="hr-badge hr-badge-success">Active</span>
                         </td>

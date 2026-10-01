@@ -33,10 +33,21 @@ class PeopleController extends Controller
         // Branch scoping
         $baseQuery = Employee::query();
         if (!$user->isSuperAdmin() && !$user->isHrAdmin() && $user->branch_id) {
-            $query->where('branch_id', $user->branch_id);
-            $baseQuery->where('branch_id', $user->branch_id);
+            $userBranchId = (int)$user->branch_id;
+            $query->where(function ($q) use ($userBranchId) {
+                $q->where('branch_id', $userBranchId)
+                  ->orWhereJsonContains('assigned_branch_ids', $userBranchId);
+            });
+            $baseQuery->where(function ($q) use ($userBranchId) {
+                $q->where('branch_id', $userBranchId)
+                  ->orWhereJsonContains('assigned_branch_ids', $userBranchId);
+            });
         } elseif ($request->filled('branch_id')) {
-            $query->where('branch_id', $request->branch_id);
+            $branchId = (int)$request->branch_id;
+            $query->where(function ($q) use ($branchId) {
+                $q->where('branch_id', $branchId)
+                  ->orWhereJsonContains('assigned_branch_ids', $branchId);
+            });
         }
 
         // Summary Statistics Cards
@@ -49,11 +60,39 @@ class PeopleController extends Controller
         ];
 
         if ($request->filled('department_id')) {
-            $query->where('department_id', $request->department_id);
+            $deptId = (int)$request->department_id;
+            $query->where(function ($q) use ($deptId) {
+                $q->where('department_id', $deptId)
+                  ->orWhereJsonContains('assigned_department_ids', $deptId);
+            });
         }
 
         if ($request->filled('position_id')) {
-            $query->where('position_id', $request->position_id);
+            $posId = (int)$request->position_id;
+            $query->where(function ($q) use ($posId) {
+                $q->where('position_id', $posId)
+                  ->orWhereJsonContains('assigned_position_ids', $posId);
+            });
+        }
+
+        if ($request->filled('company_id')) {
+            $companyId = (int)$request->company_id;
+            $comp = Company::find($companyId);
+            $query->where(function ($q) use ($companyId, $comp) {
+                $q->where('company_id', $companyId);
+                if ($comp) {
+                    $q->orWhere('company_name', $comp->name)
+                      ->orWhere('agency_name', $comp->name)
+                      ->orWhere('company_agency_name', $comp->name);
+                }
+            });
+        } elseif ($request->filled('company_name')) {
+            $cName = $request->company_name;
+            $query->where(function ($q) use ($cName) {
+                $q->where('company_name', $cName)
+                  ->orWhere('agency_name', $cName)
+                  ->orWhere('company_agency_name', $cName);
+            });
         }
 
         if ($request->filled('employment_type')) {
@@ -74,6 +113,22 @@ class PeopleController extends Controller
             });
         }
 
+        // Active Filter Context for header alert/indicator
+        $filterContext = null;
+        if ($request->filled('department_id')) {
+            $d = Department::find($request->department_id);
+            if ($d) $filterContext = ['type' => 'Department', 'name' => $d->name, 'code' => $d->code, 'id' => $d->id];
+        } elseif ($request->filled('position_id')) {
+            $p = Position::find($request->position_id);
+            if ($p) $filterContext = ['type' => 'Position', 'name' => $p->name, 'code' => $p->code, 'id' => $p->id];
+        } elseif ($request->filled('branch_id')) {
+            $b = Branch::find($request->branch_id);
+            if ($b) $filterContext = ['type' => 'Branch', 'name' => $b->name, 'code' => $b->code, 'id' => $b->id];
+        } elseif ($request->filled('company_id')) {
+            $c = Company::find($request->company_id);
+            if ($c) $filterContext = ['type' => $c->type ?? 'Company / Agency', 'name' => $c->name, 'code' => $c->code, 'id' => $c->id];
+        }
+
         $perPage = (int) $request->get('per_page', 100);
         $employees = $query->orderBy('created_at', 'desc')->paginate($perPage)->withQueryString();
         $branches = Branch::where('is_active', true)->orderBy('name')->get();
@@ -83,7 +138,7 @@ class PeopleController extends Controller
         $agencies = Company::where('type', 'Agency')->where('is_active', true)->orderBy('name')->get();
         $users = User::orderBy('full_name')->get();
 
-        return view('hr.people.employees', compact('employees', 'branches', 'departments', 'positions', 'companies', 'agencies', 'users', 'counts'));
+        return view('hr.people.employees', compact('employees', 'branches', 'departments', 'positions', 'companies', 'agencies', 'users', 'counts', 'filterContext'));
     }
 
     public function employeeShow(int $id): View
@@ -952,7 +1007,11 @@ class PeopleController extends Controller
 
     public function departmentsIndex(): View
     {
-        $departments = Department::withCount('employees')->with('branch')->get();
+        $departments = Department::with('branch')->get();
+        $allEmps = Employee::select('id', 'department_id', 'assigned_department_ids')->get();
+        foreach ($departments as $dept) {
+            $dept->employees_count = $allEmps->filter(fn($e) => in_array($dept->id, $e->all_department_ids))->count();
+        }
         $branches = Branch::where('is_active', true)->get();
         return view('hr.people.departments', compact('departments', 'branches'));
     }
@@ -994,7 +1053,11 @@ class PeopleController extends Controller
 
     public function positionsIndex(): View
     {
-        $positions = Position::with(['department', 'employees'])->withCount('employees')->get();
+        $positions = Position::with(['department', 'employees'])->get();
+        $allEmps = Employee::select('id', 'position_id', 'assigned_position_ids')->get();
+        foreach ($positions as $pos) {
+            $pos->employees_count = $allEmps->filter(fn($e) => in_array($pos->id, $e->all_position_ids))->count();
+        }
         $departments = Department::all();
         return view('hr.people.positions', compact('positions', 'departments'));
     }
@@ -1036,7 +1099,11 @@ class PeopleController extends Controller
 
     public function branchesIndex(): View
     {
-        $branches = Branch::withCount('employees')->with('company')->get();
+        $branches = Branch::with('company')->get();
+        $allEmps = Employee::select('id', 'branch_id', 'assigned_branch_ids')->get();
+        foreach ($branches as $branch) {
+            $branch->employees_count = $allEmps->filter(fn($e) => in_array($branch->id, $e->all_branch_ids))->count();
+        }
         $company = Company::first();
         return view('hr.people.branches', compact('branches', 'company'));
     }
@@ -1083,7 +1150,7 @@ class PeopleController extends Controller
 
     public function companiesIndex(Request $request): View
     {
-        $query = Company::withCount('employees')->withCount('branches');
+        $query = Company::withCount('branches');
 
         if ($type = $request->get('type')) {
             if (in_array($type, ['Company', 'Agency'])) {
@@ -1102,6 +1169,16 @@ class PeopleController extends Controller
         }
 
         $companies = $query->orderBy('type', 'asc')->orderBy('name', 'asc')->get();
+
+        $allEmps = Employee::select('id', 'company_id', 'company_name', 'agency_name', 'company_agency_name')->get();
+        foreach ($companies as $comp) {
+            $comp->employees_count = $allEmps->filter(fn($e) => 
+                $e->company_id === $comp->id || 
+                strcasecmp((string)$e->company_name, $comp->name) === 0 || 
+                strcasecmp((string)$e->agency_name, $comp->name) === 0 ||
+                strcasecmp((string)$e->company_agency_name, $comp->name) === 0
+            )->count();
+        }
 
         $totalCount = Company::count();
         $companyCount = Company::where('type', 'Company')->count();
