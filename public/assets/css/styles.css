@@ -3325,9 +3325,10 @@ select option {
 .hr-modal form {
     display: flex !important;
     flex-direction: column !important;
-    flex: 1 1 auto !important;
+    flex: 1 1 0% !important;
     min-height: 0 !important;
-    height: 100% !important;
+    height: auto !important;
+    max-height: 100% !important;
     overflow: hidden !important;
     background: #ffffff !important;
     margin: 0 !important;
@@ -6960,3 +6961,362 @@ body > .hr-custom-select-menu {
     font-size: 11px;
     color: #94a3b8;
 }
+
+/* ============================================================
+   TALENT ACQUISITION & ONBOARDING SUITE STYLES
+   ============================================================ */
+
+/* Slide-out Drawer */
+.hr-drawer-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hr-drawer-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.hr-drawer {
+    position: fixed;
+    top: 0;
+    right: -720px;
+    width: 100%;
+    max-width: 680px;
+    height: 100vh;
+    background: #ffffff;
+    box-shadow: -8px 0 32px rgba(15, 23, 42, 0.15);
+    z-index: 1001;
+    display: flex;
+    flex-direction: column;
+    transition: right 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hr-drawer.active {
+    right: 0;
+}
+
+.hr-drawer-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid #e2e8f0;
+    background: linear-gradient(135deg, rgba(236, 72, 153, 0.04) 0%, rgba(168, 85, 247, 0.08) 100%);
+    position: relative;
+    flex-shrink: 0;
+}
+
+.hr-drawer-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #64748b;
+    transition: all 0.15s ease;
+}
+
+.hr-drawer-close:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+}
+
+.hr-drawer-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+    background: #fafafa;
+}
+
+.hr-drawer-footer {
+    padding: 16px 24px;
+    border-top: 1px solid #e2e8f0;
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+/* Pipeline Horizontal Stepper */
+.hr-pipeline-stepper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+    padding: 12px 14px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    overflow-x: auto;
+}
+
+.hr-step-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    flex: 1;
+    min-width: 60px;
+    text-align: center;
+    position: relative;
+}
+
+.hr-step-dot {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    background: #f1f5f9;
+    color: #94a3b8;
+    border: 2px solid #e2e8f0;
+    transition: all 0.2s ease;
+}
+
+.hr-step-item.active .hr-step-dot {
+    background: linear-gradient(135deg, #ec4899, #a855f7);
+    color: #ffffff;
+    border-color: #a855f7;
+    box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.2);
+}
+
+.hr-step-item.completed .hr-step-dot {
+    background: #10b981;
+    color: #ffffff;
+    border-color: #10b981;
+}
+
+.hr-step-name {
+    font-size: 10px;
+    font-weight: 600;
+    color: #64748b;
+    white-space: nowrap;
+}
+
+.hr-step-item.active .hr-step-name {
+    color: #9333ea;
+    font-weight: 700;
+}
+
+/* Micro Nav Tabs inside Profile */
+.hr-micro-tabs {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    border-bottom: 1px solid #e2e8f0;
+    margin-bottom: 20px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+}
+
+.hr-micro-tab {
+    padding: 8px 14px;
+    border-radius: 8px 8px 0 0;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #64748b;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s ease;
+}
+
+.hr-micro-tab:hover {
+    color: #9333ea;
+    background: rgba(168, 85, 247, 0.05);
+}
+
+.hr-micro-tab.active {
+    color: #9333ea;
+    border-bottom-color: #9333ea;
+    background: rgba(168, 85, 247, 0.08);
+}
+
+/* Scorecard & Rating Grid */
+.hr-scorecard-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin: 16px 0;
+}
+
+.hr-rating-row {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.hr-star-rating {
+    display: inline-flex;
+    gap: 4px;
+    cursor: pointer;
+}
+
+.hr-star-rating i {
+    font-size: 16px;
+    color: #cbd5e1;
+    transition: color 0.15s ease;
+}
+
+.hr-star-rating i.filled,
+.hr-star-rating i.active {
+    color: #f59e0b;
+}
+
+/* Requirements & Checklist UI */
+.hr-checklist-item {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+    transition: all 0.15s ease;
+}
+
+.hr-checklist-item:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+}
+
+.hr-checklist-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    flex: 1;
+}
+
+.hr-checklist-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+/* Printable / Preview Offer Paper */
+.hr-offer-paper {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 28px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+    font-family: var(--font-family);
+    color: #1e293b;
+    line-height: 1.6;
+}
+
+.hr-offer-header {
+    border-bottom: 2px solid #9333ea;
+    padding-bottom: 16px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.hr-offer-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0;
+}
+
+.hr-offer-details-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 16px;
+    margin: 16px 0;
+}
+
+/* Timeline Activity Stream */
+.hr-timeline-stream {
+    position: relative;
+    padding-left: 24px;
+}
+
+.hr-timeline-stream::before {
+    content: '';
+    position: absolute;
+    left: 8px;
+    top: 6px;
+    bottom: 6px;
+    width: 2px;
+    background: #e2e8f0;
+}
+
+.hr-timeline-item {
+    position: relative;
+    margin-bottom: 18px;
+}
+
+.hr-timeline-dot {
+    position: absolute;
+    left: -24px;
+    top: 3px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 3px solid #9333ea;
+}
+
+.hr-timeline-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 2px;
+}
+
+.hr-timeline-meta {
+    font-size: 11px;
+    color: #94a3b8;
+    margin-bottom: 4px;
+}
+
+.hr-timeline-desc {
+    font-size: 12.5px;
+    color: #475569;
+}
+

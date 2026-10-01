@@ -339,49 +339,74 @@ class MultipleAssignmentsAndScheduleArrowsTest extends TestCase
     public function test_total_staff_links_open_members_in_new_window(): void
     {
         $initOb = ob_get_level();
-        $admin = User::where('username', 'peter')->first();
-        $this->actingAs($admin);
+        try {
+            $admin = User::where('username', 'peter')->first();
+            $this->actingAs($admin);
 
-        $department = Department::first();
-        $position = Position::first();
-        $branch = Branch::first();
-        $company = Company::first();
+            $department = Department::first();
+            $position = Position::first();
+            $branch = Branch::first();
+            $company = Company::first();
 
-        // 1. Department Index page has target="_blank" link to employees
-        $respDept = $this->get(route('hr.people.departments'));
-        $respDept->assertStatus(200);
-        $respDept->assertSee('target="_blank"', false);
-        $respDept->assertSee(route('hr.people.employees', ['department_id' => $department->id]), false);
+            // 1. Department Index page has modal trigger and includes members modal window
+            $respDept = $this->get(route('hr.people.departments'));
+            $respDept->assertStatus(200);
+            $respDept->assertSee("openMembersModal('department', {$department->id}", false);
+            $respDept->assertSee('id="membersRosterModal"', false);
+            $respDept->assertSee('id="membersModalTableWrapper"', false);
+            $respDept->assertSee('id="membersModalPerPage"', false);
 
-        // 2. Position Index page has target="_blank" link to employees
-        $respPos = $this->get(route('hr.people.positions'));
-        $respPos->assertStatus(200);
-        $respPos->assertSee('target="_blank"', false);
-        $respPos->assertSee(route('hr.people.employees', ['position_id' => $position->id]), false);
+            // 2. Position Index page has modal trigger and includes members modal window
+            $respPos = $this->get(route('hr.people.positions'));
+            $respPos->assertStatus(200);
+            $respPos->assertSee("openMembersModal('position', {$position->id}", false);
+            $respPos->assertSee('id="membersRosterModal"', false);
+            $respPos->assertSee('id="membersModalTableWrapper"', false);
+            $respPos->assertSee('id="membersModalPerPage"', false);
 
-        // 3. Branch Index page has target="_blank" link to employees
-        $respBranch = $this->get(route('hr.people.branches'));
-        $respBranch->assertStatus(200);
-        $respBranch->assertSee('target="_blank"', false);
-        $respBranch->assertSee(route('hr.people.employees', ['branch_id' => $branch->id]), false);
+            // 3. Branch Index page has modal trigger and includes members modal window
+            $respBranch = $this->get(route('hr.people.branches'));
+            $respBranch->assertStatus(200);
+            $respBranch->assertSee("openMembersModal('branch', {$branch->id}", false);
+            $respBranch->assertSee('id="membersRosterModal"', false);
+            $respBranch->assertSee('id="membersModalTableWrapper"', false);
+            $respBranch->assertSee('id="membersModalPerPage"', false);
 
-        // 4. Company Index page has target="_blank" link to employees
-        $respComp = $this->get(route('hr.people.companies'));
-        $respComp->assertStatus(200);
-        $respComp->assertSee('target="_blank"', false);
-        $respComp->assertSee(route('hr.people.employees', ['company_id' => $company->id]), false);
+            // 4. Company Index page has modal trigger and includes members modal window
+            $respComp = $this->get(route('hr.people.companies'));
+            $respComp->assertStatus(200);
+            $respComp->assertSee("openMembersModal('company', {$company->id}", false);
+            $respComp->assertSee('id="membersRosterModal"', false);
+            $respComp->assertSee('id="membersModalTableWrapper"', false);
+            $respComp->assertSee('id="membersModalPerPage"', false);
 
-        // 5. Open Employees Directory with department filter (simulate new window destination)
-        $respFiltered = $this->get(route('hr.people.employees', ['department_id' => $department->id]));
-        $respFiltered->assertStatus(200);
-        $respFiltered->assertSee('Filtered Member View');
-        $respFiltered->assertSee($department->name);
-        $respFiltered->assertSee('Close Window');
+            // 5. AJAX JSON endpoint returns members for Department modal
+            $respDeptJson = $this->getJson(route('hr.people.members-modal', ['type' => 'department', 'id' => $department->id]));
+            $respDeptJson->assertStatus(200);
+            $this->assertTrue($respDeptJson->json('success'));
+            $this->assertEquals('department', $respDeptJson->json('type'));
+            $this->assertEquals($department->id, $respDeptJson->json('id'));
+            $this->assertIsArray($respDeptJson->json('members'));
 
-        while (ob_get_level() > $initOb) {
-            ob_end_clean();
+            // 6. AJAX JSON endpoint returns members for Position, Branch, Company
+            $respPosJson = $this->getJson(route('hr.people.members-modal', ['type' => 'position', 'id' => $position->id]));
+            $respPosJson->assertStatus(200);
+            $this->assertTrue($respPosJson->json('success'));
+
+            $respBranchJson = $this->getJson(route('hr.people.members-modal', ['type' => 'branch', 'id' => $branch->id]));
+            $respBranchJson->assertStatus(200);
+            $this->assertTrue($respBranchJson->json('success'));
+
+            $respCompJson = $this->getJson(route('hr.people.members-modal', ['type' => 'company', 'id' => $company->id]));
+            $respCompJson->assertStatus(200);
+            $this->assertTrue($respCompJson->json('success'));
+        } finally {
+            while (ob_get_level() > $initOb) {
+                ob_end_clean();
+            }
         }
     }
 }
+
 
 

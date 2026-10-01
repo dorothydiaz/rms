@@ -92,6 +92,9 @@ class Employee extends Model
         'has_multiple_departments',
         'all_department_ids',
         'assigned_department_names',
+        'all_branch_ids',
+        'all_position_ids',
+        'photo_url',
     ];
 
     protected function casts(): array
@@ -366,4 +369,13 @@ class Employee extends Model
     {
         return $query->whereNotIn('employment_status', ['Resigned', 'Terminated', 'Retired']);
     }
+
+    /**
+     * Original recruitment applicant record if converted from Talent Acquisition.
+     */
+    public function applicant(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(Applicant::class, 'hired_as_employee_id');
+    }
 }
+

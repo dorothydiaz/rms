@@ -99,7 +99,7 @@
                 </div>
                 <div class="sub-nav{{ $workforceActive ? ' expanded' : '' }}">
                     <a href="{{ route('hr.people.employees') }}" class="sub-nav-item{{ request()->routeIs('hr.people.*', 'hr.employee') ? ' active' : '' }}" title="Employee Management, 201-files, and workforce directory"><span>Employee Management</span></a>
-                    <a href="{{ route('hr.recruitment.vacancies') }}" class="sub-nav-item{{ request()->routeIs('hr.recruitment.*') ? ' active' : '' }}" title="Job vacancy postings and hiring pipeline"><span>Recruitment</span></a>
+                    <a href="{{ route('hr.recruitment.vacancies') }}" class="sub-nav-item{{ request()->routeIs('hr.recruitment.*') ? ' active' : '' }}" title="Talent acquisition, job vacancies, candidate pipeline, and hiring"><span>Talent Acquisition</span></a>
                 </div>
             </div>
 

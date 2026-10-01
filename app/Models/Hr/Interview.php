@@ -15,18 +15,24 @@ class Interview extends Model
     protected $fillable = [
         'applicant_id',
         'interview_date',
+        'interview_time',
         'interviewer_id',
         'interviewer_name',
         'interview_type',
+        'interview_stage',
+        'location_or_link',
+        'instructions',
         'notes',
         'rating',
         'recommendation',
+        'scorecard',
         'status',
     ];
 
     protected $casts = [
         'interview_date' => 'datetime',
         'rating' => 'integer',
+        'scorecard' => 'array',
     ];
 
     public function applicant()

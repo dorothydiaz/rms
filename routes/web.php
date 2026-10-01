@@ -41,6 +41,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/employees', [\App\Http\Controllers\Hr\PeopleController::class, 'employeesIndex'])->name('employees');
             Route::post('/employees', [\App\Http\Controllers\Hr\PeopleController::class, 'employeeStore'])->name('employees.store');
             Route::get('/employees/{id}', [\App\Http\Controllers\Hr\PeopleController::class, 'employeeShow'])->name('employees.show');
+            Route::get('/employees/{id}/data', [\App\Http\Controllers\Hr\PeopleController::class, 'employeeData'])->name('employees.data');
             Route::put('/employees/{id}', [\App\Http\Controllers\Hr\PeopleController::class, 'employeeUpdate'])->name('employees.update');
             Route::delete('/employees/{id}', [\App\Http\Controllers\Hr\PeopleController::class, 'employeeDestroy'])->name('employees.destroy');
 
@@ -67,6 +68,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/employees/{id}/print-201', [\App\Http\Controllers\Hr\PeopleController::class, 'print201File'])->name('employees.print-201');
 
             Route::get('/organization', [\App\Http\Controllers\Hr\PeopleController::class, 'organizationIndex'])->name('organization');
+            Route::get('/members-modal', [\App\Http\Controllers\Hr\PeopleController::class, 'getMembersModal'])->name('members-modal');
 
             Route::get('/departments', [\App\Http\Controllers\Hr\PeopleController::class, 'departmentsIndex'])->name('departments');
             Route::post('/departments', [\App\Http\Controllers\Hr\PeopleController::class, 'departmentStore'])->name('departments.store');
@@ -91,20 +93,43 @@ Route::middleware('auth')->group(function () {
             Route::delete('/documents/{id}', [\App\Http\Controllers\Hr\PeopleController::class, 'documentDestroy'])->name('documents.destroy');
         });
 
-        // 3. Recruitment
+        // 3. Talent Acquisition & Recruitment Pipeline
         Route::prefix('recruitment')->name('recruitment.')->group(function () {
+            // Vacancies
             Route::get('/vacancies', [\App\Http\Controllers\Hr\RecruitmentController::class, 'vacanciesIndex'])->name('vacancies');
             Route::post('/vacancies', [\App\Http\Controllers\Hr\RecruitmentController::class, 'vacancyStore'])->name('vacancies.store');
             Route::put('/vacancies/{id}', [\App\Http\Controllers\Hr\RecruitmentController::class, 'vacancyUpdate'])->name('vacancies.update');
+            Route::post('/vacancies/{id}/publish', [\App\Http\Controllers\Hr\RecruitmentController::class, 'vacancyPublish'])->name('vacancies.publish');
+            Route::post('/vacancies/{id}/unpublish', [\App\Http\Controllers\Hr\RecruitmentController::class, 'vacancyUnpublish'])->name('vacancies.unpublish');
+            Route::post('/vacancies/{id}/duplicate', [\App\Http\Controllers\Hr\RecruitmentController::class, 'vacancyDuplicate'])->name('vacancies.duplicate');
+            Route::post('/vacancies/{id}/close', [\App\Http\Controllers\Hr\RecruitmentController::class, 'vacancyClose'])->name('vacancies.close');
 
+            // Applicants & Pipeline
             Route::get('/applicants', [\App\Http\Controllers\Hr\RecruitmentController::class, 'applicantsIndex'])->name('applicants');
             Route::post('/applicants', [\App\Http\Controllers\Hr\RecruitmentController::class, 'applicantStore'])->name('applicants.store');
+            Route::get('/applicants/{id}/data', [\App\Http\Controllers\Hr\RecruitmentController::class, 'applicantData'])->name('applicants.data');
             Route::put('/applicants/{id}', [\App\Http\Controllers\Hr\RecruitmentController::class, 'applicantUpdate'])->name('applicants.update');
+            Route::post('/applicants/{id}/stage', [\App\Http\Controllers\Hr\RecruitmentController::class, 'applicantChangeStage'])->name('applicants.stage');
+            Route::post('/applicants/{id}/screening', [\App\Http\Controllers\Hr\RecruitmentController::class, 'applicantScreening'])->name('applicants.screening');
+            Route::post('/applicants/{id}/final-review', [\App\Http\Controllers\Hr\RecruitmentController::class, 'applicantFinalReview'])->name('applicants.final-review');
+            Route::post('/applicants/{id}/offer', [\App\Http\Controllers\Hr\RecruitmentController::class, 'applicantOffer'])->name('applicants.offer');
+            Route::post('/applicants/{id}/offer-status', [\App\Http\Controllers\Hr\RecruitmentController::class, 'applicantOfferStatus'])->name('applicants.offer-status');
+            Route::post('/applicants/{id}/requirements', [\App\Http\Controllers\Hr\RecruitmentController::class, 'applicantRequirementUpdate'])->name('applicants.requirements');
+            Route::post('/applicants/{id}/preboarding', [\App\Http\Controllers\Hr\RecruitmentController::class, 'applicantPreboardingUpdate'])->name('applicants.preboarding');
+            Route::post('/applicants/{id}/onboarding', [\App\Http\Controllers\Hr\RecruitmentController::class, 'applicantOnboardingUpdate'])->name('applicants.onboarding');
             Route::post('/applicants/{id}/convert', [\App\Http\Controllers\Hr\RecruitmentController::class, 'applicantConvertToEmployee'])->name('applicants.convert');
 
+            // Interviews
             Route::get('/interviews', [\App\Http\Controllers\Hr\RecruitmentController::class, 'interviewsIndex'])->name('interviews');
             Route::post('/interviews', [\App\Http\Controllers\Hr\RecruitmentController::class, 'interviewStore'])->name('interviews.store');
             Route::put('/interviews/{id}', [\App\Http\Controllers\Hr\RecruitmentController::class, 'interviewUpdate'])->name('interviews.update');
+            Route::post('/interviews/{id}/evaluate', [\App\Http\Controllers\Hr\RecruitmentController::class, 'interviewEvaluate'])->name('interviews.evaluate');
+            Route::post('/interviews/{id}/status', [\App\Http\Controllers\Hr\RecruitmentController::class, 'interviewStatusUpdate'])->name('interviews.status');
+
+            // Assessments
+            Route::post('/assessments', [\App\Http\Controllers\Hr\RecruitmentController::class, 'assessmentStore'])->name('assessments.store');
+            Route::put('/assessments/{id}', [\App\Http\Controllers\Hr\RecruitmentController::class, 'assessmentUpdate'])->name('assessments.update');
+            Route::delete('/assessments/{id}', [\App\Http\Controllers\Hr\RecruitmentController::class, 'assessmentDestroy'])->name('assessments.destroy');
         });
 
         // 4. Attendance

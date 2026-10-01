@@ -13,6 +13,7 @@ use App\Models\Hr\EmploymentHistory;
 use App\Models\Hr\Position;
 use App\Models\User;
 use App\Services\AuditLogger;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -137,8 +138,19 @@ class PeopleController extends Controller
         $companies = Company::where('type', 'Company')->where('is_active', true)->orderBy('name')->get();
         $agencies = Company::where('type', 'Agency')->where('is_active', true)->orderBy('name')->get();
         $users = User::orderBy('full_name')->get();
+        $supervisors = Employee::activeWorkforce()->orderBy('first_name')->get(['id', 'first_name', 'last_name', 'employee_id']);
 
-        return view('hr.people.employees', compact('employees', 'branches', 'departments', 'positions', 'companies', 'agencies', 'users', 'counts', 'filterContext'));
+        return view('hr.people.employees', compact('employees', 'branches', 'departments', 'positions', 'companies', 'agencies', 'users', 'supervisors', 'counts', 'filterContext'));
+    }
+
+    public function employeeData(int $id): JsonResponse
+    {
+        $user = Auth::user();
+        $employee = Employee::with(['branch', 'department', 'position', 'supervisor'])->findOrFail($id);
+        if (!$user->canAccessBranch($employee->branch_id)) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+        return response()->json($employee);
     }
 
     public function employeeShow(int $id): View
@@ -415,13 +427,19 @@ class PeopleController extends Controller
             'middle_name' => 'nullable|string|max:60',
             'last_name' => 'required|string|max:60',
             'suffix' => 'nullable|string|max:15',
+            'preferred_name' => 'nullable|string|max:60',
             'date_of_birth' => 'nullable|date',
+            'birth_place' => 'nullable|string|max:100',
             'gender' => 'nullable|in:Male,Female,Other',
             'civil_status' => 'nullable|in:Single,Married,Widowed,Divorced,Separated',
             'nationality' => 'nullable|string|max:50',
             'mobile_number' => 'nullable|string|max:30',
+            'telephone_number' => 'nullable|string|max:30',
             'email' => 'nullable|email|max:100',
+            'personal_email' => 'nullable|email|max:100',
+            'company_email' => 'nullable|email|max:100',
             'address' => 'nullable|string',
+            'permanent_address' => 'nullable|string',
             'photo' => 'nullable|file|mimes:jpeg,png,jpg,webp,gif|max:5120',
             'remove_photo' => 'nullable|boolean',
             'user_id' => 'nullable|exists:users,id',
@@ -434,13 +452,16 @@ class PeopleController extends Controller
             'assigned_branch_ids.*' => 'exists:hr_branches,id',
             'assigned_position_ids' => 'nullable|array',
             'assigned_position_ids.*' => 'exists:hr_positions,id',
+            'job_level' => 'nullable|string|max:60',
             'supervisor_id' => 'nullable|exists:hr_employees,id',
             'date_hired' => 'nullable|date',
             'employment_status' => 'required|in:Active,Probationary,On Leave,Suspended,Resigned,Terminated,Retired',
-            'employment_type' => 'required|in:Regular,Probationary,Part-time,Casual,Contractual',
+            'employment_type' => 'required|in:Regular,Probationary,Part-time,Casual,Contractual,Seasonal,Intern / OJT',
             'employment_source' => 'nullable|in:Company,Agency',
             'company_name' => 'nullable|string|max:150',
             'agency_name' => 'nullable|string|max:150',
+            'work_location' => 'nullable|string|max:100',
+            'work_schedule' => 'nullable|string|max:100',
             'date_of_regularization' => 'nullable|date',
             'contract_start_date' => 'nullable|date',
             'contract_end_date' => 'nullable|date',
@@ -448,11 +469,26 @@ class PeopleController extends Controller
             'philhealth_number' => 'nullable|string|max:30',
             'pagibig_number' => 'nullable|string|max:30',
             'tin' => 'nullable|string|max:30',
+            'tin_number' => 'nullable|string|max:30',
+            'rdo_code' => 'nullable|string|max:30',
+            'philsys_id' => 'nullable|string|max:50',
+            'passport_number' => 'nullable|string|max:50',
+            'driver_license' => 'nullable|string|max:50',
             'basic_salary' => 'nullable|numeric|min:0',
             'salary_type' => 'nullable|in:Monthly,Daily,Hourly',
-            'pay_frequency' => 'nullable|in:Semi-Monthly,Monthly,Weekly',
+            'pay_frequency' => 'nullable|in:Semi-Monthly,Semi-monthly,Monthly,Weekly',
             'allowances' => 'nullable|numeric|min:0',
         ]);
+
+        if ($request->filled('personal_email') && empty($validated['email'])) {
+            $validated['email'] = $request->input('personal_email');
+        }
+        if ($request->filled('tin_number') && empty($validated['tin'])) {
+            $validated['tin'] = $request->input('tin_number');
+        }
+        if (!empty($validated['pay_frequency']) && strtolower($validated['pay_frequency']) === 'semi-monthly') {
+            $validated['pay_frequency'] = 'Semi-Monthly';
+        }
 
         if (empty($validated['branch_id'])) {
             $validated['branch_id'] = $employee->branch_id;
@@ -1003,6 +1039,104 @@ class PeopleController extends Controller
     public function organizationIndex(): RedirectResponse
     {
         return redirect()->route('hr.people.departments');
+    }
+
+    public function getMembersModal(Request $request): JsonResponse
+    {
+        $type = $request->get('type');
+        $id = (int) $request->get('id');
+
+        $title = 'Staff Members';
+        $entityName = '';
+        $query = Employee::with(['branch', 'department', 'position'])->orderBy('first_name')->orderBy('last_name');
+
+        switch ($type) {
+            case 'department':
+                $dept = Department::findOrFail($id);
+                $entityName = $dept->name;
+                $title = "Department: {$dept->name}";
+                $query->where(function($q) use ($id) {
+                    $q->where('department_id', $id)
+                      ->orWhereJsonContains('assigned_department_ids', $id);
+                });
+                break;
+
+            case 'position':
+                $pos = Position::findOrFail($id);
+                $entityName = $pos->name;
+                $title = "Position: {$pos->name}";
+                $query->where(function($q) use ($id) {
+                    $q->where('position_id', $id)
+                      ->orWhereJsonContains('assigned_position_ids', $id);
+                });
+                break;
+
+            case 'branch':
+                $branch = Branch::findOrFail($id);
+                $entityName = $branch->name;
+                $title = "Branch: {$branch->name}";
+                $query->where(function($q) use ($id) {
+                    $q->where('branch_id', $id)
+                      ->orWhereJsonContains('assigned_branch_ids', $id);
+                });
+                break;
+
+            case 'company':
+                $company = Company::findOrFail($id);
+                $entityName = $company->name;
+                $title = ($company->type === 'Agency' ? 'Agency: ' : 'Company: ') . $company->name;
+                $query->where(function($q) use ($company) {
+                    $q->where('company_id', $company->id)
+                      ->orWhere('company_name', $company->name)
+                      ->orWhere('agency_name', $company->name)
+                      ->orWhere('company_agency_name', $company->name);
+                });
+                break;
+
+            default:
+                return response()->json(['error' => 'Invalid entity type'], 400);
+        }
+
+        $employees = $query->get()->map(function($emp) {
+            $initials = strtoupper(substr($emp->first_name ?? '', 0, 1) . substr($emp->last_name ?? '', 0, 1)) ?: 'EM';
+            
+            $positions = $emp->assignedPositions()->map(function($p) use ($emp) {
+                return [
+                    'id' => $p->id,
+                    'name' => $p->name,
+                    'is_primary' => $p->id === $emp->position_id,
+                ];
+            });
+            if ($positions->isEmpty() && $emp->position) {
+                $positions = collect([['id' => $emp->position->id, 'name' => $emp->position->name, 'is_primary' => true]]);
+            }
+
+            return [
+                'id' => $emp->id,
+                'employee_id' => $emp->employee_id,
+                'full_name' => $emp->full_name,
+                'profile_photo_url' => $emp->profile_photo_url,
+                'initials' => $initials,
+                'position' => $emp->position?->name ?? 'General Staff',
+                'positions' => $positions,
+                'department' => $emp->department?->name ?? 'Unassigned',
+                'branch' => $emp->branch?->name ?? 'Unassigned',
+                'employment_status' => $emp->employment_status,
+                'employment_type' => $emp->employment_type ?? 'Regular',
+                'company' => $emp->company_or_agency,
+                'profile_url' => route('hr.people.employees.show', $emp->id),
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'type' => $type,
+            'id' => $id,
+            'title' => $title,
+            'entity_name' => $entityName,
+            'count' => $employees->count(),
+            'members' => $employees,
+        ]);
     }
 
     public function departmentsIndex(): View

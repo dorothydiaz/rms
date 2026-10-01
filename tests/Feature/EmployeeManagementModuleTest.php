@@ -293,6 +293,52 @@ class EmployeeManagementModuleTest extends TestCase
         $this->assertEquals('2028-12-31', $doc->fresh()->expiry_date->format('Y-m-d'));
     }
 
+    public function test_employee_edit_from_management_page_opens_modal_without_going_to_profile_page(): void
+    {
+        $response = $this->actingAs($this->adminUser)->get(route('hr.people.employees'));
+        $response->assertStatus(200);
+
+        // Verify the Edit button uses openEditEmployeeModal instead of linking to employee profile page
+        $response->assertSee('openEditEmployeeModal(' . $this->employee->id . ')', false);
+        $response->assertDontSee(route('hr.people.employees.show', $this->employee->id) . '?action=edit', false);
+
+        // Verify modal container exists on the employee management page
+        $response->assertSee('id="editEmployeeModal"', false);
+        $response->assertSee('id="editEmployeeForm"', false);
+        $response->assertSee('Edit Employee Profile');
+
+        // Verify JSON data element exists for quick client-side hydration
+        $response->assertSee('id="emp-json-' . $this->employee->id . '"', false);
+
+        // Verify the data endpoint returns JSON for fallback
+        $jsonResp = $this->actingAs($this->adminUser)->get(route('hr.people.employees.data', $this->employee->id));
+        $jsonResp->assertStatus(200);
+        $jsonResp->assertJsonFragment([
+            'id' => $this->employee->id,
+            'employee_id' => $this->employee->employee_id,
+            'first_name' => $this->employee->first_name,
+        ]);
+
+        // Verify submitting the edit updates and redirects back to employee management page (not to show page)
+        $updateResp = $this->actingAs($this->adminUser)
+            ->from(route('hr.people.employees'))
+            ->put(route('hr.people.employees.update', $this->employee->id), [
+                'first_name' => 'UpdatedFirst',
+                'last_name' => 'UpdatedLast',
+                'branch_id' => $this->branch->id,
+                'department_id' => $this->department->id,
+                'position_id' => $this->position->id,
+                'employment_status' => 'Active',
+                'employment_type' => 'Regular',
+                'date_hired' => '2026-01-15',
+                'basic_salary' => 25000,
+            ]);
+
+        $updateResp->assertRedirect(route('hr.people.employees'));
+        $this->assertEquals('UpdatedFirst', $this->employee->fresh()->first_name);
+        $this->assertEquals('UpdatedLast', $this->employee->fresh()->last_name);
+    }
+
     protected function tearDown(): void
     {
         $existingIds = Employee::withTrashed()->where('employee_id', 'like', 'EMP-TEST-%')->pluck('id');

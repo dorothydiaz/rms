@@ -12,15 +12,207 @@
 </x-hr-tabs>
 
 <style>
-.hr-badge-staff-link {
-    text-decoration: none !important;
+/* Condensed Layout Margins for Higher Table Viewport Space */
+.hr-parent-header {
+    margin-bottom: 6px !important;
+}
+.hr-tabs-wrapper {
+    margin-top: 6px !important;
+    margin-bottom: 8px !important;
+}
+.hr-company-summary-grid {
+    margin-bottom: 8px !important;
+    gap: 8px !important;
+}
+.hr-filter-bar {
+    margin-bottom: 8px !important;
+    padding: 6px 12px !important;
+}
+.hr-filter-bar input,
+.hr-filter-bar select,
+.hr-filter-bar button {
+    height: 31px !important;
+    font-size: 12px !important;
+}
+
+/* Glassmorphism Cards with Pink & Purple Left Accent Capsule */
+.hr-stat-card {
+    position: relative;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.78) 0%, rgba(253, 244, 255, 0.62) 50%, rgba(255, 241, 248, 0.62) 100%) !important;
+    backdrop-filter: blur(16px) saturate(190%);
+    -webkit-backdrop-filter: blur(16px) saturate(190%);
+    border: 1px solid rgba(255, 255, 255, 0.85) !important;
+    border-radius: 12px;
+    padding: 7px 12px 7px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 
+        0 4px 18px -2px rgba(168, 85, 247, 0.10),
+        0 2px 8px -1px rgba(236, 72, 153, 0.08),
+        inset 0 1px 1px rgba(255, 255, 255, 0.95);
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, background 0.2s ease;
+    overflow: hidden;
+}
+
+/* Glass Left Accent Pill with Pink & Purple Gradient */
+.hr-stat-card::before {
+    content: '';
+    position: absolute;
+    top: 6px;
+    bottom: 6px;
+    left: 4px;
+    width: 3.5px;
+    background: linear-gradient(180deg, #ec4899 0%, #d946ef 45%, #8b5cf6 100%);
+    opacity: 0.95;
+    z-index: 2;
+    border-radius: 999px;
+}
+
+/* Delicate Ambient Glass Glow at corner */
+.hr-stat-card::after {
+    content: '';
+    position: absolute;
+    bottom: -22px;
+    right: -22px;
+    width: 65px;
+    height: 65px;
+    background: radial-gradient(circle, rgba(236, 72, 153, 0.14) 0%, rgba(139, 92, 246, 0.10) 50%, transparent 70%);
+    pointer-events: none;
+    border-radius: 50%;
+    z-index: 0;
+}
+
+.hr-stat-card:hover {
+    transform: translateY(-2px);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.88) 0%, rgba(253, 244, 255, 0.75) 50%, rgba(255, 241, 248, 0.75) 100%) !important;
+    border-color: rgba(217, 70, 239, 0.45) !important;
+    box-shadow: 
+        0 8px 25px -2px rgba(147, 51, 234, 0.18),
+        0 4px 12px -1px rgba(236, 72, 153, 0.14),
+        inset 0 1px 1px #ffffff;
+}
+
+.hr-stat-icon-wrap {
+    position: relative;
+    width: 33px;
+    height: 33px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16.5px;
+    flex-shrink: 0;
+    background: linear-gradient(135deg, rgba(236, 72, 153, 0.14) 0%, rgba(139, 92, 246, 0.15) 100%);
+    border: 1px solid rgba(217, 70, 239, 0.28);
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.85);
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 1;
+}
+
+.hr-stat-card:hover .hr-stat-icon-wrap {
+    transform: scale(1.08);
+}
+
+.hr-stat-content {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    z-index: 1;
+}
+
+.hr-stat-label {
+    font-size: 9.5px;
+    font-weight: 700;
+    color: #701a75;
+    text-transform: uppercase;
+    letter-spacing: 0.45px;
+    line-height: 1.1;
+}
+
+.hr-stat-value {
+    font-size: 17.5px;
+    font-weight: 800;
+    line-height: 1.15;
+    margin: 1px 0 0 0;
+    background: linear-gradient(135deg, #581c87 0%, #86198f 50%, #be185d 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: inline-block;
+}
+
+.hr-stat-sub {
+    font-size: 10px;
+    color: #86198f;
+    opacity: 0.75;
+    line-height: 1.1;
+    margin-top: 1px;
+    font-weight: 500;
+}
+
+/* Individual Pink & Purple Gradient Accents */
+.hr-stat-card-purple::before {
+    background: linear-gradient(180deg, #8b5cf6 0%, #d946ef 50%, #ec4899 100%);
+}
+.hr-stat-card-purple .hr-stat-icon-wrap {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.16) 0%, rgba(217, 70, 239, 0.14) 100%);
+    border-color: rgba(139, 92, 246, 0.30);
+    color: #7c3aed;
+}
+
+.hr-stat-card-blue::before {
+    background: linear-gradient(180deg, #6366f1 0%, #d946ef 50%, #ec4899 100%);
+}
+.hr-stat-card-blue .hr-stat-icon-wrap {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.16) 0%, rgba(236, 72, 153, 0.14) 100%);
+    border-color: rgba(99, 102, 241, 0.30);
+    color: #6366f1;
+}
+
+.hr-stat-card-pink::before {
+    background: linear-gradient(180deg, #db2777 0%, #d946ef 50%, #9333ea 100%);
+}
+.hr-stat-card-pink .hr-stat-icon-wrap {
+    background: linear-gradient(135deg, rgba(219, 39, 119, 0.16) 0%, rgba(147, 51, 234, 0.14) 100%);
+    border-color: rgba(219, 39, 119, 0.30);
+    color: #db2777;
+}
+
+.hr-stat-card-green::before {
+    background: linear-gradient(180deg, #a855f7 0%, #d946ef 50%, #ec4899 100%);
+}
+.hr-stat-card-green .hr-stat-icon-wrap {
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.16) 0%, rgba(236, 72, 153, 0.14) 100%);
+    border-color: rgba(168, 85, 247, 0.30);
+    color: #9333ea;
+}
+
+/* Compact Table Density for Higher Viewport Capacity */
+#companiesTable th {
+    padding: 9px 12px !important;
+    font-size: 11.5px !important;
+}
+#companiesTable td {
+    padding: 8px 12px !important;
+    font-size: 12.5px !important;
+}
+#companiesTableWrapper {
+    max-height: calc(100vh - 280px);
+}
+
+.hr-badge-staff-btn {
+    border: none;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
     gap: 6px;
     transition: all 0.18s ease;
+    font-family: inherit;
+    font-size: 11.5px;
+    font-weight: 600;
 }
-.hr-badge-staff-link:hover {
+.hr-badge-staff-btn:hover {
     background: #7c3aed !important;
     color: #ffffff !important;
     box-shadow: 0 2px 8px rgba(124, 58, 237, 0.35);
@@ -28,72 +220,83 @@
 }
 </style>
 
-<!-- Summary Metric Cards -->
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin-bottom: 22px;">
-    <div class="hr-table-card" style="margin-bottom: 0; padding: 18px 20px; display: flex; align-items: center; gap: 16px;">
-        <div style="width: 46px; height: 46px; border-radius: 12px; background: rgba(124, 58, 237, 0.1); color: #7c3aed; display: flex; align-items: center; justify-content: center; font-size: 22px;">
+<!-- Summary Metric Cards (Glassmorphism with Pink & Purple Left Accent Capsule) -->
+<div class="hr-company-summary-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; margin-bottom: 8px;">
+    <!-- Total Entities -->
+    <div class="hr-stat-card hr-stat-card-purple">
+        <div class="hr-stat-icon-wrap">
             <i class="ph ph-buildings"></i>
         </div>
-        <div>
-            <div style="font-size: 11.5px; font-weight: 700; color: #64748b; text-transform: uppercase;">Total Entities</div>
-            <div style="font-size: 22px; font-weight: 800; color: #0f172a; line-height: 1.2; margin-top: 2px;">{{ $totalCount }}</div>
+        <div class="hr-stat-content">
+            <span class="hr-stat-label">Total Entities</span>
+            <div class="hr-stat-value">{{ $totalCount }}</div>
+            <span class="hr-stat-sub">Registered Records</span>
         </div>
     </div>
-    <div class="hr-table-card" style="margin-bottom: 0; padding: 18px 20px; display: flex; align-items: center; gap: 16px;">
-        <div style="width: 46px; height: 46px; border-radius: 12px; background: rgba(59, 130, 246, 0.1); color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 22px;">
+
+    <!-- Direct Companies -->
+    <div class="hr-stat-card hr-stat-card-blue">
+        <div class="hr-stat-icon-wrap">
             <i class="ph ph-briefcase"></i>
         </div>
-        <div>
-            <div style="font-size: 11.5px; font-weight: 700; color: #64748b; text-transform: uppercase;">Direct Companies</div>
-            <div style="font-size: 22px; font-weight: 800; color: #0f172a; line-height: 1.2; margin-top: 2px;">{{ $companyCount }}</div>
+        <div class="hr-stat-content">
+            <span class="hr-stat-label">Direct Companies</span>
+            <div class="hr-stat-value">{{ $companyCount }}</div>
+            <span class="hr-stat-sub">Internal Entities</span>
         </div>
     </div>
-    <div class="hr-table-card" style="margin-bottom: 0; padding: 18px 20px; display: flex; align-items: center; gap: 16px;">
-        <div style="width: 46px; height: 46px; border-radius: 12px; background: rgba(168, 85, 247, 0.1); color: #9333ea; display: flex; align-items: center; justify-content: center; font-size: 22px;">
+
+    <!-- Staffing Agencies -->
+    <div class="hr-stat-card hr-stat-card-pink">
+        <div class="hr-stat-icon-wrap">
             <i class="ph ph-handshake"></i>
         </div>
-        <div>
-            <div style="font-size: 11.5px; font-weight: 700; color: #64748b; text-transform: uppercase;">Staffing Agencies</div>
-            <div style="font-size: 22px; font-weight: 800; color: #0f172a; line-height: 1.2; margin-top: 2px;">{{ $agencyCount }}</div>
+        <div class="hr-stat-content">
+            <span class="hr-stat-label">Staffing Agencies</span>
+            <div class="hr-stat-value">{{ $agencyCount }}</div>
+            <span class="hr-stat-sub">External Partners</span>
         </div>
     </div>
-    <div class="hr-table-card" style="margin-bottom: 0; padding: 18px 20px; display: flex; align-items: center; gap: 16px;">
-        <div style="width: 46px; height: 46px; border-radius: 12px; background: rgba(16, 185, 129, 0.1); color: #059669; display: flex; align-items: center; justify-content: center; font-size: 22px;">
+
+    <!-- Assigned Employees -->
+    <div class="hr-stat-card hr-stat-card-green">
+        <div class="hr-stat-icon-wrap">
             <i class="ph ph-users-three"></i>
         </div>
-        <div>
-            <div style="font-size: 11.5px; font-weight: 700; color: #64748b; text-transform: uppercase;">Assigned Employees</div>
-            <div style="font-size: 22px; font-weight: 800; color: #0f172a; line-height: 1.2; margin-top: 2px;">{{ $totalStaffCount }}</div>
+        <div class="hr-stat-content">
+            <span class="hr-stat-label">Assigned Employees</span>
+            <div class="hr-stat-value">{{ $totalStaffCount }}</div>
+            <span class="hr-stat-sub">Active Deployed</span>
         </div>
     </div>
 </div>
 
 <!-- Real-Time Filter & Search Bar (No Enter Key or Submit Button Required) -->
-<div class="hr-filter-bar" style="margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+<div class="hr-filter-bar" style="margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
     <!-- Filters & Search Controls Group -->
-    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; flex: 1;">
+    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex: 1;">
         <!-- Instant Real-Time Search -->
-        <div style="position: relative; width: 260px; flex-shrink: 0;">
-            <i class="ph ph-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 16px; pointer-events: none;"></i>
-            <input type="text" id="companySearchInput" class="hr-input" placeholder="Search name, code, TIN..." oninput="filterCompaniesTable()" style="width: 100%; box-sizing: border-box; padding-left: 36px; height: 38px;">
+        <div style="position: relative; width: 240px; flex-shrink: 0;">
+            <i class="ph ph-magnifying-glass" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 15px; pointer-events: none;"></i>
+            <input type="text" id="companySearchInput" class="hr-input" placeholder="Search name, code, TIN..." oninput="filterCompaniesTable()" style="width: 100%; box-sizing: border-box; padding-left: 32px; height: 31px; font-size: 12px;">
         </div>
 
         <!-- Type Selector -->
-        <select id="companyTypeFilter" class="hr-select" style="height: 38px; max-width: 180px;" onchange="filterCompaniesTable()">
+        <select id="companyTypeFilter" class="hr-select" style="height: 31px; font-size: 12px; max-width: 170px;" onchange="filterCompaniesTable()">
             <option value="">All Entity Types</option>
             <option value="Company">Direct Company</option>
             <option value="Agency">Staffing Agency</option>
         </select>
 
         <!-- Status Selector -->
-        <select id="companyStatusFilter" class="hr-select" style="height: 38px; max-width: 150px;" onchange="filterCompaniesTable()">
+        <select id="companyStatusFilter" class="hr-select" style="height: 31px; font-size: 12px; max-width: 140px;" onchange="filterCompaniesTable()">
             <option value="">All Statuses</option>
             <option value="Active">Active</option>
             <option value="Inactive">Inactive</option>
         </select>
 
         <!-- Sort By Options in Table Toolbar -->
-        <select id="companySortSelect" class="hr-select" style="height: 38px; max-width: 195px;" onchange="applyCompanySortFromSelect(this.value)">
+        <select id="companySortSelect" class="hr-select" style="height: 31px; font-size: 12px; max-width: 185px;" onchange="applyCompanySortFromSelect(this.value)">
             <option value="">Sort By: Default</option>
             <option value="name_asc">Name (A &rarr; Z)</option>
             <option value="name_desc">Name (Z &rarr; A)</option>
@@ -107,7 +310,7 @@
         </select>
 
         <!-- Reset Filter Button -->
-        <button type="button" class="hr-btn hr-btn-secondary" onclick="resetCompaniesFilters()" title="Reset all filters" style="height: 38px; padding: 0 14px;">
+        <button type="button" class="hr-btn hr-btn-secondary" onclick="resetCompaniesFilters()" title="Reset all filters" style="height: 31px; font-size: 12px; padding: 0 12px;">
             <i class="ph ph-arrows-counter-clockwise"></i>
             <span>Reset</span>
         </button>
@@ -115,7 +318,7 @@
 
     <!-- Live Counter Badge -->
     <div style="flex-shrink: 0;">
-        <span class="hr-badge hr-badge-neutral" style="font-size: 12px; font-weight: 600; padding: 7px 12px; border-radius: 8px; background: #f1f5f9; color: #475569; display: inline-flex; align-items: center; gap: 4px;">
+        <span class="hr-badge hr-badge-neutral" style="font-size: 11.5px; font-weight: 600; padding: 5px 10px; border-radius: 6px; background: #f1f5f9; color: #475569; display: inline-flex; align-items: center; gap: 4px;">
             Showing <strong id="companyVisibleCount" style="color: #0f172a;">{{ $companies->count() }}</strong> of {{ $companies->count() }} entities
         </span>
     </div>
@@ -242,15 +445,14 @@
                             <span style="font-size: 12px; color: #475569; font-family: monospace;">{{ $item->tin ?: 'N/A' }}</span>
                         </td>
                         <td>
-                            <a href="{{ route('hr.people.employees', ['company_id' => $item->id]) }}" 
-                               target="_blank" 
-                               rel="noopener noreferrer"
-                               class="hr-badge hr-badge-purple hr-badge-staff-link" 
-                               title="Click to view staff members assigned to {{ $item->name }} in a new window">
+                            <button type="button"
+                                    onclick="openMembersModal('company', {{ $item->id }}, '{{ addslashes($item->name) }}')"
+                                    class="hr-badge hr-badge-purple hr-badge-staff-btn"
+                                    title="Click to view staff members assigned to {{ $item->name }} in a window">
                                 <i class="ph ph-users"></i>
                                 <span>{{ $item->employees_count }} {{ Str::plural('staff', $item->employees_count) }}</span>
                                 <i class="ph ph-arrow-square-out" style="font-size: 11px; opacity: 0.75;"></i>
-                            </a>
+                            </button>
                         </td>
                         <td>
                             @if($item->is_active)
@@ -766,4 +968,6 @@ function sortCompaniesTable(colIndex, dataType, forceDir = null) {
 }
 </script>
 @endpush
+
+@include('hr.people.partials.members-modal')
 @endsection
