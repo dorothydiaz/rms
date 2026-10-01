@@ -105,6 +105,8 @@ class AttendanceCalculationService
         } elseif ($totalHours > 8.0) {
             $overtimeHours = round($totalHours - 8.0, 2);
             $regularHours = 8.0;
+        } elseif ($totalHours < 8.0 && $totalHours > 0) {
+            $undertimeMinutes = (int) round((8.0 - $totalHours) * 60);
         }
 
         // Night Differential Calculation (10:00 PM to 6:00 AM)

@@ -58,6 +58,7 @@
                 ['name' => 'Time-Keeping', 'route' => 'hr.attendance.timekeeping', 'icon' => 'ph-fingerprint', 'active' => ['hr.attendance.timekeeping*', 'hr.attendance-checkin']],
                 ['name' => 'Schedules', 'route' => 'hr.attendance.schedules', 'icon' => 'ph-calendar', 'active' => ['hr.attendance.schedules*', 'hr.attendance-schedule']],
                 ['name' => 'Overtime', 'route' => 'hr.attendance.overtime', 'icon' => 'ph-clock-countdown', 'active' => ['hr.attendance.overtime*']],
+                ['name' => 'Undertime', 'route' => 'hr.attendance.undertime', 'icon' => 'ph-timer', 'active' => ['hr.attendance.undertime*']],
                 ['name' => 'Manual Time Entries', 'route' => 'hr.attendance.corrections', 'icon' => 'ph-pencil-line', 'active' => ['hr.attendance.corrections*', 'hr.attendance.manual-entries*']],
             ],
         ],

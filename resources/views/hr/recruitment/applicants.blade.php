@@ -2079,23 +2079,54 @@
         const pbList = document.getElementById('drawerPreboardingList');
         pbList.innerHTML = '';
         (data.preboarding_tasks || []).forEach(t => {
+            const rawDept = (t.department || 'HR').trim();
+            const deptUpper = rawDept.toUpperCase();
+            
+            let pillClass = 'hr-dept-pill-hr';
+            let pillIcon = 'ph-users';
+            
+            if (deptUpper === 'IT') {
+                pillClass = 'hr-dept-pill-it';
+                pillIcon = 'ph-cpu';
+            } else if (deptUpper === 'FINANCE' || deptUpper === 'FIN') {
+                pillClass = 'hr-dept-pill-finance';
+                pillIcon = 'ph-coins';
+            } else if (deptUpper === 'MANAGEMENT' || deptUpper === 'ADMIN') {
+                pillClass = 'hr-dept-pill-mgmt';
+                pillIcon = 'ph-briefcase';
+            } else if (deptUpper === 'FOH' || deptUpper === 'FRONT OF HOUSE') {
+                pillClass = 'hr-dept-pill-foh';
+                pillIcon = 'ph-storefront';
+            } else if (deptUpper === 'BOH' || deptUpper === 'BACK OF HOUSE' || deptUpper === 'KITCHEN') {
+                pillClass = 'hr-dept-pill-boh';
+                pillIcon = 'ph-cooking-pot';
+            }
+
+            const isDone = t.status === 'Completed';
+
             pbList.innerHTML += `
                 <div class="hr-checklist-item">
                     <div class="hr-checklist-info">
-                        <span class="hr-badge hr-badge-neutral" style="font-size: 10px; font-weight: 700; width: 65px; text-align: center;">${t.department}</span>
+                        <span class="hr-dept-pill ${pillClass}" title="Department: ${rawDept}">
+                            <i class="ph ${pillIcon}"></i>
+                            <span>${rawDept}</span>
+                        </span>
                         <div>
-                            <strong style="color: #0f172a; font-size: 13px;">${t.task_name}</strong>
-                            <div style="font-size: 11.5px; color: #64748b;">${t.description}</div>
+                            <strong style="color: #0f172a; font-size: 13.5px; display: block; line-height: 1.3;">${t.task_name}</strong>
+                            <div style="font-size: 11.5px; color: #64748b; margin-top: 2px;">${t.description}</div>
                         </div>
                     </div>
                     <div style="display: flex; align-items: center; gap: 8px;">
-                        <span class="hr-badge ${t.status === 'Completed' ? 'hr-badge-success' : 'hr-badge-warning'}">${t.status}</span>
+                        <span class="hr-badge ${isDone ? 'hr-badge-success' : 'hr-badge-warning'}">
+                            <i class="ph ${isDone ? 'ph-check-circle' : 'ph-clock'}"></i>
+                            ${t.status}
+                        </span>
                         <form method="POST" action="/hr/recruitment/applicants/${app.id}/preboarding" style="display: inline;">
                             @csrf
                             <input type="hidden" name="task_id" value="${t.id}">
-                            <input type="hidden" name="status" value="${t.status === 'Completed' ? 'Pending' : 'Completed'}">
-                            <button type="submit" class="hr-btn hr-btn-secondary hr-btn-sm">
-                                <i class="ph ${t.status === 'Completed' ? 'ph-arrow-counter-clockwise' : 'ph-check'}"></i>
+                            <input type="hidden" name="status" value="${isDone ? 'Pending' : 'Completed'}">
+                            <button type="submit" class="hr-btn hr-btn-secondary hr-btn-sm" title="${isDone ? 'Mark as Pending' : 'Mark as Completed'}">
+                                <i class="ph ${isDone ? 'ph-arrow-counter-clockwise' : 'ph-check'}"></i>
                             </button>
                         </form>
                     </div>

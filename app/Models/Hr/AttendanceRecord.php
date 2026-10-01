@@ -40,6 +40,14 @@ class AttendanceRecord extends Model
         'holiday_type',
         'is_rest_day',
         'status',
+        'overtime_status',
+        'overtime_approved_by',
+        'overtime_approved_at',
+        'overtime_remarks',
+        'undertime_status',
+        'undertime_approved_by',
+        'undertime_approved_at',
+        'undertime_remarks',
         'dtr_remarks',
         'source',
         'notes',
@@ -92,5 +100,20 @@ class AttendanceRecord extends Model
     public function getFinalOutAttribute(): ?string
     {
         return $this->time_out ?? $this->out_3;
+    }
+
+    public function overtimeApprover(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\User::class, 'overtime_approved_by');
+    }
+
+    public function undertimeApprover(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\User::class, 'undertime_approved_by');
+    }
+
+    public function actionLogs(): HasMany
+    {
+        return $this->hasMany(AttendanceActionLog::class, 'attendance_record_id');
     }
 }

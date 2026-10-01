@@ -12,6 +12,8 @@ use App\Models\Hr\EmployeeSchedule;
 use App\Models\Hr\LeaveRequest;
 use App\Models\Hr\Position;
 use App\Models\Hr\ShiftTemplate;
+use App\Models\Hr\ScheduleChangeLog;
+use App\Models\Hr\AttendanceActionLog;
 use App\Services\AttendanceCalculationService;
 use App\Services\AuditLogger;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -880,10 +882,30 @@ class AttendanceController extends Controller
         $date = Carbon::parse($request->input('date'))->toDateString();
         $isClear = $request->boolean('clear');
 
+        $existingSched = EmployeeSchedule::with('shiftTemplate')
+            ->where('employee_id', $empId)
+            ->where('schedule_date', $date)
+            ->first();
+
+        $prevRange = $existingSched 
+            ? ($existingSched->is_rest_day ? 'RESTDAY' : ($existingSched->custom_start_time ? substr($existingSched->custom_start_time, 0, 5) . ' - ' . substr($existingSched->custom_end_time, 0, 5) : ($existingSched->shiftTemplate ? $existingSched->shiftTemplate->name . ' (' . substr($existingSched->shiftTemplate->start_time, 0, 5) . '-' . substr($existingSched->shiftTemplate->end_time, 0, 5) . ')' : 'Scheduled')))
+            : 'Unassigned';
+
         if ($isClear) {
             EmployeeSchedule::where('employee_id', $empId)
                 ->where('schedule_date', $date)
                 ->delete();
+
+            ScheduleChangeLog::create([
+                'employee_id' => $empId,
+                'schedule_date' => $date,
+                'previous_shift_template_id' => $existingSched?->shift_template_id,
+                'new_shift_template_id' => null,
+                'previous_time_range' => $prevRange,
+                'new_time_range' => 'Cleared / Unassigned',
+                'reason' => 'Schedule slot cleared',
+                'changed_by' => Auth::id(),
+            ]);
 
             return response()->json([
                 'success' => true,
@@ -933,6 +955,21 @@ class AttendanceController extends Controller
         );
 
         $sched->load('shiftTemplate');
+
+        $newRange = $isRestDay 
+            ? 'RESTDAY' 
+            : ($customStart ? substr($customStart, 0, 5) . ' - ' . substr($customEnd, 0, 5) : ($sched->shiftTemplate ? $sched->shiftTemplate->name . ' (' . substr($sched->shiftTemplate->start_time, 0, 5) . '-' . substr($sched->shiftTemplate->end_time, 0, 5) . ')' : 'Assigned'));
+
+        ScheduleChangeLog::create([
+            'employee_id' => $empId,
+            'schedule_date' => $date,
+            'previous_shift_template_id' => $existingSched?->shift_template_id,
+            'new_shift_template_id' => $sched->shift_template_id,
+            'previous_time_range' => $prevRange,
+            'new_time_range' => $newRange,
+            'reason' => $isRestDay ? 'Assigned Rest Day' : 'Assigned Shift',
+            'changed_by' => Auth::id(),
+        ]);
 
         return response()->json([
             'success' => true,
@@ -1183,6 +1220,73 @@ class AttendanceController extends Controller
         ]);
     }
 
+    public function assignDefaultShift(Request $request): JsonResponse|RedirectResponse
+    {
+        $request->validate([
+            'employee_id' => 'required|exists:hr_employees,id',
+            'shift_template_id' => 'nullable|exists:hr_shift_templates,id',
+            'apply_future_blanks' => 'nullable|boolean',
+        ]);
+
+        $emp = Employee::findOrFail($request->employee_id);
+        $prevTmpl = $emp->defaultShiftTemplate;
+        $newTmplId = $request->shift_template_id ? (int) $request->shift_template_id : null;
+        $newTmpl = $newTmplId ? ShiftTemplate::find($newTmplId) : null;
+
+        $emp->update([
+            'default_shift_template_id' => $newTmplId,
+        ]);
+
+        // Log schedule default assignment
+        ScheduleChangeLog::create([
+            'employee_id' => $emp->id,
+            'schedule_date' => now()->toDateString(),
+            'previous_shift_template_id' => $prevTmpl?->id,
+            'new_shift_template_id' => $newTmplId,
+            'previous_time_range' => $prevTmpl ? "Default: {$prevTmpl->name} (" . substr($prevTmpl->start_time, 0, 5) . "-" . substr($prevTmpl->end_time, 0, 5) . ")" : "No Default Shift",
+            'new_time_range' => $newTmpl ? "Default: {$newTmpl->name} (" . substr($newTmpl->start_time, 0, 5) . "-" . substr($newTmpl->end_time, 0, 5) . ")" : "Removed Default Shift",
+            'reason' => 'Default shift schedule assigned to employee profile',
+            'changed_by' => Auth::id(),
+        ]);
+
+        $appliedCount = 0;
+        if ($request->boolean('apply_future_blanks') && $newTmplId) {
+            $futureDates = [];
+            for ($i = 0; $i < 14; $i++) {
+                $futureDates[] = now()->addDays($i)->toDateString();
+            }
+
+            foreach ($futureDates as $fDate) {
+                $exists = EmployeeSchedule::where('employee_id', $emp->id)->where('schedule_date', $fDate)->exists();
+                if (!$exists) {
+                    EmployeeSchedule::create([
+                        'employee_id' => $emp->id,
+                        'branch_id' => $emp->branch_id,
+                        'schedule_date' => $fDate,
+                        'shift_template_id' => $newTmplId,
+                        'is_rest_day' => false,
+                        'notes' => 'Applied from Default Shift',
+                    ]);
+                    $appliedCount++;
+                }
+            }
+        }
+
+        $msg = "Default shift updated for {$emp->full_name}" . ($appliedCount > 0 ? " and applied to {$appliedCount} upcoming date(s)." : ".");
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => $msg,
+                'default_shift_template_id' => $newTmplId,
+                'shift_name' => $newTmpl?->name ?? 'None',
+                'shift_code' => $newTmpl?->code ?? '',
+            ]);
+        }
+
+        return redirect()->back()->with('success', $msg);
+    }
+
     public function shiftTemplateStore(Request $request): RedirectResponse
     {
         $validated = $request->validate([
@@ -1305,7 +1409,7 @@ class AttendanceController extends Controller
     public function overtimeIndex(Request $request): View
     {
         $user = Auth::user();
-        $query = AttendanceRecord::with(['employee.branch', 'employee.department', 'employee.position'])
+        $query = AttendanceRecord::with(['employee.branch', 'employee.department', 'employee.position', 'overtimeApprover'])
             ->where('overtime_hours', '>', 0);
 
         if (!$user->isSuperAdmin() && !$user->isHrAdmin() && $user->branch_id) {
@@ -1316,6 +1420,9 @@ class AttendanceController extends Controller
 
         if ($request->filled('employee_id')) {
             $query->where('employee_id', $request->employee_id);
+        }
+        if ($request->filled('status')) {
+            $query->where('overtime_status', $request->status);
         }
         if ($request->filled('date')) {
             $query->where('date', $request->date);
@@ -1341,11 +1448,288 @@ class AttendanceController extends Controller
             });
         }
 
+        $metricsQuery = clone $query;
+        $totalOtHours = (clone $metricsQuery)->sum('overtime_hours');
+        $pendingCount = (clone $metricsQuery)->where('overtime_status', 'Pending')->count();
+        $approvedCount = (clone $metricsQuery)->where('overtime_status', 'Approved')->count();
+        $rejectedCount = (clone $metricsQuery)->where('overtime_status', 'Rejected')->count();
+
         $perPage = (int) $request->get('per_page', 10);
         $records = $query->orderBy('date', 'desc')->paginate($perPage)->withQueryString();
         $branches = Branch::where('is_active', true)->get();
 
-        return view('hr.attendance.overtime', compact('records', 'branches'));
+        return view('hr.attendance.overtime', compact(
+            'records', 'branches', 'totalOtHours', 'pendingCount', 'approvedCount', 'rejectedCount'
+        ));
+    }
+
+    public function overtimeApprove(int $id, Request $request): RedirectResponse
+    {
+        $rec = AttendanceRecord::findOrFail($id);
+        $user = Auth::user();
+
+        $prevStatus = $rec->overtime_status;
+        $rec->update([
+            'overtime_status' => 'Approved',
+            'overtime_approved_by' => $user?->id,
+            'overtime_approved_at' => now(),
+            'overtime_remarks' => $request->input('remarks', $rec->overtime_remarks),
+        ]);
+
+        AttendanceActionLog::create([
+            'attendance_record_id' => $rec->id,
+            'employee_id' => $rec->employee_id,
+            'action_type' => 'overtime_approved',
+            'details' => [
+                'date' => $rec->date?->toDateString(),
+                'overtime_hours' => $rec->overtime_hours,
+                'previous_status' => $prevStatus,
+                'new_status' => 'Approved',
+                'remarks' => $request->input('remarks'),
+            ],
+            'notes' => "Overtime of {$rec->overtime_hours} hrs on {$rec->date?->toDateString()} approved by " . ($user?->name ?? 'Admin'),
+            'action_by' => $user?->id,
+        ]);
+
+        AuditLogger::log('Update', 'Overtime', $rec->id, "Approved overtime of {$rec->overtime_hours} hrs for employee #{$rec->employee_id} on {$rec->date?->toDateString()}");
+
+        return redirect()->back()->with('success', "Overtime of {$rec->overtime_hours} hrs approved successfully.");
+    }
+
+    public function overtimeReject(int $id, Request $request): RedirectResponse
+    {
+        $rec = AttendanceRecord::findOrFail($id);
+        $user = Auth::user();
+
+        $prevStatus = $rec->overtime_status;
+        $rec->update([
+            'overtime_status' => 'Rejected',
+            'overtime_approved_by' => $user?->id,
+            'overtime_approved_at' => now(),
+            'overtime_remarks' => $request->input('remarks', 'Overtime rejected by manager/HR'),
+        ]);
+
+        AttendanceActionLog::create([
+            'attendance_record_id' => $rec->id,
+            'employee_id' => $rec->employee_id,
+            'action_type' => 'overtime_rejected',
+            'details' => [
+                'date' => $rec->date?->toDateString(),
+                'overtime_hours' => $rec->overtime_hours,
+                'previous_status' => $prevStatus,
+                'new_status' => 'Rejected',
+                'remarks' => $request->input('remarks'),
+            ],
+            'notes' => "Overtime of {$rec->overtime_hours} hrs on {$rec->date?->toDateString()} rejected by " . ($user?->name ?? 'Admin'),
+            'action_by' => $user?->id,
+        ]);
+
+        AuditLogger::log('Update', 'Overtime', $rec->id, "Rejected overtime of {$rec->overtime_hours} hrs for employee #{$rec->employee_id} on {$rec->date?->toDateString()}");
+
+        return redirect()->back()->with('success', "Overtime rejected successfully.");
+    }
+
+    public function overtimeBatchApprove(Request $request): RedirectResponse
+    {
+        $ids = $request->input('record_ids', []);
+        if (empty($ids) || !is_array($ids)) {
+            return redirect()->back()->with('error', "No overtime records selected.");
+        }
+
+        $user = Auth::user();
+        $records = AttendanceRecord::whereIn('id', $ids)->where('overtime_hours', '>', 0)->get();
+
+        foreach ($records as $rec) {
+            $prevStatus = $rec->overtime_status;
+            $rec->update([
+                'overtime_status' => 'Approved',
+                'overtime_approved_by' => $user?->id,
+                'overtime_approved_at' => now(),
+            ]);
+
+            AttendanceActionLog::create([
+                'attendance_record_id' => $rec->id,
+                'employee_id' => $rec->employee_id,
+                'action_type' => 'overtime_approved',
+                'details' => [
+                    'date' => $rec->date?->toDateString(),
+                    'overtime_hours' => $rec->overtime_hours,
+                    'previous_status' => $prevStatus,
+                    'new_status' => 'Approved',
+                    'batch' => true,
+                ],
+                'notes' => "Batch approved overtime by " . ($user?->name ?? 'Admin'),
+                'action_by' => $user?->id,
+            ]);
+        }
+
+        $count = count($records);
+        return redirect()->back()->with('success', "Successfully batch approved {$count} overtime record(s).");
+    }
+
+    // ==========================================
+    // 4.5. UNDERTIME MANAGEMENT
+    // ==========================================
+
+    public function undertimeIndex(Request $request): View
+    {
+        $user = Auth::user();
+        $query = AttendanceRecord::with(['employee.branch', 'employee.department', 'employee.position', 'undertimeApprover'])
+            ->where('undertime_minutes', '>', 0);
+
+        if (!$user->isSuperAdmin() && !$user->isHrAdmin() && $user->branch_id) {
+            $query->where('branch_id', $user->branch_id);
+        } elseif ($request->filled('branch_id')) {
+            $query->where('branch_id', $request->branch_id);
+        }
+
+        if ($request->filled('employee_id')) {
+            $query->where('employee_id', $request->employee_id);
+        }
+        if ($request->filled('status')) {
+            $query->where('undertime_status', $request->status);
+        }
+        if ($request->filled('date')) {
+            $query->where('date', $request->date);
+        }
+        if ($request->filled('date_from')) {
+            $query->where('date', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->where('date', '<=', $request->date_to);
+        }
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('employee', function ($eq) use ($search) {
+                    $eq->where('first_name', 'like', "%{$search}%")
+                        ->orWhere('last_name', 'like', "%{$search}%")
+                        ->orWhere('employee_id', 'like', "%{$search}%");
+                })->orWhereHas('employee.branch', function ($bq) use ($search) {
+                    $bq->where('name', 'like', "%{$search}%");
+                })->orWhereHas('employee.department', function ($dq) use ($search) {
+                    $dq->where('name', 'like', "%{$search}%");
+                });
+            });
+        }
+
+        $metricsQuery = clone $query;
+        $totalUndertimeMinutes = (clone $metricsQuery)->sum('undertime_minutes');
+        $pendingCount = (clone $metricsQuery)->where('undertime_status', 'Pending')->count();
+        $authorizedCount = (clone $metricsQuery)->where('undertime_status', 'Approved')->count();
+        $unauthorizedCount = (clone $metricsQuery)->where('undertime_status', 'Rejected')->count();
+
+        $perPage = (int) $request->get('per_page', 10);
+        $records = $query->orderBy('date', 'desc')->paginate($perPage)->withQueryString();
+        $branches = Branch::where('is_active', true)->get();
+
+        return view('hr.attendance.undertime', compact(
+            'records', 'branches', 'totalUndertimeMinutes', 'pendingCount', 'authorizedCount', 'unauthorizedCount'
+        ));
+    }
+
+    public function undertimeAuthorize(int $id, Request $request): RedirectResponse
+    {
+        $rec = AttendanceRecord::findOrFail($id);
+        $user = Auth::user();
+
+        $prevStatus = $rec->undertime_status;
+        $rec->update([
+            'undertime_status' => 'Approved',
+            'undertime_approved_by' => $user?->id,
+            'undertime_approved_at' => now(),
+            'undertime_remarks' => $request->input('remarks', $rec->undertime_remarks),
+        ]);
+
+        AttendanceActionLog::create([
+            'attendance_record_id' => $rec->id,
+            'employee_id' => $rec->employee_id,
+            'action_type' => 'undertime_authorized',
+            'details' => [
+                'date' => $rec->date?->toDateString(),
+                'undertime_minutes' => $rec->undertime_minutes,
+                'previous_status' => $prevStatus,
+                'new_status' => 'Approved',
+                'remarks' => $request->input('remarks'),
+            ],
+            'notes' => "Undertime of {$rec->undertime_minutes} mins on {$rec->date?->toDateString()} authorized by " . ($user?->name ?? 'Admin'),
+            'action_by' => $user?->id,
+        ]);
+
+        AuditLogger::log('Update', 'Undertime', $rec->id, "Authorized undertime of {$rec->undertime_minutes} mins for employee #{$rec->employee_id} on {$rec->date?->toDateString()}");
+
+        return redirect()->back()->with('success', "Undertime of {$rec->undertime_minutes} mins authorized successfully.");
+    }
+
+    public function undertimeReject(int $id, Request $request): RedirectResponse
+    {
+        $rec = AttendanceRecord::findOrFail($id);
+        $user = Auth::user();
+
+        $prevStatus = $rec->undertime_status;
+        $rec->update([
+            'undertime_status' => 'Rejected',
+            'undertime_approved_by' => $user?->id,
+            'undertime_approved_at' => now(),
+            'undertime_remarks' => $request->input('remarks', 'Marked as unauthorized undertime'),
+        ]);
+
+        AttendanceActionLog::create([
+            'attendance_record_id' => $rec->id,
+            'employee_id' => $rec->employee_id,
+            'action_type' => 'undertime_rejected',
+            'details' => [
+                'date' => $rec->date?->toDateString(),
+                'undertime_minutes' => $rec->undertime_minutes,
+                'previous_status' => $prevStatus,
+                'new_status' => 'Rejected',
+                'remarks' => $request->input('remarks'),
+            ],
+            'notes' => "Undertime of {$rec->undertime_minutes} mins on {$rec->date?->toDateString()} marked unauthorized by " . ($user?->name ?? 'Admin'),
+            'action_by' => $user?->id,
+        ]);
+
+        AuditLogger::log('Update', 'Undertime', $rec->id, "Marked undertime of {$rec->undertime_minutes} mins as unauthorized for employee #{$rec->employee_id} on {$rec->date?->toDateString()}");
+
+        return redirect()->back()->with('success', "Undertime marked as unauthorized.");
+    }
+
+    public function undertimeBatchAuthorize(Request $request): RedirectResponse
+    {
+        $ids = $request->input('record_ids', []);
+        if (empty($ids) || !is_array($ids)) {
+            return redirect()->back()->with('error', "No undertime records selected.");
+        }
+
+        $user = Auth::user();
+        $records = AttendanceRecord::whereIn('id', $ids)->where('undertime_minutes', '>', 0)->get();
+
+        foreach ($records as $rec) {
+            $prevStatus = $rec->undertime_status;
+            $rec->update([
+                'undertime_status' => 'Approved',
+                'undertime_approved_by' => $user?->id,
+                'undertime_approved_at' => now(),
+            ]);
+
+            AttendanceActionLog::create([
+                'attendance_record_id' => $rec->id,
+                'employee_id' => $rec->employee_id,
+                'action_type' => 'undertime_authorized',
+                'details' => [
+                    'date' => $rec->date?->toDateString(),
+                    'undertime_minutes' => $rec->undertime_minutes,
+                    'previous_status' => $prevStatus,
+                    'new_status' => 'Approved',
+                    'batch' => true,
+                ],
+                'notes' => "Batch authorized undertime by " . ($user?->name ?? 'Admin'),
+                'action_by' => $user?->id,
+            ]);
+        }
+
+        $count = count($records);
+        return redirect()->back()->with('success', "Successfully authorized {$count} undertime record(s).");
     }
 
     // ==========================================
@@ -1642,6 +2026,22 @@ class AttendanceController extends Controller
             ]
         );
 
+        AttendanceActionLog::create([
+            'attendance_record_id' => $record->id,
+            'employee_id' => $record->employee_id,
+            'action_type' => 'manual_entry_saved',
+            'details' => [
+                'date' => $cleanDate,
+                'time_in' => $record->time_in,
+                'time_out' => $record->time_out,
+                'total_hours' => $record->total_hours,
+                'status' => $record->status,
+                'notes' => $notes,
+            ],
+            'notes' => "Manual time entry encoded/updated by " . (Auth::user()?->name ?? 'Admin'),
+            'action_by' => Auth::id(),
+        ]);
+
         AuditLogger::log(
             'ManualEntry',
             'Attendance',
@@ -1662,8 +2062,23 @@ class AttendanceController extends Controller
 
         AttendanceCorrection::where('attendance_record_id', $record->id)->delete();
 
-        $empName = $record->employee?->full_name ?? 'Employee';
-        $date = \Carbon\Carbon::parse($record->date)->format('M d, Y');
+        $empId = $record->employee_id;
+        $cleanDate = $record->date ? \Carbon\Carbon::parse($record->date)->toDateString() : null;
+
+        AttendanceActionLog::create([
+            'attendance_record_id' => null,
+            'employee_id' => $empId,
+            'action_type' => 'manual_entry_deleted',
+            'details' => [
+                'date' => $cleanDate,
+                'time_in' => $record->time_in,
+                'time_out' => $record->time_out,
+                'total_hours' => $record->total_hours,
+            ],
+            'notes' => "Manual time entry for {$empName} on {$date} deleted by " . (Auth::user()?->name ?? 'Admin'),
+            'action_by' => Auth::id(),
+        ]);
+
         $record->delete();
 
         AuditLogger::log('Delete', 'Attendance', $id, "Deleted manual time entry for {$empName} on {$date}");
@@ -1722,6 +2137,20 @@ class AttendanceController extends Controller
                 $att->status = $calc['status'];
                 $att->save();
 
+                AttendanceActionLog::create([
+                    'attendance_record_id' => $att->id,
+                    'employee_id' => $att->employee_id,
+                    'action_type' => 'manual_entry_reviewed',
+                    'details' => [
+                        'status' => 'Approved',
+                        'time_in' => $att->time_in,
+                        'time_out' => $att->time_out,
+                        'reviewer_notes' => $validated['reviewer_notes'] ?? null,
+                    ],
+                    'notes' => "Correction request #{$correction->id} approved by " . ($user?->name ?? 'Admin'),
+                    'action_by' => $user?->id,
+                ]);
+
                 AuditLogger::log(
                     'Approve',
                     'Attendance',
@@ -1731,6 +2160,18 @@ class AttendanceController extends Controller
                     $att->toArray()
                 );
             } else {
+                AttendanceActionLog::create([
+                    'attendance_record_id' => $correction->attendance_record_id,
+                    'employee_id' => $correction->employee_id,
+                    'action_type' => 'manual_entry_reviewed',
+                    'details' => [
+                        'status' => 'Rejected',
+                        'reviewer_notes' => $validated['reviewer_notes'] ?? null,
+                    ],
+                    'notes' => "Correction request #{$correction->id} rejected by " . ($user?->name ?? 'Admin'),
+                    'action_by' => $user?->id,
+                ]);
+
                 AuditLogger::log('Reject', 'Attendance', $correction->id, "Rejected correction request #{$correction->id}");
             }
         });

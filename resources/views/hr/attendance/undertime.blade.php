@@ -1,20 +1,23 @@
 @extends('layouts.app')
 
-@section('title', 'Overtime Records & Approvals - Attendance Management')
+@section('title', 'Undertime Records & Authorization - Attendance Management')
 
 @section('content')
 <x-hr-tabs parent="time-attendance" />
 
 <!-- Metric Summary Cards -->
 <div class="hr-emp-summary-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-bottom: 16px;">
-    <div class="hr-stat-card hr-stat-card-purple">
+    <div class="hr-stat-card hr-stat-card-blue">
         <div class="hr-stat-icon-wrap">
-            <i class="ph ph-clock-countdown"></i>
+            <i class="ph ph-timer"></i>
         </div>
         <div class="hr-stat-content">
-            <span class="hr-stat-label">Total Overtime</span>
-            <div class="hr-stat-value">{{ number_format($totalOtHours ?? 0, 1) }} <span style="font-size: 13px; font-weight: 500;">hrs</span></div>
-            <span class="hr-stat-sub">Across all staff</span>
+            <span class="hr-stat-label">Total Undertime</span>
+            <div class="hr-stat-value">
+                {{ number_format(($totalUndertimeMinutes ?? 0) / 60, 1) }} <span style="font-size: 13px; font-weight: 500;">hrs</span>
+                <span style="font-size: 11.5px; color: #64748b; font-weight: normal;">({{ number_format($totalUndertimeMinutes ?? 0) }} mins)</span>
+            </div>
+            <span class="hr-stat-sub">Early departures logged</span>
         </div>
     </div>
 
@@ -23,31 +26,31 @@
             <i class="ph ph-hourglass-high"></i>
         </div>
         <div class="hr-stat-content">
-            <span class="hr-stat-label">Pending Approval</span>
+            <span class="hr-stat-label">Pending Review</span>
             <div class="hr-stat-value">{{ $pendingCount ?? 0 }}</div>
-            <span class="hr-stat-sub">Awaiting management review</span>
+            <span class="hr-stat-sub">Awaiting authorization</span>
         </div>
     </div>
 
     <div class="hr-stat-card hr-stat-card-green">
         <div class="hr-stat-icon-wrap">
-            <i class="ph ph-check-circle"></i>
+            <i class="ph ph-seal-check"></i>
         </div>
         <div class="hr-stat-content">
-            <span class="hr-stat-label">Approved Overtime</span>
-            <div class="hr-stat-value">{{ $approvedCount ?? 0 }}</div>
-            <span class="hr-stat-sub">Approved for payroll</span>
+            <span class="hr-stat-label">Authorized Undertime</span>
+            <div class="hr-stat-value">{{ $authorizedCount ?? 0 }}</div>
+            <span class="hr-stat-sub">Excused / Approved departures</span>
         </div>
     </div>
 
     <div class="hr-stat-card hr-stat-card-rose">
         <div class="hr-stat-icon-wrap">
-            <i class="ph ph-x-circle"></i>
+            <i class="ph ph-warning-octagon"></i>
         </div>
         <div class="hr-stat-content">
-            <span class="hr-stat-label">Rejected Overtime</span>
-            <div class="hr-stat-value">{{ $rejectedCount ?? 0 }}</div>
-            <span class="hr-stat-sub">Unauthorized / unapproved</span>
+            <span class="hr-stat-label">Unauthorized Undertime</span>
+            <div class="hr-stat-value">{{ $unauthorizedCount ?? 0 }}</div>
+            <span class="hr-stat-sub">Subject to salary deduction</span>
         </div>
     </div>
 </div>
@@ -58,22 +61,22 @@
         <!-- Real-Time Text Search -->
         <div style="position: relative; width: 240px; flex-shrink: 0;">
             <i class="ph ph-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 16px; pointer-events: none;"></i>
-            <input type="text" id="otSearchInput" class="hr-input" placeholder="Search staff, position…" oninput="filterOvertimeTable()" style="width: 100%; box-sizing: border-box; padding-left: 36px; height: 38px;">
+            <input type="text" id="utSearchInput" class="hr-input" placeholder="Search staff, position…" oninput="filterUndertimeTable()" style="width: 100%; box-sizing: border-box; padding-left: 36px; height: 38px;">
         </div>
 
         <!-- Status Filter -->
-        <select id="otStatusFilter" class="hr-select" style="height: 38px; width: 150px;" onchange="applyOtFilter('status', this.value)">
+        <select id="utStatusFilter" class="hr-select" style="height: 38px; width: 165px;" onchange="applyUtFilter('status', this.value)">
             <option value="">-- All Statuses --</option>
-            <option value="Pending" {{ request('status') === 'Pending' ? 'selected' : '' }}>Pending</option>
-            <option value="Approved" {{ request('status') === 'Approved' ? 'selected' : '' }}>Approved</option>
-            <option value="Rejected" {{ request('status') === 'Rejected' ? 'selected' : '' }}>Rejected</option>
+            <option value="Pending" {{ request('status') === 'Pending' ? 'selected' : '' }}>Pending Review</option>
+            <option value="Approved" {{ request('status') === 'Approved' ? 'selected' : '' }}>Authorized Undertime</option>
+            <option value="Rejected" {{ request('status') === 'Rejected' ? 'selected' : '' }}>Unauthorized Undertime</option>
         </select>
 
         <!-- Date Filter -->
         <div style="display: flex; align-items: center; gap: 6px;">
-            <input type="date" id="otDateFilter" class="hr-input" value="{{ request('date') }}" onchange="applyOtFilter('date', this.value)" style="height: 38px; width: 155px;" title="Filter by date">
+            <input type="date" id="utDateFilter" class="hr-input" value="{{ request('date') }}" onchange="applyUtFilter('date', this.value)" style="height: 38px; width: 155px;" title="Filter by date">
             @if(request('date') || request('status') || request('branch_id'))
-                <a href="{{ route('hr.attendance.overtime') }}" class="hr-btn hr-btn-secondary" style="height: 38px; padding: 0 10px;" title="Clear filters">
+                <a href="{{ route('hr.attendance.undertime') }}" class="hr-btn hr-btn-secondary" style="height: 38px; padding: 0 10px;" title="Clear filters">
                     <i class="ph ph-x"></i> Clear
                 </a>
             @endif
@@ -81,7 +84,7 @@
 
         <!-- Branch Filter -->
         @if(isset($branches) && $branches->isNotEmpty())
-            <select id="otBranchFilter" class="hr-select" style="height: 38px; max-width: 170px;" onchange="applyOtFilter('branch_id', this.value)">
+            <select id="utBranchFilter" class="hr-select" style="height: 38px; max-width: 170px;" onchange="applyUtFilter('branch_id', this.value)">
                 <option value="">-- All Branches --</option>
                 @foreach($branches as $b)
                     <option value="{{ $b->id }}" {{ request('branch_id') == $b->id ? 'selected' : '' }}>{{ $b->name }}</option>
@@ -91,40 +94,40 @@
     </div>
 
     <div style="display: flex; align-items: center; gap: 8px;">
-        <button type="button" class="hr-btn hr-btn-primary" id="btnBatchApprove" onclick="submitBatchApprove()" style="display: none; height: 38px; background: linear-gradient(135deg, #10b981, #059669);">
-            <i class="ph ph-check-circle"></i>
-            <span>Approve Selected (<span id="batchCount">0</span>)</span>
+        <button type="button" class="hr-btn hr-btn-primary" id="btnBatchAuthorize" onclick="submitBatchAuthorize()" style="display: none; height: 38px; background: linear-gradient(135deg, #10b981, #059669);">
+            <i class="ph ph-seal-check"></i>
+            <span>Authorize Selected (<span id="batchUtCount">0</span>)</span>
         </button>
 
         <span class="hr-badge hr-badge-neutral" style="font-size: 12px; padding: 6px 12px;">
-            Showing <strong id="otVisibleCount" style="color: #0f172a; margin: 0 3px;">{{ $records->count() }}</strong> of {{ $records->total() }} records
+            Showing <strong id="utVisibleCount" style="color: #0f172a; margin: 0 3px;">{{ $records->count() }}</strong> of {{ $records->total() }} records
         </span>
     </div>
 </div>
 
-<form id="batchApproveForm" method="POST" action="{{ route('hr.attendance.overtime.batch-approve') }}" style="display: none;">
+<form id="batchAuthorizeForm" method="POST" action="{{ route('hr.attendance.undertime.batch-authorize') }}" style="display: none;">
     @csrf
 </form>
 
 <div class="hr-table-card">
     <div class="hr-table-wrapper">
-        <table class="hr-table" id="overtimeTable">
+        <table class="hr-table" id="undertimeTable">
             <thead>
                 <tr>
                     <th style="width: 36px; text-align: center;">
-                        <input type="checkbox" id="selectAllOt" onclick="toggleSelectAll(this)" style="cursor: pointer;">
+                        <input type="checkbox" id="selectAllUt" onclick="toggleSelectAllUt(this)" style="cursor: pointer;">
                     </th>
                     <th>Date</th>
                     <th>Staff Member</th>
                     <th>Branch & Dept</th>
                     <th>Time In / Out</th>
-                    <th>Total Hours</th>
-                    <th>Overtime Rendered</th>
-                    <th>Approval Status</th>
-                    <th style="text-align: right; width: 140px;">Action</th>
+                    <th>Undertime</th>
+                    <th>Total Rendered</th>
+                    <th>Authorization Status</th>
+                    <th style="text-align: right; width: 160px;">Action</th>
                 </tr>
             </thead>
-            <tbody id="overtimeTableBody">
+            <tbody id="undertimeTableBody">
                 @forelse($records as $rec)
                     @php
                         $staffName = $rec->employee?->full_name ?? 'Staff';
@@ -132,7 +135,7 @@
                         $deptName = $rec->employee?->department?->name ?? 'Front of House';
                         $posName = $rec->employee?->position?->name ?? 'Staff';
                         $dateStr = \Carbon\Carbon::parse($rec->date)->format('Y-m-d');
-                        $status = $rec->overtime_status ?: 'Pending';
+                        $status = $rec->undertime_status ?: 'Pending';
 
                         $deptUpper = strtoupper(trim($deptName));
                         $pillClass = 'hr-dept-pill-neutral';
@@ -156,15 +159,20 @@
                             $pillClass = 'hr-dept-pill-mgmt';
                             $pillIcon = 'ph-briefcase';
                         }
+
+                        $mins = (int) $rec->undertime_minutes;
+                        $hours = floor($mins / 60);
+                        $remMins = $mins % 60;
+                        $formattedDuration = $hours > 0 ? "{$hours}h {$remMins}m" : "{$remMins} mins";
                     @endphp
-                    <tr class="overtime-row"
+                    <tr class="undertime-row"
                         data-search="{{ strtolower($staffName . ' ' . $branchName . ' ' . $deptName . ' ' . $posName) }}"
                         data-branch="{{ $branchName }}"
                         data-date="{{ $dateStr }}"
                         data-status="{{ $status }}">
                         <td style="text-align: center;">
                             @if($status === 'Pending')
-                                <input type="checkbox" class="ot-record-checkbox" value="{{ $rec->id }}" onchange="updateBatchState()" style="cursor: pointer;">
+                                <input type="checkbox" class="ut-record-checkbox" value="{{ $rec->id }}" onchange="updateBatchUtState()" style="cursor: pointer;">
                             @else
                                 <span style="color: #cbd5e1;">-</span>
                             @endif
@@ -192,21 +200,21 @@
                             </span>
                         </td>
                         <td>
-                            <strong style="color: #0f172a; font-size: 12.5px;">{{ number_format($rec->total_hours, 2) }} hrs</strong>
-                        </td>
-                        <td>
-                            <strong style="color: #7c3aed; font-size: 14px; font-weight: 800;">
-                                +{{ number_format($rec->overtime_hours, 2) }} hrs
+                            <strong style="color: #e11d48; font-size: 13.5px; font-weight: 800;">
+                                -{{ $formattedDuration }}
                             </strong>
                         </td>
                         <td>
+                            <span style="color: #334155; font-size: 12px;">{{ number_format($rec->total_hours, 2) }} hrs</span>
+                        </td>
+                        <td>
                             @if($status === 'Approved')
-                                <span class="hr-badge hr-badge-success" title="Approved by {{ $rec->overtimeApprover?->name ?? 'Manager' }} on {{ $rec->overtime_approved_at ? \Carbon\Carbon::parse($rec->overtime_approved_at)->format('M d, Y h:i A') : '' }}">
-                                    <i class="ph ph-check-circle"></i> Approved
+                                <span class="hr-badge hr-badge-success" title="Authorized by {{ $rec->undertimeApprover?->name ?? 'Manager' }} on {{ $rec->undertime_approved_at ? \Carbon\Carbon::parse($rec->undertime_approved_at)->format('M d, Y h:i A') : '' }}">
+                                    <i class="ph ph-seal-check"></i> Authorized
                                 </span>
                             @elseif($status === 'Rejected')
-                                <span class="hr-badge hr-badge-danger" title="{{ $rec->overtime_remarks ?? 'Rejected' }}">
-                                    <i class="ph ph-x-circle"></i> Rejected
+                                <span class="hr-badge hr-badge-danger" title="{{ $rec->undertime_remarks ?? 'Unauthorized Undertime' }}">
+                                    <i class="ph ph-warning-circle"></i> Unauthorized
                                 </span>
                             @else
                                 <span class="hr-badge hr-badge-warning">
@@ -217,18 +225,18 @@
                         <td style="text-align: right;">
                             <div style="display: inline-flex; align-items: center; gap: 4px; justify-content: flex-end;">
                                 @if($status !== 'Approved')
-                                    <form method="POST" action="{{ route('hr.attendance.overtime.approve', $rec->id) }}" style="display: inline;">
+                                    <form method="POST" action="{{ route('hr.attendance.undertime.authorize', $rec->id) }}" style="display: inline;">
                                         @csrf
-                                        <button type="submit" class="hr-btn hr-btn-sm hr-btn-success" title="Approve Overtime" style="padding: 4px 8px; font-size: 11px;">
-                                            <i class="ph ph-check"></i> Approve
+                                        <button type="submit" class="hr-btn hr-btn-sm hr-btn-success" title="Authorize Undertime (Excused Departure)" style="padding: 4px 8px; font-size: 11px;">
+                                            <i class="ph ph-check"></i> Authorize
                                         </button>
                                     </form>
                                 @endif
 
                                 @if($status !== 'Rejected')
-                                    <form method="POST" action="{{ route('hr.attendance.overtime.reject', $rec->id) }}" style="display: inline;" onsubmit="return confirm('Reject this overtime record?')">
+                                    <form method="POST" action="{{ route('hr.attendance.undertime.reject', $rec->id) }}" style="display: inline;" onsubmit="return confirm('Mark this undertime as unauthorized deduction?')">
                                         @csrf
-                                        <button type="submit" class="hr-btn hr-btn-sm hr-btn-secondary" title="Reject Overtime" style="padding: 4px 8px; font-size: 11px; color: #dc2626;">
+                                        <button type="submit" class="hr-btn hr-btn-sm hr-btn-secondary" title="Mark Unauthorized" style="padding: 4px 8px; font-size: 11px; color: #dc2626;">
                                             <i class="ph ph-x"></i> Reject
                                         </button>
                                     </form>
@@ -237,24 +245,22 @@
                         </td>
                     </tr>
                 @empty
-                    <tr id="emptyOtRow"><td colspan="9" style="text-align: center; color: #94a3b8; padding: 36px;">No overtime hours logged.</td></tr>
+                    <tr id="emptyUtRow"><td colspan="9" style="text-align: center; color: #94a3b8; padding: 36px;">No undertime hours logged.</td></tr>
                 @endforelse
             </tbody>
         </table>
     </div>
 
-    @if($records->total() > 0)
-        <div class="hr-table-footer">
-            {{ $records->links() }}
-        </div>
-    @endif
+    <div class="hr-table-footer" id="utPaginationBar">
+        {{ $records->links() }}
+    </div>
 </div>
 
 @push('scripts')
 <script>
-function filterOvertimeTable() {
-    const q = (document.getElementById('otSearchInput')?.value || '').toLowerCase().trim();
-    const rows = document.querySelectorAll('.overtime-row');
+function filterUndertimeTable() {
+    const q = (document.getElementById('utSearchInput')?.value || '').toLowerCase().trim();
+    const rows = document.querySelectorAll('.undertime-row');
     let visible = 0;
 
     rows.forEach(r => {
@@ -269,16 +275,25 @@ function filterOvertimeTable() {
         }
     });
 
-    const badge = document.getElementById('otVisibleCount');
+    const badge = document.getElementById('utVisibleCount');
     if (badge) badge.innerText = visible;
 
-    const empty = document.getElementById('emptyOtRow');
+    const pagInfo = document.querySelector('#utPaginationBar .hr-pagination-info');
+    if (pagInfo) {
+        if (q) {
+            pagInfo.innerHTML = `Showing <strong>${visible === 0 ? 0 : 1}</strong> to <strong>${visible}</strong> of <strong>${visible}</strong> filtered records`;
+        } else {
+            pagInfo.innerHTML = `Showing <strong>{{ $records->firstItem() ?? ($records->total() > 0 ? 1 : 0) }}</strong> to <strong>{{ $records->lastItem() ?? $records->total() }}</strong> of <strong>{{ $records->total() }}</strong> records`;
+        }
+    }
+
+    const empty = document.getElementById('emptyUtRow');
     if (empty) {
         empty.style.display = (visible === 0 && rows.length > 0) ? '' : 'none';
     }
 }
 
-function applyOtFilter(key, val) {
+function applyUtFilter(key, val) {
     const url = new URL(window.location.href);
     if (val) {
         url.searchParams.set(key, val);
@@ -289,31 +304,31 @@ function applyOtFilter(key, val) {
     window.location.href = url.toString();
 }
 
-function toggleSelectAll(master) {
-    const checkboxes = document.querySelectorAll('.ot-record-checkbox');
+function toggleSelectAllUt(master) {
+    const checkboxes = document.querySelectorAll('.ut-record-checkbox');
     checkboxes.forEach(cb => {
         cb.checked = master.checked;
     });
-    updateBatchState();
+    updateBatchUtState();
 }
 
-function updateBatchState() {
-    const checked = document.querySelectorAll('.ot-record-checkbox:checked');
-    const btn = document.getElementById('btnBatchApprove');
-    const countSpan = document.getElementById('batchCount');
+function updateBatchUtState() {
+    const checked = document.querySelectorAll('.ut-record-checkbox:checked');
+    const btn = document.getElementById('btnBatchAuthorize');
+    const countSpan = document.getElementById('batchUtCount');
     if (btn && countSpan) {
         countSpan.innerText = checked.length;
         btn.style.display = checked.length > 0 ? 'inline-flex' : 'none';
     }
 }
 
-function submitBatchApprove() {
-    const checked = document.querySelectorAll('.ot-record-checkbox:checked');
+function submitBatchAuthorize() {
+    const checked = document.querySelectorAll('.ut-record-checkbox:checked');
     if (checked.length === 0) return;
 
-    if (!confirm(`Approve ${checked.length} selected overtime record(s)?`)) return;
+    if (!confirm(`Authorize ${checked.length} selected undertime record(s)?`)) return;
 
-    const form = document.getElementById('batchApproveForm');
+    const form = document.getElementById('batchAuthorizeForm');
     form.innerHTML = '@csrf';
     checked.forEach(cb => {
         const input = document.createElement('input');

@@ -15,13 +15,13 @@
 
 .hr-corrections-table th,
 .hr-corrections-table td {
-    padding: 8px 6px !important;
-    font-size: 12px;
+    padding: 9px 6px !important;
+    font-size: 13px;
     vertical-align: middle;
 }
 
 .hr-corrections-table th {
-    font-size: 10.5px !important;
+    font-size: 11.5px !important;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -30,55 +30,56 @@
 }
 
 .hr-corrections-table .cor-col-date {
-    width: 90px;
+    width: 95px;
 }
 
 .hr-corrections-table .cor-col-staff {
-    width: 135px;
+    width: 140px;
 }
 
 .hr-corrections-table .cor-col-dept {
-    width: 120px;
+    width: 125px;
 }
 
 .hr-corrections-table .cor-col-punch-th {
     text-align: center !important;
-    padding: 8px 2px !important;
-    font-size: 10px !important;
+    padding: 9px 2px !important;
+    font-size: 11px !important;
     color: #475569;
     font-weight: 700;
     white-space: nowrap;
-    width: 52px;
+    width: 54px;
 }
 
 .hr-corrections-table .cor-col-punch-td {
     text-align: center !important;
-    padding: 8px 2px !important;
+    padding: 9px 2px !important;
     white-space: nowrap;
-    font-size: 11.5px;
-    width: 52px;
+    font-size: 12.5px;
+    width: 54px;
 }
 
 .hr-corrections-table .cor-col-hours {
     text-align: center !important;
     white-space: nowrap;
-    width: 70px;
+    width: 76px;
 }
 
 .hr-corrections-table .cor-col-status {
     text-align: center !important;
     white-space: nowrap;
-    width: 78px;
+    width: 82px;
 }
 
 .hr-corrections-table .cor-col-notes {
-    width: 115px;
+    width: 120px;
 }
 
 .hr-corrections-table .cor-col-action {
-    text-align: right !important;
+    text-align: center !important;
     white-space: nowrap;
-    width: 82px;
+    width: 74px;
+    padding: 6px 2px !important;
 }
 </style>
 @endpush
@@ -161,7 +162,7 @@
                     <th class="cor-col-hours">Total Hours</th>
                     <th class="cor-col-status">Status</th>
                     <th class="cor-col-notes">Notes / Purpose</th>
-                    <th class="cor-col-action">Action</th>
+                    <th class="cor-col-action" style="text-align: center !important;">Action</th>
                 </tr>
             </thead>
             <tbody id="manualEntriesTableBody">
@@ -199,113 +200,140 @@
                         data-branch="{{ $branchName }}"
                         data-status="{{ $r->status }}">
                         <td class="cor-col-date">
-                            <strong style="color: #0f172a; font-size: 12px;">{{ $displayDate }}</strong>
-                            <div style="font-size: 10.5px; color: #64748b;">{{ \Carbon\Carbon::parse($r->date)->format('l') }}</div>
+                            <span style="color: #0f172a; font-weight: 600; font-size: 12.5px;">{{ $displayDate }}</span>
+                            <div style="font-size: 11px; color: #64748b; font-weight: 400;">{{ \Carbon\Carbon::parse($r->date)->format('l') }}</div>
                         </td>
                         <td class="cor-col-staff">
-                            <div style="font-weight: 700; color: #0f172a; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ $empName }}">{{ $empName }}</div>
-                            <div style="font-size: 10px; color: #64748b; font-family: monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ $empId }} &bull; {{ $posName }}</div>
+                            <div style="font-weight: 600; color: #0f172a; font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ $empName }}">{{ $empName }}</div>
+                            <div style="font-size: 11px; color: #64748b; font-family: monospace; font-weight: 400; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ $empId }} &bull; {{ $posName }}</div>
                         </td>
                         <td class="cor-col-dept">
-                            <div style="font-weight: 600; color: #334155; font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ $branchName }}">
-                                <i class="ph ph-storefront" style="color: #64748b;"></i> {{ $branchName }}
+                            <div style="font-weight: 500; color: #1e293b; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 3px;" title="{{ $branchName }}">
+                                <i class="ph ph-storefront" style="color: #7c3aed; font-size: 12px;"></i> {{ $branchName }}
                             </div>
-                            <div style="font-size: 10px; color: #64748b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ $deptName }}">{{ $deptName }}</div>
+                            @php
+                                $deptUpper = strtoupper(trim($deptName));
+                                $pillClass = 'hr-dept-pill-neutral';
+                                $pillIcon = 'ph-buildings';
+                                if (str_contains($deptUpper, 'HR') || str_contains($deptUpper, 'HUMAN')) {
+                                    $pillClass = 'hr-dept-pill-hr';
+                                    $pillIcon = 'ph-users';
+                                } elseif (str_contains($deptUpper, 'IT') || str_contains($deptUpper, 'TECH')) {
+                                    $pillClass = 'hr-dept-pill-it';
+                                    $pillIcon = 'ph-cpu';
+                                } elseif (str_contains($deptUpper, 'FINANCE') || str_contains($deptUpper, 'FIN') || str_contains($deptUpper, 'ADMIN')) {
+                                    $pillClass = 'hr-dept-pill-fin';
+                                    $pillIcon = 'ph-coins';
+                                } elseif (str_contains($deptUpper, 'FRONT') || str_contains($deptUpper, 'FOH')) {
+                                    $pillClass = 'hr-dept-pill-foh';
+                                    $pillIcon = 'ph-storefront';
+                                } elseif (str_contains($deptUpper, 'BACK') || str_contains($deptUpper, 'BOH') || str_contains($deptUpper, 'KITCHEN')) {
+                                    $pillClass = 'hr-dept-pill-boh';
+                                    $pillIcon = 'ph-cooking-pot';
+                                } elseif (str_contains($deptUpper, 'MANAGE')) {
+                                    $pillClass = 'hr-dept-pill-mgmt';
+                                    $pillIcon = 'ph-briefcase';
+                                }
+                            @endphp
+                            <span class="hr-dept-pill {{ $pillClass }}" style="font-size: 10px; padding: 2px 7px; font-weight: 500;" title="{{ $deptName }}">
+                                <i class="ph {{ $pillIcon }}"></i>
+                                <span>{{ $deptName ?: 'General' }}</span>
+                            </span>
                         </td>
 
                         <!-- 1. In -->
                         <td class="cor-col-punch-td">
                             @if($pIn)
-                                <strong style="color: #059669; font-family: monospace; font-size: 12px;">{{ substr($pIn, 0, 5) }}</strong>
+                                <span style="color: #059669; font-family: monospace; font-size: 12.5px; font-weight: 600;">{{ substr($pIn, 0, 5) }}</span>
                             @else
-                                <span style="color: #cbd5e1; font-family: monospace;">--:--</span>
+                                <span style="color: #cbd5e1; font-family: monospace; font-weight: 400; font-size: 11.5px;">--:--</span>
                             @endif
                         </td>
 
                         <!-- 2. Break Out -->
                         <td class="cor-col-punch-td">
                             @if($pBreakOut)
-                                <span style="color: #334155; font-family: monospace; font-size: 11.5px;">{{ substr($pBreakOut, 0, 5) }}</span>
+                                <span style="color: #475569; font-family: monospace; font-size: 12px; font-weight: 500;">{{ substr($pBreakOut, 0, 5) }}</span>
                             @else
-                                <span style="color: #cbd5e1; font-family: monospace;">--:--</span>
+                                <span style="color: #cbd5e1; font-family: monospace; font-weight: 400; font-size: 11.5px;">--:--</span>
                             @endif
                         </td>
 
                         <!-- 3. Break In -->
                         <td class="cor-col-punch-td">
                             @if($pBreakIn)
-                                <span style="color: #334155; font-family: monospace; font-size: 11.5px;">{{ substr($pBreakIn, 0, 5) }}</span>
+                                <span style="color: #475569; font-family: monospace; font-size: 12px; font-weight: 500;">{{ substr($pBreakIn, 0, 5) }}</span>
                             @else
-                                <span style="color: #cbd5e1; font-family: monospace;">--:--</span>
+                                <span style="color: #cbd5e1; font-family: monospace; font-weight: 400; font-size: 11.5px;">--:--</span>
                             @endif
                         </td>
 
                         <!-- 4. Coffee Out -->
                         <td class="cor-col-punch-td">
                             @if($pCoffeeOut)
-                                <span style="color: #b45309; font-family: monospace; font-size: 11.5px;">{{ substr($pCoffeeOut, 0, 5) }}</span>
+                                <span style="color: #b45309; font-family: monospace; font-size: 12px; font-weight: 500;">{{ substr($pCoffeeOut, 0, 5) }}</span>
                             @else
-                                <span style="color: #cbd5e1; font-family: monospace;">--:--</span>
+                                <span style="color: #cbd5e1; font-family: monospace; font-weight: 400; font-size: 11.5px;">--:--</span>
                             @endif
                         </td>
 
                         <!-- 5. Coffee In -->
                         <td class="cor-col-punch-td">
                             @if($pCoffeeIn)
-                                <span style="color: #b45309; font-family: monospace; font-size: 11.5px;">{{ substr($pCoffeeIn, 0, 5) }}</span>
+                                <span style="color: #b45309; font-family: monospace; font-size: 12px; font-weight: 500;">{{ substr($pCoffeeIn, 0, 5) }}</span>
                             @else
-                                <span style="color: #cbd5e1; font-family: monospace;">--:--</span>
+                                <span style="color: #cbd5e1; font-family: monospace; font-weight: 400; font-size: 11.5px;">--:--</span>
                             @endif
                         </td>
 
                         <!-- 6. Final Out -->
                         <td class="cor-col-punch-td">
                             @if($pFinalOut)
-                                <strong style="color: #0284c7; font-family: monospace; font-size: 12px;">{{ substr($pFinalOut, 0, 5) }}</strong>
+                                <span style="color: #0284c7; font-family: monospace; font-size: 12.5px; font-weight: 600;">{{ substr($pFinalOut, 0, 5) }}</span>
                             @else
-                                <span style="color: #cbd5e1; font-family: monospace;">--:--</span>
+                                <span style="color: #cbd5e1; font-family: monospace; font-weight: 400; font-size: 11.5px;">--:--</span>
                             @endif
                         </td>
 
                         <!-- Total Hours -->
                         <td class="cor-col-hours">
-                            <strong style="color: #0f172a; font-size: 12px;">{{ number_format($r->total_hours ?? 0, 2) }} hrs</strong>
+                            <span style="color: #0f172a; font-weight: 600; font-size: 12.5px;">{{ number_format($r->total_hours ?? 0, 2) }} hrs</span>
                         </td>
 
                         <!-- Status Badge -->
                         <td class="cor-col-status">
                             @if($r->status === 'Present')
-                                <span class="hr-badge hr-badge-success" style="font-size: 10.5px; padding: 2px 6px;">{{ $r->status }}</span>
+                                <span class="hr-badge hr-badge-success" style="font-size: 11px; padding: 3px 7px;">{{ $r->status }}</span>
                             @elseif($r->status === 'Late')
-                                <span class="hr-badge hr-badge-warning" style="font-size: 10.5px; padding: 2px 6px;">{{ $r->status }}</span>
+                                <span class="hr-badge hr-badge-warning" style="font-size: 11px; padding: 3px 7px;">{{ $r->status }}</span>
                             @elseif($r->status === 'Rest Day')
-                                <span class="hr-badge hr-badge-neutral" style="font-size: 10.5px; padding: 2px 6px;">{{ $r->status }}</span>
+                                <span class="hr-badge hr-badge-neutral" style="font-size: 11px; padding: 3px 7px;">{{ $r->status }}</span>
                             @elseif($r->status === 'Overtime')
-                                <span class="hr-badge hr-badge-purple" style="font-size: 10.5px; padding: 2px 6px;">{{ $r->status }}</span>
+                                <span class="hr-badge hr-badge-purple" style="font-size: 11px; padding: 3px 7px;">{{ $r->status }}</span>
                             @else
-                                <span class="hr-badge hr-badge-danger" style="font-size: 10.5px; padding: 2px 6px;">{{ $r->status }}</span>
+                                <span class="hr-badge hr-badge-danger" style="font-size: 11px; padding: 3px 7px;">{{ $r->status }}</span>
                             @endif
                         </td>
 
                         <!-- Notes & Source -->
                         <td class="cor-col-notes">
-                            <div style="font-size: 11px; color: #334155; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ $r->notes ?: 'Manual time entry' }}">{{ $r->notes ?: 'Manual time entry' }}</div>
-                            <span class="hr-badge hr-badge-info" style="font-size: 8.5px; padding: 1px 5px; margin-top: 2px;">
+                            <div style="font-size: 12px; color: #334155; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ $r->notes ?: 'Manual time entry' }}">{{ $r->notes ?: 'Manual time entry' }}</div>
+                            <span class="hr-badge hr-badge-info" style="font-size: 9.5px; padding: 2px 6px; margin-top: 2px;">
                                 <i class="ph ph-hand-pointing"></i> {{ $r->source ?? 'Manual' }}
                             </span>
                         </td>
 
                         <!-- Action Buttons -->
                         <td class="cor-col-action">
-                            <div style="display: inline-flex; align-items: center; justify-content: flex-end; gap: 3px;">
-                                <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" style="padding: 3px 6px; font-size: 11px;" onclick='editManualEntry({{ $r->id }}, {{ $r->employee_id }}, "{{ addslashes($empName) }}", "{{ $dateStr }}", {{ json_encode($punchesData) }})' title="Edit punches">
-                                    <i class="ph ph-pencil-simple"></i>
+                            <div style="display: inline-flex; align-items: center; justify-content: center; gap: 4px;">
+                                <button type="button" class="hr-btn hr-btn-secondary" style="width: 32px; height: 32px; min-width: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; color: #475569;" onclick='editManualEntry({{ $r->id }}, {{ $r->employee_id }}, "{{ addslashes($empName) }}", "{{ $dateStr }}", {{ json_encode($punchesData) }})' title="Edit punches">
+                                    <i class="ph ph-pencil-simple" style="font-size: 16px;"></i>
                                 </button>
                                 <form method="POST" action="{{ route('hr.attendance.corrections.destroy', $r->id) }}" onsubmit="return confirm('Are you sure you want to delete this manual time entry for {{ addslashes($empName) }} on {{ $displayDate }}?');" style="display: inline-block; margin: 0;">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="hr-btn hr-btn-danger hr-btn-sm" style="padding: 3px 6px; font-size: 11px;" title="Delete manual entry">
-                                        <i class="ph ph-trash"></i>
+                                    <button type="submit" class="hr-btn hr-btn-danger" style="width: 32px; height: 32px; min-width: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px;" title="Delete manual entry">
+                                        <i class="ph ph-trash" style="font-size: 16px;"></i>
                                     </button>
                                 </form>
                             </div>
@@ -398,56 +426,56 @@
                     <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
                         <!-- 1. Shift In -->
                         <div class="hr-form-group" style="margin-bottom: 0;">
-                            <label class="hr-form-label" style="font-size: 12px; font-weight: 600; color: #059669; display: flex; align-items: center; justify-content: space-between;">
+                            <label class="hr-form-label" style="font-size: 12px; font-weight: 500; color: #059669; display: flex; align-items: center; justify-content: space-between;">
                                 <span>1. Shift In</span>
-                                <span style="font-size: 10px; cursor: pointer; color: #7c3aed;" onclick="setNowPunch('encTimeIn')">Now</span>
+                                <span style="font-size: 10.5px; cursor: pointer; color: #7c3aed; font-weight: 500;" onclick="setNowPunch('encTimeIn')">Now</span>
                             </label>
-                            <input type="datetime-local" step="60" name="time_in" id="encTimeIn" class="hr-input" onchange="syncDateFromPunches(); lookupPunchesForDate();" style="height: 38px; font-family: monospace; font-size: 13px; font-weight: 600;">
+                            <input type="datetime-local" step="60" name="time_in" id="encTimeIn" class="hr-input enc-punch-input" onchange="syncDateFromPunches(); lookupPunchesForDate();" style="height: 38px; font-family: inherit; font-size: 13px; font-weight: 400; color: #1e293b;">
                         </div>
 
                         <!-- 2. Break Out -->
                         <div class="hr-form-group" style="margin-bottom: 0;">
-                            <label class="hr-form-label" style="font-size: 12px; font-weight: 600; color: #334155; display: flex; align-items: center; justify-content: space-between;">
+                            <label class="hr-form-label" style="font-size: 12px; font-weight: 500; color: #334155; display: flex; align-items: center; justify-content: space-between;">
                                 <span>2. Break Out</span>
-                                <span style="font-size: 10px; cursor: pointer; color: #7c3aed;" onclick="setNowPunch('encBreakOut')">Now</span>
+                                <span style="font-size: 10.5px; cursor: pointer; color: #7c3aed; font-weight: 500;" onclick="setNowPunch('encBreakOut')">Now</span>
                             </label>
-                            <input type="datetime-local" step="60" name="break_out" id="encBreakOut" class="hr-input" onchange="syncDateFromPunches()" style="height: 38px; font-family: monospace; font-size: 13px;">
+                            <input type="datetime-local" step="60" name="break_out" id="encBreakOut" class="hr-input enc-punch-input" onchange="syncDateFromPunches()" style="height: 38px; font-family: inherit; font-size: 13px; font-weight: 400; color: #1e293b;">
                         </div>
 
                         <!-- 3. Break In -->
                         <div class="hr-form-group" style="margin-bottom: 0;">
-                            <label class="hr-form-label" style="font-size: 12px; font-weight: 600; color: #334155; display: flex; align-items: center; justify-content: space-between;">
+                            <label class="hr-form-label" style="font-size: 12px; font-weight: 500; color: #334155; display: flex; align-items: center; justify-content: space-between;">
                                 <span>3. Break In</span>
-                                <span style="font-size: 10px; cursor: pointer; color: #7c3aed;" onclick="setNowPunch('encBreakIn')">Now</span>
+                                <span style="font-size: 10.5px; cursor: pointer; color: #7c3aed; font-weight: 500;" onclick="setNowPunch('encBreakIn')">Now</span>
                             </label>
-                            <input type="datetime-local" step="60" name="break_in" id="encBreakIn" class="hr-input" onchange="syncDateFromPunches()" style="height: 38px; font-family: monospace; font-size: 13px;">
+                            <input type="datetime-local" step="60" name="break_in" id="encBreakIn" class="hr-input enc-punch-input" onchange="syncDateFromPunches()" style="height: 38px; font-family: inherit; font-size: 13px; font-weight: 400; color: #1e293b;">
                         </div>
 
                         <!-- 4. Coffee Break Out -->
                         <div class="hr-form-group" style="margin-bottom: 0;">
-                            <label class="hr-form-label" style="font-size: 12px; font-weight: 600; color: #b45309; display: flex; align-items: center; justify-content: space-between;">
+                            <label class="hr-form-label" style="font-size: 12px; font-weight: 500; color: #b45309; display: flex; align-items: center; justify-content: space-between;">
                                 <span>4. Coffee Out</span>
-                                <span style="font-size: 10px; cursor: pointer; color: #7c3aed;" onclick="setNowPunch('encCoffeeOut')">Now</span>
+                                <span style="font-size: 10.5px; cursor: pointer; color: #7c3aed; font-weight: 500;" onclick="setNowPunch('encCoffeeOut')">Now</span>
                             </label>
-                            <input type="datetime-local" step="60" name="coffee_break_out" id="encCoffeeOut" class="hr-input" onchange="syncDateFromPunches()" style="height: 38px; font-family: monospace; font-size: 13px;">
+                            <input type="datetime-local" step="60" name="coffee_break_out" id="encCoffeeOut" class="hr-input enc-punch-input" onchange="syncDateFromPunches()" style="height: 38px; font-family: inherit; font-size: 13px; font-weight: 400; color: #1e293b;">
                         </div>
 
                         <!-- 5. Coffee Break In -->
                         <div class="hr-form-group" style="margin-bottom: 0;">
-                            <label class="hr-form-label" style="font-size: 12px; font-weight: 600; color: #b45309; display: flex; align-items: center; justify-content: space-between;">
+                            <label class="hr-form-label" style="font-size: 12px; font-weight: 500; color: #b45309; display: flex; align-items: center; justify-content: space-between;">
                                 <span>5. Coffee In</span>
-                                <span style="font-size: 10px; cursor: pointer; color: #7c3aed;" onclick="setNowPunch('encCoffeeIn')">Now</span>
+                                <span style="font-size: 10.5px; cursor: pointer; color: #7c3aed; font-weight: 500;" onclick="setNowPunch('encCoffeeIn')">Now</span>
                             </label>
-                            <input type="datetime-local" step="60" name="coffee_break_in" id="encCoffeeIn" class="hr-input" onchange="syncDateFromPunches()" style="height: 38px; font-family: monospace; font-size: 13px;">
+                            <input type="datetime-local" step="60" name="coffee_break_in" id="encCoffeeIn" class="hr-input enc-punch-input" onchange="syncDateFromPunches()" style="height: 38px; font-family: inherit; font-size: 13px; font-weight: 400; color: #1e293b;">
                         </div>
 
                         <!-- 6. Final Out -->
                         <div class="hr-form-group" style="margin-bottom: 0;">
-                            <label class="hr-form-label" style="font-size: 12px; font-weight: 600; color: #0284c7; display: flex; align-items: center; justify-content: space-between;">
+                            <label class="hr-form-label" style="font-size: 12px; font-weight: 500; color: #0284c7; display: flex; align-items: center; justify-content: space-between;">
                                 <span>6. Final Out</span>
-                                <span style="font-size: 10px; cursor: pointer; color: #7c3aed;" onclick="setNowPunch('encTimeOut')">Now</span>
+                                <span style="font-size: 10.5px; cursor: pointer; color: #7c3aed; font-weight: 500;" onclick="setNowPunch('encTimeOut')">Now</span>
                             </label>
-                            <input type="datetime-local" step="60" name="time_out" id="encTimeOut" class="hr-input" onchange="syncDateFromPunches()" style="height: 38px; font-family: monospace; font-size: 13px; font-weight: 600;">
+                            <input type="datetime-local" step="60" name="time_out" id="encTimeOut" class="hr-input enc-punch-input" onchange="syncDateFromPunches()" style="height: 38px; font-family: inherit; font-size: 13px; font-weight: 400; color: #1e293b;">
                         </div>
                     </div>
                 </div>
@@ -613,6 +641,7 @@ function clearAllPunches() {
     document.getElementById('encCoffeeOut').value = '';
     document.getElementById('encCoffeeIn').value = '';
     document.getElementById('encTimeOut').value = '';
+    if (window.resetAllPunchBuffers) window.resetAllPunchBuffers();
 }
 
 function showLookupAlert(text, type) {
@@ -737,6 +766,136 @@ function resetManualFilters() {
     const st = document.getElementById('manualStatusFilter'); if (st) st.value = '';
     filterManualTable();
 }
+
+// Smart Tab Auto-Complete for Time Punches (e.g. typing 18 and pressing Tab -> 18:00)
+(function() {
+    const punchInputIds = ['encTimeIn', 'encBreakOut', 'encBreakIn', 'encCoffeeOut', 'encCoffeeIn', 'encTimeOut'];
+    const punchBuffers = {};
+
+    window.resetAllPunchBuffers = function() {
+        punchInputIds.forEach(id => {
+            punchBuffers[id] = { digits: '', colon: false };
+        });
+    };
+
+    function initPunchInputs() {
+        punchInputIds.forEach((id, idx) => {
+            const input = document.getElementById(id);
+            if (!input) return;
+
+            punchBuffers[id] = { digits: '', colon: false };
+
+            input.addEventListener('focus', function() {
+                punchBuffers[id] = { digits: '', colon: false };
+            });
+
+            input.addEventListener('keydown', function(e) {
+                const buf = punchBuffers[id] || (punchBuffers[id] = { digits: '', colon: false });
+
+                if (e.key >= '0' && e.key <= '9') {
+                    buf.digits += e.key;
+                    return;
+                }
+                if (e.key === ':') {
+                    buf.colon = true;
+                    return;
+                }
+                if (e.key === 'Backspace' || e.key === 'Delete') {
+                    buf.digits = '';
+                    buf.colon = false;
+                    return;
+                }
+
+                if ((e.key === 'Tab' && !e.shiftKey) || e.key === 'Enter') {
+                    if (buf.digits.length > 0) {
+                        let hour = null;
+                        let minute = '00';
+
+                        // If user typed 1 or 2 digits (e.g. "18", "8", "9", "12", "17")
+                        if (buf.digits.length === 1 || buf.digits.length === 2) {
+                            hour = parseInt(buf.digits, 10);
+                            minute = '00';
+                        } else if (buf.digits.length === 3) {
+                            // e.g. "830" -> 08:30, "800" -> 08:00
+                            hour = parseInt(buf.digits.substring(0, 1), 10);
+                            minute = buf.digits.substring(1, 3);
+                        } else if (buf.digits.length === 4) {
+                            // e.g. "1800" -> 18:00, "1830" -> 18:30
+                            hour = parseInt(buf.digits.substring(0, 2), 10);
+                            minute = buf.digits.substring(2, 4);
+                        } else if (buf.digits.length >= 9) {
+                            // When user typed full MMDDYYYY before hour
+                            const timePart = buf.digits.substring(8);
+                            if (timePart.length === 1 || timePart.length === 2) {
+                                hour = parseInt(timePart, 10);
+                                minute = '00';
+                            } else if (timePart.length >= 3) {
+                                hour = parseInt(timePart.substring(0, 2), 10);
+                                minute = timePart.substring(2, 4);
+                            }
+                        }
+
+                        if (hour !== null && !isNaN(hour) && hour >= 0 && hour <= 23) {
+                            e.preventDefault();
+                            const baseDate = getActivePunchDate();
+                            const hh = String(hour).padStart(2, '0');
+                            const mm = String(minute).padStart(2, '0');
+                            this.value = `${baseDate}T${hh}:${mm}`;
+
+                            buf.digits = '';
+                            buf.colon = false;
+
+                            syncDateFromPunches();
+                            if (id === 'encTimeIn') {
+                                lookupPunchesForDate();
+                            }
+
+                            // Advance focus to next punch input
+                            if (idx < punchInputIds.length - 1) {
+                                const nextInput = document.getElementById(punchInputIds[idx + 1]);
+                                if (nextInput) {
+                                    nextInput.focus();
+                                    if (punchBuffers[punchInputIds[idx + 1]]) {
+                                        punchBuffers[punchInputIds[idx + 1]].digits = '';
+                                    }
+                                }
+                            } else {
+                                const statusSelect = document.getElementById('encStatus');
+                                if (statusSelect) statusSelect.focus();
+                            }
+                            return;
+                        }
+                    }
+                    buf.digits = '';
+                    buf.colon = false;
+                }
+            });
+
+            input.addEventListener('blur', function() {
+                const buf = punchBuffers[id];
+                if (buf && (buf.digits.length === 1 || buf.digits.length === 2)) {
+                    const hour = parseInt(buf.digits, 10);
+                    if (!isNaN(hour) && hour >= 0 && hour <= 23) {
+                        const baseDate = getActivePunchDate();
+                        const hh = String(hour).padStart(2, '0');
+                        this.value = `${baseDate}T${hh}:00`;
+                        syncDateFromPunches();
+                    }
+                }
+                if (buf) {
+                    buf.digits = '';
+                    buf.colon = false;
+                }
+            });
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initPunchInputs);
+    } else {
+        initPunchInputs();
+    }
+})();
 </script>
 @endpush
 @endsection

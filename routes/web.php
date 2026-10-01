@@ -152,7 +152,17 @@ Route::middleware('auth')->group(function () {
             Route::put('/shifts/{id}', [\App\Http\Controllers\Hr\AttendanceController::class, 'shiftTemplateUpdate'])->name('shifts.update');
             Route::delete('/shifts/{id}', [\App\Http\Controllers\Hr\AttendanceController::class, 'shiftTemplateDestroy'])->name('shifts.destroy');
 
+            Route::post('/schedules/assign-default-shift', [\App\Http\Controllers\Hr\AttendanceController::class, 'assignDefaultShift'])->name('schedules.assign-default-shift');
+
             Route::get('/overtime', [\App\Http\Controllers\Hr\AttendanceController::class, 'overtimeIndex'])->name('overtime');
+            Route::post('/overtime/{id}/approve', [\App\Http\Controllers\Hr\AttendanceController::class, 'overtimeApprove'])->name('overtime.approve');
+            Route::post('/overtime/{id}/reject', [\App\Http\Controllers\Hr\AttendanceController::class, 'overtimeReject'])->name('overtime.reject');
+            Route::post('/overtime/batch-approve', [\App\Http\Controllers\Hr\AttendanceController::class, 'overtimeBatchApprove'])->name('overtime.batch-approve');
+
+            Route::get('/undertime', [\App\Http\Controllers\Hr\AttendanceController::class, 'undertimeIndex'])->name('undertime');
+            Route::post('/undertime/{id}/authorize', [\App\Http\Controllers\Hr\AttendanceController::class, 'undertimeAuthorize'])->name('undertime.authorize');
+            Route::post('/undertime/{id}/reject', [\App\Http\Controllers\Hr\AttendanceController::class, 'undertimeReject'])->name('undertime.reject');
+            Route::post('/undertime/batch-authorize', [\App\Http\Controllers\Hr\AttendanceController::class, 'undertimeBatchAuthorize'])->name('undertime.batch-authorize');
 
             Route::get('/corrections', [\App\Http\Controllers\Hr\AttendanceController::class, 'correctionsIndex'])->name('corrections');
             Route::post('/corrections', [\App\Http\Controllers\Hr\AttendanceController::class, 'correctionStore'])->name('corrections.store');
@@ -239,6 +249,35 @@ Route::middleware('auth')->group(function () {
             Route::get('/export/employees', [\App\Http\Controllers\Hr\HrReportController::class, 'exportEmployees'])->name('export.employees');
             Route::get('/export/attendance', [\App\Http\Controllers\Hr\HrReportController::class, 'exportAttendance'])->name('export.attendance');
             Route::get('/export/payroll', [\App\Http\Controllers\Hr\HrReportController::class, 'exportPayroll'])->name('export.payroll');
+
+            // Audit & History Reports
+            Route::get('/change-of-schedule', [\App\Http\Controllers\Hr\HrReportController::class, 'changeOfScheduleReport'])->name('change-of-schedule');
+            Route::get('/export/change-of-schedule', [\App\Http\Controllers\Hr\HrReportController::class, 'exportChangeOfSchedule'])->name('export.change-of-schedule');
+
+            Route::get('/overtime-history', [\App\Http\Controllers\Hr\HrReportController::class, 'overtimeHistoryReport'])->name('overtime-history');
+            Route::get('/export/overtime-history', [\App\Http\Controllers\Hr\HrReportController::class, 'exportOvertimeHistory'])->name('export.overtime-history');
+
+            Route::get('/manual-entries-history', [\App\Http\Controllers\Hr\HrReportController::class, 'manualEntriesHistoryReport'])->name('manual-entries-history');
+            Route::get('/export/manual-entries-history', [\App\Http\Controllers\Hr\HrReportController::class, 'exportManualEntriesHistory'])->name('export.manual-entries-history');
+
+            // Attendance Compliance Reports
+            Route::get('/authorized-undertime', [\App\Http\Controllers\Hr\HrReportController::class, 'authorizedUndertimeReport'])->name('authorized-undertime');
+            Route::get('/export/authorized-undertime', [\App\Http\Controllers\Hr\HrReportController::class, 'exportAuthorizedUndertime'])->name('export.authorized-undertime');
+
+            Route::get('/unauthorized-absences', [\App\Http\Controllers\Hr\HrReportController::class, 'unauthorizedAbsencesReport'])->name('unauthorized-absences');
+            Route::get('/export/unauthorized-absences', [\App\Http\Controllers\Hr\HrReportController::class, 'exportUnauthorizedAbsences'])->name('export.unauthorized-absences');
+
+            Route::get('/tardiness', [\App\Http\Controllers\Hr\HrReportController::class, 'tardinessReport'])->name('tardiness');
+            Route::get('/export/tardiness', [\App\Http\Controllers\Hr\HrReportController::class, 'exportTardiness'])->name('export.tardiness');
+
+            Route::get('/attendance-summary', [\App\Http\Controllers\Hr\HrReportController::class, 'attendanceSummaryReport'])->name('attendance-summary');
+            Route::get('/export/attendance-summary', [\App\Http\Controllers\Hr\HrReportController::class, 'exportAttendanceSummary'])->name('export.attendance-summary');
+
+            Route::get('/individual-attendance-summary', [\App\Http\Controllers\Hr\HrReportController::class, 'individualAttendanceSummaryReport'])->name('individual-attendance-summary');
+            Route::get('/export/individual-attendance-summary', [\App\Http\Controllers\Hr\HrReportController::class, 'exportIndividualAttendanceSummary'])->name('export.individual-attendance-summary');
+
+            Route::get('/employee-attendance-profile', [\App\Http\Controllers\Hr\HrReportController::class, 'employeeAttendanceProfileReport'])->name('employee-attendance-profile');
+            Route::get('/export/employee-attendance-profile', [\App\Http\Controllers\Hr\HrReportController::class, 'exportEmployeeAttendanceProfile'])->name('export.employee-attendance-profile');
         });
 
         // 10. Administration

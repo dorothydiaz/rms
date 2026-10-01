@@ -56,6 +56,7 @@ class Employee extends Model
         'contract_end_date',
         'work_location',
         'work_schedule',
+        'default_shift_template_id',
         'job_level',
         'sss_number',
         'sss_verified',
@@ -376,6 +377,22 @@ class Employee extends Model
     public function applicant(): \Illuminate\Database\Eloquent\Relations\HasOne
     {
         return $this->hasOne(Applicant::class, 'hired_as_employee_id');
+    }
+
+    /**
+     * Default Assigned Shift Template
+     */
+    public function defaultShiftTemplate(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(ShiftTemplate::class, 'default_shift_template_id');
+    }
+
+    /**
+     * Change of schedule history audit logs
+     */
+    public function scheduleChangeLogs(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(ScheduleChangeLog::class, 'employee_id');
     }
 }
 

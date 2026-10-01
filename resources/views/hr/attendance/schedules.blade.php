@@ -87,6 +87,14 @@
                     <i class="ph ph-magic-wand" style="color: #d97706; font-size: 15px;"></i>
                     <span>Fill Grid</span>
                 </button>
+                <button type="button" class="sched-top-btn sched-top-btn-secondary" onclick="openDefaultShiftModal()" title="Assign Default Shift Schedule Per Employee">
+                    <i class="ph ph-clock-user" style="color: #0284c7; font-size: 15px;"></i>
+                    <span>Default Shifts</span>
+                </button>
+                <a href="{{ route('hr.reports.change-of-schedule') }}" class="sched-top-btn sched-top-btn-secondary" title="View Change of Schedule History Report" style="text-decoration: none;">
+                    <i class="ph ph-clock-counter-clockwise" style="color: #6366f1; font-size: 15px;"></i>
+                    <span>Schedule History</span>
+                </a>
                 <button type="button" class="sched-top-btn sched-top-btn-secondary" onclick="openShiftMasterModal()" title="Shift Settings">
                     <i class="ph ph-sliders" style="color: #64748b; font-size: 15px;"></i>
                     <span>Shift Settings</span>
@@ -297,10 +305,15 @@
                         $positionName = $emp->position?->name ?? 'Staff';
                         $categoryName = $emp->department?->name ?? 'Front of House';
                         $deptColors = [
-                            'management' => '#8b5cf6',
+                            'management' => '#6366f1',
                             'front of house' => '#3b82f6',
                             'back of house' => '#10b981',
                             'finance & admin' => '#f59e0b',
+                            'finance' => '#f59e0b',
+                            'hr' => '#8b5cf6',
+                            'human resources' => '#8b5cf6',
+                            'it' => '#0ea5e9',
+                            'information technology' => '#0ea5e9',
                         ];
                         $dotColor = $deptColors[strtolower($categoryName)] ?? '#7c3aed';
                     @endphp
@@ -367,6 +380,12 @@
                                         <i class="ph ph-map-pin" style="color: #7c3aed; font-size: 11.5px;"></i>
                                         <span class="truncate" style="font-weight: 600; color: #475569;">{{ $branchName }}</span>
                                     </div>
+                                    @if($emp->defaultShiftTemplate)
+                                        <div style="font-size: 10px; color: #0284c7; font-weight: 600; display: flex; align-items: center; gap: 3px; margin-top: 2px;" title="Default Assigned Shift: {{ $emp->defaultShiftTemplate->name }}">
+                                            <i class="ph ph-clock"></i>
+                                            <span>Def: {{ $emp->defaultShiftTemplate->code ?: substr($emp->defaultShiftTemplate->start_time, 0, 5) }}</span>
+                                        </div>
+                                    @endif
                                 </div>
 
                                 <!-- ⚡ Quick Fill Menu for this row -->
@@ -392,6 +411,10 @@
                                             <span>Mon–Sat Closing (Sun Off)</span>
                                         </button>
                                         <div style="border-top: 1px solid #f1f5f9; margin: 4px 0;"></div>
+                                        <button type="button" class="sched-row-dd-item" onclick="openDefaultShiftModal({{ $emp->id }}, '{{ addslashes($emp->full_name) }}', {{ $emp->default_shift_template_id ?: 'null' }})">
+                                            <i class="ph ph-clock-user" style="color: #0284c7;"></i>
+                                            <span>Assign Default Shift</span>
+                                        </button>
                                         <button type="button" class="sched-row-dd-item text-danger" onclick="quickFillRowPreset({{ $emp->id }}, 'OFF', ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'])">
                                             <i class="ph ph-coffee"></i>
                                             <span>Mark Entire Week as Rest Days</span>
@@ -931,6 +954,65 @@
                 <button type="submit" class="sched-btn-apply-custom" style="margin-top: auto;">
                     <i class="ph ph-plus-circle" style="font-size: 14px;"></i>
                     <span>Save Shift Template</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Assign Default Shift Schedule Per Employee -->
+<div id="defaultShiftModal" class="hr-modal-overlay">
+    <div class="hr-modal" style="max-width: 520px; width: 95%;">
+        <div class="hr-modal-header" style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border-bottom: 1.5px solid #bae6fd; padding: 14px 18px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%); color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 18px; box-shadow: 0 4px 10px rgba(2, 132, 199, 0.25);">
+                    <i class="ph ph-clock-user"></i>
+                </div>
+                <div>
+                    <h3 style="font-size: 15px; font-weight: 650; color: #0c4a6e; margin: 0;">Assign Default Shift Schedule</h3>
+                    <p style="font-size: 11.5px; color: #0369a1; margin: 0; font-weight: 600;">Set standing shift template for employee profile</p>
+                </div>
+            </div>
+            <button type="button" class="icon-btn" onclick="closeModal('defaultShiftModal')" title="Close"><i class="ph ph-x"></i></button>
+        </div>
+
+        <form method="POST" action="{{ route('hr.attendance.schedules.assign-default-shift') }}" id="defaultShiftForm">
+            @csrf
+            <div class="hr-modal-body" style="padding: 18px;">
+                <div class="hr-form-group" style="margin-bottom: 14px;">
+                    <label class="hr-form-label" style="font-weight: 600; color: #0f172a;">Select Staff Member *</label>
+                    <select name="employee_id" id="defaultShiftEmpSelect" class="hr-select" required style="width: 100%;">
+                        @foreach($employees as $e)
+                            <option value="{{ $e->id }}">{{ $e->full_name }} ({{ $e->position?->name ?? 'Staff' }} &bull; {{ $e->branch?->name ?? 'Branch' }})</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="hr-form-group" style="margin-bottom: 14px;">
+                    <label class="hr-form-label" style="font-weight: 600; color: #0f172a;">Default Shift Template *</label>
+                    <select name="shift_template_id" id="defaultShiftTmplSelect" class="hr-select" style="width: 100%;">
+                        <option value="">-- No Default Shift (Clear Default) --</option>
+                        @foreach($shiftTemplates as $tmpl)
+                            <option value="{{ $tmpl->id }}">
+                                [{{ $tmpl->code ?: 'SHIFT' }}] {{ $tmpl->name }} ({{ substr($tmpl->start_time, 0, 5) }} &ndash; {{ substr($tmpl->end_time, 0, 5) }})
+                            </option>
+                        @endforeach
+                    </select>
+                    <small style="color: #64748b; font-size: 11px; margin-top: 4px; display: block;">This shift template will serve as the employee's standing baseline schedule.</small>
+                </div>
+
+                <div class="hr-form-group" style="margin-bottom: 6px;">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 12.5px; color: #334155; font-weight: 500;">
+                        <input type="checkbox" name="apply_future_blanks" value="1" checked style="accent-color: #0284c7;">
+                        <span>Auto-apply to empty upcoming schedule slots (next 14 days)</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="hr-modal-footer" style="padding: 12px 18px; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 8px;">
+                <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="closeModal('defaultShiftModal')">Cancel</button>
+                <button type="submit" class="hr-btn hr-btn-primary hr-btn-sm" style="background: linear-gradient(135deg, #0284c7, #0369a1);">
+                    <i class="ph ph-check-circle"></i> Save Default Shift
                 </button>
             </div>
         </form>
@@ -2052,31 +2134,35 @@
 .sched-cat-pill {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    padding: 2px 7px;
-    font-size: 11px;
+    gap: 5px;
+    background: linear-gradient(135deg, rgba(248, 250, 252, 0.95), rgba(241, 245, 249, 0.85));
+    border: 1px solid rgba(226, 232, 240, 0.95);
+    border-radius: 9999px;
+    padding: 2.5px 8.5px;
+    font-size: 10.5px;
     font-weight: 700;
-    color: #475569;
-    max-width: 112px;
+    color: #334155;
+    max-width: 125px;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     user-select: none;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 
 .sched-cat-pill:hover {
-    background: #f1f5f9;
+    background: #ffffff;
     border-color: #cbd5e1;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+    transform: translateY(-0.5px);
 }
 
 .sched-cat-dot {
-    width: 6px;
-    height: 6px;
+    width: 7px;
+    height: 7px;
     border-radius: 50%;
     background: #7c3aed;
     flex-shrink: 0;
+    box-shadow: 0 0 5px currentColor;
     transition: background-color 0.2s ease;
 }
 
@@ -3445,10 +3531,15 @@ let batchFillScope = 'all'; // 'all' or 'custom'
 const ALL_EMPLOYEES = @json(isset($allEmployees) ? $allEmployees : $employees);
 const ALL_DEPARTMENTS = @json($departmentsJson);
 const DEPT_COLORS = {
-    'management': '#8b5cf6',
+    'management': '#6366f1',
     'front of house': '#3b82f6',
     'back of house': '#10b981',
-    'finance & admin': '#f59e0b'
+    'finance & admin': '#f59e0b',
+    'finance': '#f59e0b',
+    'hr': '#8b5cf6',
+    'human resources': '#8b5cf6',
+    'it': '#0ea5e9',
+    'information technology': '#0ea5e9'
 };
 const SHIFT_TEMPLATES = @json($shiftTemplates->keyBy('id'));
 
@@ -5393,6 +5484,16 @@ function escapeHtml(str) {
 // -------------------------------------------------------------
 // Batch Fill Grid & Draft Schedules Engine
 // -------------------------------------------------------------
+function openDefaultShiftModal(empId = null, empName = '', shiftId = null) {
+    if (empId) {
+        const empSel = document.getElementById('defaultShiftEmpSelect');
+        if (empSel) empSel.value = empId;
+        const tmplSel = document.getElementById('defaultShiftTmplSelect');
+        if (tmplSel) tmplSel.value = shiftId || '';
+    }
+    openModal('defaultShiftModal');
+}
+
 function openBatchFillGridModal() {
     setBatchFillScope('all');
 

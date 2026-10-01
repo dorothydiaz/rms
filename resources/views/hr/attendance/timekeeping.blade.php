@@ -187,8 +187,38 @@
                             </div>
                         </td>
                         <td class="tk-col-dept">
-                            <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ $emp->branch?->name }}">{{ $emp->branch?->name }}</div>
-                            <small style="color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;" title="{{ $emp->department?->name }}">{{ $emp->department?->name }}</small>
+                            <div style="font-weight: 600; color: #1e293b; font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 3px;" title="{{ $emp->branch?->name }}">
+                                <i class="ph ph-storefront" style="color: #7c3aed; font-size: 12px;"></i> {{ $emp->branch?->name }}
+                            </div>
+                            @php
+                                $tkDeptName = $emp->department?->name ?? 'Front of House';
+                                $deptUpper = strtoupper(trim($tkDeptName));
+                                $pillClass = 'hr-dept-pill-neutral';
+                                $pillIcon = 'ph-buildings';
+                                if (str_contains($deptUpper, 'HR') || str_contains($deptUpper, 'HUMAN')) {
+                                    $pillClass = 'hr-dept-pill-hr';
+                                    $pillIcon = 'ph-users';
+                                } elseif (str_contains($deptUpper, 'IT') || str_contains($deptUpper, 'TECH')) {
+                                    $pillClass = 'hr-dept-pill-it';
+                                    $pillIcon = 'ph-cpu';
+                                } elseif (str_contains($deptUpper, 'FINANCE') || str_contains($deptUpper, 'FIN') || str_contains($deptUpper, 'ADMIN')) {
+                                    $pillClass = 'hr-dept-pill-fin';
+                                    $pillIcon = 'ph-coins';
+                                } elseif (str_contains($deptUpper, 'FRONT') || str_contains($deptUpper, 'FOH')) {
+                                    $pillClass = 'hr-dept-pill-foh';
+                                    $pillIcon = 'ph-storefront';
+                                } elseif (str_contains($deptUpper, 'BACK') || str_contains($deptUpper, 'BOH') || str_contains($deptUpper, 'KITCHEN')) {
+                                    $pillClass = 'hr-dept-pill-boh';
+                                    $pillIcon = 'ph-cooking-pot';
+                                } elseif (str_contains($deptUpper, 'MANAGE')) {
+                                    $pillClass = 'hr-dept-pill-mgmt';
+                                    $pillIcon = 'ph-briefcase';
+                                }
+                            @endphp
+                            <span class="hr-dept-pill {{ $pillClass }}" style="font-size: 9.5px; padding: 1.5px 7px;" title="{{ $tkDeptName }}">
+                                <i class="ph {{ $pillIcon }}"></i>
+                                <span>{{ $tkDeptName }}</span>
+                            </span>
                         </td>
 
                         <!-- 1. In -->
