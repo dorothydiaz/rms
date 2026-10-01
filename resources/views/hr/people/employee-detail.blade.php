@@ -76,6 +76,168 @@
     flex-wrap: wrap;
 }
 
+/* Header Action Buttons */
+.hr-emp-header-actions .hr-btn-secondary {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+.hr-emp-header-actions .hr-btn-secondary:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    color: #7c3aed;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+}
+.hr-emp-header-actions .hr-btn-secondary i {
+    color: #64748b;
+    font-size: 15px;
+    transition: color 0.15s ease;
+}
+.hr-emp-header-actions .hr-btn-secondary:hover i {
+    color: #7c3aed;
+}
+
+/* Action Dropdown Menu & Items */
+.hr-action-menu-wrap {
+    position: relative;
+    display: inline-block;
+}
+.hr-action-dropdown {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: calc(100% + 8px);
+    z-index: 100;
+    min-width: 220px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.12), 0 8px 10px -6px rgba(15, 23, 42, 0.08);
+    padding: 6px;
+    font-size: 13px;
+    animation: hrDropdownFade 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes hrDropdownFade {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.hr-dropdown-item {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 10px !important;
+    width: 100% !important;
+    padding: 8px 12px !important;
+    color: #334155 !important;
+    text-decoration: none !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    font-family: inherit !important;
+    border-radius: 8px !important;
+    border: none !important;
+    background: transparent !important;
+    cursor: pointer !important;
+    text-align: left !important;
+    box-sizing: border-box !important;
+    transition: background 0.12s ease, color 0.12s ease !important;
+    line-height: 1.4 !important;
+}
+.hr-dropdown-item:hover {
+    background: #f1f5f9 !important;
+    color: #7c3aed !important;
+}
+.hr-dropdown-item i {
+    font-size: 16px !important;
+    color: #64748b !important;
+    flex-shrink: 0 !important;
+    width: 18px !important;
+    text-align: center !important;
+    transition: color 0.12s ease !important;
+}
+.hr-dropdown-item:hover i {
+    color: #7c3aed !important;
+}
+.hr-dropdown-item.hr-dropdown-danger {
+    color: #dc2626 !important;
+}
+.hr-dropdown-item.hr-dropdown-danger i {
+    color: #dc2626 !important;
+}
+.hr-dropdown-item.hr-dropdown-danger:hover {
+    background: #fef2f2 !important;
+    color: #b91c1c !important;
+}
+.hr-dropdown-item.hr-dropdown-danger:hover i {
+    color: #b91c1c !important;
+}
+.hr-dropdown-divider {
+    height: 1px;
+    background: #f1f5f9;
+    margin: 5px 0;
+}
+
+/* Quick Statistics Cards */
+.hr-stat-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.hr-stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px -2px rgba(0, 0, 0, 0.08);
+}
+.hr-stat-icon-wrap {
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+.hr-stat-content {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+.hr-stat-label {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #64748b;
+    margin-bottom: 2px;
+}
+.hr-stat-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.25;
+    margin-bottom: 2px;
+}
+.hr-stat-sub {
+    font-size: 11px;
+    color: #94a3b8;
+}
+.hr-profile-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 14px;
+    margin-bottom: 20px;
+}
+@media (max-width: 1200px) {
+    .hr-profile-stats-grid {
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    }
+}
+
 /* Cohesive Glassmorphic 8 Profile Tabs Bar */
 .hr-profile-nav-wrap {
     background: rgba(255, 255, 255, 0.85);
@@ -305,13 +467,12 @@
     </div>
 @endif
 
-<!-- Breadcrumb Navigation -->
-<div style="display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: #64748b; margin-bottom: 14px;">
-    <a href="{{ route('hr.people.employees') }}" style="color: #7c3aed; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; font-weight: 600;">
-        <i class="ph ph-users"></i> Employee Management
+<!-- Back Button -->
+<div style="margin-bottom: 14px;">
+    <a href="{{ route('hr.people.employees') }}" class="hr-btn hr-btn-secondary hr-btn-sm" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600; text-decoration: none;">
+        <i class="ph ph-arrow-left"></i>
+        <span>Back to Employees</span>
     </a>
-    <span>/</span>
-    <span style="color: #0f172a; font-weight: 600;">{{ $employee->full_name }} ({{ $employee->employee_id }})</span>
 </div>
 
 <!-- Strong Employee Profile Header -->
@@ -386,38 +547,35 @@
                 <span>More Actions</span>
                 <i class="ph ph-caret-down"></i>
             </button>
-            <div id="profileMoreActionsDropdown" class="hr-action-dropdown" style="display: none; position: absolute; right: 0; top: calc(100% + 6px); z-index: 70; min-width: 210px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1); padding: 6px; font-size: 13px;">
-                <button type="button" class="hr-dropdown-item" onclick="openModal('editEmployeeModal')">
-                    <i class="ph ph-pencil-simple"></i> Edit Employee
+            <div id="profileMoreActionsDropdown" class="hr-action-dropdown">
+                <button type="button" class="hr-dropdown-item" onclick="openModal('changePositionModal'); closeProfileMoreActions();">
+                    <i class="ph ph-briefcase"></i>
+                    <span>Change Position</span>
                 </button>
-                <button type="button" class="hr-dropdown-item" onclick="openModal('changePositionModal')">
-                    <i class="ph ph-briefcase"></i> Change Position
+                <button type="button" class="hr-dropdown-item" onclick="openModal('transferModal'); closeProfileMoreActions();">
+                    <i class="ph ph-arrows-left-right"></i>
+                    <span>Transfer Department</span>
                 </button>
-                <button type="button" class="hr-dropdown-item" onclick="openModal('transferModal')">
-                    <i class="ph ph-arrows-left-right"></i> Transfer Department
+                <button type="button" class="hr-dropdown-item" onclick="openModal('transferModal'); closeProfileMoreActions();">
+                    <i class="ph ph-storefront"></i>
+                    <span>Transfer Branch</span>
                 </button>
-                <button type="button" class="hr-dropdown-item" onclick="openModal('transferModal')">
-                    <i class="ph ph-storefront"></i> Transfer Branch
+                <button type="button" class="hr-dropdown-item" onclick="openModal('changeSalaryModal'); closeProfileMoreActions();">
+                    <i class="ph ph-currency-dollar"></i>
+                    <span>Change Salary</span>
                 </button>
-                <button type="button" class="hr-dropdown-item" onclick="openModal('changeSalaryModal')">
-                    <i class="ph ph-currency-dollar"></i> Change Salary
+                <button type="button" class="hr-dropdown-item" onclick="openModal('changeStatusModal'); closeProfileMoreActions();">
+                    <i class="ph ph-arrows-clockwise"></i>
+                    <span>Change Employment Status</span>
                 </button>
-                <button type="button" class="hr-dropdown-item" onclick="openModal('changeStatusModal')">
-                    <i class="ph ph-arrows-clockwise"></i> Change Employment Status
+                <div class="hr-dropdown-divider"></div>
+                <button type="button" class="hr-dropdown-item hr-dropdown-danger" onclick="openModal('processSeparationModal'); closeProfileMoreActions();">
+                    <i class="ph ph-user-minus"></i>
+                    <span>Process Separation</span>
                 </button>
-                <div style="height: 1px; background: #f1f5f9; margin: 4px 0;"></div>
-                <a href="{{ route('hr.people.employees.coe', $employee->id) }}" target="_blank" class="hr-dropdown-item">
-                    <i class="ph ph-certificate"></i> Generate COE
-                </a>
-                <a href="{{ route('hr.people.employees.print-201', $employee->id) }}" target="_blank" class="hr-dropdown-item">
-                    <i class="ph ph-printer"></i> Print 201 File
-                </a>
-                <div style="height: 1px; background: #fee2e2; margin: 4px 0;"></div>
-                <button type="button" class="hr-dropdown-item" style="color: #dc2626;" onclick="openModal('processSeparationModal')">
-                    <i class="ph ph-user-minus" style="color: #dc2626;"></i> Process Separation
-                </button>
-                <button type="button" class="hr-dropdown-item" style="color: #dc2626;" onclick="openModal('archiveEmployeeModal')">
-                    <i class="ph ph-archive" style="color: #dc2626;"></i> Archive Employee
+                <button type="button" class="hr-dropdown-item hr-dropdown-danger" onclick="openModal('archiveEmployeeModal'); closeProfileMoreActions();">
+                    <i class="ph ph-archive"></i>
+                    <span>Archive Employee</span>
                 </button>
             </div>
         </div>
@@ -473,7 +631,7 @@
     <!-- ========================================================================= -->
     <div id="tab-overview" class="hr-tab-pane active">
         <!-- Quick Statistics (5 Compact Cards) -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 20px;">
+        <div class="hr-profile-stats-grid">
             <div class="hr-stat-card">
                 <div class="hr-stat-icon-wrap" style="background: rgba(124, 58, 237, 0.08); color: #7c3aed;">
                     <i class="ph ph-coins"></i>
@@ -498,7 +656,7 @@
 
             <div class="hr-stat-card">
                 <div class="hr-stat-icon-wrap" style="background: rgba(59, 130, 246, 0.08); color: #3b82f6;">
-                    <i class="ph ph-file-check"></i>
+                    <i class="ph ph-file-text"></i>
                 </div>
                 <div class="hr-stat-content">
                     <span class="hr-stat-label">Documents Verified</span>
@@ -2724,10 +2882,14 @@ function toggleProfileMoreActions(e) {
     d.style.display = d.style.display === 'block' ? 'none' : 'block';
 }
 
+function closeProfileMoreActions() {
+    const d = document.getElementById('profileMoreActionsDropdown');
+    if (d) d.style.display = 'none';
+}
+
 document.addEventListener('click', (e) => {
     if (!e.target.closest('.hr-action-menu-wrap')) {
-        const d = document.getElementById('profileMoreActionsDropdown');
-        if (d) d.style.display = 'none';
+        closeProfileMoreActions();
     }
 });
 
