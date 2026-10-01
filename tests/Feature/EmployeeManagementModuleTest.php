@@ -144,6 +144,8 @@ class EmployeeManagementModuleTest extends TestCase
         $response->assertSee('Leave Balance');
         $response->assertSee('Attendance Rate');
         $response->assertSee('Show ID Numbers');
+        $response->assertSee('Employee Profile');
+        $response->assertDontSee('Hr People Employees Show');
     }
 
     public function test_employee_lifecycle_actions_work_and_record_history(): void
