@@ -274,6 +274,9 @@ Route::middleware('auth')->group(function () {
             Route::get('/unauthorized-absences', [\App\Http\Controllers\Hr\HrReportController::class, 'unauthorizedAbsencesReport'])->name('unauthorized-absences');
             Route::get('/export/unauthorized-absences', [\App\Http\Controllers\Hr\HrReportController::class, 'exportUnauthorizedAbsences'])->name('export.unauthorized-absences');
 
+            Route::get('/authorized-leave-of-absence', [\App\Http\Controllers\Hr\HrReportController::class, 'authorizedLeaveOfAbsenceReport'])->name('authorized-leave-of-absence');
+            Route::get('/export/authorized-leave-of-absence', [\App\Http\Controllers\Hr\HrReportController::class, 'exportAuthorizedLeaveOfAbsence'])->name('export.authorized-leave-of-absence');
+
             Route::get('/tardiness', [\App\Http\Controllers\Hr\HrReportController::class, 'tardinessReport'])->name('tardiness');
             Route::get('/export/tardiness', [\App\Http\Controllers\Hr\HrReportController::class, 'exportTardiness'])->name('export.tardiness');
 

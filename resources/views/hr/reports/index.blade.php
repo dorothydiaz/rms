@@ -254,6 +254,30 @@
             </div>
         </div>
 
+        <!-- Authorized Leave of Absence (ALOA) -->
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
+                    <div class="hr-metric-icon emerald" style="width: 40px; height: 40px; font-size: 20px;">
+                        <i class="ph ph-calendar-check"></i>
+                    </div>
+                    <div>
+                        <h4 style="font-family: var(--font-heading); font-size: 14.5px; font-weight: 700; color: #0f172a; margin: 0;">Authorized Leave of Absence (ALOA)</h4>
+                        <span style="font-size: 12px; color: #64748b;">Approved leaves & statutory entitlements</span>
+                    </div>
+                </div>
+                <p style="font-size: 12px; color: #64748b; margin: 0 0 14px 0;">Official audit log of approved vacation, sick, emergency, and statutory leaves with manager authorization.</p>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <a href="{{ route('hr.reports.authorized-leave-of-absence') }}" class="hr-btn hr-btn-secondary" style="flex: 1; justify-content: center; font-size: 12px; padding: 6px 12px;">
+                    <i class="ph ph-eye"></i> View Report
+                </a>
+                <a href="{{ route('hr.reports.export.authorized-leave-of-absence') }}" class="hr-btn hr-btn-primary" style="font-size: 12px; padding: 6px 12px;" title="Download CSV">
+                    <i class="ph ph-download-simple"></i>
+                </a>
+            </div>
+        </div>
+
         <!-- Unauthorized Leave of Absences -->
         <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between;">
             <div>

@@ -11,6 +11,7 @@ use App\Models\Hr\Employee;
 use App\Models\Hr\EmployeeSchedule;
 use App\Models\Hr\LeaveBalance;
 use App\Models\Hr\LeaveRequest;
+use App\Models\Hr\LeaveType;
 use App\Models\Hr\PayrollPeriod;
 use App\Models\Hr\PayrollRecord;
 use App\Models\Hr\ScheduleChangeLog;
@@ -40,11 +41,14 @@ class HrReportController extends Controller
         $unauthorizedAbsencesCount = AttendanceRecord::where(function($q) {
             $q->where('status', 'Absent')->orWhere('absence_days', '>', 0);
         })->count();
+        $authorizedLeaveCount = LeaveRequest::where('status', 'Approved')->count();
+        $authorizedLeaveDays = (float) LeaveRequest::where('status', 'Approved')->sum('number_of_days');
 
         return view('hr.reports.index', compact(
             'branches', 'departments', 'payrollPeriods', 'employees',
             'totalScheduleChanges', 'pendingOvertimeCount', 'authorizedUndertimeCount',
-            'unauthorizedUndertimeCount', 'tardyEmployeesCount', 'unauthorizedAbsencesCount'
+            'unauthorizedUndertimeCount', 'tardyEmployeesCount', 'unauthorizedAbsencesCount',
+            'authorizedLeaveCount', 'authorizedLeaveDays'
         ));
     }
 
@@ -607,6 +611,176 @@ class HrReportController extends Controller
                     $r->absence_days ?: 1.0,
                     $r->dtr_remarks ?: 'Unauthorized Absence',
                     'Unauthorized Absence / AWOL',
+                ]);
+            }
+            fclose($handle);
+        }, 200, $headers);
+    }
+
+    // =========================================================================
+    // 5B. AUTHORIZED LEAVE OF ABSENCE (ALOA) REPORT
+    // =========================================================================
+
+    public function authorizedLeaveOfAbsenceReport(Request $request): View
+    {
+        $startDate = $request->get('date_from', Carbon::now()->startOfMonth()->toDateString());
+        $endDate = $request->get('date_to', Carbon::now()->toDateString());
+
+        $query = LeaveRequest::with(['employee.branch', 'employee.department', 'employee.position', 'leaveType', 'approver'])
+            ->where(function ($q) use ($startDate, $endDate) {
+                $q->whereBetween('start_date', [$startDate, $endDate])
+                  ->orWhereBetween('end_date', [$startDate, $endDate])
+                  ->orWhere(function ($sub) use ($startDate, $endDate) {
+                      $sub->where('start_date', '<=', $startDate)
+                          ->where('end_date', '>=', $endDate);
+                  });
+            })
+            ->orderBy('start_date', 'desc');
+
+        // Status filter: defaults to 'Approved' (Authorized ALOA), with option to view 'ALL'
+        $status = $request->get('status', 'Approved');
+        if ($status && $status !== 'ALL') {
+            $query->where('status', $status);
+        }
+
+        if ($request->filled('leave_type_id')) {
+            $query->where('leave_type_id', $request->leave_type_id);
+        }
+
+        if ($request->filled('is_paid')) {
+            $isPaid = (bool) $request->is_paid;
+            $query->whereHas('leaveType', function ($q) use ($isPaid) {
+                $q->where('is_paid', $isPaid);
+            });
+        }
+
+        if ($request->filled('branch_id')) {
+            $query->whereHas('employee', function ($q) use ($request) {
+                $q->where('branch_id', $request->branch_id);
+            });
+        }
+
+        if ($request->filled('department_id')) {
+            $query->whereHas('employee', function ($q) use ($request) {
+                $q->where('department_id', $request->department_id);
+            });
+        }
+
+        if ($request->filled('employee_id')) {
+            $query->where('employee_id', $request->employee_id);
+        }
+
+        // Summary statistics for the filtered scope
+        $summaryQuery = clone $query;
+        $totalApprovedRequests = (clone $summaryQuery)->count();
+        $totalLeaveDays = (float) (clone $summaryQuery)->sum('number_of_days');
+        $totalPaidDays = (float) (clone $summaryQuery)->whereHas('leaveType', fn($q) => $q->where('is_paid', true))->sum('number_of_days');
+        $totalUnpaidDays = (float) (clone $summaryQuery)->whereHas('leaveType', fn($q) => $q->where('is_paid', false))->sum('number_of_days');
+        $uniqueEmployeesCount = (clone $summaryQuery)->distinct('employee_id')->count('employee_id');
+
+        $records = $query->paginate(20)->withQueryString();
+        $branches = Branch::where('is_active', true)->get();
+        $departments = Department::all();
+        $leaveTypes = LeaveType::all();
+        $employees = Employee::activeWorkforce()->orderBy('first_name')->get();
+
+        return view('hr.reports.authorized-leave-of-absence', compact(
+            'records', 'branches', 'departments', 'leaveTypes', 'employees',
+            'startDate', 'endDate', 'status',
+            'totalApprovedRequests', 'totalLeaveDays', 'totalPaidDays', 'totalUnpaidDays', 'uniqueEmployeesCount'
+        ));
+    }
+
+    public function exportAuthorizedLeaveOfAbsence(Request $request): StreamedResponse
+    {
+        $startDate = $request->get('date_from', Carbon::now()->startOfMonth()->toDateString());
+        $endDate = $request->get('date_to', Carbon::now()->toDateString());
+
+        $query = LeaveRequest::with(['employee.branch', 'employee.department', 'employee.position', 'leaveType', 'approver'])
+            ->where(function ($q) use ($startDate, $endDate) {
+                $q->whereBetween('start_date', [$startDate, $endDate])
+                  ->orWhereBetween('end_date', [$startDate, $endDate])
+                  ->orWhere(function ($sub) use ($startDate, $endDate) {
+                      $sub->where('start_date', '<=', $startDate)
+                          ->where('end_date', '>=', $endDate);
+                  });
+            })
+            ->orderBy('start_date', 'desc');
+
+        $status = $request->get('status', 'Approved');
+        if ($status && $status !== 'ALL') {
+            $query->where('status', $status);
+        }
+
+        if ($request->filled('leave_type_id')) {
+            $query->where('leave_type_id', $request->leave_type_id);
+        }
+
+        if ($request->filled('is_paid')) {
+            $isPaid = (bool) $request->is_paid;
+            $query->whereHas('leaveType', fn($q) => $q->where('is_paid', $isPaid));
+        }
+
+        if ($request->filled('branch_id')) {
+            $query->whereHas('employee', fn($q) => $q->where('branch_id', $request->branch_id));
+        }
+
+        if ($request->filled('department_id')) {
+            $query->whereHas('employee', fn($q) => $q->where('department_id', $request->department_id));
+        }
+
+        if ($request->filled('employee_id')) {
+            $query->where('employee_id', $request->employee_id);
+        }
+
+        $records = $query->get();
+
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="authorized_leave_of_absence_' . date('Ymd_His') . '.csv"',
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0',
+        ];
+
+        return response()->stream(function () use ($records) {
+            $handle = fopen('php://output', 'w');
+            fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF)); // UTF-8 BOM
+            fputcsv($handle, [
+                'Start Date',
+                'End Date',
+                'Employee ID',
+                'Employee Name',
+                'Branch',
+                'Department',
+                'Position',
+                'Leave Type',
+                'Leave Code',
+                'Number of Days',
+                'Pay Classification',
+                'Status',
+                'Reason / Justification',
+                'Authorized / Approved By',
+                'Approval Timestamp',
+            ]);
+
+            foreach ($records as $r) {
+                fputcsv($handle, [
+                    $r->start_date?->format('Y-m-d'),
+                    $r->end_date?->format('Y-m-d'),
+                    $r->employee?->employee_id,
+                    $r->employee?->full_name,
+                    $r->employee?->branch?->name,
+                    $r->employee?->department?->name,
+                    $r->employee?->position?->name,
+                    $r->leaveType?->name,
+                    $r->leaveType?->code,
+                    $r->number_of_days,
+                    $r->leaveType?->is_paid ? 'Paid Leave' : 'Unpaid Leave',
+                    $r->status,
+                    $r->reason,
+                    $r->approver?->full_name ?? ($r->approver?->name ?? 'System Administrator'),
+                    $r->approval_date?->format('Y-m-d H:i:s'),
                 ]);
             }
             fclose($handle);
