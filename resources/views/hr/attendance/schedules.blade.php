@@ -36,11 +36,11 @@
     <div class="hr-table-header" style="flex-wrap: wrap; gap: 10px; padding: 8px 16px; border-bottom: 1.5px solid #e2e8f0; background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);">
         <!-- Title & Subtitle -->
         <div style="display: flex; align-items: center; gap: 9px; flex-shrink: 0;">
-            <span class="hr-table-title" style="font-size: 17px; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+            <span class="hr-table-title" style="font-size: 17px; font-weight: 650; color: #0f172a; display: flex; align-items: center; gap: 8px;">
                 <i class="ph ph-calendar-check" style="color: #7c3aed; font-size: 21px;"></i> 
                 Shift Schedule Planner
             </span>
-            <span class="hr-badge hr-badge-neutral" id="empCountBadge" style="font-size: 12px; font-weight: 800; padding: 2px 9px;">
+            <span class="hr-badge hr-badge-neutral" id="empCountBadge" style="font-size: 12px; font-weight: 600; padding: 2px 9px;">
                 {{ count($employees) }} Staff
             </span>
         </div>
@@ -94,7 +94,7 @@
                 <button type="button" class="sched-top-btn sched-top-btn-save" id="btnSaveGrid" onclick="saveDraftSchedules()" title="Save Grid Schedules">
                     <i class="ph ph-floppy-disk" style="font-size: 15px;"></i>
                     <span id="saveBtnLabel">Save</span>
-                    <span id="saveBtnBadge" class="sched-badge-count" style="display: none; background: #ffffff; color: #7c3aed; font-weight: 800; margin-left: 5px; padding: 1px 7px; border-radius: 999px; font-size: 10.5px;">0</span>
+                    <span id="saveBtnBadge" class="sched-badge-count" style="display: none; background: #ffffff; color: #7c3aed; font-weight: 600; margin-left: 5px; padding: 1px 7px; border-radius: 999px; font-size: 10.5px;">0</span>
                 </button>
             </div>
         </div>
@@ -120,7 +120,7 @@
                             <i class="ph ph-users"></i>
                         </div>
                         <div>
-                            <h4 style="font-size: 12px; font-weight: 800; color: #0f172a; margin: 0; text-transform: uppercase;">Select Employees to Schedule</h4>
+                            <h4 style="font-size: 12px; font-weight: 650; color: #0f172a; margin: 0; text-transform: uppercase;">Select Employees to Schedule</h4>
                             <p id="dropdownEmpMatchText" style="font-size: 11px; color: #64748b; margin: 0;">0 employee(s) matching filter</p>
                         </div>
                     </div>
@@ -194,7 +194,7 @@
 
         <!-- 2. Category Checkbox Filter Group (Connected to Organization Departments Tab) -->
         <div class="sched-cat-filter-group">
-            <span style="font-size: 11px; font-weight: 800; color: #64748b; display: flex; align-items: center; gap: 4px; text-transform: uppercase;">
+            <span style="font-size: 11px; font-weight: 600; color: #64748b; display: flex; align-items: center; gap: 4px; text-transform: uppercase;">
                 <i class="ph ph-funnel" style="font-size: 12px;"></i> Category:
             </span>
             @foreach($categories as $cat)
@@ -244,10 +244,10 @@
                     <!-- Sticky Left Column: Employee Identity & Row Quick Actions -->
                     <th class="sched-sticky-col sched-sticky-th" style="z-index: 30;">
                         <div style="display: flex; align-items: center; justify-content: space-between;">
-                            <span style="display: flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 800;">
+                            <span style="display: flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 650;">
                                 <i class="ph ph-user" style="font-size: 15px;"></i> Employee
                             </span>
-                            <span style="font-size: 10px; font-weight: 800; color: #7c3aed; background: #ede9fe; padding: 2.5px 7px; border-radius: 5px; text-transform: uppercase;">
+                            <span style="font-size: 10px; font-weight: 600; color: #7c3aed; background: #ede9fe; padding: 2.5px 7px; border-radius: 5px; text-transform: uppercase;">
                                 Branch &darr;
                             </span>
                         </div>
@@ -255,7 +255,7 @@
 
                     <!-- Week Column matching Picture 2 -->
                     <th class="sched-col-week" style="text-align: center;">
-                        <div style="font-weight: 800; font-size: 12.5px; color: #475569; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                        <div style="font-weight: 650; font-size: 12.5px; color: #475569; display: flex; align-items: center; justify-content: center; gap: 4px;">
                             <i class="ph ph-calendar" style="font-size: 13px;"></i> Week
                         </div>
                     </th>
@@ -267,11 +267,11 @@
                             $isToday = $cDate->isToday();
                         @endphp
                         <th class="sched-day-th" style="text-align: center; {{ $isToday ? 'background: rgba(124, 58, 237, 0.08); border-bottom: 2px solid #7c3aed;' : '' }}">
-                            <div style="font-weight: 800; font-size: 13px; color: {{ $isToday ? '#7c3aed' : '#0f172a' }}; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                            <div style="font-weight: 650; font-size: 13px; color: {{ $isToday ? '#7c3aed' : '#0f172a' }}; display: flex; align-items: center; justify-content: center; gap: 4px;">
                                 <i class="ph ph-calendar-blank" style="font-size: 13px;"></i>
                                 {{ $cDate->format('D') }}
                                 @if($isToday)
-                                    <span class="hr-badge hr-badge-primary" style="font-size: 9px; font-weight: 800; padding: 1.5px 5px; vertical-align: middle;">TODAY</span>
+                                    <span class="hr-badge hr-badge-primary" style="font-size: 9px; font-weight: 600; padding: 1.5px 5px; vertical-align: middle;">TODAY</span>
                                 @endif
                             </div>
                             <div style="color: #64748b; font-size: 12px; font-weight: 600; margin-top: 2px;">
@@ -322,7 +322,7 @@
 
                                 <div style="min-width: 0; flex: 1;">
                                     <!-- Name -->
-                                    <div style="font-weight: 800; color: #0f172a; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.25;" title="{{ $emp->full_name }}">
+                                    <div style="font-weight: 600; color: #0f172a; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.25;" title="{{ $emp->full_name }}">
                                         {{ $emp->full_name }}
                                     </div>
                                     <!-- Category Pill with <> Department Navigation (Only for employees with multiple departments) -->
@@ -376,7 +376,7 @@
                                     </button>
                                     
                                     <div class="sched-row-dropdown" id="rowMenu_{{ $emp->id }}" style="display: none;">
-                                        <div style="padding: 6px 10px; font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; border-bottom: 1px solid #f1f5f9;">
+                                        <div style="padding: 6px 10px; font-size: 10px; font-weight: 600; color: #94a3b8; text-transform: uppercase; border-bottom: 1px solid #f1f5f9;">
                                             Quick Fill: {{ Str::limit($emp->first_name, 12) }}
                                         </div>
                                         <button type="button" class="sched-row-dd-item" onclick="quickFillRowPreset({{ $emp->id }}, 'O', ['Sun'])">
@@ -406,7 +406,7 @@
                         </td>
 
                         <!-- Week Column matching Picture 2 -->
-                        <td class="sched-col-week" style="text-align: center; vertical-align: middle; color: #64748b; font-size: 12px; font-weight: 700; font-family: monospace;">
+                        <td class="sched-col-week" style="text-align: center; vertical-align: middle; color: #64748b; font-size: 12px; font-weight: 600; font-family: monospace;">
                             {{ $weekStart }}
                         </td>
 
@@ -892,11 +892,11 @@
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
                     <div>
-                        <label style="font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; display: block; margin-bottom: 2px;">Break (Min)</label>
+                        <label style="font-size: 10px; font-weight: 600; color: #64748b; text-transform: uppercase; display: block; margin-bottom: 2px;">Break (Min)</label>
                         <input type="number" name="break_minutes" class="sched-input-text-sm" required value="60" min="0" style="height: 32px; font-size: 11.5px;">
                     </div>
                     <div>
-                        <label style="font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; display: block; margin-bottom: 2px;">Badge Color</label>
+                        <label style="font-size: 10px; font-weight: 600; color: #64748b; text-transform: uppercase; display: block; margin-bottom: 2px;">Badge Color</label>
                         <input type="color" name="color" class="sched-input-text-sm" value="#8b5cf6" style="padding: 2px; height: 32px;">
                     </div>
                 </div>
@@ -925,7 +925,7 @@
                     <i class="ph ph-magic-wand"></i>
                 </div>
                 <div>
-                    <h3 style="font-size: 15px; font-weight: 800; color: #1e1b4b; margin: 0; letter-spacing: -0.2px;">Fill Schedule Grid</h3>
+                    <h3 style="font-size: 15px; font-weight: 650; color: #1e1b4b; margin: 0; letter-spacing: -0.2px;">Fill Schedule Grid</h3>
                     <p style="font-size: 11.5px; color: #6b21a8; margin: 0; font-weight: 600;">Select multiple or all employees to fill shifts as draft</p>
                 </div>
             </div>
@@ -937,11 +937,11 @@
             <!-- Employee Scope Selection: All vs Multiple Specific -->
             <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 12px;">
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-                    <label style="font-size: 11px; font-weight: 800; color: #0f172a; text-transform: uppercase; margin: 0; letter-spacing: 0.3px; display: flex; align-items: center; gap: 6px;">
+                    <label style="font-size: 11px; font-weight: 600; color: #0f172a; text-transform: uppercase; margin: 0; letter-spacing: 0.3px; display: flex; align-items: center; gap: 6px;">
                         <i class="ph ph-users" style="color: #7c3aed; font-size: 14px;"></i>
                         Target Employees *
                     </label>
-                    <span id="batchEmpSelectedSummaryBadge" class="sched-badge-count" style="background: #ede9fe; color: #6d28d9; font-weight: 800; padding: 2px 8px; border-radius: 999px; font-size: 11px;">
+                    <span id="batchEmpSelectedSummaryBadge" class="sched-badge-count" style="background: #ede9fe; color: #6d28d9; font-weight: 600; padding: 2px 8px; border-radius: 999px; font-size: 11px;">
                         All in Grid
                     </span>
                 </div>
@@ -995,7 +995,7 @@
             <!-- Date Range Selection with Presets -->
             <div class="hr-form-group" style="margin-top: 0; margin-bottom: 0;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                    <label class="hr-form-label" style="font-size: 11px; font-weight: 800; color: #0f172a; margin-bottom: 0; text-transform: uppercase;">
+                    <label class="hr-form-label" style="font-size: 11px; font-weight: 600; color: #0f172a; margin-bottom: 0; text-transform: uppercase;">
                         Date Range *
                     </label>
                     <div style="display: flex; gap: 3px;">
@@ -1006,11 +1006,11 @@
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
                     <div>
-                        <small style="font-size: 9.5px; color: #64748b; font-weight: 700; display: block; margin-bottom: 2px;">Start Date</small>
+                        <small style="font-size: 9.5px; color: #64748b; font-weight: 600; display: block; margin-bottom: 2px;">Start Date</small>
                         <input type="date" id="batchSchedStartDate" class="sched-input-text-sm" required value="{{ $weekStart }}" onchange="syncBatchDateRange()">
                     </div>
                     <div>
-                        <small style="font-size: 9.5px; color: #64748b; font-weight: 700; display: block; margin-bottom: 2px;">End Date</small>
+                        <small style="font-size: 9.5px; color: #64748b; font-weight: 600; display: block; margin-bottom: 2px;">End Date</small>
                         <input type="date" id="batchSchedEndDate" class="sched-input-text-sm" required value="{{ end($dates) }}">
                     </div>
                 </div>
@@ -1018,10 +1018,10 @@
 
             <!-- Shift Format Selection -->
             <div class="hr-form-group" style="margin-top: 0; margin-bottom: 0;">
-                <label class="hr-form-label" style="font-size: 11px; font-weight: 800; color: #0f172a; margin-bottom: 3px; text-transform: uppercase;">
+                <label class="hr-form-label" style="font-size: 11px; font-weight: 600; color: #0f172a; margin-bottom: 3px; text-transform: uppercase;">
                     Shift Format *
                 </label>
-                <select id="batchSchedShiftTemplateId" class="sched-input-text-sm" style="font-weight: 700; height: 36px;">
+                <select id="batchSchedShiftTemplateId" class="sched-input-text-sm" style="font-weight: 600; height: 36px;">
                     <option value="">Select Shift Format</option>
                     @foreach($shiftTemplates as $st)
                         <option value="{{ $st->id }}" 
@@ -1043,7 +1043,7 @@
             <!-- Weekly Rest Days Selection -->
             <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 10px 12px; margin-top: 0;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                    <div style="font-size: 10.5px; font-weight: 800; color: #0f172a; text-transform: uppercase;">
+                    <div style="font-size: 10.5px; font-weight: 600; color: #0f172a; text-transform: uppercase;">
                         Rest Days (Off Duty)
                     </div>
                     <div style="display: flex; gap: 3px;">
@@ -1092,7 +1092,7 @@
                     <i class="ph ph-pencil-simple-line"></i>
                 </div>
                 <div>
-                    <h3 style="font-size: 14px; font-weight: 800; color: #0f172a; margin: 0; letter-spacing: -0.2px;">Edit Shift Template</h3>
+                    <h3 style="font-size: 14px; font-weight: 650; color: #0f172a; margin: 0; letter-spacing: -0.2px;">Edit Shift Template</h3>
                     <p style="font-size: 11px; color: #64748b; margin: 0;" id="editShiftModalSubtitle">Modify shift hours and settings</p>
                 </div>
             </div>
@@ -1108,18 +1108,18 @@
                 <!-- Start & End Time -->
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                     <div>
-                        <label style="font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; display: block; margin-bottom: 3px;">Start Time (24h) *</label>
+                        <label style="font-size: 10px; font-weight: 600; color: #64748b; text-transform: uppercase; display: block; margin-bottom: 3px;">Start Time (24h) *</label>
                         <input type="time" name="start_time" id="editShiftStartModal" class="sched-input-time" required onchange="updateEditShiftPreviewModal()" style="height: 36px; font-size: 12px;">
                     </div>
                     <div>
-                        <label style="font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; display: block; margin-bottom: 3px;">End Time (24h) *</label>
+                        <label style="font-size: 10px; font-weight: 600; color: #64748b; text-transform: uppercase; display: block; margin-bottom: 3px;">End Time (24h) *</label>
                         <input type="time" name="end_time" id="editShiftEndModal" class="sched-input-time" required onchange="updateEditShiftPreviewModal()" style="height: 36px; font-size: 12px;">
                     </div>
                 </div>
 
                 <!-- Live Auto-preview Badge -->
                 <div>
-                    <div id="editShiftFormatPreviewModal" style="font-family: monospace; font-size: 13.5px; font-weight: 800; color: #7e22ce; padding: 9px 12px; background: rgba(168, 85, 247, 0.1); border: 1.5px solid rgba(168, 85, 247, 0.25); border-radius: 8px; text-align: center;">
+                    <div id="editShiftFormatPreviewModal" style="font-family: monospace; font-size: 13.5px; font-weight: 650; color: #7e22ce; padding: 9px 12px; background: rgba(168, 85, 247, 0.1); border: 1.5px solid rgba(168, 85, 247, 0.25); border-radius: 8px; text-align: center;">
                         0600 = 6AM - 3PM
                     </div>
                 </div>
@@ -1135,11 +1135,11 @@
                 <!-- Break & Color -->
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                     <div>
-                        <label style="font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; display: block; margin-bottom: 3px;">Break (Min)</label>
+                        <label style="font-size: 10px; font-weight: 600; color: #64748b; text-transform: uppercase; display: block; margin-bottom: 3px;">Break (Min)</label>
                         <input type="number" name="break_minutes" id="editShiftBreakModal" class="sched-input-text-sm" required min="0" style="height: 36px; font-size: 12px;">
                     </div>
                     <div>
-                        <label style="font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; display: block; margin-bottom: 3px;">Badge Color</label>
+                        <label style="font-size: 10px; font-weight: 600; color: #64748b; text-transform: uppercase; display: block; margin-bottom: 3px;">Badge Color</label>
                         <input type="color" name="color" id="editShiftColorModal" class="sched-input-text-sm" style="padding: 2px; height: 36px;">
                     </div>
                 </div>
@@ -1175,7 +1175,7 @@
                     <i class="ph ph-sliders"></i>
                 </div>
                 <div>
-                    <h3 style="font-size: 14px; font-weight: 800; color: #0f172a; margin: 0; letter-spacing: -0.2px;">Shift Master Settings by Department</h3>
+                    <h3 style="font-size: 14px; font-weight: 650; color: #0f172a; margin: 0; letter-spacing: -0.2px;">Shift Master Settings by Department</h3>
                     <p style="font-size: 11px; color: #64748b; margin: 0;">Configure default shift hours for each Department from the Department tab.</p>
                 </div>
             </div>
@@ -1186,7 +1186,7 @@
             <!-- Department Tabs (Connected to Department Tab in People > Departments) -->
             <div style="margin-bottom: 14px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                    <label style="font-size: 10.5px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0;">
+                    <label style="font-size: 10.5px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0;">
                         Select Department
                     </label>
                     <a href="{{ route('hr.people.departments') }}" target="_blank" style="font-size: 11px; font-weight: 700; color: #7c3aed; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;" title="Open Departments tab in new window">
@@ -1222,7 +1222,7 @@
                 <div class="sched-edit-row">
                     <div class="sched-edit-row-badge" style="background: #10b981;">O</div>
                     <div style="min-width: 90px;">
-                        <div style="font-weight: 800; font-size: 12px; color: #0f172a;" id="lblShift_O">OPENING</div>
+                        <div style="font-weight: 600; font-size: 12px; color: #0f172a;" id="lblShift_O">OPENING</div>
                         <div style="font-size: 10px; color: #94a3b8;">SHIFT PRESET</div>
                     </div>
                     <div style="display: flex; gap: 8px; align-items: center; flex: 1;">
@@ -1236,7 +1236,7 @@
                 <div class="sched-edit-row">
                     <div class="sched-edit-row-badge" style="background: #3b82f6;">MD</div>
                     <div style="min-width: 90px;">
-                        <div style="font-weight: 800; font-size: 12px; color: #0f172a;" id="lblShift_MD">MID DAY</div>
+                        <div style="font-weight: 600; font-size: 12px; color: #0f172a;" id="lblShift_MD">MID DAY</div>
                         <div style="font-size: 10px; color: #94a3b8;">SHIFT PRESET</div>
                     </div>
                     <div style="display: flex; gap: 8px; align-items: center; flex: 1;">
@@ -1250,7 +1250,7 @@
                 <div class="sched-edit-row">
                     <div class="sched-edit-row-badge" style="background: #f59e0b;">LD</div>
                     <div style="min-width: 90px;">
-                        <div style="font-weight: 800; font-size: 12px; color: #0f172a;" id="lblShift_LD">LATE DAY</div>
+                        <div style="font-weight: 600; font-size: 12px; color: #0f172a;" id="lblShift_LD">LATE DAY</div>
                         <div style="font-size: 10px; color: #94a3b8;">SHIFT PRESET</div>
                     </div>
                     <div style="display: flex; gap: 8px; align-items: center; flex: 1;">
@@ -1264,7 +1264,7 @@
                 <div class="sched-edit-row">
                     <div class="sched-edit-row-badge" style="background: #9333ea;">C</div>
                     <div style="min-width: 90px;">
-                        <div style="font-weight: 800; font-size: 12px; color: #0f172a;" id="lblShift_C">CLOSING</div>
+                        <div style="font-weight: 600; font-size: 12px; color: #0f172a;" id="lblShift_C">CLOSING</div>
                         <div style="font-size: 10px; color: #94a3b8;">SHIFT PRESET</div>
                     </div>
                     <div style="display: flex; gap: 8px; align-items: center; flex: 1;">
@@ -1278,7 +1278,7 @@
                 <div class="sched-edit-row" style="background: #f8fafc;">
                     <div class="sched-edit-row-badge" style="background: #64748b;">OFF</div>
                     <div style="min-width: 90px;">
-                        <div style="font-weight: 800; font-size: 12px; color: #475569;">RESTDAY</div>
+                        <div style="font-weight: 600; font-size: 12px; color: #475569;">RESTDAY</div>
                         <div style="font-size: 10px; color: #94a3b8;">OFF DUTY</div>
                     </div>
                     <div style="flex: 1; font-size: 11px; color: #64748b; font-style: italic;">
@@ -2138,7 +2138,7 @@
     min-height: 25px;
     padding: 0 5px;
     font-size: 11px;
-    font-weight: 800;
+    font-weight: 650;
     font-family: var(--font-heading, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
     border-radius: 6px;
     border: 1.5px solid #e2e8f0;
@@ -2166,7 +2166,7 @@
 .sched-pill-c { flex: 1; color: #9333ea; border-color: #d8b4fe; background: #ffffff; }
 .sched-pill-c:hover { background: #9333ea; color: #fff; border-color: #9333ea; transform: translateY(-1px); }
 
-.sched-pill-restday { flex: 2; color: #0f172a; border-color: #cbd5e1; background: #ffffff; font-size: 9.5px; font-weight: 800; letter-spacing: 0.2px; }
+.sched-pill-restday { flex: 2; color: #0f172a; border-color: #cbd5e1; background: #ffffff; font-size: 9.5px; font-weight: 600; letter-spacing: 0.2px; }
 .sched-pill-restday:hover { background: #475569; color: #fff; border-color: #475569; transform: translateY(-1px); }
 
 .sched-pill-custom {
@@ -2176,7 +2176,7 @@
     border: 1px dashed #cbd5e1;
     background: #f8fafc;
     font-size: 10px;
-    font-weight: 700;
+    font-weight: 600;
     gap: 4px;
     font-family: inherit;
     border-radius: 6px;
@@ -2242,7 +2242,7 @@
     padding: 0 5px;
     border-radius: 4px;
     font-family: var(--font-heading, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
-    font-weight: 900;
+    font-weight: 700;
     font-size: 10.5px;
     line-height: 1;
     letter-spacing: 0.3px;
@@ -2253,7 +2253,7 @@
 .sched-badge-name {
     font-family: var(--font-heading, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
     font-size: 10.5px;
-    font-weight: 800;
+    font-weight: 650;
     letter-spacing: 0.4px;
     line-height: 1;
     text-transform: uppercase;
@@ -2290,7 +2290,7 @@
 
 .sched-card-time {
     font-size: 12px;
-    font-weight: 800;
+    font-weight: 600;
     font-family: var(--font-heading, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
     font-variant-numeric: tabular-nums;
     letter-spacing: 0.25px;
@@ -2368,7 +2368,7 @@
 .sched-detail-punch {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     font-variant-numeric: tabular-nums;
-    font-weight: 700;
+    font-weight: 500;
     font-size: 9.5px;
     color: #1e293b;
     white-space: nowrap;
@@ -2381,7 +2381,7 @@
 
 .sched-detail-badge {
     font-size: 9.5px;
-    font-weight: 800;
+    font-weight: 600;
     padding: 2px 6px;
     border-radius: 4px;
     text-transform: uppercase;
@@ -2407,7 +2407,7 @@
 .sched-detail-hours {
     color: #475569;
     font-size: 10px;
-    font-weight: 700;
+    font-weight: 500;
     padding-top: 2px;
     padding-bottom: 1px;
     line-height: 1.25;
@@ -2415,7 +2415,7 @@
 .sched-detail-hours strong {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     font-variant-numeric: tabular-nums;
-    font-weight: 800;
+    font-weight: 600;
     font-size: 10.5px;
 }
 
@@ -2423,7 +2423,7 @@
 /* OPENING - GREEN (Per User Directive) */
 .sched-theme-o { border: 1.5px solid #86efac; background: #f0fdf4; }
 .sched-theme-o .sched-badge-code { background: #059669; color: #ffffff; box-shadow: 0 1px 2px rgba(5, 150, 105, 0.25); }
-.sched-theme-o .sched-badge-name { color: #065f46; font-size: 11px; font-weight: 800; }
+.sched-theme-o .sched-badge-name { color: #065f46; font-size: 11px; font-weight: 650; }
 .sched-theme-o .sched-card-time { background: #ffffff; border: 1px solid #86efac; color: #064e3b; box-shadow: 0 1px 2px rgba(5, 150, 105, 0.08); }
 .sched-theme-o .sched-card-time i { color: #059669; }
 .sched-theme-o .sched-card-detail-box { border-top: 1px solid #bbf7d0 !important; }
@@ -2434,7 +2434,7 @@
 /* MID DAY - BLUE */
 .sched-theme-md { border: 1.5px solid #93c5fd; background: #f0f7ff; }
 .sched-theme-md .sched-badge-code { background: #2563eb; color: #ffffff; box-shadow: 0 1px 2px rgba(37, 99, 235, 0.25); }
-.sched-theme-md .sched-badge-name { color: #1e40af; font-size: 11px; font-weight: 800; }
+.sched-theme-md .sched-badge-name { color: #1e40af; font-size: 11px; font-weight: 650; }
 .sched-theme-md .sched-card-time { background: #ffffff; border: 1px solid #93c5fd; color: #1e3a8a; box-shadow: 0 1px 2px rgba(37, 99, 235, 0.08); }
 .sched-theme-md .sched-card-time i { color: #2563eb; }
 .sched-theme-md .sched-card-detail-box { border-top: 1px solid #bfdbfe !important; }
@@ -2445,7 +2445,7 @@
 /* LATE DAY - AMBER */
 .sched-theme-ld { border: 1.5px solid #fcd34d; background: #fffdf5; }
 .sched-theme-ld .sched-badge-code { background: #d97706; color: #ffffff; box-shadow: 0 1px 2px rgba(217, 119, 6, 0.25); }
-.sched-theme-ld .sched-badge-name { color: #92400e; font-size: 11px; font-weight: 800; }
+.sched-theme-ld .sched-badge-name { color: #92400e; font-size: 11px; font-weight: 650; }
 .sched-theme-ld .sched-card-time { background: #ffffff; border: 1px solid #fcd34d; color: #78350f; box-shadow: 0 1px 2px rgba(217, 119, 6, 0.08); }
 .sched-theme-ld .sched-card-time i { color: #d97706; }
 .sched-theme-ld .sched-card-detail-box { border-top: 1px solid #fde68a !important; }
@@ -2456,7 +2456,7 @@
 /* CLOSING - PURPLE */
 .sched-theme-c { border: 1.5px solid #d8b4fe; background: #faf5ff; }
 .sched-theme-c .sched-badge-code { background: #9333ea; color: #ffffff; box-shadow: 0 1px 2px rgba(147, 51, 234, 0.25); }
-.sched-theme-c .sched-badge-name { color: #6b21a8; font-size: 11px; font-weight: 800; }
+.sched-theme-c .sched-badge-name { color: #6b21a8; font-size: 11px; font-weight: 650; }
 .sched-theme-c .sched-card-time { background: #ffffff; border: 1px solid #d8b4fe; color: #581c87; box-shadow: 0 1px 2px rgba(147, 51, 234, 0.08); }
 .sched-theme-c .sched-card-time i { color: #9333ea; }
 .sched-theme-c .sched-card-detail-box { border-top: 1px solid #e9d5ff !important; }
@@ -2467,7 +2467,7 @@
 /* RESTDAY - SLATE */
 .sched-card-rest { border: 1.5px solid #cbd5e1; background: #f8fafc; }
 .sched-card-rest .sched-badge-code { background: #64748b; color: #ffffff; }
-.sched-card-rest .sched-badge-name { color: #334155; font-size: 11px; font-weight: 800; }
+.sched-card-rest .sched-badge-name { color: #334155; font-size: 11px; font-weight: 650; }
 .sched-card-rest .sched-card-time { background: #ffffff; border: 1px solid #cbd5e1; color: #1e293b; box-shadow: 0 1px 2px rgba(100, 116, 139, 0.08); }
 .sched-card-rest .sched-card-time i { color: #64748b; }
 .sched-card-rest .sched-card-detail-box { border-top: 1px solid #e2e8f0 !important; }
@@ -2478,7 +2478,7 @@
 /* CUSTOM - VIOLET */
 .sched-card-custom { border: 1.5px solid #c4b5fd; background: #f5f3ff; }
 .sched-card-custom .sched-badge-code { background: #7c3aed; color: #ffffff; }
-.sched-card-custom .sched-badge-name { color: #5b21b6; font-size: 11px; font-weight: 800; }
+.sched-card-custom .sched-badge-name { color: #5b21b6; font-size: 11px; font-weight: 650; }
 .sched-card-custom .sched-card-time { background: #ffffff; border: 1px solid #c4b5fd; color: #4c1d95; box-shadow: 0 1px 2px rgba(124, 58, 237, 0.08); }
 .sched-card-custom .sched-card-time i { color: #7c3aed; }
 .sched-card-custom .sched-card-detail-box { border-top: 1px solid #ddd6fe !important; }
@@ -2565,7 +2565,7 @@
 
 .sched-week-label-range {
     font-size: 12.5px;
-    font-weight: 800;
+    font-weight: 600;
     font-family: var(--font-heading, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
     font-variant-numeric: tabular-nums;
     letter-spacing: 0.2px;
@@ -2604,7 +2604,7 @@
 .sched-nav-btn-current {
     margin-left: 2px;
     font-size: 11px;
-    font-weight: 800;
+    font-weight: 600;
     padding: 3.5px 8px;
     border-radius: 6px;
     background: #ede9fe;
@@ -2629,7 +2629,7 @@
     height: 38px;
     padding: 0 13px;
     font-size: 12.5px;
-    font-weight: 700;
+    font-weight: 600;
     border-radius: 10px;
     display: inline-flex;
     align-items: center;
@@ -2658,7 +2658,7 @@
     background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
     color: #ffffff;
     border: none;
-    font-weight: 800;
+    font-weight: 650;
     padding: 0 18px;
     box-shadow: 0 4px 14px rgba(168, 85, 247, 0.35);
 }
@@ -2682,7 +2682,7 @@
     color: #b45309;
     border: 1px solid #fde68a;
     font-size: 9px;
-    font-weight: 800;
+    font-weight: 600;
     padding: 1px 5px;
     border-radius: 4px;
     text-transform: uppercase;
@@ -2708,7 +2708,7 @@
     padding: 7px 12px;
     border-radius: 8px;
     font-size: 11.5px;
-    font-weight: 700;
+    font-weight: 600;
     cursor: pointer;
     border: 1.5px solid #e2e8f0;
     background: #ffffff;
@@ -2729,7 +2729,7 @@
     padding: 2px 8px;
     border-radius: 999px;
     font-size: 10.5px;
-    font-weight: 700;
+    font-weight: 600;
     border: 1px solid #cbd5e1;
     background: #ffffff;
     color: #64748b;
@@ -2817,7 +2817,7 @@
     flex: 1;
     padding: 6px 4px;
     font-size: 11.5px;
-    font-weight: 700;
+    font-weight: 600;
     color: #64748b;
     border: none;
     background: transparent;
@@ -2892,7 +2892,7 @@
     border-radius: 8px;
     background: #7c3aed;
     color: #ffffff;
-    font-weight: 800;
+    font-weight: 600;
     font-size: 12px;
     display: flex;
     align-items: center;
@@ -2901,7 +2901,7 @@
 }
 .sched-owner-badge {
     font-size: 9.5px;
-    font-weight: 800;
+    font-weight: 600;
     color: #7c3aed;
     background: #ffffff;
     border: 1px solid #c4b5fd;
@@ -2953,7 +2953,7 @@
 
 .sched-custom-dd-label {
     font-size: 10px;
-    font-weight: 800;
+    font-weight: 650;
     color: #94a3b8;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -3061,13 +3061,13 @@
     padding: 7px 10px;
     background: #fdf4ff;
     border: 1.5px dashed #e879f9;
-    border-radius: 9px;
+    border-radius: 99px;
     margin: 2px 0 0 0;
 }
 
 .sched-custom-time-header {
     font-size: 9.5px;
-    font-weight: 800;
+    font-weight: 650;
     color: #9333ea;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -3093,7 +3093,7 @@
 
 .sched-time-field-tag {
     font-size: 8.5px;
-    font-weight: 800;
+    font-weight: 650;
     color: #a855f7;
     text-transform: uppercase;
     letter-spacing: 0.3px;
@@ -3240,7 +3240,7 @@
 .sched-cat-tab-btn.active {
     background: #ffffff;
     color: #7c3aed;
-    font-weight: 800;
+    font-weight: 600;
     box-shadow: 0 1px 3px rgba(0,0,0,0.06);
 }
 
@@ -3263,7 +3263,7 @@
     height: 32px;
     border-radius: 8px;
     color: #ffffff;
-    font-weight: 900;
+    font-weight: 700;
     font-size: 12px;
     display: flex;
     align-items: center;
@@ -4627,7 +4627,7 @@ function appendEmployeeRowToTable(emp) {
             <div style="display: flex; align-items: flex-start; gap: 8px;">
                 <div class="sched-emp-avatar">${initials}</div>
                 <div style="min-width: 0; flex: 1;">
-                    <div style="font-weight: 800; color: #0f172a; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.25;">
+                    <div style="font-weight: 600; color: #0f172a; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.25;">
                         ${escapeHtml(name)}
                     </div>
                     <div style="margin: 3px 0;">
@@ -4686,7 +4686,7 @@ function appendEmployeeRowToTable(emp) {
                         <i class="ph ph-lightning"></i>
                     </button>
                     <div class="sched-row-dropdown" id="rowMenu_${emp.id}" style="display: none;">
-                        <div style="padding: 6px 10px; font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; border-bottom: 1px solid #f1f5f9;">
+                        <div style="padding: 6px 10px; font-size: 10px; font-weight: 600; color: #94a3b8; text-transform: uppercase; border-bottom: 1px solid #f1f5f9;">
                             Quick Fill: ${escapeHtml(emp.first_name || name)}
                         </div>
                         <button type="button" class="sched-row-dd-item" onclick="quickFillRowPreset(${emp.id}, 'O', ['Sun'])">
@@ -5577,7 +5577,7 @@ function applyBatchFillGridDraft() {
                         if (detailBadge) {
                             detailBadge.className = 'sched-detail-badge badge-draft';
                             detailBadge.textContent = 'DRAFT';
-                            detailBadge.style.cssText = 'background: #fef3c7; color: #b45309; border: 1px solid #fcd34d; font-weight: 800;';
+                            detailBadge.style.cssText = 'background: #fef3c7; color: #b45309; border: 1px solid #fcd34d; font-weight: 600;';
                         }
                     }
                     plottedCount++;
@@ -5676,7 +5676,7 @@ function applySingleEmpFillGridDraft() {
                     if (detailBadge) {
                         detailBadge.className = 'sched-detail-badge badge-draft';
                         detailBadge.textContent = 'DRAFT';
-                        detailBadge.style.cssText = 'background: #fef3c7; color: #b45309; border: 1px solid #fcd34d; font-weight: 800;';
+                        detailBadge.style.cssText = 'background: #fef3c7; color: #b45309; border: 1px solid #fcd34d; font-weight: 600;';
                     }
                 }
                 plottedCount++;

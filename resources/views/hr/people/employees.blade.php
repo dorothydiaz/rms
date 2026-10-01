@@ -327,11 +327,6 @@
                                             {{ $emp->full_name }}
                                         </a>
                                     </div>
-                                    <div style="font-size: 11.5px; color: #64748b; margin-top: 1px; display: flex; align-items: center; gap: 5px;">
-                                        <span style="color: #8b5cf6; font-weight: 500;">{{ $emp->employee_id }}</span>
-                                        <span>&bull;</span>
-                                        <span style="color: #475569;">{{ $posName }}</span>
-                                    </div>
                                 </div>
                             </div>
                         </td>
@@ -545,171 +540,7 @@
     font-size: 12.5px !important;
 }
 
-/* Compact Summary Cards */
-.hr-emp-summary-grid {
-    margin-bottom: 8px !important;
-    gap: 8px !important;
-}
-.hr-stat-card {
-    position: relative;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.78) 0%, rgba(253, 244, 255, 0.62) 50%, rgba(255, 241, 248, 0.62) 100%) !important;
-    backdrop-filter: blur(16px) saturate(190%);
-    -webkit-backdrop-filter: blur(16px) saturate(190%);
-    border: 1px solid rgba(255, 255, 255, 0.85) !important;
-    border-radius: 12px;
-    padding: 7px 12px 7px 14px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    box-shadow: 
-        0 4px 18px -2px rgba(168, 85, 247, 0.10),
-        0 2px 8px -1px rgba(236, 72, 153, 0.08),
-        inset 0 1px 1px rgba(255, 255, 255, 0.95);
-    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, background 0.2s ease;
-    overflow: hidden;
-}
 
-/* Glass Left Accent Pill with Pink & Purple Gradient */
-.hr-stat-card::before {
-    content: '';
-    position: absolute;
-    top: 6px;
-    bottom: 6px;
-    left: 4px;
-    width: 3.5px;
-    background: linear-gradient(180deg, #ec4899 0%, #d946ef 45%, #8b5cf6 100%);
-    opacity: 0.95;
-    z-index: 2;
-    border-radius: 999px;
-}
-
-/* Delicate Ambient Glass Glow at corner */
-.hr-stat-card::after {
-    content: '';
-    position: absolute;
-    bottom: -22px;
-    right: -22px;
-    width: 65px;
-    height: 65px;
-    background: radial-gradient(circle, rgba(236, 72, 153, 0.14) 0%, rgba(139, 92, 246, 0.10) 50%, transparent 70%);
-    pointer-events: none;
-    border-radius: 50%;
-    z-index: 0;
-}
-
-.hr-stat-card:hover {
-    transform: translateY(-2px);
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.88) 0%, rgba(253, 244, 255, 0.75) 50%, rgba(255, 241, 248, 0.75) 100%) !important;
-    border-color: rgba(217, 70, 239, 0.45) !important;
-    box-shadow: 
-        0 8px 25px -2px rgba(147, 51, 234, 0.18),
-        0 4px 12px -1px rgba(236, 72, 153, 0.14),
-        inset 0 1px 1px #ffffff;
-}
-
-.hr-stat-icon-wrap {
-    position: relative;
-    width: 33px;
-    height: 33px;
-    border-radius: 9px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 16.5px;
-    flex-shrink: 0;
-    background: linear-gradient(135deg, rgba(236, 72, 153, 0.14) 0%, rgba(139, 92, 246, 0.15) 100%);
-    border: 1px solid rgba(217, 70, 239, 0.28);
-    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.85);
-    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-    z-index: 1;
-}
-
-.hr-stat-card:hover .hr-stat-icon-wrap {
-    transform: scale(1.08);
-}
-
-.hr-stat-content {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-    z-index: 1;
-}
-
-.hr-stat-label {
-    font-size: 9.5px;
-    font-weight: 700;
-    color: #701a75;
-    text-transform: uppercase;
-    letter-spacing: 0.45px;
-    line-height: 1.1;
-}
-
-.hr-stat-value {
-    font-size: 17.5px;
-    font-weight: 800;
-    line-height: 1.15;
-    margin: 1px 0 0 0;
-    background: linear-gradient(135deg, #581c87 0%, #86198f 50%, #be185d 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    display: inline-block;
-}
-
-.hr-stat-sub {
-    font-size: 10px;
-    color: #86198f;
-    opacity: 0.75;
-    line-height: 1.1;
-    margin-top: 1px;
-    font-weight: 500;
-}
-
-/* Individual Pink & Purple Gradient Accents for Summary Cards */
-.hr-stat-card-purple::before {
-    background: linear-gradient(180deg, #8b5cf6 0%, #d946ef 50%, #ec4899 100%);
-}
-.hr-stat-card-purple .hr-stat-icon-wrap {
-    background: linear-gradient(135deg, rgba(139, 92, 246, 0.16) 0%, rgba(217, 70, 239, 0.14) 100%);
-    border-color: rgba(139, 92, 246, 0.30);
-    color: #7c3aed;
-}
-
-.hr-stat-card-green::before {
-    background: linear-gradient(180deg, #a855f7 0%, #d946ef 50%, #ec4899 100%);
-}
-.hr-stat-card-green .hr-stat-icon-wrap {
-    background: linear-gradient(135deg, rgba(168, 85, 247, 0.16) 0%, rgba(236, 72, 153, 0.14) 100%);
-    border-color: rgba(168, 85, 247, 0.30);
-    color: #9333ea;
-}
-
-.hr-stat-card-amber::before {
-    background: linear-gradient(180deg, #f43f5e 0%, #d946ef 50%, #8b5cf6 100%);
-}
-.hr-stat-card-amber .hr-stat-icon-wrap {
-    background: linear-gradient(135deg, rgba(217, 70, 239, 0.16) 0%, rgba(244, 63, 94, 0.14) 100%);
-    border-color: rgba(217, 70, 239, 0.30);
-    color: #c026d3;
-}
-
-.hr-stat-card-blue::before {
-    background: linear-gradient(180deg, #6366f1 0%, #d946ef 50%, #ec4899 100%);
-}
-.hr-stat-card-blue .hr-stat-icon-wrap {
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.16) 0%, rgba(236, 72, 153, 0.14) 100%);
-    border-color: rgba(99, 102, 241, 0.30);
-    color: #6366f1;
-}
-
-.hr-stat-card-rose::before {
-    background: linear-gradient(180deg, #db2777 0%, #9333ea 50%, #7c3aed 100%);
-}
-.hr-stat-card-rose .hr-stat-icon-wrap {
-    background: linear-gradient(135deg, rgba(219, 39, 119, 0.16) 0%, rgba(147, 51, 234, 0.14) 100%);
-    border-color: rgba(219, 39, 119, 0.30);
-    color: #db2777;
-}
 
 /* Compact Table Density for Higher Viewport Capacity */
 #employeesDirectoryTable th {
@@ -836,7 +667,7 @@
                         <i class="ph ph-briefcase"></i>
                     </div>
                     <div>
-                        <span class="hr-modal-title" style="font-size: 16px; font-weight: 700; color: #0f172a; margin: 0;">Change Position</span>
+                        <span class="hr-modal-title" style="font-size: 16px; font-weight: 650; color: #0f172a; margin: 0;">Change Position</span>
                         <div style="font-size: 12px; color: #64748b; margin-top: 1px;">Update primary position and assigned roles</div>
                     </div>
                 </div>
@@ -845,18 +676,18 @@
             <div class="hr-modal-body">
                 <!-- Employee Card -->
                 <div style="padding: 10px 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; display: flex; align-items: center; gap: 12px;">
-                    <div style="width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; flex-shrink: 0;" id="cpQuickEmpAvatar">
+                    <div style="width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; flex-shrink: 0;" id="cpQuickEmpAvatar">
                         <i class="ph ph-user"></i>
                     </div>
                     <div style="flex: 1; min-width: 0;">
-                        <div style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 0.04em;">Employee</div>
-                        <div style="font-size: 14px; font-weight: 700; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" id="cpQuickEmpNameDisplay">Employee Name</div>
+                        <div style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 600; letter-spacing: 0.04em;">Employee</div>
+                        <div style="font-size: 14px; font-weight: 600; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" id="cpQuickEmpNameDisplay">Employee Name</div>
                         <input type="hidden" id="cpQuickEmpName">
                     </div>
                 </div>
 
                 <div class="hr-form-group">
-                    <label class="hr-form-label" style="font-weight: 700; color: #334155; margin-bottom: 6px;">
+                    <label class="hr-form-label" style="font-weight: 600; color: #334155; margin-bottom: 6px;">
                         New Primary Position <span class="text-danger">*</span>
                     </label>
                     <select name="position_id" id="cpQuickPositionId" class="hr-select" required onchange="const cb = document.getElementById('cp_quick_pos_' + this.value); if(cb) { cb.checked = true; updateCpQuickCount(); }">
@@ -920,7 +751,7 @@
                         <i class="ph ph-arrows-left-right"></i>
                     </div>
                     <div>
-                        <span class="hr-modal-title" style="font-size: 16px; font-weight: 700; color: #0f172a; margin: 0;">Transfer Employee</span>
+                        <span class="hr-modal-title" style="font-size: 16px; font-weight: 650; color: #0f172a; margin: 0;">Transfer Employee</span>
                         <div style="font-size: 12px; color: #64748b; margin-top: 1px;">Reassign branch or department locations</div>
                     </div>
                 </div>
@@ -929,19 +760,19 @@
             <div class="hr-modal-body">
                 <!-- Employee Card -->
                 <div style="padding: 10px 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; display: flex; align-items: center; gap: 12px;">
-                    <div style="width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; flex-shrink: 0;" id="trQuickEmpAvatar">
+                    <div style="width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; flex-shrink: 0;" id="trQuickEmpAvatar">
                         <i class="ph ph-user"></i>
                     </div>
                     <div style="flex: 1; min-width: 0;">
-                        <div style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 0.04em;">Employee</div>
-                        <div style="font-size: 14px; font-weight: 700; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" id="trQuickEmpNameDisplay">Employee Name</div>
+                        <div style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 600; letter-spacing: 0.04em;">Employee</div>
+                        <div style="font-size: 14px; font-weight: 600; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" id="trQuickEmpNameDisplay">Employee Name</div>
                         <input type="hidden" id="trQuickEmpName">
                     </div>
                 </div>
 
                 <!-- Branch Assignment Card -->
                 <div class="hr-form-group" style="background: #fafafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px;">
-                    <label class="hr-form-label" style="font-weight: 700; color: #1e293b; margin-bottom: 6px; font-size: 12.5px;">
+                    <label class="hr-form-label" style="font-weight: 600; color: #1e293b; margin-bottom: 6px; font-size: 12.5px;">
                         Primary Branch <span class="text-danger">*</span>
                     </label>
                     <select name="branch_id" id="trQuickBranchId" class="hr-select" required onchange="const cb = document.getElementById('tr_quick_branch_' + this.value); if(cb) { cb.checked = true; updateTrQuickCounts(); }">
@@ -1024,7 +855,7 @@
                         <i class="ph ph-arrows-clockwise"></i>
                     </div>
                     <div>
-                        <span class="hr-modal-title" style="font-size: 16px; font-weight: 700; color: #0f172a; margin: 0;">Change Employment Status</span>
+                        <span class="hr-modal-title" style="font-size: 16px; font-weight: 650; color: #0f172a; margin: 0;">Change Employment Status</span>
                         <div style="font-size: 12px; color: #64748b; margin-top: 1px;">Update status and transition history</div>
                     </div>
                 </div>
@@ -1033,18 +864,18 @@
             <div class="hr-modal-body">
                 <!-- Employee Card -->
                 <div style="padding: 10px 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; display: flex; align-items: center; gap: 12px;">
-                    <div style="width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; flex-shrink: 0;" id="csQuickEmpAvatar">
+                    <div style="width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; flex-shrink: 0;" id="csQuickEmpAvatar">
                         <i class="ph ph-user"></i>
                     </div>
                     <div style="flex: 1; min-width: 0;">
-                        <div style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 0.04em;">Employee</div>
-                        <div style="font-size: 14px; font-weight: 700; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" id="csQuickEmpNameDisplay">Employee Name</div>
+                        <div style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 600; letter-spacing: 0.04em;">Employee</div>
+                        <div style="font-size: 14px; font-weight: 600; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" id="csQuickEmpNameDisplay">Employee Name</div>
                         <input type="hidden" id="csQuickEmpName">
                     </div>
                 </div>
 
                 <div class="hr-form-group">
-                    <label class="hr-form-label" style="font-weight: 700; color: #334155; margin-bottom: 6px;">
+                    <label class="hr-form-label" style="font-weight: 600; color: #334155; margin-bottom: 6px;">
                         New Status <span class="text-danger">*</span>
                     </label>
                     <select name="employment_status" id="csQuickStatus" class="hr-select" required>

@@ -2230,7 +2230,7 @@ a {
 .hr-page-title {
     font-family: var(--font-heading);
     font-size: 22px;
-    font-weight: 800;
+    font-weight: 650;
     color: #0f172a;
     display: flex;
     align-items: center;
@@ -2545,7 +2545,7 @@ a {
 .hr-table-title {
     font-family: var(--font-heading);
     font-size: 15px;
-    font-weight: 700;
+    font-weight: 600;
     color: #0f172a;
     display: flex;
     align-items: center;
@@ -2594,9 +2594,9 @@ a {
     background: #f8fafc !important;
     padding: 13px 18px;
     font-size: 11.5px;
-    font-weight: 700;
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.05em;
     color: #475569;
     border-bottom: 2px solid #e2e8f0;
     white-space: nowrap;
@@ -2647,7 +2647,7 @@ th.sortable.sorted-desc .sort-icon,
 th.sortable .sort-badge,
 .hr-table th.sortable .sort-badge {
     font-size: 9.5px;
-    font-weight: 700;
+    font-weight: 600;
     padding: 1px 5px;
     border-radius: 4px;
     background: rgba(124, 58, 237, 0.15);
@@ -6432,50 +6432,50 @@ body > .hr-custom-select-menu {
    HRIS PARENT PAGE TAB NAVIGATION SYSTEM
    ============================================================ */
 .hr-parent-header {
-    margin-bottom: 22px;
+    margin-bottom: 6px;
 }
 
 .hr-parent-title-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 16px;
-    margin-bottom: 12px;
+    gap: 12px;
+    margin-bottom: 4px;
     flex-wrap: wrap;
 }
 
 .hr-parent-title {
     font-family: var(--font-heading);
-    font-size: 23px;
-    font-weight: 800;
+    font-size: 20px;
+    font-weight: 650;
     color: #0f172a;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
     letter-spacing: -0.02em;
     margin: 0;
 }
 
 .hr-parent-title i {
-    width: 40px;
-    height: 40px;
+    width: 32px;
+    height: 32px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border-radius: 12px;
+    border-radius: 8px;
     background: linear-gradient(135deg, rgba(236, 72, 153, 0.14), rgba(168, 85, 247, 0.20));
     border: 1px solid rgba(168, 85, 247, 0.32);
     color: #9333ea;
-    font-size: 21px;
+    font-size: 17px;
     box-shadow: 0 4px 14px rgba(168, 85, 247, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.8);
     flex-shrink: 0;
 }
 
 .hr-parent-subtitle {
-    font-size: 13px;
+    font-size: 12px;
     color: #64748b;
     font-weight: 400;
-    margin-top: 4px;
+    margin-top: 2px;
 }
 
 .hr-tabs-wrapper {
@@ -6483,14 +6483,14 @@ body > .hr-custom-select-menu {
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     border: 1px solid rgba(226, 232, 240, 0.9);
-    border-radius: 14px;
-    padding: 6px;
-    margin-top: 14px;
-    margin-bottom: 22px;
+    border-radius: 10px;
+    padding: 3px 5px;
+    margin-top: 6px;
+    margin-bottom: 8px;
     box-shadow: 0 4px 16px rgba(148, 163, 184, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.95);
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
     overflow: visible;
     flex-wrap: wrap;
     position: relative;
@@ -6509,7 +6509,7 @@ body > .hr-custom-select-menu {
     border-radius: 10px;
     font-family: var(--font-family);
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 500;
     color: #64748b;
     text-decoration: none;
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
@@ -6537,6 +6537,7 @@ body > .hr-custom-select-menu {
 .hr-tab-item.active {
     background: #ffffff;
     color: #9333ea;
+    font-weight: 600;
     border-color: rgba(168, 85, 247, 0.28);
     box-shadow: 0 4px 14px rgba(168, 85, 247, 0.14), 0 1px 3px rgba(0, 0, 0, 0.04);
 }
@@ -6546,7 +6547,6 @@ body > .hr-custom-select-menu {
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
-    font-weight: 700;
 }
 
 .hr-tab-item.active::after {
@@ -6575,6 +6575,27 @@ body > .hr-custom-select-menu {
     visibility: visible;
     transform: translateY(0);
     pointer-events: auto;
+}
+
+.hr-tab-dropdown-wrap:hover .hr-tab-dropdown-trigger,
+.hr-tab-dropdown-wrap.open .hr-tab-dropdown-trigger {
+    color: #9333ea;
+    background: #ffffff;
+    border-color: rgba(168, 85, 247, 0.28);
+    box-shadow: 0 4px 14px rgba(168, 85, 247, 0.14), 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.hr-tab-dropdown-wrap:hover .hr-tab-dropdown-trigger i,
+.hr-tab-dropdown-wrap.open .hr-tab-dropdown-trigger i {
+    background: linear-gradient(135deg, #ec4899, #a855f7);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.hr-tab-dropdown-wrap:hover .hr-tab-caret-btn,
+.hr-tab-dropdown-wrap.open .hr-tab-caret-btn {
+    color: #9333ea;
 }
 
 .hr-tab-dropdown-trigger {
@@ -6631,7 +6652,7 @@ body > .hr-custom-select-menu {
 /* Floating Glassmorphic Dropdown Menu */
 .hr-tab-dropdown-menu {
     position: absolute;
-    top: calc(100% + 8px);
+    top: calc(100% + 4px);
     left: 0;
     min-width: 220px;
     background: rgba(255, 255, 255, 0.98);
@@ -6652,6 +6673,17 @@ body > .hr-custom-select-menu {
     gap: 3px;
 }
 
+/* Hover bridge so moving mouse between tab and menu never loses hover */
+.hr-tab-dropdown-menu::before {
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: 0;
+    right: 0;
+    height: 10px;
+    background: transparent;
+}
+
 /* Dropdown Menu Item */
 .hr-tab-dropdown-item {
     display: flex;
@@ -6662,7 +6694,7 @@ body > .hr-custom-select-menu {
     text-decoration: none;
     color: #334155;
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 500;
     transition: all 0.15s ease;
     border: 1px solid transparent;
 }
@@ -6688,7 +6720,7 @@ body > .hr-custom-select-menu {
 .hr-tab-dropdown-check {
     font-size: 14px;
     color: #9333ea;
-    font-weight: 800;
+    font-weight: 600;
     flex-shrink: 0;
 }
 
@@ -6706,7 +6738,7 @@ body > .hr-custom-select-menu {
 .hr-tab-dropdown-item.active {
     background: rgba(168, 85, 247, 0.1);
     color: #9333ea;
-    font-weight: 700;
+    font-weight: 600;
     border-color: rgba(168, 85, 247, 0.2);
 }
 
@@ -6719,7 +6751,7 @@ body > .hr-custom-select-menu {
 /* Sidebar section header category titles */
 .nav-category-header {
     font-size: 10.5px;
-    font-weight: 700;
+    font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.08em;
     color: #94a3b8;
@@ -6751,7 +6783,7 @@ body > .hr-custom-select-menu {
 
 .hr-corrections-table th {
     font-size: 10.5px !important;
-    font-weight: 700;
+    font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: #475569;
@@ -6775,7 +6807,7 @@ body > .hr-custom-select-menu {
     padding: 8px 2px !important;
     font-size: 10px !important;
     color: #475569;
-    font-weight: 700;
+    font-weight: 600;
     white-space: nowrap;
     width: 52px;
 }
@@ -6829,7 +6861,7 @@ body > .hr-custom-select-menu {
 
 .hr-payroll-table th {
     font-size: 10.5px !important;
-    font-weight: 700;
+    font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: #475569;
@@ -6911,52 +6943,486 @@ body > .hr-custom-select-menu {
 .hr-payroll-table .py-col-tax { width: 58px; }
 .hr-payroll-table .py-col-net { width: 85px; }
 
-/* Global Stat Cards */
+/* Global Stat Cards - Clean Plain White Card Design (First Design, No Gradient Accents) */
+.hr-emp-summary-grid {
+    margin-bottom: 8px !important;
+    gap: 8px !important;
+}
+
 .hr-stat-card {
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
     border-radius: 12px;
-    padding: 14px 16px;
+    padding: 10px 14px;
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 12px;
     box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04);
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    position: relative;
 }
+
+.hr-stat-card::before,
+.hr-stat-card::after {
+    display: none !important;
+    content: none !important;
+}
+
 .hr-stat-card:hover {
-    transform: translateY(-1px);
+    transform: translateY(-2px);
     box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.08);
+    border-color: #cbd5e1 !important;
+    background: #ffffff !important;
 }
+
 .hr-stat-icon-wrap {
-    width: 42px;
-    height: 42px;
-    border-radius: 10px;
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 20px;
+    font-size: 18px;
     flex-shrink: 0;
+    background: #f1f5f9;
+    color: #64748b;
+    border: none !important;
+    box-shadow: none !important;
+    transition: transform 0.15s ease;
 }
+
+.hr-stat-card:hover .hr-stat-icon-wrap {
+    transform: scale(1.05);
+}
+
 .hr-stat-content {
     display: flex;
     flex-direction: column;
     min-width: 0;
 }
+
 .hr-stat-label {
-    font-size: 11.5px;
+    font-size: 11px;
     font-weight: 600;
     color: #64748b;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.4px;
+    line-height: 1.2;
 }
+
 .hr-stat-value {
-    font-size: 22px;
+    font-size: 19px;
     font-weight: 700;
     color: #0f172a;
     line-height: 1.2;
     margin: 2px 0 1px 0;
+    background: none !important;
+    -webkit-background-clip: unset !important;
+    background-clip: unset !important;
+    -webkit-text-fill-color: initial !important;
 }
+
 .hr-stat-sub {
     font-size: 11px;
     color: #94a3b8;
+    line-height: 1.2;
+    font-weight: 400;
+    margin-top: 1px;
 }
+
+/* Individual Color Accents on Icon Wrappers (Soft Clean Pastel, No Gradients) */
+.hr-stat-card-purple .hr-stat-icon-wrap {
+    background: rgba(124, 58, 237, 0.08) !important;
+    color: #7c3aed !important;
+}
+
+.hr-stat-card-green .hr-stat-icon-wrap,
+.hr-stat-card-emerald .hr-stat-icon-wrap {
+    background: rgba(16, 185, 129, 0.10) !important;
+    color: #059669 !important;
+}
+
+.hr-stat-card-amber .hr-stat-icon-wrap {
+    background: rgba(245, 158, 11, 0.10) !important;
+    color: #d97706 !important;
+}
+
+.hr-stat-card-blue .hr-stat-icon-wrap {
+    background: rgba(37, 99, 235, 0.08) !important;
+    color: #2563eb !important;
+}
+
+.hr-stat-card-rose .hr-stat-icon-wrap,
+.hr-stat-card-pink .hr-stat-icon-wrap {
+    background: rgba(225, 29, 72, 0.08) !important;
+    color: #e11d48 !important;
+}
+
+.hr-stat-card-indigo .hr-stat-icon-wrap {
+    background: rgba(79, 70, 229, 0.08) !important;
+    color: #4f46e5 !important;
+}
+
+.hr-stat-card-neutral .hr-stat-icon-wrap {
+    background: #f1f5f9 !important;
+    color: #64748b !important;
+}
+
+/* ============================================================
+   TALENT ACQUISITION & ONBOARDING SUITE STYLES
+   ============================================================ */
+
+/* Slide-out Drawer */
+.hr-drawer-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hr-drawer-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.hr-drawer {
+    position: fixed;
+    top: 0;
+    right: -720px;
+    width: 100%;
+    max-width: 680px;
+    height: 100vh;
+    background: #ffffff;
+    box-shadow: -8px 0 32px rgba(15, 23, 42, 0.15);
+    z-index: 1001;
+    display: flex;
+    flex-direction: column;
+    transition: right 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hr-drawer.active {
+    right: 0;
+}
+
+.hr-drawer-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid #e2e8f0;
+    background: linear-gradient(135deg, rgba(236, 72, 153, 0.04) 0%, rgba(168, 85, 247, 0.08) 100%);
+    position: relative;
+    flex-shrink: 0;
+}
+
+.hr-drawer-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #64748b;
+    transition: all 0.15s ease;
+}
+
+.hr-drawer-close:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+}
+
+.hr-drawer-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+    background: #fafafa;
+}
+
+.hr-drawer-footer {
+    padding: 16px 24px;
+    border-top: 1px solid #e2e8f0;
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+/* Pipeline Horizontal Stepper */
+.hr-pipeline-stepper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+    padding: 12px 14px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    overflow-x: auto;
+}
+
+.hr-step-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    flex: 1;
+    min-width: 60px;
+    text-align: center;
+    position: relative;
+}
+
+.hr-step-dot {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    background: #f1f5f9;
+    color: #94a3b8;
+    border: 2px solid #e2e8f0;
+    transition: all 0.2s ease;
+}
+
+.hr-step-item.active .hr-step-dot {
+    background: linear-gradient(135deg, #ec4899, #a855f7);
+    color: #ffffff;
+    border-color: #a855f7;
+    box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.2);
+}
+
+.hr-step-item.completed .hr-step-dot {
+    background: #10b981;
+    color: #ffffff;
+    border-color: #10b981;
+}
+
+.hr-step-name {
+    font-size: 10px;
+    font-weight: 600;
+    color: #64748b;
+    white-space: nowrap;
+}
+
+.hr-step-item.active .hr-step-name {
+    color: #9333ea;
+    font-weight: 700;
+}
+
+/* Micro Nav Tabs inside Profile */
+.hr-micro-tabs {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    border-bottom: 1px solid #e2e8f0;
+    margin-bottom: 20px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+}
+
+.hr-micro-tab {
+    padding: 8px 14px;
+    border-radius: 8px 8px 0 0;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #64748b;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s ease;
+}
+
+.hr-micro-tab:hover {
+    color: #9333ea;
+    background: rgba(168, 85, 247, 0.05);
+}
+
+.hr-micro-tab.active {
+    color: #9333ea;
+    border-bottom-color: #9333ea;
+    background: rgba(168, 85, 247, 0.08);
+}
+
+/* Scorecard & Rating Grid */
+.hr-scorecard-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin: 16px 0;
+}
+
+.hr-rating-row {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.hr-star-rating {
+    display: inline-flex;
+    gap: 4px;
+    cursor: pointer;
+}
+
+.hr-star-rating i {
+    font-size: 16px;
+    color: #cbd5e1;
+    transition: color 0.15s ease;
+}
+
+.hr-star-rating i.filled,
+.hr-star-rating i.active {
+    color: #f59e0b;
+}
+
+/* Requirements & Checklist UI */
+.hr-checklist-item {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+    transition: all 0.15s ease;
+}
+
+.hr-checklist-item:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+}
+
+.hr-checklist-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    flex: 1;
+}
+
+.hr-checklist-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+/* Printable / Preview Offer Paper */
+.hr-offer-paper {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 28px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+    font-family: var(--font-family);
+    color: #1e293b;
+    line-height: 1.6;
+}
+
+.hr-offer-header {
+    border-bottom: 2px solid #9333ea;
+    padding-bottom: 16px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.hr-offer-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0;
+}
+
+.hr-offer-details-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 16px;
+    margin: 16px 0;
+}
+
+/* Timeline Activity Stream */
+.hr-timeline-stream {
+    position: relative;
+    padding-left: 24px;
+}
+
+.hr-timeline-stream::before {
+    content: '';
+    position: absolute;
+    left: 8px;
+    top: 6px;
+    bottom: 6px;
+    width: 2px;
+    background: #e2e8f0;
+}
+
+.hr-timeline-item {
+    position: relative;
+    margin-bottom: 18px;
+}
+
+.hr-timeline-dot {
+    position: absolute;
+    left: -24px;
+    top: 3px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 3px solid #9333ea;
+}
+
+.hr-timeline-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 2px;
+}
+
+.hr-timeline-meta {
+    font-size: 11px;
+    color: #94a3b8;
+    margin-bottom: 4px;
+}
+
+.hr-timeline-desc {
+    font-size: 12.5px;
+    color: #475569;
+}
+

@@ -149,7 +149,7 @@
             @endphp
 
             @if($hasSubtabs)
-                <div class="hr-tab-dropdown-wrap" onmouseleave="closeTabDropdown(this)">
+                <div class="hr-tab-dropdown-wrap" onmouseenter="openTabDropdown(this)" onmouseleave="closeTabDropdown(this)">
                     <div class="hr-tab-item hr-tab-dropdown-trigger {{ $isActive ? 'active' : '' }}">
                         <a href="{{ route($tab['route']) }}" class="hr-tab-link">
                             <i class="ph {{ $tab['icon'] }}"></i>
@@ -194,6 +194,21 @@
 </div>
 
 <script>
+let hrTabDropdownTimer = null;
+function openTabDropdown(wrap) {
+    if (hrTabDropdownTimer) clearTimeout(hrTabDropdownTimer);
+    if (!wrap) return;
+    document.querySelectorAll('.hr-tab-dropdown-wrap.open').forEach(w => {
+        if (w !== wrap) w.classList.remove('open');
+    });
+    wrap.classList.add('open');
+}
+function closeTabDropdown(wrap) {
+    if (hrTabDropdownTimer) clearTimeout(hrTabDropdownTimer);
+    hrTabDropdownTimer = setTimeout(() => {
+        if (wrap) wrap.classList.remove('open');
+    }, 150);
+}
 function toggleHrTabDropdown(e, btn) {
     e.preventDefault();
     e.stopPropagation();
@@ -204,9 +219,6 @@ function toggleHrTabDropdown(e, btn) {
     if (!isOpen) {
         wrap.classList.add('open');
     }
-}
-function closeTabDropdown(wrap) {
-    if (wrap) wrap.classList.remove('open');
 }
 document.addEventListener('click', function(e) {
     if (!e.target.closest('.hr-tab-dropdown-wrap')) {

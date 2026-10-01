@@ -476,7 +476,7 @@ class RecruitmentController extends Controller
             'work_setup_preference' => $validated['work_setup_preference'] ?? 'On-site',
             'source' => $validated['source'] ?? 'Walk-in',
             'application_date' => $validated['application_date'] ?? now()->toDateString(),
-            'status' => $validated['status'] ?: 'New',
+            'status' => !empty($validated['status']) ? $validated['status'] : 'New',
             'recruiter_id' => $validated['recruiter_id'] ?? Auth::id(),
             'recruiter_name' => $validated['recruiter_name'] ?? (Auth::user()?->full_name ?? 'HR Recruiter'),
             'education' => $education,
@@ -1080,22 +1080,16 @@ class RecruitmentController extends Controller
                 'education_history' => $applicant->education,
             ]);
 
-            // Copy work experience into EmploymentHistory model
-            if (!empty($applicant->work_experience) && is_array($applicant->work_experience)) {
-                foreach ($applicant->work_experience as $exp) {
-                    if (!empty($exp['company'])) {
-                        EmploymentHistory::create([
-                            'employee_id' => $employee->id,
-                            'company_name' => $exp['company'],
-                            'position_title' => $exp['position'] ?? 'Staff',
-                            'start_date' => !empty($exp['start_date']) ? $exp['start_date'] : null,
-                            'end_date' => !empty($exp['end_date']) ? $exp['end_date'] : null,
-                            'reason_for_leaving' => $exp['reason_for_leaving'] ?? null,
-                            'remarks' => $exp['responsibilities'] ?? null,
-                        ]);
-                    }
-                }
-            }
+            // Record initial employment movement history (Hiring)
+            EmploymentHistory::create([
+                'employee_id' => $employee->id,
+                'action_type' => 'Hiring',
+                'previous_value' => 'Applicant (' . $applicant->status . ')',
+                'new_value' => $employee->position?->name ?? $applicant->applied_position,
+                'remarks' => "Converted from Talent Acquisition applicant record #{$applicant->id}. Initial hire.",
+                'effective_date' => $employee->date_hired,
+                'recorded_by' => Auth::id(),
+            ]);
 
             // Transfer applicant resume to employee 201 file documents
             if ($applicant->resume_path) {
@@ -1190,6 +1184,7 @@ class RecruitmentController extends Controller
                 ->with('success', "Applicant {$applicant->full_name} successfully converted to Employee {$employee->employee_id}. Onboarding workflow initialized.");
         } catch (\Throwable $e) {
             DB::rollBack();
+            \Illuminate\Support\Facades\Log::error("Failed to convert applicant to employee: " . $e->getMessage() . " at " . $e->getFile() . ":" . $e->getLine());
             return redirect()->back()->with('error', "Failed to convert applicant to employee: " . $e->getMessage());
         }
     }
