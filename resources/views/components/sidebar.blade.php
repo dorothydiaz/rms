@@ -87,20 +87,19 @@
                 </a>
             </div>
 
-            <!-- PEOPLE -->
+            <!-- Workforce -->
             <div class="nav-section">
-                @php $peopleActive = request()->routeIs('hr.people.*', 'hr.employee', 'hr.recruitment.*'); @endphp
+                @php $workforceActive = request()->routeIs('hr.people.*', 'hr.employee', 'hr.recruitment.*'); @endphp
                 <div class="nav-item-group" data-group-id="hr-people">
                     <a href="#" class="nav-item">
                         <i class="ph ph-users"></i>
-                        <span>PEOPLE</span>
+                        <span>Workforce</span>
                     </a>
-                    <button type="button" class="add-btn"><i class="ph {{ $peopleActive ? 'ph-minus' : 'ph-plus' }}"></i></button>
+                    <button type="button" class="add-btn"><i class="ph {{ $workforceActive ? 'ph-minus' : 'ph-plus' }}"></i></button>
                 </div>
-                <div class="sub-nav{{ $peopleActive ? ' expanded' : '' }}">
+                <div class="sub-nav{{ $workforceActive ? ' expanded' : '' }}">
                     <a href="{{ route('hr.people.employees') }}" class="sub-nav-item{{ request()->routeIs('hr.people.*', 'hr.employee') ? ' active' : '' }}" title="Employee Management, 201-files, and workforce directory"><span>Employee Management</span></a>
-                    <a href="{{ route('hr.recruitment.vacancies') }}" class="sub-nav-item{{ request()->routeIs('hr.recruitment.vacancies') ? ' active' : '' }}" title="Job vacancy postings and hiring pipeline"><span>Recruitment</span></a>
-                    <a href="{{ route('hr.recruitment.applicants') }}" class="sub-nav-item{{ request()->routeIs('hr.recruitment.applicants', 'hr.recruitment.interviews') ? ' active' : '' }}" title="Candidate onboarding, applications, and conversion to employee"><span>Onboarding</span></a>
+                    <a href="{{ route('hr.recruitment.vacancies') }}" class="sub-nav-item{{ request()->routeIs('hr.recruitment.*') ? ' active' : '' }}" title="Job vacancy postings and hiring pipeline"><span>Recruitment</span></a>
                 </div>
             </div>
 

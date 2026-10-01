@@ -121,6 +121,9 @@ class EmployeeManagementModuleTest extends TestCase
         $response->assertSee($this->employee->full_name);
         $response->assertSee('Generate COE');
         $response->assertSee('Print 201 File');
+        $response->assertSee('Workforce');
+        $response->assertDontSee('<span>PEOPLE</span>', false);
+        $response->assertDontSee('<span>Onboarding</span>', false);
     }
 
     public function test_employee_profile_detail_renders_eight_tabs_and_strong_header(): void

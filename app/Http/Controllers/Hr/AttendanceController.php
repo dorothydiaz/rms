@@ -1325,21 +1325,16 @@ class AttendanceController extends Controller
     {
         $user = Auth::user();
 
-        // Query attendance records for manual encoding
-        $query = AttendanceRecord::with(['employee.branch', 'employee.department', 'employee.position', 'corrections.requester']);
+        // Query attendance records strictly for manual time entries
+        $query = AttendanceRecord::with(['employee.branch', 'employee.department', 'employee.position', 'corrections.requester'])
+            ->where('source', 'Manual');
 
         if (!$user->isSuperAdmin() && !$user->isHrAdmin() && $user->branch_id) {
             $query->where('branch_id', $user->branch_id);
         }
 
-        // If specific date is filtered, show all records for that date; otherwise show manual entries
         if ($request->filled('date')) {
             $query->where('date', $request->date);
-        } elseif (!$request->filled('show_all')) {
-            $query->where(function ($q) {
-                $q->where('source', 'Manual')
-                  ->orWhereHas('corrections');
-            });
         }
 
         if ($request->filled('date_from')) {
