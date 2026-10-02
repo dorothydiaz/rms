@@ -6305,7 +6305,7 @@ body > .hr-custom-select-menu {
 }
 
 .hr-select-search-wrap {
-    display: flex !important;
+    display: flex;
     align-items: center !important;
     gap: 7px !important;
     padding: 7px 10px !important;
@@ -6315,6 +6315,11 @@ body > .hr-custom-select-menu {
     border-top-left-radius: 9px !important;
     border-top-right-radius: 9px !important;
     box-sizing: border-box !important;
+}
+
+.hr-select-search-wrap.is-hidden,
+.hr-select-search-wrap[hidden] {
+    display: none !important;
 }
 
 .hr-select-search-icon {

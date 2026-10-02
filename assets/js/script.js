@@ -738,10 +738,13 @@ document.addEventListener('DOMContentLoaded', () => {
             searchWrap.addEventListener('mousedown', (e) => e.stopPropagation());
 
             function checkShouldHaveSearch(opts) {
-                const nameAndId = (select.name + ' ' + select.id + ' ' + (select.className || '')).toLowerCase();
-                const isTargetEntity = /employee|staff|member|dept|department|branch|company|position|role|job|title|applicant|recruiter|manager|user|category|schedule|program|leave/i.test(nameAndId);
-                const isInModal = Boolean(select.closest('.hr-modal, .hr-modal-overlay, .modal, [id*="Modal"], [id*="modal"]'));
-                return opts.length >= 4 || (isTargetEntity && opts.length >= 3) || (isInModal && opts.length >= 3);
+                // Ignore placeholder options when counting selectable choices
+                const selectableOpts = opts.filter(o => o.value !== '' && !/--\s*Select/i.test(o.text));
+                // No search bar if 3 or fewer options
+                if (selectableOpts.length <= 3 || opts.length <= 3) {
+                    return false;
+                }
+                return opts.length >= 4;
             }
 
             function filterOptions() {
@@ -883,7 +886,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 positionMenu();
 
                 // Reset search and auto-focus
-                if (searchWrap.style.display !== 'none') {
+                if (searchWrap.parentNode === menu && !searchWrap.hidden && searchWrap.style.display !== 'none') {
                     searchInput.value = '';
                     filterOptions();
                     setTimeout(() => {
@@ -904,7 +907,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 triggerText.textContent = selectedOpt ? selectedOpt.text : 'Select...';
 
                 const hasSearch = checkShouldHaveSearch(options);
-                searchWrap.style.display = hasSearch ? 'flex' : 'none';
+                if (hasSearch) {
+                    if (searchWrap.parentNode !== menu) {
+                        menu.insertBefore(searchWrap, optionsList);
+                    }
+                    searchWrap.classList.remove('is-hidden');
+                    searchWrap.hidden = false;
+                    searchWrap.style.setProperty('display', 'flex', 'important');
+                } else {
+                    if (searchWrap.parentNode === menu) {
+                        menu.removeChild(searchWrap);
+                    }
+                    searchWrap.classList.add('is-hidden');
+                    searchWrap.hidden = true;
+                    searchWrap.style.setProperty('display', 'none', 'important');
+                }
 
                 if (hasSearch) {
                     let placeholderText = 'Search...';
