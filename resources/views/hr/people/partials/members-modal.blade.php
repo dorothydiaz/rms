@@ -126,6 +126,68 @@
     box-shadow: none;
     transform: none;
 }
+
+/* Fixed Docked Layout for Staff Members Roster Modal */
+#membersRosterModal .hr-modal {
+    max-width: min(1040px, 96vw) !important;
+    width: 100% !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+}
+
+#membersRosterModal .hr-modal-body,
+#membersRosterModal #membersModalBody {
+    padding: 0 !important;
+    margin: 0 !important;
+    gap: 0 !important;
+    flex: 1 1 0% !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    background: #ffffff !important;
+}
+
+#membersRosterModal #membersModalContent {
+    flex: 1 1 0% !important;
+    min-height: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+}
+
+#membersRosterModal #membersModalTableWrapper {
+    flex: 1 1 0% !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    overflow-x: auto !important;
+    position: relative !important;
+}
+
+#membersRosterModal #membersModalPaginationBar {
+    flex-shrink: 0 !important;
+    position: relative !important;
+    z-index: 20 !important;
+    background: #ffffff !important;
+    border-top: 1px solid #e2e8f0 !important;
+    box-shadow: 0 -2px 10px rgba(15, 23, 42, 0.04) !important;
+    padding: 10px 26px !important;
+    margin: 0 !important;
+}
+
+#membersRosterModal .hr-modal-footer {
+    flex-shrink: 0 !important;
+    margin-top: 0 !important;
+    background: #f8fafc !important;
+    border-top: 1px solid #e2e8f0 !important;
+    padding: 12px 26px !important;
+    position: relative !important;
+    z-index: 20 !important;
+}
 </style>
 
 <div id="membersRosterModal" class="hr-modal-overlay">
@@ -218,28 +280,28 @@
                         <div style="font-size: 12.5px; color: #94a3b8; margin-top: 4px;">There are no employees currently matching this criteria.</div>
                     </div>
                 </div>
+            </div>
+        </div>
 
-                <!-- Cohesive Table Pagination Bar -->
-                <div id="membersModalPaginationBar" style="padding: 12px 24px; background: #ffffff; border-top: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; flex-shrink: 0;">
-                    <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
-                        <div class="hr-per-page-wrap" style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #64748b; font-weight: 500;">
-                            <span class="hr-per-page-label">Show</span>
-                            <select id="membersModalPerPage" class="hr-per-page-select" onchange="changeMembersModalPerPage(this.value)">
-                                <option value="10" selected>10</option>
-                                <option value="25">25</option>
-                                <option value="50">50</option>
-                                <option value="100">100</option>
-                            </select>
-                            <span class="hr-per-page-label">per page</span>
-                        </div>
-                        <div class="hr-pagination-info" id="membersModalPaginationInfo" style="font-size: 12.5px; color: #64748b; font-weight: 500;">
-                            Showing <strong>0 - 0</strong> of <strong>0</strong> members
-                        </div>
-                    </div>
-                    <div class="hr-pagination-nav" id="membersModalPaginationNav" style="display: inline-flex; align-items: center; gap: 6px;">
-                        <!-- Dynamic page buttons -->
-                    </div>
+        <!-- Cohesive Table Pagination Bar - Fixed directly above Modal Footer -->
+        <div id="membersModalPaginationBar" style="padding: 10px 26px; background: #ffffff; border-top: 1px solid #e2e8f0; display: none; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; flex-shrink: 0; position: relative; z-index: 20; box-shadow: 0 -2px 10px rgba(15, 23, 42, 0.04);">
+            <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+                <div class="hr-per-page-wrap" style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #64748b; font-weight: 500;">
+                    <span class="hr-per-page-label">Show</span>
+                    <select id="membersModalPerPage" class="hr-per-page-select" onchange="changeMembersModalPerPage(this.value)">
+                        <option value="10" selected>10</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                    <span class="hr-per-page-label">per page</span>
                 </div>
+                <div class="hr-pagination-info" id="membersModalPaginationInfo" style="font-size: 12.5px; color: #64748b; font-weight: 500;">
+                    Showing <strong>0 - 0</strong> of <strong>0</strong> members
+                </div>
+            </div>
+            <div class="hr-pagination-nav" id="membersModalPaginationNav" style="display: inline-flex; align-items: center; gap: 6px;">
+                <!-- Dynamic page buttons -->
             </div>
         </div>
 
@@ -274,6 +336,8 @@ function openMembersModal(type, id, entityName) {
     document.getElementById('membersModalCountBadge').innerText = '...';
     document.getElementById('membersModalLoading').style.display = 'block';
     document.getElementById('membersModalContent').style.display = 'none';
+    const paginationBar = document.getElementById('membersModalPaginationBar');
+    if (paginationBar) paginationBar.style.display = 'none';
     document.getElementById('membersModalSearch').value = '';
     const clearBtn = document.getElementById('membersModalSearchClear');
     if (clearBtn) clearBtn.style.display = 'none';
@@ -359,6 +423,7 @@ function renderMembersModalPage() {
         if (filteredCountEl) filteredCountEl.innerText = '0 members found';
         if (paginationInfo) paginationInfo.innerHTML = 'Showing <strong>0</strong> of <strong>0</strong> members';
         if (paginationNav) paginationNav.innerHTML = '';
+        if (paginationBar) paginationBar.style.display = 'none';
         return;
     }
 

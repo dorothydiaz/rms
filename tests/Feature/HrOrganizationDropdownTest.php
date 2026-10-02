@@ -54,4 +54,27 @@ class HrOrganizationDropdownTest extends TestCase
         $resComp->assertStatus(200);
         $resComp->assertSee('hr-tab-dropdown-trigger active', false);
     }
+
+    public function test_members_modal_pagination_bar_is_positioned_above_modal_footer(): void
+    {
+        $user = $this->getAdminUser();
+
+        foreach ([route('hr.people.departments'), route('hr.people.positions'), route('hr.people.branches'), route('hr.people.companies')] as $url) {
+            $response = $this->actingAs($user)->get($url);
+            $response->assertStatus(200);
+
+            $content = $response->getContent();
+            $modalPos = strpos($content, 'id="membersRosterModal"');
+            $this->assertNotFalse($modalPos, "membersRosterModal must exist in {$url}");
+            $modalContent = substr($content, $modalPos);
+
+            $paginationPos = strpos($modalContent, 'id="membersModalPaginationBar"');
+            $footerPos = strpos($modalContent, 'class="hr-modal-footer"');
+
+            $this->assertNotFalse($paginationPos, "membersModalPaginationBar must exist in {$url}");
+            $this->assertNotFalse($footerPos, "hr-modal-footer must exist in {$url}");
+            $this->assertLessThan($footerPos, $paginationPos, "Pagination bar must be positioned directly above modal footer in {$url}");
+        }
+    }
 }
+
