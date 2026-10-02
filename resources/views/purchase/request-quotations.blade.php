@@ -9,16 +9,18 @@
    RMS Industrial Procurement & Glassmorphic Ergonomics
    ========================================================================== */
 :root {
-    --rfq-primary: #0284c7;
-    --rfq-primary-dark: #0369a1;
-    --rfq-primary-light: #38bdf8;
-    --rfq-primary-glow: rgba(2, 132, 199, 0.22);
-    --rfq-primary-subtle: rgba(2, 132, 199, 0.08);
-    --rfq-primary-gradient: linear-gradient(135deg, #0284c7 0%, #0d9488 100%);
+    /* HR Operations Enterprise Theme Tokens */
+    --rfq-primary: #9333ea;
+    --rfq-primary-dark: #7c3aed;
+    --rfq-primary-light: #c084fc;
+    --rfq-primary-glow: rgba(168, 85, 247, 0.22);
+    --rfq-primary-subtle: rgba(168, 85, 247, 0.12);
+    --rfq-primary-gradient: linear-gradient(135deg, #ec4899 0%, #a855f7 100%);
+    --rfq-primary-gradient-hover: linear-gradient(135deg, #db2777 0%, #9333ea 100%);
 
-    --rfq-teal: #0d9488;
-    --rfq-teal-dark: #0f766e;
-    --rfq-teal-subtle: rgba(13, 148, 136, 0.12);
+    --rfq-teal: #6366f1;
+    --rfq-teal-dark: #4f46e5;
+    --rfq-teal-subtle: rgba(99, 102, 241, 0.12);
 
     --rfq-success: #10b981;
     --rfq-success-dark: #059669;
@@ -30,14 +32,14 @@
     --rfq-danger: #ef4444;
     --rfq-danger-subtle: rgba(239, 68, 68, 0.12);
 
-    --rfq-purple: #8b5cf6;
-    --rfq-purple-subtle: rgba(139, 92, 246, 0.12);
+    --rfq-purple: #9333ea;
+    --rfq-purple-subtle: rgba(168, 85, 247, 0.12);
 
     --rfq-surface: #ffffff;
-    --rfq-surface-card: rgba(255, 255, 255, 0.96);
+    --rfq-surface-card: rgba(255, 255, 255, 0.90);
     --rfq-surface-subtle: #f8fafc;
     --rfq-border-subtle: #e2e8f0;
-    --rfq-border-focus: #38bdf8;
+    --rfq-border-focus: #a855f7;
 
     --rfq-text-strong: #0f172a;
     --rfq-text-medium: #334155;
@@ -45,9 +47,9 @@
     --rfq-text-subtle: #94a3b8;
 
     --rfq-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.05);
-    --rfq-shadow-md: 0 4px 16px -2px rgba(15, 23, 42, 0.06);
-    --rfq-shadow-lg: 0 14px 34px -4px rgba(15, 23, 42, 0.09);
-    --rfq-shadow-xl: 0 24px 50px -6px rgba(15, 23, 42, 0.16);
+    --rfq-shadow-md: 0 8px 24px rgba(148, 163, 184, 0.08);
+    --rfq-shadow-lg: 0 14px 34px -4px rgba(168, 85, 247, 0.14);
+    --rfq-shadow-xl: 0 20px 48px rgba(15, 23, 42, 0.12);
 
     --rfq-radius-sm: 6px;
     --rfq-radius-md: 10px;
@@ -55,81 +57,168 @@
     --rfq-radius-xl: 18px;
 }
 
-/* Page Scaffolding */
+/* ==========================================================================
+   HR-STYLE FLAT PAGE HEADER (No Box Ribbon - Compact Spacing)
+   ========================================================================== */
+.hr-parent-header {
+    margin-bottom: 2px;
+    width: 100%;
+}
+.hr-parent-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 0px;
+    flex-wrap: wrap;
+}
+.hr-parent-title {
+    font-family: var(--font-heading, 'Poppins', sans-serif);
+    font-size: 21px;
+    font-weight: 700;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    letter-spacing: -0.02em;
+    margin: 0;
+}
+.hr-parent-title i {
+    width: 34px;
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9px;
+    background: linear-gradient(135deg, rgba(236, 72, 153, 0.14), rgba(168, 85, 247, 0.20));
+    border: 1px solid rgba(168, 85, 247, 0.32);
+    color: #9333ea;
+    font-size: 18px;
+    box-shadow: 0 4px 14px rgba(168, 85, 247, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.8);
+    flex-shrink: 0;
+}
+.hr-parent-subtitle {
+    font-size: 12.5px;
+    color: #64748b;
+    font-weight: 400;
+    margin: 1px 0 0 0;
+}
+.hr-page-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* Page Scaffolding - Compact Gaps */
 .rfq-workspace-container {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 8px;
     width: 100%;
     padding-bottom: 50px;
 }
 
 /* ==========================================================================
-   RFQ SEGMENTED TAB WRAPPER & TRACKER DIRECTORY STYLES
+   HR THEME GLASSMORPHIC SEGMENTED TABS BAR (Compact Ergonomics)
    ========================================================================== */
 .rfq-nav-tabs-bar {
     display: flex;
     align-items: center;
-    gap: 10px;
-    background: #ffffff;
-    border: 1px solid var(--rfq-border-subtle);
-    border-radius: var(--rfq-radius-lg);
-    padding: 8px 12px;
-    box-shadow: var(--rfq-shadow-sm);
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    border-radius: 12px;
+    padding: 3px 5px;
+    box-shadow: 0 4px 16px rgba(148, 163, 184, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.95);
     flex-wrap: wrap;
+    margin-bottom: 2px;
 }
 .rfq-tab-btn {
     display: inline-flex;
     align-items: center;
-    gap: 10px;
-    padding: 10px 20px;
-    border-radius: var(--rfq-radius-md);
-    font-size: 0.88rem;
-    font-weight: 700;
-    color: var(--rfq-text-muted);
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 9px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
     background: transparent;
-    border: none;
+    border: 1px solid transparent;
     cursor: pointer;
-    transition: all 0.16s ease;
-    font-family: inherit;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    font-family: var(--font-family, 'Poppins', sans-serif);
+    white-space: nowrap;
+    position: relative;
+    line-height: 1.2;
 }
-.rfq-tab-btn:hover {
-    color: var(--rfq-text-strong);
-    background: #f8fafc;
+.rfq-tab-btn i {
+    font-size: 16px;
+    color: #94a3b8;
+    transition: color 0.2s ease, transform 0.2s ease;
+}
+.rfq-tab-btn:hover:not(.active) {
+    color: #9333ea;
+    background: rgba(168, 85, 247, 0.08);
+}
+.rfq-tab-btn:hover:not(.active) i {
+    color: #9333ea;
+    transform: scale(1.1);
 }
 .rfq-tab-btn.active {
-    background: var(--rfq-primary-gradient);
-    color: #ffffff;
-    box-shadow: 0 4px 14px rgba(2, 132, 199, 0.28);
+    background: #ffffff;
+    color: #9333ea;
+    border-color: rgba(168, 85, 247, 0.28);
+    box-shadow: 0 4px 14px rgba(168, 85, 247, 0.14), 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+.rfq-tab-btn.active i {
+    background: linear-gradient(135deg, #ec4899, #a855f7);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 700;
+}
+.rfq-tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 16%;
+    right: 16%;
+    height: 3px;
+    background: linear-gradient(90deg, #ec4899, #a855f7);
+    border-radius: 3px 3px 0 0;
 }
 .rfq-tab-count {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 2px 8px;
-    border-radius: 12px;
-    font-size: 0.75rem;
-    font-weight: 800;
-    background: var(--rfq-primary-subtle);
-    color: var(--rfq-primary-dark);
+    padding: 2px 7px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 700;
+    background: rgba(168, 85, 247, 0.12);
+    color: #9333ea;
+    transition: all 0.2s ease;
 }
 .rfq-tab-btn.active .rfq-tab-count {
-    background: rgba(255, 255, 255, 0.24);
-    color: #ffffff;
+    background: rgba(168, 85, 247, 0.18);
+    color: #7c3aed;
 }
 .rfq-tab-badge {
     display: inline-flex;
     align-items: center;
     padding: 2px 7px;
     border-radius: 6px;
-    font-size: 0.72rem;
+    font-size: 10.5px;
     font-weight: 700;
-    background: #f1f5f9;
-    color: #475569;
+    background: rgba(168, 85, 247, 0.12);
+    color: #9333ea;
 }
 .rfq-tab-btn.active .rfq-tab-badge {
-    background: rgba(255, 255, 255, 0.24);
-    color: #ffffff;
+    background: rgba(168, 85, 247, 0.18);
+    color: #7c3aed;
 }
 .rfq-tab-pane {
     display: flex;
@@ -137,29 +226,51 @@
     gap: 20px;
     width: 100%;
 }
+#pane-tab-builder.rfq-tab-pane {
+    gap: 4px;
+}
 
-/* KPI Cluster Grid for RFQ Directory */
+/* KPI Cluster Grid for RFQ Directory (Compacted HR Metric Cards) */
 .rfq-kpi-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px;
 }
 .rfq-kpi-card {
-    background: #ffffff;
-    border: 1px solid var(--rfq-border-subtle);
-    border-radius: var(--rfq-radius-lg);
-    padding: 16px 20px;
-    box-shadow: var(--rfq-shadow-sm);
+    background: rgba(255, 255, 255, 0.90);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.95);
+    border-radius: 12px;
+    padding: 8px 14px;
+    box-shadow: 0 4px 16px rgba(148, 163, 184, 0.06), 0 1px 3px rgba(0, 0, 0, 0.02), inset 0 1px 1px rgba(255, 255, 255, 0.95);
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 2px;
     cursor: pointer;
-    transition: all 0.16s ease;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    overflow: hidden;
+}
+.rfq-kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2.5px;
+    background: linear-gradient(90deg, #ec4899 0%, #a855f7 50%, #8b5cf6 100%);
+    opacity: 0;
+    transition: opacity 0.2s ease;
 }
 .rfq-kpi-card:hover {
     transform: translateY(-2px);
-    box-shadow: var(--rfq-shadow-md);
-    border-color: var(--rfq-primary-light);
+    background: rgba(255, 255, 255, 0.98);
+    border-color: rgba(168, 85, 247, 0.38);
+    box-shadow: 0 8px 20px rgba(168, 85, 247, 0.12), 0 2px 6px rgba(236, 72, 153, 0.06);
+}
+.rfq-kpi-card:hover::before {
+    opacity: 1;
 }
 .rfq-kpi-header {
     display: flex;
@@ -167,58 +278,64 @@
     justify-content: space-between;
 }
 .rfq-kpi-label {
-    font-size: 0.78rem;
-    font-weight: 700;
+    font-size: 10.5px;
+    font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    color: var(--rfq-text-muted);
+    color: #64748b;
 }
 .rfq-kpi-icon {
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 16px;
-    background: var(--rfq-primary-subtle);
-    color: var(--rfq-primary-dark);
+    font-size: 15px;
+    background: linear-gradient(135deg, rgba(236, 72, 153, 0.14), rgba(168, 85, 247, 0.20));
+    border: 1px solid rgba(168, 85, 247, 0.32);
+    color: #9333ea;
 }
 .rfq-kpi-icon.draft {
     background: #f1f5f9;
     color: #64748b;
+    border-color: #cbd5e1;
 }
 .rfq-kpi-icon.awaiting {
-    background: #fffbeb;
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.14), rgba(217, 119, 6, 0.20));
     color: #d97706;
+    border: 1px solid rgba(245, 158, 11, 0.32);
 }
 .rfq-kpi-icon.awarded {
-    background: #ecfdf5;
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.14), rgba(5, 150, 105, 0.20));
     color: #059669;
+    border: 1px solid rgba(168, 85, 247, 0.32);
 }
 .rfq-kpi-val {
-    font-size: 1.55rem;
+    font-family: var(--font-heading, 'Poppins', sans-serif);
+    font-size: 19px;
     font-weight: 800;
-    color: var(--rfq-text-strong);
+    color: #0f172a;
     font-variant-numeric: tabular-nums;
-    line-height: 1.1;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
 }
 .rfq-kpi-sub {
-    font-size: 0.75rem;
-    color: var(--rfq-text-muted);
+    font-size: 10px;
+    color: #94a3b8;
 }
 
-/* Status Filter Pills Bar */
+/* Status Filter Pills Bar - Compact */
 .rfq-filter-pills-bar {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
     flex-wrap: wrap;
 }
 .rfq-filter-pill {
-    padding: 6px 12px;
+    padding: 3.5px 9px;
     border-radius: 20px;
-    font-size: 0.78rem;
+    font-size: 11px;
     font-weight: 600;
     color: var(--rfq-text-muted);
     background: #f8fafc;
@@ -226,53 +343,59 @@
     cursor: pointer;
     transition: all 0.15s ease;
     font-family: inherit;
+    line-height: 1.2;
 }
 .rfq-filter-pill:hover {
     background: #f1f5f9;
     color: var(--rfq-text-strong);
 }
 .rfq-filter-pill.active {
-    background: var(--rfq-primary);
-    color: #ffffff;
-    border-color: var(--rfq-primary);
+    background: linear-gradient(135deg, rgba(236, 72, 153, 0.12), rgba(168, 85, 247, 0.18));
+    color: #9333ea;
+    border-color: rgba(168, 85, 247, 0.35);
+    font-weight: 700;
+    box-shadow: 0 1px 3px rgba(168, 85, 247, 0.08);
 }
 
-/* Directory Status Badges */
+/* Directory Status Badges - HR Theme Glass Badges */
 .status-pill {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-    padding: 3px 10px;
+    gap: 4px;
+    padding: 3px 9px;
     border-radius: 20px;
-    font-size: 0.74rem;
+    font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.02em;
+    line-height: 1;
     white-space: nowrap;
+    flex-shrink: 0;
 }
 .status-pill.draft {
-    background: #f1f5f9;
-    color: #475569;
-    border: 1px solid #cbd5e1;
+    background: linear-gradient(135deg, rgba(236, 72, 153, 0.10), rgba(168, 85, 247, 0.16));
+    color: #9333ea;
+    border: 1px solid rgba(168, 85, 247, 0.28);
+    box-shadow: 0 1px 4px rgba(168, 85, 247, 0.08);
 }
 .status-pill.sent {
-    background: #fffbeb;
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(217, 119, 6, 0.18));
     color: #b45309;
-    border: 1px solid #fcd34d;
+    border: 1px solid rgba(245, 158, 11, 0.32);
 }
 .status-pill.received {
-    background: #eff6ff;
-    color: #1d4ed8;
-    border: 1px solid #93c5fd;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.12), rgba(14, 165, 233, 0.18));
+    color: #0369a1;
+    border: 1px solid rgba(14, 165, 233, 0.32);
 }
 .status-pill.awarded {
-    background: #ecfdf5;
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(5, 150, 105, 0.18));
     color: #047857;
-    border: 1px solid #6ee7b7;
+    border: 1px solid rgba(16, 185, 129, 0.32);
 }
 .status-pill.cancelled {
-    background: #fef2f2;
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(220, 38, 38, 0.18));
     color: #b91c1c;
-    border: 1px solid #fca5a5;
+    border: 1px solid rgba(239, 68, 68, 0.32);
 }
 
 /* Global Pessimistic UI Locking Spinner Overlay */
@@ -313,89 +436,60 @@
     animation: rfqFlashGreen 1.4s ease-out;
 }
 
-/* Unsaved Draft Banner */
-.rfq-draft-banner {
-    display: none;
+/* Compact RFQ Command Bar & Reference Pill */
+.rfq-ref-pill {
+    display: inline-flex;
     align-items: center;
-    justify-content: space-between;
-    background: linear-gradient(90deg, #eff6ff 0%, #f0fdf4 100%);
-    border: 1px solid #bfdbfe;
-    border-radius: var(--rfq-radius-md);
-    padding: 12px 18px;
-    color: #1e40af;
-    font-size: 0.88rem;
-    font-weight: 500;
-    box-shadow: var(--rfq-shadow-sm);
-}
-.rfq-draft-banner.is-visible {
-    display: flex;
+    gap: 6px;
+    padding: 3px 10px;
+    background: linear-gradient(135deg, rgba(236, 72, 153, 0.08), rgba(168, 85, 247, 0.14));
+    border: 1px solid rgba(168, 85, 247, 0.28);
+    border-radius: 6px;
+    font-family: monospace;
+    font-size: 13px;
+    font-weight: 700;
+    color: #9333ea;
 }
 
-/* Header & Command Bar */
 .rfq-command-bar {
     display: flex;
     align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
-    gap: 16px;
+    gap: 8px;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 0;
+    box-shadow: none;
+    margin: 0 0 2px 0;
+}
+
+.rfq-command-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.rfq-builder-audit-panel {
     background: var(--rfq-surface);
     border: 1px solid var(--rfq-border-subtle);
     border-radius: var(--rfq-radius-lg);
-    padding: 18px 22px;
     box-shadow: var(--rfq-shadow-sm);
+    display: none;
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px;
+    margin-top: 12px;
+    animation: fadeInDown 0.18s ease-out;
 }
-.rfq-title-group {
+.rfq-builder-audit-panel.is-active {
     display: flex;
-    align-items: center;
-    gap: 14px;
-}
-.rfq-icon-badge {
-    width: 46px;
-    height: 46px;
-    border-radius: 12px;
-    background: var(--rfq-primary-gradient);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #ffffff;
-    font-size: 24px;
-    box-shadow: 0 6px 16px rgba(2, 132, 199, 0.28);
-}
-.rfq-title-text h1 {
-    font-size: 1.35rem;
-    font-weight: 800;
-    color: var(--rfq-text-strong);
-    margin: 0;
-    letter-spacing: -0.01em;
-}
-.rfq-title-meta {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-top: 3px;
-    font-size: 0.82rem;
-    color: var(--rfq-text-muted);
-}
-.rfq-status-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 3px 9px;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.02em;
-    text-transform: uppercase;
-}
-.rfq-status-badge.draft {
-    background: #f1f5f9;
-    color: #475569;
-    border: 1px solid #cbd5e1;
 }
 .rfq-status-badge.ready {
-    background: var(--rfq-teal-subtle);
-    color: var(--rfq-teal-dark);
-    border: 1px solid rgba(13, 148, 136, 0.3);
+    background: rgba(168, 85, 247, 0.12);
+    color: #9333ea;
+    border: 1px solid rgba(168, 85, 247, 0.3);
 }
 
 .rfq-actions-group {
@@ -409,15 +503,15 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
-    padding: 9px 16px;
+    padding: 8px 16px;
     border-radius: var(--rfq-radius-md);
-    font-size: 0.86rem;
+    font-size: 13px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.16s ease;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     border: 1px solid transparent;
     text-decoration: none;
-    font-family: inherit;
+    font-family: var(--font-family, 'Poppins', sans-serif);
     line-height: 1.2;
 }
 .rfq-btn:disabled {
@@ -426,32 +520,41 @@
     pointer-events: none;
 }
 .rfq-btn-outline {
-    background: #ffffff;
-    border-color: var(--rfq-border-subtle);
-    color: var(--rfq-text-medium);
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    color: #334155;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 .rfq-btn-outline:hover {
-    background: #f8fafc;
-    border-color: #cbd5e1;
-    color: var(--rfq-text-strong);
+    background: linear-gradient(135deg, rgba(236, 72, 153, 0.08), rgba(168, 85, 247, 0.14));
+    border-color: rgba(168, 85, 247, 0.3);
+    color: #9333ea;
+    box-shadow: 0 4px 12px rgba(168, 85, 247, 0.10);
+    transform: translateY(-1px);
 }
 .rfq-btn-teal {
-    background: var(--rfq-teal);
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
     color: #ffffff;
-    box-shadow: 0 2px 8px rgba(13, 148, 136, 0.25);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.28);
 }
 .rfq-btn-teal:hover {
-    background: var(--rfq-teal-dark);
+    background: linear-gradient(135deg, #4f46e5, #4338ca);
     transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(99, 102, 241, 0.38);
+    color: #ffffff;
 }
 .rfq-btn-primary {
-    background: var(--rfq-primary-gradient);
+    background: linear-gradient(135deg, #ec4899, #a855f7);
     color: #ffffff;
-    box-shadow: 0 4px 14px rgba(2, 132, 199, 0.32);
+    box-shadow: 0 4px 14px rgba(168, 85, 247, 0.32), inset 0 1px 1px rgba(255, 255, 255, 0.4);
 }
 .rfq-btn-primary:hover {
-    filter: brightness(1.06);
+    background: linear-gradient(135deg, #db2777, #9333ea);
     transform: translateY(-1px);
+    box-shadow: 0 8px 22px rgba(168, 85, 247, 0.42);
+    color: #ffffff;
 }
 .rfq-btn-danger {
     background: #fff;
@@ -479,16 +582,43 @@
     color: #64748b;
 }
 
-/* Industrial Grid for Business & Vendor Details */
-.rfq-top-grid {
+/* Industrial Workspace Asymmetric Grid (Approx. 4fr Left / 6fr Right) */
+.rfq-builder-workspace-grid {
     display: grid;
-    grid-template-columns: 1.25fr 1fr;
-    gap: 20px;
+    grid-template-columns: minmax(360px, 4.2fr) minmax(480px, 5.8fr);
+    gap: 10px;
+    align-items: stretch;
 }
-@media (max-width: 1024px) {
-    .rfq-top-grid {
+@media (max-width: 1100px) {
+    .rfq-builder-workspace-grid {
         grid-template-columns: 1fr;
     }
+}
+
+.rfq-builder-left-col {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.rfq-builder-right-col {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-width: 0;
+}
+
+.rfq-builder-right-col .rfq-items-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.rfq-builder-right-col .rfq-table-responsive {
+    flex: 1 1 auto;
+    max-height: calc(100vh - 290px);
+    min-height: 260px;
+    overflow-y: auto;
 }
 
 .rfq-panel-card {
@@ -504,44 +634,44 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 14px 20px;
+    padding: 8px 14px;
     background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
     border-bottom: 1px solid var(--rfq-border-subtle);
 }
 .rfq-panel-title {
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 0.92rem;
+    gap: 6px;
+    font-size: 0.84rem;
     font-weight: 700;
     color: var(--rfq-text-strong);
     letter-spacing: 0.01em;
 }
 .rfq-panel-title i {
-    font-size: 18px;
+    font-size: 16px;
     color: var(--rfq-primary);
 }
 .rfq-panel-body {
-    padding: 20px;
+    padding: 10px 14px;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 8px;
 }
 
-/* Form Controls & Inputs */
+/* Space-Saving Form Controls & Merged Inputs */
 .rfq-form-row {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 14px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
 }
 .rfq-field {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 3px;
 }
 .rfq-dual-inputs {
     display: flex;
-    gap: 8px;
+    gap: 6px;
     align-items: center;
 }
 .rfq-dual-inputs .rfq-input {
@@ -549,7 +679,7 @@
     min-width: 0;
 }
 .rfq-label {
-    font-size: 0.78rem;
+    font-size: 0.72rem;
     font-weight: 700;
     color: var(--rfq-text-medium);
     text-transform: uppercase;
@@ -557,22 +687,23 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    margin-bottom: 1px;
 }
 .rfq-label-badge {
-    font-size: 0.68rem;
+    font-size: 0.65rem;
     font-weight: 600;
     color: var(--rfq-primary-dark);
     background: var(--rfq-primary-subtle);
-    padding: 1px 6px;
+    padding: 1px 5px;
     border-radius: 4px;
     text-transform: none;
 }
 .rfq-input, .rfq-select, .rfq-textarea {
     width: 100%;
-    padding: 9px 12px;
+    padding: 6px 10px;
     border: 1.5px solid var(--rfq-border-subtle);
-    border-radius: var(--rfq-radius-md);
-    font-size: 0.88rem;
+    border-radius: 7px;
+    font-size: 0.82rem;
     color: var(--rfq-text-strong);
     background: #ffffff;
     transition: all 0.15s ease;
@@ -592,30 +723,143 @@
 }
 .rfq-textarea {
     resize: vertical;
-    min-height: 72px;
+    min-height: 44px;
+    height: 44px;
+    padding: 6px 10px;
+    font-size: 0.8rem;
+    line-height: 1.35;
 }
 
-/* Auto-fill Vendor Live Info Banner */
+/* Searchable Target Vendor Combobox */
+.rfq-vendor-combobox {
+    position: relative;
+    width: 100%;
+}
+.rfq-vendor-combo-trigger {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 10px;
+    border: 1.5px solid var(--rfq-border-subtle);
+    border-radius: 7px;
+    background: #ffffff;
+    cursor: pointer;
+    font-size: 0.82rem;
+    color: var(--rfq-text-strong);
+    transition: all 0.15s ease;
+    user-select: none;
+    text-align: left;
+}
+.rfq-vendor-combo-trigger:hover {
+    border-color: #cbd5e1;
+    background: #fafafa;
+}
+.rfq-vendor-combo-trigger.is-active,
+.rfq-vendor-combo-trigger:focus {
+    outline: none;
+    border-color: #a855f7;
+    box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.18);
+}
+.rfq-vendor-combo-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    z-index: 1050;
+    background: #ffffff;
+    border: 1px solid rgba(226, 232, 240, 0.95);
+    border-radius: 9px;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.15), 0 4px 10px rgba(0, 0, 0, 0.05);
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    animation: fadeInDown 0.15s ease-out;
+}
+.rfq-vendor-combo-dropdown.is-active {
+    display: flex;
+}
+.rfq-vendor-combo-search-wrap {
+    padding: 7px;
+    border-bottom: 1px solid #f1f5f9;
+    background: #f8fafc;
+    position: relative;
+}
+.rfq-vendor-combo-search-wrap i {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    font-size: 14px;
+}
+.rfq-vendor-combo-search-input {
+    width: 100%;
+    padding: 5px 8px 5px 28px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    box-sizing: border-box;
+    outline: none;
+}
+.rfq-vendor-combo-search-input:focus {
+    border-color: #a855f7;
+    box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.15);
+}
+.rfq-vendor-combo-list {
+    max-height: 220px;
+    overflow-y: auto;
+    padding: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.rfq-vendor-combo-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 9px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.79rem;
+    transition: background 0.1s ease;
+}
+.rfq-vendor-combo-item:hover,
+.rfq-vendor-combo-item.is-selected {
+    background: #f3e8ff;
+}
+.rfq-vendor-combo-item.is-selected {
+    font-weight: 700;
+    color: #7e22ce;
+}
+.rfq-vendor-combo-empty {
+    padding: 14px;
+    text-align: center;
+    color: #94a3b8;
+    font-size: 0.78rem;
+}
+
+/* Compact Active Vendor Info Banner */
 .rfq-vendor-pill-box {
     display: flex;
     align-items: center;
-    gap: 12px;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: var(--rfq-radius-md);
-    padding: 12px 14px;
+    gap: 8px;
+    background: linear-gradient(135deg, rgba(245, 243, 255, 0.65), rgba(248, 250, 252, 0.85));
+    border: 1px solid rgba(216, 180, 254, 0.45);
+    border-radius: 8px;
+    padding: 5px 9px;
 }
 .rfq-vendor-avatar {
-    width: 42px;
-    height: 42px;
-    border-radius: 10px;
-    background: var(--rfq-primary);
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    background: linear-gradient(135deg, #ec4899, #a855f7);
     color: #ffffff;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 800;
-    font-size: 1.1rem;
+    font-size: 0.78rem;
     flex-shrink: 0;
 }
 .rfq-vendor-summary {
@@ -625,19 +869,18 @@
 .rfq-vendor-name-row {
     display: flex;
     align-items: center;
-    gap: 8px;
+    justify-content: space-between;
     font-weight: 700;
-    font-size: 0.92rem;
+    font-size: 0.81rem;
     color: var(--rfq-text-strong);
 }
 .rfq-vendor-detail-row {
     display: flex;
     align-items: center;
-    gap: 12px;
-    font-size: 0.79rem;
+    gap: 8px;
+    font-size: 0.72rem;
     color: var(--rfq-text-muted);
-    margin-top: 2px;
-    flex-wrap: wrap;
+    margin-top: 1px;
 }
 
 /* ==========================================================================
@@ -655,29 +898,29 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 16px 20px;
+    padding: 8px 14px;
     background: #ffffff;
     border-bottom: 1px solid var(--rfq-border-subtle);
     flex-wrap: wrap;
-    gap: 12px;
+    gap: 8px;
 }
 .rfq-toolbar-left {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
 }
 .rfq-items-counter-pill {
     background: var(--rfq-primary-subtle);
     color: var(--rfq-primary-dark);
-    font-size: 0.8rem;
+    font-size: 11px;
     font-weight: 700;
-    padding: 3px 10px;
-    border-radius: 14px;
+    padding: 2px 7px;
+    border-radius: 10px;
 }
 .rfq-toolbar-right {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
 }
 
 /* Table Container with Horizontal Scroll */
@@ -1542,6 +1785,29 @@
     <!-- Toast Notifications Root -->
     <div class="rfq-toast-container" id="rfqToastContainer"></div>
 
+    <!-- 1. Page Header — HR-Style Flat Title Row (No Box Ribbon) -->
+    <div class="hr-parent-header">
+        <div class="hr-parent-title-row">
+            <div>
+                <h1 class="hr-parent-title">
+                    <i class="ph ph-handshake"></i>
+                    <span>Request for Quotations (RFQ)</span>
+                </h1>
+                <p class="hr-parent-subtitle">Procurement tender workspace, quote comparisons, supplier bid scoring, and conversion to Purchase Orders.</p>
+            </div>
+            <div class="hr-page-actions">
+                <button type="button" class="hr-btn hr-btn-secondary" onclick="exportRfqDirectoryCSV()" data-tooltip="Export Tender Records to CSV">
+                    <i class="ph ph-download-simple"></i>
+                    <span>Export</span>
+                </button>
+                <button type="button" class="hr-btn hr-btn-primary" onclick="switchRfqTab('tab-builder'); resetRfqForm();" data-tooltip="Launch RFQ Tender Builder">
+                    <i class="ph ph-plus-circle"></i>
+                    <span>New RFQ</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- RFQ Tab Wrapper Bar -->
     <nav class="rfq-nav-tabs-bar" id="rfqTabsBar">
         <button type="button" class="rfq-tab-btn active" id="tabBtnList" data-tab="tab-list" onclick="switchRfqTab('tab-list')">
@@ -1553,11 +1819,6 @@
             <i class="ph ph-plus-circle"></i>
             <span id="tabBuilderTitle">Request for Quotation Builder</span>
             <span class="rfq-tab-badge" id="tabBuilderBadge">New RFQ</span>
-        </button>
-        <button type="button" class="rfq-tab-btn" id="tabBtnAudit" data-tab="tab-audit" onclick="switchRfqTab('tab-audit')">
-            <i class="ph ph-clock-counter-clockwise"></i>
-            <span>Audit Trail & Activity Log</span>
-            <span class="rfq-tab-count" id="tabRfqAuditCount">0</span>
         </button>
     </nav>
 
@@ -1604,10 +1865,10 @@
         <!-- Filter & Search Toolbar -->
         <div class="rfq-panel-card">
             <div class="rfq-items-toolbar">
-                <div class="rfq-toolbar-left" style="flex: 1; flex-wrap: wrap; gap: 10px;">
-                    <div style="position: relative; flex: 1; min-width: 240px; max-width: 380px;">
-                        <i class="ph ph-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 16px;"></i>
-                        <input type="text" class="rfq-input" id="rfqDirectorySearch" oninput="handleRfqDirectorySearch(this.value)" placeholder="Search RFQ #, vendor partner, contact..." style="padding-left: 36px;">
+                <div class="rfq-toolbar-left" style="flex: 1; flex-wrap: wrap; gap: 8px;">
+                    <div style="position: relative; flex: 1; min-width: 220px; max-width: 360px;">
+                        <i class="ph ph-magnifying-glass" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 14px;"></i>
+                        <input type="text" class="rfq-input" id="rfqDirectorySearch" oninput="handleRfqDirectorySearch(this.value)" placeholder="Search RFQ #, vendor partner, contact..." style="padding: 5px 10px 5px 30px; font-size: 12px; height: 32px;">
                     </div>
                     <div class="rfq-filter-pills-bar" id="rfqStatusFilterBar">
                         <button type="button" class="rfq-filter-pill active" data-status="all" onclick="filterRfqByStatus('all')">All (<span id="countPillAll">0</span>)</button>
@@ -1617,9 +1878,29 @@
                         <button type="button" class="rfq-filter-pill" data-status="Awarded" onclick="filterRfqByStatus('Awarded')">Awarded (<span id="countPillAwarded">0</span>)</button>
                     </div>
                 </div>
-                <div class="rfq-toolbar-right">
-                    <button type="button" class="rfq-btn rfq-btn-primary" onclick="startNewRfqFromDirectory()">
-                        <i class="ph ph-plus-circle"></i> + Create Request for Quotation
+                <div class="rfq-toolbar-right" style="position: relative; display: flex; align-items: center; gap: 8px;">
+                    <!-- Column Visibility Filter Trigger -->
+                    <div style="position: relative;">
+                        <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" id="btnDirectoryColFilter" onclick="toggleDirectoryColDropdown(event)" data-tooltip="Customize visible columns" style="padding: 5px 10px; font-size: 12px; border-radius: 8px;">
+                            <i class="ph ph-columns"></i>
+                            <span>Columns</span>
+                            <i class="ph ph-caret-down" style="font-size: 10px; margin-left: 2px;"></i>
+                        </button>
+
+                        <!-- Dynamic Column Filter Dropdown Menu -->
+                        <div class="inv-col-dropdown-menu" id="directoryColDropdownMenu" style="display: none; position: absolute; right: 0; top: calc(100% + 6px); background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(15,23,42,0.15); padding: 12px; min-width: 220px; z-index: 1000;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; margin-bottom: 8px;">
+                                <span style="font-size: 12px; font-weight: 700; color: #0f172a;">Column Visibility</span>
+                                <button type="button" onclick="resetDirectoryColumns()" style="font-size: 11px; color: #9333ea; background: none; border: none; cursor: pointer; text-decoration: underline;">Reset</button>
+                            </div>
+                            <div id="directoryColCheckboxesList" style="display: flex; flex-direction: column; gap: 6px; max-height: 260px; overflow-y: auto;">
+                                <!-- Generated by JS -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="button" class="rfq-btn rfq-btn-primary" onclick="startNewRfqFromDirectory()" style="padding: 6px 12px; font-size: 12px; border-radius: 8px;">
+                        <i class="ph ph-plus-circle"></i> <span>Create RFQ</span>
                     </button>
                 </div>
             </div>
@@ -1627,23 +1908,36 @@
             <!-- RFQ Directory Table -->
             <div class="rfq-table-responsive">
                 <table class="rfq-table" id="rfqDirectoryTable">
-                    <thead>
-                        <tr>
-                            <th style="width: 130px;">RFQ Reference</th>
-                            <th style="min-width: 210px;">Vendor Partner & Contact</th>
-                            <th style="width: 105px;">Date Issued</th>
-                            <th style="width: 110px;">Quotation Due</th>
-                            <th style="width: 85px; text-align: center;">Line Items</th>
-                            <th style="width: 125px; text-align: right;">Est. Budget</th>
-                            <th style="width: 140px; text-align: center;">Status</th>
-                            <th style="width: 180px; text-align: center;">Manager Approval</th>
-                            <th style="width: 130px; text-align: center;">Actions</th>
+                    <thead id="rfqDirectoryThead">
+                        <tr id="rfqDirectoryTheadRow">
+                            <!-- Rendered dynamically by renderDirectoryTableHeader() with column resizers & display filters -->
                         </tr>
                     </thead>
                     <tbody id="rfqDirectoryTbody">
                         <!-- Rendered dynamically -->
                     </tbody>
                 </table>
+            </div>
+
+            <!-- Client-Side Pagination Container -->
+            <div class="rfq-pagination-bar" id="rfqDirectoryPaginationBar" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 16px; border-top: 1px solid #f1f5f9; background: rgba(248, 250, 252, 0.65); flex-wrap: wrap; gap: 10px;">
+                <div style="font-size: 12px; color: #64748b;" id="rfqPaginationInfo">
+                    Showing <strong>1</strong> to <strong>10</strong> of <strong>0</strong> tenders
+                </div>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #64748b;">
+                        <span>Show</span>
+                        <select id="rfqPageSizeSelect" onchange="changeDirectoryPageSize(this.value)" class="hr-select" style="padding: 3px 8px; font-size: 11.5px; border-radius: 6px;">
+                            <option value="10">10</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                        </select>
+                        <span>rows</span>
+                    </div>
+                    <div class="rfq-pagination-controls" id="rfqPaginationButtons" style="display: flex; align-items: center; gap: 4px;">
+                        <!-- Rendered by JS -->
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -1653,332 +1947,398 @@
          ==================================================================== -->
     <div class="rfq-tab-pane" id="pane-tab-builder" style="display: none;">
 
-        <!-- Unsaved Draft Recovery Notification -->
-        <div class="rfq-draft-banner" id="rfqDraftBanner">
-        <div style="display: flex; align-items: center; gap: 10px;">
-            <i class="ph ph-clock-counter-clockwise" style="font-size: 20px;"></i>
-            <span><strong>Draft Session Detected:</strong> An unsaved Request for Quotation session was recovered from local storage.</span>
-        </div>
-        <div style="display: flex; gap: 8px;">
-            <button type="button" class="rfq-btn rfq-btn-outline" style="padding: 5px 12px; font-size: 0.8rem;" onclick="dismissDraftBanner()">Dismiss</button>
-            <button type="button" class="rfq-btn rfq-btn-teal" style="padding: 5px 14px; font-size: 0.8rem;" onclick="restoreDraftSession()">Resume Draft</button>
-        </div>
-    </div>
-
     <!-- Top Command & Action Bar -->
     <div class="rfq-command-bar">
-        <div class="rfq-title-group">
-            <div class="rfq-icon-badge">
-                <i class="ph ph-file-text"></i>
-            </div>
-            <div class="rfq-title-text">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <h1 id="rfqDocumentTitle">Request for Quotation</h1>
-                    <span class="rfq-status-badge draft" id="rfqStatusBadge">
-                        <i class="ph ph-dot"></i> Draft RFQ
-                    </span>
-                </div>
-                <div class="rfq-title-meta">
-                    <span>Reference: <strong id="rfqRefDisplay">RFQ-2026-0042</strong></span>
-                    <span>•</span>
-                    <span>Created By: <strong>{{ auth()->user()->name ?? 'Procurement Officer' }}</strong></span>
-                    <span>•</span>
-                    <span id="rfqLastSavedTime">Auto-saved to Local RAM</span>
-                </div>
-            </div>
+        <div class="rfq-command-left" style="display: flex; align-items: center; gap: 8px;">
+            <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.74rem; font-weight: 700; color: #64748b; letter-spacing: 0.04em; text-transform: uppercase;">
+                <i class="ph ph-sliders-horizontal" style="color: #9333ea; font-size: 14px;"></i> RFQ Workspace
+            </span>
         </div>
 
         <div class="rfq-actions-group">
-            <button type="button" class="rfq-btn rfq-btn-outline" onclick="switchRfqTab('tab-list')" title="Return to RFQ Directory & Tracker">
+            <button type="button" class="rfq-btn rfq-btn-outline" onclick="switchRfqTab('tab-list')" title="Return to RFQ Directory & Tracker" style="padding: 4px 10px; font-size: 11.5px;">
                 <i class="ph ph-arrow-left"></i> Directory
             </button>
-            <button type="button" class="rfq-btn rfq-btn-outline" onclick="resetRfqForm()" title="Clear form & start new RFQ">
+            <button type="button" class="rfq-btn rfq-btn-outline" onclick="resetRfqForm()" title="Clear form & start new RFQ" style="padding: 4px 10px; font-size: 11.5px;">
                 <i class="ph ph-arrow-counter-clockwise"></i> Reset
             </button>
-            <button type="button" class="rfq-btn rfq-btn-outline" onclick="openRecentRfqHistoryModal()" title="View previously dispatched RFQs">
-                <i class="ph ph-clock"></i> History
+            <button type="button" class="rfq-btn rfq-btn-outline" id="btnToggleBuilderAudit" onclick="openRfqAuditDrawer()" title="View Procurement Audit Trail & Activity Log" style="padding: 4px 10px; font-size: 11.5px;">
+                <i class="ph ph-clock-counter-clockwise"></i> Audit Trail
             </button>
-            <button type="button" class="rfq-btn rfq-btn-outline" onclick="openRfqDocumentPreview()" title="Open formal printable RFQ document preview (F8)">
-                <i class="ph ph-eye"></i> Preview Document <span class="rfq-hotkey-badge">F8</span>
+            <button type="button" class="rfq-btn rfq-btn-outline" onclick="openRfqDocumentPreview()" title="Open formal printable RFQ document preview (F8)" style="padding: 4px 10px; font-size: 11.5px;">
+                <i class="ph ph-eye"></i> Preview <span class="rfq-hotkey-badge">F8</span>
             </button>
-            <button type="button" class="rfq-btn rfq-btn-primary" id="btnDispatchEmail" onclick="openSendEmailModal()" title="Send RFQ package directly to vendor contact (F10)">
+            <button type="button" class="rfq-btn rfq-btn-primary" id="btnDispatchEmail" onclick="openSendEmailModal()" title="Send RFQ package directly to vendor contact (F10)" style="padding: 4px 12px; font-size: 11.5px;">
                 <i class="ph ph-paper-plane-tilt"></i> Send to Vendor <span class="rfq-hotkey-badge" style="background: rgba(255,255,255,0.25);">F10</span>
             </button>
         </div>
     </div>
 
-    <!-- Top Grid: Vendor Selection & Procurement Profile Parameters -->
-    <div class="rfq-top-grid">
+    <!-- Workspace Grid: Asymmetric 4.2fr Left (Cards 1 & 2) / 5.8fr Right (Card 3 Items Panel) -->
+    <div class="rfq-builder-workspace-grid">
 
-        <!-- Card 1: Vendor Selection & Company Profile Details -->
-        <div class="rfq-panel-card">
-            <div class="rfq-panel-header">
-                <div class="rfq-panel-title">
-                    <i class="ph ph-buildings"></i>
-                    <span>Vendor Selection & Partner Profile</span>
+        <!-- Left Column: Vendor Selection & RFQ Terms -->
+        <div class="rfq-builder-left-col">
+
+            <!-- Tender Reference & Identity Header Block (Prominent Placement with Description) -->
+            <div class="rfq-panel-card rfq-tender-ref-card" style="border-left: 4px solid #9333ea; background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(245, 243, 255, 0.65)); padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(135deg, #ec4899, #a855f7); color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 16px; box-shadow: 0 3px 10px rgba(168, 85, 247, 0.28);">
+                            <i class="ph ph-file-text"></i>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.68rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em;">Tender Reference Number</div>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span id="rfqRefDisplay" style="font-family: monospace; font-size: 1.15rem; font-weight: 800; color: #9333ea; letter-spacing: -0.01em;">RFQ-2026-0044</span>
+                                <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="copyRfqReference()" title="Copy Reference to Clipboard" style="padding: 2px 6px; font-size: 11px; height: 22px;">
+                                    <i class="ph ph-copy"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <span class="status-pill draft" id="rfqStatusBadge" style="font-size: 11px; padding: 3px 9px;">
+                            <i class="ph ph-dot"></i> Draft RFQ
+                        </span>
+                    </div>
                 </div>
-                <span class="rfq-label-badge" id="vendorCatalogBadge">Catalog Integrated</span>
-            </div>
-            <div class="rfq-panel-body">
-                <div class="rfq-field">
-                    <label class="rfq-label" for="vendorSelect">
-                        <span>Select Target Vendor *</span>
-                        <span class="rfq-label-badge">Auto-populates business fields</span>
+
+                <!-- Tender Purpose / Description Field -->
+                <div class="rfq-field" style="margin-top: 2px;">
+                    <label class="rfq-label" for="rfqTenderTitle" style="font-size: 0.70rem; color: #475569; margin-bottom: 3px;">
+                        <span>Tender Purpose / Title Description</span>
+                        <span class="rfq-label-badge" style="font-size: 0.62rem;">Project Reference</span>
                     </label>
-                    <select class="rfq-select" id="vendorSelect" onchange="handleVendorSelection(this.value)">
-                        <option value="">-- Choose Approved Vendor from Masterlist --</option>
-                        <!-- Populated dynamically from Vendor Masterlist AppStore -->
-                    </select>
+                    <input type="text" class="rfq-input" id="rfqTenderTitle" placeholder="e.g. Q4 Commissary Dry Goods Bulk Procurement — Manila Hub" style="font-size: 0.84rem; padding: 5px 10px; font-weight: 500;" oninput="handleRfqTitleChange(this.value)">
                 </div>
+            </div>
 
-                <!-- Active Vendor Summary Badge Box -->
-                <div class="rfq-vendor-pill-box" id="vendorSummaryBox" style="display: none;">
-                    <div class="rfq-vendor-avatar" id="vendorAvatarText">VM</div>
-                    <div class="rfq-vendor-summary">
-                        <div class="rfq-vendor-name-row">
-                            <span id="vendorTradeName">--</span>
-                            <span class="rfq-label-badge" id="vendorCategoryTag">Category</span>
-                        </div>
-                        <div class="rfq-vendor-detail-row">
-                            <span><i class="ph ph-identification-card"></i> TIN: <strong id="vendorTinDisplay">--</strong></span>
-                            <span>•</span>
-                            <span><i class="ph ph-map-pin"></i> <span id="vendorLocationDisplay">--</span></span>
+            <!-- Card 1: Vendor Selection & Company Profile Details -->
+            <div class="rfq-panel-card">
+                <div class="rfq-panel-header">
+                    <div class="rfq-panel-title">
+                        <i class="ph ph-buildings"></i>
+                        <span>Vendor Selection & Partner Profile</span>
+                    </div>
+                    <span class="rfq-label-badge" id="vendorCatalogBadge">Catalog Integrated</span>
+                </div>
+                <div class="rfq-panel-body">
+                    <div class="rfq-field">
+                        <label class="rfq-label" for="vendorSelect">
+                            <span>Select Target Vendor *</span>
+                            <span class="rfq-label-badge">Searchable Masterlist</span>
+                        </label>
+                        <!-- Hidden select for form bindings & backwards-compatibility -->
+                        <select class="rfq-select" id="vendorSelect" style="display: none;" onchange="handleVendorSelection(this.value)">
+                            <option value="">-- Choose Approved Vendor from Masterlist --</option>
+                            <!-- Populated dynamically -->
+                        </select>
+
+                        <!-- Custom Searchable Combobox -->
+                        <div class="rfq-vendor-combobox" id="rfqVendorCombobox">
+                            <button type="button" class="rfq-vendor-combo-trigger" id="rfqVendorComboTrigger" onclick="toggleVendorCombobox(event)">
+                                <span id="rfqVendorComboTriggerText" style="color: #64748b;">-- Choose Approved Vendor from Masterlist --</span>
+                                <i class="ph ph-caret-down" style="font-size: 14px; color: #94a3b8;"></i>
+                            </button>
+
+                            <div class="rfq-vendor-combo-dropdown" id="rfqVendorComboDropdown">
+                                <div class="rfq-vendor-combo-search-wrap" onclick="event.stopPropagation()">
+                                    <i class="ph ph-magnifying-glass"></i>
+                                    <input type="text" class="rfq-vendor-combo-search-input" id="rfqVendorSearchInput" placeholder="Search by name, code, category..." oninput="filterVendorCombobox(this.value)" autocomplete="off">
+                                </div>
+                                <div class="rfq-vendor-combo-list" id="rfqVendorComboList">
+                                    <!-- Populated dynamically -->
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="rfq-form-row">
-                    <div class="rfq-field">
-                        <label class="rfq-label" for="vendorContactPerson">
-                            <span>Contact Person / Designation</span>
-                        </label>
-                        <div class="rfq-dual-inputs">
+                    <!-- Active Vendor Summary Badge Box -->
+                    <div class="rfq-vendor-pill-box" id="vendorSummaryBox" style="display: none;">
+                        <div class="rfq-vendor-avatar" id="vendorAvatarText">VM</div>
+                        <div class="rfq-vendor-summary">
+                            <div class="rfq-vendor-name-row">
+                                <span id="vendorTradeName">--</span>
+                                <span class="rfq-label-badge" id="vendorCategoryTag">Category</span>
+                            </div>
+                            <div class="rfq-vendor-detail-row">
+                                <span><i class="ph ph-identification-card"></i> TIN: <strong id="vendorTinDisplay">--</strong></span>
+                                <span>•</span>
+                                <span><i class="ph ph-map-pin"></i> <span id="vendorLocationDisplay">--</span></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="rfq-form-row">
+                        <div class="rfq-field">
+                            <label class="rfq-label" for="vendorContactPerson">Contact Person</label>
                             <input type="text" class="rfq-input" id="vendorContactPerson" placeholder="Contact Person" readonly title="Primary Contact Person">
-                            <input type="text" class="rfq-input" id="vendorContactTitle" placeholder="Designation" readonly title="Contact Designation / Title" style="flex: 0.9;">
+                        </div>
+                        <div class="rfq-field">
+                            <label class="rfq-label" for="vendorContactTitle">Designation</label>
+                            <input type="text" class="rfq-input" id="vendorContactTitle" placeholder="Designation" readonly title="Contact Designation / Title">
                         </div>
                     </div>
+
+                    <div class="rfq-form-row">
+                        <div class="rfq-field">
+                            <label class="rfq-label" for="vendorEmail">
+                                <span>Recipient Email *</span>
+                            </label>
+                            <input type="email" class="rfq-input" id="vendorEmail" placeholder="vendor@example.com" title="Vendor Recipient Email" required>
+                        </div>
+                        <div class="rfq-field">
+                            <label class="rfq-label" for="vendorPhone">Phone / Mobile</label>
+                            <input type="text" class="rfq-input" id="vendorPhone" placeholder="Direct Phone" title="Contact Direct Phone">
+                        </div>
+                    </div>
+
                     <div class="rfq-field">
-                        <label class="rfq-label" for="vendorEmail">
-                            <span>Vendor Email * / Phone</span>
-                            <span class="rfq-label-badge">Quotation Recipient</span>
-                        </label>
-                        <div class="rfq-dual-inputs">
-                            <input type="email" class="rfq-input" id="vendorEmail" placeholder="vendor@example.com" title="Vendor Recipient Email" required style="flex: 1.25;">
-                            <input type="text" class="rfq-input" id="vendorPhone" placeholder="Phone / Mobile" title="Contact Direct Phone">
+                        <label class="rfq-label" for="vendorAddress">Physical / Billing Address</label>
+                        <input type="text" class="rfq-input" id="vendorAddress" placeholder="Street, Building, City, ZIP">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 2: Procurement Terms & Delivery Schedules -->
+            <div class="rfq-panel-card">
+                <div class="rfq-panel-header">
+                    <div class="rfq-panel-title">
+                        <i class="ph ph-calendar-check"></i>
+                        <span>RFQ Terms & Delivery Schedule</span>
+                    </div>
+                    <span class="rfq-label-badge">Auto Lead-Time Sync</span>
+                </div>
+                <div class="rfq-panel-body">
+                    <div class="rfq-form-row">
+                        <div class="rfq-field">
+                            <label class="rfq-label" for="rfqNumberInput">RFQ Reference #</label>
+                            <input type="text" class="rfq-input" id="rfqNumberInput" value="RFQ-2026-0042" readonly style="font-family: monospace; font-weight: 700; color: #9333ea;">
+                        </div>
+                        <div class="rfq-field">
+                            <label class="rfq-label" for="rfqDateIssued">Date Issued</label>
+                            <input type="date" class="rfq-input" id="rfqDateIssued">
+                        </div>
+                    </div>
+
+                    <div class="rfq-form-row">
+                        <div class="rfq-field">
+                            <label class="rfq-label" for="rfqDueDate">
+                                <span>Quotation Due *</span>
+                                <span class="rfq-label-badge" style="color: #b45309;">Submission</span>
+                            </label>
+                            <input type="date" class="rfq-input" id="rfqDueDate">
+                        </div>
+                        <div class="rfq-field">
+                            <label class="rfq-label" for="rfqExpectedDelivery">
+                                <span>Expected Delivery *</span>
+                                <span class="rfq-label-badge" id="leadTimeBadge">Lead Time</span>
+                            </label>
+                            <input type="date" class="rfq-input" id="rfqExpectedDelivery">
+                        </div>
+                    </div>
+
+                    <div class="rfq-form-row">
+                        <div class="rfq-field">
+                            <label class="rfq-label" for="rfqPaymentTerms">Payment Terms</label>
+                            <select class="rfq-select" id="rfqPaymentTerms">
+                                <option value="Net 30 Days">Net 30 Days (Standard)</option>
+                                <option value="Net 15 Days">Net 15 Days</option>
+                                <option value="Net 7 Days">Net 7 Days</option>
+                                <option value="COD">Cash on Delivery (COD)</option>
+                                <option value="Advance Payment">100% Advance Payment</option>
+                                <option value="50% DP, 50% Delivery">50% DP, 50% Upon Delivery</option>
+                            </select>
+                        </div>
+                        <div class="rfq-field">
+                            <label class="rfq-label" for="rfqDeliveryLocation">Destination Facility</label>
+                            <select class="rfq-select" id="rfqDeliveryLocation">
+                                <option value="Central Commissary - Main Dock">Central Commissary - Dock A</option>
+                                <option value="Branch 1 - Makati Flagship">Branch 1 - Makati Flagship</option>
+                                <option value="Branch 2 - BGC Bistro">Branch 2 - BGC Bistro</option>
+                                <option value="Branch 3 - Ortigas Kitchen">Branch 3 - Ortigas Kitchen</option>
+                                <option value="Central Warehouse - Dry Storage">Central Warehouse - Dry Storage</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="rfq-field">
+                        <label class="rfq-label" for="rfqSpecialInstructions">Bidding Instructions / Notes</label>
+                        <textarea class="rfq-textarea" id="rfqSpecialInstructions" placeholder="e.g. VAT-inclusive pricing; attach COA for dairy/meats."></textarea>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- /.rfq-builder-left-col -->
+
+        <!-- Right Column: Card 3 Line Items Panel -->
+        <div class="rfq-builder-right-col">
+            <!-- Quotation Line Items & Specifications Table (With Floating Column Filter) -->
+            <div class="rfq-items-panel">
+                <div class="rfq-items-toolbar">
+                    <div class="rfq-toolbar-left">
+                        <div style="font-weight: 800; font-size: 0.95rem; color: var(--rfq-text-strong); display: flex; align-items: center; gap: 8px;">
+                            <i class="ph ph-list-numbers" style="color: var(--rfq-primary); font-size: 18px;"></i>
+                            <span>Quotation Line Items & Specifications</span>
+                        </div>
+                        <span class="rfq-items-counter-pill" id="rfqItemsBadge">0 Line Items</span>
+                    </div>
+
+                    <div class="rfq-toolbar-right">
+                        <button type="button" class="rfq-btn rfq-btn-outline" onclick="openItemMasterQuickSelectModal()" title="Quick add items from Item Master (F2)" style="padding: 5px 10px; font-size: 11.5px;">
+                            <i class="ph ph-magnifying-glass"></i> Select Master <span class="rfq-hotkey-badge">F2</span>
+                        </button>
+                        <button type="button" class="rfq-btn rfq-btn-teal" onclick="addNewBlankItemRow()" title="Add custom non-catalog item specification" style="padding: 5px 10px; font-size: 11.5px;">
+                            <i class="ph ph-plus-circle"></i> Add Custom Row
+                        </button>
+                        <button type="button" class="rfq-btn rfq-btn-danger" onclick="clearAllItemRows()" title="Remove all items from table" style="padding: 5px 8px; font-size: 11.5px;">
+                            <i class="ph ph-trash"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Table Container with Horizontal & Vertical Scroll -->
+                <div class="rfq-table-responsive" id="rfqTableContainer">
+                    <table class="rfq-table" id="rfqMasterTable">
+                        <colgroup id="rfqColgroup">
+                            <!-- Populated dynamically based on column widths & visibility -->
+                        </colgroup>
+                        <thead id="rfqThead">
+                            <tr id="rfqTheadRow">
+                                <!-- Populated dynamically with Floating Column Filter Dropdown anchored after Action Header -->
+                            </tr>
+                        </thead>
+                        <tbody id="rfqTbody">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Items Table Footer Metric Summary -->
+                <div class="rfq-summary-bar" style="padding: 10px 16px;">
+                    <div class="rfq-metrics-cluster" style="gap: 16px;">
+                        <div class="rfq-metric-unit">
+                            <span class="rfq-metric-label">Lines</span>
+                            <span class="rfq-metric-val" id="summaryTotalLines" style="font-size: 1.05rem;">0</span>
+                        </div>
+                        <div class="rfq-metric-unit">
+                            <span class="rfq-metric-label">Total Units</span>
+                            <span class="rfq-metric-val" id="summaryTotalUnits" style="font-size: 1.05rem;">0.00</span>
+                        </div>
+                        <div class="rfq-metric-unit">
+                            <span class="rfq-metric-label">Benchmark Budget</span>
+                            <span class="rfq-metric-val highlight" id="summaryEstimatedBudget" style="font-size: 1.12rem;">₱0.00</span>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <div style="font-size: 0.74rem; color: var(--rfq-text-muted);">
+                            <i class="ph ph-info"></i> Benchmark pricing used for budgetary validation only.
                         </div>
                     </div>
                 </div>
-
-                <div class="rfq-field">
-                    <label class="rfq-label" for="vendorAddress">Full Physical / Billing Address</label>
-                    <input type="text" class="rfq-input" id="vendorAddress" placeholder="Street, Building, City, ZIP">
-                </div>
             </div>
-        </div>
+        </div><!-- /.rfq-builder-right-col -->
+    </div><!-- /.rfq-builder-workspace-grid -->
+</div><!-- /#pane-tab-builder -->
 
-        <!-- Card 2: Procurement Terms & Delivery Schedules -->
-        <div class="rfq-panel-card">
-            <div class="rfq-panel-header">
-                <div class="rfq-panel-title">
-                    <i class="ph ph-calendar-check"></i>
-                    <span>RFQ Terms & Delivery Schedule</span>
-                </div>
-                <span class="rfq-label-badge">Auto Lead-Time Sync</span>
+</div>
+
+<!-- ==========================================================================
+     DRAWER: PROCUREMENT AUDIT TRAIL RIGHT DRAWER
+     ========================================================================== -->
+<div id="rfqAuditDrawerOverlay" class="hr-drawer-overlay" onclick="closeRfqAuditDrawer()"></div>
+<div id="rfqAuditDrawer" class="hr-drawer" style="max-width: 620px; width: 100%;">
+    <div class="hr-drawer-header">
+        <button type="button" class="hr-drawer-close" onclick="closeRfqAuditDrawer()" title="Close Drawer">
+            <i class="ph ph-x"></i>
+        </button>
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #ec4899, #a855f7); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);">
+                <i class="ph ph-clock-counter-clockwise"></i>
             </div>
-            <div class="rfq-panel-body">
-                <div class="rfq-form-row">
-                    <div class="rfq-field">
-                        <label class="rfq-label" for="rfqNumberInput">RFQ Reference #</label>
-                        <input type="text" class="rfq-input" id="rfqNumberInput" value="RFQ-2026-0042" readonly>
-                    </div>
-                    <div class="rfq-field">
-                        <label class="rfq-label" for="rfqDateIssued">Date Issued</label>
-                        <input type="date" class="rfq-input" id="rfqDateIssued">
-                    </div>
-                </div>
-
-                <div class="rfq-form-row">
-                    <div class="rfq-field">
-                        <label class="rfq-label" for="rfqDueDate">
-                            <span>Quotation Due Date *</span>
-                            <span class="rfq-label-badge">Vendor Submission Deadline</span>
-                        </label>
-                        <input type="date" class="rfq-input" id="rfqDueDate">
-                    </div>
-                    <div class="rfq-field">
-                        <label class="rfq-label" for="rfqExpectedDelivery">
-                            <span>Expected Delivery Date *</span>
-                            <span class="rfq-label-badge" id="leadTimeBadge">Based on Lead Time</span>
-                        </label>
-                        <input type="date" class="rfq-input" id="rfqExpectedDelivery">
-                    </div>
-                </div>
-
-                <div class="rfq-form-row">
-                    <div class="rfq-field">
-                        <label class="rfq-label" for="rfqPaymentTerms">Target Payment Terms</label>
-                        <select class="rfq-select" id="rfqPaymentTerms">
-                            <option value="Net 30 Days">Net 30 Days (Standard Enterprise)</option>
-                            <option value="Net 15 Days">Net 15 Days</option>
-                            <option value="Net 7 Days">Net 7 Days</option>
-                            <option value="COD">Cash on Delivery (COD)</option>
-                            <option value="Advance Payment">100% Advance Payment</option>
-                            <option value="50% DP, 50% Delivery">50% DP, 50% Upon Delivery</option>
-                        </select>
-                    </div>
-                    <div class="rfq-field">
-                        <label class="rfq-label" for="rfqDeliveryLocation">Destination Facility</label>
-                        <select class="rfq-select" id="rfqDeliveryLocation">
-                            <option value="Central Commissary - Main Dock">Central Commissary - Receiving Dock A</option>
-                            <option value="Branch 1 - Makati Flagship">Branch 1 - Makati Flagship</option>
-                            <option value="Branch 2 - BGC Bistro">Branch 2 - BGC Bistro</option>
-                            <option value="Branch 3 - Ortigas Kitchen">Branch 3 - Ortigas Kitchen</option>
-                            <option value="Central Warehouse - Dry Storage">Central Warehouse - Dry Storage</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="rfq-field">
-                    <label class="rfq-label" for="rfqSpecialInstructions">Special Bidding Instructions / Notes</label>
-                    <textarea class="rfq-textarea" id="rfqSpecialInstructions" placeholder="e.g. Prices must be VAT-inclusive. Please attach Certificate of Analysis (COA) for fresh dairy items. Delivery time strictly 6:00 AM - 10:00 AM."></textarea>
-                </div>
-            </div>
-        </div>
-
-    </div>
-
-    <!-- Quotation Line Items & Specifications Table (With Floating Column Filter) -->
-    <div class="rfq-items-panel">
-        <div class="rfq-items-toolbar">
-            <div class="rfq-toolbar-left">
-                <div style="font-weight: 800; font-size: 1.02rem; color: var(--rfq-text-strong); display: flex; align-items: center; gap: 8px;">
-                    <i class="ph ph-list-numbers" style="color: var(--rfq-primary); font-size: 20px;"></i>
-                    <span>Quotation Line Items & Technical Specifications</span>
-                </div>
-                <span class="rfq-items-counter-pill" id="rfqItemsBadge">0 Line Items</span>
-            </div>
-
-            <div class="rfq-toolbar-right">
-                <button type="button" class="rfq-btn rfq-btn-outline" onclick="openItemMasterQuickSelectModal()" title="Quick add items from Item Master (F2)">
-                    <i class="ph ph-magnifying-glass"></i> Select From Master <span class="rfq-hotkey-badge">F2</span>
-                </button>
-                <button type="button" class="rfq-btn rfq-btn-teal" onclick="addNewBlankItemRow()" title="Add custom non-catalog item specification">
-                    <i class="ph ph-plus-circle"></i> Add Custom Spec Row
-                </button>
-                <button type="button" class="rfq-btn rfq-btn-danger" onclick="clearAllItemRows()" title="Remove all items from table">
-                    <i class="ph ph-trash"></i> Clear All
-                </button>
-            </div>
-        </div>
-
-        <!-- Table Container with Horizontal Scroll -->
-        <div class="rfq-table-responsive" id="rfqTableContainer">
-            <table class="rfq-table" id="rfqMasterTable">
-                <colgroup id="rfqColgroup">
-                    <!-- Populated dynamically based on column widths & visibility -->
-                </colgroup>
-                <thead id="rfqThead">
-                    <tr id="rfqTheadRow">
-                        <!-- Populated dynamically with Floating Column Filter Dropdown anchored after Action Header -->
-                    </tr>
-                </thead>
-                <tbody id="rfqTbody">
-                    <!-- Populated dynamically -->
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Items Table Footer Metric Summary -->
-        <div class="rfq-summary-bar">
-            <div class="rfq-metrics-cluster">
-                <div class="rfq-metric-unit">
-                    <span class="rfq-metric-label">Total Item Lines</span>
-                    <span class="rfq-metric-val" id="summaryTotalLines">0</span>
-                </div>
-                <div class="rfq-metric-unit">
-                    <span class="rfq-metric-label">Total Units Requested</span>
-                    <span class="rfq-metric-val" id="summaryTotalUnits">0.00</span>
-                </div>
-                <div class="rfq-metric-unit">
-                    <span class="rfq-metric-label">Estimated Benchmark Budget</span>
-                    <span class="rfq-metric-val highlight" id="summaryEstimatedBudget">₱0.00</span>
-                </div>
-            </div>
-
-            <div style="display: flex; align-items: center; gap: 12px;">
-                <div style="font-size: 0.8rem; color: var(--rfq-text-muted);">
-                    <i class="ph ph-info"></i> Benchmark pricing used for budgetary validation only. Final quotes are entered by supplier.
+            <div>
+                <h3 style="font-size: 16px; font-weight: 700; color: #0f172a; margin: 0;">Procurement Audit Trail</h3>
+                <div style="font-size: 12px; color: #64748b; margin-top: 2px;">
+                    Activity history & event log • <span id="tabRfqAuditCount" style="font-weight: 700; color: #9333ea;">0</span> events
                 </div>
             </div>
         </div>
     </div>
+    <div class="hr-drawer-body" style="padding: 16px; display: flex; flex-direction: column; gap: 14px; overflow-y: auto;">
+        <!-- Target Scope Indicator Bar: Restricts index to Current PO / RFQ for process optimization -->
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; background: rgba(147, 51, 234, 0.05); border: 1px solid rgba(147, 51, 234, 0.16); border-radius: 8px; padding: 6px 12px; font-size: 11.5px;">
+            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                <span style="color: #64748b; font-weight: 600;">Active Tender Index:</span>
+                <span id="auditTargetRefBadge" style="font-family: monospace; font-weight: 800; color: #9333ea; background: #ffffff; padding: 2px 7px; border-radius: 4px; border: 1px solid rgba(147, 51, 234, 0.25);">RFQ-2026-0044</span>
+                <span id="auditTargetPoBadge" style="font-family: monospace; font-weight: 700; color: #0284c7; background: #f0f9ff; padding: 2px 7px; border-radius: 4px; border: 1px solid rgba(2, 132, 199, 0.25); display: none;"></span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 4px;">
+                <button type="button" class="audit-filter-pill active" id="btnAuditScopeCurrent" onclick="setAuditScope('CURRENT')" title="Limit processing strictly to current RFQ / PO" style="padding: 2px 8px; font-size: 10.5px;">Current PO/RFQ Only</button>
+                <button type="button" class="audit-filter-pill" id="btnAuditScopeAll" onclick="setAuditScope('ALL')" title="Expand index to all historical records" style="padding: 2px 8px; font-size: 10.5px;">All Records</button>
+            </div>
+        </div>
 
-    </div><!-- /#pane-tab-builder -->
-
-    <!-- ====================================================================
-         TAB 3: SYSTEM AUDIT TRAIL & ACTIVITY LOG
-         ==================================================================== -->
-    <div class="rfq-tab-pane" id="pane-tab-audit" style="display: none; flex-direction: column; gap: 20px;">
         <!-- Audit KPI Summary Cards -->
-        <div class="audit-overview-grid">
-            <div class="audit-metric-card">
-                <div class="audit-metric-icon-box" style="background: #eff6ff; color: #2563eb;">
+        <div class="audit-overview-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+            <div class="audit-metric-card" style="padding: 10px;">
+                <div class="audit-metric-icon-box" style="background: #eff6ff; color: #2563eb; width: 32px; height: 32px; font-size: 16px;">
                     <i class="ph ph-clock-counter-clockwise"></i>
                 </div>
                 <div>
-                    <div class="audit-metric-val" id="auditKpiTotalCount">0</div>
-                    <div class="audit-metric-label">Total Logged Actions</div>
+                    <div class="audit-metric-val" id="auditKpiTotalCount" style="font-size: 18px;">0</div>
+                    <div class="audit-metric-label" style="font-size: 11px;">Total Logged Actions</div>
                 </div>
             </div>
-            <div class="audit-metric-card">
-                <div class="audit-metric-icon-box" style="background: #ecfdf5; color: #059669;">
+            <div class="audit-metric-card" style="padding: 10px;">
+                <div class="audit-metric-icon-box" style="background: #ecfdf5; color: #059669; width: 32px; height: 32px; font-size: 16px;">
                     <i class="ph ph-seal-check"></i>
                 </div>
                 <div>
-                    <div class="audit-metric-val" id="auditKpiApprovalsCount">0</div>
-                    <div class="audit-metric-label">Manager Approvals</div>
+                    <div class="audit-metric-val" id="auditKpiApprovalsCount" style="font-size: 18px;">0</div>
+                    <div class="audit-metric-label" style="font-size: 11px;">Manager Approvals</div>
                 </div>
             </div>
-            <div class="audit-metric-card">
-                <div class="audit-metric-icon-box" style="background: #fef3c7; color: #d97706;">
+            <div class="audit-metric-card" style="padding: 10px;">
+                <div class="audit-metric-icon-box" style="background: #fef3c7; color: #d97706; width: 32px; height: 32px; font-size: 16px;">
                     <i class="ph ph-pencil-line"></i>
                 </div>
                 <div>
-                    <div class="audit-metric-val" id="auditKpiEditsCount">0</div>
-                    <div class="audit-metric-label">Creations & Edits</div>
+                    <div class="audit-metric-val" id="auditKpiEditsCount" style="font-size: 18px;">0</div>
+                    <div class="audit-metric-label" style="font-size: 11px;">Creations & Edits</div>
                 </div>
             </div>
-            <div class="audit-metric-card">
-                <div class="audit-metric-icon-box" style="background: #ecfeff; color: #0891b2;">
+            <div class="audit-metric-card" style="padding: 10px;">
+                <div class="audit-metric-icon-box" style="background: #ecfeff; color: #0891b2; width: 32px; height: 32px; font-size: 16px;">
                     <i class="ph ph-envelope-simple"></i>
                 </div>
                 <div>
-                    <div class="audit-metric-val" id="auditKpiEmailsCount">0</div>
-                    <div class="audit-metric-label">Email Dispatches</div>
+                    <div class="audit-metric-val" id="auditKpiEmailsCount" style="font-size: 18px;">0</div>
+                    <div class="audit-metric-label" style="font-size: 11px;">Email Dispatches</div>
                 </div>
             </div>
         </div>
 
         <!-- Audit Toolbar & Filter Bar -->
-        <div class="audit-toolbar">
-            <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 260px; flex-wrap: wrap;">
-                <div style="position: relative; flex: 1; max-width: 360px;">
-                    <i class="ph ph-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--rfq-text-muted); font-size: 16px;"></i>
-                    <input type="text" class="rfq-input" id="auditSearchInput" placeholder="Search audit trail by Ref #, vendor, user, or action..." style="padding-left: 38px; height: 38px; font-size: 0.85rem;" oninput="onAuditSearchChange(this.value)">
-                </div>
-                <div style="display: flex; align-items: center; gap: 6px;">
-                    <button type="button" class="audit-filter-pill active" data-module="ALL" onclick="filterAuditByModule('ALL', this)">All Modules</button>
-                    <button type="button" class="audit-filter-pill" data-module="RFQ" onclick="filterAuditByModule('RFQ', this)">RFQ Only</button>
-                    <button type="button" class="audit-filter-pill" data-module="PO" onclick="filterAuditByModule('PO', this)">PO Only</button>
-                </div>
+        <div class="audit-toolbar" style="display: flex; flex-direction: column; gap: 8px; padding: 10px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
+            <div style="position: relative; width: 100%;">
+                <i class="ph ph-magnifying-glass" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--rfq-text-muted); font-size: 15px;"></i>
+                <input type="text" class="rfq-input" id="auditSearchInput" placeholder="Search audit trail by Ref, vendor, user..." style="padding-left: 32px; height: 32px; font-size: 0.80rem;" oninput="onAuditSearchChange(this.value)">
             </div>
-            <div class="audit-filter-pills" id="auditActionFilterPills">
-                <button type="button" class="audit-filter-pill active" data-action="ALL" onclick="filterAuditByAction('ALL', this)">All Events</button>
-                <button type="button" class="audit-filter-pill" data-action="APPROVED" onclick="filterAuditByAction('APPROVED', this)">Approvals</button>
-                <button type="button" class="audit-filter-pill" data-action="CREATED" onclick="filterAuditByAction('CREATED', this)">Creations</button>
-                <button type="button" class="audit-filter-pill" data-action="EDITED" onclick="filterAuditByAction('EDITED', this)">Edits</button>
-                <button type="button" class="audit-filter-pill" data-action="PO_TRANSFERRED" onclick="filterAuditByAction('PO_TRANSFERRED', this)">PO Transfers</button>
-                <button type="button" class="audit-filter-pill" data-action="EMAIL_SENT" onclick="filterAuditByAction('EMAIL_SENT', this)">Emails</button>
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px;">
+                <div style="display: flex; align-items: center; gap: 4px;">
+                    <button type="button" class="audit-filter-pill active" data-module="ALL" onclick="filterAuditByModule('ALL', this)" style="padding: 2px 8px; font-size: 11px;">All</button>
+                    <button type="button" class="audit-filter-pill" data-module="RFQ" onclick="filterAuditByModule('RFQ', this)" style="padding: 2px 8px; font-size: 11px;">RFQ</button>
+                    <button type="button" class="audit-filter-pill" data-module="PO" onclick="filterAuditByModule('PO', this)" style="padding: 2px 8px; font-size: 11px;">PO</button>
+                </div>
+                <div class="audit-filter-pills" id="auditActionFilterPills" style="display: flex; gap: 4px; flex-wrap: wrap;">
+                    <button type="button" class="audit-filter-pill active" data-action="ALL" onclick="filterAuditByAction('ALL', this)" style="padding: 2px 7px; font-size: 10.5px;">All</button>
+                    <button type="button" class="audit-filter-pill" data-action="APPROVED" onclick="filterAuditByAction('APPROVED', this)" style="padding: 2px 7px; font-size: 10.5px;">Approvals</button>
+                    <button type="button" class="audit-filter-pill" data-action="CREATED" onclick="filterAuditByAction('CREATED', this)" style="padding: 2px 7px; font-size: 10.5px;">Created</button>
+                    <button type="button" class="audit-filter-pill" data-action="EDITED" onclick="filterAuditByAction('EDITED', this)" style="padding: 2px 7px; font-size: 10.5px;">Edited</button>
+                    <button type="button" class="audit-filter-pill" data-action="EMAIL_SENT" onclick="filterAuditByAction('EMAIL_SENT', this)" style="padding: 2px 7px; font-size: 10.5px;">Emails</button>
+                </div>
             </div>
         </div>
 
@@ -1987,7 +2347,6 @@
             <!-- Dynamically populated via renderRfqAuditTrail -->
         </div>
     </div>
-
 </div>
 
 <!-- ==========================================================================
@@ -2568,6 +2927,7 @@ window.AppStore = {
     rfqs: [],
     activeRfq: {
         rfqNumber: 'RFQ-2026-0042',
+        title: '',
         status: 'Draft',
         vendorId: '',
         vendorName: '',
@@ -2603,6 +2963,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderVendorDropdown();
     renderTableHeaderAndColumns();
     renderItemsTable();
+    initDirectoryColumns();
     renderRfqDirectory();
     checkDraftRecovery();
 
@@ -2622,13 +2983,30 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Close floating column dropdown on outside click
+    // Close floating column dropdowns on outside click
     document.addEventListener('click', (e) => {
         const dropdown = document.getElementById('tableColumnFilterDropdown');
         const filterBtn = document.getElementById('btnTableColumnFilter');
         if (dropdown && dropdown.classList.contains('is-active')) {
             if (!dropdown.contains(e.target) && !filterBtn.contains(e.target)) {
                 dropdown.classList.remove('is-active');
+            }
+        }
+
+        const dirDropdown = document.getElementById('directoryColDropdownMenu');
+        const dirFilterBtn = document.getElementById('btnDirectoryColFilter');
+        if (dirDropdown && dirDropdown.classList.contains('is-active')) {
+            if (!dirDropdown.contains(e.target) && !dirFilterBtn.contains(e.target)) {
+                dirDropdown.classList.remove('is-active');
+            }
+        }
+
+        const vendorComboDropdown = document.getElementById('rfqVendorComboDropdown');
+        const vendorComboTrigger = document.getElementById('rfqVendorComboTrigger');
+        if (vendorComboDropdown && vendorComboDropdown.classList.contains('is-active')) {
+            if (!vendorComboDropdown.contains(e.target) && !vendorComboTrigger.contains(e.target)) {
+                vendorComboDropdown.classList.remove('is-active');
+                if (vendorComboTrigger) vendorComboTrigger.classList.remove('is-active');
             }
         }
     });
@@ -2725,26 +3103,154 @@ function initDates() {
  * VENDOR SELECTION & AUTO-FILL BUSINESS PARAMETERS
  * --------------------------------------------------------------------------
  */
+let vendorComboSearchTerm = '';
+
 function renderVendorDropdown() {
     const select = document.getElementById('vendorSelect');
-    if (!select) return;
+    const vendors = window.AppStore.vendors || [];
 
-    select.innerHTML = `
-        <option value="">-- Choose Approved Vendor from Masterlist --</option>
-        ${window.AppStore.vendors.map(v => `
-            <option value="${v.id || v.code}">[${v.code || v.id}] ${v.legalName || v.tradeName} (${v.category || 'General'})</option>
-        `).join('')}
-    `;
+    if (select) {
+        select.innerHTML = `
+            <option value="">-- Choose Approved Vendor from Masterlist --</option>
+            ${vendors.map(v => `
+                <option value="${v.id || v.code}">[${v.code || v.id}] ${v.legalName || v.tradeName} (${v.category || 'General'})</option>
+            `).join('')}
+        `;
+    }
+
+    renderVendorComboboxList();
+}
+
+function renderVendorComboboxList() {
+    const listEl = document.getElementById('rfqVendorComboList');
+    if (!listEl) return;
+
+    const vendors = window.AppStore.vendors || [];
+    const q = (vendorComboSearchTerm || '').toLowerCase().trim();
+
+    const filtered = vendors.filter(v => {
+        if (!q) return true;
+        const code = (v.code || v.id || '').toLowerCase();
+        const trade = (v.tradeName || '').toLowerCase();
+        const legal = (v.legalName || '').toLowerCase();
+        const cat = (v.category || '').toLowerCase();
+        const contact = (v.contacts && v.contacts[0] ? v.contacts[0].name : '').toLowerCase();
+        return code.includes(q) || trade.includes(q) || legal.includes(q) || cat.includes(q) || contact.includes(q);
+    });
+
+    const activeId = document.getElementById('vendorSelect') ? document.getElementById('vendorSelect').value : '';
+
+    if (filtered.length === 0) {
+        listEl.innerHTML = `<div class="rfq-vendor-combo-empty">No suppliers match "${escapeHtml(vendorComboSearchTerm)}"</div>`;
+        return;
+    }
+
+    let itemsHtml = '';
+    if (activeId) {
+        itemsHtml += `
+            <div class="rfq-vendor-combo-item" onclick="selectVendorFromCombo('')" style="color: #ef4444; border-bottom: 1px dashed #f1f5f9;">
+                <span style="display: flex; align-items: center; gap: 6px;">
+                    <i class="ph ph-x-circle"></i> Clear Selected Vendor
+                </span>
+            </div>
+        `;
+    }
+
+    itemsHtml += filtered.map(v => {
+        const vId = v.id || v.code;
+        const isSelected = vId === activeId;
+        return `
+            <div class="rfq-vendor-combo-item ${isSelected ? 'is-selected' : ''}" onclick="selectVendorFromCombo('${vId}')">
+                <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
+                    <div style="width: 22px; height: 22px; border-radius: 5px; background: linear-gradient(135deg, #ec4899, #a855f7); color: #fff; font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        ${(v.tradeName || v.legalName || 'V').substring(0, 1).toUpperCase()}
+                    </div>
+                    <div style="min-width: 0; line-height: 1.25;">
+                        <div style="font-weight: 600; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            ${escapeHtml(v.tradeName || v.legalName)}
+                        </div>
+                        <div style="font-size: 0.72rem; color: #64748b;">
+                            <span style="font-family: monospace; font-weight: 700;">${escapeHtml(v.code || v.id)}</span> • ${escapeHtml(v.category || 'General')}
+                        </div>
+                    </div>
+                </div>
+                ${isSelected ? '<i class="ph ph-check" style="color: #9333ea; font-size: 14px; flex-shrink: 0;"></i>' : ''}
+            </div>
+        `;
+    }).join('');
+
+    listEl.innerHTML = itemsHtml;
+}
+
+function toggleVendorCombobox(event) {
+    if (event) event.stopPropagation();
+    const dropdown = document.getElementById('rfqVendorComboDropdown');
+    const trigger = document.getElementById('rfqVendorComboTrigger');
+    if (!dropdown || !trigger) return;
+
+    const isActive = dropdown.classList.contains('is-active');
+    if (isActive) {
+        dropdown.classList.remove('is-active');
+        trigger.classList.remove('is-active');
+    } else {
+        dropdown.classList.add('is-active');
+        trigger.classList.add('is-active');
+        const input = document.getElementById('rfqVendorSearchInput');
+        if (input) {
+            input.value = '';
+            vendorComboSearchTerm = '';
+            renderVendorComboboxList();
+            setTimeout(() => input.focus(), 60);
+        }
+    }
+}
+
+function filterVendorCombobox(val) {
+    vendorComboSearchTerm = val;
+    renderVendorComboboxList();
+}
+
+function selectVendorFromCombo(vendorId) {
+    const select = document.getElementById('vendorSelect');
+    if (select) {
+        select.value = vendorId;
+    }
+    
+    const dropdown = document.getElementById('rfqVendorComboDropdown');
+    const trigger = document.getElementById('rfqVendorComboTrigger');
+    if (dropdown) dropdown.classList.remove('is-active');
+    if (trigger) trigger.classList.remove('is-active');
+
+    handleVendorSelection(vendorId);
+}
+
+function updateVendorComboTrigger(vendor) {
+    const textEl = document.getElementById('rfqVendorComboTriggerText');
+    if (!textEl) return;
+
+    if (!vendor) {
+        textEl.textContent = '-- Choose Approved Vendor from Masterlist --';
+        textEl.style.color = '#64748b';
+        textEl.style.fontWeight = 'normal';
+    } else {
+        textEl.innerHTML = `<strong>[${escapeHtml(vendor.code || vendor.id)}]</strong> ${escapeHtml(vendor.tradeName || vendor.legalName)} <span style="font-size: 0.72rem; color: #9333ea; margin-left: 6px;">(${escapeHtml(vendor.category || 'Vendor')})</span>`;
+        textEl.style.color = '#0f172a';
+    }
 }
 
 function handleVendorSelection(vendorId) {
     if (!vendorId) {
         clearVendorFields();
+        updateVendorComboTrigger(null);
+        renderVendorComboboxList();
         return;
     }
 
     const vendor = window.AppStore.vendors.find(v => (v.id === vendorId || v.code === vendorId));
     if (!vendor) return;
+
+    updateVendorComboTrigger(vendor);
+    renderVendorComboboxList();
 
     // Auto-fill company details
     document.getElementById('vendorSummaryBox').style.display = 'flex';
@@ -2802,6 +3308,9 @@ function handleVendorSelection(vendorId) {
 }
 
 function clearVendorFields() {
+    updateVendorComboTrigger(null);
+    renderVendorComboboxList();
+
     document.getElementById('vendorSummaryBox').style.display = 'none';
     document.getElementById('vendorContactPerson').value = '';
     document.getElementById('vendorContactTitle').value = '';
@@ -3632,6 +4141,8 @@ function closeRecentRfqHistoryModal() {
  */
 function syncFormInputsToState() {
     const rfq = window.AppStore.activeRfq;
+    const titleEl = document.getElementById('rfqTenderTitle');
+    if (titleEl) rfq.title = titleEl.value;
     rfq.vendorEmail = document.getElementById('vendorEmail').value;
     rfq.vendorPhone = document.getElementById('vendorPhone').value;
     rfq.vendorAddress = document.getElementById('vendorAddress').value;
@@ -3657,19 +4168,36 @@ function checkDraftRecovery() {
     if (draft) {
         try {
             const parsed = JSON.parse(draft);
-            if (parsed && (parsed.items?.length > 0 || parsed.vendorId)) {
-                document.getElementById('rfqDraftBanner').classList.add('is-visible');
+            if (parsed && (parsed.items?.length > 0 || parsed.vendorId || parsed.title)) {
+                restoreDraftSession(true);
             }
         } catch (e) {}
     }
 }
 
-function restoreDraftSession() {
+function restoreDraftSession(isAutoRecovery = false) {
     const draft = localStorage.getItem('rms_rfq_current_draft');
     if (!draft) return;
     try {
         const parsed = JSON.parse(draft);
         window.AppStore.activeRfq = parsed;
+
+        if (parsed.rfqNumber) {
+            const refEl = document.getElementById('rfqRefDisplay');
+            if (refEl) refEl.textContent = parsed.rfqNumber;
+            const inputEl = document.getElementById('rfqNumberInput');
+            if (inputEl) inputEl.value = parsed.rfqNumber;
+        }
+
+        const titleEl = document.getElementById('rfqTenderTitle');
+        if (titleEl) titleEl.value = parsed.title || '';
+
+        const statusBadge = document.getElementById('rfqStatusBadge');
+        if (statusBadge) {
+            const s = parsed.status || 'Draft';
+            statusBadge.className = `status-pill ${s.toLowerCase().replace(/\s+/g, '-')}`;
+            statusBadge.innerHTML = `<i class="ph ph-dot"></i> ${s}`;
+        }
 
         if (parsed.vendorId) {
             document.getElementById('vendorSelect').value = parsed.vendorId;
@@ -3683,22 +4211,28 @@ function restoreDraftSession() {
         document.getElementById('rfqSpecialInstructions').value = parsed.specialInstructions || '';
 
         renderItemsTable();
-        dismissDraftBanner();
-        showToast('✓ Draft session successfully restored!', 'success');
+        if (isAutoRecovery) {
+            showToast('✓ Restored unsaved RFQ draft session from local storage', 'info');
+        } else {
+            showToast('✓ Draft session successfully restored!', 'success');
+        }
     } catch (e) {
         console.warn('Error restoring draft:', e);
     }
 }
 
-function dismissDraftBanner() {
-    document.getElementById('rfqDraftBanner').classList.remove('is-visible');
-}
-
 function resetRfqForm() {
     if (confirm('Reset entire Request for Quotation form? Any unsaved edits will be discarded.')) {
         localStorage.removeItem('rms_rfq_current_draft');
-        dismissDraftBanner();
         document.getElementById('vendorSelect').value = '';
+        const titleEl = document.getElementById('rfqTenderTitle');
+        if (titleEl) titleEl.value = '';
+        window.AppStore.activeRfq.title = '';
+        const statusBadge = document.getElementById('rfqStatusBadge');
+        if (statusBadge) {
+            statusBadge.className = 'status-pill draft';
+            statusBadge.innerHTML = '<i class="ph ph-dot"></i> Draft RFQ';
+        }
         clearVendorFields();
         initDates();
         window.AppStore.activeRfq.items = [];
@@ -3712,6 +4246,7 @@ function closeAllModals() {
     closeSendEmailModal();
     closeItemMasterQuickSelectModal();
     closeRecentRfqHistoryModal();
+    closeRfqAuditDrawer();
 }
 
 /**
@@ -3736,7 +4271,7 @@ function formatDateDisplay(isoDate) {
 
 /**
  * --------------------------------------------------------------------------
- * TAB SWITCHING & DIRECTORY TRACKER LOGIC
+ * TAB SWITCHING & EMBEDDED AUDIT TRAIL LOGIC
  * --------------------------------------------------------------------------
  */
 let activeRfqStatusFilter = 'all';
@@ -3745,16 +4280,60 @@ let activeAuditActionFilter = 'ALL';
 let activeAuditModuleFilter = 'ALL';
 let auditSearchTerm = '';
 
+function openRfqAuditDrawer() {
+    const drawer = document.getElementById('rfqAuditDrawer');
+    const overlay = document.getElementById('rfqAuditDrawerOverlay');
+    if (drawer) drawer.classList.add('active');
+    if (overlay) overlay.classList.add('active');
+    renderRfqAuditTrail();
+}
+
+function closeRfqAuditDrawer() {
+    const drawer = document.getElementById('rfqAuditDrawer');
+    const overlay = document.getElementById('rfqAuditDrawerOverlay');
+    if (drawer) drawer.classList.remove('active');
+    if (overlay) overlay.classList.remove('active');
+}
+
+function toggleBuilderAuditTrail(forceOpen = null) {
+    const drawer = document.getElementById('rfqAuditDrawer');
+    if (!drawer) return;
+    const shouldOpen = forceOpen !== null ? forceOpen : !drawer.classList.contains('active');
+    if (shouldOpen) {
+        openRfqAuditDrawer();
+    } else {
+        closeRfqAuditDrawer();
+    }
+}
+
+function copyRfqReference() {
+    const ref = document.getElementById('rfqRefDisplay')?.textContent?.trim() || '';
+    if (!ref) return;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(ref).then(() => {
+            showToast(`✓ Copied ${ref} to clipboard`, 'success');
+        }).catch(() => {
+            showToast(`Reference: ${ref}`, 'info');
+        });
+    } else {
+        showToast(`Reference: ${ref}`, 'info');
+    }
+}
+
+function handleRfqTitleChange(val) {
+    if (!window.AppStore.activeRfq) window.AppStore.activeRfq = {};
+    window.AppStore.activeRfq.title = val;
+    persistDraft();
+}
+
 function switchRfqTab(tabId) {
     const btnList = document.getElementById('tabBtnList');
     const btnBuilder = document.getElementById('tabBtnBuilder');
-    const btnAudit = document.getElementById('tabBtnAudit');
     const paneList = document.getElementById('pane-tab-list');
     const paneBuilder = document.getElementById('pane-tab-builder');
-    const paneAudit = document.getElementById('pane-tab-audit');
 
-    [btnList, btnBuilder, btnAudit].forEach(b => b && b.classList.remove('active'));
-    [paneList, paneBuilder, paneAudit].forEach(p => p && (p.style.display = 'none'));
+    [btnList, btnBuilder].forEach(b => b && b.classList.remove('active'));
+    [paneList, paneBuilder].forEach(p => p && (p.style.display = 'none'));
 
     // Update tab counts
     const rfqs = window.AppStore.rfqs || [];
@@ -3763,22 +4342,273 @@ function switchRfqTab(tabId) {
 
     const auditCountBadge = document.getElementById('tabRfqAuditCount');
     if (auditCountBadge && typeof getProcurementAuditTrail === 'function') {
-        const auditLogs = getProcurementAuditTrail();
-        auditCountBadge.textContent = auditLogs.length;
+        const { rfqNum, poNum } = (typeof getCurrentAuditTarget === 'function') ? getCurrentAuditTarget() : {};
+        if (rfqNum) {
+            const allLogs = getProcurementAuditTrail();
+            const scoped = allLogs.filter(l => (l.refNumber === rfqNum || (poNum && l.refNumber === poNum)));
+            auditCountBadge.textContent = scoped.length;
+        } else {
+            auditCountBadge.textContent = 0;
+        }
     }
 
     if (tabId === 'tab-list') {
         if (btnList) btnList.classList.add('active');
         if (paneList) paneList.style.display = 'flex';
         renderRfqDirectory();
-    } else if (tabId === 'tab-builder') {
+    } else if (tabId === 'tab-builder' || tabId === 'tab-audit') {
         if (btnBuilder) btnBuilder.classList.add('active');
         if (paneBuilder) paneBuilder.style.display = 'flex';
-    } else if (tabId === 'tab-audit') {
-        if (btnAudit) btnAudit.classList.add('active');
-        if (paneAudit) paneAudit.style.display = 'flex';
-        renderRfqAuditTrail();
+        if (tabId === 'tab-audit') {
+            toggleBuilderAuditTrail(true);
+        }
     }
+}
+
+/**
+ * --------------------------------------------------------------------------
+ * RFQ DIRECTORY COLUMN CONFIGURATION & PAGINATION SYSTEM
+ * --------------------------------------------------------------------------
+ */
+const DIRECTORY_COLUMNS = [
+    { id: 'ref', label: 'RFQ Reference', default: true, lockVisible: true, defaultWidth: '135px', align: 'left' },
+    { id: 'vendor', label: 'Vendor Partner', default: true, lockVisible: true, defaultWidth: '220px', align: 'left' },
+    { id: 'dateIssued', label: 'Date Issued', default: true, lockVisible: false, defaultWidth: '105px', align: 'left' },
+    { id: 'dueDate', label: 'Quotation Due', default: true, lockVisible: false, defaultWidth: '110px', align: 'left' },
+    { id: 'itemsCount', label: 'Line Items', default: true, lockVisible: false, defaultWidth: '85px', align: 'center' },
+    { id: 'estBudget', label: 'Est. Budget', default: true, lockVisible: false, defaultWidth: '125px', align: 'right' },
+    { id: 'statusApproval', label: 'M. Approval / Status', default: true, lockVisible: false, defaultWidth: '170px', align: 'center' },
+    { id: 'actions', label: 'Actions', default: true, lockVisible: true, defaultWidth: '115px', align: 'center' }
+];
+
+let activeDirectoryColIds = (() => {
+    try {
+        const saved = localStorage.getItem('rms_rfq_directory_cols');
+        if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return DIRECTORY_COLUMNS.filter(c => c.default).map(c => c.id);
+})();
+
+let savedDirectoryColWidths = (() => {
+    try {
+        const saved = localStorage.getItem('rms_rfq_directory_col_widths');
+        if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return {};
+})();
+
+let directoryCurrentPage = 1;
+let directoryPageSize = 10;
+
+function getDirectoryColWidth(col) {
+    return savedDirectoryColWidths[col.id] || col.defaultWidth || '120px';
+}
+
+function initDirectoryColumns() {
+    renderDirectoryTableHeader();
+    renderDirectoryColDropdownChecklist();
+}
+
+function renderDirectoryTableHeader() {
+    const theadRow = document.getElementById('rfqDirectoryTheadRow');
+    if (!theadRow) return;
+
+    let thHtml = '';
+    DIRECTORY_COLUMNS.forEach(col => {
+        if (!activeDirectoryColIds.includes(col.id)) return;
+        const w = getDirectoryColWidth(col);
+        const alignClass = col.align === 'right' ? 'th-num' : (col.align === 'center' ? 'th-center' : '');
+        thHtml += `
+            <th class="${alignClass}" data-col-id="${col.id}" style="width: ${w}; position: relative; user-select: none;">
+                <span>${col.label}</span>
+                <div class="rfq-col-resizer" onmousedown="initDirectoryColResize(event, '${col.id}')"></div>
+            </th>
+        `;
+    });
+
+    theadRow.innerHTML = thHtml;
+    renderDirectoryColDropdownChecklist();
+}
+
+function renderDirectoryColDropdownChecklist() {
+    const listEl = document.getElementById('directoryColDropdownList');
+    if (!listEl) return;
+
+    listEl.innerHTML = DIRECTORY_COLUMNS.map(col => {
+        const isChecked = activeDirectoryColIds.includes(col.id);
+        const isDisabled = col.lockVisible ? 'disabled' : '';
+        return `
+            <label class="inv-col-item-row" title="${col.label}">
+                <input type="checkbox" ${isChecked ? 'checked' : ''} ${isDisabled} onchange="toggleDirectoryColVisibility('${col.id}', this.checked)">
+                <span>${col.label} ${col.lockVisible ? '<span style="font-size: 0.68rem; color:#94a3b8;">(Locked)</span>' : ''}</span>
+            </label>
+        `;
+    }).join('');
+
+    const counter = document.getElementById('directoryColActiveCounter');
+    if (counter) {
+        counter.textContent = `${activeDirectoryColIds.length} of ${DIRECTORY_COLUMNS.length} visible`;
+    }
+}
+
+function toggleDirectoryColDropdown(event) {
+    if (event) event.stopPropagation();
+    const dropdown = document.getElementById('directoryColDropdownMenu');
+    const btn = document.getElementById('btnDirectoryColFilter');
+    if (!dropdown || !btn) return;
+
+    const isActive = dropdown.classList.contains('is-active');
+    if (isActive) {
+        dropdown.classList.remove('is-active');
+        btn.classList.remove('is-active');
+    } else {
+        dropdown.classList.add('is-active');
+        btn.classList.add('is-active');
+    }
+}
+
+function toggleDirectoryColVisibility(colId, isVisible) {
+    if (isVisible) {
+        if (!activeDirectoryColIds.includes(colId)) {
+            activeDirectoryColIds.push(colId);
+        }
+    } else {
+        activeDirectoryColIds = activeDirectoryColIds.filter(id => id !== colId);
+    }
+    localStorage.setItem('rms_rfq_directory_cols', JSON.stringify(activeDirectoryColIds));
+    renderDirectoryTableHeader();
+    renderRfqDirectory();
+}
+
+function showAllDirectoryColumns() {
+    activeDirectoryColIds = DIRECTORY_COLUMNS.map(c => c.id);
+    localStorage.setItem('rms_rfq_directory_cols', JSON.stringify(activeDirectoryColIds));
+    renderDirectoryTableHeader();
+    renderRfqDirectory();
+}
+
+function resetDirectoryColumnDefaults() {
+    activeDirectoryColIds = DIRECTORY_COLUMNS.filter(c => c.default).map(c => c.id);
+    localStorage.setItem('rms_rfq_directory_cols', JSON.stringify(activeDirectoryColIds));
+    renderDirectoryTableHeader();
+    renderRfqDirectory();
+}
+
+function resetDirectoryColumnWidths() {
+    savedDirectoryColWidths = {};
+    localStorage.removeItem('rms_rfq_directory_col_widths');
+    renderDirectoryTableHeader();
+    renderRfqDirectory();
+    showToast('✓ Directory column widths reset to defaults', 'success');
+}
+
+// Directory Column Header Resizer Logic
+let dirResizingColId = null;
+let dirStartX = 0;
+let dirStartW = 0;
+
+function initDirectoryColResize(e, colId) {
+    e.preventDefault();
+    e.stopPropagation();
+    dirResizingColId = colId;
+    dirStartX = e.pageX;
+
+    const thEl = document.querySelector(`#rfqDirectoryThead th[data-col-id="${colId}"]`);
+    dirStartW = thEl ? thEl.offsetWidth : 120;
+
+    document.addEventListener('mousemove', handleDirectoryColMouseMove);
+    document.addEventListener('mouseup', handleDirectoryColMouseUp);
+}
+
+function handleDirectoryColMouseMove(e) {
+    if (!dirResizingColId) return;
+    const diff = e.pageX - dirStartX;
+    const newWidth = Math.max(50, dirStartW + diff);
+    savedDirectoryColWidths[dirResizingColId] = `${newWidth}px`;
+
+    const thEl = document.querySelector(`#rfqDirectoryThead th[data-col-id="${dirResizingColId}"]`);
+    if (thEl) {
+        thEl.style.width = `${newWidth}px`;
+    }
+}
+
+function handleDirectoryColMouseUp() {
+    if (!dirResizingColId) return;
+    localStorage.setItem('rms_rfq_directory_col_widths', JSON.stringify(savedDirectoryColWidths));
+    dirResizingColId = null;
+    document.removeEventListener('mousemove', handleDirectoryColMouseMove);
+    document.removeEventListener('mouseup', handleDirectoryColMouseUp);
+}
+
+function changeDirectoryPageSize(newSize) {
+    directoryPageSize = parseInt(newSize, 10) || 10;
+    directoryCurrentPage = 1;
+    renderRfqDirectory();
+}
+
+function goToDirectoryPage(page) {
+    directoryCurrentPage = page;
+    renderRfqDirectory();
+}
+
+function renderDirectoryPagination(totalItems) {
+    const totalPages = Math.ceil(totalItems / directoryPageSize) || 1;
+    if (directoryCurrentPage > totalPages) directoryCurrentPage = totalPages;
+    if (directoryCurrentPage < 1) directoryCurrentPage = 1;
+
+    const startIdx = totalItems === 0 ? 0 : (directoryCurrentPage - 1) * directoryPageSize + 1;
+    const endIdx = Math.min(directoryCurrentPage * directoryPageSize, totalItems);
+
+    const infoEl = document.getElementById('rfqPaginationInfo');
+    if (infoEl) {
+        infoEl.innerHTML = `Showing <strong>${startIdx}</strong> to <strong>${endIdx}</strong> of <strong>${totalItems}</strong> tenders`;
+    }
+
+    const btnsEl = document.getElementById('rfqPaginationButtons');
+    if (!btnsEl) return;
+
+    let btnsHtml = '';
+    // Previous button
+    btnsHtml += `
+        <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" 
+            onclick="goToDirectoryPage(${directoryCurrentPage - 1})" 
+            ${directoryCurrentPage <= 1 ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''} 
+            title="Previous Page" style="padding: 4px 8px; font-size: 11px;">
+            <i class="ph ph-caret-left"></i>
+        </button>
+    `;
+
+    // Page number buttons (sliding window)
+    const maxButtons = 5;
+    let startPage = Math.max(1, directoryCurrentPage - Math.floor(maxButtons / 2));
+    let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+    if (endPage - startPage + 1 < maxButtons) {
+        startPage = Math.max(1, endPage - maxButtons + 1);
+    }
+
+    for (let p = startPage; p <= endPage; p++) {
+        const isActive = p === directoryCurrentPage;
+        btnsHtml += `
+            <button type="button" 
+                class="hr-btn ${isActive ? 'hr-btn-primary' : 'hr-btn-secondary'} hr-btn-sm" 
+                onclick="goToDirectoryPage(${p})" 
+                style="padding: 4px 9px; font-size: 11.5px; min-width: 28px; font-weight: ${isActive ? '700' : '500'};">
+                ${p}
+            </button>
+        `;
+    }
+
+    // Next button
+    btnsHtml += `
+        <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" 
+            onclick="goToDirectoryPage(${directoryCurrentPage + 1})" 
+            ${directoryCurrentPage >= totalPages ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''} 
+            title="Next Page" style="padding: 4px 8px; font-size: 11px;">
+            <i class="ph ph-caret-right"></i>
+        </button>
+    `;
+
+    btnsEl.innerHTML = btnsHtml;
 }
 
 function renderRfqDirectory() {
@@ -3829,12 +4659,24 @@ function renderRfqDirectory() {
     if (pRec) pRec.textContent = receivedCount;
     if (pAward) pAward.textContent = awardedCount;
 
+    const visibleColsCount = activeDirectoryColIds.length;
+
     if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 36px; color: var(--rfq-text-muted);">No Requests for Quotation match your criteria.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="${visibleColsCount}" style="text-align: center; padding: 36px; color: var(--rfq-text-muted);">No Requests for Quotation match your criteria.</td></tr>`;
+        renderDirectoryPagination(0);
         return;
     }
 
-    tbody.innerHTML = filtered.map(r => {
+    // Pagination slice
+    const totalItems = filtered.length;
+    const totalPages = Math.ceil(totalItems / directoryPageSize) || 1;
+    if (directoryCurrentPage > totalPages) directoryCurrentPage = totalPages;
+    if (directoryCurrentPage < 1) directoryCurrentPage = 1;
+
+    const startIndex = (directoryCurrentPage - 1) * directoryPageSize;
+    const paginatedItems = filtered.slice(startIndex, startIndex + directoryPageSize);
+
+    tbody.innerHTML = paginatedItems.map(r => {
         const estTotal = (r.items || []).reduce((acc, it) => acc + ((parseFloat(it.quantity) || 0) * (parseFloat(it.targetPrice) || 0)), 0);
         let pillClass = 'draft';
         if (r.status === 'Quote Requested') pillClass = 'sent';
@@ -3842,79 +4684,94 @@ function renderRfqDirectory() {
         else if (r.status === 'Awarded') pillClass = 'awarded';
         else if (r.status === 'Cancelled') pillClass = 'cancelled';
 
-        return `
-            <tr>
+        let rowCells = '';
+
+        if (activeDirectoryColIds.includes('ref')) {
+            rowCells += `
                 <td style="font-family: monospace; font-weight: 700; color: var(--rfq-primary-dark);">
                     <a href="javascript:void(0)" onclick="editRfqFromDirectory('${r.rfqNumber}')" style="color: inherit; text-decoration: underline;">
                         ${escapeHtml(r.rfqNumber)}
                     </a>
                 </td>
+            `;
+        }
+
+        if (activeDirectoryColIds.includes('vendor')) {
+            rowCells += `
                 <td>
                     <div style="font-weight: 700; color: var(--rfq-text-strong);">${escapeHtml(r.vendorTradeName || r.vendorName || 'Unassigned')}</div>
                     <div style="font-size: 0.74rem; color: var(--rfq-text-muted);">
                         ${escapeHtml(r.vendorContactPerson || 'No Contact')} • ${escapeHtml(r.vendorEmail || '')}
                     </div>
                 </td>
-                <td>${formatDateDisplay(r.dateIssued)}</td>
-                <td><span style="font-weight: 600; color: #b45309;">${formatDateDisplay(r.dueDate)}</span></td>
-                <td class="td-center"><span class="rfq-items-counter-pill">${(r.items || []).length}</span></td>
-                <td class="td-num" style="font-weight: 700;">₱${formatMoney(estTotal)}</td>
-                <td class="td-center">
-                    <span class="status-pill ${pillClass}">
-                        <i class="ph ph-dot"></i> ${escapeHtml(r.status)}
-                    </span>
-                </td>
+            `;
+        }
+
+        if (activeDirectoryColIds.includes('dateIssued')) {
+            rowCells += `<td>${formatDateDisplay(r.dateIssued)}</td>`;
+        }
+
+        if (activeDirectoryColIds.includes('dueDate')) {
+            rowCells += `<td><span style="font-weight: 600; color: #b45309;">${formatDateDisplay(r.dueDate)}</span></td>`;
+        }
+
+        if (activeDirectoryColIds.includes('itemsCount')) {
+            rowCells += `<td class="td-center"><span class="rfq-items-counter-pill">${(r.items || []).length}</span></td>`;
+        }
+
+        if (activeDirectoryColIds.includes('estBudget')) {
+            rowCells += `<td class="td-num" style="font-weight: 700;">₱${formatMoney(estTotal)}</td>`;
+        }
+
+        if (activeDirectoryColIds.includes('statusApproval')) {
+            const isApproved = (r.isApproved === true || r.status === 'Awarded' || r.status === 'Approved' || !!r.poReference);
+            rowCells += `
                 <td class="td-center">
                     <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
-                        ${(r.isApproved === true || r.status === 'Awarded' || r.status === 'Approved' || !!r.poReference) ? `
-                            <button type="button" class="rfq-manager-toggle-btn is-approved" onclick="openManagerApprovalModal('${r.rfqNumber}')" title="Approved by ${escapeHtml(r.approvedBy || 'Manager')}. Click to view details, revoke, or issue PO">
-                                <span class="rfq-toggle-track active"><span class="rfq-toggle-thumb active"></span></span>
-                                <span>Approved</span>
+                        <span class="status-pill ${pillClass}">
+                            <i class="ph ph-dot"></i> ${escapeHtml(r.status)}
+                        </span>
+                        ${isApproved ? `
+                            <button type="button" class="hr-badge hr-badge-success" onclick="openManagerApprovalModal('${r.rfqNumber}')" title="Approved by ${escapeHtml(r.approvedBy || 'Manager')}" style="cursor: pointer; border: none; font-size: 10px; padding: 2px 8px; display: inline-flex; align-items: center; gap: 3px;">
+                                <i class="ph ph-check-circle"></i> Approved
                             </button>
-                            ${r.poReference ? `
-                                <a href="{{ route('purchase.purchase-orders') }}" class="rfq-po-link-chip" title="View Linked Purchase Order">
-                                    <i class="ph ph-receipt"></i> ${escapeHtml(r.poReference)}
-                                </a>
-                            ` : `
-                                <button type="button" class="rfq-po-link-chip" style="cursor: pointer; background: #e0f2fe; color: #0369a1; border-color: #7dd3fc;" onclick="openManagerApprovalModal('${r.rfqNumber}')" title="Generate PO for this Approved RFQ">
-                                    <i class="ph ph-arrow-right"></i> Issue PO
-                                </button>
-                            `}
                         ` : `
-                            <button type="button" class="rfq-manager-toggle-btn is-pending" onclick="openManagerApprovalModal('${r.rfqNumber}')" title="Manager Action: Click to Toggle Approval for ${escapeHtml(r.rfqNumber)}">
-                                <span class="rfq-toggle-track"><span class="rfq-toggle-thumb"></span></span>
-                                <span>Approve RFQ</span>
+                            <button type="button" class="hr-badge hr-badge-warning" onclick="openManagerApprovalModal('${r.rfqNumber}')" title="Manager Action: Click to Toggle Approval for ${escapeHtml(r.rfqNumber)}" style="cursor: pointer; border: none; font-size: 10px; padding: 2px 8px; display: inline-flex; align-items: center; gap: 3px;">
+                                <i class="ph ph-hourglass-simple"></i> Pending
                             </button>
-                            <span style="font-size: 0.68rem; color: #94a3b8; font-weight: 600;">Pending Approval</span>
                         `}
                     </div>
                 </td>
+            `;
+        }
+
+        if (activeDirectoryColIds.includes('actions')) {
+            rowCells += `
                 <td class="td-center">
-                    <div style="display: flex; align-items: center; justify-content: center; gap: 4px;">
-                        <button type="button" class="inv-table-filter-btn" onclick="openSingleAuditModal('RFQ', '${r.rfqNumber}')" title="View Audit Trail for this RFQ">
-                            <i class="ph ph-clock-counter-clockwise"></i>
-                        </button>
-                        <button type="button" class="inv-table-filter-btn" onclick="editRfqFromDirectory('${r.rfqNumber}')" title="Edit in RFQ Builder">
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 5px;">
+                        <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="editRfqFromDirectory('${r.rfqNumber}')" title="Edit RFQ" style="padding: 4px 8px; font-size: 13px;">
                             <i class="ph ph-pencil-simple"></i>
                         </button>
-                        <button type="button" class="inv-table-filter-btn" onclick="previewRfqFromDirectory('${r.rfqNumber}')" title="View Document Preview">
+                        <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="previewRfqFromDirectory('${r.rfqNumber}')" title="View Document Preview" style="padding: 4px 8px; font-size: 13px;">
                             <i class="ph ph-eye"></i>
                         </button>
-                        <button type="button" class="inv-table-filter-btn" onclick="sendRfqFromDirectory('${r.rfqNumber}')" title="Send Quotation Request">
-                            <i class="ph ph-paper-plane-tilt"></i>
-                        </button>
-                        <button type="button" class="inv-table-filter-btn" style="color: var(--rfq-danger);" onclick="deleteRfqFromDirectory('${r.rfqNumber}')" title="Delete RFQ">
+                        <button type="button" class="hr-btn hr-btn-danger hr-btn-sm" onclick="deleteRfqFromDirectory('${r.rfqNumber}')" title="Delete RFQ" style="padding: 4px 8px; font-size: 13px;">
                             <i class="ph ph-trash"></i>
                         </button>
                     </div>
                 </td>
-            </tr>
-        `;
+            `;
+        }
+
+        return `<tr>${rowCells}</tr>`;
     }).join('');
+
+    renderDirectoryPagination(totalItems);
 }
 
 function filterRfqByStatus(status) {
     activeRfqStatusFilter = status;
+    directoryCurrentPage = 1;
     const pills = document.querySelectorAll('#rfqStatusFilterBar .rfq-filter-pill');
     pills.forEach(p => {
         if (p.getAttribute('data-status') === status) {
@@ -3928,6 +4785,7 @@ function filterRfqByStatus(status) {
 
 function handleRfqDirectorySearch(query) {
     rfqSearchTerm = query;
+    directoryCurrentPage = 1;
     renderRfqDirectory();
 }
 
@@ -3951,9 +4809,20 @@ function editRfqFromDirectory(rfqNumber) {
     // Update inputs
     document.getElementById('rfqNumberInput').value = rfq.rfqNumber;
     document.getElementById('rfqRefDisplay').textContent = rfq.rfqNumber;
+    const titleEl = document.getElementById('rfqTenderTitle');
+    if (titleEl) titleEl.value = rfq.title || '';
+    const statusBadge = document.getElementById('rfqStatusBadge');
+    if (statusBadge) {
+        const s = rfq.status || 'Draft';
+        statusBadge.className = `status-pill ${s.toLowerCase().replace(/\s+/g, '-')}`;
+        statusBadge.innerHTML = `<i class="ph ph-dot"></i> ${s}`;
+    }
     if (rfq.vendorId) {
         document.getElementById('vendorSelect').value = rfq.vendorId;
         handleVendorSelection(rfq.vendorId);
+    } else {
+        document.getElementById('vendorSelect').value = '';
+        clearVendorFields();
     }
     document.getElementById('rfqDateIssued').value = rfq.dateIssued || '';
     document.getElementById('rfqDueDate').value = rfq.dueDate || '';
@@ -4406,14 +5275,90 @@ function logProcurementAudit(module, refNumber, action, title, description, deta
     return entry;
 }
 
+let auditScopeMode = 'CURRENT'; // Default strictly to CURRENT PO / RFQ to minimize process usage
+
+function getCurrentAuditTarget() {
+    const active = window.AppStore.activeRfq || {};
+    const rfqNum = (active.rfqNumber || document.getElementById('rfqRefDisplay')?.textContent || '').trim();
+    const poNum = (active.poReference || active.poNumber || '').trim();
+    return { rfqNum, poNum };
+}
+
+function setAuditScope(mode) {
+    auditScopeMode = mode;
+    const btnCurrent = document.getElementById('btnAuditScopeCurrent');
+    const btnAll = document.getElementById('btnAuditScopeAll');
+    if (btnCurrent) btnCurrent.classList.toggle('active', mode === 'CURRENT');
+    if (btnAll) btnAll.classList.toggle('active', mode === 'ALL');
+    renderRfqAuditTrail();
+}
+
 function renderRfqAuditTrail() {
     const container = document.getElementById('rfqAuditTimeline');
     if (!container) return;
 
     const allLogs = getProcurementAuditTrail();
+    const { rfqNum, poNum } = getCurrentAuditTarget();
+
+    // Update indexed scope badge in drawer
+    const badgeRfq = document.getElementById('auditTargetRefBadge');
+    if (badgeRfq) badgeRfq.textContent = rfqNum || 'Current Tender';
+
+    const badgePo = document.getElementById('auditTargetPoBadge');
+    if (badgePo) {
+        if (poNum) {
+            badgePo.textContent = poNum;
+            badgePo.style.display = 'inline-block';
+        } else {
+            badgePo.style.display = 'none';
+        }
+    }
+
+    // Process optimization: Index ONLY current RFQ / PO when in CURRENT mode
+    let targetLogs = allLogs;
+    if (auditScopeMode === 'CURRENT' && (rfqNum || poNum)) {
+        targetLogs = allLogs.filter(log => {
+            const ref = (log.refNumber || '').trim();
+            if (rfqNum && (ref === rfqNum || (log.description && log.description.includes(rfqNum)))) {
+                return true;
+            }
+            if (poNum && (ref === poNum || (log.description && log.description.includes(poNum)))) {
+                return true;
+            }
+            return false;
+        });
+
+        // If active tender has no historical entries yet, provide an initial draft baseline event
+        if (targetLogs.length === 0 && rfqNum) {
+            const active = window.AppStore.activeRfq || {};
+            targetLogs = [{
+                id: `AUD-INIT-${rfqNum}`,
+                timestamp: new Date().toISOString(),
+                formattedDate: 'Just now',
+                module: 'RFQ',
+                refNumber: rfqNum,
+                action: 'CREATED',
+                actor: '{{ auth()->user()->name ?? "Dorothy Diaz" }}',
+                role: 'Procurement Manager',
+                title: 'RFQ Tender Initialized',
+                description: `Active draft tender ${rfqNum} initialized in procurement workspace.`,
+                details: [
+                    { label: 'Tender Reference', value: rfqNum },
+                    { label: 'Lifecycle Status', value: active.status || 'Draft' },
+                    { label: 'Supplier Partner', value: active.vendorName || 'Not Selected' },
+                    { label: 'Item Lines', value: `${(active.items || []).length} items listed` }
+                ]
+            }];
+        }
+    }
+
+    // Update scoped event counter in drawer header
+    const auditCountBadge = document.getElementById('tabRfqAuditCount');
+    if (auditCountBadge) auditCountBadge.textContent = targetLogs.length;
+
     const q = (auditSearchTerm || '').toLowerCase().trim();
 
-    const filtered = allLogs.filter(log => {
+    const filtered = targetLogs.filter(log => {
         const matchesModule = (activeAuditModuleFilter === 'ALL') || (log.module === activeAuditModuleFilter);
         const matchesAction = (activeAuditActionFilter === 'ALL') || (log.action === activeAuditActionFilter);
         const matchesSearch = !q ||
@@ -4425,22 +5370,23 @@ function renderRfqAuditTrail() {
         return matchesModule && matchesAction && matchesSearch;
     });
 
-    // Update KPI numbers
+    // Update KPI numbers calculated ONLY against the indexed target set
     const kpiTotal = document.getElementById('auditKpiTotalCount');
     const kpiApprovals = document.getElementById('auditKpiApprovalsCount');
     const kpiEdits = document.getElementById('auditKpiEditsCount');
     const kpiEmails = document.getElementById('auditKpiEmailsCount');
 
-    if (kpiTotal) kpiTotal.textContent = allLogs.length;
-    if (kpiApprovals) kpiApprovals.textContent = allLogs.filter(l => l.action === 'APPROVED').length;
-    if (kpiEdits) kpiEdits.textContent = allLogs.filter(l => l.action === 'CREATED' || l.action === 'EDITED' || l.action === 'WET_MARKET_CREATED').length;
-    if (kpiEmails) kpiEmails.textContent = allLogs.filter(l => l.action === 'EMAIL_SENT').length;
+    if (kpiTotal) kpiTotal.textContent = targetLogs.length;
+    if (kpiApprovals) kpiApprovals.textContent = targetLogs.filter(l => l.action === 'APPROVED').length;
+    if (kpiEdits) kpiEdits.textContent = targetLogs.filter(l => l.action === 'CREATED' || l.action === 'EDITED' || l.action === 'WET_MARKET_CREATED').length;
+    if (kpiEmails) kpiEmails.textContent = targetLogs.filter(l => l.action === 'EMAIL_SENT').length;
 
     if (filtered.length === 0) {
         container.innerHTML = `
-            <div style="text-align: center; padding: 48px; background: #ffffff; border: 1px solid var(--rfq-border-subtle); border-radius: 10px; color: var(--rfq-text-muted);">
-                <i class="ph ph-clock-countdown" style="font-size: 36px; color: #cbd5e1; display: block; margin-bottom: 8px;"></i>
-                No audit activity records found matching the selected search and filter criteria.
+            <div style="text-align: center; padding: 36px 20px; background: #ffffff; border: 1px solid var(--rfq-border-subtle); border-radius: 10px; color: var(--rfq-text-muted);">
+                <i class="ph ph-clock-countdown" style="font-size: 32px; color: #cbd5e1; display: block; margin-bottom: 8px;"></i>
+                <div style="font-weight: 600; color: #475569; margin-bottom: 4px;">No Logged Events Found</div>
+                <div style="font-size: 12px;">No logged activities match the current filter criteria for ${rfqNum || 'this tender'}.</div>
             </div>
         `;
         return;
@@ -4635,6 +5581,34 @@ function syncRfqToDirectory(rfqData, overrideStatus = null) {
     }
     localStorage.setItem('rms_rfq_directory', JSON.stringify(window.AppStore.rfqs));
     renderRfqDirectory();
+}
+
+function exportRfqDirectoryCSV() {
+    const list = window.AppStore && window.AppStore.rfqs ? window.AppStore.rfqs : [];
+    if (!list || list.length === 0) {
+        showToast("No RFQ tender records available to export.", "warning");
+        return;
+    }
+    const headers = ["Reference", "Vendor Name", "Vendor Email", "Status", "Total Budget (PHP)", "Created Date", "Closing Date", "Items Count"];
+    const rows = list.map(r => [
+        `"${r.ref || ''}"`,
+        `"${(r.vendorName || '').replace(/"/g, '""')}"`,
+        `"${r.vendorEmail || ''}"`,
+        `"${r.status || ''}"`,
+        r.totalBudget || 0,
+        `"${r.createdDate || ''}"`,
+        `"${r.closingDate || ''}"`,
+        r.items ? r.items.length : 0
+    ]);
+    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `RFQ_Tenders_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast("RFQ directory successfully exported to CSV.", "success");
 }
 
 function escapeHtml(str) {
