@@ -59,105 +59,146 @@
 .po-workspace-container {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 12px;
     width: 100%;
     padding-bottom: 50px;
 }
 
-/* Nav Tabs Bar */
+/* Nav Tabs Bar (HR Standard) */
 .po-nav-tabs-bar {
     display: flex;
     align-items: center;
-    gap: 10px;
-    background: #ffffff;
-    border: 1px solid var(--po-border-subtle);
-    border-radius: var(--po-radius-lg);
-    padding: 8px 12px;
-    box-shadow: var(--po-shadow-sm);
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    border-radius: 12px;
+    padding: 5px 8px;
+    box-shadow: 0 4px 16px rgba(148, 163, 184, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.95);
     flex-wrap: wrap;
+    margin-bottom: 2px;
 }
 .po-tab-btn {
     display: inline-flex;
     align-items: center;
-    gap: 10px;
-    padding: 10px 20px;
-    border-radius: var(--po-radius-md);
-    font-size: 0.88rem;
-    font-weight: 700;
-    color: var(--po-text-muted);
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 9px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
     background: transparent;
-    border: none;
+    border: 1px solid transparent;
     cursor: pointer;
-    transition: all 0.16s ease;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     font-family: inherit;
+    white-space: nowrap;
+    position: relative;
+    line-height: 1.2;
 }
-.po-tab-btn:hover {
-    color: var(--po-text-strong);
-    background: #f8fafc;
+.po-tab-btn i {
+    font-size: 16px;
+    color: #94a3b8;
+    transition: color 0.2s ease, transform 0.2s ease;
+}
+.po-tab-btn:hover:not(.active) {
+    color: #9333ea;
+    background: rgba(168, 85, 247, 0.08);
+}
+.po-tab-btn:hover:not(.active) i {
+    color: #9333ea;
+    transform: scale(1.1);
 }
 .po-tab-btn.active {
-    background: var(--po-primary-gradient);
-    color: #ffffff;
-    box-shadow: 0 4px 14px rgba(2, 132, 199, 0.28);
+    background: #ffffff;
+    color: #9333ea;
+    border-color: rgba(168, 85, 247, 0.28);
+    box-shadow: 0 4px 14px rgba(168, 85, 247, 0.14), 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+.po-tab-btn.active i {
+    background: linear-gradient(135deg, #ec4899, #a855f7);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 700;
+}
+.po-tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 16%;
+    right: 16%;
+    height: 3px;
+    background: linear-gradient(90deg, #ec4899, #a855f7);
+    border-radius: 3px 3px 0 0;
 }
 .po-tab-count {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 2px 8px;
-    border-radius: 12px;
-    font-size: 0.75rem;
-    font-weight: 800;
-    background: var(--po-primary-subtle);
-    color: var(--po-primary-dark);
+    padding: 2px 7px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 700;
+    background: rgba(168, 85, 247, 0.12);
+    color: #9333ea;
+    transition: all 0.2s ease;
 }
 .po-tab-btn.active .po-tab-count {
-    background: rgba(255, 255, 255, 0.24);
-    color: #ffffff;
+    background: rgba(168, 85, 247, 0.18);
+    color: #7c3aed;
 }
 .po-tab-badge {
     display: inline-flex;
     align-items: center;
     padding: 2px 7px;
     border-radius: 6px;
-    font-size: 0.72rem;
+    font-size: 10.5px;
     font-weight: 700;
-    background: #f1f5f9;
-    color: #475569;
+    background: rgba(168, 85, 247, 0.12);
+    color: #9333ea;
 }
 .po-tab-btn.active .po-tab-badge {
-    background: rgba(255, 255, 255, 0.24);
-    color: #ffffff;
+    background: rgba(168, 85, 247, 0.18);
+    color: #7c3aed;
 }
 .po-tab-pane {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 14px;
     width: 100%;
 }
+#pane-tab-po-builder.po-tab-pane {
+    gap: 4px;
+}
 
-/* KPI Cluster Grid */
+/* KPI Cluster Grid (Compacted HR Metric Cards) */
 .po-kpi-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px;
 }
 .po-kpi-card {
-    background: #ffffff;
-    border: 1px solid var(--po-border-subtle);
-    border-radius: var(--po-radius-lg);
-    padding: 16px 20px;
-    box-shadow: var(--po-shadow-sm);
+    background: rgba(255, 255, 255, 0.90);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.95);
+    border-radius: 12px;
+    padding: 8px 14px;
+    box-shadow: 0 4px 16px rgba(148, 163, 184, 0.06), 0 1px 3px rgba(0, 0, 0, 0.02), inset 0 1px 1px rgba(255, 255, 255, 0.95);
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
     cursor: pointer;
-    transition: all 0.16s ease;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    overflow: hidden;
 }
 .po-kpi-card:hover {
     transform: translateY(-2px);
-    box-shadow: var(--po-shadow-md);
-    border-color: var(--po-primary-light);
+    box-shadow: 0 8px 24px rgba(168, 85, 247, 0.12), 0 2px 6px rgba(0, 0, 0, 0.04);
+    border-color: rgba(168, 85, 247, 0.4);
 }
 .po-kpi-header {
     display: flex;
@@ -165,45 +206,208 @@
     justify-content: space-between;
 }
 .po-kpi-label {
-    font-size: 0.78rem;
+    font-size: 0.72rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.04em;
     color: var(--po-text-muted);
 }
 .po-kpi-icon {
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
     border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 16px;
-    background: var(--po-primary-subtle);
-    color: var(--po-primary-dark);
-}
-.po-kpi-icon.pending {
-    background: #fffbeb;
-    color: #d97706;
-}
-.po-kpi-icon.received {
-    background: #ecfdf5;
-    color: #059669;
-}
-.po-kpi-icon.paid {
-    background: #eff6ff;
-    color: #1d4ed8;
+    font-size: 14px;
 }
 .po-kpi-val {
-    font-size: 1.55rem;
+    font-size: 1.35rem;
     font-weight: 800;
-    color: var(--po-text-strong);
-    font-variant-numeric: tabular-nums;
+    color: #0f172a;
     line-height: 1.1;
+    font-feature-settings: "tnum";
+    font-variant-numeric: tabular-nums;
 }
 .po-kpi-sub {
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     color: var(--po-text-muted);
+}
+
+/* PO Originating RFQ Badge */
+.po-rfq-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-family: monospace;
+    font-size: 11px;
+    font-weight: 700;
+    color: #9333ea;
+    background: rgba(168, 85, 247, 0.10);
+    border: 1px solid rgba(168, 85, 247, 0.25);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-decoration: none;
+}
+.po-rfq-pill:hover {
+    background: rgba(168, 85, 247, 0.20);
+    border-color: #9333ea;
+    transform: translateY(-1px);
+}
+
+/* Status Filter Pills Bar - Compact HR Theme */
+.po-filter-pills-bar {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-wrap: wrap;
+}
+.po-filter-pill {
+    padding: 3.5px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #64748b;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-family: inherit;
+    line-height: 1.2;
+}
+.po-filter-pill:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+}
+.po-filter-pill.active {
+    background: linear-gradient(135deg, rgba(236, 72, 153, 0.12), rgba(168, 85, 247, 0.18));
+    color: #9333ea;
+    border-color: rgba(168, 85, 247, 0.35);
+    font-weight: 700;
+    box-shadow: 0 1px 3px rgba(168, 85, 247, 0.08);
+}
+
+/* Header Column Resizer Handle */
+.po-col-resizer {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 6px;
+    bottom: 0;
+    cursor: col-resize;
+    user-select: none;
+    z-index: 10;
+}
+.po-col-resizer:hover, .po-col-resizer.is-resizing {
+    background: var(--po-primary, #9333ea);
+}
+
+/* Column Configuration Dropdown */
+.po-col-dropdown {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 4px);
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.15), 0 8px 10px -6px rgba(15, 23, 42, 0.08);
+    width: 270px;
+    z-index: 1050;
+    padding: 0;
+    overflow: hidden;
+}
+.po-col-checklist {
+    max-height: 280px;
+    overflow-y: auto;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.po-col-check-item, .inv-col-item-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 5px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    user-select: none;
+}
+.po-col-check-item:hover, .inv-col-item-row:hover {
+    background: #f8fafc;
+}
+
+/* Quick Action Links inside Dropdown */
+.inv-col-quick-link {
+    background: none;
+    border: none;
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: #9333ea;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 6px;
+    border-radius: 5px;
+    transition: background 0.12s ease;
+}
+.inv-col-quick-link:hover {
+    background: rgba(168, 85, 247, 0.10);
+}
+.inv-col-quick-link.is-reset {
+    color: #64748b;
+}
+.inv-col-quick-link.is-reset:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+}
+.inv-header-action-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    position: relative;
+}
+
+/* Industrial Workspace Asymmetric Grid for PO Builder */
+.po-builder-workspace-grid {
+    display: grid;
+    grid-template-columns: minmax(360px, 4.2fr) minmax(480px, 5.8fr);
+    gap: 10px;
+    align-items: stretch;
+}
+@media (max-width: 1100px) {
+    .po-builder-workspace-grid {
+        grid-template-columns: 1fr;
+    }
+}
+.po-builder-left-col {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.po-builder-right-col {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    height: 100%;
+    min-width: 0;
+}
+.po-builder-right-col .po-items-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+.po-builder-right-col .po-table-responsive {
+    flex: 1 1 auto;
+    max-height: calc(100vh - 290px);
+    min-height: 260px;
+    overflow-y: auto;
 }
 
 /* Filter Pills Bar */
@@ -318,55 +522,29 @@
     border: 1px solid #fde68a;
 }
 
-/* Command Bar */
+/* Compact PO Command Bar (Zero Dead Whitespace) */
 .po-command-bar {
     display: flex;
     align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
-    gap: 16px;
-    background: var(--po-surface);
-    border: 1px solid var(--po-border-subtle);
-    border-radius: var(--po-radius-lg);
-    padding: 18px 22px;
-    box-shadow: var(--po-shadow-sm);
+    gap: 8px;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 0;
+    box-shadow: none;
+    margin: 0 0 2px 0;
 }
-.po-title-group {
+.po-command-left {
     display: flex;
     align-items: center;
-    gap: 14px;
-}
-.po-icon-badge {
-    width: 46px;
-    height: 46px;
-    border-radius: 12px;
-    background: var(--po-primary-gradient);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #ffffff;
-    font-size: 24px;
-    box-shadow: 0 6px 16px rgba(2, 132, 199, 0.28);
-}
-.po-title-text h1 {
-    font-size: 1.35rem;
-    font-weight: 800;
-    color: var(--po-text-strong);
-    margin: 0;
-    letter-spacing: -0.01em;
-}
-.po-title-meta {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-top: 3px;
-    font-size: 0.82rem;
-    color: var(--po-text-muted);
+    gap: 8px;
 }
 .po-actions-group {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 6px;
     flex-wrap: wrap;
 }
 .po-btn {
@@ -496,43 +674,43 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 14px 20px;
+    padding: 8px 14px;
     background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
     border-bottom: 1px solid var(--po-border-subtle);
 }
 .po-panel-title {
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 0.92rem;
+    gap: 6px;
+    font-size: 0.84rem;
     font-weight: 700;
     color: var(--po-text-strong);
     letter-spacing: 0.01em;
 }
 .po-panel-title i {
-    font-size: 18px;
+    font-size: 16px;
     color: var(--po-primary);
 }
 .po-panel-body {
-    padding: 20px;
+    padding: 10px 14px;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 8px;
 }
 
-/* Form Controls */
+/* Space-Saving Form Controls & Merged Inputs */
 .po-form-row {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 14px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
 }
 .po-field {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 3px;
 }
 .po-label {
-    font-size: 0.78rem;
+    font-size: 0.72rem;
     font-weight: 700;
     color: var(--po-text-medium);
     text-transform: uppercase;
@@ -542,7 +720,7 @@
     justify-content: space-between;
 }
 .po-label-badge {
-    font-size: 0.68rem;
+    font-size: 0.65rem;
     font-weight: 600;
     color: var(--po-primary-dark);
     background: var(--po-primary-subtle);
@@ -552,10 +730,10 @@
 }
 .po-input, .po-select, .po-textarea {
     width: 100%;
-    padding: 9px 12px;
+    padding: 6px 10px;
     border: 1.5px solid var(--po-border-subtle);
     border-radius: var(--po-radius-md);
-    font-size: 0.88rem;
+    font-size: 0.82rem;
     color: var(--po-text-strong);
     background: #ffffff;
     transition: all 0.15s ease;
@@ -564,13 +742,240 @@
 }
 .po-input:focus, .po-select:focus, .po-textarea:focus {
     outline: none;
-    border-color: var(--po-border-focus);
+    border-color: var(--po-primary);
     box-shadow: 0 0 0 3px var(--po-primary-glow);
 }
 .po-input[readonly] {
     background: #f8fafc;
     color: #475569;
     border-style: dashed;
+}
+
+/* Searchable Target Vendor Combobox */
+.po-vendor-combobox {
+    position: relative;
+    width: 100%;
+}
+.po-vendor-combo-trigger {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 10px;
+    border: 1.5px solid var(--po-border-subtle);
+    border-radius: 7px;
+    background: #ffffff;
+    cursor: pointer;
+    font-size: 0.82rem;
+    color: var(--po-text-strong);
+    transition: all 0.15s ease;
+    user-select: none;
+    text-align: left;
+}
+.po-vendor-combo-trigger:hover {
+    border-color: #cbd5e1;
+    background: #fafafa;
+}
+.po-vendor-combo-trigger.is-active,
+.po-vendor-combo-trigger:focus {
+    outline: none;
+    border-color: var(--po-primary);
+    box-shadow: 0 0 0 3px var(--po-primary-glow);
+}
+.po-vendor-combo-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    z-index: 1050;
+    background: #ffffff;
+    border: 1px solid rgba(226, 232, 240, 0.95);
+    border-radius: 9px;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.15), 0 4px 10px rgba(0, 0, 0, 0.05);
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+}
+.po-vendor-combo-dropdown.is-active {
+    display: flex;
+}
+.po-vendor-combo-search-wrap {
+    padding: 7px;
+    border-bottom: 1px solid #f1f5f9;
+    background: #f8fafc;
+    position: relative;
+}
+.po-vendor-combo-search-wrap i {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    font-size: 14px;
+}
+.po-vendor-combo-search-input {
+    width: 100%;
+    padding: 5px 8px 5px 28px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    box-sizing: border-box;
+    outline: none;
+}
+.po-vendor-combo-search-input:focus {
+    border-color: var(--po-primary);
+    box-shadow: 0 0 0 2px var(--po-primary-glow);
+}
+.po-vendor-combo-list {
+    max-height: 220px;
+    overflow-y: auto;
+    padding: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.po-vendor-combo-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 9px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.79rem;
+    transition: background 0.1s ease;
+}
+.po-vendor-combo-item:hover,
+.po-vendor-combo-item.is-selected {
+    background: #e0f2fe;
+}
+.po-vendor-combo-item.is-selected {
+    font-weight: 700;
+    color: var(--po-primary-dark);
+}
+.po-vendor-combo-empty {
+    padding: 14px;
+    text-align: center;
+    color: #94a3b8;
+    font-size: 0.78rem;
+}
+
+/* Compact Active Vendor Info Banner */
+.po-vendor-pill-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, rgba(240, 249, 255, 0.75), rgba(248, 250, 252, 0.85));
+    border: 1px solid rgba(186, 230, 253, 0.65);
+    border-radius: 8px;
+    padding: 5px 9px;
+}
+.po-vendor-avatar {
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    background: linear-gradient(135deg, #0284c7, #0d9488);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 0.78rem;
+    flex-shrink: 0;
+}
+.po-vendor-summary {
+    flex: 1;
+    min-width: 0;
+}
+.po-vendor-name-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-weight: 700;
+    font-size: 0.81rem;
+    color: var(--po-text-strong);
+}
+.po-vendor-detail-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.72rem;
+    color: var(--po-text-muted);
+    margin-top: 1px;
+}
+
+/* Items Panel Toolbar & Summary Bar */
+.po-items-panel {
+    background: var(--po-surface);
+    border: 1px solid var(--po-border-subtle);
+    border-radius: var(--po-radius-lg);
+    box-shadow: var(--po-shadow-sm);
+    display: flex;
+    flex-direction: column;
+}
+.po-items-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 14px;
+    background: #ffffff;
+    border-bottom: 1px solid var(--po-border-subtle);
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.po-toolbar-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.po-items-counter-pill {
+    background: var(--po-primary-subtle);
+    color: var(--po-primary-dark);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 10px;
+}
+.po-toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.po-summary-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    background: #f8fafc;
+    border-top: 1px solid var(--po-border-subtle);
+    border-radius: 0 0 var(--po-radius-lg) var(--po-radius-lg);
+    flex-wrap: wrap;
+    gap: 16px;
+}
+.po-metrics-cluster {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+.po-metric-unit {
+    display: flex;
+    flex-direction: column;
+}
+.po-metric-label {
+    font-size: 0.74rem;
+    font-weight: 700;
+    color: var(--po-text-muted);
+    text-transform: uppercase;
+}
+.po-metric-val {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: var(--po-text-strong);
+    font-feature-settings: "tnum";
+    font-variant-numeric: tabular-nums;
+}
+.po-metric-val.highlight {
+    color: var(--po-primary);
 }
 .po-dual-inputs {
     display: flex;
@@ -946,6 +1351,19 @@
     <!-- Toast Notifications Root -->
     <div class="rfq-toast-container" id="poToastContainer"></div>
 
+    <!-- Top Action Header / Breadcrumb (HR Operations Standard - Clean Identity) -->
+    <div class="hr-parent-title" style="margin-bottom: 2px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 38px; height: 38px; border-radius: 10px; background: linear-gradient(135deg, rgba(236, 72, 153, 0.14), rgba(168, 85, 247, 0.20)); border: 1px solid rgba(168, 85, 247, 0.32); color: #9333ea; display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 4px 14px rgba(168, 85, 247, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.8); flex-shrink: 0;">
+                <i class="ph ph-receipt"></i>
+            </div>
+            <div>
+                <h1 style="font-size: 1.25rem; font-weight: 700; color: #0f172a; margin: 0; line-height: 1.2;">Purchase Orders (PO)</h1>
+                <p style="font-size: 0.8rem; color: #64748b; margin: 2px 0 0 0;">Official procurement commitments, receiving dock tracking & vendor settlement</p>
+            </div>
+        </div>
+    </div>
+
     <!-- PO Navigation Tabs Bar -->
     <nav class="po-nav-tabs-bar" id="poTabsBar">
         <button type="button" class="po-tab-btn active" id="tabBtnPoList" data-tab="tab-po-list" onclick="switchPoTab('tab-po-list')">
@@ -955,13 +1373,8 @@
         </button>
         <button type="button" class="po-tab-btn" id="tabBtnPoBuilder" data-tab="tab-po-builder" onclick="switchPoTab('tab-po-builder')">
             <i class="ph ph-plus-circle"></i>
-            <span id="tabPoBuilderTitle">Create New Purchase Order</span>
+            <span id="tabPoBuilderTitle">Purchase Order Builder</span>
             <span class="po-tab-badge" id="tabPoBuilderBadge">New PO</span>
-        </button>
-        <button type="button" class="po-tab-btn" id="tabBtnPoAudit" data-tab="tab-po-audit" onclick="switchPoTab('tab-po-audit')">
-            <i class="ph ph-clock-counter-clockwise"></i>
-            <span>PO Audit Trail & Financial Logs</span>
-            <span class="po-tab-count" id="tabPoAuditCount">0</span>
         </button>
     </nav>
 
@@ -974,7 +1387,7 @@
             <div class="po-kpi-card" onclick="filterPoStatus('all')">
                 <div class="po-kpi-header">
                     <span class="po-kpi-label">Total Purchase Orders</span>
-                    <div class="po-kpi-icon"><i class="ph ph-files"></i></div>
+                    <div class="po-kpi-icon" style="background: linear-gradient(135deg, #eff6ff, #dbeafe); color: #2563eb;"><i class="ph ph-files"></i></div>
                 </div>
                 <div class="po-kpi-val" id="kpiPoTotal">0</div>
                 <div class="po-kpi-sub">Total procurement commitments</div>
@@ -982,7 +1395,7 @@
             <div class="po-kpi-card" onclick="filterPoStatus('Approved / Issued')">
                 <div class="po-kpi-header">
                     <span class="po-kpi-label">Pending Delivery</span>
-                    <div class="po-kpi-icon pending"><i class="ph ph-truck"></i></div>
+                    <div class="po-kpi-icon" style="background: linear-gradient(135deg, #fff7ed, #ffedd5); color: #ea580c;"><i class="ph ph-truck"></i></div>
                 </div>
                 <div class="po-kpi-val" id="kpiPoPending">0</div>
                 <div class="po-kpi-sub">Issued orders awaiting receiving dock</div>
@@ -990,7 +1403,7 @@
             <div class="po-kpi-card" onclick="filterPoStatus('Fully Received')">
                 <div class="po-kpi-header">
                     <span class="po-kpi-label">Fully Received</span>
-                    <div class="po-kpi-icon received"><i class="ph ph-check-circle"></i></div>
+                    <div class="po-kpi-icon" style="background: linear-gradient(135deg, #ecfdf5, #d1fae5); color: #059669;"><i class="ph ph-check-circle"></i></div>
                 </div>
                 <div class="po-kpi-val" id="kpiPoReceived">0</div>
                 <div class="po-kpi-sub">Inventoried and stocked in commissary</div>
@@ -998,7 +1411,7 @@
             <div class="po-kpi-card" onclick="filterPoPayment('Paid in Full / Cash Out')">
                 <div class="po-kpi-header">
                     <span class="po-kpi-label">Settled / Paid</span>
-                    <div class="po-kpi-icon paid"><i class="ph ph-currency-dollar"></i></div>
+                    <div class="po-kpi-icon" style="background: linear-gradient(135deg, #f5f3ff, #ede9fe); color: #7c3aed;"><i class="ph ph-currency-dollar"></i></div>
                 </div>
                 <div class="po-kpi-val" id="kpiPoPaid">0</div>
                 <div class="po-kpi-sub">Financial cash-out / settled invoices</div>
@@ -1007,49 +1420,96 @@
 
         <!-- Filter & Search Toolbar -->
         <div class="po-panel-card">
-            <div style="display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--po-border-subtle); flex-wrap: wrap; gap: 12px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--po-border-subtle); flex-wrap: wrap; gap: 10px;">
                 <div style="display: flex; align-items: center; gap: 10px; flex: 1; flex-wrap: wrap;">
-                    <div style="position: relative; flex: 1; min-width: 240px; max-width: 380px;">
-                        <i class="ph ph-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 16px;"></i>
-                        <input type="text" class="po-input" id="poSearchInput" oninput="handlePoSearch(this.value)" placeholder="Search PO #, vendor, wet market stall..." style="padding-left: 36px;">
+                    <div style="position: relative; flex: 1; min-width: 220px; max-width: 360px;">
+                        <i class="ph ph-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 15px;"></i>
+                        <input type="text" class="po-input" id="poSearchInput" oninput="handlePoSearch(this.value)" placeholder="Search PO #, vendor, RFQ ref, stall..." style="padding-left: 34px; height: 32px; font-size: 0.82rem;">
                     </div>
                     <div class="po-filter-pills-bar" id="poStatusFilterBar">
-                        <button type="button" class="po-filter-pill active" data-filter="all" onclick="filterPoStatus('all')">All (<span id="countPoAll">0</span>)</button>
-                        <button type="button" class="po-filter-pill" data-filter="Standard" onclick="filterPoType('vendor')">Vendor Supplier</button>
-                        <button type="button" class="po-filter-pill" data-filter="WetMarket" onclick="filterPoType('wet_market')">Wet Market Cash Run</button>
-                        <button type="button" class="po-filter-pill" data-filter="Pending" onclick="filterPoStatus('Approved / Issued')">Pending Delivery (<span id="countPoPending">0</span>)</button>
-                        <button type="button" class="po-filter-pill" data-filter="Received" onclick="filterPoStatus('Fully Received')">Received (<span id="countPoReceived">0</span>)</button>
-                        <button type="button" class="po-filter-pill" data-filter="Paid" onclick="filterPoPayment('Paid in Full / Cash Out')">Paid (<span id="countPoPaid">0</span>)</button>
+                        <button type="button" class="po-filter-pill active" data-filter="all" onclick="filterPoStatus('all', this)">All (<span id="countPoAll">0</span>)</button>
+                        <button type="button" class="po-filter-pill" data-filter="Standard" onclick="filterPoType('vendor', this)">Vendor Supplier</button>
+                        <button type="button" class="po-filter-pill" data-filter="WetMarket" onclick="filterPoType('wet_market', this)">Wet Market Cash Run</button>
+                        <button type="button" class="po-filter-pill" data-filter="Pending" onclick="filterPoStatus('Approved / Issued', this)">Pending Delivery (<span id="countPoPending">0</span>)</button>
+                        <button type="button" class="po-filter-pill" data-filter="Received" onclick="filterPoStatus('Fully Received', this)">Received (<span id="countPoReceived">0</span>)</button>
+                        <button type="button" class="po-filter-pill" data-filter="Paid" onclick="filterPoPayment('Paid in Full / Cash Out', this)">Paid (<span id="countPoPaid">0</span>)</button>
                     </div>
                 </div>
-                <div>
-                    <button type="button" class="po-btn po-btn-primary" onclick="startNewPoFromDirectory()">
-                        <i class="ph ph-plus-circle"></i> + Create Purchase Order
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <!-- Column Visibility Selector Dropdown -->
+                    <div style="position: relative;">
+                        <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" id="btnPoColConfig" onclick="togglePoColumnConfigDropdown(event)" style="padding: 4px 10px; font-size: 11.5px; height: 32px;" title="Customize visible table columns">
+                            <i class="ph ph-columns"></i> Columns <i class="ph ph-caret-down" style="font-size: 10px;"></i>
+                        </button>
+                        <div class="po-col-dropdown" id="poColConfigDropdown" style="display: none;" onclick="event.stopPropagation()">
+                            <div style="padding: 8px 12px; border-bottom: 1px solid #f1f5f9; display: flex; flex-direction: column; gap: 6px;">
+                                <div style="display: flex; align-items: center; justify-content: space-between;">
+                                    <span style="font-weight: 700; font-size: 12px; color: #0f172a; display: flex; align-items: center; gap: 5px;">
+                                        <i class="ph ph-funnel" style="color: #9333ea;"></i> Column Visibility
+                                    </span>
+                                    <button type="button" class="inv-col-quick-link is-reset" onclick="resetPoColumnWidths()" title="Reset all column widths to defaults" style="font-size: 11px; padding: 2px 6px;">
+                                        <i class="ph ph-arrow-counter-clockwise"></i> Reset Widths
+                                    </button>
+                                </div>
+                                <div class="inv-col-dropdown-quick-links" style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                                    <button type="button" class="inv-col-quick-link" onclick="showAllPoColumns()" style="font-size: 11px; padding: 2px 6px;">
+                                        <i class="ph ph-check-square"></i> Show All
+                                    </button>
+                                    <button type="button" class="inv-col-quick-link" onclick="resetPoColumnDefaults()" style="font-size: 11px; padding: 2px 6px;">
+                                        <i class="ph ph-columns"></i> Defaults
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="po-col-checklist" id="poColChecklist">
+                                <!-- Populated dynamically -->
+                            </div>
+                            <div style="padding: 6px 12px; border-top: 1px solid #f1f5f9; background: #fafafa; font-size: 11px; color: #64748b; display: flex; align-items: center; justify-content: space-between;">
+                                <span id="poColActiveCounter">0 visible</span>
+                                <span>Drag headers to resize</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="openImportRfqModal()" title="Convert Awarded RFQ to PO" style="padding: 4px 10px; font-size: 11.5px; height: 32px;">
+                        <i class="ph ph-link"></i> Import RFQ
+                    </button>
+                    <button type="button" class="hr-btn hr-btn-primary hr-btn-sm" onclick="startNewPoFromDirectory()" style="padding: 4px 12px; font-size: 11.5px; height: 32px;">
+                        <i class="ph ph-plus-circle"></i> + Create PO
                     </button>
                 </div>
             </div>
 
             <!-- PO Directory Table -->
-            <div class="po-table-responsive">
+            <div class="po-table-responsive" style="overflow-x: auto;">
                 <table class="po-table" id="poDirectoryTable">
-                    <thead>
-                        <tr>
-                            <th style="width: 130px;">PO Reference</th>
-                            <th style="width: 110px;">Type</th>
-                            <th style="min-width: 220px;">Vendor / Market Source</th>
-                            <th style="width: 110px;">Order Date</th>
-                            <th style="width: 110px;">Delivery Due</th>
-                            <th style="width: 80px; text-align: center;">Items</th>
-                            <th style="width: 130px; text-align: right;">Total Amount</th>
-                            <th style="width: 130px; text-align: center;">Payment Status</th>
-                            <th style="width: 140px; text-align: center;">PO Status</th>
-                            <th style="width: 150px; text-align: center;">Actions</th>
+                    <thead id="poDirectoryThead">
+                        <tr id="poDirectoryTheadRow">
+                            <!-- Populated dynamically via renderPoTableHeader -->
                         </tr>
                     </thead>
                     <tbody id="poDirectoryTbody">
                         <!-- Rendered dynamically -->
                     </tbody>
                 </table>
+            </div>
+
+            <!-- Table Pagination Bar -->
+            <div class="po-table-pagination-bar" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-top: 1px solid var(--po-border-subtle); flex-wrap: wrap; gap: 10px; font-size: 0.8rem; color: #64748b;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span>Showing <strong id="poPaginationStart" style="color: #0f172a;">0</strong> to <strong id="poPaginationEnd" style="color: #0f172a;">0</strong> of <strong id="poPaginationTotal" style="color: #0f172a;">0</strong> purchase orders</span>
+                    <span>•</span>
+                    <label for="poPageSizeSelect" style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.78rem;">
+                        <span>Per page:</span>
+                        <select class="po-select" id="poPageSizeSelect" onchange="changePoPageSize(this.value)" style="height: 26px; padding: 2px 8px; font-size: 0.78rem; width: auto;">
+                            <option value="10">10</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                        </select>
+                    </label>
+                </div>
+                <div class="po-pagination-controls" id="poPaginationButtons" style="display: flex; align-items: center; gap: 4px;">
+                    <!-- Rendered by JS -->
+                </div>
             </div>
         </div>
     </div>
@@ -1061,383 +1521,418 @@
 
         <!-- Command Bar -->
         <div class="po-command-bar">
-            <div class="po-title-group">
-                <div class="po-icon-badge">
-                    <i class="ph ph-receipt"></i>
-                </div>
-                <div class="po-title-text">
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <h1 id="poBuilderTitle">Purchase Order Generator</h1>
-                        <span class="po-status-badge approved" id="poHeaderStatusBadge">
-                            <i class="ph ph-dot"></i> Draft PO
-                        </span>
-                    </div>
-                    <div class="po-title-meta">
-                        <span>PO Ref: <strong id="poRefDisplay">PO-2026-0105</strong></span>
-                        <span>•</span>
-                        <span>Purchaser: <strong>{{ auth()->user()->name ?? 'Procurement Officer' }}</strong></span>
-                        <span>•</span>
-                        <span id="poSaveIndicator">Auto-saved to Local Storage</span>
-                    </div>
-                </div>
+            <div class="po-command-left">
+                <span style="font-size: 0.72rem; font-weight: 800; color: #64748b; letter-spacing: 0.08em; text-transform: uppercase; display: flex; align-items: center; gap: 6px;">
+                    <i class="ph ph-sliders-horizontal" style="color: var(--po-primary); font-size: 14px;"></i> PO Workspace
+                </span>
             </div>
 
-            <div class="po-actions-group">
-                <button type="button" class="po-btn po-btn-outline" onclick="switchPoTab('tab-po-list')" title="Back to PO Tracker">
-                    <i class="ph ph-arrow-left"></i> PO Directory
+            <div class="po-actions-group" style="display: flex; align-items: center; gap: 6px;">
+                <button type="button" class="po-btn po-btn-outline" onclick="switchPoTab('tab-po-list')" title="Back to PO Directory" style="padding: 4px 10px; font-size: 11.5px;">
+                    <i class="ph ph-arrow-left"></i> Directory
                 </button>
-                <button type="button" class="po-btn po-btn-outline" onclick="resetPoForm()" title="Clear form">
+                <button type="button" class="po-btn po-btn-outline" onclick="resetPoForm()" title="Clear form & start new PO" style="padding: 4px 10px; font-size: 11.5px;">
                     <i class="ph ph-arrow-counter-clockwise"></i> Reset
                 </button>
-                <button type="button" class="po-btn po-btn-outline" onclick="openPoDocumentPreview()" title="Open formal printable PO preview (F8)">
-                    <i class="ph ph-eye"></i> Preview Document <span class="po-hotkey-badge">F8</span>
+                <button type="button" class="po-btn po-btn-outline" id="btnTogglePoAudit" onclick="openPoAuditDrawer()" title="View Procurement Audit Trail & Activity Log" style="padding: 4px 10px; font-size: 11.5px;">
+                    <i class="ph ph-clock-counter-clockwise"></i> Audit Trail
                 </button>
-                <button type="button" class="po-btn po-btn-primary" onclick="issuePurchaseOrderSubmit()" title="Approve & save purchase order (F10)">
+                <button type="button" class="po-btn po-btn-outline" onclick="openImportRfqModal()" title="Import lines from Awarded RFQ" style="padding: 4px 10px; font-size: 11.5px;">
+                    <i class="ph ph-link"></i> Import Awarded RFQ
+                </button>
+                <button type="button" class="po-btn po-btn-outline" onclick="openPoDocumentPreview()" title="Open formal printable PO preview (F8)" style="padding: 4px 10px; font-size: 11.5px;">
+                    <i class="ph ph-eye"></i> Preview <span class="po-hotkey-badge">F8</span>
+                </button>
+                <button type="button" class="po-btn po-btn-primary" onclick="issuePurchaseOrderSubmit()" title="Approve & save purchase order (F10)" style="padding: 4px 12px; font-size: 11.5px; background: linear-gradient(135deg, #0284c7, #0d9488);">
                     <i class="ph ph-check-circle"></i> Issue Purchase Order <span class="po-hotkey-badge" style="background: rgba(255,255,255,0.25);">F10</span>
                 </button>
             </div>
         </div>
 
-        <!-- PO Type Mode Selector: Standard Vendor vs Direct Wet Market -->
-        <div class="po-mode-toggle-card">
-            <div>
-                <div style="font-weight: 800; font-size: 0.95rem; color: var(--po-text-strong); display: flex; align-items: center; gap: 8px;">
-                    <i class="ph ph-path" style="color: var(--po-primary); font-size: 18px;"></i>
-                    <span>Select Procurement Sourcing Method</span>
-                </div>
-                <div style="font-size: 0.8rem; color: var(--po-text-muted); margin-top: 2px;">
-                    Choose whether buying from formal contracted vendors or conducting direct cash purchases in wet markets.
-                </div>
-            </div>
-            <div class="po-mode-pills">
-                <button type="button" class="po-mode-btn active" id="btnModeVendor" onclick="setPoMode('vendor')">
-                    <i class="ph ph-buildings"></i> Standard Vendor PO
-                </button>
-                <button type="button" class="po-mode-btn is-market" id="btnModeMarket" onclick="setPoMode('wet_market')">
-                    <i class="ph ph-basket"></i> Direct / Wet Market Cash Purchase
-                </button>
-            </div>
-        </div>
+        <!-- Workspace Grid: Asymmetric 4.2fr Left (Cards 1 & 2) / 5.8fr Right (Card 3 Items Panel & Settlement) -->
+        <div class="po-builder-workspace-grid">
 
-        <!-- Top Grid: Source / Vendor & Order Parameters -->
-        <div class="po-top-grid">
+            <!-- Left Column: Reference Header + Vendor Profile + PO Terms -->
+            <div class="po-builder-left-col">
 
-            <!-- Card 1: Vendor Partner or Wet Market Stall Profile -->
-            <div class="po-panel-card">
-                <div class="po-panel-header">
-                    <div class="po-panel-title">
-                        <i class="ph ph-storefront" id="sourceCardIcon"></i>
-                        <span id="sourceCardTitle">Vendor & Partner Profile</span>
+                <!-- Tender Reference & Identity Header Block (Prominent Placement with Description) -->
+                <div class="po-panel-card po-tender-ref-card" style="border-left: 4px solid var(--po-primary); background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(250, 245, 255, 0.65)); padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(135deg, rgba(236, 72, 153, 0.14), rgba(168, 85, 247, 0.20)); border: 1px solid rgba(168, 85, 247, 0.32); color: #9333ea; display: flex; align-items: center; justify-content: center; font-size: 16px; box-shadow: 0 3px 10px rgba(168, 85, 247, 0.15);">
+                                <i class="ph ph-receipt"></i>
+                            </div>
+                            <div>
+                                <div style="font-size: 0.68rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em;">Purchase Order Reference Number</div>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span id="poRefDisplay" style="font-family: monospace; font-size: 1.15rem; font-weight: 800; color: var(--po-primary-dark); letter-spacing: -0.01em;">PO-2026-0105</span>
+                                    <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="copyPoReference()" title="Copy Reference to Clipboard" style="padding: 2px 6px; font-size: 11px; height: 22px;">
+                                        <i class="ph ph-copy"></i>
+                                    </button>
+                                    <span id="poLinkedRfqPill" style="display: none; font-size: 11px; padding: 2px 7px; background: rgba(168, 85, 247, 0.12); color: #7e22ce; border: 1px solid rgba(168, 85, 247, 0.25); border-radius: 5px; font-family: monospace; font-weight: 700;"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="status-pill draft" id="poStatusBadge" style="font-size: 11px; padding: 3px 9px;">
+                                <i class="ph ph-dot"></i> Draft PO
+                            </span>
+                        </div>
                     </div>
-                    <span class="po-label-badge" id="sourceTypeBadge">Approved Vendor</span>
+
+                    <!-- PO Purpose / Description Field -->
+                    <div class="po-field" style="margin-top: 2px;">
+                        <label class="po-label" for="poOrderTitle" style="font-size: 0.70rem; color: #475569; margin-bottom: 3px;">
+                            <span>Order Purpose / Title Description</span>
+                            <span class="po-label-badge" style="font-size: 0.62rem;">Project Reference</span>
+                        </label>
+                        <input type="text" class="po-input" id="poOrderTitle" placeholder="e.g. Q4 Commissary Dry Goods Bulk Procurement — Manila Hub" style="font-size: 0.84rem; padding: 5px 10px; font-weight: 500;" oninput="handlePoTitleChange(this.value)">
+                    </div>
                 </div>
-                <div class="po-panel-body">
-                    <!-- Standard Vendor Mode Inputs -->
-                    <div id="sectionVendorSource">
-                        <div class="po-field" style="margin-bottom: 14px;">
-                            <label class="po-label" for="poVendorSelect">Select Contracted Supplier *</label>
-                            <select class="po-select" id="poVendorSelect" onchange="handlePoVendorSelect(this.value)">
+
+                <!-- Card 1: Vendor Selection & Company Profile Details -->
+                <div class="po-panel-card">
+                    <div class="po-panel-header">
+                        <div class="po-panel-title">
+                            <i class="ph ph-buildings"></i>
+                            <span>Vendor Selection & Partner Profile</span>
+                        </div>
+                        <span class="po-label-badge" id="poVendorCatalogBadge">Catalog Integrated</span>
+                    </div>
+                    <div class="po-panel-body">
+                        <div class="po-field">
+                            <label class="po-label" for="poVendorSelect">
+                                <span>Select Target Vendor *</span>
+                                <span class="po-label-badge">Searchable Masterlist</span>
+                            </label>
+                            <!-- Hidden select for form bindings & backwards-compatibility -->
+                            <select class="po-select" id="poVendorSelect" style="display: none;" onchange="handlePoVendorSelect(this.value)">
                                 <option value="">-- Choose Approved Vendor from Masterlist --</option>
                             </select>
-                        </div>
-                    </div>
 
-                    <!-- Wet Market Cash Sourcing Inputs -->
-                    <div id="sectionMarketSource" style="display: none;">
-                        <div class="po-field" style="margin-bottom: 14px;">
-                            <label class="po-label" for="poMarketStallName">
-                                <span>Wet Market Name & Stall # *</span>
-                                <span class="po-label-badge">Direct Market Run</span>
-                            </label>
-                            <input type="text" class="po-input" id="poMarketStallName" placeholder="e.g. Balintawak Wet Market - Stall 14 (Aling Nena Meats)">
-                        </div>
-                    </div>
+                            <!-- Custom Searchable Combobox -->
+                            <div class="po-vendor-combobox" id="poVendorCombobox">
+                                <button type="button" class="po-vendor-combo-trigger" id="poVendorComboTrigger" onclick="togglePoVendorCombobox(event)">
+                                    <span id="poVendorComboTriggerText" style="color: #64748b;">-- Choose Approved Vendor from Masterlist --</span>
+                                    <i class="ph ph-caret-down" style="font-size: 14px; color: #94a3b8;"></i>
+                                </button>
 
-                    <div class="po-form-row">
+                                <div class="po-vendor-combo-dropdown" id="poVendorComboDropdown">
+                                    <div class="po-vendor-combo-search-wrap" onclick="event.stopPropagation()">
+                                        <i class="ph ph-magnifying-glass"></i>
+                                        <input type="text" class="po-vendor-combo-search-input" id="poVendorSearchInput" placeholder="Search by name, code, category..." oninput="filterPoVendorCombobox(this.value)" autocomplete="off">
+                                    </div>
+                                    <div class="po-vendor-combo-list" id="poVendorComboList">
+                                        <!-- Populated dynamically -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Active Vendor Summary Badge Box -->
+                        <div class="po-vendor-pill-box" id="poVendorSummaryBox" style="display: none;">
+                            <div class="po-vendor-avatar" id="poVendorAvatarText">VM</div>
+                            <div class="po-vendor-summary">
+                                <div class="po-vendor-name-row">
+                                    <span id="poVendorTradeName">--</span>
+                                    <span class="po-label-badge" id="poVendorCategoryTag">Category</span>
+                                </div>
+                                <div class="po-vendor-detail-row">
+                                    <span><i class="ph ph-identification-card"></i> TIN: <strong id="poVendorTinDisplay">--</strong></span>
+                                    <span>•</span>
+                                    <span><i class="ph ph-map-pin"></i> <span id="poVendorLocationDisplay">--</span></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="po-form-row">
+                            <div class="po-field">
+                                <label class="po-label" for="poContactPerson">Contact Person</label>
+                                <input type="text" class="po-input" id="poContactPerson" placeholder="Contact Person" readonly title="Primary Contact Person">
+                            </div>
+                            <div class="po-field">
+                                <label class="po-label" for="poContactTitle">Designation</label>
+                                <input type="text" class="po-input" id="poContactTitle" placeholder="Designation" readonly title="Contact Designation / Title">
+                            </div>
+                        </div>
+
+                        <div class="po-form-row">
+                            <div class="po-field">
+                                <label class="po-label" for="poContactEmail">
+                                    <span>Recipient Email *</span>
+                                </label>
+                                <input type="email" class="po-input" id="poContactEmail" placeholder="vendor@example.com" title="Vendor Recipient Email" required>
+                            </div>
+                            <div class="po-field">
+                                <label class="po-label" for="poContactPhone">Phone / Mobile</label>
+                                <input type="text" class="po-input" id="poContactPhone" placeholder="Direct Phone" title="Contact Direct Phone">
+                            </div>
+                        </div>
+
                         <div class="po-field">
-                            <label class="po-label" for="poContactPerson">Contact Person / Stall Vendor</label>
-                            <input type="text" class="po-input" id="poContactPerson" placeholder="Representative Name">
+                            <label class="po-label" for="poFullAddress">Physical / Billing Address</label>
+                            <input type="text" class="po-input" id="poFullAddress" placeholder="Street, Building, City, ZIP">
                         </div>
+                    </div>
+                </div>
+
+                <!-- Card 2: Procurement Terms & Delivery Schedules -->
+                <div class="po-panel-card">
+                    <div class="po-panel-header">
+                        <div class="po-panel-title">
+                            <i class="ph ph-calendar-check"></i>
+                            <span>PO Terms & Delivery Schedule</span>
+                        </div>
+                        <span class="po-label-badge">Auto Lead-Time Sync</span>
+                    </div>
+                    <div class="po-panel-body">
+                        <div class="po-form-row">
+                            <div class="po-field">
+                                <label class="po-label" for="poNumberInput">PO Reference #</label>
+                                <input type="text" class="po-input" id="poNumberInput" value="PO-2026-0105" readonly style="font-family: monospace; font-weight: 700; color: var(--po-primary-dark);">
+                            </div>
+                            <div class="po-field">
+                                <label class="po-label" for="poOrderDate">Date Issued</label>
+                                <input type="date" class="po-input" id="poOrderDate">
+                            </div>
+                        </div>
+
+                        <div class="po-form-row">
+                            <div class="po-field">
+                                <label class="po-label" for="poPaymentTerms">
+                                    <span>Payment Terms</span>
+                                    <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="openPaymentSettlementModal()" title="Open Financial Tracking & Payment Settlement" style="font-size: 11px; padding: 2px 7px; height: 22px; display: inline-flex; align-items: center; gap: 4px;">
+                                        <i class="ph ph-bank" style="color: var(--po-primary);"></i> Financial Settlement
+                                    </button>
+                                </label>
+                                <div style="display: flex; gap: 6px; align-items: center;">
+                                    <select class="po-select" id="poPaymentTerms" style="flex: 1;" onchange="handlePaymentTermsChange(this.value)">
+                                        <option value="Net 30 Days">Net 30 Days (Standard)</option>
+                                        <option value="Net 15 Days">Net 15 Days</option>
+                                        <option value="Net 7 Days">Net 7 Days</option>
+                                        <option value="COD">Cash on Delivery (COD)</option>
+                                        <option value="Advance Payment">100% Advance Payment</option>
+                                        <option value="50% DP, 50% Delivery">50% DP, 50% Upon Delivery</option>
+                                    </select>
+                                    <button type="button" class="hr-btn hr-btn-secondary" onclick="openPaymentSettlementModal()" title="View and calculate payments filtered by this PO reference" style="padding: 5px 9px; font-size: 11.5px; height: 32px; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;">
+                                        <span id="poSummaryPayBadge" class="pay-badge unpaid" style="font-size: 10px; padding: 2px 6px;">Unpaid</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="po-field">
+                                <label class="po-label" for="poExpectedDelivery">
+                                    <span>Expected Delivery *</span>
+                                    <span class="po-label-badge" style="color: #0369a1;">Lead Time</span>
+                                </label>
+                                <input type="date" class="po-input" id="poExpectedDelivery">
+                            </div>
+                        </div>
+
+                        <div class="po-form-row">
+                            <div class="po-field">
+                                <label class="po-label" for="poDeliveryLocation">Destination Facility</label>
+                                <select class="po-select" id="poDeliveryLocation">
+                                    <option value="Central Commissary - Receiving Dock A">Central Commissary - Dock A</option>
+                                    <option value="Branch 1 - Makati Flagship">Branch 1 - Makati Flagship</option>
+                                    <option value="Branch 2 - BGC Bistro">Branch 2 - BGC Bistro</option>
+                                    <option value="Branch 3 - Ortigas Kitchen">Branch 3 - Ortigas Kitchen</option>
+                                    <option value="Central Warehouse - Cold Storage">Central Warehouse - Cold Storage</option>
+                                </select>
+                            </div>
+                            <div class="po-field">
+                                <label class="po-label" for="poPaymentMethod">Payment Method</label>
+                                <select class="po-select" id="poPaymentMethod">
+                                    <option value="Trade Credit (Net 30/15)">Trade Credit (Net 30/15 Days)</option>
+                                    <option value="Company Check">Company Check</option>
+                                    <option value="Bank Transfer / Electronic">Bank Transfer / Electronic</option>
+                                    <option value="Cash / Petty Cash">Cash / Petty Cash</option>
+                                    <option value="GCash / Maya">GCash / Maya</option>
+                                </select>
+                            </div>
+                        </div>
+
                         <div class="po-field">
-                            <label class="po-label" for="poContactPhone">Phone / Mobile</label>
-                            <input type="text" class="po-input" id="poContactPhone" placeholder="+63 9XX XXX XXXX">
+                            <label class="po-label" for="poSpecialNotes">Purchase Order Instructions / Notes</label>
+                            <textarea class="po-textarea" id="poSpecialNotes" placeholder="e.g. Inspect temperature upon receiving dock. Meat cuts must be vacuum sealed and weighing ticket attached."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+            </div><!-- /.po-builder-left-col -->
+
+            <!-- Right Column: Card 3 Line Items Panel & Card 4 Financial Settlement -->
+            <div class="po-builder-right-col">
+
+                <!-- Purchase Order Line Items & Specifications -->
+                <div class="po-items-panel">
+                    <div class="po-items-toolbar">
+                        <div class="po-toolbar-left">
+                            <div style="font-weight: 800; font-size: 0.95rem; color: var(--po-text-strong); display: flex; align-items: center; gap: 8px;">
+                                <i class="ph ph-list-numbers" style="color: var(--po-primary); font-size: 18px;"></i>
+                                <span>Purchase Order Line Items & Specifications</span>
+                            </div>
+                            <span class="po-items-counter-pill" id="poItemCountBadge">0 Line Items</span>
+                        </div>
+
+                        <div class="po-toolbar-right">
+                            <button type="button" class="po-btn po-btn-outline" onclick="openItemMasterQuickPicker()" title="Quick add items from Item Master (F2)" style="padding: 5px 10px; font-size: 11.5px;">
+                                <i class="ph ph-magnifying-glass"></i> Select Master <span class="po-hotkey-badge">F2</span>
+                            </button>
+                            <button type="button" class="po-btn po-btn-teal" onclick="addNewBlankPoItemRow()" title="Add custom non-catalog item specification" style="padding: 5px 10px; font-size: 11.5px;">
+                                <i class="ph ph-plus-circle"></i> Add Custom Row
+                            </button>
+                            <button type="button" class="po-btn po-btn-outline" style="color: var(--po-danger); padding: 5px 8px; font-size: 11.5px;" onclick="clearAllPoItems()" title="Remove all items from table">
+                                <i class="ph ph-trash"></i>
+                            </button>
                         </div>
                     </div>
 
-                    <div class="po-form-row">
-                        <div class="po-field">
-                            <label class="po-label" for="poContactEmail">Vendor Email (Optional for Market)</label>
-                            <input type="email" class="po-input" id="poContactEmail" placeholder="vendor@example.com">
-                        </div>
-                        <div class="po-field">
-                            <label class="po-label" for="poSourceLocation">Location / City</label>
-                            <input type="text" class="po-input" id="poSourceLocation" placeholder="Market Location / Warehouse City">
-                        </div>
+                    <!-- Table Container with Horizontal & Vertical Scroll -->
+                    <div class="po-table-responsive" id="poTableContainer">
+                        <table class="po-table" id="poItemsTable">
+                            <thead>
+                                <tr>
+                                    <th style="width: 42px; text-align: center;">#</th>
+                                    <th style="min-width: 220px;">Item Name & Specifications *</th>
+                                    <th style="width: 90px; text-align: center;">UOM / Pack</th>
+                                    <th style="width: 105px; text-align: right;">Ordered Qty *</th>
+                                    <th style="width: 120px; text-align: right;">Unit Price (₱) *</th>
+                                    <th style="width: 130px; text-align: right;">Line Total</th>
+                                    <th style="width: 60px; text-align: center;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="poItemsTbody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
                     </div>
 
-                    <div class="po-field">
-                        <label class="po-label" for="poFullAddress">Complete Physical Address</label>
-                        <input type="text" class="po-input" id="poFullAddress" placeholder="Street, Market Hall, Building, City">
-                    </div>
-                </div>
-            </div>
+                    <!-- Items Table Footer Metric Summary -->
+                    <div class="po-summary-bar">
+                        <div class="po-metrics-cluster">
+                            <div class="po-metric-unit">
+                                <span class="po-metric-label">Lines</span>
+                                <span class="po-metric-val" id="summaryPoLines">0</span>
+                            </div>
+                            <div class="po-metric-unit">
+                                <span class="po-metric-label">Total Units</span>
+                                <span class="po-metric-val" id="summaryPoUnits">0.00</span>
+                            </div>
+                            <div class="po-metric-unit">
+                                <span class="po-metric-label">Grand Total</span>
+                                <span class="po-metric-val highlight" id="summaryPoGross">₱0.00</span>
+                            </div>
+                        </div>
 
-            <!-- Card 2: PO Logistics & Order Schedule -->
-            <div class="po-panel-card">
-                <div class="po-panel-header">
-                    <div class="po-panel-title">
-                        <i class="ph ph-calendar-check"></i>
-                        <span>Order Schedule & Delivery Destination</span>
-                    </div>
-                    <span class="po-label-badge">Audit Tracked</span>
-                </div>
-                <div class="po-panel-body">
-                    <div class="po-form-row">
-                        <div class="po-field">
-                            <label class="po-label" for="poNumberInput">PO Reference #</label>
-                            <input type="text" class="po-input" id="poNumberInput" value="PO-2026-0105" readonly>
-                        </div>
-                        <div class="po-field">
-                            <label class="po-label" for="poOrderDate">Purchase Date</label>
-                            <input type="date" class="po-input" id="poOrderDate">
-                        </div>
-                    </div>
-
-                    <div class="po-form-row">
-                        <div class="po-field">
-                            <label class="po-label" for="poExpectedDelivery">Expected Delivery / Market Run Date *</label>
-                            <input type="date" class="po-input" id="poExpectedDelivery">
-                        </div>
-                        <div class="po-field">
-                            <label class="po-label" for="poRfqReference">Linked RFQ Reference</label>
-                            <input type="text" class="po-input" id="poRfqReference" placeholder="e.g. RFQ-2026-0038 (Optional)">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div style="font-size: 0.74rem; color: var(--po-text-muted);">
+                                <i class="ph ph-info"></i> All procurement totals reflect agreed contracted pricing.
+                            </div>
                         </div>
                     </div>
+                </div><!-- /.po-items-panel -->
 
-                    <div class="po-field">
-                        <label class="po-label" for="poDeliveryLocation">Destination Kitchen / Commissary Dock</label>
-                        <select class="po-select" id="poDeliveryLocation">
-                            <option value="Central Commissary - Receiving Dock A">Central Commissary - Receiving Dock A</option>
-                            <option value="Branch 1 - Makati Flagship">Branch 1 - Makati Flagship</option>
-                            <option value="Branch 2 - BGC Bistro">Branch 2 - BGC Bistro</option>
-                            <option value="Branch 3 - Ortigas Kitchen">Branch 3 - Ortigas Kitchen</option>
-                            <option value="Central Warehouse - Cold Storage">Central Warehouse - Cold Storage</option>
-                        </select>
-                    </div>
+            </div><!-- /.po-builder-right-col -->
 
-                    <div class="po-field">
-                        <label class="po-label" for="poSpecialNotes">Delivery & Quality Inspection Instructions</label>
-                        <textarea class="po-textarea" id="poSpecialNotes" placeholder="e.g. Inspect temperature upon receiving dock. Meat cuts must be vacuum sealed and weighing ticket attached."></textarea>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-
-        <!-- Line Items Table (Item Master + Custom Wet Market Line Entry) -->
-        <div class="po-panel-card">
-            <div style="display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--po-border-subtle); flex-wrap: wrap; gap: 12px;">
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <div style="font-weight: 800; font-size: 1.02rem; color: var(--po-text-strong); display: flex; align-items: center; gap: 8px;">
-                        <i class="ph ph-shopping-cart" style="color: var(--po-primary); font-size: 20px;"></i>
-                        <span>Purchase Order Items & Pricing</span>
-                    </div>
-                    <span class="po-tab-count" id="poItemCountBadge">0 Line Items</span>
-                </div>
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <button type="button" class="po-btn po-btn-outline" onclick="openItemMasterQuickPicker()" title="Select item from Masterlist (F2)">
-                        <i class="ph ph-magnifying-glass"></i> Select from Master <span class="po-hotkey-badge">F2</span>
-                    </button>
-                    <button type="button" class="po-btn po-btn-teal" onclick="addNewBlankPoItemRow()" title="Add custom market item row">
-                        <i class="ph ph-plus-circle"></i> Add Custom Market Line
-                    </button>
-                    <button type="button" class="po-btn po-btn-outline" style="color: var(--po-danger);" onclick="clearAllPoItems()" title="Clear table">
-                        <i class="ph ph-trash"></i> Clear Items
-                    </button>
-                </div>
-            </div>
-
-            <div class="po-table-responsive">
-                <table class="po-table" id="poItemsTable">
-                    <thead>
-                        <tr>
-                            <th style="width: 45px; text-align: center;">#</th>
-                            <th style="width: 120px;">SKU / Code</th>
-                            <th style="min-width: 220px;">Item Description & Specifications *</th>
-                            <th style="width: 140px;">Category</th>
-                            <th style="width: 100px; text-align: center;">UOM</th>
-                            <th style="width: 110px; text-align: right;">Quantity *</th>
-                            <th style="width: 130px; text-align: right;">Unit Price (₱) *</th>
-                            <th style="width: 140px; text-align: right;">Line Total (₱)</th>
-                            <th style="width: 80px; text-align: center;">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="poItemsTbody">
-                        <!-- Populated dynamically -->
-                    </tbody>
-                </table>
-            </div>
-
-            <div style="display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; background: #f8fafc; border-top: 1px solid var(--po-border-subtle); flex-wrap: wrap; gap: 16px;">
-                <div style="display: flex; gap: 24px; align-items: center; flex-wrap: wrap;">
-                    <div>
-                        <div style="font-size: 0.74rem; font-weight: 700; color: var(--po-text-muted); text-transform: uppercase;">Total Lines</div>
-                        <div style="font-size: 1.15rem; font-weight: 800; color: var(--po-text-strong);" id="summaryPoLines">0</div>
-                    </div>
-                    <div>
-                        <div style="font-size: 0.74rem; font-weight: 700; color: var(--po-text-muted); text-transform: uppercase;">Total Quantity Units</div>
-                        <div style="font-size: 1.15rem; font-weight: 800; color: var(--po-text-strong);" id="summaryPoUnits">0.00</div>
-                    </div>
-                    <div>
-                        <div style="font-size: 0.74rem; font-weight: 700; color: var(--po-text-muted); text-transform: uppercase;">Gross PO Amount</div>
-                        <div style="font-size: 1.35rem; font-weight: 900; color: var(--po-teal);" id="summaryPoGross">₱0.00</div>
-                    </div>
-                </div>
-                <div style="font-size: 0.8rem; color: var(--po-text-muted);">
-                    <i class="ph ph-shield-check"></i> Pricing reflects contracted quotation or verified wet market cash disbursement.
-                </div>
-            </div>
-        </div>
-
-        <!-- Card 4: Financial Tracking & Payment Settlement Section (User Explicit Requirement) -->
-        <div class="po-payment-panel">
-            <div class="po-payment-header">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <i class="ph ph-bank" style="color: var(--po-primary); font-size: 22px;"></i>
-                    <div>
-                        <div style="font-weight: 800; font-size: 0.96rem; color: var(--po-text-strong);">Financial Tracking & Payment Settlement</div>
-                        <div style="font-size: 0.78rem; color: var(--po-text-muted);">Record cash-out, trade credit, check issuance, or petty cash advances upon PO creation</div>
-                    </div>
-                </div>
-                <span class="pay-badge unpaid" id="paymentStatusBadge">Unpaid / Credit</span>
-            </div>
-            <div class="po-panel-body">
-                <div class="po-form-row">
-                    <div class="po-field">
-                        <label class="po-label" for="poPaymentStatus">Payment Status Upon Creation *</label>
-                        <select class="po-select" id="poPaymentStatus" onchange="handlePaymentStatusChange(this.value)">
-                            <option value="Unpaid / Credit">Unpaid / Trade Credit (Net 30/15 Days)</option>
-                            <option value="Paid in Full / Cash Out">Paid in Full / Cash Out (Immediate Settlement)</option>
-                            <option value="Partial Payment">Partial Payment (Downpayment / Advance)</option>
-                        </select>
-                    </div>
-                    <div class="po-field">
-                        <label class="po-label" for="poPaymentMethod">Payment Disbursement Method *</label>
-                        <select class="po-select" id="poPaymentMethod">
-                            <option value="Cash / Petty Cash">Cash / Petty Cash (Wet Market Run)</option>
-                            <option value="Trade Credit (Net 30/15)">Trade Credit (Net 30/15 Days Invoice)</option>
-                            <option value="Company Check">Company Check (Post-Dated or Spot)</option>
-                            <option value="Bank Transfer / Electronic">Bank Transfer / Electronic (InstaPay / PESONet)</option>
-                            <option value="GCash / Maya">GCash / Maya (Mobile e-Wallet)</option>
-                            <option value="Corporate Credit Card">Corporate Credit Card</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="po-form-row">
-                    <div class="po-field">
-                        <label class="po-label" for="poAmountPaid">Amount Disbursed / Paid (₱) *</label>
-                        <input type="number" step="0.01" min="0" class="po-input" id="poAmountPaid" value="0.00" oninput="calculateBalanceDue()">
-                    </div>
-                    <div class="po-field">
-                        <label class="po-label" for="poBalanceDue">Remaining Balance Due (₱)</label>
-                        <input type="text" class="po-input" id="poBalanceDue" value="₱0.00" readonly style="font-weight: 800; color: #dc2626;">
-                    </div>
-                </div>
-
-                <div class="po-form-row">
-                    <div class="po-field">
-                        <label class="po-label" for="poPaymentRef">OR # / Check # / Receipt Ref</label>
-                        <input type="text" class="po-input" id="poPaymentRef" placeholder="e.g. Cash Slip #4912, Check #00412, GCash Ref 88214">
-                    </div>
-                    <div class="po-field">
-                        <label class="po-label" for="poPaymentDate">Payment Date</label>
-                        <input type="date" class="po-input" id="poPaymentDate">
-                    </div>
-                    <div class="po-field">
-                        <label class="po-label" for="poFundSource">Disbursing Account / Fund Source</label>
-                        <select class="po-select" id="poFundSource">
-                            <option value="Branch Petty Cash Fund">Branch Petty Cash Fund</option>
-                            <option value="Main Commissary Checking Acct">Main Commissary Checking Account</option>
-                            <option value="Purchaser Cash Advance">Purchaser Cash Advance Fund</option>
-                            <option value="Corporate Card Account">Corporate Card Account</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="po-field">
-                    <label class="po-label" for="poPaymentRemarks">Financial Remarks & Accounting Notes</label>
-                    <textarea class="po-textarea" id="poPaymentRemarks" placeholder="e.g. Cash disbursed from Makati Branch petty cash for wet market meat procurement. Official vendor ticket attached."></textarea>
-                </div>
-            </div>
-        </div>
+        </div><!-- /.po-builder-workspace-grid -->
 
     </div><!-- /#pane-tab-po-builder -->
 
-    <!-- ====================================================================
-         TAB 3: PO AUDIT TRAIL & FINANCIAL LOGS
-         ==================================================================== -->
-    <div class="po-tab-pane" id="pane-tab-po-audit" style="display: none; flex-direction: column; gap: 20px;">
+</div>
+
+<!-- ==========================================================================
+     DRAWER: PURCHASE ORDER AUDIT TRAIL RIGHT DRAWER
+     ========================================================================== -->
+<div id="poAuditDrawerOverlay" class="hr-drawer-overlay" onclick="closePoAuditDrawer()"></div>
+<div id="poAuditDrawer" class="hr-drawer" style="max-width: 620px; width: 100%;">
+    <div class="hr-drawer-header">
+        <button type="button" class="hr-drawer-close" onclick="closePoAuditDrawer()" title="Close Drawer">
+            <i class="ph ph-x"></i>
+        </button>
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #ec4899, #a855f7); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);">
+                <i class="ph ph-clock-counter-clockwise"></i>
+            </div>
+            <div>
+                <h3 style="font-size: 16px; font-weight: 700; color: #0f172a; margin: 0;">Purchase Order Audit Trail</h3>
+                <div style="font-size: 12px; color: #64748b; margin-top: 2px;">
+                    Financial & fulfillment logs • <span id="tabPoAuditCount" style="font-weight: 700; color: #9333ea;">0</span> events
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="hr-drawer-body" style="padding: 16px; display: flex; flex-direction: column; gap: 14px; overflow-y: auto;">
+        <!-- Target Scope Indicator Bar: Restricts index to Current PO / RFQ for process optimization -->
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; background: rgba(147, 51, 234, 0.05); border: 1px solid rgba(147, 51, 234, 0.16); border-radius: 8px; padding: 6px 12px; font-size: 11.5px;">
+            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                <span style="color: #64748b; font-weight: 600;">Active PO Index:</span>
+                <span id="poAuditTargetRefBadge" style="font-family: monospace; font-weight: 800; color: #9333ea; background: #ffffff; padding: 2px 7px; border-radius: 4px; border: 1px solid rgba(147, 51, 234, 0.25);">PO-2026-0105</span>
+                <span id="poAuditTargetRfqBadge" style="font-family: monospace; font-weight: 700; color: #0284c7; background: #f0f9ff; padding: 2px 7px; border-radius: 4px; border: 1px solid rgba(2, 132, 199, 0.25); display: none;"></span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 4px;">
+                <button type="button" class="audit-filter-pill active" id="btnPoAuditScopeCurrent" onclick="setPoAuditScope('CURRENT')" title="Limit processing strictly to active PO / RFQ" style="padding: 2px 8px; font-size: 10.5px;">Current PO Only</button>
+                <button type="button" class="audit-filter-pill" id="btnPoAuditScopeAll" onclick="setPoAuditScope('ALL')" title="Expand index to all historical records" style="padding: 2px 8px; font-size: 10.5px;">All Records</button>
+            </div>
+        </div>
+
         <!-- Audit KPI Summary Cards -->
-        <div class="audit-overview-grid">
-            <div class="audit-metric-card">
-                <div class="audit-metric-icon-box" style="background: #eff6ff; color: #2563eb;">
+        <div class="audit-overview-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+            <div class="audit-metric-card" style="padding: 10px;">
+                <div class="audit-metric-icon-box" style="background: rgba(168, 85, 247, 0.12); color: #9333ea; width: 32px; height: 32px; font-size: 16px;">
                     <i class="ph ph-receipt"></i>
                 </div>
                 <div>
-                    <div class="audit-metric-val" id="poAuditKpiTotal">0</div>
-                    <div class="audit-metric-label">Total PO Events</div>
+                    <div class="audit-metric-val" id="poAuditKpiTotal" style="font-size: 18px;">0</div>
+                    <div class="audit-metric-label" style="font-size: 11px;">Total PO Events</div>
                 </div>
             </div>
-            <div class="audit-metric-card">
-                <div class="audit-metric-icon-box" style="background: #fff7ed; color: #ea580c;">
+            <div class="audit-metric-card" style="padding: 10px;">
+                <div class="audit-metric-icon-box" style="background: #fff7ed; color: #ea580c; width: 32px; height: 32px; font-size: 16px;">
                     <i class="ph ph-storefront"></i>
                 </div>
                 <div>
-                    <div class="audit-metric-val" id="poAuditKpiWetMarket">0</div>
-                    <div class="audit-metric-label">Wet Market Cash Runs</div>
+                    <div class="audit-metric-val" id="poAuditKpiWetMarket" style="font-size: 18px;">0</div>
+                    <div class="audit-metric-label" style="font-size: 11px;">Wet Market Runs</div>
                 </div>
             </div>
-            <div class="audit-metric-card">
-                <div class="audit-metric-icon-box" style="background: #ecfdf5; color: #059669;">
+            <div class="audit-metric-card" style="padding: 10px;">
+                <div class="audit-metric-icon-box" style="background: #ecfdf5; color: #059669; width: 32px; height: 32px; font-size: 16px;">
                     <i class="ph ph-currency-circle-dollar"></i>
                 </div>
                 <div>
-                    <div class="audit-metric-val" id="poAuditKpiPayments">0</div>
-                    <div class="audit-metric-label">Payment Settlements</div>
+                    <div class="audit-metric-val" id="poAuditKpiPayments" style="font-size: 18px;">0</div>
+                    <div class="audit-metric-label" style="font-size: 11px;">Settlements</div>
                 </div>
             </div>
-            <div class="audit-metric-card">
-                <div class="audit-metric-icon-box" style="background: #f5f3ff; color: #7c3aed;">
+            <div class="audit-metric-card" style="padding: 10px;">
+                <div class="audit-metric-icon-box" style="background: #f5f3ff; color: #7c3aed; width: 32px; height: 32px; font-size: 16px;">
                     <i class="ph ph-seal-check"></i>
                 </div>
                 <div>
-                    <div class="audit-metric-val" id="poAuditKpiTransfers">0</div>
-                    <div class="audit-metric-label">Transfers & Issues</div>
+                    <div class="audit-metric-val" id="poAuditKpiTransfers" style="font-size: 18px;">0</div>
+                    <div class="audit-metric-label" style="font-size: 11px;">Transfers & Issues</div>
                 </div>
             </div>
         </div>
 
         <!-- Audit Toolbar & Filter Bar -->
-        <div class="audit-toolbar">
-            <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 260px; flex-wrap: wrap;">
-                <div style="position: relative; flex: 1; max-width: 360px;">
-                    <i class="ph ph-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--po-text-muted); font-size: 16px;"></i>
-                    <input type="text" class="po-input" id="poAuditSearchInput" placeholder="Search PO #, supplier/stall, payment ref, or actor..." style="padding-left: 38px; height: 38px; font-size: 0.85rem;" oninput="onPoAuditSearchChange(this.value)">
-                </div>
-                <div style="display: flex; align-items: center; gap: 6px;">
-                    <button type="button" class="audit-filter-pill active" data-module="ALL" onclick="filterPoAuditByModule('ALL', this)">All Modules</button>
-                    <button type="button" class="audit-filter-pill" data-module="PO" onclick="filterPoAuditByModule('PO', this)">PO Only</button>
-                    <button type="button" class="audit-filter-pill" data-module="RFQ" onclick="filterPoAuditByModule('RFQ', this)">RFQ Only</button>
-                </div>
+        <div class="audit-toolbar" style="display: flex; flex-direction: column; gap: 8px; padding: 10px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
+            <div style="position: relative; width: 100%;">
+                <i class="ph ph-magnifying-glass" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--po-text-muted); font-size: 15px;"></i>
+                <input type="text" class="po-input" id="poAuditSearchInput" placeholder="Search PO #, supplier/stall, payment ref..." style="padding-left: 32px; height: 32px; font-size: 0.80rem;" oninput="onPoAuditSearchChange(this.value)">
             </div>
-            <div class="audit-filter-pills" id="poAuditActionFilterPills">
-                <button type="button" class="audit-filter-pill active" data-action="ALL" onclick="filterPoAuditByAction('ALL', this)">All PO Logs</button>
-                <button type="button" class="audit-filter-pill" data-action="PAYMENT_RECORDED" onclick="filterPoAuditByAction('PAYMENT_RECORDED', this)">Payments</button>
-                <button type="button" class="audit-filter-pill" data-action="WET_MARKET_CREATED" onclick="filterPoAuditByAction('WET_MARKET_CREATED', this)">Wet Market</button>
-                <button type="button" class="audit-filter-pill" data-action="CREATED" onclick="filterPoAuditByAction('CREATED', this)">PO Created</button>
-                <button type="button" class="audit-filter-pill" data-action="PO_TRANSFERRED" onclick="filterPoAuditByAction('PO_TRANSFERRED', this)">RFQ Transfers</button>
-                <button type="button" class="audit-filter-pill" data-action="EDITED" onclick="filterPoAuditByAction('EDITED', this)">Edits</button>
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px;">
+                <div style="display: flex; align-items: center; gap: 4px;">
+                    <button type="button" class="audit-filter-pill active" data-module="ALL" onclick="filterPoAuditByModule('ALL', this)" style="padding: 2px 8px; font-size: 11px;">All</button>
+                    <button type="button" class="audit-filter-pill" data-module="PO" onclick="filterPoAuditByModule('PO', this)" style="padding: 2px 8px; font-size: 11px;">PO Only</button>
+                    <button type="button" class="audit-filter-pill" data-module="RFQ" onclick="filterPoAuditByModule('RFQ', this)" style="padding: 2px 8px; font-size: 11px;">RFQ Only</button>
+                </div>
+                <div class="audit-filter-pills" id="poAuditActionFilterPills" style="display: flex; gap: 4px; flex-wrap: wrap;">
+                    <button type="button" class="audit-filter-pill active" data-action="ALL" onclick="filterPoAuditByAction('ALL', this)" style="padding: 2px 7px; font-size: 10.5px;">All</button>
+                    <button type="button" class="audit-filter-pill" data-action="PAYMENT_RECORDED" onclick="filterPoAuditByAction('PAYMENT_RECORDED', this)" style="padding: 2px 7px; font-size: 10.5px;">Paid</button>
+                    <button type="button" class="audit-filter-pill" data-action="WET_MARKET_CREATED" onclick="filterPoAuditByAction('WET_MARKET_CREATED', this)" style="padding: 2px 7px; font-size: 10.5px;">Market</button>
+                    <button type="button" class="audit-filter-pill" data-action="PO_TRANSFERRED" onclick="filterPoAuditByAction('PO_TRANSFERRED', this)" style="padding: 2px 7px; font-size: 10.5px;">RFQ Transfers</button>
+                </div>
             </div>
         </div>
 
@@ -1446,6 +1941,231 @@
             <!-- Dynamically populated via renderPoAuditTrail -->
         </div>
     </div>
+</div>
+
+<!-- ==========================================================================
+     MODAL: LINKED RFQ QUICK DETAILS INSPECTOR
+     ========================================================================== -->
+<div class="po-modal-backdrop" id="poLinkedRfqModal" role="dialog" aria-modal="true" aria-labelledby="linkedRfqModalTitle">
+    <div class="po-modal-card" style="max-width: 760px;">
+        <div class="po-modal-header">
+            <div style="font-weight: 800; font-size: 1.1rem; color: #0f172a; display: flex; align-items: center; gap: 10px;" id="linkedRfqModalTitle">
+                <i class="ph ph-link" style="color: #9333ea;"></i>
+                <span>Originating Tender & Quotation Approval Details</span>
+            </div>
+            <button type="button" class="inv-table-filter-btn" onclick="closeLinkedRfqModal()" aria-label="Close Modal">
+                <i class="ph ph-x"></i>
+            </button>
+        </div>
+        <div class="po-modal-body" id="linkedRfqModalBody" style="max-height: 70vh; overflow-y: auto; padding: 18px;">
+            <!-- Dynamically populated via openLinkedRfqModal -->
+        </div>
+        <div class="po-modal-footer">
+            <button type="button" class="po-btn po-btn-outline" onclick="closeLinkedRfqModal()">Close Inspector</button>
+            <a href="{{ route('purchase.request-quotations') }}" class="po-btn po-btn-primary" target="_blank" style="text-decoration: none;">
+                <i class="ph ph-arrow-square-out"></i> Open in RFQ Module
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- ==========================================================================
+     MODAL: IMPORT FROM AWARDED RFQ LIST
+     ========================================================================== -->
+<div class="po-modal-backdrop" id="poImportRfqModal" role="dialog" aria-modal="true" aria-labelledby="importRfqModalTitle">
+    <div class="po-modal-card" style="max-width: 820px;">
+        <div class="po-modal-header">
+            <div style="font-weight: 800; font-size: 1.1rem; color: #0f172a; display: flex; align-items: center; gap: 10px;" id="importRfqModalTitle">
+                <i class="ph ph-link" style="color: #9333ea;"></i>
+                <span>Import Approved / Awarded RFQ into Purchase Order</span>
+            </div>
+            <button type="button" class="inv-table-filter-btn" onclick="closeImportRfqModal()" aria-label="Close Modal">
+                <i class="ph ph-x"></i>
+            </button>
+        </div>
+        <div class="po-modal-body" style="max-height: 68vh; overflow-y: auto; padding: 16px;">
+            <div style="font-size: 12.5px; color: #64748b; margin-bottom: 12px;">
+                Select any approved quotation tender to automatically populate vendor profile, logistics terms, and awarded item specifications into the Purchase Order Builder:
+            </div>
+            <div id="importRfqListContainer" style="display: flex; flex-direction: column; gap: 8px;">
+                <!-- Populated dynamically via openImportRfqModal -->
+            </div>
+        </div>
+        <div class="po-modal-footer">
+            <button type="button" class="po-btn po-btn-outline" onclick="closeImportRfqModal()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- ==========================================================================
+     MODAL: FINANCIAL TRACKING & PAYMENT SETTLEMENT
+     ========================================================================== -->
+<div class="po-modal-backdrop" id="poPaymentSettlementModal" role="dialog" aria-modal="true" aria-labelledby="payModalTitle">
+    <div class="po-modal-card" style="max-width: 880px; width: 100%;">
+        <div class="po-modal-header" style="background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="width: 36px; height: 36px; border-radius: 9px; background: linear-gradient(135deg, #0284c7, #0d9488); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 18px; box-shadow: 0 3px 10px rgba(2, 132, 199, 0.25);">
+                    <i class="ph ph-bank"></i>
+                </div>
+                <div>
+                    <div style="font-weight: 800; font-size: 1.12rem; color: #0f172a;" id="payModalTitle">Financial Tracking & Payment Settlement</div>
+                    <div style="font-size: 0.76rem; color: #64748b;">Disbursement schedule, installments & trade credit tracking by reference</div>
+                </div>
+            </div>
+            <button type="button" class="inv-table-filter-btn" onclick="closePaymentSettlementModal()" aria-label="Close Modal">
+                <i class="ph ph-x"></i>
+            </button>
+        </div>
+
+        <div class="po-modal-body" style="padding: 16px; display: flex; flex-direction: column; gap: 14px; max-height: 75vh; overflow-y: auto;">
+            <!-- Reference Filter & Context Bar -->
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 10px 14px;">
+                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                    <span style="font-size: 0.74rem; font-weight: 800; color: #64748b; text-transform: uppercase;">Active Target Reference:</span>
+                    <span id="payModalActiveRef" style="font-family: monospace; font-size: 1.05rem; font-weight: 800; color: var(--po-primary-dark); background: var(--po-primary-subtle); padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(2, 132, 199, 0.25);">PO-2026-0105</span>
+                    <span id="payModalLinkedRfqBadge" style="display: none; font-size: 11px; padding: 2px 7px; background: rgba(168, 85, 247, 0.12); color: #7e22ce; border: 1px solid rgba(168, 85, 247, 0.25); border-radius: 5px; font-family: monospace; font-weight: 700;"></span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <label for="payModalRefSelect" style="font-size: 0.76rem; color: #64748b; font-weight: 600;">Filter by Reference:</label>
+                    <select id="payModalRefSelect" class="po-select" style="max-width: 200px; padding: 4px 8px; font-size: 12px; height: 30px;" onchange="filterPaymentsByReference(this.value)">
+                        <!-- Populated dynamically -->
+                    </select>
+                    <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="resetPaymentViewToActivePo()" title="View Current Active PO" style="height: 30px; font-size: 11.5px; padding: 0 8px;">
+                        <i class="ph ph-arrow-counter-clockwise"></i> Active PO
+                    </button>
+                </div>
+            </div>
+
+            <!-- Financial Calculation KPI Cards -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px;">
+                <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 10px 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+                    <div style="font-size: 0.72rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Total Commitment (Gross)</div>
+                    <div id="payModalGross" style="font-size: 1.25rem; font-weight: 800; color: #0f172a; margin-top: 3px;">₱0.00</div>
+                    <div style="font-size: 0.68rem; color: #94a3b8;">Contracted item lines</div>
+                </div>
+                <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 10px 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+                    <div style="font-size: 0.72rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Total Amount Paid</div>
+                    <div id="payModalPaid" style="font-size: 1.25rem; font-weight: 800; color: #059669; margin-top: 3px;">₱0.00</div>
+                    <div style="font-size: 0.68rem; color: #059669;">Recorded disbursements</div>
+                </div>
+                <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 10px 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+                    <div style="font-size: 0.72rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Remaining Balance Due</div>
+                    <div id="payModalBalance" style="font-size: 1.25rem; font-weight: 800; color: #dc2626; margin-top: 3px;">₱0.00</div>
+                    <div style="font-size: 0.68rem; color: #dc2626;">Net unsettled liability</div>
+                </div>
+                <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 10px 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; flex-direction: column; justify-content: space-between;">
+                    <div style="font-size: 0.72rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Settlement Status</div>
+                    <div>
+                        <span id="payModalStatusBadge" class="pay-badge unpaid" style="font-size: 12px; padding: 3px 10px;">Unpaid / Credit</span>
+                    </div>
+                    <div id="payModalPercentPaid" style="font-size: 0.68rem; color: #64748b;">0% settled</div>
+                </div>
+            </div>
+
+            <!-- Payments Ledger History Table -->
+            <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 10px; overflow: hidden;">
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 14px; background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                    <div style="font-weight: 800; font-size: 0.86rem; color: #0f172a; display: flex; align-items: center; gap: 6px;">
+                        <i class="ph ph-list-dashes" style="color: var(--po-primary);"></i>
+                        <span>Disbursement History for <span id="payLedgerRefLabel" style="font-family: monospace;">--</span></span>
+                    </div>
+                    <span id="payLedgerCountBadge" style="font-size: 11px; background: #e2e8f0; color: #475569; padding: 1px 7px; border-radius: 8px; font-weight: 700;">0 Entries</span>
+                </div>
+                <div style="max-height: 180px; overflow-y: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                        <thead>
+                            <tr style="background: #f1f5f9; text-align: left; color: #475569;">
+                                <th style="padding: 7px 10px; width: 40px; text-align: center;">#</th>
+                                <th style="padding: 7px 10px; width: 95px;">Date</th>
+                                <th style="padding: 7px 10px; width: 130px;">Method</th>
+                                <th style="padding: 7px 10px;">Reference / OR #</th>
+                                <th style="padding: 7px 10px; width: 140px;">Fund Source</th>
+                                <th style="padding: 7px 10px; text-align: right; width: 110px;">Amount (₱)</th>
+                                <th style="padding: 7px 10px; text-align: center; width: 60px;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="payModalLedgerTbody">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Record New Payment Disbursement Card -->
+            <div style="background: #ffffff; border: 1.5px solid var(--po-primary); border-radius: 10px; padding: 12px 14px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+                    <div style="font-weight: 800; font-size: 0.88rem; color: #0f172a; display: flex; align-items: center; gap: 6px;">
+                        <i class="ph ph-plus-circle" style="color: var(--po-primary);"></i>
+                        <span>Record Payment Disbursement against Reference</span>
+                    </div>
+                    <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="fillFullRemainingBalance()" style="font-size: 11px; padding: 2px 8px; height: 24px; color: #059669; border-color: #a7f3d0; background: #ecfdf5;">
+                        <i class="ph ph-lightning"></i> Pay Full Balance
+                    </button>
+                </div>
+
+                <div class="po-form-row">
+                    <div class="po-field">
+                        <label class="po-label" for="newPayAmount">Amount to Disburse (₱) *</label>
+                        <input type="number" step="0.01" min="0.01" class="po-input" id="newPayAmount" placeholder="0.00" style="font-weight: 700; font-size: 0.95rem;">
+                    </div>
+                    <div class="po-field">
+                        <label class="po-label" for="newPayMethod">Disbursement Method *</label>
+                        <select class="po-select" id="newPayMethod">
+                            <option value="Cash / Petty Cash">Cash / Petty Cash (Direct Run)</option>
+                            <option value="Trade Credit (Net 30/15)">Trade Credit (Net 30/15 Days Invoice)</option>
+                            <option value="Company Check">Company Check (Spot / Post-Dated)</option>
+                            <option value="Bank Transfer / Electronic">Bank Transfer / Electronic (PESONet / InstaPay)</option>
+                            <option value="GCash / Maya">GCash / Maya (Mobile e-Wallet)</option>
+                            <option value="Corporate Credit Card">Corporate Credit Card</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="po-form-row" style="margin-top: 6px;">
+                    <div class="po-field">
+                        <label class="po-label" for="newPayRef">OR # / Check # / Receipt Ref</label>
+                        <input type="text" class="po-input" id="newPayRef" placeholder="e.g. Cash Slip #4912, Check #00412, GCash 88214">
+                    </div>
+                    <div class="po-field">
+                        <label class="po-label" for="newPayDate">Payment Date</label>
+                        <input type="date" class="po-input" id="newPayDate">
+                    </div>
+                </div>
+
+                <div class="po-form-row" style="margin-top: 6px;">
+                    <div class="po-field">
+                        <label class="po-label" for="newPayFundSource">Disbursing Fund Source</label>
+                        <select class="po-select" id="newPayFundSource">
+                            <option value="Main Commissary Checking Acct">Main Commissary Checking Account</option>
+                            <option value="Branch Petty Cash Fund">Branch Petty Cash Fund</option>
+                            <option value="Purchaser Cash Advance">Purchaser Cash Advance Fund</option>
+                            <option value="Corporate Card Account">Corporate Card Account</option>
+                        </select>
+                    </div>
+                    <div class="po-field">
+                        <label class="po-label" for="newPayRemarks">Financial Remarks</label>
+                        <input type="text" class="po-input" id="newPayRemarks" placeholder="e.g. 50% initial downpayment for batch production">
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; margin-top: 10px;">
+                    <button type="button" class="hr-btn hr-btn-primary" onclick="addPaymentDisbursement()" style="padding: 6px 16px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
+                        <i class="ph ph-plus-circle"></i> Add Disbursement Entry
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="po-modal-footer" style="padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; background: #f8fafc; border-top: 1px solid #e2e8f0;">
+            <div style="font-size: 11.5px; color: #64748b;">
+                <i class="ph ph-info"></i> Recorded disbursements are automatically synchronized with the active Purchase Order.
+            </div>
+            <button type="button" class="po-btn po-btn-primary" onclick="closePaymentSettlementModal()" style="padding: 6px 18px; font-size: 12px;">
+                Done
+            </button>
+        </div>
+    </div>
+</div>
 
 <!-- ==========================================================================
      MODAL 1: FORMAL PRINTABLE PURCHASE ORDER PREVIEW
@@ -1800,6 +2520,7 @@ window.PoStore = {
     activePo: {
         poNumber: 'PO-2026-0105',
         poType: 'vendor', // 'vendor' or 'wet_market'
+        title: '',
         rfqReference: '',
         vendorId: '',
         vendorName: '',
@@ -1830,9 +2551,12 @@ window.PoStore = {
 let activePoStatusFilter = 'all';
 let activePoTypeFilter = 'all';
 let poSearchTerm = '';
+let poCurrentPage = 1;
+let poPageSize = 10;
 
 document.addEventListener('DOMContentLoaded', () => {
     initPoStore();
+    initPoColumns();
     initPoDates();
     renderPoVendorDropdown();
     renderPoItemsTable();
@@ -1853,6 +2577,16 @@ document.addEventListener('DOMContentLoaded', () => {
             closeAllPoModals();
         }
     });
+
+    // Close column dropdown on outside click
+    document.addEventListener('click', (e) => {
+        const dropdown = document.getElementById('poColConfigDropdown');
+        const btn = document.getElementById('btnPoColConfig');
+        const actionBtn = document.getElementById('btnPoActionColFilter');
+        if (dropdown && dropdown.style.display !== 'none' && !dropdown.contains(e.target) && (!btn || !btn.contains(e.target)) && (!actionBtn || !actionBtn.contains(e.target))) {
+            dropdown.style.display = 'none';
+        }
+    });
 });
 
 function initPoStore() {
@@ -1868,6 +2602,9 @@ function initPoStore() {
         window.PoStore.purchaseOrders = JSON.parse(JSON.stringify(SEEDED_PURCHASE_ORDERS));
         localStorage.setItem('rms_purchase_orders', JSON.stringify(window.PoStore.purchaseOrders));
     }
+
+    // 2. Automatically sync any newly approved / awarded RFQs into PO list
+    syncApprovedRfqsToPoDirectory();
 
     // 2. Load Vendors
     const storedVendors = localStorage.getItem('rms_vendor_database_v6');
@@ -1926,42 +2663,170 @@ function initPoDates() {
     window.PoStore.activePo.paymentDate = today;
 }
 
+let poVendorComboSearchTerm = '';
+
 function renderPoVendorDropdown() {
     const select = document.getElementById('poVendorSelect');
-    if (!select) return;
+    const vendors = window.PoStore.vendors || [];
 
-    const vendors = window.PoStore.vendors;
-    if (vendors.length === 0) {
+    if (select) {
         select.innerHTML = `
-            <option value="">-- No Approved Vendors Found in Cache --</option>
-            <option value="VND-SAN-002">San Miguel Pure Foods Company Inc. (Raw Ingredients)</option>
-            <option value="VND-ROB-003">Universal Robina Corporation (Raw Ingredients)</option>
-            <option value="VND-ECO-004">EcoPack Solutions Philippines Corp. (Packaging)</option>
+            <option value="">-- Choose Approved Vendor from Masterlist --</option>
+            ${vendors.map(v => `
+                <option value="${v.id || v.code}">[${v.code || v.id}] ${v.legalName || v.tradeName} (${v.category || 'General'})</option>
+            `).join('')}
         `;
+    }
+
+    renderPoVendorComboboxList();
+}
+
+function renderPoVendorComboboxList() {
+    const listEl = document.getElementById('poVendorComboList');
+    if (!listEl) return;
+
+    const vendors = window.PoStore.vendors || [];
+    const q = (poVendorComboSearchTerm || '').toLowerCase().trim();
+
+    const filtered = vendors.filter(v => {
+        if (!q) return true;
+        const code = (v.code || v.id || '').toLowerCase();
+        const trade = (v.tradeName || '').toLowerCase();
+        const legal = (v.legalName || '').toLowerCase();
+        const cat = (v.category || '').toLowerCase();
+        const contact = (v.contacts && v.contacts[0] ? v.contacts[0].name : '').toLowerCase();
+        return code.includes(q) || trade.includes(q) || legal.includes(q) || cat.includes(q) || contact.includes(q);
+    });
+
+    const activeId = document.getElementById('poVendorSelect') ? document.getElementById('poVendorSelect').value : '';
+
+    if (filtered.length === 0) {
+        listEl.innerHTML = `<div class="po-vendor-combo-empty">No suppliers match "${escapeHtml(poVendorComboSearchTerm)}"</div>`;
         return;
     }
 
-    select.innerHTML = `
-        <option value="">-- Choose Approved Vendor from Masterlist --</option>
-        ${vendors.map(v => `
-            <option value="${v.id || v.code}">[${v.code || v.id}] ${v.legalName || v.tradeName} (${v.category || 'General'})</option>
-        `).join('')}
-    `;
+    let itemsHtml = '';
+    if (activeId) {
+        itemsHtml += `
+            <div class="po-vendor-combo-item" onclick="selectPoVendorFromCombo('')" style="color: #ef4444; border-bottom: 1px dashed #f1f5f9;">
+                <span style="display: flex; align-items: center; gap: 6px;">
+                    <i class="ph ph-x-circle"></i> Clear Selected Vendor
+                </span>
+            </div>
+        `;
+    }
+
+    itemsHtml += filtered.map(v => {
+        const vId = v.id || v.code;
+        const isSelected = vId === activeId;
+        return `
+            <div class="po-vendor-combo-item ${isSelected ? 'is-selected' : ''}" onclick="selectPoVendorFromCombo('${vId}')">
+                <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
+                    <div style="width: 22px; height: 22px; border-radius: 5px; background: linear-gradient(135deg, #0284c7, #0d9488); color: #fff; font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        ${(v.tradeName || v.legalName || 'V').substring(0, 1).toUpperCase()}
+                    </div>
+                    <div style="min-width: 0; line-height: 1.25;">
+                        <div style="font-weight: 600; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            ${escapeHtml(v.tradeName || v.legalName)}
+                        </div>
+                        <div style="font-size: 0.72rem; color: #64748b;">
+                            <span style="font-family: monospace; font-weight: 700;">${escapeHtml(v.code || v.id)}</span> • ${escapeHtml(v.category || 'General')}
+                        </div>
+                    </div>
+                </div>
+                ${isSelected ? '<i class="ph ph-check" style="color: var(--po-primary); font-size: 14px; flex-shrink: 0;"></i>' : ''}
+            </div>
+        `;
+    }).join('');
+
+    listEl.innerHTML = itemsHtml;
 }
 
-/**
- * Switch Tab: PO Directory vs PO Builder
- */
+function togglePoVendorCombobox(event) {
+    if (event) event.stopPropagation();
+    const dropdown = document.getElementById('poVendorComboDropdown');
+    const trigger = document.getElementById('poVendorComboTrigger');
+    if (!dropdown || !trigger) return;
+
+    const isActive = dropdown.classList.contains('is-active');
+    if (isActive) {
+        dropdown.classList.remove('is-active');
+        trigger.classList.remove('is-active');
+    } else {
+        dropdown.classList.add('is-active');
+        trigger.classList.add('is-active');
+        const input = document.getElementById('poVendorSearchInput');
+        if (input) {
+            input.value = '';
+            poVendorComboSearchTerm = '';
+            renderPoVendorComboboxList();
+            setTimeout(() => input.focus(), 50);
+        }
+    }
+}
+
+function filterPoVendorCombobox(query) {
+    poVendorComboSearchTerm = query || '';
+    renderPoVendorComboboxList();
+}
+
+function selectPoVendorFromCombo(vendorId) {
+    const select = document.getElementById('poVendorSelect');
+    if (select) {
+        select.value = vendorId;
+    }
+    handlePoVendorSelect(vendorId);
+
+    const dropdown = document.getElementById('poVendorComboDropdown');
+    const trigger = document.getElementById('poVendorComboTrigger');
+    if (dropdown) dropdown.classList.remove('is-active');
+    if (trigger) trigger.classList.remove('is-active');
+}
+
+function updatePoVendorSummaryCard(vendor) {
+    const summaryBox = document.getElementById('poVendorSummaryBox');
+    const triggerText = document.getElementById('poVendorComboTriggerText');
+
+    if (!vendor) {
+        if (summaryBox) summaryBox.style.display = 'none';
+        if (triggerText) {
+            triggerText.textContent = '-- Choose Approved Vendor from Masterlist --';
+            triggerText.style.color = '#64748b';
+            triggerText.style.fontWeight = 'normal';
+        }
+        return;
+    }
+
+    if (triggerText) {
+        triggerText.innerHTML = `<strong>[${vendor.code || vendor.id}]</strong> ${escapeHtml(vendor.tradeName || vendor.legalName)}`;
+        triggerText.style.color = '#0f172a';
+        triggerText.style.fontWeight = '600';
+    }
+
+    if (summaryBox) {
+        summaryBox.style.display = 'flex';
+        const tradeName = vendor.tradeName || vendor.legalName || 'Supplier Partner';
+        document.getElementById('poVendorTradeName').textContent = tradeName;
+        document.getElementById('poVendorCategoryTag').textContent = vendor.category || 'General';
+        document.getElementById('poVendorTinDisplay').textContent = vendor.tin || '000-000-000-000';
+        document.getElementById('poVendorLocationDisplay').textContent = vendor.address || vendor.city || 'Metro Manila, Philippines';
+        document.getElementById('poVendorAvatarText').textContent = tradeName.substring(0, 2).toUpperCase();
+    }
+}
+
 function switchPoTab(tabId) {
+    if (tabId === 'tab-po-audit') {
+        openPoAuditDrawer();
+        return;
+    }
+
     const btnList = document.getElementById('tabBtnPoList');
     const btnBuilder = document.getElementById('tabBtnPoBuilder');
-    const btnAudit = document.getElementById('tabBtnPoAudit');
     const paneList = document.getElementById('pane-tab-po-list');
     const paneBuilder = document.getElementById('pane-tab-po-builder');
-    const paneAudit = document.getElementById('pane-tab-po-audit');
 
-    [btnList, btnBuilder, btnAudit].forEach(b => b && b.classList.remove('active'));
-    [paneList, paneBuilder, paneAudit].forEach(p => p && (p.style.display = 'none'));
+    [btnList, btnBuilder].forEach(b => b && b.classList.remove('active'));
+    [paneList, paneBuilder].forEach(p => p && (p.style.display = 'none'));
 
     const pos = window.PoStore.purchaseOrders || [];
     const countBadge = document.getElementById('tabPoCount');
@@ -1969,8 +2834,14 @@ function switchPoTab(tabId) {
 
     const auditCountBadge = document.getElementById('tabPoAuditCount');
     if (auditCountBadge && typeof getProcurementAuditTrail === 'function') {
+        const { poNum, rfqNum } = (typeof getCurrentPoAuditTarget === 'function') ? getCurrentPoAuditTarget() : {};
         const logs = getProcurementAuditTrail();
-        auditCountBadge.textContent = logs.filter(l => l.module === 'PO' || l.action === 'PO_TRANSFERRED').length || logs.length;
+        if (poNum) {
+            const scoped = logs.filter(l => l.refNumber === poNum || (rfqNum && l.refNumber === rfqNum));
+            auditCountBadge.textContent = scoped.length;
+        } else {
+            auditCountBadge.textContent = logs.filter(l => l.module === 'PO').length;
+        }
     }
 
     if (tabId === 'tab-po-list') {
@@ -1980,10 +2851,6 @@ function switchPoTab(tabId) {
     } else if (tabId === 'tab-po-builder') {
         if (btnBuilder) btnBuilder.classList.add('active');
         if (paneBuilder) paneBuilder.style.display = 'flex';
-    } else if (tabId === 'tab-po-audit') {
-        if (btnAudit) btnAudit.classList.add('active');
-        if (paneAudit) paneAudit.style.display = 'flex';
-        renderPoAuditTrail();
     }
 }
 
@@ -2035,19 +2902,35 @@ function setPoMode(mode) {
 }
 
 function handlePoVendorSelect(vendorId) {
-    if (!vendorId) return;
+    if (!vendorId) {
+        document.getElementById('poContactPerson').value = '';
+        document.getElementById('poContactTitle').value = '';
+        document.getElementById('poContactPhone').value = '';
+        document.getElementById('poContactEmail').value = '';
+        document.getElementById('poFullAddress').value = '';
+        window.PoStore.activePo.vendorId = '';
+        window.PoStore.activePo.vendorName = '';
+        window.PoStore.activePo.vendorTradeName = '';
+        updatePoVendorSummaryCard(null);
+        renderPoVendorComboboxList();
+        return;
+    }
+
     const vendor = window.PoStore.vendors.find(v => (v.id === vendorId || v.code === vendorId));
     if (!vendor) return;
 
     document.getElementById('poContactPerson').value = (vendor.contacts && vendor.contacts[0]) ? vendor.contacts[0].name : '';
+    document.getElementById('poContactTitle').value = (vendor.contacts && vendor.contacts[0]) ? (vendor.contacts[0].title || vendor.contacts[0].designation || 'Account Representative') : 'Account Manager';
     document.getElementById('poContactPhone').value = (vendor.contacts && vendor.contacts[0]) ? vendor.contacts[0].phone : '';
     document.getElementById('poContactEmail').value = (vendor.contacts && vendor.contacts[0]) ? vendor.contacts[0].email : (vendor.email || '');
-    document.getElementById('poSourceLocation').value = vendor.location || 'Metro Manila';
     document.getElementById('poFullAddress').value = vendor.address || '';
 
     window.PoStore.activePo.vendorId = vendor.id || vendor.code;
     window.PoStore.activePo.vendorName = vendor.legalName || vendor.tradeName;
     window.PoStore.activePo.vendorTradeName = vendor.tradeName || vendor.legalName;
+
+    updatePoVendorSummaryCard(vendor);
+    renderPoVendorComboboxList();
     showToast(`✓ Selected vendor ${vendor.tradeName || vendor.legalName}`, 'success');
 }
 
@@ -2113,10 +2996,10 @@ function renderPoItemsTable() {
     if (items.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="9" style="text-align: center; padding: 42px; color: var(--po-text-muted);">
+                <td colspan="7" style="text-align: center; padding: 42px; color: var(--po-text-muted);">
                     <i class="ph ph-shopping-bag-open" style="font-size: 38px; color: #cbd5e1; display: block; margin-bottom: 8px;"></i>
                     <div style="font-weight: 700; color: var(--po-text-strong);">No Line Items in Purchase Order</div>
-                    <div style="font-size: 0.8rem; margin-top: 4px;">Click <strong>"Select from Master" (F2)</strong> or <strong>"Add Custom Market Line"</strong> to input items.</div>
+                    <div style="font-size: 0.8rem; margin-top: 4px;">Click <strong>"Select Master" (F2)</strong> or <strong>"Add Custom Row"</strong> to input items.</div>
                 </td>
             </tr>
         `;
@@ -2130,19 +3013,7 @@ function renderPoItemsTable() {
             <tr>
                 <td class="td-center" style="font-weight: 700; color: var(--po-text-muted);">${idx + 1}</td>
                 <td>
-                    <input type="text" value="${escapeHtml(it.sku || '')}" placeholder="SKU / Tag" onchange="updatePoItemField(${idx}, 'sku', this.value)" style="font-family: monospace; font-weight: 600;">
-                </td>
-                <td>
                     <input type="text" value="${escapeHtml(it.name || '')}" placeholder="Item Description / Cut / Brand" onchange="updatePoItemField(${idx}, 'name', this.value)" required style="font-weight: 600;">
-                </td>
-                <td>
-                    <select onchange="updatePoItemField(${idx}, 'category', this.value)">
-                        <option value="Raw Ingredients" ${it.category === 'Raw Ingredients' ? 'selected' : ''}>Raw Ingredients</option>
-                        <option value="Packaging" ${it.category === 'Packaging' ? 'selected' : ''}>Packaging</option>
-                        <option value="Beverage" ${it.category === 'Beverage' ? 'selected' : ''}>Beverage</option>
-                        <option value="Services" ${it.category === 'Services' ? 'selected' : ''}>Services</option>
-                        <option value="General" ${it.category === 'General' ? 'selected' : ''}>General</option>
-                    </select>
                 </td>
                 <td class="td-center">
                     <select onchange="updatePoItemField(${idx}, 'unit', this.value)" style="text-align: center;">
@@ -2233,6 +3104,7 @@ function updatePoTotals() {
     document.getElementById('poItemCountBadge').textContent = `${totalLines} Line Item${totalLines === 1 ? '' : 's'}`;
 
     calculateBalanceDue();
+    updatePoSummaryPayBadge();
 }
 
 /**
@@ -2434,6 +3306,211 @@ function issuePurchaseOrderSubmit() {
     switchPoTab('tab-po-list');
 }
 
+/**
+ * --------------------------------------------------------------------------
+ * PO DIRECTORY COLUMN CONFIGURATION & PAGINATION SYSTEM
+ * --------------------------------------------------------------------------
+ */
+const PO_DIRECTORY_COLUMNS = [
+    { id: 'poNumber', label: 'PO Reference', default: true, lockVisible: true, defaultWidth: '135px', align: 'left' },
+    { id: 'type', label: 'Sourcing Type', default: true, lockVisible: false, defaultWidth: '120px', align: 'center' },
+    { id: 'vendor', label: 'Supplier / Stall', default: true, lockVisible: true, defaultWidth: '220px', align: 'left' },
+    { id: 'orderDate', label: 'Date Issued', default: true, lockVisible: false, defaultWidth: '105px', align: 'left' },
+    { id: 'expectedDelivery', label: 'Expected Delivery', default: true, lockVisible: false, defaultWidth: '130px', align: 'left' },
+    { id: 'itemsCount', label: 'Line Items', default: true, lockVisible: false, defaultWidth: '85px', align: 'center' },
+    { id: 'grossTotal', label: 'Total Amount', default: true, lockVisible: false, defaultWidth: '125px', align: 'right' },
+    { id: 'paymentStatus', label: 'Payment Status', default: true, lockVisible: false, defaultWidth: '130px', align: 'center' },
+    { id: 'status', label: 'Order Status', default: true, lockVisible: false, defaultWidth: '140px', align: 'center' },
+    { id: 'actions', label: 'Actions', default: true, lockVisible: true, defaultWidth: '130px', align: 'center' }
+];
+
+let activePoColIds = (() => {
+    try {
+        const saved = localStorage.getItem('rms_po_directory_cols');
+        if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return PO_DIRECTORY_COLUMNS.filter(c => c.default).map(c => c.id);
+})();
+
+let savedPoColWidths = (() => {
+    try {
+        const saved = localStorage.getItem('rms_po_directory_col_widths');
+        if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return {};
+})();
+
+function getPoColWidth(col) {
+    return savedPoColWidths[col.id] || col.defaultWidth || '120px';
+}
+
+function initPoColumns() {
+    renderPoTableHeader();
+    renderPoColumnChecklist();
+}
+
+function renderPoTableHeader() {
+    const theadRow = document.getElementById('poDirectoryTheadRow');
+    if (!theadRow) return;
+
+    let thHtml = '';
+    PO_DIRECTORY_COLUMNS.forEach(col => {
+        if (!activePoColIds.includes(col.id)) return;
+        const w = getPoColWidth(col);
+        const alignClass = col.align === 'right' ? 'th-num' : (col.align === 'center' ? 'th-center' : '');
+
+        if (col.id === 'actions') {
+            thHtml += `
+                <th class="${alignClass}" data-col-id="actions" style="width: ${w}; position: relative; user-select: none;">
+                    <div class="inv-header-action-wrapper">
+                        <span>Action</span>
+                        <button type="button" class="inv-table-filter-btn" id="btnPoActionColFilter" onclick="togglePoColumnConfigDropdown(event)" title="Column Display Filter" style="width: 22px; height: 22px; font-size: 11px; border-radius: 5px; color: #9333ea; background: rgba(168, 85, 247, 0.10); border: 1px solid rgba(168, 85, 247, 0.25);">
+                            <i class="ph ph-funnel"></i>
+                        </button>
+                    </div>
+                </th>
+            `;
+        } else {
+            thHtml += `
+                <th class="${alignClass}" data-col-id="${col.id}" style="width: ${w}; position: relative; user-select: none;">
+                    <span>${col.label}</span>
+                    <div class="po-col-resizer" onmousedown="initPoColResize(event, '${col.id}')"></div>
+                </th>
+            `;
+        }
+    });
+
+    theadRow.innerHTML = thHtml;
+    renderPoColumnChecklist();
+}
+
+function renderPoColumnChecklist() {
+    const listEl = document.getElementById('poColChecklist');
+    if (!listEl) return;
+
+    listEl.innerHTML = PO_DIRECTORY_COLUMNS.map(col => {
+        const isChecked = activePoColIds.includes(col.id);
+        const isDisabled = col.lockVisible ? 'disabled' : '';
+        return `
+            <label class="inv-col-item-row" title="${col.label}" style="display: flex; align-items: center; justify-content: space-between; padding: 5px 8px; font-size: 12px; border-radius: 6px; cursor: ${col.lockVisible ? 'default' : 'pointer'};">
+                <span style="display: flex; align-items: center; gap: 7px; color: ${col.lockVisible ? '#94a3b8' : '#1e293b'}; font-weight: ${isChecked ? '600' : '400'};">
+                    <input type="checkbox" ${isChecked ? 'checked' : ''} ${isDisabled} onchange="togglePoColumnVisibility('${col.id}', this.checked)" style="accent-color: #9333ea; width: 14px; height: 14px; cursor: ${col.lockVisible ? 'default' : 'pointer'};">
+                    ${col.label}
+                </span>
+                ${col.lockVisible ? '<span style="font-size: 10px; color: #94a3b8; font-weight: 600;">(Locked)</span>' : ''}
+            </label>
+        `;
+    }).join('');
+
+    const counter = document.getElementById('poColActiveCounter');
+    if (counter) {
+        counter.textContent = `${activePoColIds.length} of ${PO_DIRECTORY_COLUMNS.length} visible`;
+    }
+}
+
+function togglePoColumnConfigDropdown(event) {
+    if (event) event.stopPropagation();
+    const dropdown = document.getElementById('poColConfigDropdown');
+    const btn = document.getElementById('btnPoColConfig');
+    if (!dropdown) return;
+
+    const isVisible = dropdown.style.display !== 'none';
+    dropdown.style.display = isVisible ? 'none' : 'block';
+    if (btn) btn.classList.toggle('active', !isVisible);
+}
+
+function togglePoColumnVisibility(colId, isVisible) {
+    if (isVisible) {
+        if (!activePoColIds.includes(colId)) {
+            activePoColIds.push(colId);
+        }
+    } else {
+        activePoColIds = activePoColIds.filter(id => id !== colId);
+    }
+    localStorage.setItem('rms_po_directory_cols', JSON.stringify(activePoColIds));
+    renderPoTableHeader();
+    renderPoDirectory();
+}
+
+function showAllPoColumns() {
+    activePoColIds = PO_DIRECTORY_COLUMNS.map(c => c.id);
+    localStorage.setItem('rms_po_directory_cols', JSON.stringify(activePoColIds));
+    renderPoTableHeader();
+    renderPoDirectory();
+    showToast('✓ All columns visible', 'success');
+}
+
+function resetPoColumnDefaults() {
+    activePoColIds = PO_DIRECTORY_COLUMNS.filter(c => c.default).map(c => c.id);
+    localStorage.setItem('rms_po_directory_cols', JSON.stringify(activePoColIds));
+    renderPoTableHeader();
+    renderPoDirectory();
+    showToast('✓ Reset to default columns', 'success');
+}
+
+function resetPoColumns() {
+    resetPoColumnDefaults();
+}
+
+function resetPoColumnWidths() {
+    savedPoColWidths = {};
+    localStorage.removeItem('rms_po_directory_col_widths');
+    renderPoTableHeader();
+    renderPoDirectory();
+    showToast('✓ Column widths reset to defaults', 'success');
+}
+
+// Column Header Resizer Logic
+let poResizingColId = null;
+let poStartX = 0;
+let poStartW = 0;
+
+function initPoColResize(e, colId) {
+    e.preventDefault();
+    e.stopPropagation();
+    poResizingColId = colId;
+    poStartX = e.pageX;
+
+    const thEl = document.querySelector(`#poDirectoryTheadRow th[data-col-id="${colId}"]`);
+    poStartW = thEl ? thEl.offsetWidth : 120;
+
+    document.addEventListener('mousemove', handlePoColMouseMove);
+    document.addEventListener('mouseup', handlePoColMouseUp);
+}
+
+function handlePoColMouseMove(e) {
+    if (!poResizingColId) return;
+    const diff = e.pageX - poStartX;
+    const newWidth = Math.max(60, poStartW + diff);
+    savedPoColWidths[poResizingColId] = `${newWidth}px`;
+
+    const thEl = document.querySelector(`#poDirectoryTheadRow th[data-col-id="${poResizingColId}"]`);
+    if (thEl) {
+        thEl.style.width = `${newWidth}px`;
+    }
+}
+
+function handlePoColMouseUp() {
+    if (!poResizingColId) return;
+    localStorage.setItem('rms_po_directory_col_widths', JSON.stringify(savedPoColWidths));
+    poResizingColId = null;
+    document.removeEventListener('mousemove', handlePoColMouseMove);
+    document.removeEventListener('mouseup', handlePoColMouseUp);
+}
+
+function syncPoFilterPillActive(filterVal) {
+    const bar = document.getElementById('poStatusFilterBar');
+    if (!bar) return;
+    bar.querySelectorAll('.po-filter-pill').forEach(p => {
+        const val = p.getAttribute('data-filter');
+        if (val === filterVal) {
+            p.classList.add('active');
+        } else {
+            p.classList.remove('active');
+        }
+    });
+}
+
 function renderPoDirectory() {
     const tbody = document.getElementById('poDirectoryTbody');
     const pos = window.PoStore.purchaseOrders || [];
@@ -2470,11 +3547,30 @@ function renderPoDirectory() {
     document.getElementById('countPoPaid').textContent = paid;
 
     if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 36px; color: var(--po-text-muted);">No Purchase Orders found matching the filter criteria.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="${activePoColIds.length || 10}" style="text-align: center; padding: 36px; color: var(--po-text-muted);">No Purchase Orders found matching the filter criteria.</td></tr>`;
+        document.getElementById('poPaginationStart').textContent = '0';
+        document.getElementById('poPaginationEnd').textContent = '0';
+        document.getElementById('poPaginationTotal').textContent = '0';
+        renderPoPaginationControls(0);
         return;
     }
 
-    tbody.innerHTML = filtered.map(p => {
+    // Pagination Calculation
+    const totalFiltered = filtered.length;
+    const totalPages = Math.max(1, Math.ceil(totalFiltered / poPageSize));
+    if (poCurrentPage > totalPages) poCurrentPage = totalPages;
+    if (poCurrentPage < 1) poCurrentPage = 1;
+
+    const startIndex = (poCurrentPage - 1) * poPageSize;
+    const endIndex = Math.min(startIndex + poPageSize, totalFiltered);
+    const pageItems = filtered.slice(startIndex, endIndex);
+
+    document.getElementById('poPaginationStart').textContent = (startIndex + 1).toString();
+    document.getElementById('poPaginationEnd').textContent = endIndex.toString();
+    document.getElementById('poPaginationTotal').textContent = totalFiltered.toString();
+    renderPoPaginationControls(totalPages);
+
+    tbody.innerHTML = pageItems.map(p => {
         const gross = (p.items || []).reduce((acc, it) => acc + ((parseFloat(it.quantity) || 0) * (parseFloat(it.unitPrice) || 0)), 0);
         const isMarket = p.poType === 'wet_market';
         let payBadgeClass = 'unpaid';
@@ -2485,78 +3581,174 @@ function renderPoDirectory() {
         if (p.status === 'Approved / Issued') poStatusClass = 'approved';
         else if (p.status === 'Fully Received') poStatusClass = 'received';
 
-        return `
-            <tr>
-                <td style="font-family: monospace; font-weight: 700; color: var(--po-primary-dark);">
-                    <a href="javascript:void(0)" onclick="editPoFromDirectory('${p.poNumber}')" style="color: inherit; text-decoration: underline;">
-                        ${escapeHtml(p.poNumber)}
-                    </a>
-                </td>
-                <td>
-                    <span class="po-type-badge ${isMarket ? 'wet-market' : 'vendor'}">
-                        ${isMarket ? '<i class="ph ph-basket"></i> Wet Market' : '<i class="ph ph-buildings"></i> Vendor'}
-                    </span>
-                </td>
-                <td>
-                    <div style="font-weight: 700; color: var(--po-text-strong);">${escapeHtml(p.vendorTradeName || p.vendorName || 'Market Stall')}</div>
-                    <div style="font-size: 0.74rem; color: var(--po-text-muted);">
-                        ${escapeHtml(p.vendorContactPerson || 'Purchaser')} • ${escapeHtml(p.vendorPhone || '')}
-                    </div>
-                </td>
-                <td>${formatDateDisplay(p.orderDate)}</td>
-                <td><span style="font-weight: 600; color: var(--po-teal-dark);">${formatDateDisplay(p.expectedDelivery)}</span></td>
-                <td class="td-center"><span class="po-tab-count">${(p.items || []).length}</span></td>
-                <td class="td-num" style="font-weight: 800;">₱${formatMoney(gross)}</td>
-                <td class="td-center">
-                    <span class="pay-badge ${payBadgeClass}">
-                        ${escapeHtml(p.paymentStatus || 'Unpaid')}
-                    </span>
-                </td>
-                <td class="td-center">
-                    <span class="po-status-badge ${poStatusClass}">
-                        <i class="ph ph-dot"></i> ${escapeHtml(p.status)}
-                    </span>
-                </td>
-                <td class="td-center">
-                    <div style="display: flex; align-items: center; justify-content: center; gap: 4px;">
-                        <button type="button" class="inv-table-filter-btn" onclick="openPoSingleAuditModal('${p.poNumber}')" title="View Audit Trail for this PO">
-                            <i class="ph ph-clock-counter-clockwise"></i>
-                        </button>
-                        <button type="button" class="inv-table-filter-btn" onclick="previewPoFromDirectory('${p.poNumber}')" title="Preview Printable PO">
-                            <i class="ph ph-eye"></i>
-                        </button>
-                        <button type="button" class="inv-table-filter-btn" onclick="editPoFromDirectory('${p.poNumber}')" title="Edit Purchase Order">
-                            <i class="ph ph-pencil-simple"></i>
-                        </button>
-                        <button type="button" class="inv-table-filter-btn" style="color: var(--po-danger);" onclick="deletePo('${p.poNumber}')" title="Delete PO">
-                            <i class="ph ph-trash"></i>
-                        </button>
-                    </div>
-                </td>
-            </tr>
-        `;
+        let cellsHtml = '';
+        PO_DIRECTORY_COLUMNS.forEach(col => {
+            if (!activePoColIds.includes(col.id)) return;
+
+            if (col.id === 'poNumber') {
+                cellsHtml += `
+                    <td style="font-family: monospace; font-weight: 700; color: var(--po-primary-dark);">
+                        <a href="javascript:void(0)" onclick="editPoFromDirectory('${p.poNumber}')" style="color: inherit; text-decoration: underline;">
+                            ${escapeHtml(p.poNumber)}
+                        </a>
+                    </td>
+                `;
+            } else if (col.id === 'type') {
+                cellsHtml += `
+                    <td class="td-center">
+                        <span class="po-type-badge ${isMarket ? 'wet-market' : 'vendor'}">
+                            ${isMarket ? '<i class="ph ph-basket"></i> Wet Market' : '<i class="ph ph-buildings"></i> Vendor'}
+                        </span>
+                    </td>
+                `;
+            } else if (col.id === 'vendor') {
+                cellsHtml += `
+                    <td>
+                        <div style="font-weight: 700; color: var(--po-text-strong);">${escapeHtml(p.vendorTradeName || p.vendorName || 'Market Stall')}</div>
+                        <div style="font-size: 0.74rem; color: var(--po-text-muted);">
+                            ${escapeHtml(p.vendorContactPerson || 'Purchaser')} • ${escapeHtml(p.vendorPhone || '')}
+                        </div>
+                    </td>
+                `;
+            } else if (col.id === 'orderDate') {
+                cellsHtml += `<td>${formatDateDisplay(p.orderDate)}</td>`;
+            } else if (col.id === 'expectedDelivery') {
+                cellsHtml += `<td><span style="font-weight: 600; color: var(--po-teal-dark);">${formatDateDisplay(p.expectedDelivery)}</span></td>`;
+            } else if (col.id === 'itemsCount') {
+                cellsHtml += `<td class="td-center"><span class="po-tab-count">${(p.items || []).length}</span></td>`;
+            } else if (col.id === 'grossTotal') {
+                cellsHtml += `<td class="td-num" style="font-weight: 800;">₱${formatMoney(gross)}</td>`;
+            } else if (col.id === 'paymentStatus') {
+                cellsHtml += `
+                    <td class="td-center">
+                        <span class="pay-badge ${payBadgeClass}" style="cursor: pointer;" onclick="openPaymentSettlementModal('${p.poNumber}')" title="View Financial Settlement">
+                            ${escapeHtml(p.paymentStatus || 'Unpaid')}
+                        </span>
+                    </td>
+                `;
+            } else if (col.id === 'status') {
+                cellsHtml += `
+                    <td class="td-center">
+                        <span class="po-status-badge ${poStatusClass}">
+                            <i class="ph ph-dot"></i> ${escapeHtml(p.status)}
+                        </span>
+                    </td>
+                `;
+            } else if (col.id === 'actions') {
+                cellsHtml += `
+                    <td class="td-center">
+                        <div style="display: flex; align-items: center; justify-content: center; gap: 4px;">
+                            <button type="button" class="inv-table-filter-btn" onclick="openPaymentSettlementModal('${p.poNumber}')" title="Financial Settlement & Payments" style="color: #0284c7;">
+                                <i class="ph ph-bank"></i>
+                            </button>
+                            <button type="button" class="inv-table-filter-btn" onclick="openPoSingleAuditModal('${p.poNumber}')" title="View Audit Trail for this PO">
+                                <i class="ph ph-clock-counter-clockwise"></i>
+                            </button>
+                            <button type="button" class="inv-table-filter-btn" onclick="previewPoFromDirectory('${p.poNumber}')" title="Preview Printable PO">
+                                <i class="ph ph-eye"></i>
+                            </button>
+                            <button type="button" class="inv-table-filter-btn" onclick="editPoFromDirectory('${p.poNumber}')" title="Edit Purchase Order">
+                                <i class="ph ph-pencil-simple"></i>
+                            </button>
+                            <button type="button" class="inv-table-filter-btn" style="color: var(--po-danger);" onclick="deletePo('${p.poNumber}')" title="Delete PO">
+                                <i class="ph ph-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+            }
+        });
+
+        return `<tr>${cellsHtml}</tr>`;
     }).join('');
 }
 
-function filterPoStatus(status) {
+function renderPoPaginationControls(totalPages) {
+    const container = document.getElementById('poPaginationButtons');
+    if (!container) return;
+
+    if (totalPages <= 1) {
+        container.innerHTML = '';
+        return;
+    }
+
+    let html = `
+        <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" style="padding: 2px 8px; height: 26px; font-size: 11px;" ${poCurrentPage === 1 ? 'disabled' : ''} onclick="changePoPage(${poCurrentPage - 1})">
+            <i class="ph ph-caret-left"></i> Prev
+        </button>
+    `;
+
+    for (let p = 1; p <= totalPages; p++) {
+        if (p === 1 || p === totalPages || (p >= poCurrentPage - 1 && p <= poCurrentPage + 1)) {
+            const isActive = (p === poCurrentPage);
+            html += `
+                <button type="button" class="hr-btn hr-btn-sm ${isActive ? 'hr-btn-primary' : 'hr-btn-secondary'}" style="padding: 2px 8px; height: 26px; font-size: 11px; min-width: 26px;" onclick="changePoPage(${p})">
+                    ${p}
+                </button>
+            `;
+        } else if (p === poCurrentPage - 2 || p === poCurrentPage + 2) {
+            html += `<span style="padding: 0 4px; color: #94a3b8; font-size: 11px;">...</span>`;
+        }
+    }
+
+    html += `
+        <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" style="padding: 2px 8px; height: 26px; font-size: 11px;" ${poCurrentPage === totalPages ? 'disabled' : ''} onclick="changePoPage(${poCurrentPage + 1})">
+            Next <i class="ph ph-caret-right"></i>
+        </button>
+    `;
+
+    container.innerHTML = html;
+}
+
+function changePoPage(page) {
+    poCurrentPage = page;
+    renderPoDirectory();
+}
+
+function changePoPageSize(size) {
+    poPageSize = parseInt(size, 10) || 10;
+    poCurrentPage = 1;
+    renderPoDirectory();
+}
+
+function filterPoStatus(status, btn) {
     activePoStatusFilter = status;
     activePoTypeFilter = 'all';
+    poCurrentPage = 1;
+    if (btn) {
+        syncPoFilterPillActive(btn.getAttribute('data-filter') || 'all');
+    } else {
+        syncPoFilterPillActive(status === 'all' ? 'all' : (status === 'Approved / Issued' ? 'Pending' : 'Received'));
+    }
     renderPoDirectory();
 }
 
-function filterPoType(type) {
+function filterPoType(type, btn) {
     activePoTypeFilter = type;
+    poCurrentPage = 1;
+    if (btn) {
+        syncPoFilterPillActive(btn.getAttribute('data-filter'));
+    } else {
+        syncPoFilterPillActive(type === 'vendor' ? 'Standard' : 'WetMarket');
+    }
     renderPoDirectory();
 }
 
-function filterPoPayment(payStatus) {
+function filterPoPayment(payStatus, btn) {
     activePoStatusFilter = 'all';
     activePoTypeFilter = 'all';
+    poCurrentPage = 1;
+    if (btn) {
+        syncPoFilterPillActive(btn.getAttribute('data-filter'));
+    } else {
+        syncPoFilterPillActive('Paid');
+    }
     renderPoDirectory();
 }
 
 function handlePoSearch(q) {
     poSearchTerm = q;
+    poCurrentPage = 1;
     renderPoDirectory();
 }
 
@@ -2574,6 +3766,20 @@ function editPoFromDirectory(poNumber) {
     // Update Form
     document.getElementById('poNumberInput').value = po.poNumber;
     document.getElementById('poRefDisplay').textContent = po.poNumber;
+    if (document.getElementById('poOrderTitle')) {
+        document.getElementById('poOrderTitle').value = po.orderTitle || po.purpose || '';
+    }
+
+    const rfqBadge = document.getElementById('poLinkedRfqPill');
+    if (rfqBadge) {
+        if (po.rfqReference) {
+            rfqBadge.style.display = 'inline-flex';
+            rfqBadge.textContent = `Tender: ${po.rfqReference}`;
+        } else {
+            rfqBadge.style.display = 'none';
+        }
+    }
+
     setPoMode(po.poType || 'vendor');
 
     if (po.poType === 'wet_market') {
@@ -2581,6 +3787,15 @@ function editPoFromDirectory(poNumber) {
     } else {
         document.getElementById('poVendorSelect').value = po.vendorId || '';
     }
+
+    const vendor = window.PoStore.vendors.find(v => (v.id === po.vendorId || v.code === po.vendorId)) || (po.vendorName ? {
+        code: po.vendorId || 'VND',
+        tradeName: po.vendorTradeName || po.vendorName,
+        legalName: po.vendorName,
+        category: 'Vendor',
+        address: po.vendorAddress
+    } : null);
+    updatePoVendorSummaryCard(vendor);
 
     document.getElementById('poContactPerson').value = po.vendorContactPerson || '';
     document.getElementById('poContactPhone').value = po.vendorPhone || '';
@@ -2643,6 +3858,8 @@ function resetPoForm() {
         poNumber: poNum,
         poType: 'vendor',
         rfqReference: '',
+        orderTitle: '',
+        purpose: '',
         vendorId: '',
         vendorName: '',
         vendorTradeName: '',
@@ -2670,7 +3887,13 @@ function resetPoForm() {
 
     document.getElementById('poNumberInput').value = poNum;
     document.getElementById('poRefDisplay').textContent = poNum;
+    if (document.getElementById('poOrderTitle')) document.getElementById('poOrderTitle').value = '';
+    const rfqBadge = document.getElementById('poLinkedRfqPill');
+    if (rfqBadge) { rfqBadge.style.display = 'none'; rfqBadge.textContent = ''; }
     document.getElementById('poVendorSelect').value = '';
+    updatePoVendorSummaryCard(null);
+    renderPoVendorComboboxList();
+
     document.getElementById('poMarketStallName').value = '';
     document.getElementById('poContactPerson').value = '';
     document.getElementById('poContactPhone').value = '';
@@ -2943,14 +4166,104 @@ function logProcurementAudit(module, refNumber, action, title, description, deta
     return entry;
 }
 
+let poAuditScopeMode = 'CURRENT';
+
+function getCurrentPoAuditTarget() {
+    const active = window.PoStore.activePo || {};
+    const poNum = (active.poNumber || document.getElementById('poRefDisplay')?.textContent || '').trim();
+    const rfqNum = (active.rfqReference || document.getElementById('poRfqReference')?.value || '').trim();
+    return { poNum, rfqNum };
+}
+
+function openPoAuditDrawer() {
+    const drawer = document.getElementById('poAuditDrawer');
+    const overlay = document.getElementById('poAuditDrawerOverlay');
+    if (drawer) drawer.classList.add('active');
+    if (overlay) overlay.classList.add('active');
+    renderPoAuditTrail();
+}
+
+function closePoAuditDrawer() {
+    const drawer = document.getElementById('poAuditDrawer');
+    const overlay = document.getElementById('poAuditDrawerOverlay');
+    if (drawer) drawer.classList.remove('active');
+    if (overlay) overlay.classList.remove('active');
+}
+
+function setPoAuditScope(mode) {
+    poAuditScopeMode = mode;
+    const btnCurrent = document.getElementById('btnPoAuditScopeCurrent');
+    const btnAll = document.getElementById('btnPoAuditScopeAll');
+    if (btnCurrent) btnCurrent.classList.toggle('active', mode === 'CURRENT');
+    if (btnAll) btnAll.classList.toggle('active', mode === 'ALL');
+    renderPoAuditTrail();
+}
+
 function renderPoAuditTrail() {
     const container = document.getElementById('poAuditTimeline');
     if (!container) return;
 
     const allLogs = getProcurementAuditTrail();
+    const { poNum, rfqNum } = getCurrentPoAuditTarget();
+
+    // Update target badges in drawer
+    const badgePo = document.getElementById('poAuditTargetRefBadge');
+    if (badgePo) badgePo.textContent = poNum || 'Current PO';
+
+    const badgeRfq = document.getElementById('poAuditTargetRfqBadge');
+    if (badgeRfq) {
+        if (rfqNum && rfqNum !== 'None' && rfqNum !== 'Direct Market Purchase') {
+            badgeRfq.textContent = rfqNum;
+            badgeRfq.style.display = 'inline-block';
+        } else {
+            badgeRfq.style.display = 'none';
+        }
+    }
+
+    // Process optimization: Index ONLY active PO / RFQ when in CURRENT mode
+    let targetLogs = allLogs;
+    if (poAuditScopeMode === 'CURRENT' && (poNum || rfqNum)) {
+        targetLogs = allLogs.filter(log => {
+            const ref = (log.refNumber || '').trim();
+            if (poNum && (ref === poNum || (log.description && log.description.includes(poNum)))) {
+                return true;
+            }
+            if (rfqNum && (ref === rfqNum || (log.description && log.description.includes(rfqNum)))) {
+                return true;
+            }
+            return false;
+        });
+
+        // Ensure newly drafted PO has baseline entry
+        if (targetLogs.length === 0 && poNum) {
+            const active = window.PoStore.activePo || {};
+            targetLogs = [{
+                id: `AUD-INIT-${poNum}`,
+                timestamp: new Date().toISOString(),
+                formattedDate: 'Just now',
+                module: 'PO',
+                refNumber: poNum,
+                action: 'CREATED',
+                actor: '{{ auth()->user()->name ?? "Dorothy Diaz" }}',
+                role: 'Procurement Specialist',
+                title: 'Purchase Order Initialized',
+                description: `Draft order ${poNum} initialized for ${active.vendorTradeName || active.vendorName || 'selected supplier'}.`,
+                details: [
+                    { label: 'Order Ref', value: poNum },
+                    { label: 'Sourcing Type', value: active.poType === 'wet_market' ? 'Direct Wet Market' : 'Contracted Vendor' },
+                    { label: 'Originating RFQ', value: active.rfqReference || 'None (Direct Order)' }
+                ]
+            }];
+        }
+    }
+
+    // Update scoped event counter in drawer header
+    const auditCountBadge = document.getElementById('tabPoAuditCount');
+    if (auditCountBadge) auditCountBadge.textContent = targetLogs.length;
+
     const q = (poAuditSearchTerm || '').toLowerCase().trim();
 
-    const filtered = allLogs.filter(log => {
+    const filtered = targetLogs.filter(log => {
         const matchesModule = (activePoAuditModuleFilter === 'ALL') || (log.module === activePoAuditModuleFilter);
         const matchesAction = (activePoAuditActionFilter === 'ALL') || (log.action === activePoAuditActionFilter);
         const matchesSearch = !q ||
@@ -2962,22 +4275,23 @@ function renderPoAuditTrail() {
         return matchesModule && matchesAction && matchesSearch;
     });
 
-    // Update KPI numbers
+    // Update KPI numbers calculated ONLY from the target set
     const kpiTotal = document.getElementById('poAuditKpiTotal');
     const kpiWetMarket = document.getElementById('poAuditKpiWetMarket');
     const kpiPayments = document.getElementById('poAuditKpiPayments');
     const kpiTransfers = document.getElementById('poAuditKpiTransfers');
 
-    if (kpiTotal) kpiTotal.textContent = allLogs.filter(l => l.module === 'PO').length || allLogs.length;
-    if (kpiWetMarket) kpiWetMarket.textContent = allLogs.filter(l => l.action === 'WET_MARKET_CREATED').length;
-    if (kpiPayments) kpiPayments.textContent = allLogs.filter(l => l.action === 'PAYMENT_RECORDED').length;
-    if (kpiTransfers) kpiTransfers.textContent = allLogs.filter(l => l.action === 'PO_TRANSFERRED' || l.action === 'CREATED').length;
+    if (kpiTotal) kpiTotal.textContent = targetLogs.length;
+    if (kpiWetMarket) kpiWetMarket.textContent = targetLogs.filter(l => l.action === 'WET_MARKET_CREATED').length;
+    if (kpiPayments) kpiPayments.textContent = targetLogs.filter(l => l.action === 'PAYMENT_RECORDED').length;
+    if (kpiTransfers) kpiTransfers.textContent = targetLogs.filter(l => l.action === 'PO_TRANSFERRED' || l.action === 'CREATED').length;
 
     if (filtered.length === 0) {
         container.innerHTML = `
-            <div style="text-align: center; padding: 48px; background: #ffffff; border: 1px solid var(--po-border-subtle); border-radius: 10px; color: var(--po-text-muted);">
-                <i class="ph ph-clock-countdown" style="font-size: 36px; color: #cbd5e1; display: block; margin-bottom: 8px;"></i>
-                No Purchase Order audit activity records found matching selected filters.
+            <div style="text-align: center; padding: 36px 20px; background: #ffffff; border: 1px solid var(--po-border-subtle); border-radius: 10px; color: var(--po-text-muted);">
+                <i class="ph ph-clock-countdown" style="font-size: 32px; color: #cbd5e1; display: block; margin-bottom: 8px;"></i>
+                <div style="font-weight: 600; color: #475569; margin-bottom: 4px;">No Activity Records Found</div>
+                <div style="font-size: 12px;">No logged activities match the current filter criteria for ${poNum || 'this order'}.</div>
             </div>
         `;
         return;
@@ -3135,5 +4449,587 @@ function closePoSingleAuditModal() {
     const modal = document.getElementById('poSingleAuditModal');
     if (modal) modal.classList.remove('is-open');
 }
+
+/**
+ * --------------------------------------------------------------------------
+ * PO REFERENCE & TITLE UTILITIES
+ * --------------------------------------------------------------------------
+ */
+function copyPoReference() {
+    const ref = document.getElementById('poRefDisplay') ? document.getElementById('poRefDisplay').textContent : '';
+    if (!ref) return;
+    navigator.clipboard.writeText(ref).then(() => {
+        showToast(`Copied ${ref} to clipboard`, 'success');
+    }).catch(() => {
+        showToast(`Reference: ${ref}`, 'success');
+    });
+}
+
+function handlePoTitleChange(val) {
+    window.PoStore.activePo.orderTitle = val;
+    window.PoStore.activePo.purpose = val;
+}
+
+/**
+ * --------------------------------------------------------------------------
+ * IMPORT AWARDED RFQ MODAL UTILITIES
+ * --------------------------------------------------------------------------
+ */
+function openImportRfqModal() {
+    const modal = document.getElementById('poImportRfqModal');
+    const container = document.getElementById('importRfqListContainer');
+    if (!modal || !container) return;
+
+    let rfqs = [];
+    try {
+        rfqs = JSON.parse(localStorage.getItem('rms_rfq_directory') || '[]');
+    } catch(e) { rfqs = []; }
+
+    const approvedRfqs = rfqs.filter(r => (r.status === 'Awarded' || r.isApproved === true));
+
+    if (approvedRfqs.length === 0) {
+        container.innerHTML = `
+            <div style="text-align: center; padding: 32px 16px; color: #64748b;">
+                <i class="ph ph-files" style="font-size: 32px; color: #cbd5e1; display: block; margin-bottom: 8px;"></i>
+                <div style="font-weight: 700; color: #0f172a;">No Approved RFQs Available</div>
+                <div style="font-size: 12px; margin-top: 4px;">Only tenders with <strong>Awarded / Approved</strong> status can be converted into Purchase Orders.</div>
+            </div>
+        `;
+    } else {
+        container.innerHTML = approvedRfqs.map(r => `
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 10px; transition: all 0.15s ease;">
+                <div style="display: flex; flex-direction: column; gap: 3px; min-width: 0;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-family: monospace; font-weight: 800; color: #9333ea; font-size: 13px;">${escapeHtml(r.rfqNumber)}</span>
+                        <span class="status-pill approved" style="font-size: 10.5px; padding: 2px 7px;"><i class="ph ph-check-circle"></i> Awarded Tender</span>
+                    </div>
+                    <div style="font-weight: 700; color: #0f172a; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        ${escapeHtml(r.vendorName || r.vendorTradeName || 'Contracted Supplier')}
+                    </div>
+                    <div style="font-size: 11.5px; color: #64748b;">
+                        ${escapeHtml(r.projectTitle || r.purpose || 'General Procurement')} • Issued: ${formatDateDisplay(r.dateIssued)} • Items: ${(r.items || []).length} lines
+                    </div>
+                </div>
+                <button type="button" class="hr-btn hr-btn-primary hr-btn-sm" onclick="importApprovedRfqToBuilder('${escapeHtml(r.rfqNumber)}')" style="flex-shrink: 0; padding: 6px 14px; font-size: 12px;">
+                    <i class="ph ph-arrow-down-left"></i> Import to Builder
+                </button>
+            </div>
+        `).join('');
+    }
+
+    modal.classList.add('is-open');
+}
+
+function closeImportRfqModal() {
+    const modal = document.getElementById('poImportRfqModal');
+    if (modal) modal.classList.remove('is-open');
+}
+
+function importApprovedRfqToBuilder(rfqNum) {
+    let rfqs = [];
+    try {
+        rfqs = JSON.parse(localStorage.getItem('rms_rfq_directory') || '[]');
+    } catch(e) { rfqs = []; }
+
+    const rfq = rfqs.find(r => r.rfqNumber === rfqNum);
+    if (!rfq) {
+        showToast('RFQ record not found', 'danger');
+        return;
+    }
+
+    closeImportRfqModal();
+
+    // Populate Active PO
+    const count = (window.PoStore.purchaseOrders || []).length;
+    const nextPoNum = rfq.poReference || `PO-2026-${String(count + 105).padStart(4, '0')}`;
+
+    window.PoStore.activePo.poNumber = nextPoNum;
+    window.PoStore.activePo.rfqReference = rfq.rfqNumber;
+    window.PoStore.activePo.orderTitle = rfq.projectTitle || rfq.purpose || `Procurement via ${rfq.rfqNumber}`;
+    window.PoStore.activePo.vendorId = rfq.vendorId || '';
+    window.PoStore.activePo.vendorName = rfq.vendorName || '';
+    window.PoStore.activePo.vendorTradeName = rfq.vendorTradeName || rfq.vendorName || '';
+    window.PoStore.activePo.vendorContactPerson = rfq.vendorContactPerson || '';
+    window.PoStore.activePo.vendorPhone = rfq.vendorPhone || '';
+    window.PoStore.activePo.vendorEmail = rfq.vendorEmail || '';
+    window.PoStore.activePo.vendorAddress = rfq.vendorAddress || '';
+    window.PoStore.activePo.deliveryLocation = rfq.deliveryLocation || 'Central Commissary - Receiving Dock A';
+    window.PoStore.activePo.paymentTerms = rfq.paymentTerms || 'Net 30 Days';
+    window.PoStore.activePo.expectedDelivery = rfq.expectedDelivery || '';
+    window.PoStore.activePo.specialNotes = `Imported from Tender Evaluation ${rfq.rfqNumber}. ${rfq.specialInstructions || ''}`;
+    window.PoStore.activePo.status = 'Draft PO';
+
+    // Map items
+    window.PoStore.activePo.items = (rfq.items || []).map(it => ({
+        sku: it.sku || 'CAT-DIR',
+        name: it.name || it.itemDescription || 'Awarded Specification Item',
+        specs: it.specs || '',
+        category: it.category || 'Raw Ingredients',
+        unit: it.unit || it.uom || 'Kg',
+        quantity: parseFloat(it.quantity) || 1,
+        unitPrice: parseFloat(it.quotedUnitPrice || it.unitPrice || it.budgetPrice || 0)
+    }));
+
+    // Update DOM inputs
+    document.getElementById('poNumberInput').value = nextPoNum;
+    document.getElementById('poRefDisplay').textContent = nextPoNum;
+    document.getElementById('poOrderTitle').value = window.PoStore.activePo.orderTitle;
+    document.getElementById('poVendorSelect').value = rfq.vendorId || '';
+    document.getElementById('poContactPerson').value = window.PoStore.activePo.vendorContactPerson;
+    document.getElementById('poContactPhone').value = window.PoStore.activePo.vendorPhone;
+    document.getElementById('poContactEmail').value = window.PoStore.activePo.vendorEmail;
+    document.getElementById('poFullAddress').value = window.PoStore.activePo.vendorAddress;
+    document.getElementById('poPaymentTerms').value = window.PoStore.activePo.paymentTerms;
+    if (document.getElementById('poExpectedDelivery')) {
+        document.getElementById('poExpectedDelivery').value = window.PoStore.activePo.expectedDelivery;
+    }
+    document.getElementById('poDeliveryLocation').value = window.PoStore.activePo.deliveryLocation;
+    document.getElementById('poSpecialNotes').value = window.PoStore.activePo.specialNotes;
+
+    const rfqBadge = document.getElementById('poLinkedRfqPill');
+    if (rfqBadge) {
+        rfqBadge.style.display = 'inline-flex';
+        rfqBadge.textContent = `Tender: ${rfq.rfqNumber}`;
+    }
+
+    const vendor = window.PoStore.vendors.find(v => (v.id === rfq.vendorId || v.code === rfq.vendorId)) || {
+        code: rfq.vendorId || 'VND-AWD',
+        tradeName: rfq.vendorTradeName || rfq.vendorName,
+        legalName: rfq.vendorName,
+        category: 'Awarded Partner',
+        address: rfq.vendorAddress
+    };
+    updatePoVendorSummaryCard(vendor);
+
+    renderPoItemsTable();
+    switchPoTab('tab-po-builder');
+    showToast(`✓ Imported tender ${rfq.rfqNumber} with ${(rfq.items || []).length} items into PO Builder!`, 'success');
+}
+
+function openLinkedRfqModal(rfqNum) {
+    const modal = document.getElementById('poLinkedRfqModal');
+    if (!modal) return;
+
+    let rfqs = [];
+    try {
+        rfqs = JSON.parse(localStorage.getItem('rms_rfq_directory') || '[]');
+    } catch(e) { rfqs = []; }
+
+    const rfq = rfqs.find(r => r.rfqNumber === rfqNum);
+    const content = document.getElementById('linkedRfqDetailContent');
+    const title = document.getElementById('linkedRfqModalRef');
+
+    if (title) title.textContent = rfqNum;
+
+    if (!rfq) {
+        if (content) {
+            content.innerHTML = `
+                <div style="text-align: center; padding: 24px; color: #64748b;">
+                    <i class="ph ph-warning-circle" style="font-size: 32px; color: #f59e0b; display: block; margin-bottom: 6px;"></i>
+                    <div style="font-weight: 700; color: #0f172a;">Originating RFQ Archive Not Found</div>
+                    <div style="font-size: 12px; margin-top: 4px;">The reference <strong>${escapeHtml(rfqNum)}</strong> is stored in history, but its complete raw tender dataset was cleared from local memory.</div>
+                </div>
+            `;
+        }
+    } else if (content) {
+        content.innerHTML = `
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                    <div>
+                        <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #64748b;">Selected Vendor</div>
+                        <div style="font-size: 14px; font-weight: 800; color: #0f172a;">${escapeHtml(rfq.vendorTradeName || rfq.vendorName)}</div>
+                        <div style="font-size: 12px; color: #64748b;">${escapeHtml(rfq.vendorAddress || 'Metro Manila')}</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <span class="status-pill approved" style="font-size: 11px; padding: 3px 9px;"><i class="ph ph-check-circle"></i> Awarded Tender</span>
+                        <div style="font-size: 11.5px; color: #64748b; margin-top: 4px;">Issued: ${formatDateDisplay(rfq.dateIssued)}</div>
+                    </div>
+                </div>
+                <div>
+                    <div style="font-size: 12px; font-weight: 700; color: #0f172a; margin-bottom: 6px;">Quotation Line Items (${(rfq.items || []).length})</div>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                        <thead>
+                            <tr style="background: #f1f5f9; text-align: left;">
+                                <th style="padding: 6px 8px;">Item Description</th>
+                                <th style="padding: 6px 8px; text-align: center;">UOM</th>
+                                <th style="padding: 6px 8px; text-align: right;">Quantity</th>
+                                <th style="padding: 6px 8px; text-align: right;">Quoted Price</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${(rfq.items || []).map(it => `
+                                <tr style="border-bottom: 1px solid #f1f5f9;">
+                                    <td style="padding: 6px 8px; font-weight: 600;">${escapeHtml(it.name || it.itemDescription)}</td>
+                                    <td style="padding: 6px 8px; text-align: center;">${escapeHtml(it.unit || it.uom || 'Kg')}</td>
+                                    <td style="padding: 6px 8px; text-align: right;">${parseFloat(it.quantity || 0).toFixed(2)}</td>
+                                    <td style="padding: 6px 8px; text-align: right; font-weight: 700; color: #047857;">₱${formatMoney(it.quotedUnitPrice || it.unitPrice || 0)}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    }
+
+    modal.classList.add('is-open');
+}
+
+function closeLinkedRfqModal() {
+    const modal = document.getElementById('poLinkedRfqModal');
+    if (modal) modal.classList.remove('is-open');
+}
+
+/**
+ * --------------------------------------------------------------------------
+ * FINANCIAL TRACKING & PAYMENT SETTLEMENT (FILTERED BY REFERENCE)
+ * --------------------------------------------------------------------------
+ */
+let currentSettlementRef = '';
+
+function getStoredPayments() {
+    try {
+        return JSON.parse(localStorage.getItem('rms_po_payments') || '[]');
+    } catch(e) {
+        return [];
+    }
+}
+
+function saveStoredPayments(payments) {
+    try {
+        localStorage.setItem('rms_po_payments', JSON.stringify(payments));
+    } catch(e) {
+        console.error('Error saving payments:', e);
+    }
+}
+
+function handlePaymentTermsChange(val) {
+    window.PoStore.activePo.paymentTerms = val;
+    showToast(`Payment terms set to ${val}`, 'success');
+}
+
+function updatePoSummaryPayBadge() {
+    const badge = document.getElementById('poSummaryPayBadge');
+    if (!badge) return;
+
+    const po = window.PoStore.activePo;
+    const gross = calculatePoGrossTotal();
+    const payments = getStoredPayments().filter(p => p.poNumber === po.poNumber);
+    const paid = payments.reduce((acc, p) => acc + (parseFloat(p.amount) || 0), 0);
+
+    if (paid >= gross && gross > 0) {
+        badge.className = 'pay-badge paid';
+        badge.textContent = 'Paid in Full';
+        window.PoStore.activePo.paymentStatus = 'Paid in Full / Cash Out';
+    } else if (paid > 0) {
+        badge.className = 'pay-badge partial';
+        badge.textContent = `Partial (${formatMoney(paid)})`;
+        window.PoStore.activePo.paymentStatus = 'Partial Payment';
+    } else {
+        badge.className = 'pay-badge unpaid';
+        badge.textContent = 'Unpaid';
+        window.PoStore.activePo.paymentStatus = 'Unpaid / Credit';
+    }
+
+    window.PoStore.activePo.amountPaid = paid;
+    window.PoStore.activePo.balanceDue = Math.max(0, gross - paid);
+}
+
+function openPaymentSettlementModal(targetRef) {
+    const modal = document.getElementById('poPaymentSettlementModal');
+    if (!modal) return;
+
+    currentSettlementRef = targetRef || (window.PoStore.activePo.poNumber || 'PO-2026-0105');
+
+    // Populate References Dropdown
+    const select = document.getElementById('payModalRefSelect');
+    if (select) {
+        const pos = window.PoStore.purchaseOrders || [];
+        const refSet = new Set();
+        if (window.PoStore.activePo.poNumber) refSet.add(window.PoStore.activePo.poNumber);
+        pos.forEach(p => { if (p.poNumber) refSet.add(p.poNumber); });
+
+        select.innerHTML = Array.from(refSet).map(ref => `
+            <option value="${ref}" ${ref === currentSettlementRef ? 'selected' : ''}>${ref}</option>
+        `).join('');
+    }
+
+    // Default payment date to today
+    const dateInput = document.getElementById('newPayDate');
+    if (dateInput && !dateInput.value) {
+        dateInput.value = new Date().toISOString().split('T')[0];
+    }
+
+    renderPaymentSettlementData();
+    modal.classList.add('is-open');
+}
+
+function closePaymentSettlementModal() {
+    const modal = document.getElementById('poPaymentSettlementModal');
+    if (modal) modal.classList.remove('is-open');
+}
+
+function filterPaymentsByReference(ref) {
+    if (!ref) return;
+    currentSettlementRef = ref;
+    renderPaymentSettlementData();
+}
+
+function resetPaymentViewToActivePo() {
+    currentSettlementRef = window.PoStore.activePo.poNumber || 'PO-2026-0105';
+    const select = document.getElementById('payModalRefSelect');
+    if (select) select.value = currentSettlementRef;
+    renderPaymentSettlementData();
+}
+
+function renderPaymentSettlementData() {
+    const ref = currentSettlementRef || window.PoStore.activePo.poNumber;
+    const isActivePo = (ref === window.PoStore.activePo.poNumber);
+
+    // Resolve Gross and Linked RFQ
+    let gross = 0;
+    let linkedRfq = '';
+    let vendorName = '';
+
+    if (isActivePo) {
+        gross = calculatePoGrossTotal();
+        linkedRfq = window.PoStore.activePo.rfqReference || '';
+        vendorName = window.PoStore.activePo.vendorTradeName || window.PoStore.activePo.vendorName || '';
+    } else {
+        const po = (window.PoStore.purchaseOrders || []).find(p => p.poNumber === ref);
+        if (po) {
+            gross = (po.items || []).reduce((acc, it) => acc + ((parseFloat(it.quantity) || 0) * (parseFloat(it.unitPrice) || 0)), 0);
+            linkedRfq = po.rfqReference || '';
+            vendorName = po.vendorTradeName || po.vendorName || '';
+        }
+    }
+
+    // Filter payments strictly by currentSettlementRef
+    const allPayments = getStoredPayments();
+    const payments = allPayments.filter(p => p.poNumber === ref);
+    const totalPaid = payments.reduce((acc, p) => acc + (parseFloat(p.amount) || 0), 0);
+    const balanceDue = Math.max(0, gross - totalPaid);
+
+    // DOM Updates
+    document.getElementById('payModalActiveRef').textContent = ref;
+    document.getElementById('payLedgerRefLabel').textContent = ref;
+    document.getElementById('payModalGross').textContent = `₱${formatMoney(gross)}`;
+    document.getElementById('payModalPaid').textContent = `₱${formatMoney(totalPaid)}`;
+    document.getElementById('payModalBalance').textContent = `₱${formatMoney(balanceDue)}`;
+    document.getElementById('payLedgerCountBadge').textContent = `${payments.length} Entr${payments.length === 1 ? 'y' : 'ies'}`;
+
+    const pct = gross > 0 ? ((totalPaid / gross) * 100) : (totalPaid > 0 ? 100 : 0);
+    document.getElementById('payModalPercentPaid').textContent = `${pct.toFixed(1)}% settled${vendorName ? ' • ' + vendorName : ''}`;
+
+    const statusBadge = document.getElementById('payModalStatusBadge');
+    if (totalPaid >= gross && gross > 0) {
+        statusBadge.className = 'pay-badge paid';
+        statusBadge.textContent = 'Paid in Full';
+    } else if (totalPaid > 0) {
+        statusBadge.className = 'pay-badge partial';
+        statusBadge.textContent = 'Partial Payment';
+    } else {
+        statusBadge.className = 'pay-badge unpaid';
+        statusBadge.textContent = 'Unpaid / Credit';
+    }
+
+    // Linked RFQ Badge
+    const linkedBadge = document.getElementById('payModalLinkedRfqBadge');
+    if (linkedBadge) {
+        if (linkedRfq) {
+            linkedBadge.style.display = 'inline-flex';
+            linkedBadge.textContent = `Tender: ${linkedRfq}`;
+        } else {
+            linkedBadge.style.display = 'none';
+        }
+    }
+
+    // Render Ledger Table
+    const tbody = document.getElementById('payModalLedgerTbody');
+    if (tbody) {
+        if (payments.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: 28px 14px; color: #94a3b8;">
+                        <i class="ph ph-receipt" style="font-size: 28px; color: #cbd5e1; display: block; margin-bottom: 6px;"></i>
+                        <div style="font-weight: 700; color: #475569;">No Payment Disbursements Recorded</div>
+                        <div style="font-size: 11.5px; margin-top: 2px;">Record an advance, downpayment, or full payment for reference <strong>${escapeHtml(ref)}</strong> using the form below.</div>
+                    </td>
+                </tr>
+            `;
+        } else {
+            tbody.innerHTML = payments.map((p, idx) => `
+                <tr style="border-bottom: 1px solid #f1f5f9;">
+                    <td style="padding: 7px 10px; text-align: center; color: #64748b; font-weight: 700;">${idx + 1}</td>
+                    <td style="padding: 7px 10px; font-weight: 600; color: #1e293b;">${formatDateDisplay(p.paymentDate)}</td>
+                    <td style="padding: 7px 10px; color: #475569;"><span class="po-label-badge">${escapeHtml(p.method || 'Cash')}</span></td>
+                    <td style="padding: 7px 10px; font-family: monospace; font-weight: 700; color: #0284c7;">${escapeHtml(p.reference || '--')}</td>
+                    <td style="padding: 7px 10px; color: #475569; font-size: 11px;">${escapeHtml(p.fundSource || 'Petty Cash')}</td>
+                    <td style="padding: 7px 10px; text-align: right; font-weight: 800; color: #059669;">₱${formatMoney(p.amount)}</td>
+                    <td style="padding: 7px 10px; text-align: center;">
+                        <button type="button" class="inv-table-filter-btn" onclick="deletePaymentDisbursement('${p.id}')" title="Delete payment entry" style="color: #ef4444; width: 24px; height: 24px; font-size: 13px;">
+                            <i class="ph ph-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+    }
+
+    // Synchronize to Active PO if editing current active PO
+    if (isActivePo) {
+        updatePoSummaryPayBadge();
+    }
+}
+
+function fillFullRemainingBalance() {
+    const ref = currentSettlementRef || window.PoStore.activePo.poNumber;
+    const isActivePo = (ref === window.PoStore.activePo.poNumber);
+
+    let gross = 0;
+    if (isActivePo) {
+        gross = calculatePoGrossTotal();
+    } else {
+        const po = (window.PoStore.purchaseOrders || []).find(p => p.poNumber === ref);
+        if (po) {
+            gross = (po.items || []).reduce((acc, it) => acc + ((parseFloat(it.quantity) || 0) * (parseFloat(it.unitPrice) || 0)), 0);
+        }
+    }
+
+    const allPayments = getStoredPayments();
+    const payments = allPayments.filter(p => p.poNumber === ref);
+    const totalPaid = payments.reduce((acc, p) => acc + (parseFloat(p.amount) || 0), 0);
+    const balanceDue = Math.max(0, gross - totalPaid);
+
+    const amountInput = document.getElementById('newPayAmount');
+    if (amountInput) {
+        amountInput.value = balanceDue.toFixed(2);
+        amountInput.focus();
+    }
+}
+
+function addPaymentDisbursement() {
+    const ref = currentSettlementRef || window.PoStore.activePo.poNumber;
+    const amountVal = parseFloat(document.getElementById('newPayAmount').value) || 0;
+
+    if (amountVal <= 0) {
+        showToast('Please enter a valid disbursement amount greater than 0', 'danger');
+        return;
+    }
+
+    const method = document.getElementById('newPayMethod').value;
+    const paymentRef = document.getElementById('newPayRef').value.trim() || `DISB-${Date.now().toString().slice(-4)}`;
+    const paymentDate = document.getElementById('newPayDate').value || new Date().toISOString().split('T')[0];
+    const fundSource = document.getElementById('newPayFundSource').value;
+    const remarks = document.getElementById('newPayRemarks').value.trim();
+
+    const paymentEntry = {
+        id: `PAY-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        poNumber: ref,
+        amount: amountVal,
+        method: method,
+        reference: paymentRef,
+        paymentDate: paymentDate,
+        fundSource: fundSource,
+        remarks: remarks,
+        recordedAt: new Date().toISOString(),
+        actor: '{{ auth()->user()->name ?? "Procurement Specialist" }}'
+    };
+
+    const payments = getStoredPayments();
+    payments.push(paymentEntry);
+    saveStoredPayments(payments);
+
+    // Audit log
+    logProcurementAudit(
+        'PO',
+        ref,
+        'PAYMENT_RECORDED',
+        'Payment Disbursement Added',
+        `Disbursed ₱${formatMoney(amountVal)} via ${method} for ${ref} (${paymentRef}).`,
+        [
+            { label: 'Amount Paid', value: `₱${formatMoney(amountVal)}` },
+            { label: 'Method', value: method },
+            { label: 'Receipt / Check #', value: paymentRef },
+            { label: 'Fund Source', value: fundSource }
+        ]
+    );
+
+    // Update in-memory PO state
+    if (ref === window.PoStore.activePo.poNumber) {
+        updatePoSummaryPayBadge();
+    } else {
+        const po = (window.PoStore.purchaseOrders || []).find(p => p.poNumber === ref);
+        if (po) {
+            const poPayments = payments.filter(p => p.poNumber === ref);
+            const totalPaid = poPayments.reduce((acc, p) => acc + (parseFloat(p.amount) || 0), 0);
+            const gross = (po.items || []).reduce((acc, it) => acc + ((parseFloat(it.quantity) || 0) * (parseFloat(it.unitPrice) || 0)), 0);
+            po.amountPaid = totalPaid;
+            po.balanceDue = Math.max(0, gross - totalPaid);
+            po.paymentStatus = (totalPaid >= gross && gross > 0) ? 'Paid in Full / Cash Out' : (totalPaid > 0 ? 'Partial Payment' : 'Unpaid / Credit');
+            localStorage.setItem('rms_purchase_orders', JSON.stringify(window.PoStore.purchaseOrders));
+        }
+    }
+
+    // Reset inputs
+    document.getElementById('newPayAmount').value = '';
+    document.getElementById('newPayRef').value = '';
+    document.getElementById('newPayRemarks').value = '';
+
+    renderPaymentSettlementData();
+    renderPoDirectory();
+    showToast(`✓ Recorded ₱${formatMoney(amountVal)} disbursement for ${ref}`, 'success');
+}
+
+function deletePaymentDisbursement(id) {
+    if (!confirm('Remove this payment disbursement entry?')) return;
+
+    let payments = getStoredPayments();
+    const deleted = payments.find(p => p.id === id);
+    payments = payments.filter(p => p.id !== id);
+    saveStoredPayments(payments);
+
+    if (deleted) {
+        logProcurementAudit(
+            'PO',
+            deleted.poNumber,
+            'PAYMENT_REMOVED',
+            'Payment Disbursement Voided',
+            `Voided payment disbursement ₱${formatMoney(deleted.amount)} (${deleted.reference}) for ${deleted.poNumber}.`,
+            [{ label: 'Voided Amount', value: `₱${formatMoney(deleted.amount)}` }]
+        );
+    }
+
+    const ref = currentSettlementRef || window.PoStore.activePo.poNumber;
+    if (ref === window.PoStore.activePo.poNumber) {
+        updatePoSummaryPayBadge();
+    } else {
+        const po = (window.PoStore.purchaseOrders || []).find(p => p.poNumber === ref);
+        if (po) {
+            const poPayments = payments.filter(p => p.poNumber === ref);
+            const totalPaid = poPayments.reduce((acc, p) => acc + (parseFloat(p.amount) || 0), 0);
+            const gross = (po.items || []).reduce((acc, it) => acc + ((parseFloat(it.quantity) || 0) * (parseFloat(it.unitPrice) || 0)), 0);
+            po.amountPaid = totalPaid;
+            po.balanceDue = Math.max(0, gross - totalPaid);
+            po.paymentStatus = (totalPaid >= gross && gross > 0) ? 'Paid in Full / Cash Out' : (totalPaid > 0 ? 'Partial Payment' : 'Unpaid / Credit');
+            localStorage.setItem('rms_purchase_orders', JSON.stringify(window.PoStore.purchaseOrders));
+        }
+    }
+
+    renderPaymentSettlementData();
+    renderPoDirectory();
+    showToast('Payment disbursement entry removed', 'success');
+}
+
+// Global click handler to close vendor combobox dropdown
+window.addEventListener('click', (e) => {
+    const combobox = document.getElementById('poVendorCombobox');
+    const dropdown = document.getElementById('poVendorComboDropdown');
+    const trigger = document.getElementById('poVendorComboTrigger');
+    if (combobox && !combobox.contains(e.target)) {
+        if (dropdown) dropdown.classList.remove('is-active');
+        if (trigger) trigger.classList.remove('is-active');
+    }
+});
 </script>
 @endpush

@@ -1,13 +1,13 @@
 {
   "metadata": {
-    "generated_at": "2026-10-02T13:34:41.821Z",
+    "generated_at": "2026-10-02T13:45:58.766Z",
     "root_dir": "C:\\Users\\JABIGUERO\\Documents\\GitHub\\rms",
     "version": "1.0.0",
     "total_symbols": 2088,
     "total_unique_symbols": 1192,
     "total_files_indexed": 436,
     "total_routes": 237,
-    "duration_ms": 216
+    "duration_ms": 190
   },
   "symbols": {
     "collectRepoFiles": [
@@ -12272,7 +12272,7 @@
       },
       {
         "file": "resources/views/purchase/request-quotations.blade.php",
-        "line": 1532,
+        "line": 1659,
         "type": "blade_directive"
       },
       {
@@ -12494,7 +12494,7 @@
       },
       {
         "file": "resources/views/purchase/request-quotations.blade.php",
-        "line": 2366,
+        "line": 2516,
         "type": "blade_directive"
       },
       {
