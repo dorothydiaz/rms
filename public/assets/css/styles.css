@@ -6734,6 +6734,8 @@ body > .hr-custom-select-menu {
     max-width: 100%;
     min-width: 0;
     box-sizing: border-box;
+    position: relative;
+    z-index: 50;
 }
 
 .hr-parent-title-row {
@@ -6805,12 +6807,10 @@ body > .hr-custom-select-menu {
     gap: 4px;
     max-width: 100%;
     min-width: 0;
-    overflow-x: auto;
+    overflow: visible !important;
     flex-wrap: wrap;
     position: relative;
-    z-index: 40;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: thin;
+    z-index: 50;
 }
 
 .hr-tabs-wrapper::-webkit-scrollbar {
@@ -6866,8 +6866,8 @@ body > .hr-custom-select-menu {
         font-size: 12px;
     }
     .hr-tabs-wrapper {
-        flex-wrap: nowrap;
-        overflow-x: auto;
+        flex-wrap: wrap;
+        overflow: visible !important;
         padding-bottom: 5px;
     }
 }
@@ -6921,14 +6921,15 @@ body > .hr-custom-select-menu {
     position: relative;
     display: inline-flex;
     align-items: center;
+    z-index: 60;
 }
 
 .hr-tab-dropdown-wrap:hover .hr-tab-dropdown-menu,
 .hr-tab-dropdown-wrap.open .hr-tab-dropdown-menu {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0);
-    pointer-events: auto;
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: translateY(0) !important;
+    pointer-events: auto !important;
 }
 
 .hr-tab-dropdown-wrap:hover .hr-tab-dropdown-trigger,
@@ -6956,37 +6957,46 @@ body > .hr-custom-select-menu {
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    padding: 0 8px 0 16px !important;
+    padding: 8px 12px 8px 14px !important;
+    background: transparent;
+    cursor: pointer;
+    border: 1px solid transparent;
+    outline: none;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    color: #64748b;
+    border-radius: 10px;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    white-space: nowrap;
+    user-select: none;
 }
 
+.hr-tab-dropdown-trigger .hr-tab-link-content,
 .hr-tab-dropdown-trigger .hr-tab-link {
     display: inline-flex;
     align-items: center;
     gap: 8px;
     text-decoration: none;
     color: inherit;
-    padding: 9px 0;
 }
 
 .hr-tab-caret-btn {
     background: transparent;
     border: none;
-    padding: 6px 4px;
+    padding: 0;
     margin-left: 2px;
     color: #94a3b8;
-    cursor: pointer;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border-radius: 6px;
-    transition: all 0.15s ease;
     font-size: 13px;
     line-height: 1;
+    pointer-events: none;
 }
 
 .hr-tab-caret-btn:hover {
     color: #9333ea;
-    background: rgba(168, 85, 247, 0.12);
 }
 
 .hr-tab-item.active .hr-tab-caret-btn {
@@ -7015,13 +7025,13 @@ body > .hr-custom-select-menu {
     border: 1px solid rgba(226, 232, 240, 0.95);
     border-radius: 14px;
     padding: 6px;
-    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12), 0 2px 6px rgba(15, 23, 42, 0.04);
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.16), 0 2px 6px rgba(15, 23, 42, 0.04);
     opacity: 0;
     visibility: hidden;
     transform: translateY(-6px);
     transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.2s;
     pointer-events: none;
-    z-index: 100;
+    z-index: 9999;
     display: flex;
     flex-direction: column;
     gap: 3px;
@@ -7031,10 +7041,10 @@ body > .hr-custom-select-menu {
 .hr-tab-dropdown-menu::before {
     content: '';
     position: absolute;
-    top: -10px;
+    top: -12px;
     left: 0;
     right: 0;
-    height: 10px;
+    height: 14px;
     background: transparent;
 }
 

@@ -2063,7 +2063,9 @@ class AttendanceController extends Controller
         AttendanceCorrection::where('attendance_record_id', $record->id)->delete();
 
         $empId = $record->employee_id;
+        $empName = $record->employee?->full_name ?? "Employee #{$record->employee_id}";
         $cleanDate = $record->date ? \Carbon\Carbon::parse($record->date)->toDateString() : null;
+        $date = $record->date ? \Carbon\Carbon::parse($record->date)->format('M d, Y') : 'N/A';
 
         AttendanceActionLog::create([
             'attendance_record_id' => null,
