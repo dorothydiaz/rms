@@ -4,9 +4,11 @@
 
 @section('content')
 <x-report-header 
-    title="Manual Time Entries History & Audit Report" 
-    breadcrumb="Manual Time Entries History"
-    subtitle="Historical manual time entries, punch adjustments, administrative corrections, and change tracking">
+    title="Manual Time Entries History"
+    icon="ph-pencil-line"
+    subtitle="Audit log of manual punch entries & adjustments"
+    description="Audit trail of all administrative manual time entries, biometric corrections, and manager override entries."
+>
     <a href="{{ route('hr.reports.export.manual-entries-history', request()->query()) }}" class="hr-btn hr-btn-secondary">
         <i class="ph ph-download-simple"></i>
         <span>Export CSV</span>

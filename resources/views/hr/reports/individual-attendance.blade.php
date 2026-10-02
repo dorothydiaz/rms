@@ -4,9 +4,11 @@
 
 @section('content')
 <x-report-header 
-    title="Individual Attendance Summary Report" 
-    breadcrumb="Individual Attendance Summary"
-    subtitle="In-depth DTR statement, daily attendance log, and cumulative hours for an individual employee">
+    title="Individual Attendance Summary"
+    icon="ph-user-list"
+    subtitle="In-depth DTR statement & cumulative hours for an employee"
+    description="Consolidated daily time record statement, daily attendance log, and cumulative hours for an individual employee."
+>
     @if($employee)
         <a href="{{ route('hr.reports.export.individual-attendance-summary', ['employee_id' => $employee->id, 'date_from' => $startDate, 'date_to' => $endDate]) }}" class="hr-btn hr-btn-secondary">
             <i class="ph ph-download-simple"></i>

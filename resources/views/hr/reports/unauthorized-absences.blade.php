@@ -4,9 +4,10 @@
 
 @section('content')
 <x-report-header 
-    title="Unauthorized Leave of Absences Report"
-    breadcrumb="Unauthorized Leave of Absences"
-    subtitle="Monitoring unapproved absences, AWOL occurrences, and attendance compliance violations"
+    title="Unauthorized Absences"
+    icon="ph-user-minus"
+    subtitle="AWOL occurrences & consecutive unexcused absences"
+    description="Detailed log of employee AWOL days, unexcused absences, and compliance tracking for administrative notices."
 >
     <a href="{{ route('hr.reports.export.unauthorized-absences', request()->query()) }}" class="hr-btn hr-btn-secondary">
         <i class="ph ph-download-simple"></i>

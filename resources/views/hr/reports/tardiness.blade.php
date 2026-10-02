@@ -4,9 +4,10 @@
 
 @section('content')
 <x-report-header 
-    title="Employee Tardiness Report"
-    breadcrumb="Employee Tardiness"
-    subtitle="Comprehensive ranking and daily breakdown of late arrivals, total minutes lost, and frequency per employee"
+    title="Employee Tardiness"
+    icon="ph-alarm"
+    subtitle="Late arrivals & cumulative minutes delay"
+    description="Comprehensive breakdown of employee late punch logs, cumulative tardiness minutes, and grace period exceedances."
 >
     <a href="{{ route('hr.reports.export.tardiness', request()->query()) }}" class="hr-btn hr-btn-secondary">
         <i class="ph ph-download-simple"></i>

@@ -4,9 +4,10 @@
 
 @section('content')
 <x-report-header 
-    title="Authorized Leave of Absence (ALOA) Report"
-    breadcrumb="Authorized Leave of Absence"
-    subtitle="Official DOLE-compliant audit trail of approved employee leave applications, statutory leaves, and management authorizations"
+    title="Authorized Leave of Absence"
+    icon="ph-airplane-takeoff"
+    subtitle="Approved vacation, sick, and statutory leaves"
+    description="Detailed record of employee filed and approved leave applications, pay status, and leave credit deductions."
 >
     <a href="{{ route('hr.reports.export.authorized-leave-of-absence', request()->query()) }}" class="hr-btn hr-btn-secondary" title="Export to CSV / Excel">
         <i class="ph ph-download-simple" style="color: #059669;"></i>

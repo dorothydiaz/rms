@@ -4,9 +4,10 @@
 
 @section('content')
 <x-report-header 
-    title="Unauthorized Undertime Report"
-    breadcrumb="Unauthorized Undertime"
-    subtitle="Audit of unapproved early departures, unexcused undertime minutes, attendance infractions, and salary deductions"
+    title="Unauthorized Undertime"
+    icon="ph-hourglass"
+    subtitle="Unapproved early departures & salary deductions"
+    description="Tracks employees leaving early without approved supervisor permits, unexcused shifts, and salary deduction metrics."
 >
     <a href="{{ route('hr.reports.export.unauthorized-undertime', request()->query()) }}" class="hr-btn hr-btn-secondary" title="Export to CSV">
         <i class="ph ph-download-simple" style="color: #e11d48;"></i>

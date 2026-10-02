@@ -4,9 +4,10 @@
 
 @section('content')
 <x-report-header 
-    title="Change of Schedule History Report"
-    breadcrumb="Change of Schedule History"
-    subtitle="Comprehensive audit trail of employee shift adjustments, default schedule assignments, and schedule swaps"
+    title="Change of Schedule History"
+    icon="ph-calendar-blank"
+    subtitle="Audit log of shift edits & default shift assignments"
+    description="Tracks who changed employee shift times, previous vs new schedules, and timestamps."
 >
     <a href="{{ route('hr.reports.export.change-of-schedule', request()->query()) }}" class="hr-btn hr-btn-secondary">
         <i class="ph ph-download-simple"></i>

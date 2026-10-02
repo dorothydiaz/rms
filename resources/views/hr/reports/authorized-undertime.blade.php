@@ -4,9 +4,10 @@
 
 @section('content')
 <x-report-header 
-    title="Authorized Undertime Report"
-    breadcrumb="Authorized Undertime"
-    subtitle="Official audit trail of approved early departures, gate pass permits, manager authorizations, and excused undertime"
+    title="Authorized Undertime"
+    icon="ph-timer"
+    subtitle="Official undertime permits & authorized gate passes"
+    description="Log of approved employee undertime slips, official gate passes, and valid early departure authorizations."
 >
     <a href="{{ route('hr.reports.export.authorized-undertime', request()->query()) }}" class="hr-btn hr-btn-secondary" title="Export to CSV">
         <i class="ph ph-download-simple" style="color: #059669;"></i>

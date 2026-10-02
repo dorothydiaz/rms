@@ -4,9 +4,11 @@
 
 @section('content')
 <x-report-header 
-    title="Employee Attendance Profile Report" 
-    breadcrumb="Employee Attendance Profile"
-    subtitle="Unified 360-degree attendance profile: shift schedules, default assignments, audit logs, overtime, and undertime history">
+    title="Employee Attendance Profile"
+    icon="ph-identification-card"
+    subtitle="Unified 360-degree attendance profile"
+    description="Comprehensive attendance profile: shift schedules, default assignments, audit logs, overtime, and undertime history."
+>
     @if($employee)
         <a href="{{ route('hr.reports.export.employee-attendance-profile', ['employee_id' => $employee->id]) }}" class="hr-btn hr-btn-secondary">
             <i class="ph ph-download-simple"></i>

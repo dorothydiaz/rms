@@ -4,9 +4,10 @@
 
 @section('content')
 <x-report-header 
-    title="Overtime History & Approval Report"
-    breadcrumb="Overtime History & Approvals"
-    subtitle="Historical overtime hours rendered, approval status, approving managers, and remarks for payroll integration"
+    title="Overtime History & Approvals"
+    icon="ph-clock-countdown"
+    subtitle="Overtime authorization and hours rendered"
+    description="Summary of approved and pending overtime hours by department and branch for payroll verification."
 >
     <a href="{{ route('hr.reports.export.overtime-history', request()->query()) }}" class="hr-btn hr-btn-secondary">
         <i class="ph ph-download-simple"></i>

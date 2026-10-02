@@ -4,9 +4,10 @@
 
 @section('content')
 <x-report-header 
-    title="Attendance Summary Report"
-    breadcrumb="Attendance Summary"
-    subtitle="Aggregated attendance metrics, present days, tardiness, undertime, overtime, and work hours by employee"
+    title="Attendance Summary"
+    icon="ph-calendar-check"
+    subtitle="Aggregate attendance logs & hour calculations"
+    description="Consolidated workforce attendance report covering present days, total regular hours, tardiness, and overtime."
 >
     <a href="{{ route('hr.reports.export.attendance-summary', request()->query()) }}" class="hr-btn hr-btn-secondary">
         <i class="ph ph-download-simple"></i>
