@@ -6284,26 +6284,101 @@ input[type="date"]::-webkit-calendar-picker-indicator,
 .hr-custom-select-menu {
     position: fixed !important;
     min-width: 160px !important;
-    max-height: 240px !important;
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
+    max-height: 280px !important;
+    overflow: hidden !important;
     background: #ffffff !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
     border: 1.5px solid #cbd5e1 !important;
     border-radius: 10px !important;
     box-shadow: 0 16px 36px -6px rgba(15, 23, 42, 0.2), 0 4px 12px -2px rgba(15, 23, 42, 0.08) !important;
-    padding: 4px !important;
+    padding: 0 !important;
     z-index: 99999999 !important;
     display: none;
     flex-direction: column !important;
-    gap: 2px !important;
     animation: hrDropdownFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 .hr-custom-select-wrap.open .hr-custom-select-menu,
 body > .hr-custom-select-menu {
     display: flex !important;
+}
+
+.hr-select-search-wrap {
+    display: flex !important;
+    align-items: center !important;
+    gap: 7px !important;
+    padding: 7px 10px !important;
+    background: #faf5ff !important;
+    border-bottom: 1.5px solid #f3e8ff !important;
+    flex-shrink: 0 !important;
+    border-top-left-radius: 9px !important;
+    border-top-right-radius: 9px !important;
+    box-sizing: border-box !important;
+}
+
+.hr-select-search-icon {
+    font-size: 14px !important;
+    color: #9333ea !important;
+    flex-shrink: 0 !important;
+}
+
+.hr-select-search-input {
+    flex: 1 1 auto !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 28px !important;
+    border: 1px solid #e9d5ff !important;
+    border-radius: 6px !important;
+    padding: 2px 8px !important;
+    font-size: 12px !important;
+    font-family: inherit !important;
+    color: #1e293b !important;
+    background: #ffffff !important;
+    outline: none !important;
+    transition: all 0.15s ease !important;
+    box-sizing: border-box !important;
+}
+
+.hr-select-search-input:focus {
+    border-color: #a855f7 !important;
+    box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.2) !important;
+}
+
+.hr-select-search-clear {
+    background: none !important;
+    border: none !important;
+    color: #94a3b8 !important;
+    cursor: pointer !important;
+    padding: 0 !important;
+    font-size: 13px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: color 0.15s !important;
+}
+
+.hr-select-search-clear:hover {
+    color: #ef4444 !important;
+}
+
+.hr-custom-select-options-list {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 2px !important;
+    max-height: 220px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding: 4px !important;
+    flex: 1 1 auto !important;
+}
+
+.hr-select-empty-msg {
+    padding: 14px 10px !important;
+    text-align: center !important;
+    font-size: 12px !important;
+    color: #94a3b8 !important;
+    font-style: italic !important;
 }
 
 @keyframes hrDropdownFadeIn {
@@ -6323,7 +6398,7 @@ body > .hr-custom-select-menu {
     font-size: 12.5px !important;
     font-weight: 500 !important;
     color: #1e293b !important;
-    display: flex !important;
+    display: flex;
     align-items: center !important;
     justify-content: space-between !important;
     cursor: pointer !important;
@@ -6331,6 +6406,11 @@ body > .hr-custom-select-menu {
     gap: 10px !important;
     white-space: nowrap !important;
     box-sizing: border-box !important;
+}
+
+.hr-custom-select-option.hr-select-hidden,
+.hr-custom-select-option[hidden] {
+    display: none !important;
 }
 
 .hr-custom-select-option span:first-child {

@@ -158,4 +158,38 @@ class ManualTimeEntriesTest extends TestCase
 
         $this->assertNull(AttendanceRecord::find($record->id));
     }
+
+    public function test_manual_time_entries_modal_uses_datetime_format_without_top_date_picker(): void
+    {
+        $admin = $this->getAdmin();
+        $response = $this->actingAs($admin)->get(route('hr.attendance.corrections'));
+
+        $response->assertStatus(200);
+        $response->assertSee('1. Select Staff Member');
+        $response->assertDontSee('ATTENDANCE DATE *');
+        $response->assertSee('id="encDate"', false);
+        $response->assertSee('id="encTimeIn"', false);
+        $response->assertSee('type="datetime-local"', false);
+    }
+
+    public function test_hr_pages_include_searchable_dropdown_assets(): void
+    {
+        $admin = $this->getAdmin();
+        $response = $this->actingAs($admin)->get(route('hr.attendance.corrections'));
+        $response->assertStatus(200);
+        $response->assertSee('assets/js/script.js', false);
+        $response->assertSee('assets/css/styles.css', false);
+
+        // Verify script contains the custom search wrap logic
+        $scriptContent = file_get_contents(public_path('assets/js/script.js'));
+        $this->assertStringContainsString('hr-select-search-wrap', $scriptContent);
+        $this->assertStringContainsString('hr-select-search-input', $scriptContent);
+        $this->assertStringContainsString('filterOptions', $scriptContent);
+
+        // Verify styles contain the custom search wrap styling
+        $styleContent = file_get_contents(public_path('assets/css/styles.css'));
+        $this->assertStringContainsString('.hr-select-search-wrap', $styleContent);
+        $this->assertStringContainsString('.hr-select-search-input', $styleContent);
+        $this->assertStringContainsString('.hr-select-hidden', $styleContent);
+    }
 }

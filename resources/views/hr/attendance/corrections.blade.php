@@ -403,11 +403,16 @@
                     <div id="lookupAlert" style="display: none; margin-top: 12px; padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 600;"></div>
                 </div>
 
-                <!-- Step 2: Time Punches Encoding Grid (Date & Time in All Fields) -->
+                <!-- Step 2: Time Punches Encoding Grid (Date & Time Pickers) -->
                 <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 16px; margin-bottom: 18px;">
                     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
-                        <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: #475569; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
-                            <i class="ph ph-fingerprint"></i> 2. Encode Time Punches (Date & Time Format)
+                        <div>
+                            <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: #475569; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
+                                <i class="ph ph-fingerprint"></i> 2. Encode Time Punches (Date & Time Format)
+                            </div>
+                            <div style="font-size: 11px; color: #64748b; margin-top: 2px;">
+                                Type military time like <strong style="color: #475569;">18</strong> (converts to 6:00 PM) or <strong style="color: #475569;">1830</strong> (converts to 6:30 PM) and press <kbd style="background: #e2e8f0; padding: 1px 4px; border-radius: 3px; font-size: 10px;">Tab</kbd>
+                            </div>
                         </div>
                         <div style="display: flex; gap: 6px;">
                             <button type="button" class="hr-btn hr-btn-secondary" style="font-size: 11px; padding: 3px 8px; height: auto;" onclick="applyStandardShiftPreset()">
@@ -423,54 +428,54 @@
                     <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
                         <!-- 1. Shift In -->
                         <div class="hr-form-group" style="margin-bottom: 0;">
-                            <label class="hr-form-label" style="font-size: 12px; font-weight: 500; color: #059669; display: flex; align-items: center; justify-content: space-between;">
+                            <label class="hr-form-label" style="font-size: 12px; font-weight: 600; color: #059669; display: flex; align-items: center; justify-content: space-between;">
                                 <span>1. Shift In</span>
-                                <span style="font-size: 10.5px; cursor: pointer; color: #7c3aed; font-weight: 500;" onclick="setNowPunch('encTimeIn')">Now</span>
+                                <span style="font-size: 10.5px; cursor: pointer; color: #7c3aed; font-weight: 600;" onclick="setNowPunch('encTimeIn')">Now</span>
                             </label>
                             <input type="datetime-local" step="60" name="time_in" id="encTimeIn" class="hr-input enc-punch-input" onchange="syncDateFromPunches(); lookupPunchesForDate();" style="height: 38px; font-family: inherit; font-size: 13px; font-weight: 400; color: #1e293b;">
                         </div>
 
                         <!-- 2. Break Out -->
                         <div class="hr-form-group" style="margin-bottom: 0;">
-                            <label class="hr-form-label" style="font-size: 12px; font-weight: 500; color: #334155; display: flex; align-items: center; justify-content: space-between;">
+                            <label class="hr-form-label" style="font-size: 12px; font-weight: 600; color: #334155; display: flex; align-items: center; justify-content: space-between;">
                                 <span>2. Break Out</span>
-                                <span style="font-size: 10.5px; cursor: pointer; color: #7c3aed; font-weight: 500;" onclick="setNowPunch('encBreakOut')">Now</span>
+                                <span style="font-size: 10.5px; cursor: pointer; color: #7c3aed; font-weight: 600;" onclick="setNowPunch('encBreakOut')">Now</span>
                             </label>
                             <input type="datetime-local" step="60" name="break_out" id="encBreakOut" class="hr-input enc-punch-input" onchange="syncDateFromPunches()" style="height: 38px; font-family: inherit; font-size: 13px; font-weight: 400; color: #1e293b;">
                         </div>
 
                         <!-- 3. Break In -->
                         <div class="hr-form-group" style="margin-bottom: 0;">
-                            <label class="hr-form-label" style="font-size: 12px; font-weight: 500; color: #334155; display: flex; align-items: center; justify-content: space-between;">
+                            <label class="hr-form-label" style="font-size: 12px; font-weight: 600; color: #334155; display: flex; align-items: center; justify-content: space-between;">
                                 <span>3. Break In</span>
-                                <span style="font-size: 10.5px; cursor: pointer; color: #7c3aed; font-weight: 500;" onclick="setNowPunch('encBreakIn')">Now</span>
+                                <span style="font-size: 10.5px; cursor: pointer; color: #7c3aed; font-weight: 600;" onclick="setNowPunch('encBreakIn')">Now</span>
                             </label>
                             <input type="datetime-local" step="60" name="break_in" id="encBreakIn" class="hr-input enc-punch-input" onchange="syncDateFromPunches()" style="height: 38px; font-family: inherit; font-size: 13px; font-weight: 400; color: #1e293b;">
                         </div>
 
                         <!-- 4. Coffee Break Out -->
                         <div class="hr-form-group" style="margin-bottom: 0;">
-                            <label class="hr-form-label" style="font-size: 12px; font-weight: 500; color: #b45309; display: flex; align-items: center; justify-content: space-between;">
+                            <label class="hr-form-label" style="font-size: 12px; font-weight: 600; color: #b45309; display: flex; align-items: center; justify-content: space-between;">
                                 <span>4. Coffee Out</span>
-                                <span style="font-size: 10.5px; cursor: pointer; color: #7c3aed; font-weight: 500;" onclick="setNowPunch('encCoffeeOut')">Now</span>
+                                <span style="font-size: 10.5px; cursor: pointer; color: #7c3aed; font-weight: 600;" onclick="setNowPunch('encCoffeeOut')">Now</span>
                             </label>
                             <input type="datetime-local" step="60" name="coffee_break_out" id="encCoffeeOut" class="hr-input enc-punch-input" onchange="syncDateFromPunches()" style="height: 38px; font-family: inherit; font-size: 13px; font-weight: 400; color: #1e293b;">
                         </div>
 
                         <!-- 5. Coffee Break In -->
                         <div class="hr-form-group" style="margin-bottom: 0;">
-                            <label class="hr-form-label" style="font-size: 12px; font-weight: 500; color: #b45309; display: flex; align-items: center; justify-content: space-between;">
+                            <label class="hr-form-label" style="font-size: 12px; font-weight: 600; color: #b45309; display: flex; align-items: center; justify-content: space-between;">
                                 <span>5. Coffee In</span>
-                                <span style="font-size: 10.5px; cursor: pointer; color: #7c3aed; font-weight: 500;" onclick="setNowPunch('encCoffeeIn')">Now</span>
+                                <span style="font-size: 10.5px; cursor: pointer; color: #7c3aed; font-weight: 600;" onclick="setNowPunch('encCoffeeIn')">Now</span>
                             </label>
                             <input type="datetime-local" step="60" name="coffee_break_in" id="encCoffeeIn" class="hr-input enc-punch-input" onchange="syncDateFromPunches()" style="height: 38px; font-family: inherit; font-size: 13px; font-weight: 400; color: #1e293b;">
                         </div>
 
                         <!-- 6. Final Out -->
                         <div class="hr-form-group" style="margin-bottom: 0;">
-                            <label class="hr-form-label" style="font-size: 12px; font-weight: 500; color: #0284c7; display: flex; align-items: center; justify-content: space-between;">
+                            <label class="hr-form-label" style="font-size: 12px; font-weight: 600; color: #0284c7; display: flex; align-items: center; justify-content: space-between;">
                                 <span>6. Final Out</span>
-                                <span style="font-size: 10.5px; cursor: pointer; color: #7c3aed; font-weight: 500;" onclick="setNowPunch('encTimeOut')">Now</span>
+                                <span style="font-size: 10.5px; cursor: pointer; color: #7c3aed; font-weight: 600;" onclick="setNowPunch('encTimeOut')">Now</span>
                             </label>
                             <input type="datetime-local" step="60" name="time_out" id="encTimeOut" class="hr-input enc-punch-input" onchange="syncDateFromPunches()" style="height: 38px; font-family: inherit; font-size: 13px; font-weight: 400; color: #1e293b;">
                         </div>
@@ -544,11 +549,8 @@ function openEncodeModal() {
 function getActivePunchDate() {
     const ids = ['encTimeIn', 'encTimeOut', 'encBreakOut', 'encBreakIn', 'encCoffeeOut', 'encCoffeeIn'];
     for (const id of ids) {
-        let val = document.getElementById(id)?.value;
+        const val = document.getElementById(id)?.value;
         if (val) {
-            if (/^00([0-9]{2})-/.test(val)) {
-                val = val.replace(/^00([0-9]{2})-/, '20$1-');
-            }
             if (val.includes('T')) {
                 return val.split('T')[0];
             }
@@ -557,11 +559,8 @@ function getActivePunchDate() {
             }
         }
     }
-    let encDate = document.getElementById('encDate')?.value;
+    const encDate = document.getElementById('encDate')?.value;
     if (encDate) {
-        if (/^00([0-9]{2})-/.test(encDate)) {
-            encDate = encDate.replace(/^00([0-9]{2})-/, '20$1-');
-        }
         return encDate;
     }
     return new Date().toISOString().slice(0, 10);
@@ -573,6 +572,15 @@ function syncDateFromPunches() {
     if (encDate && d) {
         encDate.value = d;
     }
+}
+
+function formatLocalDateTime(d) {
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const hh = String(d.getHours()).padStart(2, '0');
+    const min = String(d.getMinutes()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
 }
 
 function toDateTimeInputValue(dateStr, timeStr) {
@@ -606,15 +614,6 @@ function editManualEntry(recordId, empId, empName, dateStr, punches) {
 
     showLookupAlert('Editing existing attendance record for ' + empName + ' on ' + dateStr, 'info');
     openModal('encodeModal');
-}
-
-function formatLocalDateTime(d) {
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
-    const dd = String(d.getDate()).padStart(2, '0');
-    const hh = String(d.getHours()).padStart(2, '0');
-    const min = String(d.getMinutes()).padStart(2, '0');
-    return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
 }
 
 // Set time to current clock (Date & Time format)
@@ -774,249 +773,172 @@ function resetManualFilters() {
     filterManualTable();
 }
 
-// Smart Tab Auto-Complete for Time Punches & 2-Digit Dates
-// (e.g. typing 18 and pressing Tab -> 18:00, or dates like 10/21/01 -> 2001-10-21, 01-10 -> 2001-2010)
+// Clean Military Time Input Conversion on Datetime-Local Pickers
+// Accepts typed military shorthand (e.g. "18" -> converts to 18:00 / 06:00 PM normal time, "1830" -> 18:30 / 06:30 PM normal time)
+// and handles seamless Tab navigation between punch fields without getting stuck in native sub-segments.
 (function() {
     const punchInputIds = ['encTimeIn', 'encBreakOut', 'encBreakIn', 'encCoffeeOut', 'encCoffeeIn', 'encTimeOut'];
-    const punchBuffers = {};
-
-    function normalizePunchYear(input) {
-        if (!input || !input.value) return;
-        const val = input.value;
-        const match = val.match(/^00([0-9]{2})-(.*)$/);
-        if (match) {
-            const yy = parseInt(match[1], 10);
-            if (yy >= 0 && yy <= 99) {
-                const fullY = 2000 + yy; // 01-10 -> 2001-2010, 00-99 -> 2000-2099
-                input.value = `${fullY}-${match[2]}`;
-                syncDateFromPunches();
-            }
-        }
-    }
+    const timeBuffers = {};
 
     window.resetAllPunchBuffers = function() {
         punchInputIds.forEach(id => {
-            punchBuffers[id] = { digits: '', raw: '', colon: false };
+            timeBuffers[id] = '';
         });
     };
+
+    function parseTimeShorthand(raw) {
+        if (!raw) return null;
+        const str = raw.trim();
+        if (!str) return null;
+
+        // 1. With colon: "18:30", "18:", "8:30", "8:"
+        if (str.includes(':')) {
+            const parts = str.split(':');
+            const h = parseInt(parts[0], 10);
+            if (!isNaN(h) && h >= 0 && h <= 23) {
+                let m = 0;
+                if (parts[1] && parts[1].length > 0) {
+                    const parsedM = parseInt(parts[1].padEnd(2, '0').slice(0, 2), 10);
+                    if (!isNaN(parsedM) && parsedM >= 0 && parsedM <= 59) {
+                        m = parsedM;
+                    }
+                }
+                return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+            }
+            return null;
+        }
+
+        // 2. Pure digits shorthand: "18" -> 18:00, "1830" -> 18:30, "8" -> 08:00, "830" -> 08:30
+        const digits = str.replace(/\D/g, '');
+        if (!digits) return null;
+
+        let hour = null;
+        let minute = 0;
+
+        if (digits.length === 1 || digits.length === 2) {
+            hour = parseInt(digits, 10);
+            minute = 0;
+        } else if (digits.length === 3) {
+            hour = parseInt(digits.slice(0, 1), 10);
+            minute = parseInt(digits.slice(1, 3), 10);
+        } else if (digits.length >= 4) {
+            hour = parseInt(digits.slice(0, 2), 10);
+            minute = parseInt(digits.slice(2, 4), 10);
+        }
+
+        if (hour !== null && !isNaN(hour) && hour >= 0 && hour <= 23 && !isNaN(minute) && minute >= 0 && minute <= 59) {
+            return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+        }
+
+        return null;
+    }
+
+    function applyTimeToInput(input, formattedTime) {
+        if (!input || !formattedTime) return false;
+
+        let datePart = '';
+        if (input.value && input.value.includes('T')) {
+            datePart = input.value.split('T')[0];
+        } else {
+            datePart = getActivePunchDate();
+        }
+
+        input.value = `${datePart}T${formattedTime}`;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+        syncDateFromPunches();
+        return true;
+    }
+
+    function advanceToNext(currentIdx) {
+        if (currentIdx < punchInputIds.length - 1) {
+            const next = document.getElementById(punchInputIds[currentIdx + 1]);
+            if (next) {
+                next.focus();
+                timeBuffers[punchInputIds[currentIdx + 1]] = '';
+            }
+        } else {
+            const statusSelect = document.getElementById('encStatus');
+            if (statusSelect) statusSelect.focus();
+        }
+    }
 
     function initPunchInputs() {
         punchInputIds.forEach((id, idx) => {
             const input = document.getElementById(id);
             if (!input) return;
 
-            punchBuffers[id] = { digits: '', raw: '', colon: false };
+            timeBuffers[id] = '';
 
             input.addEventListener('focus', function() {
-                punchBuffers[id] = { digits: '', raw: '', colon: false };
-            });
-
-            // Normalize whenever input or change fires (captures browser native 0001-0010 values)
-            input.addEventListener('input', function() {
-                normalizePunchYear(this);
-            });
-            input.addEventListener('change', function() {
-                normalizePunchYear(this);
-            });
-            input.addEventListener('keyup', function() {
-                normalizePunchYear(this);
+                timeBuffers[id] = '';
             });
 
             input.addEventListener('keydown', function(e) {
-                const buf = punchBuffers[id] || (punchBuffers[id] = { digits: '', raw: '', colon: false });
-
-                if ((e.key >= '0' && e.key <= '9') || e.key === '/' || e.key === '-' || e.key === '.') {
-                    buf.raw += e.key;
-                    if (e.key >= '0' && e.key <= '9') {
-                        buf.digits += e.key;
+                if ((e.key >= '0' && e.key <= '9') || e.key === ':') {
+                    timeBuffers[id] = (timeBuffers[id] || '') + e.key;
+                    if (timeBuffers[id].length > 5) {
+                        timeBuffers[id] = timeBuffers[id].slice(-5);
                     }
                     return;
                 }
-                if (e.key === ':') {
-                    buf.colon = true;
-                    buf.raw += ':';
-                    return;
-                }
-                if (e.key === 'Backspace' || e.key === 'Delete') {
-                    buf.digits = '';
-                    buf.raw = '';
-                    buf.colon = false;
+
+                if (e.key === 'Backspace') {
+                    timeBuffers[id] = (timeBuffers[id] || '').slice(0, -1);
                     return;
                 }
 
+                if (e.key === 'Delete' || e.key === 'Escape') {
+                    timeBuffers[id] = '';
+                    return;
+                }
+
+                // Shift+Tab: move to previous punch input
+                if (e.key === 'Tab' && e.shiftKey) {
+                    e.preventDefault();
+                    if (idx > 0) {
+                        const prev = document.getElementById(punchInputIds[idx - 1]);
+                        if (prev) prev.focus();
+                    } else {
+                        const emp = document.getElementById('encEmployeeId');
+                        if (emp) emp.focus();
+                    }
+                    return;
+                }
+
+                // Tab or Enter: apply military shorthand if typed, and advance to next input!
                 if ((e.key === 'Tab' && !e.shiftKey) || e.key === 'Enter') {
-                    // Check and fix if current value already has 2-digit year (0001-0010 -> 2001-2010)
-                    normalizePunchYear(this);
+                    const raw = timeBuffers[id];
+                    timeBuffers[id] = '';
+                    const parsedTime = parseTimeShorthand(raw);
 
-                    let targetDate = null;
-                    let targetTime = null;
-
-                    // 1. Check slash/dash/dot format in raw buffer: e.g. "10/21/01", "10-21-01", "10/01/01"
-                    const slashMatch = buf.raw.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{1,4})(?:[T\s](\d{1,2})(?::(\d{1,2}))?)?$/);
-                    if (slashMatch) {
-                        const m = parseInt(slashMatch[1], 10);
-                        const d = parseInt(slashMatch[2], 10);
-                        let y = parseInt(slashMatch[3], 10);
-                        if (m >= 1 && m <= 12 && d >= 1 && d <= 31) {
-                            if (y >= 0 && y <= 99) {
-                                y = 2000 + y; // e.g. 01 -> 2001, 10 -> 2010
-                            }
-                            targetDate = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-                            if (slashMatch[4]) {
-                                const hh = String(parseInt(slashMatch[4], 10)).padStart(2, '0');
-                                const mm = slashMatch[5] ? String(parseInt(slashMatch[5], 10)).padStart(2, '0') : '00';
-                                targetTime = `${hh}:${mm}`;
-                            }
-                        }
-                    }
-
-                    // 2. Check numeric buffer:
-                    // 6 digits: MMDDYY (e.g. "102101" -> 10/21/2001, "100101" -> 10/01/2001)
-                    if (!targetDate && buf.digits.length === 6) {
-                        const m = parseInt(buf.digits.substring(0, 2), 10);
-                        const d = parseInt(buf.digits.substring(2, 4), 10);
-                        let y = parseInt(buf.digits.substring(4, 6), 10);
-                        if (m >= 1 && m <= 12 && d >= 1 && d <= 31) {
-                            if (y >= 0 && y <= 99) {
-                                y = 2000 + y; // 01 -> 2001, 10 -> 2010
-                            }
-                            targetDate = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-                        }
-                    }
-
-                    // 8 digits: MMDDYYYY (e.g. "10212001") or MMDDYYHH (e.g. "10210118")
-                    if (!targetDate && buf.digits.length === 8) {
-                        const m = parseInt(buf.digits.substring(0, 2), 10);
-                        const d = parseInt(buf.digits.substring(2, 4), 10);
-                        const possibleY = parseInt(buf.digits.substring(4, 8), 10);
-                        if (m >= 1 && m <= 12 && d >= 1 && d <= 31) {
-                            if (possibleY >= 1970 && possibleY <= 2100) {
-                                targetDate = `${possibleY}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-                            } else {
-                                let yy = parseInt(buf.digits.substring(4, 6), 10);
-                                const hh = parseInt(buf.digits.substring(6, 8), 10);
-                                if (yy >= 0 && yy <= 99 && hh >= 0 && hh <= 23) {
-                                    yy = 2000 + yy;
-                                    targetDate = `${yy}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-                                    targetTime = `${String(hh).padStart(2, '0')}:00`;
-                                }
-                            }
-                        }
-                    }
-
-                    // 10 digits: MMDDYYHHmm (e.g. "1021011800")
-                    if (!targetDate && buf.digits.length === 10) {
-                        const m = parseInt(buf.digits.substring(0, 2), 10);
-                        const d = parseInt(buf.digits.substring(2, 4), 10);
-                        let yy = parseInt(buf.digits.substring(4, 6), 10);
-                        const hh = parseInt(buf.digits.substring(6, 8), 10);
-                        const mm = parseInt(buf.digits.substring(8, 10), 10);
-                        if (m >= 1 && m <= 12 && d >= 1 && d <= 31 && hh >= 0 && hh <= 23 && mm >= 0 && mm <= 59) {
-                            if (yy >= 0 && yy <= 99) yy = 2000 + yy;
-                            targetDate = `${yy}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-                            targetTime = `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
-                        }
-                    }
-
-                    // 12 digits: MMDDYYYYHHmm
-                    if (!targetDate && buf.digits.length === 12) {
-                        const m = parseInt(buf.digits.substring(0, 2), 10);
-                        const d = parseInt(buf.digits.substring(2, 4), 10);
-                        const y = parseInt(buf.digits.substring(4, 8), 10);
-                        const hh = parseInt(buf.digits.substring(8, 10), 10);
-                        const mm = parseInt(buf.digits.substring(10, 12), 10);
-                        if (m >= 1 && m <= 12 && d >= 1 && d <= 31 && y >= 1970 && y <= 2100 && hh >= 0 && hh <= 23 && mm >= 0 && mm <= 59) {
-                            targetDate = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-                            targetTime = `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
-                        }
-                    }
-
-                    // 3. Check time-only buffers:
-                    if (!targetDate && !targetTime && buf.digits.length > 0) {
-                        let hour = null;
-                        let minute = '00';
-
-                        // 1 or 2 digits: e.g. "18" -> 18:00
-                        if (buf.digits.length === 1 || buf.digits.length === 2) {
-                            hour = parseInt(buf.digits, 10);
-                            minute = '00';
-                        } else if (buf.digits.length === 3) {
-                            // "830" -> 08:30
-                            hour = parseInt(buf.digits.substring(0, 1), 10);
-                            minute = buf.digits.substring(1, 3);
-                        } else if (buf.digits.length === 4) {
-                            // "1800" -> 18:00, "1830" -> 18:30
-                            hour = parseInt(buf.digits.substring(0, 2), 10);
-                            minute = buf.digits.substring(2, 4);
-                        }
-                        if (hour !== null && !isNaN(hour) && hour >= 0 && hour <= 23) {
-                            targetTime = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
-                        }
-                    }
-
-                    if (targetDate || targetTime) {
+                    if (parsedTime) {
                         e.preventDefault();
-                        const baseDate = targetDate || getActivePunchDate();
-                        let finalTime = targetTime;
-                        if (!finalTime) {
-                            if (this.value && this.value.includes('T')) {
-                                finalTime = this.value.split('T')[1].substring(0, 5);
-                            } else {
-                                finalTime = id === 'encTimeOut' ? '17:00' : '08:00';
-                            }
-                        }
-                        this.value = `${baseDate}T${finalTime}`;
-                        normalizePunchYear(this);
-
-                        buf.digits = '';
-                        buf.raw = '';
-                        buf.colon = false;
-
-                        syncDateFromPunches();
+                        applyTimeToInput(this, parsedTime);
                         if (id === 'encTimeIn') {
                             lookupPunchesForDate();
                         }
-
-                        // Advance focus to next punch input
-                        if (idx < punchInputIds.length - 1) {
-                            const nextInput = document.getElementById(punchInputIds[idx + 1]);
-                            if (nextInput) {
-                                nextInput.focus();
-                                if (punchBuffers[punchInputIds[idx + 1]]) {
-                                    punchBuffers[punchInputIds[idx + 1]].digits = '';
-                                    punchBuffers[punchInputIds[idx + 1]].raw = '';
-                                }
-                            }
-                        } else {
-                            const statusSelect = document.getElementById('encStatus');
-                            if (statusSelect) statusSelect.focus();
-                        }
+                        advanceToNext(idx);
                         return;
                     }
 
-                    buf.digits = '';
-                    buf.raw = '';
-                    buf.colon = false;
+                    // If user pressed Tab (even without shorthand), advance directly to next punch input
+                    if (e.key === 'Tab') {
+                        e.preventDefault();
+                        advanceToNext(idx);
+                    }
                 }
             });
 
             input.addEventListener('blur', function() {
-                normalizePunchYear(this);
-                const buf = punchBuffers[id];
-                if (buf) {
-                    if (buf.digits.length === 1 || buf.digits.length === 2) {
-                        const hour = parseInt(buf.digits, 10);
-                        if (!isNaN(hour) && hour >= 0 && hour <= 23) {
-                            const baseDate = getActivePunchDate();
-                            const hh = String(hour).padStart(2, '0');
-                            this.value = `${baseDate}T${hh}:00`;
-                            normalizePunchYear(this);
-                            syncDateFromPunches();
-                        }
+                const raw = timeBuffers[id];
+                timeBuffers[id] = '';
+                const parsedTime = parseTimeShorthand(raw);
+                if (parsedTime) {
+                    applyTimeToInput(this, parsedTime);
+                    if (id === 'encTimeIn') {
+                        lookupPunchesForDate();
                     }
-                    buf.digits = '';
-                    buf.raw = '';
-                    buf.colon = false;
                 }
             });
         });

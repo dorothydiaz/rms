@@ -691,31 +691,157 @@ document.addEventListener('DOMContentLoaded', () => {
             trigger.appendChild(chevron);
             wrap.appendChild(trigger);
 
-            // Custom Menu
+            // Custom Menu with Integrated Search Bar
             const menu = document.createElement('div');
             menu.className = 'hr-custom-select-menu';
             menu.setAttribute('role', 'listbox');
             wrap.appendChild(menu);
+
+            // Search Bar Container & Elements
+            const searchWrap = document.createElement('div');
+            searchWrap.className = 'hr-select-search-wrap';
+
+            const searchIcon = document.createElement('i');
+            searchIcon.className = 'ph ph-magnifying-glass hr-select-search-icon';
+
+            const searchInput = document.createElement('input');
+            searchInput.type = 'text';
+            searchInput.className = 'hr-select-search-input';
+            searchInput.setAttribute('autocomplete', 'off');
+            searchInput.setAttribute('spellcheck', 'false');
+
+            const clearBtn = document.createElement('button');
+            clearBtn.type = 'button';
+            clearBtn.className = 'hr-select-search-clear';
+            clearBtn.innerHTML = '<i class="ph ph-x"></i>';
+            clearBtn.style.display = 'none';
+
+            searchWrap.appendChild(searchIcon);
+            searchWrap.appendChild(searchInput);
+            searchWrap.appendChild(clearBtn);
+
+            // Container for list of options
+            const optionsList = document.createElement('div');
+            optionsList.className = 'hr-custom-select-options-list';
+
+            // Empty search state
+            const emptyState = document.createElement('div');
+            emptyState.className = 'hr-select-empty-msg';
+            emptyState.textContent = 'No matching options found';
+            emptyState.style.display = 'none';
+
+            menu.appendChild(searchWrap);
+            menu.appendChild(optionsList);
+            optionsList.appendChild(emptyState);
+
+            searchWrap.addEventListener('click', (e) => e.stopPropagation());
+            searchWrap.addEventListener('mousedown', (e) => e.stopPropagation());
+
+            function checkShouldHaveSearch(opts) {
+                const nameAndId = (select.name + ' ' + select.id + ' ' + (select.className || '')).toLowerCase();
+                const isTargetEntity = /employee|staff|member|dept|department|branch|company|position|role|job|title|applicant|recruiter|manager|user|category|schedule|program|leave/i.test(nameAndId);
+                const isInModal = Boolean(select.closest('.hr-modal, .hr-modal-overlay, .modal, [id*="Modal"], [id*="modal"]'));
+                return opts.length >= 4 || (isTargetEntity && opts.length >= 3) || (isInModal && opts.length >= 3);
+            }
+
+            function filterOptions() {
+                const query = (searchInput.value || '').toLowerCase().trim();
+                clearBtn.style.display = query ? 'flex' : 'none';
+
+                let visibleCount = 0;
+                const terms = query ? query.split(/\s+/).filter(Boolean) : [];
+                const optEls = optionsList.querySelectorAll('.hr-custom-select-option');
+                optEls.forEach((optEl) => {
+                    const text = (optEl.textContent || '').toLowerCase();
+                    const val = (optEl.getAttribute('data-value') || '').toLowerCase();
+                    const isPlaceholder = optEl.getAttribute('data-is-placeholder') === 'true';
+
+                    let matches = false;
+                    if (!query) {
+                        matches = true;
+                    } else if (isPlaceholder) {
+                        matches = false;
+                    } else {
+                        const hay = text + ' ' + val;
+                        matches = terms.every(term => hay.includes(term));
+                    }
+
+                    optEl.classList.toggle('hr-select-hidden', !matches);
+                    optEl.hidden = !matches;
+                    optEl.style.setProperty('display', matches ? 'flex' : 'none', 'important');
+                    if (matches) visibleCount++;
+                });
+
+                emptyState.style.display = visibleCount === 0 ? 'block' : 'none';
+            }
+
+            searchInput.addEventListener('input', filterOptions);
+            searchInput.addEventListener('keyup', filterOptions);
+            searchInput.addEventListener('paste', () => setTimeout(filterOptions, 10));
+
+            searchInput.addEventListener('click', (e) => e.stopPropagation());
+            searchInput.addEventListener('mousedown', (e) => e.stopPropagation());
+
+            clearBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                searchInput.value = '';
+                filterOptions();
+                searchInput.focus();
+            });
+
+            searchInput.addEventListener('keydown', (e) => {
+                e.stopPropagation();
+                if (e.key === 'Escape') {
+                    closeMenu();
+                } else if (e.key === 'Tab') {
+                    closeMenu();
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const visibleOpts = Array.from(optionsList.querySelectorAll('.hr-custom-select-option'))
+                        .filter(el => !el.classList.contains('hr-select-hidden') && !el.hidden && el.style.display !== 'none');
+                    if (visibleOpts.length > 0) {
+                        const target = (visibleOpts.length > 1 && visibleOpts[0].getAttribute('data-is-placeholder') === 'true' && searchInput.value.trim()) ? visibleOpts[1] : visibleOpts[0];
+                        target.click();
+                    }
+                } else if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    const firstVisible = Array.from(optionsList.querySelectorAll('.hr-custom-select-option'))
+                        .find(el => !el.classList.contains('hr-select-hidden') && !el.hidden && el.style.display !== 'none');
+                    if (firstVisible) firstVisible.focus();
+                }
+            });
 
             function positionMenu() {
                 const rect = trigger.getBoundingClientRect();
                 menu.style.position = 'fixed';
                 menu.style.minWidth = `${rect.width}px`;
                 menu.style.width = 'max-content';
-                const maxAvailableWidth = Math.max(rect.width, Math.min(window.innerWidth - 32, 380));
+                const maxAvailableWidth = Math.min(window.innerWidth - 32, Math.max(rect.width, 360));
                 menu.style.maxWidth = `${maxAvailableWidth}px`;
                 
-                // Prevent overflowing off right side of screen
+                // Measure actual rendered width of menu (never smaller than trigger width)
+                const menuWidth = Math.max(menu.offsetWidth || 0, rect.width);
+                
+                // Align left with the trigger by default.
+                // If it overflows viewport on the right, align with the trigger's right edge instead.
                 let left = rect.left;
-                if (left + maxAvailableWidth > window.innerWidth - 16) {
-                    left = Math.max(16, window.innerWidth - maxAvailableWidth - 16);
+                if (left + menuWidth > window.innerWidth - 16) {
+                    left = rect.right - menuWidth;
                 }
+                // Keep within screen edges
+                if (left < 16) {
+                    left = 16;
+                }
+                if (left + menuWidth > window.innerWidth - 16) {
+                    left = Math.max(16, window.innerWidth - menuWidth - 16);
+                }
+
                 menu.style.left = `${left}px`;
                 menu.style.overflowX = 'hidden';
                 menu.style.zIndex = '99999999';
 
                 const spaceBelow = window.innerHeight - rect.bottom;
-                const menuHeight = Math.min(menu.scrollHeight || 220, 240);
+                const menuHeight = Math.min(menu.scrollHeight || 260, 300);
 
                 if (spaceBelow < menuHeight + 10 && rect.top > menuHeight) {
                     menu.style.top = 'auto';
@@ -732,6 +858,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     document.body.removeChild(menu);
                     wrap.appendChild(menu);
                 }
+                if (searchInput) {
+                    searchInput.value = '';
+                    filterOptions();
+                }
             }
 
             function openMenu() {
@@ -742,25 +872,68 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
 
+                // Sync trigger text with underlying select.selectedIndex if changed from outside
+                const sel = select.options[select.selectedIndex];
+                if (sel) {
+                    triggerText.textContent = sel.text;
+                }
+
                 wrap.classList.add('open');
                 document.body.appendChild(menu);
                 positionMenu();
+
+                // Reset search and auto-focus
+                if (searchWrap.style.display !== 'none') {
+                    searchInput.value = '';
+                    filterOptions();
+                    setTimeout(() => {
+                        searchInput.focus();
+                    }, 40);
+                }
             }
 
             wrap._closeCustomSelect = closeMenu;
 
             function updateOptions() {
-                menu.innerHTML = '';
+                optionsList.innerHTML = '';
+                optionsList.appendChild(emptyState);
+
                 const options = Array.from(select.options);
                 let selectedOpt = select.options[select.selectedIndex] || options[0];
 
                 triggerText.textContent = selectedOpt ? selectedOpt.text : 'Select...';
 
+                const hasSearch = checkShouldHaveSearch(options);
+                searchWrap.style.display = hasSearch ? 'flex' : 'none';
+
+                if (hasSearch) {
+                    let placeholderText = 'Search...';
+                    if (options[0] && options[0].text && /--\s*Select/i.test(options[0].text)) {
+                        const entityName = options[0].text.replace(/--/g, '').replace(/Select/i, '').trim();
+                        if (entityName) placeholderText = `Search ${entityName.toLowerCase()}...`;
+                    } else if (/employee|staff|member/i.test(select.name + ' ' + select.id)) {
+                        placeholderText = 'Search employee...';
+                    } else if (/department|dept/i.test(select.name + ' ' + select.id)) {
+                        placeholderText = 'Search department...';
+                    } else if (/branch/i.test(select.name + ' ' + select.id)) {
+                        placeholderText = 'Search branch...';
+                    } else if (/position|role|job/i.test(select.name + ' ' + select.id)) {
+                        placeholderText = 'Search position...';
+                    } else if (/company/i.test(select.name + ' ' + select.id)) {
+                        placeholderText = 'Search company...';
+                    }
+                    searchInput.placeholder = placeholderText;
+                }
+
                 options.forEach((opt, idx) => {
                     const optEl = document.createElement('div');
                     optEl.className = 'hr-custom-select-option' + (opt.selected ? ' selected' : '');
                     optEl.setAttribute('role', 'option');
+                    optEl.setAttribute('tabindex', '0');
                     optEl.setAttribute('data-value', opt.value);
+                    if (idx === 0 && (!opt.value || /--\s*Select/i.test(opt.text))) {
+                        optEl.setAttribute('data-is-placeholder', 'true');
+                    }
 
                     const labelSpan = document.createElement('span');
                     labelSpan.textContent = opt.text;
@@ -778,8 +951,15 @@ document.addEventListener('DOMContentLoaded', () => {
                         select.value = opt.value;
                         triggerText.textContent = opt.text;
 
-                        menu.querySelectorAll('.hr-custom-select-option').forEach(el => el.classList.remove('selected'));
+                        optionsList.querySelectorAll('.hr-custom-select-option').forEach(el => {
+                            el.classList.remove('selected');
+                            const chk = el.querySelector('.hr-select-check');
+                            if (chk) chk.remove();
+                        });
                         optEl.classList.add('selected');
+                        const chk = document.createElement('i');
+                        chk.className = 'ph ph-check hr-select-check';
+                        optEl.appendChild(chk);
 
                         closeMenu();
 
@@ -791,31 +971,70 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     };
 
-                    menu.appendChild(optEl);
+                    optEl.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            optEl.click();
+                        } else if (e.key === 'ArrowDown') {
+                            e.preventDefault();
+                            let next = optEl.nextElementSibling;
+                            while (next && (next.classList.contains('hr-select-hidden') || next.hidden || next.style.display === 'none')) {
+                                next = next.nextElementSibling;
+                            }
+                            if (next && next.classList.contains('hr-custom-select-option')) {
+                                next.focus();
+                            }
+                        } else if (e.key === 'ArrowUp') {
+                            e.preventDefault();
+                            let prev = optEl.previousElementSibling;
+                            while (prev && (prev.classList.contains('hr-select-hidden') || prev.hidden || prev.style.display === 'none')) {
+                                prev = prev.previousElementSibling;
+                            }
+                            if (prev && prev.classList.contains('hr-custom-select-option')) {
+                                prev.focus();
+                            } else if (hasSearch) {
+                                searchInput.focus();
+                            }
+                        } else if (e.key === 'Escape') {
+                            closeMenu();
+                        }
+                    });
+
+                    optionsList.appendChild(optEl);
                 });
+
+                filterOptions();
             }
 
             updateOptions();
 
-            optEl_click_callback = (e, opt, idx) => {
-                e.stopPropagation();
-                select.selectedIndex = idx;
-                select.value = opt.value;
-                triggerText.textContent = opt.text;
+            // Observe dynamic option changes in native select
+            const selectObserver = new MutationObserver(() => {
+                updateOptions();
+            });
+            selectObserver.observe(select, { childList: true, subtree: true });
 
-                menu.querySelectorAll('.hr-custom-select-option').forEach(el => el.classList.remove('selected'));
-                const matchedOpt = menu.querySelectorAll('.hr-custom-select-option')[idx];
-                if (matchedOpt) matchedOpt.classList.add('selected');
-
-                closeMenu();
-
-                // Fire native change events
-                select.dispatchEvent(new Event('input', { bubbles: true }));
-                select.dispatchEvent(new Event('change', { bubbles: true }));
-                if (typeof select.onchange === 'function') {
-                    select.onchange();
+            // Listen for external change events on native select to update trigger label
+            select.addEventListener('change', () => {
+                const cur = select.options[select.selectedIndex];
+                if (cur) {
+                    triggerText.textContent = cur.text;
+                    optionsList.querySelectorAll('.hr-custom-select-option').forEach((el, idx) => {
+                        if (idx === select.selectedIndex) {
+                            el.classList.add('selected');
+                            if (!el.querySelector('.hr-select-check')) {
+                                const chk = document.createElement('i');
+                                chk.className = 'ph ph-check hr-select-check';
+                                el.appendChild(chk);
+                            }
+                        } else {
+                            el.classList.remove('selected');
+                            const chk = el.querySelector('.hr-select-check');
+                            if (chk) chk.remove();
+                        }
+                    });
                 }
-            };
+            });
 
             // Toggle open
             trigger.onclick = (e) => {
@@ -827,7 +1046,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             };
 
-            // Keyboard navigation
+            // Keyboard navigation on trigger
             trigger.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
@@ -904,6 +1123,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (m) {
             m.classList.add('open');
             document.body.style.overflow = 'hidden';
+            if (typeof initCustomSelects === 'function') {
+                initCustomSelects();
+            }
         }
     };
     window.closeModal = function(id) {
