@@ -314,7 +314,8 @@ class PeopleController extends Controller
             'pagibig_number' => 'nullable|string|max:30',
             'tin' => 'nullable|string|max:30',
             'basic_salary' => 'nullable|numeric|min:0',
-            'salary_type' => 'required|in:Monthly,Daily,Hourly',
+            'payroll_type' => 'nullable|in:Daily,Monthly',
+            'salary_type' => 'nullable|in:Monthly,Daily,Hourly',
             'pay_frequency' => 'required|in:Semi-Monthly,Monthly,Weekly',
             'allowances' => 'nullable|numeric|min:0',
             'emergency_contact_name' => 'nullable|string|max:100',
@@ -404,6 +405,15 @@ class PeopleController extends Controller
             $validated['photo'] = $path;
         }
 
+        if (!empty($validated['payroll_type'])) {
+            $validated['salary_type'] = $validated['payroll_type'];
+        } elseif (!empty($validated['salary_type'])) {
+            $validated['payroll_type'] = ($validated['salary_type'] === 'Daily') ? 'Daily' : 'Monthly';
+        } else {
+            $validated['salary_type'] = 'Monthly';
+            $validated['payroll_type'] = 'Monthly';
+        }
+
         $employee = Employee::create($validated);
 
         if (!empty($validated['emergency_contact_name'])) {
@@ -463,8 +473,8 @@ class PeopleController extends Controller
             'job_level' => 'nullable|string|max:60',
             'supervisor_id' => 'nullable|exists:hr_employees,id',
             'date_hired' => 'nullable|date',
-            'employment_status' => 'required|in:Active,Probationary,On Leave,Suspended,Resigned,Terminated,Retired',
-            'employment_type' => 'required|in:Regular,Probationary,Part-time,Casual,Contractual,Seasonal,Intern / OJT',
+            'employment_status' => 'nullable|in:Active,Probationary,On Leave,Suspended,Resigned,Terminated,Retired',
+            'employment_type' => 'nullable|in:Regular,Probationary,Part-time,Casual,Contractual,Seasonal,Intern / OJT',
             'employment_source' => 'nullable|in:Company,Agency',
             'company_name' => 'nullable|string|max:150',
             'agency_name' => 'nullable|string|max:150',
@@ -483,6 +493,7 @@ class PeopleController extends Controller
             'passport_number' => 'nullable|string|max:50',
             'driver_license' => 'nullable|string|max:50',
             'basic_salary' => 'nullable|numeric|min:0',
+            'payroll_type' => 'nullable|in:Daily,Monthly',
             'salary_type' => 'nullable|in:Monthly,Daily,Hourly',
             'pay_frequency' => 'nullable|in:Semi-Monthly,Semi-monthly,Monthly,Weekly',
             'allowances' => 'nullable|numeric|min:0',
@@ -516,7 +527,20 @@ class PeopleController extends Controller
         if (empty($validated['nationality'])) {
             $validated['nationality'] = $employee->nationality ?: 'Filipino';
         }
-        if (empty($validated['salary_type'])) {
+        if (empty($validated['employment_status'])) {
+            $validated['employment_status'] = $employee->employment_status ?: 'Active';
+        }
+        if (empty($validated['employment_type'])) {
+            $validated['employment_type'] = $employee->employment_type ?: 'Regular';
+        }
+        if ($request->filled('payroll_type')) {
+            $validated['payroll_type'] = $request->payroll_type;
+            $validated['salary_type'] = $request->payroll_type;
+        } elseif ($request->filled('salary_type')) {
+            $validated['payroll_type'] = ($request->salary_type === 'Daily') ? 'Daily' : 'Monthly';
+            $validated['salary_type'] = $request->salary_type;
+        } else {
+            $validated['payroll_type'] = $employee->payroll_type ?: 'Monthly';
             $validated['salary_type'] = $employee->salary_type ?: 'Monthly';
         }
         if (empty($validated['pay_frequency'])) {
@@ -760,6 +784,8 @@ class PeopleController extends Controller
         $employee = Employee::findOrFail($id);
         $request->validate([
             'basic_salary' => 'required|numeric|min:0',
+            'payroll_type' => 'nullable|in:Daily,Monthly',
+            'salary_type' => 'nullable|in:Monthly,Daily,Hourly',
             'allowances' => 'nullable|numeric|min:0',
             'adjustment_type' => 'required|string|max:50',
             'effective_date' => 'required|date',
@@ -768,12 +794,16 @@ class PeopleController extends Controller
 
         $oldSalary = (float) $employee->basic_salary;
         $newSalary = (float) $request->basic_salary;
+        $newPayrollType = $request->input('payroll_type') ?? $request->input('salary_type') ?? $employee->payroll_type;
+        $oldPayrollType = $employee->payroll_type;
 
         $salHistory = $employee->salary_history ?? [];
         $salHistory[] = [
             'effective_date' => $request->effective_date,
             'previous_salary' => $oldSalary,
             'new_salary' => $newSalary,
+            'previous_payroll_type' => $oldPayrollType,
+            'new_payroll_type' => $newPayrollType,
             'adjustment_type' => $request->adjustment_type,
             'reason' => $request->reason ?? 'Periodic rate adjustment',
             'approved_by' => Auth::user()?->full_name ?? 'HR Executive',
@@ -782,8 +812,8 @@ class PeopleController extends Controller
         EmploymentHistory::create([
             'employee_id' => $employee->id,
             'action_type' => 'Salary Adjustment',
-            'previous_value' => '₱' . number_format($oldSalary, 2),
-            'new_value' => '₱' . number_format($newSalary, 2),
+            'previous_value' => '₱' . number_format($oldSalary, 2) . ($oldPayrollType ? " ({$oldPayrollType})" : ''),
+            'new_value' => '₱' . number_format($newSalary, 2) . ($newPayrollType ? " ({$newPayrollType})" : ''),
             'remarks' => "{$request->adjustment_type}: " . ($request->reason ?: 'Salary update'),
             'effective_date' => $request->effective_date,
             'recorded_by' => Auth::id(),
@@ -791,10 +821,12 @@ class PeopleController extends Controller
 
         $employee->update([
             'basic_salary' => $newSalary,
+            'payroll_type' => $newPayrollType,
+            'salary_type' => $newPayrollType,
             'allowances' => $request->filled('allowances') ? (float)$request->allowances : $employee->allowances,
             'salary_history' => $salHistory,
         ]);
-        AuditLogger::log('Update', 'Employees', $employee->id, "Salary adjusted for {$employee->full_name} to ₱" . number_format($newSalary, 2));
+        AuditLogger::log('Update', 'Employees', $employee->id, "Salary adjusted for {$employee->full_name} to ₱" . number_format($newSalary, 2) . " ({$newPayrollType})");
 
         return redirect()->back()->with('success', "Salary adjusted to ₱" . number_format($newSalary, 2) . " successfully.");
     }

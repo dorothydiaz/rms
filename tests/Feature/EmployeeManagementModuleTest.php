@@ -339,6 +339,58 @@ class EmployeeManagementModuleTest extends TestCase
         $this->assertEquals('UpdatedLast', $this->employee->fresh()->last_name);
     }
 
+    public function test_employee_details_displays_payroll_type_daily_and_monthly(): void
+    {
+        // 1. Check with Monthly payroll type
+        $this->employee->update(['payroll_type' => 'Monthly']);
+        $respMonthly = $this->actingAs($this->adminUser)->get(route('hr.people.employees.show', $this->employee->id));
+        $respMonthly->assertStatus(200);
+        $respMonthly->assertSee('Payroll Type');
+        $respMonthly->assertSee('Monthly');
+
+        // 2. Check with Daily payroll type
+        $this->employee->update(['payroll_type' => 'Daily']);
+        $respDaily = $this->actingAs($this->adminUser)->get(route('hr.people.employees.show', $this->employee->id));
+        $respDaily->assertStatus(200);
+        $respDaily->assertSee('Payroll Type');
+        $respDaily->assertSee('Daily');
+    }
+
+    public function test_employee_update_and_salary_adjustment_support_payroll_type(): void
+    {
+        // Update employee with Daily payroll type
+        $updateResp = $this->actingAs($this->adminUser)
+            ->put(route('hr.people.employees.update', $this->employee->id), [
+                'branch_id' => $this->branch->id,
+                'first_name' => $this->employee->first_name,
+                'last_name' => $this->employee->last_name,
+                'payroll_type' => 'Daily',
+                'basic_salary' => 650.00,
+            ]);
+
+        $updateResp->assertRedirect();
+        $freshEmp = $this->employee->fresh();
+        $this->assertEquals('Daily', $freshEmp->payroll_type);
+        $this->assertEquals('Daily', $freshEmp->salary_type);
+        $this->assertEquals(650.00, (float)$freshEmp->basic_salary);
+
+        // Adjust salary and switch to Monthly payroll type
+        $adjustResp = $this->actingAs($this->adminUser)
+            ->post(route('hr.people.employees.change-salary', $this->employee->id), [
+                'new_salary' => 28000.00,
+                'payroll_type' => 'Monthly',
+                'adjustment_type' => 'Promotion',
+                'effective_date' => '2026-10-02',
+                'reason' => 'Switched to monthly rate upon promotion',
+            ]);
+
+        $adjustResp->assertRedirect();
+        $freshEmp2 = $this->employee->fresh();
+        $this->assertEquals('Monthly', $freshEmp2->payroll_type);
+        $this->assertEquals('Monthly', $freshEmp2->salary_type);
+        $this->assertEquals(28000.00, (float)$freshEmp2->basic_salary);
+    }
+
     protected function tearDown(): void
     {
         $existingIds = Employee::withTrashed()->where('employee_id', 'like', 'EMP-TEST-%')->pluck('id');

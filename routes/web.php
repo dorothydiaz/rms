@@ -219,6 +219,24 @@ Route::middleware('auth')->group(function () {
             Route::post('/wage-distortion/export', [\App\Http\Controllers\Hr\PayrollController::class, 'wageDistortionExport'])->name('wage-distortion.export');
             Route::get('/wage-distortion/export', [\App\Http\Controllers\Hr\PayrollController::class, 'wageDistortionExport'])->name('wage-distortion.export.get');
 
+            // Holidays Management
+            Route::get('/holidays', [\App\Http\Controllers\Hr\PayrollController::class, 'holidaysIndex'])->name('holidays');
+            Route::post('/holidays', [\App\Http\Controllers\Hr\PayrollController::class, 'holidayStore'])->name('holidays.store');
+            Route::put('/holidays/{id}', [\App\Http\Controllers\Hr\PayrollController::class, 'holidayUpdate'])->name('holidays.update');
+            Route::delete('/holidays/{id}', [\App\Http\Controllers\Hr\PayrollController::class, 'holidayDestroy'])->name('holidays.destroy');
+            Route::post('/holidays/import', [\App\Http\Controllers\Hr\PayrollController::class, 'holidayImport'])->name('holidays.import');
+            Route::get('/holidays/export', [\App\Http\Controllers\Hr\PayrollController::class, 'holidayExport'])->name('holidays.export');
+            Route::post('/holidays/settings', [\App\Http\Controllers\Hr\PayrollController::class, 'holidaySettingsUpdate'])->name('holidays.settings');
+
+            // Premium Pay Management
+            Route::get('/premium-pay', [\App\Http\Controllers\Hr\PayrollController::class, 'premiumPayIndex'])->name('premium-pay');
+            Route::post('/premium-pay/{id}/approve', [\App\Http\Controllers\Hr\PayrollController::class, 'premiumPayApprove'])->name('premium-pay.approve');
+            Route::post('/premium-pay/{id}/reject', [\App\Http\Controllers\Hr\PayrollController::class, 'premiumPayReject'])->name('premium-pay.reject');
+            Route::post('/premium-pay/bulk-approve', [\App\Http\Controllers\Hr\PayrollController::class, 'premiumPayBulkApprove'])->name('premium-pay.bulk-approve');
+            Route::post('/premium-pay/bulk-reject', [\App\Http\Controllers\Hr\PayrollController::class, 'premiumPayBulkReject'])->name('premium-pay.bulk-reject');
+            Route::post('/premium-pay/recalculate', [\App\Http\Controllers\Hr\PayrollController::class, 'premiumPayRecalculate'])->name('premium-pay.recalculate');
+            Route::post('/premium-pay/settings', [\App\Http\Controllers\Hr\PayrollController::class, 'premiumPaySettingsUpdate'])->name('premium-pay.settings');
+
             Route::get('/reports', [\App\Http\Controllers\Hr\PayrollController::class, 'registerIndex'])->name('reports');
         });
 

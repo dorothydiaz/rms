@@ -90,14 +90,27 @@
                         <td style="padding: 9px 14px; border-bottom: 1px solid #f1f5f9; text-align: right; font-weight: 600;">₱{{ number_format($record->overtime_pay, 2) }}</td>
                     </tr>
                     <tr>
+                        <td style="padding: 9px 14px; border-bottom: 1px solid #f1f5f9;">Holiday Pay</td>
+                        <td style="padding: 9px 14px; border-bottom: 1px solid #f1f5f9; text-align: right; font-weight: 600;">₱{{ number_format($record->holiday_pay, 2) }}</td>
+                    </tr>
+                    <tr style="background: #faf5ff;">
+                        <td style="padding: 9px 14px; border-bottom: 1px solid #f1f5f9;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px;">
+                                <span style="font-weight: 600; color: #7c3aed;">Premium Pay</span>
+                                <button type="button" onclick="openPayslipModal('payslipPremiumPayModal')" style="background: #f3e8ff; border: 1px solid #d8b4fe; border-radius: 4px; font-size: 11px; color: #7c3aed; cursor: pointer; font-weight: 600; padding: 2px 7px;" title="View DOLE calculation breakdown">
+                                    <i class="ph ph-calculator"></i> Calculation Details
+                                </button>
+                            </div>
+                        </td>
+                        <td style="padding: 9px 14px; border-bottom: 1px solid #f1f5f9; text-align: right; font-weight: 700; color: #7c3aed; cursor: pointer;" onclick="openPayslipModal('payslipPremiumPayModal')" title="Click to view calculation breakdown">
+                            ₱{{ number_format($record->premium_pay > 0 ? $record->premium_pay : $record->rest_day_pay, 2) }}
+                        </td>
+                    </tr>
+                    <tr>
                         <td style="padding: 9px 14px; border-bottom: 1px solid #f1f5f9;">
                             Night Shift Differential ({{ number_format($record->night_diff_hours, 2) }} hrs)
                         </td>
                         <td style="padding: 9px 14px; border-bottom: 1px solid #f1f5f9; text-align: right; font-weight: 600;">₱{{ number_format($record->night_diff_pay, 2) }}</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 9px 14px; border-bottom: 1px solid #f1f5f9;">Holiday & Rest Day Premiums</td>
-                        <td style="padding: 9px 14px; border-bottom: 1px solid #f1f5f9; text-align: right; font-weight: 600;">₱{{ number_format($record->holiday_pay + $record->rest_day_pay, 2) }}</td>
                     </tr>
                     <tr>
                         <td style="padding: 9px 14px; border-bottom: 1px solid #f1f5f9;">Allowances</td>
@@ -198,4 +211,149 @@
         </div>
     </div>
 </div>
+
+<!-- ======================================================== -->
+<!-- MODAL: PREMIUM PAY CALCULATION DETAILS                   -->
+<!-- ======================================================== -->
+<div id="payslipPremiumPayModal" class="hr-modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); z-index: 1050; align-items: center; justify-content: center; padding: 20px;">
+    <div style="background: #ffffff; border-radius: 12px; width: 100%; max-width: 620px; max-height: 85vh; overflow-y: auto; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2); border: 1px solid #e2e8f0;">
+        <div style="padding: 18px 24px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; background: linear-gradient(135deg, #faf5ff 0%, #ffffff 100%);">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="width: 36px; height: 36px; border-radius: 8px; background: #f3e8ff; color: #7c3aed; display: flex; align-items: center; justify-content: center; font-size: 18px;">
+                    <i class="ph ph-calculator"></i>
+                </div>
+                <div>
+                    <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: #0f172a;">Premium Pay Calculation Breakdown</h3>
+                    <p style="margin: 2px 0 0; font-size: 12px; color: #64748b;">DOLE statutory rest day and special holiday compensation</p>
+                </div>
+            </div>
+            <button type="button" onclick="closePayslipModal('payslipPremiumPayModal')" style="background: none; border: none; cursor: pointer; color: #64748b; font-size: 18px; padding: 4px;">
+                <i class="ph ph-x"></i>
+            </button>
+        </div>
+
+        <div style="padding: 20px 24px; display: flex; flex-direction: column; gap: 16px;">
+            <!-- Summary Info -->
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 12.5px;">
+                <div>
+                    <span style="color: #64748b; font-size: 11px; text-transform: uppercase;">Employee:</span>
+                    <div style="font-weight: 700; color: #0f172a;">{{ $record->employee->first_name ?? '' }} {{ $record->employee->last_name ?? '' }}</div>
+                </div>
+                <div>
+                    <span style="color: #64748b; font-size: 11px; text-transform: uppercase;">Daily Rate:</span>
+                    <div style="font-weight: 700; color: #0f172a;">₱{{ number_format($record->daily_rate ?? ($record->basic_pay / 22), 2) }} (₱{{ number_format(($record->daily_rate ?? ($record->basic_pay / 22)) / 8, 2) }}/hr)</div>
+                </div>
+                <div>
+                    <span style="color: #64748b; font-size: 11px; text-transform: uppercase;">Payroll Period:</span>
+                    <div style="font-weight: 600; color: #334155;">{{ $record->payrollPeriod->period_name ?? 'Current Period' }}</div>
+                </div>
+                <div>
+                    <span style="color: #64748b; font-size: 11px; text-transform: uppercase;">Total Premium Pay:</span>
+                    <div style="font-weight: 800; color: #7c3aed; font-size: 14px;">₱{{ number_format($record->premium_pay > 0 ? $record->premium_pay : $record->rest_day_pay, 2) }}</div>
+                </div>
+            </div>
+
+            <!-- Items List -->
+            @php
+                $items = $record->premiumPayItems;
+                $details = $record->premium_pay_details;
+            @endphp
+
+            @if($items && $items->isNotEmpty())
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    @foreach($items as $idx => $pItem)
+                        <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; background: #ffffff;">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                                <div>
+                                    <strong style="color: #0f172a; font-size: 13px;">{{ \Carbon\Carbon::parse($pItem->work_date)->format('M d, Y (l)') }}</strong>
+                                    <div style="font-size: 11.5px; color: #7c3aed; font-weight: 600;">
+                                        {{ $pItem->work_type }} @if($pItem->holiday_name) • {{ $pItem->holiday_name }} @endif
+                                    </div>
+                                </div>
+                                <span style="font-size: 13.5px; font-weight: 800; color: #7c3aed;">
+                                    ₱{{ number_format($pItem->premium_amount, 2) }}
+                                </span>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; font-size: 11.5px; background: #f8fafc; padding: 8px 10px; border-radius: 6px; margin-top: 6px;">
+                                <div>
+                                    <span style="color: #64748b;">Regular Hours:</span>
+                                    <strong style="color: #0f172a; display: block;">{{ number_format($pItem->hours_worked - $pItem->overtime_hours, 1) }} hrs @ {{ number_format($pItem->applied_multiplier * 100, 0) }}%</strong>
+                                </div>
+                                <div>
+                                    <span style="color: #64748b;">Overtime:</span>
+                                    <strong style="color: #b45309; display: block;">{{ number_format($pItem->overtime_hours, 1) }} hrs @ 130%</strong>
+                                </div>
+                                <div>
+                                    <span style="color: #64748b;">Status:</span>
+                                    <strong style="color: {{ $pItem->status === 'Approved' ? '#059669' : '#d97706' }}; display: block;">{{ $pItem->status }}</strong>
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @elseif($details && is_array($details) && count($details) > 0)
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    @foreach($details as $dItem)
+                        <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; background: #ffffff;">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                <div>
+                                    <strong style="color: #0f172a; font-size: 13px;">{{ $dItem['date'] ?? 'Work Date' }}</strong>
+                                    <div style="font-size: 11.5px; color: #7c3aed; font-weight: 600;">
+                                        {{ $dItem['work_type'] ?? 'Premium Work' }}
+                                    </div>
+                                </div>
+                                <span style="font-size: 13.5px; font-weight: 800; color: #7c3aed;">
+                                    ₱{{ number_format($dItem['amount'] ?? 0, 2) }}
+                                </span>
+                            </div>
+                            <div style="font-size: 11.5px; color: #64748b; margin-top: 6px;">
+                                {{ $dItem['equation'] ?? ($dItem['hours'] . ' hrs @ ' . ($dItem['multiplier'] * 100) . '%') }}
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <!-- Fallback display when single lumped premium recorded -->
+                <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; background: #faf5ff;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <strong style="color: #581c87; font-size: 13px;">Scheduled Rest Day Work</strong>
+                            <div style="font-size: 11.5px; color: #7c3aed;">DOLE Statutory Rate: 130% daily basic equivalent</div>
+                        </div>
+                        <span style="font-size: 15px; font-weight: 800; color: #7c3aed;">
+                            ₱{{ number_format($record->premium_pay > 0 ? $record->premium_pay : $record->rest_day_pay, 2) }}
+                        </span>
+                    </div>
+                    <div style="margin-top: 10px; font-size: 11.5px; color: #6b21a8; background: #ffffff; padding: 8px 12px; border-radius: 6px; border: 1px solid #f0abfc;">
+                        Calculation: 8.0 Regular Hours × 130% Statutory Multiplier
+                    </div>
+                </div>
+            @endif
+
+            <div style="font-size: 11px; color: #64748b; background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px dashed #cbd5e1;">
+                <i class="ph ph-shield-check" style="color: #7c3aed;"></i>
+                Computed by central <strong>PremiumPayRuleEngine</strong> in compliance with DOLE Labor Code Art. 93 and official advisory guidelines.
+            </div>
+        </div>
+
+        <div style="padding: 14px 24px; border-top: 1px solid #e2e8f0; background: #ffffff; display: flex; justify-content: flex-end;">
+            <button type="button" onclick="closePayslipModal('payslipPremiumPayModal')" class="hr-btn hr-btn-secondary" style="height: 32px; padding: 0 14px; font-size: 12px;">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+function openPayslipModal(id) {
+    const modal = document.getElementById(id);
+    if (modal) modal.style.display = 'flex';
+}
+
+function closePayslipModal(id) {
+    const modal = document.getElementById(id);
+    if (modal) modal.style.display = 'none';
+}
+</script>
 @endsection
