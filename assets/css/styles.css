@@ -6284,19 +6284,20 @@ input[type="date"]::-webkit-calendar-picker-indicator,
 .hr-custom-select-menu {
     position: fixed !important;
     min-width: 160px !important;
-    max-height: 280px !important;
+    max-height: 240px !important;
     overflow-y: auto !important;
+    overflow-x: hidden !important;
     background: #ffffff !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
     border: 1.5px solid #cbd5e1 !important;
-    border-radius: 12px !important;
-    box-shadow: 0 20px 48px -6px rgba(15, 23, 42, 0.22), 0 6px 16px -2px rgba(15, 23, 42, 0.08) !important;
-    padding: 6px !important;
+    border-radius: 10px !important;
+    box-shadow: 0 16px 36px -6px rgba(15, 23, 42, 0.2), 0 4px 12px -2px rgba(15, 23, 42, 0.08) !important;
+    padding: 4px !important;
     z-index: 99999999 !important;
     display: none;
     flex-direction: column !important;
-    gap: 3px !important;
+    gap: 2px !important;
     animation: hrDropdownFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
@@ -6317,9 +6318,9 @@ body > .hr-custom-select-menu {
 }
 
 .hr-custom-select-option {
-    padding: 9px 14px !important;
-    border-radius: 8px !important;
-    font-size: 13px !important;
+    padding: 7px 11px !important;
+    border-radius: 7px !important;
+    font-size: 12.5px !important;
     font-weight: 500 !important;
     color: #1e293b !important;
     display: flex !important;
@@ -6328,6 +6329,13 @@ body > .hr-custom-select-menu {
     cursor: pointer !important;
     transition: all 0.15s ease !important;
     gap: 10px !important;
+    white-space: nowrap !important;
+    box-sizing: border-box !important;
+}
+
+.hr-custom-select-option span:first-child {
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
     white-space: nowrap !important;
 }
 
@@ -7935,3 +7943,1359 @@ body > .hr-custom-select-menu {
     font-weight: 400 !important;
 }
 
+/* ==========================================================================
+   HR Attendance Approval / Rejection Toggle Switch (Undertime & Overtime)
+   ========================================================================== */
+.hr-toggle-cell {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    position: relative;
+    vertical-align: middle;
+}
+
+/* Base Toggle Switch Button */
+.hr-approval-toggle-btn {
+    border: none;
+    outline: none;
+    cursor: pointer;
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    width: 58px;
+    height: 28px;
+    border-radius: 9999px;
+    padding: 0 3px;
+    box-sizing: border-box;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    user-select: none;
+    text-decoration: none;
+}
+
+.hr-approval-toggle-btn:focus-visible {
+    box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px #3b82f6;
+}
+
+/* Approved State: Soft Green Track with White Check Thumb on Right */
+.hr-approval-toggle-btn.state-approved {
+    background-color: #5bb796;
+    background: linear-gradient(135deg, #62b694 0%, #4fac89 100%);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(79, 172, 137, 0.25);
+}
+
+.hr-approval-toggle-btn.state-approved:hover {
+    filter: brightness(0.95);
+    transform: scale(1.03);
+}
+
+.hr-approval-toggle-btn.state-approved .toggle-track-icon {
+    position: absolute;
+    left: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #236348;
+    font-size: 13px;
+    font-weight: 700;
+    pointer-events: none;
+    opacity: 0.85;
+}
+
+.hr-approval-toggle-btn.state-approved .toggle-thumb {
+    margin-left: auto;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background-color: #ffffff;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #279668;
+    font-size: 13px;
+    font-weight: 800;
+    transition: transform 0.2s ease;
+}
+
+/* Rejected State: Soft Light Pink Track with Rose Red Cross Thumb on Right */
+.hr-approval-toggle-btn.state-rejected {
+    background-color: #fcd9df;
+    background: linear-gradient(135deg, #fce4e8 0%, #fcd4dc 100%);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(244, 63, 94, 0.15);
+}
+
+.hr-approval-toggle-btn.state-rejected:hover {
+    filter: brightness(0.95);
+    transform: scale(1.03);
+}
+
+.hr-approval-toggle-btn.state-rejected .toggle-track-icon {
+    position: absolute;
+    left: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #e11d48;
+    font-size: 13px;
+    pointer-events: none;
+    opacity: 0.3;
+}
+
+.hr-approval-toggle-btn.state-rejected .toggle-thumb {
+    margin-left: auto;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
+    box-shadow: 0 2px 6px rgba(225, 29, 72, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 800;
+    transition: transform 0.2s ease;
+}
+
+/* Pending State: Neutral Track with Dual-Action Split Buttons */
+.hr-approval-pending-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 58px;
+    height: 28px;
+    border-radius: 9999px;
+    background-color: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    padding: 0 2px;
+    box-sizing: border-box;
+    position: relative;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.hr-pending-action-btn {
+    border: none;
+    outline: none;
+    cursor: pointer;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 0;
+}
+
+.hr-pending-action-btn.btn-approve {
+    color: #059669;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.hr-pending-action-btn.btn-approve:hover {
+    background-color: #10b981;
+    color: #ffffff;
+    box-shadow: 0 2px 5px rgba(16, 185, 129, 0.35);
+    transform: scale(1.1);
+}
+
+.hr-pending-action-btn.btn-reject {
+    color: #e11d48;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.hr-pending-action-btn.btn-reject:hover {
+    background-color: #f43f5e;
+    color: #ffffff;
+    box-shadow: 0 2px 5px rgba(244, 63, 94, 0.35);
+    transform: scale(1.1);
+}
+
+/* CSS Floating Tooltip */
+/* CSS Floating Tooltip (Positioned to the left of the toggle, avoiding the table header) */
+.hr-toggle-cell {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    position: relative;
+    vertical-align: middle;
+    z-index: 5;
+}
+
+.hr-toggle-cell:hover {
+    z-index: 50;
+}
+
+.hr-toggle-tooltip {
+    position: relative;
+}
+
+.hr-approval-toggle-btn.hr-toggle-tooltip::before {
+    content: attr(data-tooltip);
+    position: absolute;
+    right: calc(100% + 8px);
+    top: 50%;
+    transform: translateY(-50%) translateX(4px);
+    background: #0f172a;
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1;
+    padding: 5px 8px;
+    border-radius: 6px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);
+    transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+}
+
+.hr-approval-toggle-btn.hr-toggle-tooltip::after {
+    content: '';
+    position: absolute;
+    right: calc(100% + 3px);
+    top: 50%;
+    transform: translateY(-50%) translateX(4px);
+    border-width: 5px 0 5px 5px;
+    border-style: solid;
+    border-color: transparent transparent transparent #0f172a;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    z-index: 1000;
+    transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+}
+
+.hr-approval-toggle-btn.hr-toggle-tooltip:hover::before,
+.hr-approval-toggle-btn.hr-toggle-tooltip:hover::after {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(-50%) translateX(0);
+}
+
+/* Tooltips for pending dual-action buttons */
+.hr-pending-action-btn.btn-approve.hr-toggle-tooltip::before {
+    content: attr(data-tooltip);
+    position: absolute;
+    right: calc(100% + 6px);
+    top: 50%;
+    transform: translateY(-50%) translateX(4px);
+    background: #0f172a;
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1;
+    padding: 5px 8px;
+    border-radius: 6px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);
+    transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+}
+
+.hr-pending-action-btn.btn-approve.hr-toggle-tooltip::after {
+    content: '';
+    position: absolute;
+    right: calc(100% + 1px);
+    top: 50%;
+    transform: translateY(-50%) translateX(4px);
+    border-width: 5px 0 5px 5px;
+    border-style: solid;
+    border-color: transparent transparent transparent #0f172a;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    z-index: 1000;
+    transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+}
+
+.hr-pending-action-btn.btn-reject.hr-toggle-tooltip::before {
+    content: attr(data-tooltip);
+    position: absolute;
+    right: calc(100% + 30px);
+    top: 50%;
+    transform: translateY(-50%) translateX(4px);
+    background: #0f172a;
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1;
+    padding: 5px 8px;
+    border-radius: 6px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);
+    transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+}
+
+.hr-pending-action-btn.btn-reject.hr-toggle-tooltip::after {
+    content: '';
+    position: absolute;
+    right: calc(100% + 25px);
+    top: 50%;
+    transform: translateY(-50%) translateX(4px);
+    border-width: 5px 0 5px 5px;
+    border-style: solid;
+    border-color: transparent transparent transparent #0f172a;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    z-index: 1000;
+    transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+}
+
+.hr-pending-action-btn:hover::before,
+.hr-pending-action-btn:hover::after {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(-50%) translateX(0);
+}
+
+/* ==========================================================================
+   Refined Neutral Status Indicators (Non-repetitive for Undertime & Overtime)
+   ========================================================================== */
+.hr-status-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    font-size: 11.5px;
+    font-weight: 500;
+    color: #334155;
+    line-height: 1.3;
+    white-space: nowrap;
+    letter-spacing: 0.01em;
+    transition: background 0.15s ease;
+}
+
+.hr-status-indicator .status-dot {
+    width: 6.5px;
+    height: 6.5px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.hr-status-indicator.is-approved .status-dot {
+    background-color: #10b981;
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
+.hr-status-indicator.is-approved {
+    color: #1e293b;
+}
+
+.hr-status-indicator.is-rejected .status-dot {
+    background-color: #ef4444;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+}
+
+.hr-status-indicator.is-rejected {
+    color: #64748b;
+}
+
+.hr-status-indicator.is-pending .status-dot {
+    background-color: #f59e0b;
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+}
+
+.hr-status-indicator.is-pending {
+    color: #78350f;
+    background: #fffbeb;
+    border-color: #fef3c7;
+}
+
+/* Schedule Card Code & Name Badge Optical Alignment */
+.sched-badge-code {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 19px !important;
+    height: 18px !important;
+    padding: 2px 5px 0 5px !important;
+    border-radius: 4px !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Outfit', sans-serif !important;
+    font-weight: 700 !important;
+    font-size: 10.5px !important;
+    line-height: 1 !important;
+    letter-spacing: 0.3px !important;
+    text-transform: uppercase !important;
+    flex-shrink: 0 !important;
+    box-sizing: border-box !important;
+}
+
+.sched-badge-name {
+    display: inline-flex !important;
+    align-items: center !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Outfit', sans-serif !important;
+    font-size: 10.5px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.4px !important;
+    line-height: 1 !important;
+    text-transform: uppercase !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    padding-top: 1px !important;
+}
+
+/* ==========================================================================
+   Universal Form Validation Styling (HR Operations)
+   ========================================================================== */
+.hr-input.hr-input-invalid,
+.hr-select.hr-input-invalid,
+.form-control.hr-input-invalid {
+    border-color: #ef4444 !important;
+    background-color: #fff8f8 !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12) !important;
+}
+
+.hr-input.hr-input-valid:not(:placeholder-shown):focus,
+.hr-input.hr-input-valid:not([value=""]):focus {
+    border-color: #10b981 !important;
+}
+
+.hr-field-error-msg {
+    font-size: 11px;
+    font-weight: 500;
+    color: #ef4444;
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    line-height: 1.3;
+    animation: hrErrorSlideIn 0.15s ease-out;
+}
+
+@keyframes hrErrorSlideIn {
+    from { opacity: 0; transform: translateY(-3px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ==========================================================================
+   HR Reports Page Header & Filter Bar UI Enhancements
+   ========================================================================== */
+.hr-report-back-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    border: 1px solid rgba(168, 85, 247, 0.22);
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.12) 0%, rgba(236, 72, 153, 0.12) 100%);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    color: #9333ea;
+    font-size: 16px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 2px 8px rgba(168, 85, 247, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.6);
+    flex-shrink: 0;
+}
+
+.hr-report-back-btn i {
+    background: linear-gradient(135deg, #9333ea 0%, #ec4899 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: inline-block;
+    transition: transform 0.2s ease;
+    font-size: 16px;
+}
+
+.hr-report-back-btn:hover {
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.22) 0%, rgba(236, 72, 153, 0.22) 100%);
+    border-color: rgba(168, 85, 247, 0.4);
+    box-shadow: 0 4px 14px rgba(168, 85, 247, 0.18), inset 0 1px 1px rgba(255, 255, 255, 0.8);
+    transform: translateX(-2px);
+}
+
+.hr-report-back-btn:hover i {
+    transform: scale(1.1);
+}
+
+.hr-report-back-btn:active {
+    transform: scale(0.95);
+}
+
+/* Report Filters Bar Layout */
+.hr-report-filter-bar {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+    overflow: visible;
+}
+
+.hr-report-filter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
+    gap: 12px 14px;
+    align-items: flex-end;
+}
+
+.hr-report-filter-grid > div {
+    min-width: 0;
+}
+
+.hr-report-filter-bar .hr-select,
+.hr-report-filter-bar .hr-input {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    min-width: 0 !important;
+    font-size: 12px !important;
+    height: 34px !important;
+}
+
+.hr-report-filter-bar .hr-select {
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    padding-right: 28px !important;
+}
+
+/* Report Header Back Button - Matches Header Sidebar Glassmorphic Style */
+.hr-report-back-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    border: 1px solid rgba(168, 85, 247, 0.22);
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.12) 0%, rgba(236, 72, 153, 0.12) 100%);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    color: #9333ea;
+    font-size: 16px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 2px 8px rgba(168, 85, 247, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.6);
+    flex-shrink: 0;
+}
+
+.hr-report-back-btn i {
+    background: linear-gradient(135deg, #9333ea 0%, #ec4899 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: inline-block;
+    transition: transform 0.2s ease;
+    font-size: 16px;
+}
+
+.hr-report-back-btn:hover {
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.22) 0%, rgba(236, 72, 153, 0.22) 100%);
+    border-color: rgba(168, 85, 247, 0.4);
+    box-shadow: 0 4px 14px rgba(168, 85, 247, 0.18), inset 0 1px 1px rgba(255, 255, 255, 0.8);
+    transform: translateY(-1px);
+}
+
+.hr-report-back-btn:hover i {
+    transform: scale(1.1);
+}
+
+.hr-report-back-btn:active {
+    transform: scale(0.95);
+}
+
+/* Stacked Sketch Filter Styles for Reports */
+/* ==========================================================================
+   HR Reports & Analytics Unified 3-Control Filter Section
+   [ Start Date ] [ End Date ] [ Search Bar ] [ Generate ] + Removable Chips
+   Glassmorphism & Pink/Purple Gradient Theme
+   ========================================================================== */
+.hr-report-filters-bar {
+    position: relative !important;
+    z-index: 100 !important;
+    margin-bottom: 22px;
+    width: 100%;
+    box-sizing: border-box;
+    overflow: visible !important;
+}
+
+.hr-report-filters-bar:focus-within {
+    z-index: 1000 !important;
+}
+
+.hr-filter-controls-row {
+    display: flex;
+    align-items: stretch;
+    gap: 12px;
+    width: 100%;
+    flex-wrap: wrap;
+    position: relative;
+    z-index: 60;
+    overflow: visible !important;
+}
+
+/* Glassmorphic Unified Date Pickers */
+.hr-date-picker-box {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid rgba(203, 213, 225, 0.85);
+    border-radius: 12px;
+    height: 42px;
+    padding: 0 14px;
+    min-width: 190px;
+    gap: 10px;
+    flex-shrink: 0;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 2px 10px rgba(168, 85, 247, 0.05), inset 0 1px 1.5px rgba(255, 255, 255, 0.95);
+    box-sizing: border-box;
+}
+
+.hr-date-picker-box:hover {
+    background: rgba(255, 255, 255, 0.92);
+    border-color: rgba(236, 72, 153, 0.45);
+    box-shadow: 0 4px 18px rgba(236, 72, 153, 0.12), inset 0 1px 1.5px rgba(255, 255, 255, 1);
+}
+
+.hr-date-picker-box:focus-within {
+    background: #ffffff;
+    border-color: #ec4899;
+    box-shadow: 0 0 0 3.5px rgba(236, 72, 153, 0.18), 0 6px 20px rgba(168, 85, 247, 0.14);
+}
+
+/* Elegant integrated label badge - NO clunky dividing border or segmented background */
+.hr-date-box-label {
+    background: linear-gradient(135deg, rgba(236, 72, 153, 0.1) 0%, rgba(168, 85, 247, 0.16) 100%);
+    color: #9333ea;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: 7px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    user-select: none;
+    flex-shrink: 0;
+    border: 1px solid rgba(168, 85, 247, 0.2);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Date Field - Completely borderless & transparent to remove inner rectangle cutouts */
+.hr-date-field {
+    border: none !important;
+    outline: none !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    color: #0f172a !important;
+    font-family: inherit !important;
+    width: 100% !important;
+    flex: 1;
+    min-width: 0;
+    cursor: pointer;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    appearance: none !important;
+}
+
+.hr-date-field::-webkit-datetime-edit,
+.hr-date-field::-webkit-datetime-edit-fields-wrapper,
+.hr-date-field::-webkit-datetime-edit-text,
+.hr-date-field::-webkit-datetime-edit-month-field,
+.hr-date-field::-webkit-datetime-edit-day-field,
+.hr-date-field::-webkit-datetime-edit-year-field {
+    background: transparent !important;
+    background-color: transparent !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    color: #0f172a !important;
+}
+
+/* Single clean calendar icon at the right edge */
+.hr-date-field::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    filter: invert(38%) sepia(85%) saturate(1600%) hue-rotate(275deg) brightness(90%) contrast(95%);
+    opacity: 0.75;
+    transition: opacity 0.15s ease, transform 0.15s ease;
+    margin-left: auto;
+    padding: 0;
+}
+
+.hr-date-field::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+    transform: scale(1.15);
+}
+
+.hr-date-field::-webkit-inner-spin-button,
+.hr-date-field::-webkit-clear-button {
+    display: none;
+    -webkit-appearance: none;
+}
+
+/* Glassmorphic Search Bar Wrap */
+.hr-search-bar-wrap {
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.65);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.85);
+    border-radius: 10px;
+    padding: 0 12px;
+    flex: 1;
+    min-width: 220px;
+    height: 38px;
+    min-height: 38px;
+    max-height: 38px;
+    position: relative;
+    z-index: 60;
+    overflow: visible !important;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 2px 12px rgba(168, 85, 247, 0.05), inset 0 1px 1.5px rgba(255, 255, 255, 0.95);
+    box-sizing: border-box;
+}
+
+.hr-search-bar-wrap:hover {
+    background: rgba(255, 255, 255, 0.85);
+    border-color: rgba(168, 85, 247, 0.4);
+    box-shadow: 0 4px 16px rgba(168, 85, 247, 0.1), inset 0 1px 1.5px rgba(255, 255, 255, 1);
+}
+
+.hr-search-bar-wrap:focus-within {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: #a855f7;
+    box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.18), 0 4px 16px rgba(236, 72, 153, 0.12);
+    z-index: 500 !important;
+}
+
+.hr-search-bar-icon {
+    color: #a855f7;
+    font-size: 16px;
+    margin-right: 8px;
+    flex-shrink: 0;
+}
+
+.hr-search-bar-input {
+    border: none !important;
+    outline: none !important;
+    background: transparent !important;
+    font-size: 12.5px !important;
+    color: #0f172a !important;
+    width: 100% !important;
+    padding: 0 !important;
+    font-family: inherit !important;
+}
+
+.hr-search-bar-input::placeholder {
+    color: #94a3b8;
+    font-size: 12px;
+}
+
+/* Gradient of Pink & Purple Generate Button */
+.hr-sketch-generate-btn {
+    background: linear-gradient(135deg, #ec4899 0%, #a855f7 100%) !important;
+    color: #ffffff !important;
+    border: none !important;
+    border-radius: 12px !important;
+    font-size: 13.5px;
+    font-weight: 600;
+    padding: 0 26px;
+    height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 4px 16px rgba(236, 72, 153, 0.35), 0 2px 6px rgba(168, 85, 247, 0.25), inset 0 1px 1.5px rgba(255, 255, 255, 0.45) !important;
+    text-decoration: none;
+    user-select: none;
+}
+
+.hr-sketch-generate-btn:hover {
+    background: linear-gradient(135deg, #db2777 0%, #9333ea 100%) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 26px rgba(236, 72, 153, 0.45), 0 4px 14px rgba(168, 85, 247, 0.35) !important;
+    color: #ffffff !important;
+}
+
+.hr-sketch-generate-btn:active {
+    transform: translateY(0);
+}
+
+/* Glassmorphic & Gradient Filter Tags / Chips Row */
+.hr-filter-chips-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    min-height: 28px;
+}
+
+.hr-filter-tag-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: #1e293b;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.88) 0%, rgba(253, 242, 248, 0.72) 45%, rgba(243, 232, 255, 0.72) 100%);
+    backdrop-filter: blur(14px) saturate(180%);
+    -webkit-backdrop-filter: blur(14px) saturate(180%);
+    border: 1px solid rgba(168, 85, 247, 0.3);
+    border-radius: 9px;
+    padding: 5px 12px;
+    line-height: 1.4;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 4px 14px rgba(168, 85, 247, 0.08), inset 0 1px 1.5px rgba(255, 255, 255, 0.95);
+    user-select: none;
+}
+
+.hr-filter-tag-chip:hover {
+    border-color: #ec4899;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(236, 72, 153, 0.16), inset 0 1px 1.5px rgba(255, 255, 255, 1);
+}
+
+.hr-chip-category {
+    font-weight: 700;
+    background: linear-gradient(135deg, #ec4899 0%, #9333ea 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.hr-chip-value {
+    color: #0f172a;
+    font-weight: 500;
+}
+
+.hr-chip-remove-btn {
+    cursor: pointer;
+    color: #94a3b8;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1;
+    background: none;
+    border: none;
+    padding: 0;
+    width: 18px;
+    height: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.15s ease;
+    margin-left: 2px;
+}
+
+.hr-chip-remove-btn:hover {
+    color: #ffffff;
+    background: linear-gradient(135deg, #ec4899, #db2777);
+    box-shadow: 0 2px 6px rgba(236, 72, 153, 0.4);
+}
+
+.hr-clear-all-chips-btn {
+    background: linear-gradient(135deg, rgba(236, 72, 153, 0.1) 0%, rgba(168, 85, 247, 0.14) 100%);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(236, 72, 153, 0.3);
+    font-size: 12px;
+    font-weight: 600;
+    color: #db2777;
+    cursor: pointer;
+    padding: 5px 12px;
+    border-radius: 8px;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.hr-clear-all-chips-btn:hover {
+    background: linear-gradient(135deg, #ec4899 0%, #a855f7 100%);
+    color: #ffffff;
+    border-color: transparent;
+    box-shadow: 0 4px 14px rgba(236, 72, 153, 0.35);
+    transform: translateY(-1px);
+}
+
+/* Glassmorphic Autocomplete Suggestions Dropdown */
+.hr-filter-suggestions-list {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    background: #ffffff !important; /* Pure solid white to prevent underlying elements bleeding through */
+    border: 1.5px solid #cbd5e1 !important;
+    border-radius: 12px;
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.22), 0 4px 16px rgba(168, 85, 247, 0.14) !important;
+    z-index: 99999 !important;
+    max-height: 290px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 6px;
+    box-sizing: border-box;
+}
+
+.hr-suggestion-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 7px 11px;
+    border-radius: 7px;
+    font-size: 12.5px;
+    color: #1e293b;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    gap: 8px;
+    box-sizing: border-box;
+}
+
+.hr-suggestion-item:hover,
+.hr-suggestion-item.active {
+    background: linear-gradient(135deg, rgba(236, 72, 153, 0.08) 0%, rgba(168, 85, 247, 0.14) 100%);
+    color: #9333ea;
+    transform: translateX(2px);
+}
+
+.hr-suggestion-item:hover .ph-plus,
+.hr-suggestion-item.active .ph-plus {
+    color: #ec4899 !important;
+}
+
+.hr-suggestion-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
+}
+
+.hr-suggestion-title {
+    font-weight: 600;
+    color: #0f172a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 12px;
+}
+
+.hr-suggestion-subtext {
+    font-size: 11px;
+    color: #64748b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-shrink: 1;
+}
+
+.hr-suggestion-badge {
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    display: inline-block;
+}
+
+.hr-badge-branch {
+    background: rgba(2, 132, 199, 0.12);
+    color: #0284c7;
+}
+
+.hr-badge-department {
+    background: rgba(16, 185, 129, 0.12);
+    color: #059669;
+}
+
+.hr-badge-position {
+    background: rgba(245, 158, 11, 0.14);
+    color: #d97706;
+}
+
+.hr-badge-employee {
+    background: linear-gradient(135deg, rgba(236, 72, 153, 0.12), rgba(168, 85, 247, 0.18));
+    color: #9333ea;
+}
+
+.hr-badge-status {
+    background: rgba(100, 116, 139, 0.12);
+    color: #475569;
+}
+
+.hr-badge-search {
+    background: rgba(148, 163, 184, 0.14);
+    color: #334155;
+}
+
+/* Quick Filter Presets (All Active / All Employees) */
+.hr-filter-quick-presets {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+}
+
+.hr-preset-label {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #64748b;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.hr-preset-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #475569;
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(12px) saturate(160%);
+    -webkit-backdrop-filter: blur(12px) saturate(160%);
+    border: 1px solid rgba(203, 213, 225, 0.7);
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 2px 8px rgba(168, 85, 247, 0.04), inset 0 1px 1px rgba(255, 255, 255, 0.9);
+    user-select: none;
+}
+
+.hr-preset-pill:hover {
+    color: #9333ea;
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(236, 72, 153, 0.4);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(236, 72, 153, 0.15);
+}
+
+.hr-preset-pill.active {
+    background: linear-gradient(135deg, #ec4899 0%, #a855f7 100%) !important;
+    color: #ffffff !important;
+    border-color: transparent !important;
+    box-shadow: 0 4px 14px rgba(236, 72, 153, 0.35), 0 2px 6px rgba(168, 85, 247, 0.25) !important;
+    transform: translateY(-1px);
+}
+
+.hr-preset-pill.active i {
+    color: #ffffff !important;
+}
+
+/* Card Layout Adaptation for Export Cards */
+.hr-export-card,
+.hr-card:has(.hr-layout-card),
+.hr-card:has(.hr-report-filters-bar) {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100% !important;
+    padding: 14px 16px !important;
+    border-radius: 14px !important;
+    background: rgba(255, 255, 255, 0.78) !important;
+    backdrop-filter: blur(14px) saturate(180%) !important;
+    border: 1px solid rgba(226, 232, 240, 0.9) !important;
+    box-shadow: 0 4px 14px rgba(168, 85, 247, 0.04) !important;
+    margin-bottom: 0 !important;
+    box-sizing: border-box !important;
+    overflow: visible !important; /* CRITICAL: Allows dropdown search suggestions to extend outside without being cut off */
+    position: relative;
+    z-index: 10;
+}
+
+.hr-export-card:focus-within,
+.hr-card:has(.hr-layout-card):focus-within,
+.hr-card:has(.hr-report-filters-bar):focus-within {
+    z-index: 1000 !important;
+}
+
+.hr-export-card-header {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    margin-bottom: 10px !important;
+}
+
+.hr-export-card .hr-metric-icon {
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    font-size: 17px !important;
+    border-radius: 9px !important;
+}
+
+.hr-export-card-title,
+.hr-export-card h3 {
+    font-size: 13.5px !important;
+    font-weight: 700 !important;
+    color: #0f172a !important;
+    margin: 0 !important;
+    line-height: 1.25 !important;
+}
+
+.hr-export-card-desc,
+.hr-export-card p {
+    font-size: 11px !important;
+    color: #64748b !important;
+    margin: 2px 0 0 0 !important;
+    line-height: 1.2 !important;
+}
+
+.hr-report-filters-bar.hr-layout-card {
+    background: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin-bottom: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 !important;
+    height: 100% !important;
+    overflow: visible !important;
+}
+
+.hr-layout-card form {
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 !important;
+    height: 100% !important;
+    overflow: visible !important;
+}
+
+.hr-layout-card .hr-filter-controls-row {
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 !important;
+    height: 100% !important;
+    gap: 7px !important;
+    overflow: visible !important;
+}
+
+.hr-layout-card .hr-card-dates-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 2px;
+}
+
+.hr-card-date-field-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.hr-card-date-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #475569;
+    margin-bottom: 3px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Standalone Date Input in Card: Native, Single Border, No Double-Box */
+.hr-glass-date-input {
+    background: rgba(255, 255, 255, 0.72) !important;
+    backdrop-filter: blur(12px) saturate(160%) !important;
+    -webkit-backdrop-filter: blur(12px) saturate(160%) !important;
+    border: 1px solid rgba(203, 213, 225, 0.85) !important;
+    border-radius: 8px !important;
+    height: 35px !important;
+    min-height: 35px !important;
+    max-height: 35px !important;
+    box-shadow: 0 1.5px 6px rgba(168, 85, 247, 0.04), inset 0 1px 1.5px rgba(255, 255, 255, 0.95) !important;
+    transition: all 0.2s ease !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    padding: 0 8px !important;
+    color: #0f172a !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    font-family: inherit !important;
+    cursor: pointer;
+    outline: none !important;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.hr-glass-date-input::-webkit-datetime-edit {
+    padding: 0 !important;
+}
+
+.hr-glass-date-input::-webkit-datetime-edit-fields-wrapper {
+    padding: 0 !important;
+}
+
+.hr-glass-date-input:hover {
+    border-color: rgba(236, 72, 153, 0.45) !important;
+    background: rgba(255, 255, 255, 0.92) !important;
+}
+
+.hr-glass-date-input:focus {
+    border-color: #ec4899 !important;
+    box-shadow: 0 0 0 2.5px rgba(236, 72, 153, 0.18) !important;
+    background: #ffffff !important;
+}
+
+.hr-glass-date-input::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    filter: invert(38%) sepia(85%) saturate(1600%) hue-rotate(275deg) brightness(90%) contrast(95%);
+    opacity: 0.8;
+    transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.hr-glass-date-input::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+/* Card Search Bar: Fixed Height, NEVER Expands Vertically */
+.hr-layout-card .hr-search-bar-wrap {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 35px !important;
+    min-height: 35px !important;
+    max-height: 35px !important;
+    flex: 0 0 35px !important; /* CRITICAL: NEVER EXPAND VERTICALLY */
+    padding: 0 10px !important;
+    border-radius: 8px !important;
+    box-shadow: 0 1.5px 6px rgba(168, 85, 247, 0.04), inset 0 1px 1.5px rgba(255, 255, 255, 0.95) !important;
+}
+
+.hr-layout-card .hr-search-bar-input {
+    font-size: 12px !important;
+    height: 33px !important;
+    line-height: 33px !important;
+}
+
+.hr-layout-card .hr-search-bar-icon {
+    font-size: 15px !important;
+    margin-right: 7px !important;
+}
+
+.hr-layout-card .hr-sketch-generate-btn {
+    width: 100% !important;
+    height: 35px !important;
+    min-height: 35px !important;
+    font-size: 12px !important;
+    border-radius: 8px !important;
+    padding: 0 14px !important;
+    margin-top: auto !important; /* Sticked strictly at the bottom of the card */
+    box-shadow: 0 3px 10px rgba(236, 72, 153, 0.25) !important;
+}
+
+.hr-layout-card .hr-filter-chips-row {
+    margin-top: 3px;
+    margin-bottom: 2px;
+    gap: 4px !important;
+}
+
+.hr-layout-card .hr-filter-tag-chip {
+    padding: 2px 7px !important;
+    font-size: 11px !important;
+    border-radius: 10px !important;
+}
+
+.hr-layout-card .hr-filter-quick-presets {
+    margin-top: 0px;
+    margin-bottom: 2px;
+    gap: 5px !important;
+}
+
+.hr-layout-card .hr-preset-pill {
+    padding: 3px 8px !important;
+    font-size: 11px !important;
+    border-radius: 12px !important;
+}
+
+.hr-layout-card .hr-preset-label {
+    font-size: 10.5px !important;
+}
+
+.hr-glass-select,
+.hr-layout-card .hr-custom-select-trigger {
+    background: rgba(255, 255, 255, 0.72) !important;
+    backdrop-filter: blur(12px) saturate(160%) !important;
+    -webkit-backdrop-filter: blur(12px) saturate(160%) !important;
+    border: 1px solid rgba(203, 213, 225, 0.85) !important;
+    border-radius: 8px !important;
+    height: 35px !important;
+    min-height: 35px !important;
+    max-height: 35px !important;
+    box-shadow: 0 1.5px 6px rgba(168, 85, 247, 0.04), inset 0 1px 1.5px rgba(255, 255, 255, 0.95) !important;
+    transition: all 0.2s ease !important;
+    width: 100% !important;
+    padding: 0 10px !important;
+    color: #0f172a !important;
+    font-size: 12px !important;
+    box-sizing: border-box !important;
+}
+
+.hr-layout-card .hr-custom-select-trigger .hr-select-trigger-text {
+    font-size: 12px !important;
+    color: #0f172a !important;
+}
+
+.hr-glass-select:hover,
+.hr-layout-card .hr-custom-select-trigger:hover {
+    border-color: rgba(168, 85, 247, 0.45) !important;
+    background: rgba(255, 255, 255, 0.92) !important;
+}
+
+.hr-glass-select:focus,
+.hr-layout-card.open .hr-custom-select-trigger {
+    border-color: #a855f7 !important;
+    box-shadow: 0 0 0 2.5px rgba(168, 85, 247, 0.18) !important;
+}
+
+@media (max-width: 768px) {
+    .hr-filter-controls-row {
+        flex-direction: column;
+    }
+    .hr-date-picker-box {
+        width: 100%;
+    }
+    .hr-search-bar-wrap {
+        width: 100%;
+    }
+    .hr-sketch-generate-btn {
+        width: 100%;
+    }
+    .hr-layout-card .hr-card-dates-grid {
+        grid-template-columns: 1fr;
+    }
+}

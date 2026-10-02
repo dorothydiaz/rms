@@ -700,20 +700,28 @@ document.addEventListener('DOMContentLoaded', () => {
             function positionMenu() {
                 const rect = trigger.getBoundingClientRect();
                 menu.style.position = 'fixed';
-                menu.style.left = `${rect.left}px`;
                 menu.style.minWidth = `${rect.width}px`;
-                menu.style.width = `${rect.width}px`;
-                menu.style.maxWidth = `${Math.max(rect.width, 360)}px`;
+                menu.style.width = 'max-content';
+                const maxAvailableWidth = Math.max(rect.width, Math.min(window.innerWidth - 32, 380));
+                menu.style.maxWidth = `${maxAvailableWidth}px`;
+                
+                // Prevent overflowing off right side of screen
+                let left = rect.left;
+                if (left + maxAvailableWidth > window.innerWidth - 16) {
+                    left = Math.max(16, window.innerWidth - maxAvailableWidth - 16);
+                }
+                menu.style.left = `${left}px`;
+                menu.style.overflowX = 'hidden';
                 menu.style.zIndex = '99999999';
 
                 const spaceBelow = window.innerHeight - rect.bottom;
-                const menuHeight = Math.min(menu.scrollHeight || 240, 280);
+                const menuHeight = Math.min(menu.scrollHeight || 220, 240);
 
                 if (spaceBelow < menuHeight + 10 && rect.top > menuHeight) {
                     menu.style.top = 'auto';
-                    menu.style.bottom = `${window.innerHeight - rect.top + 6}px`;
+                    menu.style.bottom = `${window.innerHeight - rect.top + 4}px`;
                 } else {
-                    menu.style.top = `${rect.bottom + 6}px`;
+                    menu.style.top = `${rect.bottom + 4}px`;
                     menu.style.bottom = 'auto';
                 }
             }

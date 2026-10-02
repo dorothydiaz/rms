@@ -26,24 +26,10 @@
     :departments="$departments"
     :companies="$companies"
     :employees="$employees"
+    :positions="$positions ?? []"
     :startDate="request('date_from')"
     :endDate="request('date_to')"
-    :showStatus="true"
-    :showSource="true"
->
-    <!-- Overtime Status Custom Slot -->
-    <div style="min-width: 150px;">
-        <label class="hr-form-label" style="margin-bottom: 4px; font-size: 11.5px; font-weight: 600; color: #475569; display: flex; align-items: center; gap: 4px;">
-            <i class="ph ph-check-circle"></i> OT Status
-        </label>
-        <select name="status" class="hr-select" style="padding: 6px 10px; font-size: 12.5px; height: 34px; width: 100%;">
-            <option value="">All OT Statuses</option>
-            <option value="Approved" {{ request('status') === 'Approved' ? 'selected' : '' }}>Approved</option>
-            <option value="Pending" {{ request('status') === 'Pending' ? 'selected' : '' }}>Pending Review</option>
-            <option value="Rejected" {{ request('status') === 'Rejected' ? 'selected' : '' }}>Rejected / Unauthorized</option>
-        </select>
-    </div>
-</x-report-filters>
+/>
 
 <!-- Table Card -->
 <div class="hr-card" style="padding: 0; overflow: hidden;">

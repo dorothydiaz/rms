@@ -13,214 +13,102 @@
     </div>
 </div>
 
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 24px; margin-bottom: 30px;">
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin-bottom: 20px;">
     
     <!-- 1. Employee Masterlist Report -->
-    <div class="hr-card" style="display: flex; flex-direction: column; justify-content: space-between;">
-        <div>
-            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px;">
-                <div class="hr-metric-icon sky">
-                    <i class="ph ph-users"></i>
-                </div>
-                <div>
-                    <h3 style="font-family: var(--font-heading); font-size: 16px; font-weight: 700; color: #0f172a; margin: 0;">Employee Directory & Masterlist</h3>
-                    <p style="font-size: 12px; color: #64748b; margin: 2px 0 0 0;">Complete 201-files, contact info, gov IDs, and salaries</p>
-                </div>
+    <div class="hr-card hr-export-card">
+        <div class="hr-export-card-header">
+            <div class="hr-metric-icon sky">
+                <i class="ph ph-users"></i>
             </div>
-            <form method="GET" action="{{ route('hr.reports.export.employees') }}" style="margin-top: 16px;">
-                <div class="hr-form-group">
-                    <label class="hr-form-label">Search Staff</label>
-                    <input type="text" name="search" class="hr-input" placeholder="Name or EMP ID..." style="font-size: 12.5px;">
-                </div>
-                <div class="hr-form-grid" style="margin-top: 8px;">
-                    <div class="hr-form-group">
-                        <label class="hr-form-label">Branch</label>
-                        <select name="branch_id" class="hr-select">
-                            <option value="">-- All Branches --</option>
-                            @foreach($branches as $b)
-                                <option value="{{ $b->id }}">{{ $b->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="hr-form-group">
-                        <label class="hr-form-label">Company / Agency</label>
-                        <select name="company_id" class="hr-select">
-                            <option value="">-- All Companies --</option>
-                            @foreach($companies as $c)
-                                <option value="{{ $c->id }}">{{ $c->name }} ({{ $c->type ?? 'Company' }})</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-                <div class="hr-form-grid" style="margin-top: 8px;">
-                    <div class="hr-form-group">
-                        <label class="hr-form-label">Department</label>
-                        <select name="department_id" class="hr-select">
-                            <option value="">-- All Departments --</option>
-                            @foreach($departments as $d)
-                                <option value="{{ $d->id }}">{{ $d->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="hr-form-group">
-                        <label class="hr-form-label">Status</label>
-                        <select name="employment_status" class="hr-select">
-                            <option value="">-- All Statuses --</option>
-                            <option value="ACTIVE_ALL">Active Staff Only</option>
-                            <option value="Active">Active</option>
-                            <option value="Probationary">Probationary</option>
-                            <option value="Regular">Regular</option>
-                            <option value="Contractual">Contractual</option>
-                            <option value="Resigned">Resigned</option>
-                            <option value="Terminated">Terminated</option>
-                        </select>
-                    </div>
-                </div>
-                <div style="margin-top: 18px;">
-                    <button type="submit" class="hr-btn hr-btn-primary" style="width: 100%; justify-content: center;">
-                        <i class="ph ph-download-simple"></i>
-                        <span>Download Employee CSV</span>
-                    </button>
-                </div>
-            </form>
+            <div>
+                <h3 class="hr-export-card-title">Employee Directory & Masterlist</h3>
+                <p class="hr-export-card-desc">Complete 201-files, contact info, gov IDs, and salaries</p>
+            </div>
         </div>
+        <x-report-filters
+            id="exportEmployeesFilter"
+            :action="route('hr.reports.export.employees')"
+            :branches="$branches"
+            :departments="$departments"
+            :companies="$companies"
+            :employees="$employees"
+            :showDates="false"
+            layout="card"
+            buttonText="Download Employee CSV"
+            buttonIcon="ph-download-simple"
+            placeholder="Search staff, branch, department, position..."
+        />
     </div>
 
     <!-- 2. Attendance & DTR Report -->
-    <div class="hr-card" style="display: flex; flex-direction: column; justify-content: space-between;">
-        <div>
-            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px;">
-                <div class="hr-metric-icon emerald">
-                    <i class="ph ph-calendar-check"></i>
-                </div>
-                <div>
-                    <h3 style="font-family: var(--font-heading); font-size: 16px; font-weight: 700; color: #0f172a; margin: 0;">Attendance & DTR Time Log</h3>
-                    <p style="font-size: 12px; color: #64748b; margin: 2px 0 0 0;">Punches, overtime, tardiness, undertime, and night diff</p>
-                </div>
+    <div class="hr-card hr-export-card">
+        <div class="hr-export-card-header">
+            <div class="hr-metric-icon emerald">
+                <i class="ph ph-calendar-check"></i>
             </div>
-            <form method="GET" action="{{ route('hr.reports.export.attendance') }}" style="margin-top: 16px;">
-                <div class="hr-form-grid">
-                    <div class="hr-form-group">
-                        <label class="hr-form-label">Start Date</label>
-                        <input type="date" name="start_date" class="hr-input" value="{{ date('Y-m-01') }}">
-                    </div>
-                    <div class="hr-form-group">
-                        <label class="hr-form-label">End Date</label>
-                        <input type="date" name="end_date" class="hr-input" value="{{ date('Y-m-d') }}">
-                    </div>
-                </div>
-                <div class="hr-form-group" style="margin-top: 8px;">
-                    <label class="hr-form-label">Search Staff</label>
-                    <input type="text" name="search" class="hr-input" placeholder="Name or EMP ID..." style="font-size: 12.5px;">
-                </div>
-                <div class="hr-form-grid" style="margin-top: 8px;">
-                    <div class="hr-form-group">
-                        <label class="hr-form-label">Branch</label>
-                        <select name="branch_id" class="hr-select">
-                            <option value="">-- All Branches --</option>
-                            @foreach($branches as $b)
-                                <option value="{{ $b->id }}">{{ $b->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="hr-form-group">
-                        <label class="hr-form-label">Company / Agency</label>
-                        <select name="company_id" class="hr-select">
-                            <option value="">-- All Companies --</option>
-                            @foreach($companies as $c)
-                                <option value="{{ $c->id }}">{{ $c->name }} ({{ $c->type ?? 'Company' }})</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-                <div class="hr-form-group" style="margin-top: 8px;">
-                    <label class="hr-form-label">Status</label>
-                    <select name="employment_status" class="hr-select">
-                        <option value="">-- All Statuses --</option>
-                        <option value="ACTIVE_ALL">Active Staff Only</option>
-                        <option value="Active">Active</option>
-                        <option value="Probationary">Probationary</option>
-                        <option value="Regular">Regular</option>
-                        <option value="Contractual">Contractual</option>
-                        <option value="Resigned">Resigned</option>
-                    </select>
-                </div>
-                <div style="margin-top: 18px;">
-                    <button type="submit" class="hr-btn hr-btn-primary" style="width: 100%; justify-content: center;">
-                        <i class="ph ph-download-simple"></i>
-                        <span>Download Attendance CSV</span>
-                    </button>
-                </div>
-            </form>
+            <div>
+                <h3 class="hr-export-card-title">Attendance & DTR Time Log</h3>
+                <p class="hr-export-card-desc">Punches, overtime, tardiness, undertime, and night diff</p>
+            </div>
         </div>
+        <x-report-filters
+            id="exportAttendanceFilter"
+            :action="route('hr.reports.export.attendance')"
+            :branches="$branches"
+            :departments="$departments"
+            :companies="$companies"
+            :employees="$employees"
+            :showDates="true"
+            :startDate="date('Y-m-01')"
+            :endDate="date('Y-m-d')"
+            startDateName="start_date"
+            endDateName="end_date"
+            layout="card"
+            buttonText="Download Attendance CSV"
+            buttonIcon="ph-download-simple"
+            placeholder="Search staff, branch, department, status..."
+        />
     </div>
 
     <!-- 3. Payroll Register & Statutory Report -->
-    <div class="hr-card" style="display: flex; flex-direction: column; justify-content: space-between;">
-        <div>
-            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px;">
-                <div class="hr-metric-icon amber">
-                    <i class="ph ph-money"></i>
-                </div>
-                <div>
-                    <h3 style="font-family: var(--font-heading); font-size: 16px; font-weight: 700; color: #0f172a; margin: 0;">Payroll Register & Statutory Summary</h3>
-                    <p style="font-size: 12px; color: #64748b; margin: 2px 0 0 0;">Earnings breakdown, SSS, PhilHealth, Pag-IBIG & BIR tax</p>
-                </div>
+    <div class="hr-card hr-export-card">
+        <div class="hr-export-card-header">
+            <div class="hr-metric-icon amber">
+                <i class="ph ph-money"></i>
             </div>
-            <form method="GET" action="{{ route('hr.reports.export.payroll') }}" style="margin-top: 16px;">
-                <div class="hr-form-group">
-                    <label class="hr-form-label">Pay Period *</label>
-                    <select name="payroll_period_id" class="hr-select">
+            <div>
+                <h3 class="hr-export-card-title">Payroll Register & Statutory Summary</h3>
+                <p class="hr-export-card-desc">Earnings breakdown, SSS, PhilHealth, Pag-IBIG & BIR tax</p>
+            </div>
+        </div>
+        <x-report-filters
+            id="exportPayrollFilter"
+            :action="route('hr.reports.export.payroll')"
+            :branches="$branches"
+            :departments="$departments"
+            :companies="$companies"
+            :employees="$employees"
+            :showDates="false"
+            layout="card"
+            buttonText="Download Payroll CSV"
+            buttonIcon="ph-download-simple"
+            placeholder="Search staff, branch, department, status..."
+        >
+            <x-slot:extraControls>
+                <div style="margin-bottom: 2px;">
+                    <label class="hr-card-date-label">
+                        <i class="ph ph-calendar-blank" style="color: #ec4899;"></i> Pay Period
+                    </label>
+                    <select name="payroll_period_id" class="hr-select hr-glass-select">
                         <option value="">-- All Pay Periods --</option>
                         @foreach($payrollPeriods as $pp)
                             <option value="{{ $pp->id }}">{{ $pp->name }} ({{ $pp->status }})</option>
                         @endforeach
                     </select>
                 </div>
-                <div class="hr-form-group" style="margin-top: 8px;">
-                    <label class="hr-form-label">Search Staff</label>
-                    <input type="text" name="search" class="hr-input" placeholder="Name or EMP ID..." style="font-size: 12.5px;">
-                </div>
-                <div class="hr-form-grid" style="margin-top: 8px;">
-                    <div class="hr-form-group">
-                        <label class="hr-form-label">Branch</label>
-                        <select name="branch_id" class="hr-select">
-                            <option value="">-- All Branches --</option>
-                            @foreach($branches as $b)
-                                <option value="{{ $b->id }}">{{ $b->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="hr-form-group">
-                        <label class="hr-form-label">Company / Agency</label>
-                        <select name="company_id" class="hr-select">
-                            <option value="">-- All Companies --</option>
-                            @foreach($companies as $c)
-                                <option value="{{ $c->id }}">{{ $c->name }} ({{ $c->type ?? 'Company' }})</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-                <div class="hr-form-group" style="margin-top: 8px;">
-                    <label class="hr-form-label">Status</label>
-                    <select name="employment_status" class="hr-select">
-                        <option value="">-- All Statuses --</option>
-                        <option value="ACTIVE_ALL">Active Staff Only</option>
-                        <option value="Active">Active</option>
-                        <option value="Probationary">Probationary</option>
-                        <option value="Regular">Regular</option>
-                        <option value="Contractual">Contractual</option>
-                        <option value="Resigned">Resigned</option>
-                    </select>
-                </div>
-                <div style="margin-top: 18px;">
-                    <button type="submit" class="hr-btn hr-btn-primary" style="width: 100%; justify-content: center;">
-                        <i class="ph ph-download-simple"></i>
-                        <span>Download Payroll CSV</span>
-                    </button>
-                </div>
-            </form>
-        </div>
+            </x-slot:extraControls>
+        </x-report-filters>
     </div>
 
 </div>

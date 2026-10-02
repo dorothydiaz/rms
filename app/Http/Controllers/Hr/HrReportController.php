@@ -15,6 +15,7 @@ use App\Models\Hr\LeaveRequest;
 use App\Models\Hr\LeaveType;
 use App\Models\Hr\PayrollPeriod;
 use App\Models\Hr\PayrollRecord;
+use App\Models\Hr\Position;
 use App\Models\Hr\ScheduleChangeLog;
 use App\Models\Hr\ShiftTemplate;
 use Carbon\Carbon;
@@ -28,7 +29,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class HrReportController extends Controller
 {
     /**
-     * Get common filter options for reports (branches, departments, companies, employees).
+     * Get common filter options for reports (branches, departments, companies, employees, positions).
      */
     protected function getFilterOptions(): array
     {
@@ -37,6 +38,7 @@ class HrReportController extends Controller
             'departments' => Department::orderBy('name')->get(),
             'companies' => Company::where('is_active', true)->orderBy('name')->get(),
             'employees' => Employee::orderBy('first_name')->get(['id', 'first_name', 'middle_name', 'last_name', 'suffix', 'employee_id']),
+            'positions' => Position::orderBy('name')->get(),
         ];
     }
 
@@ -51,116 +53,357 @@ class HrReportController extends Controller
      */
     protected function applyEmployeeFilters($query, Request $request, bool $isDirectEmployee = false, string $employeeRelation = 'employee')
     {
-        // 1. Search Individual Employee (by first name, last name, or employee_id)
-        if ($request->filled('search')) {
-            $search = trim($request->search);
-            if ($isDirectEmployee) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('first_name', 'like', "%{$search}%")
-                      ->orWhere('last_name', 'like', "%{$search}%")
-                      ->orWhere('employee_id', 'like', "%{$search}%")
-                      ->orWhere(DB::raw("CONCAT(first_name, ' ', last_name)"), 'like', "%{$search}%");
-                });
-            } else {
-                $query->whereHas($employeeRelation, function ($q) use ($search) {
-                    $q->where('first_name', 'like', "%{$search}%")
-                      ->orWhere('last_name', 'like', "%{$search}%")
-                      ->orWhere('employee_id', 'like', "%{$search}%")
-                      ->orWhere(DB::raw("CONCAT(first_name, ' ', last_name)"), 'like', "%{$search}%");
-                });
+        $branchIds = [];
+        $deptIds = [];
+        $posIds = [];
+        $empIds = [];
+        $empCodeIds = [];
+        $empNames = [];
+        $statuses = [];
+        $companyIds = [];
+        $searchTerms = [];
+
+        $includeAllEmployees = false;
+
+        // 1. Parse structured filter_tags JSON if present
+        if ($request->filled('filter_tags')) {
+            $tags = is_string($request->filter_tags) ? json_decode($request->filter_tags, true) : (is_array($request->filter_tags) ? $request->filter_tags : []);
+            if (is_array($tags)) {
+                foreach ($tags as $t) {
+                    $type = strtolower($t['type'] ?? '');
+                    $val = trim($t['value'] ?? '');
+                    $id = $t['id'] ?? null;
+                    $empid = $t['empid'] ?? null;
+
+                    if ($type === 'branch') {
+                        if ($id) {
+                            $branchIds[] = (int) $id;
+                        } elseif ($val !== '') {
+                            $bMatch = Branch::where('name', 'like', "%{$val}%")->orWhere('code', 'like', "%{$val}%")->pluck('id')->toArray();
+                            $branchIds = array_merge($branchIds, $bMatch);
+                        }
+                    } elseif ($type === 'department') {
+                        if ($id) {
+                            $deptIds[] = (int) $id;
+                        } elseif ($val !== '') {
+                            $dMatch = Department::where('name', 'like', "%{$val}%")->pluck('id')->toArray();
+                            $deptIds = array_merge($deptIds, $dMatch);
+                        }
+                    } elseif ($type === 'position') {
+                        if ($id) {
+                            $posIds[] = (int) $id;
+                        } elseif ($val !== '') {
+                            $pMatch = Position::where('name', 'like', "%{$val}%")->pluck('id')->toArray();
+                            $posIds = array_merge($posIds, $pMatch);
+                        }
+                    } elseif ($type === 'scope' || $type === 'all') {
+                        if (strcasecmp($val, 'ALL') === 0 || strcasecmp($val, 'All Employees') === 0) {
+                            $includeAllEmployees = true;
+                        }
+                    } elseif ($type === 'employee') {
+                        if (strcasecmp($val, 'All Employees') === 0 || strcasecmp($val, 'ALL') === 0) {
+                            $includeAllEmployees = true;
+                        } else {
+                            if ($id) {
+                                $empIds[] = (int) $id;
+                            }
+                            if ($empid) {
+                                $empCodeIds[] = (string) $empid;
+                            }
+                            if ($val !== '') {
+                                $empNames[] = $val;
+                            }
+                        }
+                    } elseif ($type === 'employee_id') {
+                        if ($val !== '') {
+                            $empCodeIds[] = (string) $val;
+                        }
+                    } elseif ($type === 'status') {
+                        if ($val !== '') {
+                            if (strcasecmp($val, 'All Active') === 0 || strcasecmp($val, 'ACTIVE_ALL') === 0 || strcasecmp($val, 'Active Staff Only') === 0) {
+                                $statuses[] = 'ACTIVE_ALL';
+                            } elseif (strcasecmp($val, 'All Employees') === 0 || strcasecmp($val, 'ALL') === 0) {
+                                $includeAllEmployees = true;
+                            } else {
+                                $statuses[] = $val;
+                            }
+                        }
+                    } elseif ($type === 'company') {
+                        if ($id) {
+                            $companyIds[] = (int) $id;
+                        } elseif ($val !== '') {
+                            $cMatch = Company::where('name', 'like', "%{$val}%")->pluck('id')->toArray();
+                            $companyIds = array_merge($companyIds, $cMatch);
+                        }
+                    } elseif ($type === 'search') {
+                        if ($val !== '') {
+                            $searchTerms[] = $val;
+                        }
+                    }
+                }
             }
         }
 
-        // 2. Specific Employee ID Selection
-        if ($request->filled('employee_id')) {
-            if ($isDirectEmployee) {
-                $query->where('id', $request->employee_id);
-            } else {
-                $query->where('employee_id', $request->employee_id);
+        // 2. Fallbacks & additions from URL query arrays or single parameters
+        // Branches
+        if ($request->has('branches')) {
+            $bInputs = (array) $request->input('branches');
+            foreach ($bInputs as $b) {
+                if (is_numeric($b)) {
+                    $branchIds[] = (int) $b;
+                } else {
+                    $bMatch = Branch::where('name', 'like', "%{$b}%")->pluck('id')->toArray();
+                    $branchIds = array_merge($branchIds, $bMatch);
+                }
             }
         }
-
-        // 3. Branch Filter
         if ($request->filled('branch_id')) {
-            $branchId = $request->branch_id;
+            $branchIds[] = (int) $request->branch_id;
+        }
+
+        // Departments
+        if ($request->has('departments')) {
+            $dInputs = (array) $request->input('departments');
+            foreach ($dInputs as $d) {
+                if (is_numeric($d)) {
+                    $deptIds[] = (int) $d;
+                } else {
+                    $dMatch = Department::where('name', 'like', "%{$d}%")->pluck('id')->toArray();
+                    $deptIds = array_merge($deptIds, $dMatch);
+                }
+            }
+        }
+        if ($request->filled('department_id')) {
+            $deptIds[] = (int) $request->department_id;
+        }
+
+        // Positions
+        if ($request->has('positions')) {
+            $pInputs = (array) $request->input('positions');
+            foreach ($pInputs as $p) {
+                if (is_numeric($p)) {
+                    $posIds[] = (int) $p;
+                } else {
+                    $pMatch = Position::where('name', 'like', "%{$p}%")->pluck('id')->toArray();
+                    $posIds = array_merge($posIds, $pMatch);
+                }
+            }
+        }
+        if ($request->filled('position_id')) {
+            $posIds[] = (int) $request->position_id;
+        }
+
+        // Employees & Employee IDs
+        if ($request->has('employees')) {
+            $eInputs = (array) $request->input('employees');
+            foreach ($eInputs as $e) {
+                if (is_numeric($e)) {
+                    $empIds[] = (int) $e;
+                } else {
+                    $empNames[] = $e;
+                }
+            }
+        }
+        if ($request->has('employee_ids')) {
+            $empCodeIds = array_merge($empCodeIds, (array) $request->input('employee_ids'));
+        }
+        if ($request->filled('employee_id')) {
+            if (is_numeric($request->employee_id)) {
+                $empIds[] = (int) $request->employee_id;
+            } else {
+                $empCodeIds[] = (string) $request->employee_id;
+            }
+        }
+
+        // Statuses
+        if ($request->has('statuses')) {
+            $statuses = array_merge($statuses, (array) $request->input('statuses'));
+        }
+        if ($request->filled('employment_status')) {
+            $statuses[] = $request->employment_status;
+        }
+        if ($request->filled('status')) {
+            $statuses[] = $request->status;
+        }
+        if ($request->has('all_employees') || $request->input('scope') === 'ALL' || in_array('ALL', $statuses) || in_array('All Employees', $statuses)) {
+            $includeAllEmployees = true;
+        }
+
+        // Companies
+        if ($request->filled('company_id')) {
+            $companyIds[] = (int) $request->company_id;
+        }
+
+        // General search
+        if ($request->filled('search')) {
+            $searchTerms[] = $request->search;
+        }
+
+        $branchIds = array_unique(array_filter($branchIds));
+        $deptIds = array_unique(array_filter($deptIds));
+        $posIds = array_unique(array_filter($posIds));
+        $empIds = array_unique(array_filter($empIds));
+        $empCodeIds = array_unique(array_filter($empCodeIds));
+        
+        // Remove pseudo-names like 'all', 'all employees', 'all active'
+        $empNames = array_unique(array_filter($empNames, function($n) {
+            return !in_array(strtolower(trim($n)), ['all', 'all employees', 'active staff only', 'all active']);
+        }));
+
+        $statuses = array_unique(array_filter($statuses));
+        if ($includeAllEmployees) {
+            $statuses = array_values(array_filter($statuses, fn($s) => !in_array(strtoupper($s), ['ALL', 'ALL EMPLOYEES'])));
+        }
+        $companyIds = array_unique(array_filter($companyIds));
+        $searchTerms = array_unique(array_filter($searchTerms));
+
+        // 3. Apply Branches Filter (Supports multiple branches simultaneously)
+        if (!empty($branchIds)) {
             if ($isDirectEmployee) {
-                $query->where(function ($q) use ($branchId) {
-                    $q->where('branch_id', $branchId)
-                      ->orWhereJsonContains('assigned_branch_ids', (int) $branchId)
-                      ->orWhereJsonContains('assigned_branch_ids', (string) $branchId);
+                $query->where(function ($q) use ($branchIds) {
+                    $q->whereIn('branch_id', $branchIds);
+                    foreach ($branchIds as $bId) {
+                        $q->orWhereJsonContains('assigned_branch_ids', (int) $bId)
+                          ->orWhereJsonContains('assigned_branch_ids', (string) $bId);
+                    }
                 });
             } else {
                 $table = $query->getModel()->getTable();
-                if (Schema::hasColumn($table, 'branch_id')) {
-                    $query->where(function ($q) use ($branchId, $employeeRelation) {
-                        $q->where('branch_id', $branchId)
-                          ->orWhereHas($employeeRelation, function ($eq) use ($branchId) {
-                              $eq->where('branch_id', $branchId)
-                                 ->orWhereJsonContains('assigned_branch_ids', (int) $branchId)
-                                 ->orWhereJsonContains('assigned_branch_ids', (string) $branchId);
-                          });
+                $query->where(function ($q) use ($branchIds, $employeeRelation, $table) {
+                    if (Schema::hasColumn($table, 'branch_id')) {
+                        $q->whereIn('branch_id', $branchIds);
+                    }
+                    $q->orWhereHas($employeeRelation, function ($eq) use ($branchIds) {
+                        $eq->whereIn('branch_id', $branchIds);
+                        foreach ($branchIds as $bId) {
+                            $eq->orWhereJsonContains('assigned_branch_ids', (int) $bId)
+                               ->orWhereJsonContains('assigned_branch_ids', (string) $bId);
+                        }
                     });
-                } else {
-                    $query->whereHas($employeeRelation, function ($eq) use ($branchId) {
-                        $eq->where('branch_id', $branchId)
-                           ->orWhereJsonContains('assigned_branch_ids', (int) $branchId)
-                           ->orWhereJsonContains('assigned_branch_ids', (string) $branchId);
-                    });
-                }
-            }
-        }
-
-        // 4. Company / Agency Filter
-        if ($request->filled('company_id')) {
-            $companyId = $request->company_id;
-            if ($isDirectEmployee) {
-                $query->where('company_id', $companyId);
-            } else {
-                $query->whereHas($employeeRelation, function ($q) use ($companyId) {
-                    $q->where('company_id', $companyId);
                 });
             }
         }
 
-        // 5. Department Filter
-        if ($request->filled('department_id')) {
-            $deptId = $request->department_id;
+        // 4. Apply Departments Filter (Supports multiple departments simultaneously)
+        if (!empty($deptIds)) {
             if ($isDirectEmployee) {
-                $query->where(function ($q) use ($deptId) {
-                    $q->where('department_id', $deptId)
-                      ->orWhereJsonContains('assigned_department_ids', (int) $deptId)
-                      ->orWhereJsonContains('assigned_department_ids', (string) $deptId);
+                $query->where(function ($q) use ($deptIds) {
+                    $q->whereIn('department_id', $deptIds);
+                    foreach ($deptIds as $dId) {
+                        $q->orWhereJsonContains('assigned_department_ids', (int) $dId)
+                          ->orWhereJsonContains('assigned_department_ids', (string) $dId);
+                    }
                 });
             } else {
-                $query->whereHas($employeeRelation, function ($q) use ($deptId) {
-                    $q->where('department_id', $deptId)
-                      ->orWhereJsonContains('assigned_department_ids', (int) $deptId)
-                      ->orWhereJsonContains('assigned_department_ids', (string) $deptId);
+                $query->whereHas($employeeRelation, function ($q) use ($deptIds) {
+                    $q->whereIn('department_id', $deptIds);
+                    foreach ($deptIds as $dId) {
+                        $q->orWhereJsonContains('assigned_department_ids', (int) $dId)
+                          ->orWhereJsonContains('assigned_department_ids', (string) $dId);
+                    }
                 });
             }
         }
 
-        // 6. Employment Status Filter
-        if ($request->filled('employment_status')) {
-            $status = $request->employment_status;
-            $statusClosure = function ($q) use ($status) {
-                if ($status === 'ACTIVE_ALL') {
-                    $q->whereNotIn('employment_status', ['Resigned', 'Terminated', 'Retired', 'Inactive']);
-                } elseif ($status === 'INACTIVE_ALL') {
-                    $q->whereIn('employment_status', ['Resigned', 'Terminated', 'Retired', 'Inactive']);
-                } else {
-                    $q->where('employment_status', $status);
-                }
+        // 5. Apply Positions Filter (Supports multiple positions simultaneously)
+        if (!empty($posIds)) {
+            if ($isDirectEmployee) {
+                $query->where(function ($q) use ($posIds) {
+                    $q->whereIn('position_id', $posIds);
+                    foreach ($posIds as $pId) {
+                        $q->orWhereJsonContains('assigned_position_ids', (int) $pId)
+                          ->orWhereJsonContains('assigned_position_ids', (string) $pId);
+                    }
+                });
+            } else {
+                $query->whereHas($employeeRelation, function ($q) use ($posIds) {
+                    $q->whereIn('position_id', $posIds);
+                    foreach ($posIds as $pId) {
+                        $q->orWhereJsonContains('assigned_position_ids', (int) $pId)
+                          ->orWhereJsonContains('assigned_position_ids', (string) $pId);
+                    }
+                });
+            }
+        }
+
+        // 6. Apply Employees / Employee IDs Filter
+        if (!empty($empIds) || !empty($empNames) || !empty($empCodeIds)) {
+            $empClosure = function ($q) use ($empIds, $empNames, $empCodeIds) {
+                $q->where(function ($sub) use ($empIds, $empNames, $empCodeIds) {
+                    if (!empty($empIds)) {
+                        $sub->whereIn('id', $empIds);
+                    }
+                    if (!empty($empCodeIds)) {
+                        $sub->orWhereIn('employee_id', $empCodeIds);
+                    }
+                    foreach ($empNames as $name) {
+                        $sub->orWhere('first_name', 'like', "%{$name}%")
+                            ->orWhere('last_name', 'like', "%{$name}%")
+                            ->orWhere(DB::raw("CONCAT(first_name, ' ', last_name)"), 'like', "%{$name}%");
+                    }
+                });
+            };
+
+            if ($isDirectEmployee) {
+                $empClosure($query);
+            } else {
+                $query->whereHas($employeeRelation, $empClosure);
+            }
+        }
+
+        // 7. Apply Companies Filter
+        if (!empty($companyIds)) {
+            if ($isDirectEmployee) {
+                $query->whereIn('company_id', $companyIds);
+            } else {
+                $query->whereHas($employeeRelation, function ($q) use ($companyIds) {
+                    $q->whereIn('company_id', $companyIds);
+                });
+            }
+        }
+
+        // 8. Apply Statuses Filter
+        if (!empty($statuses) && !$includeAllEmployees) {
+            $statusClosure = function ($q) use ($statuses) {
+                $q->where(function ($sub) use ($statuses) {
+                    foreach ($statuses as $st) {
+                        if ($st === 'ACTIVE_ALL' || strcasecmp($st, 'All Active') === 0 || strcasecmp($st, 'Active Staff Only') === 0) {
+                            $sub->orWhereNotIn('employment_status', ['Resigned', 'Terminated', 'Retired', 'Inactive']);
+                        } elseif ($st === 'INACTIVE_ALL') {
+                            $sub->orWhereIn('employment_status', ['Resigned', 'Terminated', 'Retired', 'Inactive']);
+                        } elseif ($st !== 'ALL' && strcasecmp($st, 'All Employees') !== 0) {
+                            $sub->orWhere('employment_status', $st);
+                        }
+                    }
+                });
             };
 
             if ($isDirectEmployee) {
                 $statusClosure($query);
             } else {
-                $query->whereHas($employeeRelation, $statusClosure);
+                $table = $query->getModel()->getTable();
+                $hasCustomStatus = false;
+                $query->where(function ($q) use ($statuses, $employeeRelation, $statusClosure, $table, &$hasCustomStatus) {
+                    if (Schema::hasColumn($table, 'overtime_status')) {
+                        $q->whereIn('overtime_status', $statuses);
+                        $hasCustomStatus = true;
+                    } elseif (Schema::hasColumn($table, 'undertime_status')) {
+                        $q->whereIn('undertime_status', $statuses);
+                        $hasCustomStatus = true;
+                    } elseif (Schema::hasColumn($table, 'status')) {
+                        $q->whereIn('status', $statuses);
+                        $hasCustomStatus = true;
+                    }
+                    if ($hasCustomStatus) {
+                        $q->orWhereHas($employeeRelation, $statusClosure);
+                    } else {
+                        $q->whereHas($employeeRelation, $statusClosure);
+                    }
+                });
             }
         }
 
-        // 7. Employment Source Filter (Direct Hire vs Agency)
+        // 9. Employment Source Filter (Direct vs Agency)
         if ($request->filled('employment_source')) {
             $source = $request->employment_source;
             if ($isDirectEmployee) {
@@ -169,6 +412,35 @@ class HrReportController extends Controller
                 $query->whereHas($employeeRelation, function ($q) use ($source) {
                     $q->where('employment_source', $source);
                 });
+            }
+        }
+
+        // 10. General Search Terms
+        if (!empty($searchTerms)) {
+            foreach ($searchTerms as $search) {
+                $search = trim($search);
+                if ($search === '') continue;
+                if ($isDirectEmployee) {
+                    $query->where(function ($q) use ($search) {
+                        $q->where('first_name', 'like', "%{$search}%")
+                          ->orWhere('last_name', 'like', "%{$search}%")
+                          ->orWhere('employee_id', 'like', "%{$search}%")
+                          ->orWhere(DB::raw("CONCAT(first_name, ' ', last_name)"), 'like', "%{$search}%")
+                          ->orWhereHas('position', fn($pq) => $pq->where('name', 'like', "%{$search}%"))
+                          ->orWhereHas('department', fn($dq) => $dq->where('name', 'like', "%{$search}%"))
+                          ->orWhereHas('branch', fn($bq) => $bq->where('name', 'like', "%{$search}%"));
+                    });
+                } else {
+                    $query->whereHas($employeeRelation, function ($q) use ($search) {
+                        $q->where('first_name', 'like', "%{$search}%")
+                          ->orWhere('last_name', 'like', "%{$search}%")
+                          ->orWhere('employee_id', 'like', "%{$search}%")
+                          ->orWhere(DB::raw("CONCAT(first_name, ' ', last_name)"), 'like', "%{$search}%")
+                          ->orWhereHas('position', fn($pq) => $pq->where('name', 'like', "%{$search}%"))
+                          ->orWhereHas('department', fn($dq) => $dq->where('name', 'like', "%{$search}%"))
+                          ->orWhereHas('branch', fn($bq) => $bq->where('name', 'like', "%{$search}%"));
+                    });
+                }
             }
         }
 
@@ -1207,6 +1479,10 @@ class HrReportController extends Controller
         $this->applyEmployeeFilters($empQuery, $request, true);
         $employees = $empQuery->orderBy('first_name')->get();
 
+        if (!$selectedEmpId && $employees->count() === 1) {
+            $selectedEmpId = $employees->first()->id;
+        }
+
         $employee = null;
         $records = collect();
         $stats = [
@@ -1303,6 +1579,10 @@ class HrReportController extends Controller
         $empQuery = Employee::query();
         $this->applyEmployeeFilters($empQuery, $request, true);
         $employees = $empQuery->orderBy('first_name')->get();
+
+        if (!$selectedEmpId && $employees->count() === 1) {
+            $selectedEmpId = $employees->first()->id;
+        }
 
         $employee = null;
         $recentLogs = collect();

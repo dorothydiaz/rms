@@ -84,23 +84,10 @@
     :departments="$departments"
     :companies="$companies"
     :employees="$employees"
+    :positions="$positions ?? []"
     :startDate="request('date_from')"
     :endDate="request('date_to')"
-    :showStatus="true"
-    :showSource="true"
->
-    <!-- Custom Infraction Filter Slot -->
-    <div style="min-width: 170px;">
-        <label class="hr-form-label" style="margin-bottom: 4px; font-size: 11.5px; font-weight: 600; color: #475569; display: flex; align-items: center; gap: 4px;">
-            <i class="ph ph-funnel"></i> Infraction Status
-        </label>
-        <select name="status" class="hr-select" style="padding: 6px 10px; font-size: 12.5px; height: 34px; width: 100%;">
-            <option value="">All Unauthorized & Unapproved</option>
-            <option value="Rejected" {{ request('status') === 'Rejected' ? 'selected' : '' }}>Rejected / Unauthorized</option>
-            <option value="Pending" {{ request('status') === 'Pending' ? 'selected' : '' }}>Pending Review (Unexcused)</option>
-        </select>
-    </div>
-</x-report-filters>
+/>
 
 <!-- Table Card -->
 <div class="hr-card" style="padding: 0; overflow: hidden; width: 100%; box-sizing: border-box;">

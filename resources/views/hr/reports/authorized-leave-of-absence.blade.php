@@ -85,51 +85,10 @@
     :departments="$departments"
     :companies="$companies"
     :employees="$employees"
+    :positions="$positions ?? []"
     :startDate="$startDate"
     :endDate="$endDate"
-    :showStatus="true"
-    :showSource="true"
->
-    <!-- Leave Type -->
-    <div style="min-width: 160px;">
-        <label class="hr-form-label" style="margin-bottom: 4px; font-size: 11.5px; font-weight: 600; color: #475569; display: flex; align-items: center; gap: 4px;">
-            <i class="ph ph-tag"></i> Leave Type
-        </label>
-        <select name="leave_type_id" class="hr-select" style="padding: 6px 10px; font-size: 12.5px; height: 34px; width: 100%;">
-            <option value="">All Leave Types</option>
-            @foreach($leaveTypes as $lt)
-                <option value="{{ $lt->id }}" {{ (string) request('leave_type_id') === (string) $lt->id ? 'selected' : '' }}>
-                    {{ $lt->name }} ({{ $lt->code }})
-                </option>
-            @endforeach
-        </select>
-    </div>
-
-    <!-- Pay Status -->
-    <div style="min-width: 140px;">
-        <label class="hr-form-label" style="margin-bottom: 4px; font-size: 11.5px; font-weight: 600; color: #475569; display: flex; align-items: center; gap: 4px;">
-            <i class="ph ph-currency-circle-dollar"></i> Pay Status
-        </label>
-        <select name="is_paid" class="hr-select" style="padding: 6px 10px; font-size: 12.5px; height: 34px; width: 100%;">
-            <option value="">All (Paid & Unpaid)</option>
-            <option value="1" {{ request('is_paid') === '1' ? 'selected' : '' }}>Paid Leave</option>
-            <option value="0" {{ request('is_paid') === '0' ? 'selected' : '' }}>Unpaid Leave</option>
-        </select>
-    </div>
-
-    <!-- Authorization Status -->
-    <div style="min-width: 150px;">
-        <label class="hr-form-label" style="margin-bottom: 4px; font-size: 11.5px; font-weight: 600; color: #475569; display: flex; align-items: center; gap: 4px;">
-            <i class="ph ph-shield-check"></i> Auth Status
-        </label>
-        <select name="status" class="hr-select" style="padding: 6px 10px; font-size: 12.5px; height: 34px; width: 100%;">
-            <option value="Approved" {{ ($status ?? request('status', 'Approved')) === 'Approved' ? 'selected' : '' }}>Approved (Authorized)</option>
-            <option value="ALL" {{ ($status ?? request('status')) === 'ALL' ? 'selected' : '' }}>All Statuses</option>
-            <option value="Pending" {{ ($status ?? request('status')) === 'Pending' ? 'selected' : '' }}>Pending Review</option>
-            <option value="Rejected" {{ ($status ?? request('status')) === 'Rejected' ? 'selected' : '' }}>Rejected</option>
-        </select>
-    </div>
-</x-report-filters>
+/>
 
 <!-- Table Card -->
 <div class="hr-card" style="padding: 0; overflow: hidden; border: 1px solid #e2e8f0; border-radius: 14px; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">

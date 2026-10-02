@@ -1,486 +1,1095 @@
 @props([
+    'id' => null,
     'action',
     'resetUrl' => null,
     'branches' => [],
     'departments' => [],
     'companies' => [],
     'employees' => [],
+    'positions' => null,
     'startDate' => null,
     'endDate' => null,
     'showDates' => true,
+    'startDateName' => 'date_from',
+    'endDateName' => 'date_to',
+    'placeholder' => 'Search employees, branch, department, position...',
     'showSearch' => true,
-    'showEmployeeDropdown' => true,
-    'showStatus' => true,
-    'showBranch' => true,
-    'showCompany' => true,
-    'showDepartment' => true,
+    'showQuickPresets' => true,
+    'layout' => 'horizontal', // 'horizontal' or 'card'
+    'buttonText' => 'Generate',
+    'buttonIcon' => 'ph-funnel-simple',
+    'extraControls' => null,
+    'showEmployeeDropdown' => false,
+    'showStatus' => false,
+    'showBranch' => false,
+    'showCompany' => false,
+    'showDepartment' => false,
     'showSource' => false,
 ])
 
 @php
-    $reset = $resetUrl ?: $action;
-    $statuses = ['Active Staff Only' => 'ACTIVE_ALL', 'Regular' => 'Regular', 'Probationary' => 'Probationary', 'Contractual' => 'Contractual', 'Part-time' => 'Part-time', 'Seasonal' => 'Seasonal', 'On Leave' => 'On Leave', 'Suspended' => 'Suspended', 'Resigned' => 'Resigned', 'Terminated' => 'Terminated'];
+    $uid = $id ?? ('hrFilter_' . bin2hex(random_bytes(4)));
+    $formId = $id ? ($id . '_form') : 'hrReportFilterForm';
+    $searchWrapId = $uid . '_searchWrap';
+    $searchInputId = $id ? ($id . '_searchInput') : 'hrFilterSearchInput';
+    $suggestionsId = $uid . '_suggestionsList';
+    $chipsRowId = $id ? ($id . '_chipsRow') : 'hrFilterChipsRow';
+    $tagsJsonId = $uid . '_filterTagsJson';
+    $hiddenContainerId = $uid . '_hiddenFilterInputs';
 
-    // Map active query parameters to stacked tag badges
-    $stackedTags = [];
-    if (request()->filled('employment_status')) {
-        $stVal = request('employment_status');
-        $lbl = array_search($stVal, $statuses) ?: $stVal;
-        $stackedTags[] = [
-            'key' => 'employment_status',
-            'value' => $stVal,
-            'label' => strtolower($lbl),
-        ];
+    // Ensure positions list is populated
+    if (empty($positions)) {
+        try {
+            $positions = \App\Models\Hr\Position::orderBy('name')->get();
+        } catch (\Throwable $e) {
+            $positions = collect();
+        }
     }
-    if (request()->filled('branch_id')) {
-        $bObj = collect($branches)->firstWhere('id', request('branch_id'));
-        $bName = $bObj ? strtolower($bObj->name) : 'branch #' . request('branch_id');
-        $stackedTags[] = [
-            'key' => 'branch_id',
-            'value' => request('branch_id'),
-            'label' => $bName,
-        ];
+
+    // 1. Initial chips rehydrated from URL query params
+    $initialChips = [];
+    if (request()->filled('filter_tags')) {
+        $decoded = json_decode(request('filter_tags'), true);
+        if (is_array($decoded)) {
+            $initialChips = $decoded;
+        }
     }
-    if (request()->filled('company_id')) {
-        $cObj = collect($companies)->firstWhere('id', request('company_id'));
-        $cName = $cObj ? strtolower($cObj->name) : 'company #' . request('company_id');
-        $stackedTags[] = [
-            'key' => 'company_id',
-            'value' => request('company_id'),
-            'label' => $cName,
-        ];
+
+    if (empty($initialChips)) {
+        // Multiple branches
+        $branchInputs = request('branches', []);
+        if (is_array($branchInputs)) {
+            foreach ($branchInputs as $b) {
+                if (!$b) continue;
+                $bObj = collect($branches)->first(fn($item) => $item->id == $b || strcasecmp($item->name, $b) === 0);
+                $bName = $bObj ? $bObj->name : $b;
+                $initialChips[] = ['type' => 'branch', 'label' => 'Branch: ' . $bName, 'value' => $bName, 'id' => $bObj ? $bObj->id : null];
+            }
+        }
+        if (request()->filled('branch_id')) {
+            $bObj = collect($branches)->firstWhere('id', request('branch_id'));
+            $bName = $bObj ? $bObj->name : 'Branch #' . request('branch_id');
+            if (!collect($initialChips)->contains('label', 'Branch: ' . $bName)) {
+                $initialChips[] = ['type' => 'branch', 'label' => 'Branch: ' . $bName, 'value' => $bName, 'id' => request('branch_id')];
+            }
+        }
+
+        // Multiple departments
+        $deptInputs = request('departments', []);
+        if (is_array($deptInputs)) {
+            foreach ($deptInputs as $d) {
+                if (!$d) continue;
+                $dObj = collect($departments)->first(fn($item) => $item->id == $d || strcasecmp($item->name, $d) === 0);
+                $dName = $dObj ? $dObj->name : $d;
+                $initialChips[] = ['type' => 'department', 'label' => 'Department: ' . $dName, 'value' => $dName, 'id' => $dObj ? $dObj->id : null];
+            }
+        }
+        if (request()->filled('department_id')) {
+            $dObj = collect($departments)->firstWhere('id', request('department_id'));
+            $dName = $dObj ? $dObj->name : 'Dept #' . request('department_id');
+            if (!collect($initialChips)->contains('label', 'Department: ' . $dName)) {
+                $initialChips[] = ['type' => 'department', 'label' => 'Department: ' . $dName, 'value' => $dName, 'id' => request('department_id')];
+            }
+        }
+
+        // Multiple positions
+        $posInputs = request('positions', []);
+        if (is_array($posInputs)) {
+            foreach ($posInputs as $p) {
+                if (!$p) continue;
+                $pObj = collect($positions)->first(fn($item) => $item->id == $p || strcasecmp($item->name, $p) === 0);
+                $pName = $pObj ? $pObj->name : $p;
+                $initialChips[] = ['type' => 'position', 'label' => 'Position: ' . $pName, 'value' => $pName, 'id' => $pObj ? $pObj->id : null];
+            }
+        }
+        if (request()->filled('position_id')) {
+            $pObj = collect($positions)->firstWhere('id', request('position_id'));
+            $pName = $pObj ? $pObj->name : 'Position #' . request('position_id');
+            if (!collect($initialChips)->contains('label', 'Position: ' . $pName)) {
+                $initialChips[] = ['type' => 'position', 'label' => 'Position: ' . $pName, 'value' => $pName, 'id' => request('position_id')];
+            }
+        }
+
+        // Employees & Employee IDs
+        if (request()->filled('employee_id')) {
+            $eVal = request('employee_id');
+            $eObj = collect($employees)->first(fn($item) => $item->id == $eVal || $item->employee_id == $eVal);
+            if ($eObj) {
+                $eName = $eObj->full_name ?? ($eObj->first_name . ' ' . $eObj->last_name);
+                $initialChips[] = ['type' => 'employee', 'label' => 'Employee: ' . $eName, 'value' => $eName, 'id' => $eObj->id, 'empid' => $eObj->employee_id];
+            } else {
+                $initialChips[] = ['type' => 'employee_id', 'label' => 'Employee ID: ' . $eVal, 'value' => $eVal];
+            }
+        }
+        $empInputs = request('employees', []);
+        if (is_array($empInputs)) {
+            foreach ($empInputs as $emp) {
+                if (!$emp) continue;
+                $initialChips[] = ['type' => 'employee', 'label' => 'Employee: ' . $emp, 'value' => $emp];
+            }
+        }
+        $empCodeInputs = request('employee_ids', []);
+        if (is_array($empCodeInputs)) {
+            foreach ($empCodeInputs as $eid) {
+                if (!$eid) continue;
+                $initialChips[] = ['type' => 'employee_id', 'label' => 'Employee ID: ' . $eid, 'value' => $eid];
+            }
+        }
+
+        // Statuses & All Active
+        $statusVal = request('employment_status', request('status'));
+        if ($statusVal) {
+            if ($statusVal === 'ACTIVE_ALL' || strcasecmp($statusVal, 'All Active') === 0 || strcasecmp($statusVal, 'Active Staff Only') === 0) {
+                $initialChips[] = ['type' => 'status', 'label' => 'Status: All Active', 'value' => 'ACTIVE_ALL'];
+            } else {
+                $initialChips[] = ['type' => 'status', 'label' => 'Status: ' . $statusVal, 'value' => $statusVal];
+            }
+        }
+
+        // Scope All Employees
+        if (request('scope') === 'ALL' || request('all_employees') || in_array('ALL', (array)request('statuses', []))) {
+            $initialChips[] = ['type' => 'scope', 'label' => 'Scope: All Employees', 'value' => 'ALL'];
+        }
+
+        // Free-text Search
+        if (request()->filled('search')) {
+            $initialChips[] = ['type' => 'search', 'label' => 'Search: ' . request('search'), 'value' => request('search')];
+        }
     }
-    if (request()->filled('department_id')) {
-        $dObj = collect($departments)->firstWhere('id', request('department_id'));
-        $dName = $dObj ? strtolower($dObj->name) : 'dept #' . request('department_id');
-        $stackedTags[] = [
-            'key' => 'department_id',
-            'value' => request('department_id'),
-            'label' => $dName,
-        ];
-    }
-    if (request()->filled('employee_id')) {
-        $eObj = collect($employees)->firstWhere('id', request('employee_id'));
-        $eName = $eObj ? strtolower($eObj->full_name) : 'staff #' . request('employee_id');
-        $stackedTags[] = [
-            'key' => 'employee_id',
-            'value' => request('employee_id'),
-            'label' => $eName,
-        ];
-    }
-    if (request()->filled('employment_source')) {
-        $stackedTags[] = [
-            'key' => 'employment_source',
-            'value' => request('employment_source'),
-            'label' => strtolower(request('employment_source')) . ' source',
-        ];
-    }
-    if (request()->filled('status')) {
-        $stackedTags[] = [
-            'key' => 'status',
-            'value' => request('status'),
-            'label' => strtolower(request('status')),
-        ];
-    }
-    if (request()->filled('leave_type_id')) {
-        $stackedTags[] = [
-            'key' => 'leave_type_id',
-            'value' => request('leave_type_id'),
-            'label' => 'leave #' . request('leave_type_id'),
-        ];
-    }
-    if (request()->filled('is_paid')) {
-        $stackedTags[] = [
-            'key' => 'is_paid',
-            'value' => request('is_paid'),
-            'label' => request('is_paid') == '1' ? 'paid leave' : 'unpaid leave',
-        ];
-    }
+
+    $hasAllActiveChip = collect($initialChips)->contains(fn($c) => ($c['type'] ?? '') === 'status' && in_array($c['value'] ?? '', ['ACTIVE_ALL', 'All Active', 'Active Staff Only']));
+    $hasAllEmployeesChip = collect($initialChips)->contains(fn($c) => ($c['type'] ?? '') === 'scope' || in_array($c['value'] ?? '', ['ALL', 'All Employees']));
+
+    // Lookup collections for autocomplete
+    $lookupBranches = collect($branches)->map(fn($b) => ['id' => $b->id, 'name' => $b->name])->values();
+    $lookupDepartments = collect($departments)->map(fn($d) => ['id' => $d->id, 'name' => $d->name])->values();
+    $lookupPositions = collect($positions)->map(fn($p) => ['id' => $p->id, 'name' => $p->name])->values();
+    $lookupEmployees = collect($employees)->map(fn($e) => [
+        'id' => $e->id,
+        'employee_id' => $e->employee_id,
+        'name' => $e->full_name ?? ($e->first_name . ' ' . $e->last_name),
+    ])->values();
+    $lookupStatuses = ['All Active', 'All Employees', 'Regular', 'Probationary', 'Contractual', 'Part-time', 'Seasonal', 'Approved', 'Pending', 'Rejected'];
 @endphp
 
-<div class="hr-sketch-filter-wrap">
-    <form method="GET" action="{{ $action }}" id="hrStackedFilterForm">
+<div class="hr-report-filters-bar {{ $layout === 'card' ? 'hr-layout-card' : '' }}" id="{{ $uid }}_bar">
+    <form method="GET" action="{{ $action }}" id="{{ $formId }}">
+        <!-- Hidden input holding all active filter tags as JSON -->
+        <input type="hidden" name="filter_tags" id="{{ $tagsJsonId }}" value="{{ json_encode($initialChips) }}">
         
-        <!-- Hidden Inputs for Stacking Filters -->
-        <input type="hidden" name="employment_status" id="hr_input_employment_status" value="{{ request('employment_status') }}">
-        <input type="hidden" name="branch_id" id="hr_input_branch_id" value="{{ request('branch_id') }}">
-        <input type="hidden" name="company_id" id="hr_input_company_id" value="{{ request('company_id') }}">
-        <input type="hidden" name="department_id" id="hr_input_department_id" value="{{ request('department_id') }}">
-        <input type="hidden" name="employee_id" id="hr_input_employee_id" value="{{ request('employee_id') }}">
-        <input type="hidden" name="employment_source" id="hr_input_employment_source" value="{{ request('employment_source') }}">
+        <!-- Dynamically managed individual inputs for backend compatibility -->
+        <div id="{{ $hiddenContainerId }}" class="hr-hidden-inputs-container" style="display: none;"></div>
 
-        @if($showDates)
-        <!-- 1. Top Row matching sketch: from [  ]   to [  ] -->
-        <div class="hr-sketch-date-row">
-            <span class="hr-sketch-date-label">from</span>
-            <div class="hr-sketch-date-box">
-                <input type="date" name="date_from" value="{{ $startDate ?? request('date_from') }}" class="hr-sketch-date-input" title="Date From">
-            </div>
-            <span class="hr-sketch-date-label" style="margin-left: 10px;">to</span>
-            <div class="hr-sketch-date-box">
-                <input type="date" name="date_to" value="{{ $endDate ?? request('date_to') }}" class="hr-sketch-date-input" title="Date To">
-            </div>
-        </div>
+        {{-- Optional Extra Controls (e.g. Pay Period select) --}}
+        @if(isset($extraControls) && $extraControls)
+            {{ $extraControls }}
         @endif
 
-        <!-- 2. Bottom Row matching sketch: [ all employee ][ regular; bgc branch; ... ][ Generate ] -->
-        <div style="position: relative;">
-            <div class="hr-stacked-bar-container">
-                
-                <!-- Unified Input Box (Purple Prefix + White Body) -->
-                <div class="hr-stacked-input-group" id="hrStackedInputGroup">
-                    
-                    <!-- Left Solid Purple Prefix Box: all employee -->
-                    <div class="hr-filter-prefix-pill" id="hrFilterPrefixPill" title="Default is all employees. Click to clear all stacked filters back to default.">
-                        <span id="hrFilterPrefixText">all employee</span>
-                    </div>
-
-                    <!-- Center Body for Stacked Filter Chips and Search Input -->
-                    <div class="hr-stacked-tags-body" id="hrStackedTagsBody" onclick="focusStackedInput(event)">
-                        
-                        <!-- Stacked Filter Tag Chips -->
-                        <div id="hrStackedChipsContainer" style="display: contents;">
-                            @foreach($stackedTags as $tag)
-                                <span class="hr-stacked-tag-chip" data-key="{{ $tag['key'] }}" data-value="{{ $tag['value'] }}">
-                                    <span>{{ $tag['label'] }};</span>
-                                    <button type="button" class="remove-tag" onclick="event.stopPropagation(); removeFilterTag('{{ $tag['key'] }}')">&times;</button>
-                                </span>
-                            @endforeach
+        @if($layout === 'card')
+            {{-- Card / Stacked Layout --}}
+            <div class="hr-filter-controls-row">
+                @if($showDates)
+                    <div class="hr-card-dates-grid">
+                        <!-- 1. Start Date -->
+                        <div class="hr-card-date-field-group">
+                            <label class="hr-card-date-label">
+                                <i class="ph ph-calendar-blank" style="color: #ec4899;"></i> Start Date
+                            </label>
+                            <input type="date" 
+                                   name="{{ $startDateName }}" 
+                                   value="{{ $startDate ?? request($startDateName, request('date_from')) }}" 
+                                   class="hr-glass-date-input" 
+                                   title="Start Date"
+                                   aria-label="Start Date">
                         </div>
 
-                        <!-- Typing Search Input -->
-                        <input type="text" name="search" id="hrStackedSearchInput" value="{{ request('search') }}" class="hr-stacked-live-input" placeholder="{{ count($stackedTags) === 0 ? 'Click to stack filters (status, branch, company, dept...) or search employee...' : 'Add more filters or search...' }}" autocomplete="off">
+                        <!-- 2. End Date -->
+                        <div class="hr-card-date-field-group">
+                            <label class="hr-card-date-label">
+                                <i class="ph ph-calendar-blank" style="color: #a855f7;"></i> End Date
+                            </label>
+                            <input type="date" 
+                                   name="{{ $endDateName }}" 
+                                   value="{{ $endDate ?? request($endDateName, request('date_to')) }}" 
+                                   class="hr-glass-date-input" 
+                                   title="End Date"
+                                   aria-label="End Date">
+                        </div>
+                    </div>
+                @endif
 
-                        <!-- Dropdown Open Indicator Button -->
-                        <button type="button" id="hrFilterDropdownToggle" onclick="event.stopPropagation(); toggleFilterDropdown()" style="background: none; border: none; padding: 2px 6px; cursor: pointer; color: #64748b; display: inline-flex; align-items: center; gap: 3px; font-size: 13px;" title="Browse and select filters">
-                            <i class="ph ph-funnel" style="font-size: 15px; color: #8e44ad;"></i>
-                            <i class="ph ph-caret-down" id="hrDropdownCaretIcon" style="font-size: 11px;"></i>
+                @if($showQuickPresets)
+                    <div class="hr-filter-quick-presets" id="{{ $uid }}_presets">
+                        <span class="hr-preset-label"><i class="ph ph-sparkle"></i> Quick scope:</span>
+                        <button type="button" 
+                                class="hr-preset-pill {{ $hasAllActiveChip ? 'active' : '' }}" 
+                                id="{{ $uid }}_preset_active" 
+                                data-preset="all-active" 
+                                title="Filter for active staff only">
+                            <i class="ph ph-check-circle"></i> All Active
+                        </button>
+                        <button type="button" 
+                                class="hr-preset-pill {{ $hasAllEmployeesChip ? 'active' : '' }}" 
+                                id="{{ $uid }}_preset_all" 
+                                data-preset="all-employees" 
+                                title="Include all active & inactive staff">
+                            <i class="ph ph-users"></i> All Employees
                         </button>
                     </div>
+                @endif
 
+                <!-- Search Bar -->
+                <div class="hr-search-bar-wrap" id="{{ $searchWrapId }}">
+                    <i class="ph ph-magnifying-glass hr-search-bar-icon"></i>
+                    <input type="text" 
+                           id="{{ $searchInputId }}" 
+                           class="hr-search-bar-input hrFilterSearchInput" 
+                           placeholder="{{ $placeholder }}" 
+                           autocomplete="off" 
+                           aria-label="Search criteria">
+                    
+                    <!-- Autocomplete suggestions dropdown -->
+                    <div id="{{ $suggestionsId }}" class="hr-filter-suggestions-list" style="display: none;"></div>
                 </div>
 
-                <!-- Right Pink/Magenta Rounded Generate Button -->
-                <button type="submit" class="hr-sketch-generate-btn" title="Generate report records">
-                    Generate
+                <!-- Removable Tags / Chips Row -->
+                <div class="hr-filter-chips-row hrFilterChipsRow" id="{{ $chipsRowId }}">
+                    @foreach($initialChips as $idx => $chip)
+                        @php
+                            $parts = explode(':', $chip['label'] ?? '', 2);
+                            $cat = count($parts) === 2 ? trim($parts[0]) : '';
+                            $val = count($parts) === 2 ? trim($parts[1]) : $chip['label'];
+                        @endphp
+                        <span class="hr-filter-tag-chip" data-index="{{ $idx }}">
+                            <span class="hr-chip-text">
+                                @if($cat)
+                                    <strong class="hr-chip-category">{{ $cat }}:</strong>
+                                @endif
+                                <span class="hr-chip-value">{{ $val }}</span>
+                            </span>
+                            <button type="button" class="hr-chip-remove-btn" data-index="{{ $idx }}" aria-label="Remove filter">&times;</button>
+                        </span>
+                    @endforeach
+                    @if(count($initialChips) >= 2)
+                        <button type="button" class="hr-clear-all-chips-btn"><i class="ph ph-x"></i> Clear all</button>
+                    @endif
+                </div>
+
+                <!-- Submit / Download Button -->
+                <button type="submit" class="hr-sketch-generate-btn" title="{{ $buttonText }}">
+                    <i class="ph {{ $buttonIcon }}"></i>
+                    <span>{{ $buttonText }}</span>
                 </button>
-
             </div>
 
-            <!-- Sleek Popover Drawer for Selecting Filters -->
-            <div id="hrFilterPickerPopover" class="hr-filter-picker-popover" style="display: none;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid #f1f5f9;">
-                    <div style="font-size: 13px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 6px;">
-                        <i class="ph ph-sliders" style="color: #8e44ad; font-size: 16px;"></i>
-                        <span>Stack Filter Criteria</span>
-                        <span style="font-size: 11.5px; font-weight: 400; color: #64748b;">(Click tags to add/remove from filter bar)</span>
+        @else
+            {{-- Horizontal Report Layout (3 Main Controls Row) --}}
+            <div class="hr-filter-controls-row">
+                @if($showDates)
+                    <!-- 1. Start Date -->
+                    <div class="hr-date-picker-box" title="Start Date">
+                        <span class="hr-date-box-label">Start Date</span>
+                        <input type="date" 
+                               name="{{ $startDateName }}" 
+                               value="{{ $startDate ?? request($startDateName, request('date_from')) }}" 
+                               class="hr-date-field" 
+                               aria-label="Start Date">
                     </div>
-                    <div style="display: flex; gap: 10px; align-items: center;">
-                        <button type="button" onclick="clearAllFilterTags()" style="background: none; border: none; font-size: 11.5px; font-weight: 600; color: #ef4444; cursor: pointer; display: inline-flex; align-items: center; gap: 3px;">
-                            <i class="ph ph-arrow-counter-clockwise"></i> Clear All to Default
-                        </button>
-                        <button type="button" onclick="closeFilterDropdown()" style="background: #f1f5f9; border: none; border-radius: 6px; padding: 4px 8px; font-size: 12px; cursor: pointer; color: #64748b;">
-                            Done
-                        </button>
-                    </div>
-                </div>
 
-                <!-- Scrollable Categories Grid -->
-                <div style="max-height: 380px; overflow-y: auto; padding-right: 6px;">
+                    <!-- 2. End Date -->
+                    <div class="hr-date-picker-box" title="End Date">
+                        <span class="hr-date-box-label">End Date</span>
+                        <input type="date" 
+                               name="{{ $endDateName }}" 
+                               value="{{ $endDate ?? request($endDateName, request('date_to')) }}" 
+                               class="hr-date-field" 
+                               aria-label="End Date">
+                    </div>
+                @endif
+
+                <!-- 3. Search Bar -->
+                <div class="hr-search-bar-wrap" id="{{ $searchWrapId }}">
+                    <i class="ph ph-magnifying-glass hr-search-bar-icon"></i>
+                    <input type="text" 
+                           id="{{ $searchInputId }}" 
+                           class="hr-search-bar-input hrFilterSearchInput" 
+                           placeholder="{{ $placeholder }}" 
+                           autocomplete="off" 
+                           aria-label="Search criteria">
                     
-                    @if($showStatus)
-                        <!-- 1. Employee Status -->
-                        <div class="hr-picker-sec-title">
-                            <i class="ph ph-user-check" style="color: #8e44ad;"></i> Employee Status
-                        </div>
-                        <div class="hr-picker-pill-grid">
-                            @foreach($statuses as $lbl => $val)
-                                @php $isActive = (request('employment_status') === (string)$val); @endphp
-                                <span class="hr-picker-pill {{ $isActive ? 'active' : '' }}" 
-                                      data-filter-key="employment_status" 
-                                      data-filter-val="{{ $val }}" 
-                                      data-filter-label="{{ strtolower($lbl) }}"
-                                      onclick="togglePickerPill(this)">
-                                    {{ $lbl }}
-                                </span>
-                            @endforeach
-                        </div>
-                    @endif
-
-                    @if($showBranch && count($branches) > 0)
-                        <!-- 2. Branches -->
-                        <div class="hr-picker-sec-title">
-                            <i class="ph ph-storefront" style="color: #0284c7;"></i> Branches
-                        </div>
-                        <div class="hr-picker-pill-grid">
-                            @foreach($branches as $b)
-                                @php $isActive = ((string)request('branch_id') === (string)$b->id); @endphp
-                                <span class="hr-picker-pill {{ $isActive ? 'active' : '' }}" 
-                                      data-filter-key="branch_id" 
-                                      data-filter-val="{{ $b->id }}" 
-                                      data-filter-label="{{ strtolower($b->name) }}"
-                                      onclick="togglePickerPill(this)">
-                                    {{ $b->name }}
-                                </span>
-                            @endforeach
-                        </div>
-                    @endif
-
-                    @if($showCompany && count($companies) > 0)
-                        <!-- 3. Company / Agency -->
-                        <div class="hr-picker-sec-title">
-                            <i class="ph ph-buildings" style="color: #d97706;"></i> Company / Agency
-                        </div>
-                        <div class="hr-picker-pill-grid">
-                            @foreach($companies as $c)
-                                @php $isActive = ((string)request('company_id') === (string)$c->id); @endphp
-                                <span class="hr-picker-pill {{ $isActive ? 'active' : '' }}" 
-                                      data-filter-key="company_id" 
-                                      data-filter-val="{{ $c->id }}" 
-                                      data-filter-label="{{ strtolower($c->name) }}"
-                                      onclick="togglePickerPill(this)">
-                                    {{ $c->name }}
-                                </span>
-                            @endforeach
-                        </div>
-                    @endif
-
-                    @if($showDepartment && count($departments) > 0)
-                        <!-- 4. Department -->
-                        <div class="hr-picker-sec-title">
-                            <i class="ph ph-tree-structure" style="color: #059669;"></i> Departments
-                        </div>
-                        <div class="hr-picker-pill-grid">
-                            @foreach($departments as $d)
-                                @php $isActive = ((string)request('department_id') === (string)$d->id); @endphp
-                                <span class="hr-picker-pill {{ $isActive ? 'active' : '' }}" 
-                                      data-filter-key="department_id" 
-                                      data-filter-val="{{ $d->id }}" 
-                                      data-filter-label="{{ strtolower($d->name) }}"
-                                      onclick="togglePickerPill(this)">
-                                    {{ $d->name }}
-                                </span>
-                            @endforeach
-                        </div>
-                    @endif
-
-                    @if($showSource)
-                        <!-- 5. Employment Source -->
-                        <div class="hr-picker-sec-title">
-                            <i class="ph ph-briefcase" style="color: #7c3aed;"></i> Employment Source
-                        </div>
-                        <div class="hr-picker-pill-grid">
-                            <span class="hr-picker-pill {{ request('employment_source') === 'Direct' ? 'active' : '' }}" 
-                                  data-filter-key="employment_source" 
-                                  data-filter-val="Direct" 
-                                  data-filter-label="direct source"
-                                  onclick="togglePickerPill(this)">Direct Hire</span>
-                            <span class="hr-picker-pill {{ request('employment_source') === 'Agency' ? 'active' : '' }}" 
-                                  data-filter-key="employment_source" 
-                                  data-filter-val="Agency" 
-                                  data-filter-label="agency source"
-                                  onclick="togglePickerPill(this)">Agency Deployed</span>
-                        </div>
-                    @endif
-
-                    @if($showEmployeeDropdown && count($employees) > 0)
-                        <!-- 6. Specific Employee -->
-                        <div class="hr-picker-sec-title">
-                            <i class="ph ph-user" style="color: #6366f1;"></i> Specific Staff Member
-                        </div>
-                        <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 10px;">
-                            <select id="hrPickerEmployeeSelect" class="hr-select" style="font-size: 12px; height: 32px; padding: 4px 8px; flex: 1;" onchange="selectEmployeePill(this)">
-                                <option value="">-- Choose specific staff --</option>
-                                @foreach($employees as $e)
-                                    <option value="{{ $e->id }}" data-name="{{ strtolower($e->full_name) }}" {{ ((string)request('employee_id') === (string)$e->id) ? 'selected' : '' }}>
-                                        {{ $e->full_name }} ({{ $e->employee_id }})
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                    @endif
-
-                    @if(isset($slot) && trim($slot) !== '')
-                        <!-- Custom Injected Slot Filters (Leave Type, Status, etc.) -->
-                        <div class="hr-picker-sec-title" style="margin-top: 14px; border-top: 1px dashed #cbd5e1; padding-top: 12px;">
-                            <i class="ph ph-funnel" style="color: #ec4899;"></i> Report-Specific Filters
-                        </div>
-                        <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
-                            {{ $slot }}
-                        </div>
-                    @endif
-
+                    <!-- Autocomplete suggestions dropdown -->
+                    <div id="{{ $suggestionsId }}" class="hr-filter-suggestions-list" style="display: none;"></div>
                 </div>
 
+                <!-- Generate Button -->
+                <button type="submit" class="hr-sketch-generate-btn" title="Generate report with active criteria">
+                    <i class="ph {{ $buttonIcon }}"></i>
+                    <span>{{ $buttonText }}</span>
+                </button>
             </div>
 
-        </div>
+            <!-- Quick Presets Row & Removable Tags / Chips Row -->
+            <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px;">
+                <!-- Removable Tags / Chips Row -->
+                <div class="hr-filter-chips-row hrFilterChipsRow" id="{{ $chipsRowId }}">
+                    @foreach($initialChips as $idx => $chip)
+                        @php
+                            $parts = explode(':', $chip['label'] ?? '', 2);
+                            $cat = count($parts) === 2 ? trim($parts[0]) : '';
+                            $val = count($parts) === 2 ? trim($parts[1]) : $chip['label'];
+                        @endphp
+                        <span class="hr-filter-tag-chip" data-index="{{ $idx }}">
+                            <span class="hr-chip-text">
+                                @if($cat)
+                                    <strong class="hr-chip-category">{{ $cat }}:</strong>
+                                @endif
+                                <span class="hr-chip-value">{{ $val }}</span>
+                            </span>
+                            <button type="button" class="hr-chip-remove-btn" data-index="{{ $idx }}" aria-label="Remove filter">&times;</button>
+                        </span>
+                    @endforeach
+                    @if(count($initialChips) >= 2)
+                        <button type="button" class="hr-clear-all-chips-btn"><i class="ph ph-x"></i> Clear all</button>
+                    @endif
+                </div>
 
+                @if($showQuickPresets)
+                    <div class="hr-filter-quick-presets" id="{{ $uid }}_presets">
+                        <span class="hr-preset-label"><i class="ph ph-sparkle"></i> Quick scope:</span>
+                        <button type="button" 
+                                class="hr-preset-pill {{ $hasAllActiveChip ? 'active' : '' }}" 
+                                id="{{ $uid }}_preset_active" 
+                                data-preset="all-active" 
+                                title="Filter for active staff only">
+                            <i class="ph ph-check-circle"></i> All Active
+                        </button>
+                        <button type="button" 
+                                class="hr-preset-pill {{ $hasAllEmployeesChip ? 'active' : '' }}" 
+                                id="{{ $uid }}_preset_all" 
+                                data-preset="all-employees" 
+                                title="Include all active & inactive staff">
+                            <i class="ph ph-users"></i> All Employees
+                        </button>
+                    </div>
+                @endif
+            </div>
+        @endif
     </form>
 </div>
 
 <script>
-    function focusStackedInput(e) {
-        if (e.target.tagName !== 'BUTTON' && !e.target.closest('.remove-tag')) {
-            var input = document.getElementById('hrStackedSearchInput');
-            if (input) input.focus();
-            openFilterDropdown();
-        }
+(function() {
+    const rootForm = document.getElementById(@json($formId));
+    if (!rootForm) return;
+
+    let filterTags = @json($initialChips);
+    const lookupData = {
+        branches: @json($lookupBranches),
+        departments: @json($lookupDepartments),
+        positions: @json($lookupPositions),
+        employees: @json($lookupEmployees),
+        statuses: @json($lookupStatuses)
+    };
+
+    let activeSuggestionIndex = -1;
+    let currentSuggestions = [];
+
+    const searchInput = rootForm.querySelector('.hrFilterSearchInput');
+    const suggestionsList = document.getElementById(@json($suggestionsId));
+    const chipsRow = rootForm.querySelector('.hrFilterChipsRow');
+    const hiddenJsonInput = document.getElementById(@json($tagsJsonId));
+    const hiddenInputsContainer = document.getElementById(@json($hiddenContainerId));
+    const searchWrap = document.getElementById(@json($searchWrapId));
+    const presetActiveBtn = document.getElementById(@json($uid . '_preset_active'));
+    const presetAllBtn = document.getElementById(@json($uid . '_preset_all'));
+
+    // Sync state on load
+    syncHiddenInputs();
+    updatePresetPillStates();
+
+    // Event delegation on chips row for removing chips
+    if (chipsRow) {
+        chipsRow.addEventListener('click', function(e) {
+            const removeBtn = e.target.closest('.hr-chip-remove-btn');
+            if (removeBtn) {
+                const idx = parseInt(removeBtn.getAttribute('data-index'), 10);
+                if (!isNaN(idx)) {
+                    removeFilterTag(idx);
+                }
+                return;
+            }
+            const clearBtn = e.target.closest('.hr-clear-all-chips-btn');
+            if (clearBtn) {
+                clearAllFilterTags();
+            }
+        });
     }
 
-    function toggleFilterDropdown() {
-        var popover = document.getElementById('hrFilterPickerPopover');
-        if (!popover) return;
-        if (popover.style.display === 'none' || popover.style.display === '') {
-            openFilterDropdown();
+    // Preset button click handlers
+    if (presetActiveBtn) {
+        presetActiveBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            togglePresetActive();
+        });
+    }
+
+    if (presetAllBtn) {
+        presetAllBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            togglePresetAll();
+        });
+    }
+
+    function togglePresetActive() {
+        const activeIdx = filterTags.findIndex(t => 
+            (t.type === 'status' && (t.value === 'ACTIVE_ALL' || t.value === 'All Active')) ||
+            t.label === 'Status: All Active'
+        );
+
+        if (activeIdx >= 0) {
+            // Toggle off
+            filterTags.splice(activeIdx, 1);
         } else {
-            closeFilterDropdown();
+            // Remove any "Scope: All Employees" tag
+            filterTags = filterTags.filter(t => t.type !== 'scope' && t.value !== 'ALL' && t.label !== 'Scope: All Employees');
+            // Remove any other individual status tags to avoid contradiction
+            filterTags = filterTags.filter(t => t.type !== 'status');
+            filterTags.push({
+                type: 'status',
+                label: 'Status: All Active',
+                value: 'ACTIVE_ALL'
+            });
         }
+        renderChips();
+        syncHiddenInputs();
+        updatePresetPillStates();
+        if (searchInput) searchInput.focus();
     }
 
-    function openFilterDropdown() {
-        var popover = document.getElementById('hrFilterPickerPopover');
-        var caret = document.getElementById('hrDropdownCaretIcon');
-        if (popover) popover.style.display = 'block';
-        if (caret) caret.className = 'ph ph-caret-up';
+    function togglePresetAll() {
+        const allIdx = filterTags.findIndex(t => 
+            t.type === 'scope' || t.value === 'ALL' || t.label === 'Scope: All Employees'
+        );
+
+        if (allIdx >= 0) {
+            // Toggle off
+            filterTags.splice(allIdx, 1);
+        } else {
+            // Remove "Status: All Active" and other status tags
+            filterTags = filterTags.filter(t => t.label !== 'Status: All Active' && t.value !== 'ACTIVE_ALL');
+            filterTags = filterTags.filter(t => t.type !== 'status');
+            filterTags.push({
+                type: 'scope',
+                label: 'Scope: All Employees',
+                value: 'ALL'
+            });
+        }
+        renderChips();
+        syncHiddenInputs();
+        updatePresetPillStates();
+        if (searchInput) searchInput.focus();
     }
 
-    function closeFilterDropdown() {
-        var popover = document.getElementById('hrFilterPickerPopover');
-        var caret = document.getElementById('hrDropdownCaretIcon');
-        if (popover) popover.style.display = 'none';
-        if (caret) caret.className = 'ph ph-caret-down';
-    }
+    function updatePresetPillStates() {
+        const hasActive = filterTags.some(t => 
+            (t.type === 'status' && (t.value === 'ACTIVE_ALL' || t.value === 'All Active')) ||
+            t.label === 'Status: All Active'
+        );
+        const hasAll = filterTags.some(t => 
+            t.type === 'scope' || t.value === 'ALL' || t.label === 'Scope: All Employees'
+        );
 
-    // Close popover when clicking outside
-    document.addEventListener('click', function(e) {
-        var wrap = document.getElementById('hrStackedInputGroup');
-        var popover = document.getElementById('hrFilterPickerPopover');
-        if (popover && popover.style.display === 'block') {
-            if (!popover.contains(e.target) && !wrap.contains(e.target)) {
-                closeFilterDropdown();
+        if (presetActiveBtn) {
+            if (hasActive) {
+                presetActiveBtn.classList.add('active');
+            } else {
+                presetActiveBtn.classList.remove('active');
             }
         }
-    });
 
-    function togglePickerPill(el) {
-        var key = el.getAttribute('data-filter-key');
-        var val = el.getAttribute('data-filter-val');
-        var label = el.getAttribute('data-filter-label');
-        var isActive = el.classList.contains('active');
-
-        var hiddenInput = document.getElementById('hr_input_' + key);
-
-        if (isActive) {
-            // Deactivate
-            el.classList.remove('active');
-            if (hiddenInput) hiddenInput.value = '';
-            removeChipByKey(key);
-        } else {
-            // Remove previous sibling active in the same category
-            var group = el.parentElement.querySelectorAll('.hr-picker-pill');
-            group.forEach(function(p) { p.classList.remove('active'); });
-
-            el.classList.add('active');
-            if (hiddenInput) hiddenInput.value = val;
-            addOrUpdateChip(key, val, label);
+        if (presetAllBtn) {
+            if (hasAll) {
+                presetAllBtn.classList.add('active');
+            } else {
+                presetAllBtn.classList.remove('active');
+            }
         }
-        updatePlaceholder();
     }
 
-    function selectEmployeePill(selectEl) {
-        var val = selectEl.value;
-        var opt = selectEl.options[selectEl.selectedIndex];
-        var name = opt ? (opt.getAttribute('data-name') || opt.text) : '';
-        var hiddenInput = document.getElementById('hr_input_employee_id');
-
-        if (val) {
-            if (hiddenInput) hiddenInput.value = val;
-            addOrUpdateChip('employee_id', val, name);
-        } else {
-            if (hiddenInput) hiddenInput.value = '';
-            removeChipByKey('employee_id');
+    function removeFilterTag(index) {
+        if (index >= 0 && index < filterTags.length) {
+            filterTags.splice(index, 1);
+            renderChips();
+            syncHiddenInputs();
+            updatePresetPillStates();
+            if (searchInput) searchInput.focus();
         }
-        updatePlaceholder();
     }
 
-    function addOrUpdateChip(key, val, label) {
-        removeChipByKey(key);
-        var container = document.getElementById('hrStackedChipsContainer');
-        if (!container) return;
-
-        var chip = document.createElement('span');
-        chip.className = 'hr-stacked-tag-chip';
-        chip.setAttribute('data-key', key);
-        chip.setAttribute('data-value', val);
-        chip.innerHTML = '<span>' + label + ';</span>' +
-            '<button type="button" class="remove-tag" onclick="event.stopPropagation(); removeFilterTag(\'' + key + '\')">&times;</button>';
-        container.appendChild(chip);
-    }
-
-    function removeChipByKey(key) {
-        var container = document.getElementById('hrStackedChipsContainer');
-        if (!container) return;
-        var existing = container.querySelector('[data-key="' + key + '"]');
-        if (existing) existing.remove();
-    }
-
-    function removeFilterTag(key) {
-        var hiddenInput = document.getElementById('hr_input_' + key);
-        if (hiddenInput) hiddenInput.value = '';
-        removeChipByKey(key);
-
-        // Deactivate pill in popover if open
-        var pill = document.querySelector('.hr-picker-pill[data-filter-key="' + key + '"].active');
-        if (pill) pill.classList.remove('active');
-
-        if (key === 'employee_id') {
-            var empSelect = document.getElementById('hrPickerEmployeeSelect');
-            if (empSelect) empSelect.value = '';
-        }
-        updatePlaceholder();
+    // Expose removeFilterTag and clearAllFilterTags on form for fallback
+    rootForm.removeFilterTag = removeFilterTag;
+    if (!window.removeFilterTag) {
+        window.removeFilterTag = removeFilterTag;
     }
 
     function clearAllFilterTags() {
-        ['employment_status', 'branch_id', 'company_id', 'department_id', 'employee_id', 'employment_source'].forEach(function(k) {
-            var inp = document.getElementById('hr_input_' + k);
-            if (inp) inp.value = '';
-            removeChipByKey(k);
-        });
-
-        document.querySelectorAll('.hr-picker-pill.active').forEach(function(p) {
-            p.classList.remove('active');
-        });
-
-        var empSelect = document.getElementById('hrPickerEmployeeSelect');
-        if (empSelect) empSelect.value = '';
-
-        var searchInput = document.getElementById('hrStackedSearchInput');
-        if (searchInput) searchInput.value = '';
-
-        updatePlaceholder();
-        closeFilterDropdown();
+        filterTags = [];
+        renderChips();
+        syncHiddenInputs();
+        updatePresetPillStates();
+        if (searchInput) searchInput.focus();
     }
 
-    // Prefix pill click handler: resets back to all employee default
-    document.addEventListener('DOMContentLoaded', function() {
-        var prefix = document.getElementById('hrFilterPrefixPill');
-        if (prefix) {
-            prefix.addEventListener('click', function(e) {
-                e.stopPropagation();
-                clearAllFilterTags();
+    function addFilterTag(tagObj) {
+        if (!tagObj || !tagObj.label) return;
+        
+        // Prevent duplicate tags with exact same label
+        const exists = filterTags.some(t => t.label.toLowerCase() === tagObj.label.toLowerCase());
+        if (!exists) {
+            // If adding "All Active", remove "All Employees"
+            if (tagObj.value === 'ACTIVE_ALL' || tagObj.label === 'Status: All Active') {
+                filterTags = filterTags.filter(t => t.type !== 'scope' && t.value !== 'ALL');
+            }
+            // If adding "All Employees", remove "All Active"
+            if (tagObj.value === 'ALL' || tagObj.label === 'Scope: All Employees') {
+                filterTags = filterTags.filter(t => t.value !== 'ACTIVE_ALL' && t.label !== 'Status: All Active');
+            }
+            filterTags.push(tagObj);
+            renderChips();
+            syncHiddenInputs();
+            updatePresetPillStates();
+        }
+
+        if (searchInput) {
+            searchInput.value = '';
+            searchInput.focus();
+        }
+        closeSuggestions();
+    }
+
+    function renderChips() {
+        if (!chipsRow) return;
+        chipsRow.innerHTML = '';
+
+        filterTags.forEach((chip, idx) => {
+            const span = document.createElement('span');
+            span.className = 'hr-filter-tag-chip';
+            span.setAttribute('data-index', idx);
+
+            const parts = (chip.label || '').split(':');
+            let cat = '';
+            let val = chip.label || '';
+            if (parts.length >= 2) {
+                cat = parts[0].trim();
+                val = parts.slice(1).join(':').trim();
+            }
+
+            span.innerHTML = `
+                <span class="hr-chip-text">
+                    ${cat ? `<strong class="hr-chip-category">${escapeHtml(cat)}:</strong> ` : ''}
+                    <span class="hr-chip-value">${escapeHtml(val)}</span>
+                </span>
+                <button type="button" class="hr-chip-remove-btn" data-index="${idx}" aria-label="Remove filter">&times;</button>
+            `;
+            chipsRow.appendChild(span);
+        });
+
+        if (filterTags.length >= 2) {
+            const clearBtn = document.createElement('button');
+            clearBtn.type = 'button';
+            clearBtn.className = 'hr-clear-all-chips-btn';
+            clearBtn.innerHTML = '<i class="ph ph-x"></i> Clear all';
+            chipsRow.appendChild(clearBtn);
+        }
+    }
+
+    function syncHiddenInputs() {
+        if (hiddenJsonInput) {
+            hiddenJsonInput.value = JSON.stringify(filterTags);
+        }
+
+        if (!hiddenInputsContainer) return;
+        hiddenInputsContainer.innerHTML = '';
+
+        let branchCount = 0;
+        let lastBranchId = null;
+        let deptCount = 0;
+        let lastDeptId = null;
+        let posCount = 0;
+        let lastPosId = null;
+        let empCount = 0;
+        let lastEmpId = null;
+        let statusCount = 0;
+        let lastStatus = null;
+        let searchCount = 0;
+        let lastSearch = null;
+        let scopeAll = false;
+
+        filterTags.forEach(t => {
+            const type = (t.type || '').toLowerCase();
+            const val = t.value || '';
+            const id = t.id || null;
+            const empid = t.empid || null;
+
+            if (type === 'branch') {
+                branchCount++;
+                if (id) lastBranchId = id;
+                createHiddenInput('branches[]', val);
+            } else if (type === 'department') {
+                deptCount++;
+                if (id) lastDeptId = id;
+                createHiddenInput('departments[]', val);
+            } else if (type === 'position') {
+                posCount++;
+                if (id) lastPosId = id;
+                createHiddenInput('positions[]', val);
+            } else if (type === 'employee') {
+                empCount++;
+                if (id) lastEmpId = id;
+                createHiddenInput('employees[]', val);
+                if (empid) createHiddenInput('employee_ids[]', empid);
+            } else if (type === 'employee_id') {
+                empCount++;
+                lastEmpId = val;
+                createHiddenInput('employee_ids[]', val);
+            } else if (type === 'status') {
+                statusCount++;
+                lastStatus = val;
+                createHiddenInput('statuses[]', val);
+                if (val === 'ACTIVE_ALL') {
+                    createHiddenInput('employment_status', 'ACTIVE_ALL');
+                }
+            } else if (type === 'scope' || val === 'ALL') {
+                scopeAll = true;
+                createHiddenInput('scope', 'ALL');
+                createHiddenInput('all_employees', '1');
+            } else if (type === 'search') {
+                searchCount++;
+                lastSearch = val;
+            }
+        });
+
+        // Set backwards-compatible single parameters
+        if (branchCount === 1 && lastBranchId) createHiddenInput('branch_id', lastBranchId);
+        if (deptCount === 1 && lastDeptId) createHiddenInput('department_id', lastDeptId);
+        if (posCount === 1 && lastPosId) createHiddenInput('position_id', lastPosId);
+        if (empCount === 1 && lastEmpId) createHiddenInput('employee_id', lastEmpId);
+        if (statusCount === 1 && lastStatus) createHiddenInput('status', lastStatus);
+        if (searchCount === 1 && lastSearch) createHiddenInput('search', lastSearch);
+    }
+
+    function createHiddenInput(name, value) {
+        const inp = document.createElement('input');
+        inp.type = 'hidden';
+        inp.name = name;
+        inp.value = value;
+        hiddenInputsContainer.appendChild(inp);
+    }
+
+    function parseFreeText(rawText) {
+        const text = rawText.trim();
+        if (!text) return null;
+
+        const lower = text.toLowerCase();
+
+        // Check for "all active" or "active"
+        if (lower === 'all active' || lower === 'active staff only') {
+            return {
+                type: 'status',
+                label: 'Status: All Active',
+                value: 'ACTIVE_ALL'
+            };
+        }
+
+        // Check for "all employee" or "all employees"
+        if (lower === 'all employee' || lower === 'all employees' || lower === 'all staff') {
+            return {
+                type: 'scope',
+                label: 'Scope: All Employees',
+                value: 'ALL'
+            };
+        }
+
+        // 1. Explicit prefix matching
+        const prefixPatterns = [
+            { regex: /^(branch|branches)\s*:\s*(.+)$/i, type: 'branch', labelPrefix: 'Branch: ' },
+            { regex: /^(department|departments|dept)\s*:\s*(.+)$/i, type: 'department', labelPrefix: 'Department: ' },
+            { regex: /^(position|positions|pos)\s*:\s*(.+)$/i, type: 'position', labelPrefix: 'Position: ' },
+            { regex: /^(employee\s*id|empid|id)\s*:\s*(.+)$/i, type: 'employee_id', labelPrefix: 'Employee ID: ' },
+            { regex: /^(employee|employees|emp|staff)\s*:\s*(.+)$/i, type: 'employee', labelPrefix: 'Employee: ' },
+            { regex: /^(status|statuses)\s*:\s*(.+)$/i, type: 'status', labelPrefix: 'Status: ' },
+            { regex: /^(search)\s*:\s*(.+)$/i, type: 'search', labelPrefix: 'Search: ' },
+        ];
+
+        for (let p of prefixPatterns) {
+            const m = text.match(p.regex);
+            if (m && m[2]) {
+                const val = m[2].trim();
+                let matchedId = null;
+                let matchedEmpId = null;
+
+                if (p.type === 'branch') {
+                    const b = lookupData.branches.find(x => x.name.toLowerCase() === val.toLowerCase());
+                    if (b) matchedId = b.id;
+                } else if (p.type === 'department') {
+                    const d = lookupData.departments.find(x => x.name.toLowerCase() === val.toLowerCase());
+                    if (d) matchedId = d.id;
+                } else if (p.type === 'position') {
+                    const pos = lookupData.positions.find(x => x.name.toLowerCase() === val.toLowerCase());
+                    if (pos) matchedId = pos.id;
+                } else if (p.type === 'employee') {
+                    const emp = lookupData.employees.find(x => x.name.toLowerCase() === val.toLowerCase() || (x.employee_id && x.employee_id.toLowerCase() === val.toLowerCase()));
+                    if (emp) {
+                        matchedId = emp.id;
+                        matchedEmpId = emp.employee_id;
+                    }
+                }
+
+                return {
+                    type: p.type,
+                    label: p.labelPrefix + val,
+                    value: val,
+                    id: matchedId,
+                    empid: matchedEmpId
+                };
+            }
+        }
+
+        // 2. Intelligent Category Matching without explicit prefix
+        // Branch match
+        const bMatch = lookupData.branches.find(b => b.name.toLowerCase() === lower || b.name.toLowerCase().includes(lower));
+        if (bMatch && (lower.length > 2 || bMatch.name.toLowerCase() === lower)) {
+            return {
+                type: 'branch',
+                label: 'Branch: ' + bMatch.name,
+                value: bMatch.name,
+                id: bMatch.id
+            };
+        }
+
+        // Department match
+        const dMatch = lookupData.departments.find(d => d.name.toLowerCase() === lower || d.name.toLowerCase().includes(lower));
+        if (dMatch && (lower.length > 2 || dMatch.name.toLowerCase() === lower)) {
+            return {
+                type: 'department',
+                label: 'Department: ' + dMatch.name,
+                value: dMatch.name,
+                id: dMatch.id
+            };
+        }
+
+        // Position match
+        const pMatch = lookupData.positions.find(p => p.name.toLowerCase() === lower || p.name.toLowerCase().includes(lower));
+        if (pMatch && (lower.length > 2 || pMatch.name.toLowerCase() === lower)) {
+            return {
+                type: 'position',
+                label: 'Position: ' + pMatch.name,
+                value: pMatch.name,
+                id: pMatch.id
+            };
+        }
+
+        // Employee match
+        const eMatch = lookupData.employees.find(e => {
+            const nameMatch = e.name && e.name.toLowerCase().includes(lower);
+            const idMatch = e.employee_id && e.employee_id.toLowerCase().includes(lower);
+            return nameMatch || idMatch;
+        });
+        if (eMatch && lower.length >= 3) {
+            return {
+                type: 'employee',
+                label: 'Employee: ' + eMatch.name,
+                value: eMatch.name,
+                id: eMatch.id,
+                empid: eMatch.employee_id
+            };
+        }
+
+        // Status match
+        const sMatch = lookupData.statuses.find(s => s.toLowerCase() === lower || s.toLowerCase().includes(lower));
+        if (sMatch) {
+            if (sMatch === 'All Active') {
+                return { type: 'status', label: 'Status: All Active', value: 'ACTIVE_ALL' };
+            }
+            if (sMatch === 'All Employees') {
+                return { type: 'scope', label: 'Scope: All Employees', value: 'ALL' };
+            }
+            return {
+                type: 'status',
+                label: 'Status: ' + sMatch,
+                value: sMatch
+            };
+        }
+
+        // Pure digits or EMP- prefix -> Employee ID
+        if (/^\d{3,}$/.test(text) || /^emp[-\s]?\d+$/i.test(text)) {
+            return {
+                type: 'employee_id',
+                label: 'Employee ID: ' + text,
+                value: text
+            };
+        }
+
+        // Unknown text does not generate a fake keyword tag
+        return null;
+    }
+
+    // Autocomplete Suggestions Generator
+    function getSuggestions(query) {
+        const q = (query || '').trim().toLowerCase();
+        const results = [];
+
+        // When search is blank or matches "all" / "act" / "emp", place presets at the very top
+        const showPresets = !q || 'all active'.includes(q) || 'all employees'.includes(q) || 'active'.includes(q) || 'all'.includes(q) || 'staff'.includes(q);
+        
+        if (showPresets) {
+            results.push({
+                type: 'status',
+                badge: 'Preset',
+                badgeClass: 'hr-badge-status',
+                icon: 'ph-check-circle',
+                label: 'Status: All Active',
+                subtext: 'Active workforce only - exclude resigned & terminated',
+                value: 'ACTIVE_ALL'
+            });
+            results.push({
+                type: 'scope',
+                badge: 'Preset',
+                badgeClass: 'hr-badge-employee',
+                icon: 'ph-users',
+                label: 'Scope: All Employees',
+                subtext: 'All staff records - active & inactive masterlist',
+                value: 'ALL'
             });
         }
-    });
 
-    function updatePlaceholder() {
-        var chips = document.querySelectorAll('.hr-stacked-tag-chip');
-        var input = document.getElementById('hrStackedSearchInput');
-        if (!input) return;
-        if (chips.length === 0) {
-            input.placeholder = 'Click to stack filters (status, branch, company, dept...) or search employee...';
-        } else {
-            input.placeholder = 'Add more filters or search...';
+        if (!q) {
+            // Show top branches & departments as quick starters
+            lookupData.branches.slice(0, 3).forEach(b => {
+                results.push({
+                    type: 'branch',
+                    badge: 'Branch',
+                    badgeClass: 'hr-badge-branch',
+                    icon: 'ph-storefront',
+                    label: 'Branch: ' + b.name,
+                    value: b.name,
+                    id: b.id
+                });
+            });
+            lookupData.departments.slice(0, 2).forEach(d => {
+                results.push({
+                    type: 'department',
+                    badge: 'Department',
+                    badgeClass: 'hr-badge-department',
+                    icon: 'ph-buildings',
+                    label: 'Department: ' + d.name,
+                    value: d.name,
+                    id: d.id
+                });
+            });
+            return results.slice(0, 8);
         }
+
+        // Branches
+        lookupData.branches.forEach(b => {
+            if (b.name.toLowerCase().includes(q)) {
+                results.push({
+                    type: 'branch',
+                    badge: 'Branch',
+                    badgeClass: 'hr-badge-branch',
+                    icon: 'ph-storefront',
+                    label: 'Branch: ' + b.name,
+                    value: b.name,
+                    id: b.id
+                });
+            }
+        });
+
+        // Departments
+        lookupData.departments.forEach(d => {
+            if (d.name.toLowerCase().includes(q)) {
+                results.push({
+                    type: 'department',
+                    badge: 'Department',
+                    badgeClass: 'hr-badge-department',
+                    icon: 'ph-buildings',
+                    label: 'Department: ' + d.name,
+                    value: d.name,
+                    id: d.id
+                });
+            }
+        });
+
+        // Positions
+        lookupData.positions.forEach(p => {
+            if (p.name.toLowerCase().includes(q)) {
+                results.push({
+                    type: 'position',
+                    badge: 'Position',
+                    badgeClass: 'hr-badge-position',
+                    icon: 'ph-identification-badge',
+                    label: 'Position: ' + p.name,
+                    value: p.name,
+                    id: p.id
+                });
+            }
+        });
+
+        // Employees (by name or employee_id)
+        lookupData.employees.forEach(e => {
+            const nameMatch = e.name && e.name.toLowerCase().includes(q);
+            const idMatch = e.employee_id && e.employee_id.toLowerCase().includes(q);
+            if (nameMatch || idMatch) {
+                results.push({
+                    type: 'employee',
+                    badge: 'Employee',
+                    badgeClass: 'hr-badge-employee',
+                    icon: 'ph-user',
+                    label: 'Employee: ' + e.name,
+                    subtext: e.employee_id ? `ID: ${e.employee_id}` : '',
+                    value: e.name,
+                    id: e.id,
+                    empid: e.employee_id
+                });
+            }
+        });
+
+        // Statuses
+        lookupData.statuses.forEach(s => {
+            if (s !== 'All Active' && s !== 'All Employees' && s.toLowerCase().includes(q)) {
+                results.push({
+                    type: 'status',
+                    badge: 'Status',
+                    badgeClass: 'hr-badge-status',
+                    icon: 'ph-tag',
+                    label: 'Status: ' + s,
+                    value: s
+                });
+            }
+        });
+
+        return results.slice(0, 8); // Top 8 results
     }
+
+    function renderSuggestions(suggestions) {
+        if (!suggestionsList) return;
+        currentSuggestions = suggestions;
+        activeSuggestionIndex = -1;
+
+        if (suggestions.length === 0) {
+            closeSuggestions();
+            return;
+        }
+
+        suggestionsList.innerHTML = '';
+        suggestions.forEach((item, i) => {
+            const div = document.createElement('div');
+            div.className = 'hr-suggestion-item';
+            div.setAttribute('data-index', i);
+            const cleanSub = item.subtext ? item.subtext.replace(/^\(|\)$/g, '').trim() : '';
+            const subtextHtml = cleanSub ? `<span class="hr-suggestion-subtext">(${escapeHtml(cleanSub)})</span>` : '';
+            div.innerHTML = `
+                <div class="hr-suggestion-left">
+                    <i class="ph ${item.icon}" style="color: #64748b; font-size: 14px; flex-shrink: 0;"></i>
+                    <span class="hr-suggestion-badge ${item.badgeClass}">${escapeHtml(item.badge)}</span>
+                    <span class="hr-suggestion-title">${escapeHtml(item.label || item.value)}</span>
+                    ${subtextHtml}
+                </div>
+                <i class="ph ph-plus" style="font-size: 13px; color: #94a3b8; flex-shrink: 0; margin-left: auto;"></i>
+            `;
+            div.addEventListener('click', () => {
+                addFilterTag(item);
+            });
+            suggestionsList.appendChild(div);
+        });
+
+        suggestionsList.scrollTop = 0;
+        suggestionsList.style.display = 'block';
+    }
+
+    function closeSuggestions() {
+        if (suggestionsList) suggestionsList.style.display = 'none';
+        activeSuggestionIndex = -1;
+        currentSuggestions = [];
+    }
+
+    if (searchInput) {
+        // Focus opens suggestions
+        searchInput.addEventListener('focus', function() {
+            renderSuggestions(getSuggestions(searchInput.value));
+        });
+
+        // Typing in search input triggers autocomplete
+        searchInput.addEventListener('input', function() {
+            renderSuggestions(getSuggestions(searchInput.value));
+        });
+
+        // Keyboard navigation
+        searchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowDown') {
+                if (currentSuggestions.length > 0) {
+                    e.preventDefault();
+                    activeSuggestionIndex = (activeSuggestionIndex + 1) % currentSuggestions.length;
+                    highlightSuggestion();
+                }
+            } else if (e.key === 'ArrowUp') {
+                if (currentSuggestions.length > 0) {
+                    e.preventDefault();
+                    activeSuggestionIndex = (activeSuggestionIndex - 1 + currentSuggestions.length) % currentSuggestions.length;
+                    highlightSuggestion();
+                }
+            } else if (e.key === 'Enter') {
+                if (activeSuggestionIndex >= 0 && activeSuggestionIndex < currentSuggestions.length) {
+                    e.preventDefault();
+                    addFilterTag(currentSuggestions[activeSuggestionIndex]);
+                } else if (searchInput.value.trim() !== '') {
+                    e.preventDefault();
+                    const tag = parseFreeText(searchInput.value);
+                    if (tag) {
+                        addFilterTag(tag);
+                    }
+                } else {
+                    // Empty input on Enter: Allow regular form submit
+                }
+            } else if (e.key === 'Backspace' && searchInput.value === '') {
+                // Remove last chip on backspace if input is empty
+                if (filterTags.length > 0) {
+                    removeFilterTag(filterTags.length - 1);
+                }
+            } else if (e.key === 'Escape') {
+                closeSuggestions();
+            }
+        });
+
+        // Close on blur / click outside
+        document.addEventListener('click', function(e) {
+            if (searchWrap && !searchWrap.contains(e.target)) {
+                closeSuggestions();
+            }
+        });
+    }
+
+    function highlightSuggestion() {
+        if (!suggestionsList) return;
+        const items = suggestionsList.querySelectorAll('.hr-suggestion-item');
+        items.forEach((item, idx) => {
+            if (idx === activeSuggestionIndex) {
+                item.classList.add('active');
+                item.scrollIntoView({ block: 'nearest' });
+            } else {
+                item.classList.remove('active');
+            }
+        });
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+})();
 </script>
