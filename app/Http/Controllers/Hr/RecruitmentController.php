@@ -47,7 +47,13 @@ class RecruitmentController extends Controller
             $term = '%' . $request->search . '%';
             $query->where(function ($q) use ($term) {
                 $q->where('title', 'like', $term)
-                  ->orWhere('job_description', 'like', $term);
+                  ->orWhere('job_description', 'like', $term)
+                  ->orWhereHas('position', function ($pq) use ($term) {
+                      $pq->where('name', 'like', $term);
+                  })
+                  ->orWhereHas('department', function ($dq) use ($term) {
+                      $dq->where('name', 'like', $term);
+                  });
             });
         }
 
@@ -218,7 +224,15 @@ class RecruitmentController extends Controller
             $query->where('source', $request->source);
         }
         if ($request->filled('position')) {
-            $query->where('applied_position', $request->position);
+            $query->where(function ($q) use ($request) {
+                $q->where('applied_position', $request->position)
+                  ->orWhereHas('jobVacancy', function ($vq) use ($request) {
+                      $vq->where('title', $request->position)
+                         ->orWhereHas('position', function ($pq) use ($request) {
+                             $pq->where('name', $request->position);
+                         });
+                  });
+            });
         }
         if ($request->filled('recruiter_id')) {
             $query->where('recruiter_id', $request->recruiter_id);
@@ -1202,6 +1216,22 @@ class RecruitmentController extends Controller
     public function interviewsIndex(Request $request): View
     {
         $query = Interview::with(['applicant.jobVacancy', 'interviewer']);
+
+        if ($request->filled('search')) {
+            $term = '%' . $request->search . '%';
+            $query->where(function ($q) use ($term) {
+                $q->whereHas('applicant', function ($aq) use ($term) {
+                    $aq->where('first_name', 'like', $term)
+                       ->orWhere('last_name', 'like', $term)
+                       ->orWhere('middle_name', 'like', $term)
+                       ->orWhere('email', 'like', $term)
+                       ->orWhere('applied_position', 'like', $term);
+                })
+                ->orWhere('interviewer_name', 'like', $term)
+                ->orWhere('interview_stage', 'like', $term)
+                ->orWhere('location_or_link', 'like', $term);
+            });
+        }
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);

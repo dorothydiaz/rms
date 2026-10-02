@@ -111,10 +111,16 @@
 </div>
 
 <!-- Filter Bar -->
-<div class="hr-filter-bar" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px 16px; margin-bottom: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-    <form method="GET" action="{{ route('hr.recruitment.interviews') }}" class="hr-filter-form" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+<div class="hr-filter-bar" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 6px 12px; margin-bottom: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+    <form method="GET" action="{{ route('hr.recruitment.interviews') }}" class="hr-filter-form" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; width: 100%;">
+        <!-- Search Input -->
+        <div style="flex: 1; min-width: 180px; position: relative;">
+            <i class="ph ph-magnifying-glass" style="position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 14px;"></i>
+            <input type="text" name="search" class="hr-input" placeholder="Search candidate, role, venue..." value="{{ request('search') }}" style="padding-left: 28px; width: 100%;">
+        </div>
+
         <!-- Status Filter -->
-        <select name="status" class="hr-select" style="min-width: 140px;">
+        <select name="status" class="hr-select" style="min-width: 130px;">
             <option value="">All Statuses</option>
             @foreach(['Scheduled', 'Confirmed', 'Completed', 'Rescheduled', 'Cancelled', 'No Show'] as $st)
                 <option value="{{ $st }}" {{ request('status') === $st ? 'selected' : '' }}>{{ $st }}</option>
@@ -122,7 +128,7 @@
         </select>
 
         <!-- Stage Filter -->
-        <select name="stage" class="hr-select" style="min-width: 160px;">
+        <select name="stage" class="hr-select" style="min-width: 130px;">
             <option value="">All Stages</option>
             @foreach(['HR Interview', 'Hiring Manager', 'Technical', 'Final'] as $stg)
                 <option value="{{ $stg }}" {{ request('stage') === $stg ? 'selected' : '' }}>{{ $stg }}</option>
@@ -130,30 +136,32 @@
         </select>
 
         <!-- Type Filter -->
-        <select name="type" class="hr-select" style="min-width: 140px;">
+        <select name="type" class="hr-select" style="min-width: 130px;">
             <option value="">All Types</option>
-            @foreach(['Face-to-face', 'Video', 'Phone'] as $tp)
+            @foreach(['Face-to-face', 'Video', 'Phone', 'Technical / Practical'] as $tp)
                 <option value="{{ $tp }}" {{ request('type') === $tp ? 'selected' : '' }}>{{ $tp }}</option>
             @endforeach
         </select>
 
         <!-- Interviewer Filter -->
-        <select name="interviewer_id" class="hr-select" style="min-width: 160px;">
+        <select name="interviewer_id" class="hr-select" style="min-width: 140px;">
             <option value="">All Interviewers</option>
             @foreach($users as $u)
                 <option value="{{ $u->id }}" {{ request('interviewer_id') == $u->id ? 'selected' : '' }}>{{ $u->full_name ?? $u->name }}</option>
             @endforeach
         </select>
 
-        <!-- Date Filter -->
-        <input type="date" name="date" class="hr-input" value="{{ request('date') }}" style="min-width: 140px;">
+        <!-- Date Filter Container -->
+        <div class="hr-filter-date-wrap" style="width: 145px; position: relative;">
+            <input type="date" name="date" class="hr-input" placeholder="Interview Date" value="{{ request('date') }}" style="width: 100%;">
+        </div>
 
         <button type="submit" class="hr-btn hr-btn-secondary">
             <i class="ph ph-funnel"></i>
             <span>Filter</span>
         </button>
 
-        @if(request()->anyFilled(['status', 'stage', 'type', 'interviewer_id', 'date']))
+        @if(request()->anyFilled(['search', 'status', 'stage', 'type', 'interviewer_id', 'date']))
             <a href="{{ route('hr.recruitment.interviews') }}" class="hr-btn hr-btn-ghost" title="Reset Filters">
                 <i class="ph ph-x-circle"></i>
                 <span>Reset</span>
@@ -195,8 +203,10 @@
                                     <i class="ph ph-video-camera"></i> Video
                                 @elseif($int->interview_type === 'Phone')
                                     <i class="ph ph-phone"></i> Phone
+                                @elseif($int->interview_type === 'Technical / Practical')
+                                    <i class="ph ph-wrench"></i> Technical / Practical
                                 @else
-                                    <i class="ph ph-user"></i> Face-to-face
+                                    <i class="ph ph-user"></i> {{ $int->interview_type ?: 'Face-to-face' }}
                                 @endif
                             </span>
                         </td>

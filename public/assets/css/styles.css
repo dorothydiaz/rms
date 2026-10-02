@@ -2397,21 +2397,21 @@ a {
     box-shadow: 0 4px 14px rgba(99, 102, 241, 0.16);
 }
 
-/* Glassmorphic Filter Bar (90% Transparency) */
+/* Compact Table Filter Bar Across All HR Operational Modules */
 .hr-filter-bar {
-    background: rgba(255, 255, 255, 0.90);
-    backdrop-filter: blur(24px) saturate(180%);
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.95);
-    border-radius: 16px;
-    padding: 14px 18px;
-    margin-bottom: 22px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid #e2e8f0;
+    border-radius: 10px !important;
+    padding: 6px 12px !important;
+    margin-bottom: 8px !important;
     display: flex;
     align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
-    gap: 12px;
-    box-shadow: 0 8px 24px rgba(148, 163, 184, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.95);
+    gap: 8px !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
     position: relative;
     z-index: 20;
     overflow: visible;
@@ -2420,12 +2420,88 @@ a {
 .hr-filter-form {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px !important;
     flex-wrap: wrap;
     width: 100%;
     position: relative;
     z-index: 20;
     overflow: visible;
+}
+
+/* Compact filter inputs & dropdowns */
+.hr-filter-bar input.hr-input,
+.hr-filter-bar select.hr-select,
+.hr-filter-bar .hr-input,
+.hr-filter-bar .hr-select,
+.hr-filter-bar input[type="text"],
+.hr-filter-bar input[type="date"],
+.hr-filter-bar select,
+.hr-filter-form input.hr-input,
+.hr-filter-form select.hr-select,
+.hr-filter-form .hr-input,
+.hr-filter-form .hr-select,
+.hr-filter-form input[type="text"],
+.hr-filter-form input[type="date"],
+.hr-filter-form select {
+    height: 31px !important;
+    min-height: 31px !important;
+    max-height: 31px !important;
+    padding: 3px 8px !important;
+    font-size: 12px !important;
+    border-radius: 7px !important;
+    line-height: 1.2 !important;
+    border: 1px solid #cbd5e1 !important;
+    background: #ffffff !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+}
+
+/* Compact filter buttons */
+.hr-filter-bar .hr-btn,
+.hr-filter-form .hr-btn {
+    height: 31px !important;
+    min-height: 31px !important;
+    max-height: 31px !important;
+    padding: 3px 10px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    border-radius: 7px !important;
+    gap: 5px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+}
+
+.hr-filter-bar .hr-btn i,
+.hr-filter-form .hr-btn i {
+    font-size: 13.5px !important;
+}
+
+/* Compact labels inside filter bars */
+.hr-filter-bar label,
+.hr-filter-form label {
+    font-size: 11.5px !important;
+    font-weight: 600 !important;
+    color: #475569 !important;
+    margin: 0 !important;
+}
+
+/* Search input with leading icon inside filter bar */
+.hr-filter-bar input[name="search"],
+.hr-filter-bar input[id*="Search"],
+.hr-filter-bar input[id*="search"],
+.hr-filter-form input[name="search"],
+.hr-filter-form input[id*="Search"],
+.hr-filter-form input[id*="search"] {
+    padding-left: 28px !important;
+}
+
+.hr-filter-bar div:has(> input[name="search"]) > i,
+.hr-filter-bar div:has(> input[id*="Search"]) > i,
+.hr-filter-bar div:has(> input[id*="search"]) > i,
+.hr-filter-form div:has(> input[name="search"]) > i,
+.hr-filter-form div:has(> input[id*="Search"]) > i,
+.hr-filter-form div:has(> input[id*="search"]) > i {
+    font-size: 13.5px !important;
+    left: 8px !important;
 }
 
 .hr-input, .hr-select, .hr-textarea {
@@ -6045,6 +6121,49 @@ select option {
 
 .hr-custom-date-wrap:hover .hr-custom-date-icon {
     color: #6d28d9 !important;
+}
+
+/* Filter bar custom date wrap containment - compact 31px */
+.hr-filter-bar .hr-custom-date-wrap,
+.hr-filter-form .hr-custom-date-wrap,
+.hr-filter-date-wrap,
+.hr-filter-date-wrap .hr-custom-date-wrap,
+.hr-filter-date-container,
+.hr-filter-date-container .hr-custom-date-wrap {
+    width: auto !important;
+    max-width: 140px !important;
+    display: inline-flex !important;
+    flex: 0 0 auto !important;
+    height: 31px !important;
+    min-height: 31px !important;
+    max-height: 31px !important;
+}
+
+.hr-filter-bar .hr-custom-date-wrap input.hr-input,
+.hr-filter-bar .hr-custom-date-wrap input[type="text"],
+.hr-filter-form .hr-custom-date-wrap input.hr-input,
+.hr-filter-form .hr-custom-date-wrap input[type="text"],
+.hr-filter-date-wrap .hr-custom-date-wrap input.hr-input,
+.hr-filter-date-wrap .hr-custom-date-wrap input[type="text"],
+.hr-filter-date-container .hr-custom-date-wrap input.hr-input,
+.hr-filter-date-container .hr-custom-date-wrap input[type="text"] {
+    width: 100% !important;
+    min-height: 31px !important;
+    height: 31px !important;
+    max-height: 31px !important;
+    padding: 3px 26px 3px 8px !important;
+    font-size: 12px !important;
+    border-radius: 7px !important;
+}
+
+.hr-filter-bar .hr-custom-date-wrap .hr-custom-date-icon,
+.hr-filter-form .hr-custom-date-wrap .hr-custom-date-icon,
+.hr-filter-date-wrap .hr-custom-date-icon,
+.hr-filter-date-container .hr-custom-date-icon {
+    right: 8px !important;
+    font-size: 13.5px !important;
+    width: 14px !important;
+    height: 14px !important;
 }
 
 /* Fallback for native webkit date inputs */

@@ -9,6 +9,7 @@
             <i class="ph ph-plus-circle"></i>
             <span>Add Agency / Company</span>
         </button>
+    </x-slot:actions>
 </x-hr-tabs>
 
 <style>

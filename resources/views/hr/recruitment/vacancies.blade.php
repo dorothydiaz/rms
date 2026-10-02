@@ -111,11 +111,11 @@
 </div>
 
 <!-- Search & Filter Bar -->
-<div class="hr-filter-bar" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px 16px; margin-bottom: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-    <form method="GET" action="{{ route('hr.recruitment.vacancies') }}" class="hr-filter-form" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-        <div style="flex: 1; min-width: 220px; position: relative;">
-            <i class="ph ph-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 16px;"></i>
-            <input type="text" name="search" class="hr-input" placeholder="Search vacancy title, description..." value="{{ request('search') }}" style="padding-left: 36px; width: 100%;">
+<div class="hr-filter-bar" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 6px 12px; margin-bottom: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+    <form method="GET" action="{{ route('hr.recruitment.vacancies') }}" class="hr-filter-form" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 180px; position: relative;">
+            <i class="ph ph-magnifying-glass" style="position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 14px;"></i>
+            <input type="text" name="search" class="hr-input" placeholder="Search vacancy title, description..." value="{{ request('search') }}" style="padding-left: 28px; width: 100%;">
         </div>
 
         <select name="status" class="hr-select" style="min-width: 140px;">
