@@ -8347,5 +8347,166 @@ body > .hr-custom-select-menu {
     padding-top: 1px !important;
 }
 
+/* ==========================================================================
+   Universal Form Validation Styling (HR Operations)
+   ========================================================================== */
+.hr-input.hr-input-invalid,
+.hr-select.hr-input-invalid,
+.form-control.hr-input-invalid {
+    border-color: #ef4444 !important;
+    background-color: #fff8f8 !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12) !important;
+}
 
+.hr-input.hr-input-valid:not(:placeholder-shown):focus,
+.hr-input.hr-input-valid:not([value=""]):focus {
+    border-color: #10b981 !important;
+}
+
+.hr-field-error-msg {
+    font-size: 11px;
+    font-weight: 500;
+    color: #ef4444;
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    line-height: 1.3;
+    animation: hrErrorSlideIn 0.15s ease-out;
+}
+
+@keyframes hrErrorSlideIn {
+    from { opacity: 0; transform: translateY(-3px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ==========================================================================
+   HR Reports Page Header & Filter Bar UI Enhancements
+   ========================================================================== */
+.hr-report-back-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    border: 1px solid rgba(168, 85, 247, 0.22);
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.12) 0%, rgba(236, 72, 153, 0.12) 100%);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    color: #9333ea;
+    font-size: 16px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 2px 8px rgba(168, 85, 247, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.6);
+    flex-shrink: 0;
+}
+
+.hr-report-back-btn i {
+    background: linear-gradient(135deg, #9333ea 0%, #ec4899 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: inline-block;
+    transition: transform 0.2s ease;
+    font-size: 16px;
+}
+
+.hr-report-back-btn:hover {
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.22) 0%, rgba(236, 72, 153, 0.22) 100%);
+    border-color: rgba(168, 85, 247, 0.4);
+    box-shadow: 0 4px 14px rgba(168, 85, 247, 0.18), inset 0 1px 1px rgba(255, 255, 255, 0.8);
+    transform: translateX(-2px);
+}
+
+.hr-report-back-btn:hover i {
+    transform: scale(1.1);
+}
+
+.hr-report-back-btn:active {
+    transform: scale(0.95);
+}
+
+/* Report Filters Bar Layout */
+.hr-report-filter-bar {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+    overflow: visible;
+}
+
+.hr-report-filter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
+    gap: 12px 14px;
+    align-items: flex-end;
+}
+
+.hr-report-filter-grid > div {
+    min-width: 0;
+}
+
+.hr-report-filter-bar .hr-select,
+.hr-report-filter-bar .hr-input {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    min-width: 0 !important;
+    font-size: 12px !important;
+    height: 34px !important;
+}
+
+.hr-report-filter-bar .hr-select {
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    padding-right: 28px !important;
+}
+
+/* Report Header Back Button - Matches Header Sidebar Glassmorphic Style */
+.hr-report-back-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    border: 1px solid rgba(168, 85, 247, 0.22);
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.12) 0%, rgba(236, 72, 153, 0.12) 100%);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    color: #9333ea;
+    font-size: 16px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 2px 8px rgba(168, 85, 247, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.6);
+    flex-shrink: 0;
+}
+
+.hr-report-back-btn i {
+    background: linear-gradient(135deg, #9333ea 0%, #ec4899 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: inline-block;
+    transition: transform 0.2s ease;
+    font-size: 16px;
+}
+
+.hr-report-back-btn:hover {
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.22) 0%, rgba(236, 72, 153, 0.22) 100%);
+    border-color: rgba(168, 85, 247, 0.4);
+    box-shadow: 0 4px 14px rgba(168, 85, 247, 0.18), inset 0 1px 1px rgba(255, 255, 255, 0.8);
+    transform: translateY(-1px);
+}
+
+.hr-report-back-btn:hover i {
+    transform: scale(1.1);
+}
+
+.hr-report-back-btn:active {
+    transform: scale(0.95);
+}
 

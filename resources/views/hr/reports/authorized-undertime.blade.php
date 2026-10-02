@@ -3,35 +3,24 @@
 @section('title', 'Authorized Undertime Report - Reports & Analytics')
 
 @section('content')
-<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
-    <div>
-        <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748b; margin-bottom: 6px;">
-            <a href="{{ route('hr.reports.index') }}" style="color: #64748b; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
-                <i class="ph ph-chart-polar"></i> Reports & Analytics
-            </a>
-            <i class="ph ph-caret-right" style="font-size: 11px;"></i>
-            <span style="color: #0f172a; font-weight: 600;">Authorized Undertime</span>
-        </div>
-        <h1 style="font-family: var(--font-heading); font-size: 22px; font-weight: 700; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 8px;">
-            <i class="ph ph-timer" style="color: #059669;"></i> Authorized Undertime Report
-        </h1>
-        <p style="font-size: 13px; color: #64748b; margin: 3px 0 0 0;">Official audit trail of approved early departures, gate pass permits, manager authorizations, and excused undertime</p>
-    </div>
-    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-        <a href="{{ route('hr.reports.export.authorized-undertime', request()->query()) }}" class="hr-btn hr-btn-secondary" title="Export to CSV">
-            <i class="ph ph-download-simple" style="color: #059669;"></i>
-            <span>Export CSV</span>
-        </a>
-        <a href="{{ route('hr.reports.unauthorized-undertime') }}" class="hr-btn hr-btn-secondary" style="border-color: #fecdd3; color: #e11d48;" title="View Unauthorized Undertime Report">
-            <i class="ph ph-warning-circle"></i>
-            <span>Unauthorized Undertime Report</span>
-        </a>
-        <a href="{{ route('hr.attendance.undertime') }}" class="hr-btn hr-btn-primary">
-            <i class="ph ph-shield-check"></i>
-            <span>Undertime Portal</span>
-        </a>
-    </div>
-</div>
+<x-report-header 
+    title="Authorized Undertime Report"
+    breadcrumb="Authorized Undertime"
+    subtitle="Official audit trail of approved early departures, gate pass permits, manager authorizations, and excused undertime"
+>
+    <a href="{{ route('hr.reports.export.authorized-undertime', request()->query()) }}" class="hr-btn hr-btn-secondary" title="Export to CSV">
+        <i class="ph ph-download-simple" style="color: #059669;"></i>
+        <span>Export CSV</span>
+    </a>
+    <a href="{{ route('hr.reports.unauthorized-undertime') }}" class="hr-btn hr-btn-secondary" style="border-color: #fecdd3; color: #e11d48;" title="View Unauthorized Undertime Report">
+        <i class="ph ph-warning-circle"></i>
+        <span>Unauthorized Undertime Report</span>
+    </a>
+    <a href="{{ route('hr.attendance.undertime') }}" class="hr-btn hr-btn-primary">
+        <i class="ph ph-shield-check"></i>
+        <span>Undertime Portal</span>
+    </a>
+</x-report-header>
 
 <!-- KPI Summary Cards -->
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-bottom: 20px;">

@@ -3,31 +3,20 @@
 @section('title', 'Overtime History & Approval Report - Reports & Analytics')
 
 @section('content')
-<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
-    <div>
-        <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748b; margin-bottom: 6px;">
-            <a href="{{ route('hr.reports.index') }}" style="color: #64748b; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
-                <i class="ph ph-chart-polar"></i> Reports & Analytics
-            </a>
-            <i class="ph ph-caret-right" style="font-size: 11px;"></i>
-            <span style="color: #0f172a; font-weight: 600;">Overtime History & Approvals</span>
-        </div>
-        <h1 style="font-family: var(--font-heading); font-size: 22px; font-weight: 700; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 8px;">
-            <i class="ph ph-clock-countdown" style="color: #8b5cf6;"></i> Overtime History & Approval Report
-        </h1>
-        <p style="font-size: 13px; color: #64748b; margin: 3px 0 0 0;">Historical overtime hours rendered, approval status, approving managers, and remarks for payroll integration</p>
-    </div>
-    <div style="display: flex; gap: 10px; align-items: center;">
-        <a href="{{ route('hr.reports.export.overtime-history', request()->query()) }}" class="hr-btn hr-btn-secondary">
-            <i class="ph ph-download-simple"></i>
-            <span>Export CSV</span>
-        </a>
-        <a href="{{ route('hr.attendance.overtime') }}" class="hr-btn hr-btn-primary">
-            <i class="ph ph-check-circle"></i>
-            <span>Overtime Approvals</span>
-        </a>
-    </div>
-</div>
+<x-report-header 
+    title="Overtime History & Approval Report"
+    breadcrumb="Overtime History & Approvals"
+    subtitle="Historical overtime hours rendered, approval status, approving managers, and remarks for payroll integration"
+>
+    <a href="{{ route('hr.reports.export.overtime-history', request()->query()) }}" class="hr-btn hr-btn-secondary">
+        <i class="ph ph-download-simple"></i>
+        <span>Export CSV</span>
+    </a>
+    <a href="{{ route('hr.attendance.overtime') }}" class="hr-btn hr-btn-primary">
+        <i class="ph ph-check-circle"></i>
+        <span>Overtime Approvals</span>
+    </a>
+</x-report-header>
 
 <!-- Multi-Filters -->
 <x-report-filters 

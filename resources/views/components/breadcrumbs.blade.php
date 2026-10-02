@@ -105,11 +105,22 @@
                     ]
                 ],
                 'reports' => [
-                    'title' => 'Analytics Hub',
+                    'title' => 'Reports & Analytics',
                     'url' => route('hr.reports.index'),
                     'icon' => 'ph-chart-polar',
                     'items' => [
-                        ['title' => 'Analytics Hub', 'url' => route('hr.reports.index'), 'icon' => 'ph-download-simple', 'route' => 'hr.reports.index'],
+                        ['title' => 'Analytics Hub', 'url' => route('hr.reports.index'), 'icon' => 'ph-chart-polar', 'route' => 'hr.reports.index'],
+                        ['title' => 'Attendance Summary', 'url' => route('hr.reports.attendance-summary'), 'icon' => 'ph-calendar-check', 'route' => 'hr.reports.attendance-summary'],
+                        ['title' => 'Employee Tardiness', 'url' => route('hr.reports.tardiness'), 'icon' => 'ph-alarm', 'route' => 'hr.reports.tardiness'],
+                        ['title' => 'Change of Schedule History', 'url' => route('hr.reports.change-of-schedule'), 'icon' => 'ph-calendar-blank', 'route' => 'hr.reports.change-of-schedule'],
+                        ['title' => 'Overtime History', 'url' => route('hr.reports.overtime-history'), 'icon' => 'ph-clock-countdown', 'route' => 'hr.reports.overtime-history'],
+                        ['title' => 'Manual Time Entries History', 'url' => route('hr.reports.manual-entries-history'), 'icon' => 'ph-pencil-line', 'route' => 'hr.reports.manual-entries-history'],
+                        ['title' => 'Authorized Undertime', 'url' => route('hr.reports.authorized-undertime'), 'icon' => 'ph-timer', 'route' => 'hr.reports.authorized-undertime'],
+                        ['title' => 'Unauthorized Undertime', 'url' => route('hr.reports.unauthorized-undertime'), 'icon' => 'ph-hourglass', 'route' => 'hr.reports.unauthorized-undertime'],
+                        ['title' => 'Unauthorized Absences', 'url' => route('hr.reports.unauthorized-absences'), 'icon' => 'ph-user-minus', 'route' => 'hr.reports.unauthorized-absences'],
+                        ['title' => 'Authorized Leave of Absence', 'url' => route('hr.reports.authorized-leave-of-absence'), 'icon' => 'ph-airplane-takeoff', 'route' => 'hr.reports.authorized-leave-of-absence'],
+                        ['title' => 'Individual Attendance Summary', 'url' => route('hr.reports.individual-attendance-summary'), 'icon' => 'ph-user-list', 'route' => 'hr.reports.individual-attendance-summary'],
+                        ['title' => 'Employee Attendance Profile', 'url' => route('hr.reports.employee-attendance-profile'), 'icon' => 'ph-identification-card', 'route' => 'hr.reports.employee-attendance-profile'],
                     ]
                 ],
                 'admin' => [

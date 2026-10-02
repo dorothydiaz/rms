@@ -770,7 +770,7 @@
                         </div>
                         <div class="hr-form-group">
                             <label class="hr-form-label">Mobile Number *</label>
-                            <input type="text" name="contact_number" class="hr-input" required placeholder="0917xxxxxxx">
+                            <input type="tel" name="contact_number" class="hr-input" required placeholder="0917-xxx-xxxx or +63 9xx xxx xxxx" pattern="[+]?[\d\s\-()]{7,25}">
                         </div>
                         <div class="hr-form-group">
                             <label class="hr-form-label">City</label>

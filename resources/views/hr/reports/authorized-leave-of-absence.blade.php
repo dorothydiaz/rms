@@ -3,35 +3,24 @@
 @section('title', 'Authorized Leave of Absence (ALOA) Report - Reports & Analytics')
 
 @section('content')
-<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
-    <div>
-        <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748b; margin-bottom: 6px;">
-            <a href="{{ route('hr.reports.index') }}" style="color: #64748b; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
-                <i class="ph ph-chart-polar"></i> Reports & Analytics
-            </a>
-            <i class="ph ph-caret-right" style="font-size: 11px;"></i>
-            <span style="color: #0f172a; font-weight: 600;">Authorized Leave of Absence</span>
-        </div>
-        <h1 style="font-family: var(--font-heading); font-size: 22px; font-weight: 700; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 8px;">
-            <i class="ph ph-calendar-check" style="color: #059669;"></i> Authorized Leave of Absence (ALOA) Report
-        </h1>
-        <p style="font-size: 13px; color: #64748b; margin: 3px 0 0 0;">Official DOLE-compliant audit trail of approved employee leave applications, statutory leaves, and management authorizations</p>
-    </div>
-    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-        <a href="{{ route('hr.reports.export.authorized-leave-of-absence', request()->query()) }}" class="hr-btn hr-btn-secondary" title="Export to CSV / Excel">
-            <i class="ph ph-download-simple" style="color: #059669;"></i>
-            <span>Export CSV</span>
-        </a>
-        <button type="button" onclick="window.print()" class="hr-btn hr-btn-secondary" title="Print official report">
-            <i class="ph ph-printer" style="color: #2563eb;"></i>
-            <span>Print Report</span>
-        </button>
-        <a href="{{ route('hr.leave.requests') }}" class="hr-btn hr-btn-primary" style="background: linear-gradient(135deg, #059669 0%, #047857 100%);">
-            <i class="ph ph-calendar-plus"></i>
-            <span>Leave Requests Portal</span>
-        </a>
-    </div>
-</div>
+<x-report-header 
+    title="Authorized Leave of Absence (ALOA) Report"
+    breadcrumb="Authorized Leave of Absence"
+    subtitle="Official DOLE-compliant audit trail of approved employee leave applications, statutory leaves, and management authorizations"
+>
+    <a href="{{ route('hr.reports.export.authorized-leave-of-absence', request()->query()) }}" class="hr-btn hr-btn-secondary" title="Export to CSV / Excel">
+        <i class="ph ph-download-simple" style="color: #059669;"></i>
+        <span>Export CSV</span>
+    </a>
+    <button type="button" onclick="window.print()" class="hr-btn hr-btn-secondary" title="Print official report">
+        <i class="ph ph-printer" style="color: #2563eb;"></i>
+        <span>Print Report</span>
+    </button>
+    <a href="{{ route('hr.leave.requests') }}" class="hr-btn hr-btn-primary" style="background: linear-gradient(135deg, #059669 0%, #047857 100%);">
+        <i class="ph ph-calendar-plus"></i>
+        <span>Leave Requests Portal</span>
+    </a>
+</x-report-header>
 
 <!-- KPI Summary Cards -->
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-bottom: 20px;">

@@ -2209,11 +2209,11 @@
                     </div>
                     <div class="hr-form-group">
                         <label class="hr-form-label">Mobile Number</label>
-                        <input type="text" name="mobile_number" class="hr-input" value="{{ $employee->mobile_number }}">
+                        <input type="tel" name="mobile_number" class="hr-input" value="{{ $employee->mobile_number }}" placeholder="0917-xxx-xxxx or +63 9xx xxx xxxx" pattern="[+]?[\d\s\-()]{7,25}">
                     </div>
                     <div class="hr-form-group">
                         <label class="hr-form-label">Telephone Number</label>
-                        <input type="text" name="telephone_number" class="hr-input" value="{{ $employee->telephone_number }}">
+                        <input type="tel" name="telephone_number" class="hr-input" value="{{ $employee->telephone_number }}" placeholder="(02) 8xxx-xxxx" pattern="[+]?[\d\s\-()]{7,25}">
                     </div>
                     <div class="hr-form-group" style="grid-column: 1 / -1;">
                         <label class="hr-form-label">Current Address</label>
@@ -2770,7 +2770,7 @@
                 </div>
                 <div class="hr-form-group" style="margin-top: 12px;">
                     <label class="hr-form-label">Contact Number</label>
-                    <input type="text" name="contact_number" class="hr-input">
+                    <input type="tel" name="contact_number" class="hr-input" placeholder="0917-xxx-xxxx or +63 9xx xxx xxxx" pattern="[+]?[\d\s\-()]{7,25}">
                 </div>
                 <div style="display: flex; gap: 20px; margin-top: 14px;">
                     <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer;">
@@ -2811,7 +2811,7 @@
                 </div>
                 <div class="hr-form-group" style="margin-top: 12px;">
                     <label class="hr-form-label">Mobile Number <span class="text-danger">*</span></label>
-                    <input type="text" name="mobile_number" class="hr-input" placeholder="0918xxxxxxx" required>
+                    <input type="tel" name="mobile_number" class="hr-input" placeholder="0918-xxx-xxxx or +63 9xx xxx xxxx" pattern="[+]?[\d\s\-()]{7,25}" required>
                 </div>
                 <div class="hr-form-group" style="margin-top: 12px;">
                     <label class="hr-form-label">Address</label>

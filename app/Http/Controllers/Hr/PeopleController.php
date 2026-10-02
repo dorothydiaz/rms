@@ -285,8 +285,8 @@ class PeopleController extends Controller
             'gender' => 'nullable|in:Male,Female,Other',
             'civil_status' => 'required|in:Single,Married,Widowed,Divorced,Separated',
             'nationality' => 'required|string|max:50',
-            'mobile_number' => 'nullable|string|max:30',
-            'email' => 'nullable|email|max:100',
+            'mobile_number' => 'nullable|string|regex:/^([+]?[\d\s\-()]{7,25})$/|max:30',
+            'email' => 'nullable|email:rfc,filter|max:100',
             'address' => 'nullable|string',
             'photo' => 'nullable|file|mimes:jpeg,png,jpg,webp,gif|max:5120',
             'user_id' => 'nullable|exists:users,id',
@@ -319,7 +319,11 @@ class PeopleController extends Controller
             'allowances' => 'nullable|numeric|min:0',
             'emergency_contact_name' => 'nullable|string|max:100',
             'emergency_contact_relationship' => 'nullable|string|max:50',
-            'emergency_contact_phone' => 'nullable|string|max:30',
+            'emergency_contact_phone' => 'nullable|string|regex:/^([+]?[\d\s\-()]{7,25})$/|max:30',
+        ], [
+            'email.email' => 'Please provide a valid email address (e.g., name@example.com).',
+            'mobile_number.regex' => 'The mobile number format is invalid. Must contain 7-15 digits (e.g. 0917-123-4567 or +63 917 123 4567).',
+            'emergency_contact_phone.regex' => 'The emergency contact phone number format is invalid. Must contain 7-15 digits.',
         ]);
 
         if (!$user->canAccessBranch($validated['branch_id'])) {
@@ -437,11 +441,11 @@ class PeopleController extends Controller
             'gender' => 'nullable|in:Male,Female,Other',
             'civil_status' => 'nullable|in:Single,Married,Widowed,Divorced,Separated',
             'nationality' => 'nullable|string|max:50',
-            'mobile_number' => 'nullable|string|max:30',
-            'telephone_number' => 'nullable|string|max:30',
-            'email' => 'nullable|email|max:100',
-            'personal_email' => 'nullable|email|max:100',
-            'company_email' => 'nullable|email|max:100',
+            'mobile_number' => 'nullable|string|regex:/^([+]?[\d\s\-()]{7,25})$/|max:30',
+            'telephone_number' => 'nullable|string|regex:/^([+]?[\d\s\-()]{7,25})$/|max:30',
+            'email' => 'nullable|email:rfc,filter|max:100',
+            'personal_email' => 'nullable|email:rfc,filter|max:100',
+            'company_email' => 'nullable|email:rfc,filter|max:100',
             'address' => 'nullable|string',
             'permanent_address' => 'nullable|string',
             'photo' => 'nullable|file|mimes:jpeg,png,jpg,webp,gif|max:5120',
@@ -482,6 +486,12 @@ class PeopleController extends Controller
             'salary_type' => 'nullable|in:Monthly,Daily,Hourly',
             'pay_frequency' => 'nullable|in:Semi-Monthly,Semi-monthly,Monthly,Weekly',
             'allowances' => 'nullable|numeric|min:0',
+        ], [
+            'email.email' => 'Please provide a valid primary email address.',
+            'personal_email.email' => 'Please provide a valid personal email address.',
+            'company_email.email' => 'Please provide a valid company email address.',
+            'mobile_number.regex' => 'The mobile number format is invalid. Must contain 7-15 digits.',
+            'telephone_number.regex' => 'The telephone number format is invalid. Must contain 7-15 digits.',
         ]);
 
         if ($request->filled('personal_email') && empty($validated['email'])) {
@@ -866,7 +876,9 @@ class PeopleController extends Controller
             'relationship' => 'required|string|max:50',
             'birth_date' => 'nullable|date',
             'occupation' => 'nullable|string|max:100',
-            'contact_number' => 'nullable|string|max:30',
+            'contact_number' => 'nullable|string|regex:/^([+]?[\d\s\-()]{7,25})$/|max:30',
+        ], [
+            'contact_number.regex' => 'The contact number format is invalid. Must contain 7-15 digits.',
         ]);
 
         $list = $employee->family_dependents ?? [];
@@ -900,12 +912,18 @@ class PeopleController extends Controller
         if (!$request->filled('contact_name') && $request->filled('name')) {
             $request->merge(['contact_name' => $request->name]);
         }
+        if (!$request->filled('contact_number') && $request->filled('mobile_number')) {
+            $request->merge(['contact_number' => $request->mobile_number]);
+        }
 
         $request->validate([
             'contact_name' => 'required|string|max:100',
             'relationship' => 'required|string|max:50',
-            'contact_number' => 'required|string|max:30',
+            'contact_number' => 'required|string|regex:/^([+]?[\d\s\-()]{7,25})$/|max:30',
             'address' => 'nullable|string|max:255',
+        ], [
+            'contact_number.required' => 'Emergency contact number is required.',
+            'contact_number.regex' => 'The contact number format is invalid. Must contain 7-15 digits.',
         ]);
 
         if ($request->boolean('is_primary')) {
@@ -1253,9 +1271,12 @@ class PeopleController extends Controller
             'code' => 'required|string|max:30|unique:hr_branches,code',
             'company_id' => 'nullable|exists:hr_companies,id',
             'address' => 'nullable|string',
-            'phone' => 'nullable|string|max:50',
-            'email' => 'nullable|email|max:100',
+            'phone' => 'nullable|string|regex:/^([+]?[\d\s\-()]{7,25})$/|max:50',
+            'email' => 'nullable|email:rfc,filter|max:100',
             'is_active' => 'boolean',
+        ], [
+            'email.email' => 'Please provide a valid branch email address.',
+            'phone.regex' => 'The branch phone number format is invalid. Must contain 7-15 digits.',
         ]);
 
         $branch = Branch::create($validated);
@@ -1271,9 +1292,12 @@ class PeopleController extends Controller
             'name' => 'required|string|max:100',
             'code' => 'required|string|max:30|unique:hr_branches,code,' . $id,
             'address' => 'nullable|string',
-            'phone' => 'nullable|string|max:50',
-            'email' => 'nullable|email|max:100',
+            'phone' => 'nullable|string|regex:/^([+]?[\d\s\-()]{7,25})$/|max:50',
+            'email' => 'nullable|email:rfc,filter|max:100',
             'is_active' => 'boolean',
+        ], [
+            'email.email' => 'Please provide a valid branch email address.',
+            'phone.regex' => 'The branch phone number format is invalid. Must contain 7-15 digits.',
         ]);
 
         $branch->update($validated);
@@ -1334,11 +1358,14 @@ class PeopleController extends Controller
             'code' => 'required|string|max:50|unique:hr_companies,code',
             'tin' => 'nullable|string|max:30',
             'contact_person' => 'nullable|string|max:100',
-            'email' => 'nullable|email|max:100',
-            'phone' => 'nullable|string|max:50',
+            'email' => 'nullable|email:rfc,filter|max:100',
+            'phone' => 'nullable|string|regex:/^([+]?[\d\s\-()]{7,25})$/|max:50',
             'address' => 'nullable|string',
             'notes' => 'nullable|string',
             'is_active' => 'nullable|boolean',
+        ], [
+            'email.email' => 'Please provide a valid entity email address.',
+            'phone.regex' => 'The phone number format is invalid. Must contain 7-15 digits.',
         ]);
 
         $validated['is_active'] = $request->has('is_active') ? $request->boolean('is_active') : true;
@@ -1359,11 +1386,14 @@ class PeopleController extends Controller
             'code' => 'required|string|max:50|unique:hr_companies,code,' . $id,
             'tin' => 'nullable|string|max:30',
             'contact_person' => 'nullable|string|max:100',
-            'email' => 'nullable|email|max:100',
-            'phone' => 'nullable|string|max:50',
+            'email' => 'nullable|email:rfc,filter|max:100',
+            'phone' => 'nullable|string|regex:/^([+]?[\d\s\-()]{7,25})$/|max:50',
             'address' => 'nullable|string',
             'notes' => 'nullable|string',
             'is_active' => 'nullable|boolean',
+        ], [
+            'email.email' => 'Please provide a valid entity email address.',
+            'phone.regex' => 'The phone number format is invalid. Must contain 7-15 digits.',
         ]);
 
         $validated['is_active'] = $request->has('is_active') ? $request->boolean('is_active') : true;

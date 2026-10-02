@@ -40,7 +40,7 @@
 
             <div class="hr-form-group">
                 <label class="hr-form-label">Contact Phone / Landline</label>
-                <input type="text" name="phone" class="hr-input" placeholder="e.g. +63 (2) 8888-1234" value="{{ old('phone', $company->phone ?? '') }}">
+                <input type="tel" name="phone" class="hr-input" placeholder="e.g. +63 (2) 8888-1234 or 0917-xxx-xxxx" pattern="[+]?[\d\s\-()]{7,25}" value="{{ old('phone', $company->phone ?? '') }}">
             </div>
 
             <div class="hr-form-group">

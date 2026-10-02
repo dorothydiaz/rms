@@ -50,12 +50,14 @@ class HrAdminController extends Controller
         $validated = $request->validate([
             'username' => 'required|string|max:50|unique:users,username',
             'full_name' => 'required|string|max:100',
-            'email' => 'required|email|max:100|unique:users,email',
+            'email' => 'required|email:rfc,filter|max:100|unique:users,email',
             'password' => 'required|string|min:8',
             'role_id' => 'required|exists:roles,id',
             'branch_id' => 'nullable|exists:hr_branches,id',
             'employee_id' => 'nullable|exists:hr_employees,id',
             'status' => 'required|in:Active,Inactive',
+        ], [
+            'email.email' => 'Please provide a valid email address (e.g., name@example.com).',
         ]);
 
         $role = Role::findOrFail($validated['role_id']);
@@ -89,11 +91,13 @@ class HrAdminController extends Controller
         $user = User::findOrFail($id);
         $validated = $request->validate([
             'full_name' => 'required|string|max:100',
-            'email' => 'required|email|max:100|unique:users,email,' . $id,
+            'email' => 'required|email:rfc,filter|max:100|unique:users,email,' . $id,
             'role_id' => 'required|exists:roles,id',
             'branch_id' => 'nullable|exists:hr_branches,id',
             'employee_id' => 'nullable|exists:hr_employees,id',
             'status' => 'required|in:Active,Inactive',
+        ], [
+            'email.email' => 'Please provide a valid email address (e.g., name@example.com).',
         ]);
 
         $role = Role::findOrFail($validated['role_id']);
@@ -280,9 +284,12 @@ class HrAdminController extends Controller
             'name' => 'required|string|max:150',
             'code' => 'required|string|max:50',
             'tin' => 'nullable|string|max:30',
-            'email' => 'nullable|email|max:100',
-            'phone' => 'nullable|string|max:50',
+            'email' => 'nullable|email:rfc,filter|max:100',
+            'phone' => 'nullable|string|regex:/^([+]?[\d\s\-()]{7,25})$/|max:50',
             'address' => 'nullable|string',
+        ], [
+            'email.email' => 'Please provide a valid company email address.',
+            'phone.regex' => 'The phone number format is invalid. Must contain 7-15 digits.',
         ]);
 
         if ($company) {

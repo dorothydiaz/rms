@@ -998,7 +998,7 @@
                     </div>
                     <div class="hr-form-group">
                         <label class="hr-form-label">Mobile Number</label>
-                        <input type="text" name="mobile_number" class="hr-input" placeholder="0917xxxxxxx">
+                        <input type="tel" name="mobile_number" class="hr-input" placeholder="0917-xxx-xxxx or +63 9xx xxx xxxx" pattern="[+]?[\d\s\-()]{7,25}">
                     </div>
                     <div class="hr-form-group">
                         <label class="hr-form-label">Email Address</label>
@@ -1222,7 +1222,7 @@
                     </div>
                     <div class="hr-form-group">
                         <label class="hr-form-label">Emergency Phone</label>
-                        <input type="text" name="emergency_contact_phone" class="hr-input" placeholder="0918xxxxxxx">
+                        <input type="tel" name="emergency_contact_phone" class="hr-input" placeholder="0918-xxx-xxxx or +63 9xx xxx xxxx" pattern="[+]?[\d\s\-()]{7,25}">
                     </div>
                 </div>
             </div>
@@ -1317,11 +1317,11 @@
                     </div>
                     <div class="hr-form-group">
                         <label class="hr-form-label">Mobile Number</label>
-                        <input type="text" name="mobile_number" id="edit_emp_mobile_number" class="hr-input">
+                        <input type="tel" name="mobile_number" id="edit_emp_mobile_number" class="hr-input" placeholder="0917-xxx-xxxx or +63 9xx xxx xxxx" pattern="[+]?[\d\s\-()]{7,25}">
                     </div>
                     <div class="hr-form-group">
                         <label class="hr-form-label">Telephone Number</label>
-                        <input type="text" name="telephone_number" id="edit_emp_telephone_number" class="hr-input">
+                        <input type="tel" name="telephone_number" id="edit_emp_telephone_number" class="hr-input" placeholder="(02) 8xxx-xxxx" pattern="[+]?[\d\s\-()]{7,25}">
                     </div>
                     <div class="hr-form-group" style="grid-column: 1 / -1;">
                         <label class="hr-form-label">Current Address</label>

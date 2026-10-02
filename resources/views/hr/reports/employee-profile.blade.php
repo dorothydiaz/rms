@@ -3,33 +3,21 @@
 @section('title', 'Employee Attendance Profile - Reports & Analytics')
 
 @section('content')
-<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
-    <div>
-        <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748b; margin-bottom: 6px;">
-            <a href="{{ route('hr.reports.index') }}" style="color: #64748b; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
-                <i class="ph ph-chart-polar"></i> Reports & Analytics
-            </a>
-            <i class="ph ph-caret-right" style="font-size: 11px;"></i>
-            <span style="color: #0f172a; font-weight: 600;">Employee Attendance Profile</span>
-        </div>
-        <h1 style="font-family: var(--font-heading); font-size: 22px; font-weight: 700; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 8px;">
-            <i class="ph ph-identification-card" style="color: #6366f1;"></i> Employee Attendance Profile Report
-        </h1>
-        <p style="font-size: 13px; color: #64748b; margin: 3px 0 0 0;">Unified 360-degree attendance profile: shift schedules, default assignments, audit logs, overtime, and undertime history</p>
-    </div>
+<x-report-header 
+    title="Employee Attendance Profile Report" 
+    breadcrumb="Employee Attendance Profile"
+    subtitle="Unified 360-degree attendance profile: shift schedules, default assignments, audit logs, overtime, and undertime history">
     @if($employee)
-        <div style="display: flex; gap: 10px; align-items: center;">
-            <a href="{{ route('hr.reports.export.employee-attendance-profile', ['employee_id' => $employee->id]) }}" class="hr-btn hr-btn-secondary">
-                <i class="ph ph-download-simple"></i>
-                <span>Export Profile CSV</span>
-            </a>
-            <a href="{{ route('hr.attendance.schedules') }}" class="hr-btn hr-btn-primary">
-                <i class="ph ph-calendar"></i>
-                <span>Assign Shift</span>
-            </a>
-        </div>
+        <a href="{{ route('hr.reports.export.employee-attendance-profile', ['employee_id' => $employee->id]) }}" class="hr-btn hr-btn-secondary">
+            <i class="ph ph-download-simple"></i>
+            <span>Export Profile CSV</span>
+        </a>
+        <a href="{{ route('hr.attendance.schedules') }}" class="hr-btn hr-btn-primary">
+            <i class="ph ph-calendar"></i>
+            <span>Assign Shift</span>
+        </a>
     @endif
-</div>
+</x-report-header>
 
 <!-- Multi-Filters -->
 <x-report-filters 

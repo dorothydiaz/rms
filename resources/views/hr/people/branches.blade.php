@@ -124,7 +124,7 @@
                 <div class="hr-form-grid">
                     <div class="hr-form-group">
                         <label class="hr-form-label">Phone Number</label>
-                        <input type="text" name="phone" class="hr-input" placeholder="+63 2 8xxx xxxx">
+                        <input type="tel" name="phone" class="hr-input" placeholder="+63 2 8xxx xxxx or 0917-xxx-xxxx" pattern="[+]?[\d\s\-()]{7,25}">
                     </div>
                     <div class="hr-form-group">
                         <label class="hr-form-label">Email</label>

@@ -323,8 +323,8 @@ class RecruitmentController extends Controller
             'nationality' => 'nullable|string|max:50',
 
             // Contact
-            'email' => 'nullable|email|max:100',
-            'contact_number' => 'nullable|string|max:30',
+            'email' => 'nullable|email:rfc,filter|max:100',
+            'contact_number' => 'nullable|string|regex:/^([+]?[\d\s\-()]{7,25})$/|max:30',
             'address' => 'nullable|string',
             'city' => 'nullable|string|max:100',
             'province' => 'nullable|string|max:100',
@@ -378,6 +378,9 @@ class RecruitmentController extends Controller
             'privacy_consent' => 'nullable|boolean',
             'data_processing_consent' => 'nullable|boolean',
             'applicant_declaration' => 'nullable|boolean',
+        ], [
+            'email.email' => 'Please provide a valid email address (e.g., name@example.com).',
+            'contact_number.regex' => 'The contact number format is invalid. Must contain 7-15 digits (e.g. 0917-123-4567 or +63 917 123 4567).',
         ]);
 
         // Build education JSON
@@ -515,8 +518,8 @@ class RecruitmentController extends Controller
             'middle_name' => 'nullable|string|max:60',
             'last_name' => 'required|string|max:60',
             'suffix' => 'nullable|string|max:15',
-            'contact_number' => 'nullable|string|max:30',
-            'email' => 'nullable|email|max:100',
+            'contact_number' => 'nullable|string|regex:/^([+]?[\d\s\-()]{7,25})$/|max:30',
+            'email' => 'nullable|email:rfc,filter|max:100',
             'address' => 'nullable|string',
             'city' => 'nullable|string|max:100',
             'province' => 'nullable|string|max:100',
@@ -528,6 +531,9 @@ class RecruitmentController extends Controller
             'source' => 'required|string|max:50',
             'recruiter_id' => 'nullable|exists:users,id',
             'recruiter_name' => 'nullable|string|max:100',
+        ], [
+            'email.email' => 'Please provide a valid email address.',
+            'contact_number.regex' => 'The contact number format is invalid. Must contain 7-15 digits.',
         ]);
 
         if (!empty($validated['recruiter_id']) && empty($validated['recruiter_name'])) {

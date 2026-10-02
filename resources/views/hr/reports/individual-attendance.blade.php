@@ -3,33 +3,21 @@
 @section('title', 'Individual Attendance Summary - Reports & Analytics')
 
 @section('content')
-<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
-    <div>
-        <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748b; margin-bottom: 6px;">
-            <a href="{{ route('hr.reports.index') }}" style="color: #64748b; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
-                <i class="ph ph-chart-polar"></i> Reports & Analytics
-            </a>
-            <i class="ph ph-caret-right" style="font-size: 11px;"></i>
-            <span style="color: #0f172a; font-weight: 600;">Individual Attendance Summary</span>
-        </div>
-        <h1 style="font-family: var(--font-heading); font-size: 22px; font-weight: 700; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 8px;">
-            <i class="ph ph-user-list" style="color: #0ea5e9;"></i> Individual Attendance Summary Report
-        </h1>
-        <p style="font-size: 13px; color: #64748b; margin: 3px 0 0 0;">In-depth DTR statement, daily attendance log, and cumulative hours for an individual employee</p>
-    </div>
+<x-report-header 
+    title="Individual Attendance Summary Report" 
+    breadcrumb="Individual Attendance Summary"
+    subtitle="In-depth DTR statement, daily attendance log, and cumulative hours for an individual employee">
     @if($employee)
-        <div style="display: flex; gap: 10px; align-items: center;">
-            <a href="{{ route('hr.reports.export.individual-attendance-summary', ['employee_id' => $employee->id, 'date_from' => $startDate, 'date_to' => $endDate]) }}" class="hr-btn hr-btn-secondary">
-                <i class="ph ph-download-simple"></i>
-                <span>Export Individual CSV</span>
-            </a>
-            <a href="{{ route('hr.reports.employee-attendance-profile', ['employee_id' => $employee->id]) }}" class="hr-btn hr-btn-primary">
-                <i class="ph ph-identification-card"></i>
-                <span>Full Attendance Profile</span>
-            </a>
-        </div>
+        <a href="{{ route('hr.reports.export.individual-attendance-summary', ['employee_id' => $employee->id, 'date_from' => $startDate, 'date_to' => $endDate]) }}" class="hr-btn hr-btn-secondary">
+            <i class="ph ph-download-simple"></i>
+            <span>Export Individual CSV</span>
+        </a>
+        <a href="{{ route('hr.reports.employee-attendance-profile', ['employee_id' => $employee->id]) }}" class="hr-btn hr-btn-primary">
+            <i class="ph ph-identification-card"></i>
+            <span>Full Attendance Profile</span>
+        </a>
     @endif
-</div>
+</x-report-header>
 
 <!-- Multi-Filters -->
 <x-report-filters 

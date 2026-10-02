@@ -3,31 +3,20 @@
 @section('title', 'Unauthorized Leave of Absences Report - Reports & Analytics')
 
 @section('content')
-<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
-    <div>
-        <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748b; margin-bottom: 6px;">
-            <a href="{{ route('hr.reports.index') }}" style="color: #64748b; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
-                <i class="ph ph-chart-polar"></i> Reports & Analytics
-            </a>
-            <i class="ph ph-caret-right" style="font-size: 11px;"></i>
-            <span style="color: #0f172a; font-weight: 600;">Unauthorized Leave of Absences</span>
-        </div>
-        <h1 style="font-family: var(--font-heading); font-size: 22px; font-weight: 700; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 8px;">
-            <i class="ph ph-user-minus" style="color: #ef4444;"></i> Unauthorized Leave of Absences Report
-        </h1>
-        <p style="font-size: 13px; color: #64748b; margin: 3px 0 0 0;">Monitoring unapproved absences, AWOL occurrences, and attendance compliance violations</p>
-    </div>
-    <div style="display: flex; gap: 10px; align-items: center;">
-        <a href="{{ route('hr.reports.export.unauthorized-absences', request()->query()) }}" class="hr-btn hr-btn-secondary">
-            <i class="ph ph-download-simple"></i>
-            <span>Export CSV</span>
-        </a>
-        <a href="{{ route('hr.attendance.timekeeping') }}" class="hr-btn hr-btn-primary">
-            <i class="ph ph-calendar-check"></i>
-            <span>Timekeeping DTR</span>
-        </a>
-    </div>
-</div>
+<x-report-header 
+    title="Unauthorized Leave of Absences Report"
+    breadcrumb="Unauthorized Leave of Absences"
+    subtitle="Monitoring unapproved absences, AWOL occurrences, and attendance compliance violations"
+>
+    <a href="{{ route('hr.reports.export.unauthorized-absences', request()->query()) }}" class="hr-btn hr-btn-secondary">
+        <i class="ph ph-download-simple"></i>
+        <span>Export CSV</span>
+    </a>
+    <a href="{{ route('hr.attendance.timekeeping') }}" class="hr-btn hr-btn-primary">
+        <i class="ph ph-calendar-check"></i>
+        <span>Timekeeping DTR</span>
+    </a>
+</x-report-header>
 
 <!-- Multi-Filters -->
 <x-report-filters 

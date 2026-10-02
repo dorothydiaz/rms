@@ -1403,5 +1403,171 @@ function getCellSortValue(cell) {
     }, true);
 })();
 
+/* ==========================================================================
+   Universal HR Operations Form Validator (Emails, Phones, Required Fields)
+   ========================================================================== */
+(function() {
+    'use strict';
+
+    const EMAIL_REGEX = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
+    const PHONE_ALLOWED_CHARS = /^[0-9+\s\-()]*$/;
+
+    function isPhoneField(el) {
+        if (!el || el.tagName !== 'INPUT') return false;
+        const type = (el.type || '').toLowerCase();
+        const name = (el.name || '').toLowerCase();
+        const id = (el.id || '').toLowerCase();
+        return type === 'tel' || 
+               name.includes('phone') || 
+               name.includes('mobile') || 
+               name.includes('contact_no') ||
+               name.includes('contact_number') ||
+               name.includes('contact_num') ||
+               name.includes('telephone') ||
+               id.includes('phone') || 
+               id.includes('mobile') ||
+               id.includes('telephone');
+    }
+
+    function isEmailField(el) {
+        if (!el || el.tagName !== 'INPUT') return false;
+        const type = (el.type || '').toLowerCase();
+        const name = (el.name || '').toLowerCase();
+        const id = (el.id || '').toLowerCase();
+        return type === 'email' || name.includes('email') || id.includes('email');
+    }
+
+    function validatePhone(val) {
+        if (!val) return { valid: true };
+        const clean = val.trim();
+        if (!PHONE_ALLOWED_CHARS.test(clean)) {
+            return { valid: false, message: 'Phone number can only contain digits, +, -, ( ), and spaces.' };
+        }
+        const digitCount = (clean.match(/\d/g) || []).length;
+        if (digitCount < 7) {
+            return { valid: false, message: 'Phone number must have at least 7 digits (e.g. 0917-123-4567 or (02) 8888-1234).' };
+        }
+        if (digitCount > 15) {
+            return { valid: false, message: 'Phone number cannot exceed 15 digits.' };
+        }
+        return { valid: true };
+    }
+
+    function validateEmail(val) {
+        if (!val) return { valid: true };
+        const clean = val.trim();
+        if (!EMAIL_REGEX.test(clean)) {
+            return { valid: false, message: 'Please enter a valid email address (e.g. name@domain.com).' };
+        }
+        return { valid: true };
+    }
+
+    function showFieldError(input, message) {
+        clearFieldError(input);
+        input.classList.add('hr-input-invalid');
+        const err = document.createElement('div');
+        err.className = 'hr-field-error-msg';
+        err.innerHTML = `<i class="ph ph-warning-circle" style="font-size: 13px; flex-shrink: 0;"></i> <span>${message}</span>`;
+        input.parentNode.appendChild(err);
+    }
+
+    function clearFieldError(input) {
+        input.classList.remove('hr-input-invalid');
+        const existing = input.parentNode ? input.parentNode.querySelector('.hr-field-error-msg') : null;
+        if (existing) existing.remove();
+    }
+
+    // Real-time listener for all phone and email fields
+    document.addEventListener('input', (e) => {
+        const target = e.target;
+        if (isPhoneField(target) || isEmailField(target)) {
+            clearFieldError(target);
+        }
+    });
+
+    document.addEventListener('blur', (e) => {
+        const target = e.target;
+        if (isEmailField(target) && target.value.trim() !== '') {
+            const res = validateEmail(target.value);
+            if (!res.valid) showFieldError(target, res.message);
+        } else if (isPhoneField(target) && target.value.trim() !== '') {
+            const res = validatePhone(target.value);
+            if (!res.valid) showFieldError(target, res.message);
+        }
+    }, true);
+
+    // Global form submit interceptor for HR Operations forms
+    document.addEventListener('submit', (e) => {
+        const form = e.target;
+        if (!form || form.tagName !== 'FORM') return;
+
+        // Skip search filter forms or delete confirmation forms that only submit CSRF
+        const isDeleteOrGet = (form.method || '').toUpperCase() === 'GET' || form.querySelector('input[name="_method"][value="DELETE"]');
+        if (isDeleteOrGet && !form.querySelector('input[type="tel"], input[type="email"], input[name*="email"], input[name*="phone"], input[name*="mobile"], input[name*="contact"]')) {
+            return;
+        }
+
+        let firstInvalid = null;
+        let errorMessages = [];
+
+        const allInputs = form.querySelectorAll('input');
+        allInputs.forEach(input => {
+            const val = input.value ? input.value.trim() : '';
+
+            // Email check
+            if (isEmailField(input)) {
+                if (input.required && !val) {
+                    showFieldError(input, 'Email address is required.');
+                    if (!firstInvalid) firstInvalid = input;
+                    errorMessages.push('Email is required');
+                } else if (val) {
+                    const res = validateEmail(val);
+                    if (!res.valid) {
+                        showFieldError(input, res.message);
+                        if (!firstInvalid) firstInvalid = input;
+                        errorMessages.push(res.message);
+                    }
+                }
+            }
+
+            // Phone check
+            if (isPhoneField(input)) {
+                if (input.required && !val) {
+                    showFieldError(input, 'Phone number is required.');
+                    if (!firstInvalid) firstInvalid = input;
+                    errorMessages.push('Phone number is required');
+                } else if (val) {
+                    const res = validatePhone(val);
+                    if (!res.valid) {
+                        showFieldError(input, res.message);
+                        if (!firstInvalid) firstInvalid = input;
+                        errorMessages.push(res.message);
+                    }
+                }
+            }
+        });
+
+        // If errors found, prevent submit and highlight first field
+        if (firstInvalid) {
+            e.preventDefault();
+            e.stopPropagation();
+            firstInvalid.focus();
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Form Validation Error',
+                    text: errorMessages[0] || 'Please correct the highlighted errors before submitting.',
+                    confirmButtonColor: '#7c3aed',
+                    confirmButtonText: 'Review Form',
+                    timer: 4000,
+                    timerProgressBar: true
+                });
+            }
+            return false;
+        }
+    }, true);
+})();
+
+
 
 
