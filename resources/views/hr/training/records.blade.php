@@ -14,7 +14,7 @@
 
 <!-- Filters -->
 <div class="hr-filter-bar">
-    <form method="GET" action="{{ route('hr.training.records') }}" style="display: flex; gap: 12px; width: 100%; align-items: center; flex-wrap: wrap;">
+    <form method="GET" action="{{ route('hr.training.records') }}" style="display: flex; gap: 8px; width: 100%; align-items: center; flex-wrap: wrap;">
         <select name="training_program_id" class="hr-select" style="max-width: 250px;">
             <option value="">-- All Training Programs --</option>
             @foreach($programs as $prog)

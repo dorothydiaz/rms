@@ -85,9 +85,9 @@
 <x-hr-tabs parent="time-attendance" />
 
 <div class="hr-table-card hr-table-card-full">
-    <div class="hr-table-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 12px 18px;">
-        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-            <div style="display: flex; align-items: center; gap: 8px;">
+    <div class="hr-table-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; padding: 8px 14px;">
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 6px;">
                 <span class="hr-table-title"><i class="ph ph-calendar-blank"></i> Staff Time Logs</span>
                 <span class="hr-badge hr-badge-neutral" id="tkStaffCountBadge">{{ count($employees) }} Staff</span>
             </div>
@@ -95,22 +95,22 @@
             <!-- Date Filter Form -->
             <form method="GET" action="{{ route('hr.attendance.timekeeping') }}" style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
                 <div style="display: flex; gap: 3px; align-items: center;">
-                    <a href="{{ route('hr.attendance.timekeeping', array_merge(request()->query(), ['date' => \Carbon\Carbon::parse($date)->subDay()->toDateString()])) }}" class="hr-btn hr-btn-secondary" style="height: 34px; padding: 0 9px;" title="Previous Day">
+                    <a href="{{ route('hr.attendance.timekeeping', array_merge(request()->query(), ['date' => \Carbon\Carbon::parse($date)->subDay()->toDateString()])) }}" class="hr-btn hr-btn-secondary" style="height: 31px; padding: 0 8px;" title="Previous Day">
                         <i class="ph ph-caret-left"></i>
                     </a>
-                    <input type="date" name="date" class="hr-input" value="{{ $date }}" onchange="this.form.submit()" style="height: 34px; padding: 4px 8px; font-size: 12.5px;">
-                    <a href="{{ route('hr.attendance.timekeeping', array_merge(request()->query(), ['date' => \Carbon\Carbon::parse($date)->addDay()->toDateString()])) }}" class="hr-btn hr-btn-secondary" style="height: 34px; padding: 0 9px;" title="Next Day">
+                    <input type="date" name="date" class="hr-input" value="{{ $date }}" onchange="this.form.submit()" style="height: 31px; padding: 2px 8px; font-size: 12px;">
+                    <a href="{{ route('hr.attendance.timekeeping', array_merge(request()->query(), ['date' => \Carbon\Carbon::parse($date)->addDay()->toDateString()])) }}" class="hr-btn hr-btn-secondary" style="height: 31px; padding: 0 8px;" title="Next Day">
                         <i class="ph ph-caret-right"></i>
                     </a>
                     @if($date !== \Carbon\Carbon::today()->toDateString())
-                        <a href="{{ route('hr.attendance.timekeeping', array_merge(request()->query(), ['date' => \Carbon\Carbon::today()->toDateString()])) }}" class="hr-btn hr-btn-secondary" style="height: 34px; padding: 0 9px; font-size: 11.5px; font-weight: 600;" title="Jump to Today">
+                        <a href="{{ route('hr.attendance.timekeeping', array_merge(request()->query(), ['date' => \Carbon\Carbon::today()->toDateString()])) }}" class="hr-btn hr-btn-secondary" style="height: 31px; padding: 0 8px; font-size: 11px; font-weight: 600;" title="Jump to Today">
                             Today
                         </a>
                     @endif
                 </div>
 
                 @if(isset($branches) && $branches->count() > 1)
-                    <select name="branch_id" class="hr-select" onchange="this.form.submit()" style="height: 34px; font-size: 12px; padding: 4px 10px;">
+                    <select name="branch_id" class="hr-select" onchange="this.form.submit()" style="height: 31px; font-size: 12px; padding: 2px 8px;">
                         <option value="">All Branches</option>
                         @foreach($branches as $b)
                             <option value="{{ $b->id }}" {{ request('branch_id') == $b->id ? 'selected' : '' }}>{{ $b->name }}</option>
@@ -119,10 +119,10 @@
                 @endif
             </form>
         </div>
-        <div style="position: relative; min-width: 240px; margin-left: auto;">
-            <i class="ph ph-magnifying-glass" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 14px;"></i>
-            <input type="text" id="tkSearchInput" placeholder="Search staff name, ID, branch..." oninput="filterTimekeepingRows()" style="width: 100%; font-size: 12.5px; padding: 6px 28px 6px 30px; border: 1.5px solid #e2e8f0; border-radius: 8px; outline: none; height: 34px; box-sizing: border-box;">
-            <button type="button" id="tkClearSearchBtn" onclick="clearTkSearch()" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); border: none; background: transparent; color: #94a3b8; cursor: pointer; display: none; font-size: 16px; line-height: 1;">&times;</button>
+        <div style="position: relative; min-width: 220px; margin-left: auto;">
+            <i class="ph ph-magnifying-glass" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 13px;"></i>
+            <input type="text" id="tkSearchInput" placeholder="Search staff name, ID, branch..." oninput="filterTimekeepingRows()" style="width: 100%; font-size: 12px; padding: 4px 26px 4px 28px; border: 1px solid #e2e8f0; border-radius: 6px; outline: none; height: 31px; box-sizing: border-box;">
+            <button type="button" id="tkClearSearchBtn" onclick="clearTkSearch()" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); border: none; background: transparent; color: #94a3b8; cursor: pointer; display: none; font-size: 15px; line-height: 1;">&times;</button>
         </div>
     </div>
     <div class="hr-table-wrapper">

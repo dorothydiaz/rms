@@ -20,17 +20,17 @@
 </div>
 
 <!-- Real-Time Filter & Search Bar (No Enter Key Required) -->
-<div class="hr-filter-bar" style="margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+<div class="hr-filter-bar" style="margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
     <!-- Filters & Search Controls Group -->
-    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; flex: 1;">
+    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex: 1;">
         <!-- Search Input -->
-        <div style="position: relative; width: 260px; flex-shrink: 0;">
-            <i class="ph ph-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 16px; pointer-events: none;"></i>
-            <input type="text" id="docSearchInput" class="hr-input" placeholder="Search title, file, branch..." oninput="filterDocumentsTable()" style="width: 100%; box-sizing: border-box; padding-left: 36px; height: 38px;">
+        <div style="position: relative; width: 220px; flex-shrink: 0;">
+            <i class="ph ph-magnifying-glass" style="position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 14px; pointer-events: none;"></i>
+            <input type="text" id="docSearchInput" class="hr-input" placeholder="Search title, file, branch..." oninput="filterDocumentsTable()" style="width: 100%; box-sizing: border-box; padding-left: 28px; height: 31px; font-size: 12px;">
         </div>
 
         <!-- Document Type Filter -->
-        <select id="docTypeFilter" class="hr-select" style="height: 38px; max-width: 200px;" onchange="filterDocumentsTable()">
+        <select id="docTypeFilter" class="hr-select" style="height: 31px; max-width: 180px; font-size: 12px;" onchange="filterDocumentsTable()">
             <option value="">-- All Types --</option>
             <option value="Health Permit">Health Permit / Sanitary</option>
             <option value="Food Handler Certificate">Food Handler Certificate</option>
@@ -41,7 +41,7 @@
         </select>
 
         <!-- Branch Filter -->
-        <select id="docBranchFilter" class="hr-select" style="height: 38px; max-width: 180px;" onchange="filterDocumentsTable()">
+        <select id="docBranchFilter" class="hr-select" style="height: 31px; max-width: 160px; font-size: 12px;" onchange="filterDocumentsTable()">
             <option value="">-- All Branches --</option>
             @foreach($branches as $b)
                 <option value="{{ $b->name }}">{{ $b->name }}</option>
@@ -49,7 +49,7 @@
         </select>
 
         <!-- Expiry Status Filter -->
-        <select id="docExpiryFilter" class="hr-select" style="height: 38px; max-width: 170px;" onchange="filterDocumentsTable()">
+        <select id="docExpiryFilter" class="hr-select" style="height: 31px; max-width: 155px; font-size: 12px;" onchange="filterDocumentsTable()">
             <option value="">-- Expiry Status --</option>
             <option value="valid">Active / Valid</option>
             <option value="expiring">Expiring Soon (30d)</option>
@@ -58,7 +58,7 @@
         </select>
 
         <!-- Sort By Options in Table Toolbar -->
-        <select id="docSortSelect" class="hr-select" style="height: 38px; max-width: 195px;" onchange="applyDocSortFromSelect(this.value)">
+        <select id="docSortSelect" class="hr-select" style="height: 31px; max-width: 175px; font-size: 12px;" onchange="applyDocSortFromSelect(this.value)">
             <option value="">Sort By: Default</option>
             <option value="title_asc">Title (A &rarr; Z)</option>
             <option value="title_desc">Title (Z &rarr; A)</option>

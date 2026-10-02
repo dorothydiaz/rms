@@ -7,7 +7,7 @@
 
 <!-- Filters -->
 <div class="hr-filter-bar">
-    <form method="GET" action="{{ route('hr.admin.audit-logs') }}" style="display: flex; gap: 12px; width: 100%; align-items: center; flex-wrap: wrap;">
+    <form method="GET" action="{{ route('hr.admin.audit-logs') }}" style="display: flex; gap: 8px; width: 100%; align-items: center; flex-wrap: wrap;">
         <select name="module" class="hr-select" style="max-width: 180px;">
             <option value="">-- All Modules --</option>
             <option value="Authentication" {{ request('module') === 'Authentication' ? 'selected' : '' }}>Authentication</option>

@@ -95,26 +95,26 @@
 </x-hr-tabs>
 
 <!-- Filter & Action Toolbar -->
-<div class="hr-filter-bar" style="margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
-    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; flex: 1;">
+<div class="hr-filter-bar" style="margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
+    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex: 1;">
         <!-- Real-Time Text Search -->
-        <div style="position: relative; width: 250px; flex-shrink: 0;">
-            <i class="ph ph-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 16px; pointer-events: none;"></i>
-            <input type="text" id="manualSearchInput" class="hr-input" placeholder="Search staff, ID, branch, notes..." oninput="filterManualTable()" style="width: 100%; box-sizing: border-box; padding-left: 36px; height: 38px;">
+        <div style="position: relative; width: 220px; flex-shrink: 0;">
+            <i class="ph ph-magnifying-glass" style="position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 14px; pointer-events: none;"></i>
+            <input type="text" id="manualSearchInput" class="hr-input" placeholder="Search staff, ID, branch, notes..." oninput="filterManualTable()" style="width: 100%; box-sizing: border-box; padding-left: 28px; height: 31px; font-size: 12px;">
         </div>
 
         <!-- Chosen Date Filter -->
         <div style="display: flex; align-items: center; gap: 6px;">
-            <input type="date" id="manualDateFilter" class="hr-input" value="{{ request('date') }}" onchange="applyServerDateFilter(this.value)" style="height: 38px; width: 160px;" title="Filter by specific chosen date">
+            <input type="date" id="manualDateFilter" class="hr-input" value="{{ request('date') }}" onchange="applyServerDateFilter(this.value)" style="height: 31px; width: 140px; font-size: 12px;" title="Filter by specific chosen date">
             @if(request('date'))
-                <a href="{{ route('hr.attendance.corrections') }}" class="hr-btn hr-btn-secondary" style="height: 38px; padding: 0 10px;" title="Clear date filter">
+                <a href="{{ route('hr.attendance.corrections') }}" class="hr-btn hr-btn-secondary" style="height: 31px; padding: 0 8px; font-size: 11.5px;" title="Clear date filter">
                     <i class="ph ph-x"></i> Clear
                 </a>
             @endif
         </div>
 
         <!-- Branch Filter -->
-        <select id="manualBranchFilter" class="hr-select" style="height: 38px; max-width: 170px;" onchange="filterManualTable()">
+        <select id="manualBranchFilter" class="hr-select" style="height: 31px; max-width: 155px; font-size: 12px;" onchange="filterManualTable()">
             <option value="">-- All Branches --</option>
             @foreach($branches as $b)
                 <option value="{{ $b->name }}" {{ request('branch_id') == $b->id ? 'selected' : '' }}>{{ $b->name }}</option>
@@ -122,7 +122,7 @@
         </select>
 
         <!-- Status Filter -->
-        <select id="manualStatusFilter" class="hr-select" style="height: 38px; max-width: 150px;" onchange="filterManualTable()">
+        <select id="manualStatusFilter" class="hr-select" style="height: 31px; max-width: 145px; font-size: 12px;" onchange="filterManualTable()">
             <option value="">-- All Statuses --</option>
             <option value="Present">Present</option>
             <option value="Late">Late</option>
@@ -132,7 +132,7 @@
         </select>
 
         <!-- Quick Reset -->
-        <button type="button" class="hr-btn hr-btn-secondary" style="height: 38px;" onclick="resetManualFilters()">
+        <button type="button" class="hr-btn hr-btn-secondary" style="height: 31px; font-size: 12px;" onclick="resetManualFilters()">
             <i class="ph ph-arrow-counter-clockwise"></i> Reset
         </button>
     </div>

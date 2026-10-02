@@ -120,7 +120,7 @@
 /* Filter Controls Grid */
 .wd-filter-panel {
     background: #f8fafc;
-    padding: 16px 20px;
+    padding: 10px 16px;
     border-bottom: 1px solid #e2e8f0;
     box-sizing: border-box;
     width: 100%;
@@ -128,8 +128,8 @@
 
 .wd-filter-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
-    gap: 12px;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 8px;
     width: 100%;
     box-sizing: border-box;
 }
@@ -338,33 +338,33 @@
                 
                 <!-- Quick Search -->
                 <div class="wd-search-span">
-                    <label style="display: block; font-size: 11.5px; font-weight: 600; color: #475569; margin-bottom: 4px;">
+                    <label style="display: block; font-size: 11px; font-weight: 600; color: #475569; margin-bottom: 3px;">
                         <i class="ph ph-magnifying-glass"></i> Search Employee (Name or ID)
                     </label>
                     <div style="position: relative;">
-                        <i class="ph ph-magnifying-glass" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 15px;"></i>
-                        <input type="text" id="filterSearch" class="hr-input" placeholder="Type name, EMP-XXXX, or title..." oninput="onFilterChange()" style="padding-left: 32px; width: 100%; box-sizing: border-box; height: 34px; font-size: 12.5px;">
+                        <i class="ph ph-magnifying-glass" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 14px;"></i>
+                        <input type="text" id="filterSearch" class="hr-input" placeholder="Type name, EMP-XXXX, or title..." oninput="onFilterChange()" style="padding-left: 30px; width: 100%; box-sizing: border-box; height: 31px; font-size: 12px;">
                     </div>
                 </div>
 
                 <!-- Salary Range Min/Max -->
                 <div>
-                    <label style="display: block; font-size: 11.5px; font-weight: 600; color: #475569; margin-bottom: 4px;">
+                    <label style="display: block; font-size: 11px; font-weight: 600; color: #475569; margin-bottom: 3px;">
                         <i class="ph ph-currency-circle-dollar"></i> Salary Range (Min - Max)
                     </label>
                     <div style="display: flex; align-items: center; gap: 6px;">
-                        <input type="number" id="filterSalaryMin" class="hr-input" placeholder="Min ₱" oninput="onFilterChange()" style="width: 50%; height: 34px; font-size: 12px; padding: 0 8px;">
+                        <input type="number" id="filterSalaryMin" class="hr-input" placeholder="Min ₱" oninput="onFilterChange()" style="width: 50%; height: 31px; font-size: 12px; padding: 0 8px;">
                         <span style="color: #94a3b8;">-</span>
-                        <input type="number" id="filterSalaryMax" class="hr-input" placeholder="Max ₱" oninput="onFilterChange()" style="width: 50%; height: 34px; font-size: 12px; padding: 0 8px;">
+                        <input type="number" id="filterSalaryMax" class="hr-input" placeholder="Max ₱" oninput="onFilterChange()" style="width: 50%; height: 31px; font-size: 12px; padding: 0 8px;">
                     </div>
                 </div>
 
                 <!-- Department -->
                 <div>
-                    <label style="display: block; font-size: 11.5px; font-weight: 600; color: #475569; margin-bottom: 4px;">
+                    <label style="display: block; font-size: 11px; font-weight: 600; color: #475569; margin-bottom: 3px;">
                         <i class="ph ph-tree-structure"></i> Department
                     </label>
-                    <select id="filterDept" class="hr-select" onchange="onFilterChange()" style="height: 34px; font-size: 12px; width: 100%;">
+                    <select id="filterDept" class="hr-select" onchange="onFilterChange()" style="height: 31px; font-size: 12px; width: 100%;">
                         <option value="">All Departments</option>
                         @foreach($departments as $d)
                             <option value="{{ $d->name }}">{{ $d->name }}</option>
@@ -374,10 +374,10 @@
 
                 <!-- Position -->
                 <div>
-                    <label style="display: block; font-size: 11.5px; font-weight: 600; color: #475569; margin-bottom: 4px;">
+                    <label style="display: block; font-size: 11px; font-weight: 600; color: #475569; margin-bottom: 3px;">
                         <i class="ph ph-identification-card"></i> Position
                     </label>
-                    <select id="filterPosition" class="hr-select" onchange="onFilterChange()" style="height: 34px; font-size: 12px; width: 100%;">
+                    <select id="filterPosition" class="hr-select" onchange="onFilterChange()" style="height: 31px; font-size: 12px; width: 100%;">
                         <option value="">All Positions</option>
                         @foreach($positions as $p)
                             <option value="{{ $p->name }}">{{ $p->name }}</option>
@@ -387,10 +387,10 @@
 
                 <!-- Branch -->
                 <div>
-                    <label style="display: block; font-size: 11.5px; font-weight: 600; color: #475569; margin-bottom: 4px;">
+                    <label style="display: block; font-size: 11px; font-weight: 600; color: #475569; margin-bottom: 3px;">
                         <i class="ph ph-storefront"></i> Branch
                     </label>
-                    <select id="filterBranch" class="hr-select" onchange="onFilterChange()" style="height: 34px; font-size: 12px; width: 100%;">
+                    <select id="filterBranch" class="hr-select" onchange="onFilterChange()" style="height: 31px; font-size: 12px; width: 100%;">
                         <option value="">All Branches</option>
                         @foreach($branches as $b)
                             <option value="{{ $b->name }}">{{ $b->name }}</option>
@@ -400,10 +400,10 @@
 
                 <!-- Employment Status -->
                 <div>
-                    <label style="display: block; font-size: 11.5px; font-weight: 600; color: #475569; margin-bottom: 4px;">
+                    <label style="display: block; font-size: 11px; font-weight: 600; color: #475569; margin-bottom: 3px;">
                         <i class="ph ph-user-check"></i> Employment Status
                     </label>
-                    <select id="filterStatus" class="hr-select" onchange="onFilterChange()" style="height: 34px; font-size: 12px; width: 100%;">
+                    <select id="filterStatus" class="hr-select" onchange="onFilterChange()" style="height: 31px; font-size: 12px; width: 100%;">
                         <option value="ACTIVE_ALL" selected>Active Workforce Only</option>
                         <option value="">All Statuses (Inc. Separated)</option>
                         <option value="Regular">Regular</option>
@@ -420,10 +420,10 @@
 
                 <!-- Employee Type -->
                 <div>
-                    <label style="display: block; font-size: 11.5px; font-weight: 600; color: #475569; margin-bottom: 4px;">
+                    <label style="display: block; font-size: 11px; font-weight: 600; color: #475569; margin-bottom: 3px;">
                         <i class="ph ph-briefcase"></i> Employee Type
                     </label>
-                    <select id="filterType" class="hr-select" onchange="onFilterChange()" style="height: 34px; font-size: 12px; width: 100%;">
+                    <select id="filterType" class="hr-select" onchange="onFilterChange()" style="height: 31px; font-size: 12px; width: 100%;">
                         <option value="">All Types</option>
                         <option value="Regular">Regular</option>
                         <option value="Probationary">Probationary</option>
@@ -436,10 +436,10 @@
 
                 <!-- Pay Group (Frequency) -->
                 <div>
-                    <label style="display: block; font-size: 11.5px; font-weight: 600; color: #475569; margin-bottom: 4px;">
+                    <label style="display: block; font-size: 11px; font-weight: 600; color: #475569; margin-bottom: 3px;">
                         <i class="ph ph-clock-clockwise"></i> Pay Group
                     </label>
-                    <select id="filterPayGroup" class="hr-select" onchange="onFilterChange()" style="height: 34px; font-size: 12px; width: 100%;">
+                    <select id="filterPayGroup" class="hr-select" onchange="onFilterChange()" style="height: 31px; font-size: 12px; width: 100%;">
                         <option value="">All Pay Groups</option>
                         <option value="Semi-Monthly">Semi-Monthly</option>
                         <option value="Monthly">Monthly</option>
@@ -449,10 +449,10 @@
 
                 <!-- Salary Grade / Job Level -->
                 <div>
-                    <label style="display: block; font-size: 11.5px; font-weight: 600; color: #475569; margin-bottom: 4px;">
+                    <label style="display: block; font-size: 11px; font-weight: 600; color: #475569; margin-bottom: 3px;">
                         <i class="ph ph-chart-bar"></i> Salary Grade / Job Level
                     </label>
-                    <select id="filterJobLevel" class="hr-select" onchange="onFilterChange()" style="height: 34px; font-size: 12px; width: 100%;">
+                    <select id="filterJobLevel" class="hr-select" onchange="onFilterChange()" style="height: 31px; font-size: 12px; width: 100%;">
                         <option value="">All Salary Grades</option>
                         @foreach($jobLevels as $jl)
                             <option value="{{ $jl->name }}">{{ $jl->name }}</option>
@@ -462,10 +462,10 @@
 
                 <!-- Employment Classification / Source -->
                 <div>
-                    <label style="display: block; font-size: 11.5px; font-weight: 600; color: #475569; margin-bottom: 4px;">
+                    <label style="display: block; font-size: 11px; font-weight: 600; color: #475569; margin-bottom: 3px;">
                         <i class="ph ph-buildings"></i> Classification
                     </label>
-                    <select id="filterSource" class="hr-select" onchange="onFilterChange()" style="height: 34px; font-size: 12px; width: 100%;">
+                    <select id="filterSource" class="hr-select" onchange="onFilterChange()" style="height: 31px; font-size: 12px; width: 100%;">
                         <option value="">All Classifications</option>
                         <option value="Direct">Direct Company Hire</option>
                         <option value="Agency">Agency Deployed</option>
@@ -474,10 +474,10 @@
 
                 <!-- Current Payroll Period Reference -->
                 <div>
-                    <label style="display: block; font-size: 11.5px; font-weight: 600; color: #475569; margin-bottom: 4px;">
+                    <label style="display: block; font-size: 11px; font-weight: 600; color: #475569; margin-bottom: 3px;">
                         <i class="ph ph-calendar-blank"></i> Payroll Period Target
                     </label>
-                    <select id="filterPayrollPeriod" class="hr-select" style="height: 34px; font-size: 12px; width: 100%;">
+                    <select id="filterPayrollPeriod" class="hr-select" style="height: 31px; font-size: 12px; width: 100%;">
                         <option value="">Immediate Effective Date</option>
                         @foreach($periods as $p)
                             <option value="{{ $p->id }}">{{ $p->name }} ({{ \Carbon\Carbon::parse($p->start_date)->format('M d') }} - {{ \Carbon\Carbon::parse($p->end_date)->format('M d, Y') }})</option>

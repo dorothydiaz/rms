@@ -163,23 +163,23 @@
     </div>
 
     <!-- Filter Bar -->
-    <div class="hr-filter-bar" style="margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+    <div class="hr-filter-bar" style="margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
         <!-- Filters & Search Controls Group -->
-        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; flex: 1;">
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex: 1;">
             <!-- Search Input -->
-            <div style="position: relative; width: 260px; flex-shrink: 0;">
-                <i class="ph ph-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 16px; pointer-events: none;"></i>
-                <input type="text" id="employeeSearchInput" class="hr-input" placeholder="Search employee, ID, role..." oninput="filterEmployeeTable()" style="width: 100%; box-sizing: border-box; padding-left: 36px; height: 38px;">
+            <div style="position: relative; width: 220px; flex-shrink: 0;">
+                <i class="ph ph-magnifying-glass" style="position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 14px; pointer-events: none;"></i>
+                <input type="text" id="employeeSearchInput" class="hr-input" placeholder="Search employee, ID, role..." oninput="filterEmployeeTable()" style="width: 100%; box-sizing: border-box; padding-left: 28px; height: 31px; font-size: 12px;">
             </div>
 
-            <select id="branchFilterSelect" class="hr-select" style="height: 38px; max-width: 190px;" onchange="filterEmployeeTable()">
+            <select id="branchFilterSelect" class="hr-select" style="height: 31px; max-width: 160px; font-size: 12px;" onchange="filterEmployeeTable()">
                 <option value="">-- All Branches --</option>
                 @foreach($branches as $b)
                     <option value="{{ $b->name }}" {{ request('branch_id') == $b->id ? 'selected' : '' }}>{{ $b->name }}</option>
                 @endforeach
             </select>
 
-            <select id="permStatusFilter" class="hr-select" style="height: 38px; max-width: 200px;" onchange="filterEmployeeTable()">
+            <select id="permStatusFilter" class="hr-select" style="height: 31px; max-width: 175px; font-size: 12px;" onchange="filterEmployeeTable()">
                 <option value="">-- All Permission States --</option>
                 <option value="custom">Has Custom Permissions</option>
                 <option value="defaults">Role Defaults Only</option>
@@ -187,7 +187,7 @@
             </select>
 
             <!-- Sort Options in Toolbar -->
-            <select id="rolesSortSelect" class="hr-select" style="height: 38px; max-width: 195px;" onchange="applyRolesSortFromSelect(this.value)">
+            <select id="rolesSortSelect" class="hr-select" style="height: 31px; max-width: 175px; font-size: 12px;" onchange="applyRolesSortFromSelect(this.value)">
                 <option value="">Sort By: Default</option>
                 <option value="name_asc">Employee (A &rarr; Z)</option>
                 <option value="name_desc">Employee (Z &rarr; A)</option>

@@ -116,16 +116,16 @@
     </div>
 
     <!-- HOLIDAY FILTERS BAR (CLIENT-SIDE REACTIVE WITHOUT PAGE RELOAD) -->
-    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 16px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 6px 12px; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
         <!-- Search Input -->
-        <div style="flex: 1; min-width: 200px; position: relative;">
-            <i class="ph ph-magnifying-glass" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 16px;"></i>
-            <input type="text" id="holidaySearchInput" class="hr-input" placeholder="Search Holiday, Proclamation, or Keyword..." style="padding-left: 32px; height: 36px; font-size: 12.5px; width: 100%; border-radius: 8px;" oninput="applyHolidayFilters()">
+        <div style="flex: 1; min-width: 180px; position: relative;">
+            <i class="ph ph-magnifying-glass" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 14px;"></i>
+            <input type="text" id="holidaySearchInput" class="hr-input" placeholder="Search Holiday, Proclamation, or Keyword..." style="padding-left: 30px; height: 31px; font-size: 12px; width: 100%; border-radius: 6px;" oninput="applyHolidayFilters()">
         </div>
 
         <!-- Filter 1: Holiday Type -->
-        <div style="min-width: 150px;">
-            <select id="filterHolidayType" class="hr-select" style="height: 36px; font-size: 12.5px; border-radius: 8px;" onchange="applyHolidayFilters()">
+        <div style="min-width: 140px;">
+            <select id="filterHolidayType" class="hr-select" style="height: 31px; font-size: 12px; border-radius: 6px;" onchange="applyHolidayFilters()">
                 <option value="">All Holiday Types</option>
                 <option value="Regular Holiday">Regular Holiday</option>
                 <option value="Special Non-Working">Special Non-Working</option>
@@ -136,8 +136,8 @@
         </div>
 
         <!-- Filter 2: Location / Scope -->
-        <div style="min-width: 130px;">
-            <select id="filterScope" class="hr-select" style="height: 36px; font-size: 12.5px; border-radius: 8px;" onchange="applyHolidayFilters()">
+        <div style="min-width: 120px;">
+            <select id="filterScope" class="hr-select" style="height: 31px; font-size: 12px; border-radius: 6px;" onchange="applyHolidayFilters()">
                 <option value="">All Scopes</option>
                 <option value="Nationwide">Nationwide</option>
                 <option value="Regional">Regional</option>
@@ -148,8 +148,8 @@
         </div>
 
         <!-- Filter 3: Branch -->
-        <div style="min-width: 140px;">
-            <select id="filterBranch" class="hr-select" style="height: 36px; font-size: 12.5px; border-radius: 8px;" onchange="applyHolidayFilters()">
+        <div style="min-width: 130px;">
+            <select id="filterBranch" class="hr-select" style="height: 31px; font-size: 12px; border-radius: 6px;" onchange="applyHolidayFilters()">
                 <option value="">All Branches</option>
                 @foreach($branches as $b)
                     <option value="{{ $b->id }}">{{ $b->name }}</option>
@@ -158,8 +158,8 @@
         </div>
 
         <!-- Filter 4: Status -->
-        <div style="min-width: 120px;">
-            <select id="filterStatus" class="hr-select" style="height: 36px; font-size: 12.5px; border-radius: 8px;" onchange="applyHolidayFilters()">
+        <div style="min-width: 110px;">
+            <select id="filterStatus" class="hr-select" style="height: 31px; font-size: 12px; border-radius: 6px;" onchange="applyHolidayFilters()">
                 <option value="">All Status</option>
                 <option value="Active">Active</option>
                 <option value="Inactive">Inactive</option>
@@ -167,15 +167,15 @@
         </div>
 
         <!-- Filter 5: Year Selector -->
-        <div style="min-width: 100px;">
-            <select id="filterYear" class="hr-select" style="height: 36px; font-size: 12.5px; border-radius: 8px; font-weight: 700; color: #7c3aed;" onchange="window.location.href = '{{ route('hr.payroll.holidays') }}?year=' + this.value">
+        <div style="min-width: 90px;">
+            <select id="filterYear" class="hr-select" style="height: 31px; font-size: 12px; border-radius: 6px; font-weight: 700; color: #7c3aed;" onchange="window.location.href = '{{ route('hr.payroll.holidays') }}?year=' + this.value">
                 @foreach($availableYears as $y)
                     <option value="{{ $y }}" {{ $year == $y ? 'selected' : '' }}>{{ $y }}</option>
                 @endforeach
             </select>
         </div>
 
-        <button type="button" class="hr-btn hr-btn-secondary" style="height: 36px; padding: 0 12px; font-size: 12px;" onclick="resetHolidayFilters()" title="Reset Filters">
+        <button type="button" class="hr-btn hr-btn-secondary" style="height: 31px; padding: 0 10px; font-size: 12px;" onclick="resetHolidayFilters()" title="Reset Filters">
             <i class="ph ph-arrow-counter-clockwise"></i>
             <span>Reset</span>
         </button>

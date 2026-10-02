@@ -198,6 +198,7 @@
     font-size: var(--tooltip-font-size);
     font-weight: var(--tooltip-font-weight);
     letter-spacing: var(--tooltip-letter-spacing);
+    line-height: 1.2;
     padding: var(--tooltip-padding);
     border-radius: var(--tooltip-radius);
     white-space: nowrap;
@@ -208,6 +209,10 @@
     box-shadow: var(--shadow-tooltip);
     border: var(--tooltip-border);
     z-index: 100000;
+    display: inline-flex;
+    align-items: center;
+    box-sizing: border-box;
+    height: auto;
 }
 
 [data-tooltip]::before,
@@ -217,6 +222,8 @@
     bottom: calc(100% + 2px);
     left: 50%;
     transform: translateX(-50%) translateY(4px);
+    width: 0;
+    height: 0;
     border-width: 5px 4.5px 0 4.5px;
     border-style: solid;
     border-color: var(--tooltip-bg) transparent transparent transparent;
@@ -225,6 +232,7 @@
     pointer-events: none;
     transition: opacity var(--transition-smooth), transform var(--transition-smooth), visibility var(--transition-smooth);
     z-index: 100001;
+    box-sizing: border-box;
 }
 
 [data-tooltip]:hover::after,
@@ -238,20 +246,22 @@
 
 /* Tooltip Position Right Variation */
 [data-tooltip-pos="right"]::after {
-    bottom: auto;
-    top: 50%;
-    left: calc(100% + 9px);
-    transform: translateY(-50%) translateX(-4px);
+    bottom: auto !important;
+    top: 50% !important;
+    left: calc(100% + 10px) !important;
+    transform: translateY(-50%) translateX(-4px) !important;
 }
 [data-tooltip-pos="right"]::before {
-    bottom: auto;
-    top: 50%;
-    left: calc(100% + 4px);
-    transform: translateY(-50%) translateX(-4px);
-    border-width: 4.5px 5px 4.5px 0;
-    border-color: transparent var(--tooltip-bg) transparent transparent;
+    bottom: auto !important;
+    top: 50% !important;
+    left: calc(100% + 5px) !important;
+    transform: translateY(-50%) translateX(-4px) !important;
+    width: 0 !important;
+    height: 0 !important;
+    border-width: 5px 5px 5px 0 !important;
+    border-color: transparent var(--tooltip-bg) transparent transparent !important;
 }
 [data-tooltip-pos="right"]:hover::after,
 [data-tooltip-pos="right"]:hover::before {
-    transform: translateY(-50%) translateX(0);
+    transform: translateY(-50%) translateX(0) !important;
 }

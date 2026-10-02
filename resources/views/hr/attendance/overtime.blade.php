@@ -53,16 +53,16 @@
 </div>
 
 <!-- Filter & Search Toolbar -->
-<div class="hr-filter-bar" style="margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
-    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; flex: 1;">
+<div class="hr-filter-bar" style="margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
+    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex: 1;">
         <!-- Real-Time Text Search -->
-        <div style="position: relative; width: 240px; flex-shrink: 0;">
-            <i class="ph ph-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 16px; pointer-events: none;"></i>
-            <input type="text" id="otSearchInput" class="hr-input" placeholder="Search staff, position…" oninput="filterOvertimeTable()" style="width: 100%; box-sizing: border-box; padding-left: 36px; height: 38px;">
+        <div style="position: relative; width: 220px; flex-shrink: 0;">
+            <i class="ph ph-magnifying-glass" style="position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 14px; pointer-events: none;"></i>
+            <input type="text" id="otSearchInput" class="hr-input" placeholder="Search staff, position…" oninput="filterOvertimeTable()" style="width: 100%; box-sizing: border-box; padding-left: 28px; height: 31px; font-size: 12px;">
         </div>
 
         <!-- Status Filter -->
-        <select id="otStatusFilter" class="hr-select" style="height: 38px; width: 150px;" onchange="applyOtFilter('status', this.value)">
+        <select id="otStatusFilter" class="hr-select" style="height: 31px; width: 140px; font-size: 12px;" onchange="applyOtFilter('status', this.value)">
             <option value="">-- All Statuses --</option>
             <option value="Pending" {{ request('status') === 'Pending' ? 'selected' : '' }}>Pending</option>
             <option value="Approved" {{ request('status') === 'Approved' ? 'selected' : '' }}>Approved</option>
@@ -71,9 +71,9 @@
 
         <!-- Date Filter -->
         <div style="display: flex; align-items: center; gap: 6px;">
-            <input type="date" id="otDateFilter" class="hr-input" value="{{ request('date') }}" onchange="applyOtFilter('date', this.value)" style="height: 38px; width: 155px;" title="Filter by date">
+            <input type="date" id="otDateFilter" class="hr-input" value="{{ request('date') }}" onchange="applyOtFilter('date', this.value)" style="height: 31px; width: 140px; font-size: 12px;" title="Filter by date">
             @if(request('date') || request('status') || request('branch_id'))
-                <a href="{{ route('hr.attendance.overtime') }}" class="hr-btn hr-btn-secondary" style="height: 38px; padding: 0 10px;" title="Clear filters">
+                <a href="{{ route('hr.attendance.overtime') }}" class="hr-btn hr-btn-secondary" style="height: 31px; padding: 0 8px; font-size: 11.5px;" title="Clear filters">
                     <i class="ph ph-x"></i> Clear
                 </a>
             @endif
@@ -81,7 +81,7 @@
 
         <!-- Branch Filter -->
         @if(isset($branches) && $branches->isNotEmpty())
-            <select id="otBranchFilter" class="hr-select" style="height: 38px; max-width: 170px;" onchange="applyOtFilter('branch_id', this.value)">
+            <select id="otBranchFilter" class="hr-select" style="height: 31px; max-width: 155px; font-size: 12px;" onchange="applyOtFilter('branch_id', this.value)">
                 <option value="">-- All Branches --</option>
                 @foreach($branches as $b)
                     <option value="{{ $b->id }}" {{ request('branch_id') == $b->id ? 'selected' : '' }}>{{ $b->name }}</option>

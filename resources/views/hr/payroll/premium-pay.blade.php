@@ -88,18 +88,18 @@
     </div>
 
     <!-- FILTER BAR -->
-    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 18px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
-        <form method="GET" action="{{ route('hr.payroll.premium-pay') }}" id="premiumFilterForm" style="display: flex; flex-direction: column; gap: 10px;">
-            <div style="display: grid; grid-template-columns: 2fr 1.5fr 1fr 1fr 1fr; gap: 10px; align-items: center;">
+    <div class="hr-filter-bar" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 6px 12px; margin-bottom: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+        <form method="GET" action="{{ route('hr.payroll.premium-pay') }}" id="premiumFilterForm" style="display: flex; flex-direction: column; gap: 6px; width: 100%;">
+            <div style="display: grid; grid-template-columns: 2fr 1.5fr 1fr 1fr 1fr; gap: 8px; align-items: center;">
                 <!-- Search Employee -->
                 <div style="position: relative;">
-                    <i class="ph ph-magnifying-glass" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 15px;"></i>
-                    <input type="text" name="search" id="filterSearch" value="{{ request('search') }}" placeholder="Search Employee..." class="hr-input" style="padding-left: 32px; height: 36px; font-size: 13px;">
+                    <i class="ph ph-magnifying-glass" style="position: absolute; left: 8px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 13.5px;"></i>
+                    <input type="text" name="search" id="filterSearch" value="{{ request('search') }}" placeholder="Search Employee..." class="hr-input" style="padding-left: 28px; height: 31px; font-size: 12px;">
                 </div>
 
                 <!-- Payroll Period -->
                 <div>
-                    <select name="payroll_period_id" class="hr-select" style="height: 36px; font-size: 12.5px;">
+                    <select name="payroll_period_id" class="hr-select" style="height: 31px; font-size: 12px;">
                         <option value="">Payroll Period (All)</option>
                         @foreach($periods as $p)
                             <option value="{{ $p->id }}" {{ request('payroll_period_id') == $p->id ? 'selected' : '' }}>
@@ -111,7 +111,7 @@
 
                 <!-- Department -->
                 <div>
-                    <select name="department_id" class="hr-select" style="height: 36px; font-size: 12.5px;">
+                    <select name="department_id" class="hr-select" style="height: 31px; font-size: 12px;">
                         <option value="">Department (All)</option>
                         @foreach($departments as $d)
                             <option value="{{ $d->id }}" {{ request('department_id') == $d->id ? 'selected' : '' }}>{{ $d->name }}</option>
@@ -121,7 +121,7 @@
 
                 <!-- Branch -->
                 <div>
-                    <select name="branch_id" class="hr-select" style="height: 36px; font-size: 12.5px;">
+                    <select name="branch_id" class="hr-select" style="height: 31px; font-size: 12px;">
                         <option value="">Branch (All)</option>
                         @foreach($branches as $b)
                             <option value="{{ $b->id }}" {{ request('branch_id') == $b->id ? 'selected' : '' }}>{{ $b->name }}</option>
@@ -131,7 +131,7 @@
 
                 <!-- Status -->
                 <div>
-                    <select name="status" class="hr-select" style="height: 36px; font-size: 12.5px;">
+                    <select name="status" class="hr-select" style="height: 31px; font-size: 12px;">
                         <option value="">Status (All)</option>
                         <option value="Pending" {{ request('status') == 'Pending' ? 'selected' : '' }}>Pending</option>
                         <option value="Approved" {{ request('status') == 'Approved' ? 'selected' : '' }}>Approved</option>
@@ -141,10 +141,10 @@
             </div>
 
             <!-- Second Row Filters -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1.5fr auto; gap: 10px; align-items: center;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1.5fr auto; gap: 8px; align-items: center;">
                 <!-- Premium Type -->
                 <div>
-                    <select name="premium_type" class="hr-select" style="height: 36px; font-size: 12.5px;">
+                    <select name="premium_type" class="hr-select" style="height: 31px; font-size: 12px;">
                         <option value="">Work / Premium Type (All)</option>
                         <option value="Rest Day" {{ request('premium_type') == 'Rest Day' ? 'selected' : '' }}>Rest Day (130%)</option>
                         <option value="Special Non-Working Day" {{ request('premium_type') == 'Special Non-Working Day' ? 'selected' : '' }}>Special Non-Working (130%)</option>
@@ -156,7 +156,7 @@
 
                 <!-- Holiday Type -->
                 <div>
-                    <select name="holiday_type" class="hr-select" style="height: 36px; font-size: 12.5px;">
+                    <select name="holiday_type" class="hr-select" style="height: 31px; font-size: 12px;">
                         <option value="">Holiday Type (All)</option>
                         <option value="Regular Holiday" {{ request('holiday_type') == 'Regular Holiday' ? 'selected' : '' }}>Regular Holiday</option>
                         <option value="Special Non-Working" {{ request('holiday_type') == 'Special Non-Working' ? 'selected' : '' }}>Special Non-Working</option>
@@ -167,21 +167,21 @@
                 </div>
 
                 <!-- Date Range Start -->
-                <div>
-                    <input type="date" name="start_date" value="{{ request('start_date') }}" class="hr-input" style="height: 36px; font-size: 12.5px;" title="Start Date">
+                <div class="hr-filter-date-wrap">
+                    <input type="date" name="start_date" value="{{ request('start_date') }}" class="hr-input" style="height: 31px; font-size: 12px;" title="Start Date">
                 </div>
 
                 <!-- Date Range End -->
-                <div>
-                    <input type="date" name="end_date" value="{{ request('end_date') }}" class="hr-input" style="height: 36px; font-size: 12.5px;" title="End Date">
+                <div class="hr-filter-date-wrap">
+                    <input type="date" name="end_date" value="{{ request('end_date') }}" class="hr-input" style="height: 31px; font-size: 12px;" title="End Date">
                 </div>
 
                 <!-- Actions -->
                 <div style="display: flex; align-items: center; gap: 6px;">
-                    <button type="submit" class="hr-btn hr-btn-primary hr-btn-sm" style="height: 36px; padding: 0 14px;">
+                    <button type="submit" class="hr-btn hr-btn-primary hr-btn-sm" style="height: 31px; padding: 0 10px; font-size: 12px;">
                         <i class="ph ph-funnel"></i> Filter
                     </button>
-                    <a href="{{ route('hr.payroll.premium-pay') }}" class="hr-btn hr-btn-secondary hr-btn-sm" style="height: 36px; padding: 0 12px;" title="Reset Filters">
+                    <a href="{{ route('hr.payroll.premium-pay') }}" class="hr-btn hr-btn-secondary hr-btn-sm" style="height: 31px; padding: 0 10px; font-size: 12px;" title="Reset Filters">
                         <i class="ph ph-arrow-counter-clockwise"></i> Reset
                     </a>
                 </div>

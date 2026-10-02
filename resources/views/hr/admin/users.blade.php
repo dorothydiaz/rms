@@ -14,7 +14,7 @@
 
 <!-- Filters -->
 <div class="hr-filter-bar">
-    <form method="GET" action="{{ route('hr.admin.users') }}" style="display: flex; gap: 12px; width: 100%; align-items: center; flex-wrap: wrap;">
+    <form method="GET" action="{{ route('hr.admin.users') }}" style="display: flex; gap: 8px; width: 100%; align-items: center; flex-wrap: wrap;">
         <select name="role" class="hr-select" style="max-width: 200px;">
             <option value="">-- All Roles --</option>
             @foreach($roles as $r)

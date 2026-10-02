@@ -14,7 +14,7 @@
 
 <!-- Filters -->
 <div class="hr-filter-bar">
-    <form method="GET" action="{{ route('hr.performance.evaluations') }}" style="display: flex; gap: 12px; width: 100%; align-items: center; flex-wrap: wrap;">
+    <form method="GET" action="{{ route('hr.performance.evaluations') }}" style="display: flex; gap: 8px; width: 100%; align-items: center; flex-wrap: wrap;">
         <select name="performance_period_id" class="hr-select" style="max-width: 250px;">
             <option value="">-- All Review Cycles --</option>
             @foreach($periods as $per)
