@@ -152,15 +152,15 @@
 
             @if($hasSubtabs)
                 <div class="hr-tab-dropdown-wrap" onmouseenter="openTabDropdown(this)" onmouseleave="closeTabDropdown(this)">
-                    <div class="hr-tab-item hr-tab-dropdown-trigger {{ $isActive ? 'active' : '' }}">
-                        <a href="{{ route($tab['route']) }}" class="hr-tab-link">
+                    <button type="button" class="hr-tab-item hr-tab-dropdown-trigger {{ $isActive ? 'active' : '' }}" onclick="toggleHrTabDropdown(event, this)" aria-haspopup="true" aria-expanded="false" title="Switch {{ $tab['name'] }} section">
+                        <span class="hr-tab-link-content">
                             <i class="ph {{ $tab['icon'] }}"></i>
                             <span>{{ $tab['name'] }}</span>
-                        </a>
-                        <button type="button" class="hr-tab-caret-btn" onclick="toggleHrTabDropdown(event, this)" aria-label="Toggle {{ $tab['name'] }} options" title="Switch organization section">
+                        </span>
+                        <span class="hr-tab-caret-btn" aria-hidden="true">
                             <i class="ph ph-caret-down hr-tab-caret"></i>
-                        </button>
-                    </div>
+                        </span>
+                    </button>
 
                     <div class="hr-tab-dropdown-menu">
                         @foreach($tab['subtabs'] as $subtab)
@@ -201,30 +201,53 @@ function openTabDropdown(wrap) {
     if (hrTabDropdownTimer) clearTimeout(hrTabDropdownTimer);
     if (!wrap) return;
     document.querySelectorAll('.hr-tab-dropdown-wrap.open').forEach(w => {
-        if (w !== wrap) w.classList.remove('open');
+        if (w !== wrap) {
+            w.classList.remove('open');
+            const trig = w.querySelector('.hr-tab-dropdown-trigger');
+            if (trig) trig.setAttribute('aria-expanded', 'false');
+        }
     });
     wrap.classList.add('open');
+    const trigger = wrap.querySelector('.hr-tab-dropdown-trigger');
+    if (trigger) trigger.setAttribute('aria-expanded', 'true');
 }
 function closeTabDropdown(wrap) {
     if (hrTabDropdownTimer) clearTimeout(hrTabDropdownTimer);
     hrTabDropdownTimer = setTimeout(() => {
-        if (wrap) wrap.classList.remove('open');
-    }, 150);
+        if (wrap) {
+            wrap.classList.remove('open');
+            const trigger = wrap.querySelector('.hr-tab-dropdown-trigger');
+            if (trigger) trigger.setAttribute('aria-expanded', 'false');
+        }
+    }, 250);
 }
 function toggleHrTabDropdown(e, btn) {
-    e.preventDefault();
-    e.stopPropagation();
+    if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    if (hrTabDropdownTimer) clearTimeout(hrTabDropdownTimer);
     const wrap = btn.closest('.hr-tab-dropdown-wrap');
     if (!wrap) return;
     const isOpen = wrap.classList.contains('open');
-    document.querySelectorAll('.hr-tab-dropdown-wrap.open').forEach(w => w.classList.remove('open'));
+    document.querySelectorAll('.hr-tab-dropdown-wrap.open').forEach(w => {
+        w.classList.remove('open');
+        const trig = w.querySelector('.hr-tab-dropdown-trigger');
+        if (trig) trig.setAttribute('aria-expanded', 'false');
+    });
     if (!isOpen) {
         wrap.classList.add('open');
+        const trigger = wrap.querySelector('.hr-tab-dropdown-trigger');
+        if (trigger) trigger.setAttribute('aria-expanded', 'true');
     }
 }
 document.addEventListener('click', function(e) {
     if (!e.target.closest('.hr-tab-dropdown-wrap')) {
-        document.querySelectorAll('.hr-tab-dropdown-wrap.open').forEach(w => w.classList.remove('open'));
+        document.querySelectorAll('.hr-tab-dropdown-wrap.open').forEach(w => {
+            w.classList.remove('open');
+            const trigger = w.querySelector('.hr-tab-dropdown-trigger');
+            if (trigger) trigger.setAttribute('aria-expanded', 'false');
+        });
     }
 });
 </script>
