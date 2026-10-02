@@ -693,7 +693,7 @@
                             ₱••••••
                         @endif
                     </div>
-                    <span class="hr-stat-sub">{{ $employee->pay_frequency ?? 'Semi-monthly' }}</span>
+                    <span class="hr-stat-sub">{{ $employee->payroll_type }} &bull; {{ $employee->pay_frequency ?? 'Semi-monthly' }}</span>
                 </div>
             </div>
 
@@ -734,6 +734,14 @@
                             <span class="detail-label">Employment Status</span>
                             <span class="detail-val">
                                 <span class="hr-badge hr-badge-success" style="font-size: 11px;">{{ $employee->employment_status }}</span>
+                            </span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Payroll Type</span>
+                            <span class="detail-val">
+                                <span class="hr-badge {{ $employee->payroll_type === 'Daily' ? 'hr-badge-info' : 'hr-badge-primary' }}" style="font-size: 11px;">
+                                    {{ $employee->payroll_type }}
+                                </span>
                             </span>
                         </div>
                         <div class="detail-item">
@@ -1088,12 +1096,16 @@
                         </span>
                     </div>
                     <div class="detail-item">
-                        <span class="detail-label">Salary Frequency</span>
-                        <span class="detail-val">{{ $employee->pay_frequency ?? 'Semi-monthly' }}</span>
+                        <span class="detail-label">Payroll Type</span>
+                        <span class="detail-val">
+                            <span class="hr-badge {{ $employee->payroll_type === 'Daily' ? 'hr-badge-info' : 'hr-badge-primary' }}">
+                                {{ $employee->payroll_type }}
+                            </span>
+                        </span>
                     </div>
                     <div class="detail-item">
-                        <span class="detail-label">Pay Type</span>
-                        <span class="detail-val">{{ $employee->pay_type ?? 'Salaried Monthly / Fixed' }}</span>
+                        <span class="detail-label">Salary Frequency</span>
+                        <span class="detail-val">{{ $employee->pay_frequency ?? 'Semi-monthly' }}</span>
                     </div>
                 </div>
             </div>
@@ -1968,6 +1980,14 @@
                         </span>
                     </div>
                     <div class="detail-item">
+                        <span class="detail-label">Payroll Type</span>
+                        <span class="detail-val">
+                            <span class="hr-badge {{ $employee->payroll_type === 'Daily' ? 'hr-badge-info' : 'hr-badge-primary' }}">
+                                {{ $employee->payroll_type }}
+                            </span>
+                        </span>
+                    </div>
+                    <div class="detail-item">
                         <span class="detail-label">Pay Frequency</span>
                         <span class="detail-val">{{ $employee->pay_frequency ?? 'Semi-monthly' }}</span>
                     </div>
@@ -2368,6 +2388,13 @@
                         <input type="number" step="0.01" name="basic_salary" class="hr-input" value="{{ $employee->basic_salary }}" required>
                     </div>
                     <div class="hr-form-group">
+                        <label class="hr-form-label">Payroll Type *</label>
+                        <select name="payroll_type" class="hr-select" required>
+                            <option value="Daily" {{ $employee->payroll_type === 'Daily' ? 'selected' : '' }}>Daily</option>
+                            <option value="Monthly" {{ $employee->payroll_type === 'Monthly' ? 'selected' : '' }}>Monthly</option>
+                        </select>
+                    </div>
+                    <div class="hr-form-group">
                         <label class="hr-form-label">Pay Frequency</label>
                         <select name="pay_frequency" class="hr-select">
                             <option value="Semi-monthly" {{ $employee->pay_frequency === 'Semi-monthly' ? 'selected' : '' }}>Semi-monthly</option>
@@ -2563,8 +2590,15 @@
             @csrf
             <div class="hr-modal-body">
                 <div class="hr-form-group">
-                    <label class="hr-form-label">Current Basic Salary</label>
-                    <input type="text" class="hr-input" readonly value="₱{{ number_format($employee->basic_salary, 2) }}" style="background: #f8fafc; font-weight: 400; color: #7c3aed;">
+                    <label class="hr-form-label">Current Basic Salary & Payroll Type</label>
+                    <input type="text" class="hr-input" readonly value="₱{{ number_format($employee->basic_salary, 2) }} ({{ $employee->payroll_type }})" style="background: #f8fafc; font-weight: 500; color: #7c3aed;">
+                </div>
+                <div class="hr-form-group" style="margin-top: 12px;">
+                    <label class="hr-form-label">Payroll Type</label>
+                    <select name="payroll_type" class="hr-select">
+                        <option value="Daily" {{ $employee->payroll_type === 'Daily' ? 'selected' : '' }}>Daily</option>
+                        <option value="Monthly" {{ $employee->payroll_type === 'Monthly' ? 'selected' : '' }}>Monthly</option>
+                    </select>
                 </div>
                 <div class="hr-form-group" style="margin-top: 12px;">
                     <label class="hr-form-label">New Basic Salary (₱) <span class="text-danger">*</span></label>

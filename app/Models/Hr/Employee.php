@@ -78,6 +78,7 @@ class Employee extends Model
         'other_gov_id_verified',
         'basic_salary',
         'salary_type',
+        'payroll_type',
         'pay_frequency',
         'allowances',
         'other_compensation',
@@ -96,6 +97,7 @@ class Employee extends Model
         'all_branch_ids',
         'all_position_ids',
         'photo_url',
+        'payroll_type',
     ];
 
     protected function casts(): array
@@ -177,6 +179,32 @@ class Employee extends Model
     public function assignedPositions()
     {
         return Position::whereIn('id', $this->all_position_ids)->get();
+    }
+
+    public function getPayrollTypeAttribute(?string $value = null): string
+    {
+        if (!empty($value) && in_array($value, ['Daily', 'Monthly'])) {
+            return $value;
+        }
+        $raw = $this->attributes['payroll_type'] ?? $this->attributes['salary_type'] ?? 'Monthly';
+        return ($raw === 'Daily') ? 'Daily' : 'Monthly';
+    }
+
+    public function setPayrollTypeAttribute(?string $value): void
+    {
+        $normalized = ($value === 'Daily') ? 'Daily' : 'Monthly';
+        $this->attributes['payroll_type'] = $normalized;
+        $this->attributes['salary_type'] = $normalized;
+    }
+
+    public function setSalaryTypeAttribute(?string $value): void
+    {
+        $this->attributes['salary_type'] = $value;
+        if ($value === 'Daily') {
+            $this->attributes['payroll_type'] = 'Daily';
+        } elseif ($value === 'Monthly' || empty($this->attributes['payroll_type'])) {
+            $this->attributes['payroll_type'] = 'Monthly';
+        }
     }
 
     public function getFullNameAttribute(): string

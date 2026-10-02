@@ -83,6 +83,8 @@
                 ['name' => 'Payslips', 'route' => 'hr.payroll.payslips', 'icon' => 'ph-file-text', 'active' => ['hr.payroll.payslips*']],
                 ['name' => 'Statutory Rules', 'route' => 'hr.payroll.statutory-rules', 'icon' => 'ph-sliders-horizontal', 'active' => ['hr.payroll.statutory-rules*']],
                 ['name' => 'Wage Distortion Converter', 'route' => 'hr.payroll.wage-distortion', 'icon' => 'ph-scales', 'active' => ['hr.payroll.wage-distortion*']],
+                ['name' => 'Holidays', 'route' => 'hr.payroll.holidays', 'icon' => 'ph-calendar-check', 'active' => ['hr.payroll.holidays*']],
+                ['name' => 'Premium Pay', 'route' => 'hr.payroll.premium-pay', 'icon' => 'ph-sparkle', 'active' => ['hr.payroll.premium-pay*']],
             ],
         ],
         'talent-acquisition' => [

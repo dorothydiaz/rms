@@ -452,6 +452,7 @@
                                     'date_of_regularization' => $emp->date_of_regularization ? $emp->date_of_regularization->format('Y-m-d') : '',
                                     'basic_salary' => $emp->basic_salary,
                                     'salary_type' => $emp->salary_type ?: 'Monthly',
+                                    'payroll_type' => $emp->payroll_type,
                                     'pay_frequency' => $emp->pay_frequency ?: 'Semi-Monthly',
                                     'allowances' => $emp->allowances,
                                     'sss_number' => $emp->sss_number,
@@ -1175,10 +1176,10 @@
                         <input type="number" step="0.01" name="basic_salary" class="hr-input" placeholder="20000.00" value="18000.00">
                     </div>
                     <div class="hr-form-group">
-                        <label class="hr-form-label">Salary Type *</label>
+                        <label class="hr-form-label">Payroll Type *</label>
                         <select name="salary_type" class="hr-select" required>
-                            <option value="Monthly">Monthly</option>
                             <option value="Daily">Daily</option>
+                            <option value="Monthly" selected>Monthly</option>
                             <option value="Hourly">Hourly</option>
                         </select>
                     </div>
@@ -1517,10 +1518,10 @@
                         <input type="number" step="0.01" name="basic_salary" id="edit_emp_basic_salary" class="hr-input" required>
                     </div>
                     <div class="hr-form-group">
-                        <label class="hr-form-label">Salary Type</label>
+                        <label class="hr-form-label">Payroll Type</label>
                         <select name="salary_type" id="edit_emp_salary_type" class="hr-select">
-                            <option value="Monthly">Monthly</option>
                             <option value="Daily">Daily</option>
+                            <option value="Monthly">Monthly</option>
                             <option value="Hourly">Hourly</option>
                         </select>
                     </div>
@@ -2179,7 +2180,7 @@ function populateEditEmployeeModal(emp) {
     document.getElementById('edit_emp_date_hired').value = emp.date_hired ? emp.date_hired.substring(0, 10) : '';
     document.getElementById('edit_emp_date_of_regularization').value = emp.date_of_regularization ? emp.date_of_regularization.substring(0, 10) : '';
     document.getElementById('edit_emp_basic_salary').value = (emp.basic_salary !== null && emp.basic_salary !== undefined) ? emp.basic_salary : '';
-    document.getElementById('edit_emp_salary_type').value = emp.salary_type || 'Monthly';
+    document.getElementById('edit_emp_salary_type').value = emp.payroll_type || emp.salary_type || 'Monthly';
     document.getElementById('edit_emp_pay_frequency').value = (emp.pay_frequency && emp.pay_frequency.toLowerCase() === 'semi-monthly') ? 'Semi-Monthly' : (emp.pay_frequency || 'Semi-Monthly');
     document.getElementById('edit_emp_allowances').value = (emp.allowances !== null && emp.allowances !== undefined) ? emp.allowances : '0.00';
 

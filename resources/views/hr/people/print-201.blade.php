@@ -234,6 +234,10 @@
                 <span class="label">Basic Salary</span>
                 <span class="value">₱{{ number_format($employee->basic_salary, 2) }} ({{ $employee->pay_frequency ?? 'Semi-monthly' }})</span>
             </div>
+            <div class="field">
+                <span class="label">Payroll Type</span>
+                <span class="value">{{ $employee->payroll_type }}</span>
+            </div>
         </div>
 
         <!-- Section 2: Personal Profile -->

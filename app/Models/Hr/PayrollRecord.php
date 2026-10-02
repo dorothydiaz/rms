@@ -24,6 +24,8 @@ class PayrollRecord extends Model
         'night_diff_pay',
         'holiday_pay',
         'rest_day_pay',
+        'premium_pay',
+        'premium_pay_details',
         'allowances',
         'bonuses',
         'other_earnings',
@@ -57,6 +59,8 @@ class PayrollRecord extends Model
         'night_diff_pay' => 'decimal:2',
         'holiday_pay' => 'decimal:2',
         'rest_day_pay' => 'decimal:2',
+        'premium_pay' => 'decimal:2',
+        'premium_pay_details' => 'array',
         'allowances' => 'decimal:2',
         'bonuses' => 'decimal:2',
         'other_earnings' => 'decimal:2',
@@ -91,5 +95,10 @@ class PayrollRecord extends Model
     public function adjustments()
     {
         return $this->hasMany(PayrollAdjustment::class);
+    }
+
+    public function premiumPayItems()
+    {
+        return $this->hasMany(PremiumPayItem::class, 'payroll_record_id');
     }
 }

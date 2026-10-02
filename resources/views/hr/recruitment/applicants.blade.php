@@ -1522,10 +1522,10 @@
                     </div>
 
                     <div class="hr-form-group">
-                        <label class="hr-form-label">Salary Type</label>
+                        <label class="hr-form-label">Payroll Type *</label>
                         <select name="salary_type" class="hr-select" required>
-                            <option value="Monthly">Monthly</option>
                             <option value="Daily">Daily</option>
+                            <option value="Monthly" selected>Monthly</option>
                             <option value="Hourly">Hourly</option>
                         </select>
                     </div>

@@ -4,9 +4,12 @@ namespace App\Services;
 
 use App\Models\Hr\AttendanceRecord;
 use App\Models\Hr\Employee;
+use App\Models\Hr\Holiday;
 use App\Models\Hr\PayrollPeriod;
 use App\Models\Hr\PayrollRecord;
+use App\Models\Hr\PremiumPayItem;
 use App\Services\AuditLogger;
+use App\Services\PremiumPayRuleEngine;
 use App\Services\StatutoryContributionService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -106,9 +109,16 @@ class PayrollCalculationService
         $totalAbsentDays = 0;
         $holidayPay = 0.00;
         $restDayPay = 0.00;
+        $totalPremiumPay = 0.00;
+        $premiumItemsBreakdown = [];
+        $premiumEngine = app(PremiumPayRuleEngine::class);
 
         foreach ($attendances as $att) {
-            if (in_array($att->status, ['Present', 'Late'])) {
+            $attDateStr = Carbon::parse($att->date)->toDateString();
+            $holiday = Holiday::where('is_active', true)->where('date', $attDateStr)->first();
+            $isRestDay = (bool) ($att->is_rest_day ?? false);
+
+            if (in_array($att->status, ['Present', 'Late', 'Overtime'])) {
                 $totalWorkDays += 1.0;
                 $totalHours += (float) $att->total_hours;
                 $totalOtHours += (float) $att->overtime_hours;
@@ -116,13 +126,53 @@ class PayrollCalculationService
                 $totalLateMinutes += (int) $att->late_minutes;
                 $totalUndertimeMinutes += (int) $att->undertime_minutes;
 
-                if ($att->holiday_type === 'Regular') {
-                    $holidayPay += round($dailyRate * 1.0, 2); // 100% additional for regular holiday
-                } elseif ($att->holiday_type === 'SpecialNonWorking') {
-                    $holidayPay += round($dailyRate * 0.30, 2); // 30% additional for special non-working holiday
-                }
-                if ($att->is_rest_day) {
-                    $restDayPay += round($dailyRate * 0.30, 2); // 30% premium for working on rest day
+                if ($holiday || $isRestDay) {
+                    $eval = $premiumEngine->evaluateDay(
+                        $employee,
+                        $att,
+                        null,
+                        $holiday,
+                        $period,
+                        $dailyRate,
+                        (float)$att->total_hours,
+                        (float)$att->overtime_hours,
+                        $isRestDay
+                    );
+
+                    PremiumPayItem::updateOrCreate(
+                        [
+                            'payroll_period_id' => $period->id,
+                            'employee_id' => $employee->id,
+                            'work_date' => $attDateStr,
+                        ],
+                        [
+                            'attendance_record_id' => $att->id,
+                            'holiday_id' => $holiday?->id,
+                            'work_type' => $eval['work_type'],
+                            'holiday_type' => $eval['holiday_type'],
+                            'is_rest_day' => $eval['is_rest_day'],
+                            'hours_worked' => $eval['regular_hours'] + $eval['overtime_hours'],
+                            'regular_hours' => $eval['regular_hours'],
+                            'overtime_hours' => $eval['overtime_hours'],
+                            'daily_rate' => $dailyRate,
+                            'hourly_rate' => $hourlyRate,
+                            'applied_rate_multiplier' => $eval['multiplier'],
+                            'regular_premium_pay' => $eval['regular_premium_pay'],
+                            'overtime_premium_pay' => $eval['overtime_premium_pay'],
+                            'premium_amount' => $eval['premium_amount'],
+                            'calculation_breakdown' => $eval['calculation_breakdown'],
+                            'rule_version' => $eval['rule_version'],
+                            'status' => 'Approved',
+                        ]
+                    );
+
+                    $totalPremiumPay += (float) $eval['net_premium_differential'];
+                    if ($holiday) {
+                        $holidayPay += (float) $eval['regular_premium_pay'];
+                    } elseif ($isRestDay) {
+                        $restDayPay += (float) $eval['net_premium_differential'];
+                    }
+                    $premiumItemsBreakdown[] = $eval['calculation_breakdown'];
                 }
             } elseif ($att->status === 'Half Day') {
                 $totalWorkDays += 0.5;
@@ -221,6 +271,8 @@ class PayrollCalculationService
             'night_diff_pay' => $nightDiffPay,
             'holiday_pay' => $holidayPay,
             'rest_day_pay' => $restDayPay,
+            'premium_pay' => $totalPremiumPay,
+            'premium_pay_details' => $premiumItemsBreakdown,
             'allowances' => $periodAllowance,
             'bonuses' => 0.00,
             'other_earnings' => 0.00,
@@ -243,9 +295,15 @@ class PayrollCalculationService
             'status' => 'Draft',
         ];
 
-        return PayrollRecord::updateOrCreate(
+        $record = PayrollRecord::updateOrCreate(
             ['payroll_period_id' => $period->id, 'employee_id' => $employee->id],
             $recordData
         );
+
+        PremiumPayItem::where('payroll_period_id', $period->id)
+            ->where('employee_id', $employee->id)
+            ->update(['payroll_record_id' => $record->id]);
+
+        return $record;
     }
 }
