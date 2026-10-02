@@ -1,10 +1,10 @@
 @extends('layouts.app')
 
-@section('title', 'Overtime History & Approval Report - Reports & Analytics')
+@section('title', 'Overtime Prooflist Report - Reports & Analytics')
 
 @section('content')
 <x-report-header 
-    title="Overtime History & Approvals"
+    title="Overtime Prooflist"
     icon="ph-clock-countdown"
     subtitle="Overtime authorization and hours rendered"
     description="Summary of approved and pending overtime hours by department and branch for payroll verification."

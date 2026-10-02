@@ -1,10 +1,10 @@
 @extends('layouts.app')
 
-@section('title', 'Change of Schedule History Report - Reports & Analytics')
+@section('title', 'Change of Schedule Prooflist Report - Reports & Analytics')
 
 @section('content')
 <x-report-header 
-    title="Change of Schedule History"
+    title="Change of Schedule Prooflist"
     icon="ph-calendar-blank"
     subtitle="Audit log of shift edits & default shift assignments"
     description="Tracks who changed employee shift times, previous vs new schedules, and timestamps."

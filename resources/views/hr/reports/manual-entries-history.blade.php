@@ -1,10 +1,10 @@
 @extends('layouts.app')
 
-@section('title', 'Manual Time Entries History Report - Reports & Analytics')
+@section('title', 'Manual Time Entries Prooflist Report - Reports & Analytics')
 
 @section('content')
 <x-report-header 
-    title="Manual Time Entries History"
+    title="Manual Time Entries Prooflist"
     icon="ph-pencil-line"
     subtitle="Audit log of manual punch entries & adjustments"
     description="Audit trail of all administrative manual time entries, biometric corrections, and manager override entries."

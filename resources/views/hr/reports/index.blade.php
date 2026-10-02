@@ -123,7 +123,7 @@
     </div>
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px;">
         
-        <!-- Change of Schedule History -->
+        <!-- Change of Schedule Prooflist -->
         <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between;">
             <div>
                 <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
@@ -131,7 +131,7 @@
                         <i class="ph ph-calendar-blank"></i>
                     </div>
                     <div>
-                        <h4 style="font-family: var(--font-heading); font-size: 14.5px; font-weight: 700; color: #0f172a; margin: 0;">Change of Schedule History</h4>
+                        <h4 style="font-family: var(--font-heading); font-size: 14.5px; font-weight: 700; color: #0f172a; margin: 0;">Change of Schedule Prooflist</h4>
                         <span style="font-size: 12px; color: #64748b;">Audit log of shift edits & default shift assignments</span>
                     </div>
                 </div>
@@ -147,7 +147,7 @@
             </div>
         </div>
 
-        <!-- Overtime History & Approvals -->
+        <!-- Overtime Prooflist -->
         <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between;">
             <div>
                 <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
@@ -155,7 +155,7 @@
                         <i class="ph ph-clock-countdown"></i>
                     </div>
                     <div>
-                        <h4 style="font-family: var(--font-heading); font-size: 14.5px; font-weight: 700; color: #0f172a; margin: 0;">Overtime History & Approvals</h4>
+                        <h4 style="font-family: var(--font-heading); font-size: 14.5px; font-weight: 700; color: #0f172a; margin: 0;">Overtime Prooflist</h4>
                         <span style="font-size: 12px; color: #64748b;">Approved, pending, and rejected overtime hours</span>
                     </div>
                 </div>
@@ -171,7 +171,7 @@
             </div>
         </div>
 
-        <!-- Manual Time Entries History -->
+        <!-- Manual Time Entries Prooflist -->
         <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between;">
             <div>
                 <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
@@ -179,7 +179,7 @@
                         <i class="ph ph-pencil-line"></i>
                     </div>
                     <div>
-                        <h4 style="font-family: var(--font-heading); font-size: 14.5px; font-weight: 700; color: #0f172a; margin: 0;">Manual Time Entries History</h4>
+                        <h4 style="font-family: var(--font-heading); font-size: 14.5px; font-weight: 700; color: #0f172a; margin: 0;">Manual Time Entries Prooflist</h4>
                         <span style="font-size: 12px; color: #64748b;">Administrative punch edits and manual entries</span>
                     </div>
                 </div>
