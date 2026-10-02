@@ -948,8 +948,16 @@
 
                 <div class="hr-form-grid">
                     <div class="hr-form-group">
-                        <label class="hr-form-label">Employee ID *</label>
-                        <input type="text" name="employee_id" class="hr-input" required placeholder="EMP-2026-011" value="EMP-2026-{{ str_pad(rand(11, 999), 3, '0', STR_PAD_LEFT) }}">
+                        <label class="hr-form-label" style="display: flex; align-items: center; justify-content: space-between;">
+                            <span>Employee ID <span class="text-danger">*</span></span>
+                            <span style="font-size: 10.5px; font-weight: 600; color: #7c3aed; background: #f5f3ff; border: 1px solid #ddd6fe; padding: 1px 6px; border-radius: 4px;">
+                                <i class="ph ph-lock-simple"></i> Auto-Generated
+                            </span>
+                        </label>
+                        <input type="text" name="employee_id" class="hr-input" required readonly value="{{ $nextEmployeeId ?? 'EMP-' . date('Y') . '-011' }}" style="background: #f8fafc; color: #475569; cursor: not-allowed; font-weight: 600; border-color: #cbd5e1; user-select: none;">
+                        <small style="font-size: 11px; color: #64748b; margin-top: 3px; display: block;">
+                            Assigned automatically by the system. Cannot be edited.
+                        </small>
                     </div>
                     <div class="hr-form-group">
                         <label class="hr-form-label">First Name *</label>

@@ -7935,3 +7935,417 @@ body > .hr-custom-select-menu {
     font-weight: 400 !important;
 }
 
+/* ==========================================================================
+   HR Attendance Approval / Rejection Toggle Switch (Undertime & Overtime)
+   ========================================================================== */
+.hr-toggle-cell {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    position: relative;
+    vertical-align: middle;
+}
+
+/* Base Toggle Switch Button */
+.hr-approval-toggle-btn {
+    border: none;
+    outline: none;
+    cursor: pointer;
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    width: 58px;
+    height: 28px;
+    border-radius: 9999px;
+    padding: 0 3px;
+    box-sizing: border-box;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    user-select: none;
+    text-decoration: none;
+}
+
+.hr-approval-toggle-btn:focus-visible {
+    box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px #3b82f6;
+}
+
+/* Approved State: Soft Green Track with White Check Thumb on Right */
+.hr-approval-toggle-btn.state-approved {
+    background-color: #5bb796;
+    background: linear-gradient(135deg, #62b694 0%, #4fac89 100%);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(79, 172, 137, 0.25);
+}
+
+.hr-approval-toggle-btn.state-approved:hover {
+    filter: brightness(0.95);
+    transform: scale(1.03);
+}
+
+.hr-approval-toggle-btn.state-approved .toggle-track-icon {
+    position: absolute;
+    left: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #236348;
+    font-size: 13px;
+    font-weight: 700;
+    pointer-events: none;
+    opacity: 0.85;
+}
+
+.hr-approval-toggle-btn.state-approved .toggle-thumb {
+    margin-left: auto;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background-color: #ffffff;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #279668;
+    font-size: 13px;
+    font-weight: 800;
+    transition: transform 0.2s ease;
+}
+
+/* Rejected State: Soft Light Pink Track with Rose Red Cross Thumb on Right */
+.hr-approval-toggle-btn.state-rejected {
+    background-color: #fcd9df;
+    background: linear-gradient(135deg, #fce4e8 0%, #fcd4dc 100%);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(244, 63, 94, 0.15);
+}
+
+.hr-approval-toggle-btn.state-rejected:hover {
+    filter: brightness(0.95);
+    transform: scale(1.03);
+}
+
+.hr-approval-toggle-btn.state-rejected .toggle-track-icon {
+    position: absolute;
+    left: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #e11d48;
+    font-size: 13px;
+    pointer-events: none;
+    opacity: 0.3;
+}
+
+.hr-approval-toggle-btn.state-rejected .toggle-thumb {
+    margin-left: auto;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
+    box-shadow: 0 2px 6px rgba(225, 29, 72, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 800;
+    transition: transform 0.2s ease;
+}
+
+/* Pending State: Neutral Track with Dual-Action Split Buttons */
+.hr-approval-pending-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 58px;
+    height: 28px;
+    border-radius: 9999px;
+    background-color: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    padding: 0 2px;
+    box-sizing: border-box;
+    position: relative;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.hr-pending-action-btn {
+    border: none;
+    outline: none;
+    cursor: pointer;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 0;
+}
+
+.hr-pending-action-btn.btn-approve {
+    color: #059669;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.hr-pending-action-btn.btn-approve:hover {
+    background-color: #10b981;
+    color: #ffffff;
+    box-shadow: 0 2px 5px rgba(16, 185, 129, 0.35);
+    transform: scale(1.1);
+}
+
+.hr-pending-action-btn.btn-reject {
+    color: #e11d48;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.hr-pending-action-btn.btn-reject:hover {
+    background-color: #f43f5e;
+    color: #ffffff;
+    box-shadow: 0 2px 5px rgba(244, 63, 94, 0.35);
+    transform: scale(1.1);
+}
+
+/* CSS Floating Tooltip */
+/* CSS Floating Tooltip (Positioned to the left of the toggle, avoiding the table header) */
+.hr-toggle-cell {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    position: relative;
+    vertical-align: middle;
+    z-index: 5;
+}
+
+.hr-toggle-cell:hover {
+    z-index: 50;
+}
+
+.hr-toggle-tooltip {
+    position: relative;
+}
+
+.hr-approval-toggle-btn.hr-toggle-tooltip::before {
+    content: attr(data-tooltip);
+    position: absolute;
+    right: calc(100% + 8px);
+    top: 50%;
+    transform: translateY(-50%) translateX(4px);
+    background: #0f172a;
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1;
+    padding: 5px 8px;
+    border-radius: 6px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);
+    transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+}
+
+.hr-approval-toggle-btn.hr-toggle-tooltip::after {
+    content: '';
+    position: absolute;
+    right: calc(100% + 3px);
+    top: 50%;
+    transform: translateY(-50%) translateX(4px);
+    border-width: 5px 0 5px 5px;
+    border-style: solid;
+    border-color: transparent transparent transparent #0f172a;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    z-index: 1000;
+    transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+}
+
+.hr-approval-toggle-btn.hr-toggle-tooltip:hover::before,
+.hr-approval-toggle-btn.hr-toggle-tooltip:hover::after {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(-50%) translateX(0);
+}
+
+/* Tooltips for pending dual-action buttons */
+.hr-pending-action-btn.btn-approve.hr-toggle-tooltip::before {
+    content: attr(data-tooltip);
+    position: absolute;
+    right: calc(100% + 6px);
+    top: 50%;
+    transform: translateY(-50%) translateX(4px);
+    background: #0f172a;
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1;
+    padding: 5px 8px;
+    border-radius: 6px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);
+    transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+}
+
+.hr-pending-action-btn.btn-approve.hr-toggle-tooltip::after {
+    content: '';
+    position: absolute;
+    right: calc(100% + 1px);
+    top: 50%;
+    transform: translateY(-50%) translateX(4px);
+    border-width: 5px 0 5px 5px;
+    border-style: solid;
+    border-color: transparent transparent transparent #0f172a;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    z-index: 1000;
+    transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+}
+
+.hr-pending-action-btn.btn-reject.hr-toggle-tooltip::before {
+    content: attr(data-tooltip);
+    position: absolute;
+    right: calc(100% + 30px);
+    top: 50%;
+    transform: translateY(-50%) translateX(4px);
+    background: #0f172a;
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1;
+    padding: 5px 8px;
+    border-radius: 6px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);
+    transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+}
+
+.hr-pending-action-btn.btn-reject.hr-toggle-tooltip::after {
+    content: '';
+    position: absolute;
+    right: calc(100% + 25px);
+    top: 50%;
+    transform: translateY(-50%) translateX(4px);
+    border-width: 5px 0 5px 5px;
+    border-style: solid;
+    border-color: transparent transparent transparent #0f172a;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    z-index: 1000;
+    transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+}
+
+.hr-pending-action-btn:hover::before,
+.hr-pending-action-btn:hover::after {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(-50%) translateX(0);
+}
+
+/* ==========================================================================
+   Refined Neutral Status Indicators (Non-repetitive for Undertime & Overtime)
+   ========================================================================== */
+.hr-status-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    font-size: 11.5px;
+    font-weight: 500;
+    color: #334155;
+    line-height: 1.3;
+    white-space: nowrap;
+    letter-spacing: 0.01em;
+    transition: background 0.15s ease;
+}
+
+.hr-status-indicator .status-dot {
+    width: 6.5px;
+    height: 6.5px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.hr-status-indicator.is-approved .status-dot {
+    background-color: #10b981;
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
+.hr-status-indicator.is-approved {
+    color: #1e293b;
+}
+
+.hr-status-indicator.is-rejected .status-dot {
+    background-color: #ef4444;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+}
+
+.hr-status-indicator.is-rejected {
+    color: #64748b;
+}
+
+.hr-status-indicator.is-pending .status-dot {
+    background-color: #f59e0b;
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+}
+
+.hr-status-indicator.is-pending {
+    color: #78350f;
+    background: #fffbeb;
+    border-color: #fef3c7;
+}
+
+/* Schedule Card Code & Name Badge Optical Alignment */
+.sched-badge-code {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 19px !important;
+    height: 18px !important;
+    padding: 2px 5px 0 5px !important;
+    border-radius: 4px !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Outfit', sans-serif !important;
+    font-weight: 700 !important;
+    font-size: 10.5px !important;
+    line-height: 1 !important;
+    letter-spacing: 0.3px !important;
+    text-transform: uppercase !important;
+    flex-shrink: 0 !important;
+    box-sizing: border-box !important;
+}
+
+.sched-badge-name {
+    display: inline-flex !important;
+    align-items: center !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Outfit', sans-serif !important;
+    font-size: 10.5px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.4px !important;
+    line-height: 1 !important;
+    text-transform: uppercase !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    padding-top: 1px !important;
+}
+
+
+

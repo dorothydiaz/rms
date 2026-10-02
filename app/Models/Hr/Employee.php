@@ -394,5 +394,37 @@ class Employee extends Model
     {
         return $this->hasMany(ScheduleChangeLog::class, 'employee_id');
     }
+
+    /**
+     * Automatically generate the next sequential Employee ID (e.g. EMP-YYYY-011)
+     */
+    public static function generateNextEmployeeId(): string
+    {
+        $currentYear = date('Y');
+
+        $existingIds = static::withTrashed()
+            ->where('employee_id', 'like', "EMP-{$currentYear}-%")
+            ->pluck('employee_id');
+
+        $maxNum = 0;
+        foreach ($existingIds as $id) {
+            if (preg_match('/EMP-\d{4}-(\d+)/', $id, $matches)) {
+                $num = (int) $matches[1];
+                if ($num < 500 && $num > $maxNum) {
+                    $maxNum = $num;
+                }
+            }
+        }
+
+        $nextNumber = $maxNum + 1;
+        $candidateId = "EMP-{$currentYear}-" . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
+
+        while (static::withTrashed()->where('employee_id', $candidateId)->exists()) {
+            $nextNumber++;
+            $candidateId = "EMP-{$currentYear}-" . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
+        }
+
+        return $candidateId;
+    }
 }
 

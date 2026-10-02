@@ -124,7 +124,7 @@
                     <th>Undertime</th>
                     <th>Total Rendered</th>
                     <th>Authorization Status</th>
-                    <th style="text-align: right; width: 160px;">Action</th>
+                    <th style="text-align: right; width: 100px;">Action</th>
                 </tr>
             </thead>
             <tbody id="undertimeTableBody">
@@ -200,46 +200,60 @@
                             </span>
                         </td>
                         <td>
-                            <strong style="color: #e11d48; font-size: 13.5px; font-weight: 800;">
+                            <span style="color: #e11d48; font-size: 13px; font-weight: 500;">
                                 -{{ $formattedDuration }}
-                            </strong>
+                            </span>
                         </td>
                         <td>
                             <span style="color: #334155; font-size: 12px;">{{ number_format($rec->total_hours, 2) }} hrs</span>
                         </td>
                         <td>
                             @if($status === 'Approved')
-                                <span class="hr-badge hr-badge-success" title="Authorized by {{ $rec->undertimeApprover?->name ?? 'Manager' }} on {{ $rec->undertime_approved_at ? \Carbon\Carbon::parse($rec->undertime_approved_at)->format('M d, Y h:i A') : '' }}">
-                                    <i class="ph ph-seal-check"></i> Authorized
+                                <span class="hr-status-indicator is-approved" title="Authorized by {{ $rec->undertimeApprover?->name ?? 'Manager' }} on {{ $rec->undertime_approved_at ? \Carbon\Carbon::parse($rec->undertime_approved_at)->format('M d, Y h:i A') : '' }}">
+                                    <span class="status-dot"></span> Authorized
                                 </span>
                             @elseif($status === 'Rejected')
-                                <span class="hr-badge hr-badge-danger" title="{{ $rec->undertime_remarks ?? 'Unauthorized Undertime' }}">
-                                    <i class="ph ph-warning-circle"></i> Unauthorized
+                                <span class="hr-status-indicator is-rejected" title="{{ $rec->undertime_remarks ?? 'Unauthorized Undertime' }}">
+                                    <span class="status-dot"></span> Unauthorized
                                 </span>
                             @else
-                                <span class="hr-badge hr-badge-warning">
-                                    <i class="ph ph-clock"></i> Pending Review
+                                <span class="hr-status-indicator is-pending">
+                                    <span class="status-dot"></span> Pending Review
                                 </span>
                             @endif
                         </td>
                         <td style="text-align: right;">
-                            <div style="display: inline-flex; align-items: center; gap: 4px; justify-content: flex-end;">
-                                @if($status !== 'Approved')
-                                    <form method="POST" action="{{ route('hr.attendance.undertime.authorize', $rec->id) }}" style="display: inline;">
+                            <div class="hr-toggle-cell">
+                                @if($status === 'Approved')
+                                    <form method="POST" action="{{ route('hr.attendance.undertime.reject', $rec->id) }}" style="display: inline-block; margin: 0;" onsubmit="return confirm('Mark this undertime as unauthorized deduction?')">
                                         @csrf
-                                        <button type="submit" class="hr-btn hr-btn-sm hr-btn-success" title="Authorize Undertime (Excused Departure)" style="padding: 4px 8px; font-size: 11px;">
-                                            <i class="ph ph-check"></i> Authorize
+                                        <button type="submit" class="hr-approval-toggle-btn state-approved hr-toggle-tooltip" data-tooltip="Reject">
+                                            <span class="toggle-track-icon"><i class="ph-bold ph-check"></i></span>
+                                            <span class="toggle-thumb"><i class="ph-bold ph-check"></i></span>
                                         </button>
                                     </form>
-                                @endif
-
-                                @if($status !== 'Rejected')
-                                    <form method="POST" action="{{ route('hr.attendance.undertime.reject', $rec->id) }}" style="display: inline;" onsubmit="return confirm('Mark this undertime as unauthorized deduction?')">
+                                @elseif($status === 'Rejected')
+                                    <form method="POST" action="{{ route('hr.attendance.undertime.authorize', $rec->id) }}" style="display: inline-block; margin: 0;">
                                         @csrf
-                                        <button type="submit" class="hr-btn hr-btn-sm hr-btn-secondary" title="Mark Unauthorized" style="padding: 4px 8px; font-size: 11px; color: #dc2626;">
-                                            <i class="ph ph-x"></i> Reject
+                                        <button type="submit" class="hr-approval-toggle-btn state-rejected hr-toggle-tooltip" data-tooltip="Approve">
+                                            <span class="toggle-thumb"><i class="ph-bold ph-x"></i></span>
                                         </button>
                                     </form>
+                                @else
+                                    <div class="hr-approval-pending-pill">
+                                        <form method="POST" action="{{ route('hr.attendance.undertime.authorize', $rec->id) }}" style="display: inline-block; margin: 0;">
+                                            @csrf
+                                            <button type="submit" class="hr-pending-action-btn btn-approve hr-toggle-tooltip" data-tooltip="Approve">
+                                                <i class="ph-bold ph-check"></i>
+                                            </button>
+                                        </form>
+                                        <form method="POST" action="{{ route('hr.attendance.undertime.reject', $rec->id) }}" style="display: inline-block; margin: 0;" onsubmit="return confirm('Mark this undertime as unauthorized deduction?')">
+                                            @csrf
+                                            <button type="submit" class="hr-pending-action-btn btn-reject hr-toggle-tooltip" data-tooltip="Reject">
+                                                <i class="ph-bold ph-x"></i>
+                                            </button>
+                                        </form>
+                                    </div>
                                 @endif
                             </div>
                         </td>

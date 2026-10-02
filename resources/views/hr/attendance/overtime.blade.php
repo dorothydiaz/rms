@@ -121,7 +121,7 @@
                     <th>Total Hours</th>
                     <th>Overtime Rendered</th>
                     <th>Approval Status</th>
-                    <th style="text-align: right; width: 140px;">Action</th>
+                    <th style="text-align: right; width: 100px;">Action</th>
                 </tr>
             </thead>
             <tbody id="overtimeTableBody">
@@ -195,43 +195,57 @@
                             <strong style="color: #0f172a; font-size: 12.5px;">{{ number_format($rec->total_hours, 2) }} hrs</strong>
                         </td>
                         <td>
-                            <strong style="color: #7c3aed; font-size: 14px; font-weight: 800;">
+                            <span style="color: #7c3aed; font-size: 13px; font-weight: 500;">
                                 +{{ number_format($rec->overtime_hours, 2) }} hrs
-                            </strong>
+                            </span>
                         </td>
                         <td>
                             @if($status === 'Approved')
-                                <span class="hr-badge hr-badge-success" title="Approved by {{ $rec->overtimeApprover?->name ?? 'Manager' }} on {{ $rec->overtime_approved_at ? \Carbon\Carbon::parse($rec->overtime_approved_at)->format('M d, Y h:i A') : '' }}">
-                                    <i class="ph ph-check-circle"></i> Approved
+                                <span class="hr-status-indicator is-approved" title="Approved by {{ $rec->overtimeApprover?->name ?? 'Manager' }} on {{ $rec->overtime_approved_at ? \Carbon\Carbon::parse($rec->overtime_approved_at)->format('M d, Y h:i A') : '' }}">
+                                    <span class="status-dot"></span> Approved
                                 </span>
                             @elseif($status === 'Rejected')
-                                <span class="hr-badge hr-badge-danger" title="{{ $rec->overtime_remarks ?? 'Rejected' }}">
-                                    <i class="ph ph-x-circle"></i> Rejected
+                                <span class="hr-status-indicator is-rejected" title="{{ $rec->overtime_remarks ?? 'Rejected' }}">
+                                    <span class="status-dot"></span> Rejected
                                 </span>
                             @else
-                                <span class="hr-badge hr-badge-warning">
-                                    <i class="ph ph-clock"></i> Pending Review
+                                <span class="hr-status-indicator is-pending">
+                                    <span class="status-dot"></span> Pending Review
                                 </span>
                             @endif
                         </td>
                         <td style="text-align: right;">
-                            <div style="display: inline-flex; align-items: center; gap: 4px; justify-content: flex-end;">
-                                @if($status !== 'Approved')
-                                    <form method="POST" action="{{ route('hr.attendance.overtime.approve', $rec->id) }}" style="display: inline;">
+                            <div class="hr-toggle-cell">
+                                @if($status === 'Approved')
+                                    <form method="POST" action="{{ route('hr.attendance.overtime.reject', $rec->id) }}" style="display: inline-block; margin: 0;" onsubmit="return confirm('Reject this overtime record?')">
                                         @csrf
-                                        <button type="submit" class="hr-btn hr-btn-sm hr-btn-success" title="Approve Overtime" style="padding: 4px 8px; font-size: 11px;">
-                                            <i class="ph ph-check"></i> Approve
+                                        <button type="submit" class="hr-approval-toggle-btn state-approved hr-toggle-tooltip" data-tooltip="Reject">
+                                            <span class="toggle-track-icon"><i class="ph-bold ph-check"></i></span>
+                                            <span class="toggle-thumb"><i class="ph-bold ph-check"></i></span>
                                         </button>
                                     </form>
-                                @endif
-
-                                @if($status !== 'Rejected')
-                                    <form method="POST" action="{{ route('hr.attendance.overtime.reject', $rec->id) }}" style="display: inline;" onsubmit="return confirm('Reject this overtime record?')">
+                                @elseif($status === 'Rejected')
+                                    <form method="POST" action="{{ route('hr.attendance.overtime.approve', $rec->id) }}" style="display: inline-block; margin: 0;">
                                         @csrf
-                                        <button type="submit" class="hr-btn hr-btn-sm hr-btn-secondary" title="Reject Overtime" style="padding: 4px 8px; font-size: 11px; color: #dc2626;">
-                                            <i class="ph ph-x"></i> Reject
+                                        <button type="submit" class="hr-approval-toggle-btn state-rejected hr-toggle-tooltip" data-tooltip="Approve">
+                                            <span class="toggle-thumb"><i class="ph-bold ph-x"></i></span>
                                         </button>
                                     </form>
+                                @else
+                                    <div class="hr-approval-pending-pill">
+                                        <form method="POST" action="{{ route('hr.attendance.overtime.approve', $rec->id) }}" style="display: inline-block; margin: 0;">
+                                            @csrf
+                                            <button type="submit" class="hr-pending-action-btn btn-approve hr-toggle-tooltip" data-tooltip="Approve">
+                                                <i class="ph-bold ph-check"></i>
+                                            </button>
+                                        </form>
+                                        <form method="POST" action="{{ route('hr.attendance.overtime.reject', $rec->id) }}" style="display: inline-block; margin: 0;" onsubmit="return confirm('Reject this overtime record?')">
+                                            @csrf
+                                            <button type="submit" class="hr-pending-action-btn btn-reject hr-toggle-tooltip" data-tooltip="Reject">
+                                                <i class="ph-bold ph-x"></i>
+                                            </button>
+                                        </form>
+                                    </div>
                                 @endif
                             </div>
                         </td>

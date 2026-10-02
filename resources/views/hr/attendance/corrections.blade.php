@@ -318,9 +318,6 @@
                         <!-- Notes & Source -->
                         <td class="cor-col-notes">
                             <div style="font-size: 12px; color: #334155; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ $r->notes ?: 'Manual time entry' }}">{{ $r->notes ?: 'Manual time entry' }}</div>
-                            <span class="hr-badge hr-badge-info" style="font-size: 9.5px; padding: 2px 6px; margin-top: 2px;">
-                                <i class="ph ph-hand-pointing"></i> {{ $r->source ?? 'Manual' }}
-                            </span>
                         </td>
 
                         <!-- Action Buttons -->

@@ -202,7 +202,7 @@
 
         <!-- 2. Category Checkbox Filter Group (Connected to Organization Departments Tab) -->
         <div class="sched-cat-filter-group">
-            <span style="font-size: 11px; font-weight: 600; color: #64748b; display: flex; align-items: center; gap: 4px; text-transform: uppercase;">
+            <span style="font-size: 11px; font-weight: 500; color: #64748b; display: flex; align-items: center; gap: 4px; text-transform: uppercase;">
                 <i class="ph ph-funnel" style="font-size: 12px;"></i> Category:
             </span>
             @foreach($categories as $cat)
@@ -1844,7 +1844,7 @@
     align-items: center;
     gap: 6px;
     font-size: 12.5px;
-    font-weight: 700;
+    font-weight: 500;
     color: #334155;
     cursor: pointer;
     user-select: none;
@@ -2171,7 +2171,7 @@
     align-items: center;
     gap: 3px;
     font-size: 10px;
-    font-weight: 700;
+    font-weight: 500;
     color: #7c3aed;
     text-decoration: none;
     padding: 2px 6px;
@@ -2347,27 +2347,31 @@
     justify-content: center;
     min-width: 19px;
     height: 18px;
-    padding: 0 5px;
+    padding: 2px 5px 0 5px;
     border-radius: 4px;
-    font-family: var(--font-heading, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Outfit', sans-serif;
     font-weight: 700;
     font-size: 10.5px;
     line-height: 1;
     letter-spacing: 0.3px;
     text-transform: uppercase;
     flex-shrink: 0;
+    box-sizing: border-box;
 }
 
 .sched-badge-name {
-    font-family: var(--font-heading, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+    display: inline-flex;
+    align-items: center;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Outfit', sans-serif;
     font-size: 10.5px;
-    font-weight: 650;
+    font-weight: 600;
     letter-spacing: 0.4px;
     line-height: 1;
     text-transform: uppercase;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    padding-top: 1px;
 }
 
 .sched-card-clear {

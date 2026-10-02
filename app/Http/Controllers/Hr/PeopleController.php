@@ -139,8 +139,9 @@ class PeopleController extends Controller
         $agencies = Company::where('type', 'Agency')->where('is_active', true)->orderBy('name')->get();
         $users = User::orderBy('full_name')->get();
         $supervisors = Employee::activeWorkforce()->orderBy('first_name')->get(['id', 'first_name', 'last_name', 'employee_id']);
+        $nextEmployeeId = Employee::generateNextEmployeeId();
 
-        return view('hr.people.employees', compact('employees', 'branches', 'departments', 'positions', 'companies', 'agencies', 'users', 'supervisors', 'counts', 'filterContext'));
+        return view('hr.people.employees', compact('employees', 'branches', 'departments', 'positions', 'companies', 'agencies', 'users', 'supervisors', 'counts', 'filterContext', 'nextEmployeeId'));
     }
 
     public function employeeData(int $id): JsonResponse
@@ -271,6 +272,9 @@ class PeopleController extends Controller
     public function employeeStore(Request $request): RedirectResponse
     {
         $user = Auth::user();
+        if (empty($request->employee_id)) {
+            $request->merge(['employee_id' => Employee::generateNextEmployeeId()]);
+        }
         $validated = $request->validate([
             'employee_id' => 'required|string|max:30|unique:hr_employees,employee_id',
             'first_name' => 'required|string|max:60',
