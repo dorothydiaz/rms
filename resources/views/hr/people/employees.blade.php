@@ -994,7 +994,11 @@
                     </div>
                     <div class="hr-form-group">
                         <label class="hr-form-label">Nationality *</label>
-                        <input type="text" name="nationality" class="hr-input" value="Filipino" required>
+                        <select name="nationality" class="hr-select" required>
+                            @foreach(['Filipino', 'American', 'Australian', 'British', 'Canadian', 'Chinese', 'French', 'German', 'Indian', 'Indonesian', 'Irish', 'Italian', 'Japanese', 'Korean', 'Malaysian', 'New Zealander', 'Russian', 'Singaporean', 'Spanish', 'Swiss', 'Taiwanese', 'Thai', 'Vietnamese', 'Other'] as $nat)
+                                <option value="{{ $nat }}" {{ $nat === 'Filipino' ? 'selected' : '' }}>{{ $nat }}</option>
+                            @endforeach
+                        </select>
                     </div>
                     <div class="hr-form-group">
                         <label class="hr-form-label">Mobile Number</label>
@@ -1301,7 +1305,11 @@
                     </div>
                     <div class="hr-form-group" style="grid-column: 1 / 2;">
                         <label class="hr-form-label">Nationality</label>
-                        <input type="text" name="nationality" id="edit_emp_nationality" class="hr-input" value="Filipino">
+                        <select name="nationality" id="edit_emp_nationality" class="hr-select">
+                            @foreach(['Filipino', 'American', 'Australian', 'British', 'Canadian', 'Chinese', 'French', 'German', 'Indian', 'Indonesian', 'Irish', 'Italian', 'Japanese', 'Korean', 'Malaysian', 'New Zealander', 'Russian', 'Singaporean', 'Spanish', 'Swiss', 'Taiwanese', 'Thai', 'Vietnamese', 'Other'] as $nat)
+                                <option value="{{ $nat }}">{{ $nat }}</option>
+                            @endforeach
+                        </select>
                     </div>
                 </div>
 
@@ -2118,7 +2126,11 @@ function populateEditEmployeeModal(emp) {
     document.getElementById('edit_emp_birth_place').value = emp.birth_place || '';
     document.getElementById('edit_emp_gender').value = emp.gender || 'Male';
     document.getElementById('edit_emp_civil_status').value = emp.civil_status || 'Single';
-    document.getElementById('edit_emp_nationality').value = emp.nationality || 'Filipino';
+    const editEmpNat = document.getElementById('edit_emp_nationality');
+    if (editEmpNat) {
+        editEmpNat.value = emp.nationality || 'Filipino';
+        editEmpNat.dispatchEvent(new Event('change', { bubbles: true }));
+    }
 
     // 2. Contact & Addresses
     document.getElementById('edit_emp_personal_email').value = emp.personal_email || emp.email || '';

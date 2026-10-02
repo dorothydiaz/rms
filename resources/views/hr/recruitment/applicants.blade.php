@@ -753,7 +753,11 @@
                         </div>
                         <div class="hr-form-group">
                             <label class="hr-form-label">Nationality</label>
-                            <input type="text" name="nationality" class="hr-input" value="Filipino">
+                            <select name="nationality" class="hr-select">
+                                @foreach(['Filipino', 'American', 'Australian', 'British', 'Canadian', 'Chinese', 'French', 'German', 'Indian', 'Indonesian', 'Irish', 'Italian', 'Japanese', 'Korean', 'Malaysian', 'New Zealander', 'Russian', 'Singaporean', 'Spanish', 'Swiss', 'Taiwanese', 'Thai', 'Vietnamese', 'Other'] as $nat)
+                                    <option value="{{ $nat }}" {{ $nat === 'Filipino' ? 'selected' : '' }}>{{ $nat }}</option>
+                                @endforeach
+                            </select>
                         </div>
                     </div>
                 </div>
