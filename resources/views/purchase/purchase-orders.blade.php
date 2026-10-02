@@ -257,6 +257,53 @@
     transform: translateY(-1px);
 }
 
+/* Status Filter Pills Bar - Compact HR Theme */
+.po-filter-pills-bar {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-wrap: wrap;
+}
+.po-filter-pill {
+    padding: 3.5px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #64748b;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-family: inherit;
+    line-height: 1.2;
+}
+.po-filter-pill:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+}
+.po-filter-pill.active {
+    background: linear-gradient(135deg, rgba(236, 72, 153, 0.12), rgba(168, 85, 247, 0.18));
+    color: #9333ea;
+    border-color: rgba(168, 85, 247, 0.35);
+    font-weight: 700;
+    box-shadow: 0 1px 3px rgba(168, 85, 247, 0.08);
+}
+
+/* Header Column Resizer Handle */
+.po-col-resizer {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 6px;
+    bottom: 0;
+    cursor: col-resize;
+    user-select: none;
+    z-index: 10;
+}
+.po-col-resizer:hover, .po-col-resizer.is-resizing {
+    background: var(--po-primary, #9333ea);
+}
+
 /* Column Configuration Dropdown */
 .po-col-dropdown {
     position: absolute;
@@ -264,33 +311,67 @@
     top: calc(100% + 4px);
     background: #ffffff;
     border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.12), 0 8px 10px -6px rgba(15, 23, 42, 0.08);
-    width: 250px;
-    z-index: 100;
-    padding: 6px 0;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.15), 0 8px 10px -6px rgba(15, 23, 42, 0.08);
+    width: 270px;
+    z-index: 1050;
+    padding: 0;
+    overflow: hidden;
 }
 .po-col-checklist {
     max-height: 280px;
     overflow-y: auto;
-    padding: 4px 6px;
+    padding: 6px;
     display: flex;
     flex-direction: column;
     gap: 2px;
 }
-.po-col-check-item {
+.po-col-check-item, .inv-col-item-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 6px 10px;
+    padding: 5px 8px;
     border-radius: 6px;
     font-size: 12px;
     cursor: pointer;
     transition: background 0.15s ease;
     user-select: none;
 }
-.po-col-check-item:hover {
+.po-col-check-item:hover, .inv-col-item-row:hover {
     background: #f8fafc;
+}
+
+/* Quick Action Links inside Dropdown */
+.inv-col-quick-link {
+    background: none;
+    border: none;
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: #9333ea;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 6px;
+    border-radius: 5px;
+    transition: background 0.12s ease;
+}
+.inv-col-quick-link:hover {
+    background: rgba(168, 85, 247, 0.10);
+}
+.inv-col-quick-link.is-reset {
+    color: #64748b;
+}
+.inv-col-quick-link.is-reset:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+}
+.inv-header-action-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    position: relative;
 }
 
 /* Industrial Workspace Asymmetric Grid for PO Builder */
@@ -1273,7 +1354,7 @@
     <!-- Top Action Header / Breadcrumb (HR Operations Standard - Clean Identity) -->
     <div class="hr-parent-title" style="margin-bottom: 2px;">
         <div style="display: flex; align-items: center; gap: 12px;">
-            <div style="width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg, #0284c7, #0d9488); color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 22px; box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);">
+            <div style="width: 38px; height: 38px; border-radius: 10px; background: linear-gradient(135deg, rgba(236, 72, 153, 0.14), rgba(168, 85, 247, 0.20)); border: 1px solid rgba(168, 85, 247, 0.32); color: #9333ea; display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 4px 14px rgba(168, 85, 247, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.8); flex-shrink: 0;">
                 <i class="ph ph-receipt"></i>
             </div>
             <div>
@@ -1346,27 +1427,45 @@
                         <input type="text" class="po-input" id="poSearchInput" oninput="handlePoSearch(this.value)" placeholder="Search PO #, vendor, RFQ ref, stall..." style="padding-left: 34px; height: 32px; font-size: 0.82rem;">
                     </div>
                     <div class="po-filter-pills-bar" id="poStatusFilterBar">
-                        <button type="button" class="po-filter-pill active" data-filter="all" onclick="filterPoStatus('all')">All (<span id="countPoAll">0</span>)</button>
-                        <button type="button" class="po-filter-pill" data-filter="Standard" onclick="filterPoType('vendor')">Vendor Supplier</button>
-                        <button type="button" class="po-filter-pill" data-filter="WetMarket" onclick="filterPoType('wet_market')">Wet Market Cash Run</button>
-                        <button type="button" class="po-filter-pill" data-filter="Pending" onclick="filterPoStatus('Approved / Issued')">Pending Delivery (<span id="countPoPending">0</span>)</button>
-                        <button type="button" class="po-filter-pill" data-filter="Received" onclick="filterPoStatus('Fully Received')">Received (<span id="countPoReceived">0</span>)</button>
-                        <button type="button" class="po-filter-pill" data-filter="Paid" onclick="filterPoPayment('Paid in Full / Cash Out')">Paid (<span id="countPoPaid">0</span>)</button>
+                        <button type="button" class="po-filter-pill active" data-filter="all" onclick="filterPoStatus('all', this)">All (<span id="countPoAll">0</span>)</button>
+                        <button type="button" class="po-filter-pill" data-filter="Standard" onclick="filterPoType('vendor', this)">Vendor Supplier</button>
+                        <button type="button" class="po-filter-pill" data-filter="WetMarket" onclick="filterPoType('wet_market', this)">Wet Market Cash Run</button>
+                        <button type="button" class="po-filter-pill" data-filter="Pending" onclick="filterPoStatus('Approved / Issued', this)">Pending Delivery (<span id="countPoPending">0</span>)</button>
+                        <button type="button" class="po-filter-pill" data-filter="Received" onclick="filterPoStatus('Fully Received', this)">Received (<span id="countPoReceived">0</span>)</button>
+                        <button type="button" class="po-filter-pill" data-filter="Paid" onclick="filterPoPayment('Paid in Full / Cash Out', this)">Paid (<span id="countPoPaid">0</span>)</button>
                     </div>
                 </div>
                 <div style="display: flex; align-items: center; gap: 8px;">
                     <!-- Column Visibility Selector Dropdown -->
                     <div style="position: relative;">
-                        <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" id="btnPoColConfig" onclick="togglePoColumnConfigDropdown(event)" style="padding: 4px 10px; font-size: 11.5px; height: 32px;">
-                            <i class="ph ph-sliders"></i> Columns <i class="ph ph-caret-down" style="font-size: 10px;"></i>
+                        <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" id="btnPoColConfig" onclick="togglePoColumnConfigDropdown(event)" style="padding: 4px 10px; font-size: 11.5px; height: 32px;" title="Customize visible table columns">
+                            <i class="ph ph-columns"></i> Columns <i class="ph ph-caret-down" style="font-size: 10px;"></i>
                         </button>
                         <div class="po-col-dropdown" id="poColConfigDropdown" style="display: none;" onclick="event.stopPropagation()">
-                            <div style="padding: 8px 12px; border-bottom: 1px solid #f1f5f9; font-weight: 700; font-size: 12px; color: #0f172a; display: flex; align-items: center; justify-content: space-between;">
-                                <span>Configure Columns</span>
-                                <button type="button" onclick="resetPoColumns()" style="background: none; border: none; font-size: 11px; color: #9333ea; font-weight: 600; cursor: pointer;">Reset</button>
+                            <div style="padding: 8px 12px; border-bottom: 1px solid #f1f5f9; display: flex; flex-direction: column; gap: 6px;">
+                                <div style="display: flex; align-items: center; justify-content: space-between;">
+                                    <span style="font-weight: 700; font-size: 12px; color: #0f172a; display: flex; align-items: center; gap: 5px;">
+                                        <i class="ph ph-funnel" style="color: #9333ea;"></i> Column Visibility
+                                    </span>
+                                    <button type="button" class="inv-col-quick-link is-reset" onclick="resetPoColumnWidths()" title="Reset all column widths to defaults" style="font-size: 11px; padding: 2px 6px;">
+                                        <i class="ph ph-arrow-counter-clockwise"></i> Reset Widths
+                                    </button>
+                                </div>
+                                <div class="inv-col-dropdown-quick-links" style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                                    <button type="button" class="inv-col-quick-link" onclick="showAllPoColumns()" style="font-size: 11px; padding: 2px 6px;">
+                                        <i class="ph ph-check-square"></i> Show All
+                                    </button>
+                                    <button type="button" class="inv-col-quick-link" onclick="resetPoColumnDefaults()" style="font-size: 11px; padding: 2px 6px;">
+                                        <i class="ph ph-columns"></i> Defaults
+                                    </button>
+                                </div>
                             </div>
                             <div class="po-col-checklist" id="poColChecklist">
                                 <!-- Populated dynamically -->
+                            </div>
+                            <div style="padding: 6px 12px; border-top: 1px solid #f1f5f9; background: #fafafa; font-size: 11px; color: #64748b; display: flex; align-items: center; justify-content: space-between;">
+                                <span id="poColActiveCounter">0 visible</span>
+                                <span>Drag headers to resize</span>
                             </div>
                         </div>
                     </div>
@@ -1457,10 +1556,10 @@
             <div class="po-builder-left-col">
 
                 <!-- Tender Reference & Identity Header Block (Prominent Placement with Description) -->
-                <div class="po-panel-card po-tender-ref-card" style="border-left: 4px solid var(--po-primary); background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(240, 249, 255, 0.65)); padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;">
+                <div class="po-panel-card po-tender-ref-card" style="border-left: 4px solid var(--po-primary); background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(250, 245, 255, 0.65)); padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;">
                     <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
                         <div style="display: flex; align-items: center; gap: 10px;">
-                            <div style="width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(135deg, #0284c7, #0d9488); color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 16px; box-shadow: 0 3px 10px rgba(2, 132, 199, 0.28);">
+                            <div style="width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(135deg, rgba(236, 72, 153, 0.14), rgba(168, 85, 247, 0.20)); border: 1px solid rgba(168, 85, 247, 0.32); color: #9333ea; display: flex; align-items: center; justify-content: center; font-size: 16px; box-shadow: 0 3px 10px rgba(168, 85, 247, 0.15);">
                                 <i class="ph ph-receipt"></i>
                             </div>
                             <div>
@@ -1779,7 +1878,7 @@
         <!-- Audit KPI Summary Cards -->
         <div class="audit-overview-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
             <div class="audit-metric-card" style="padding: 10px;">
-                <div class="audit-metric-icon-box" style="background: #eff6ff; color: #2563eb; width: 32px; height: 32px; font-size: 16px;">
+                <div class="audit-metric-icon-box" style="background: rgba(168, 85, 247, 0.12); color: #9333ea; width: 32px; height: 32px; font-size: 16px;">
                     <i class="ph ph-receipt"></i>
                 </div>
                 <div>
@@ -2452,6 +2551,8 @@ window.PoStore = {
 let activePoStatusFilter = 'all';
 let activePoTypeFilter = 'all';
 let poSearchTerm = '';
+let poCurrentPage = 1;
+let poPageSize = 10;
 
 document.addEventListener('DOMContentLoaded', () => {
     initPoStore();
@@ -2481,7 +2582,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('click', (e) => {
         const dropdown = document.getElementById('poColConfigDropdown');
         const btn = document.getElementById('btnPoColConfig');
-        if (dropdown && dropdown.style.display !== 'none' && !dropdown.contains(e.target) && !btn.contains(e.target)) {
+        const actionBtn = document.getElementById('btnPoActionColFilter');
+        if (dropdown && dropdown.style.display !== 'none' && !dropdown.contains(e.target) && (!btn || !btn.contains(e.target)) && (!actionBtn || !actionBtn.contains(e.target))) {
             dropdown.style.display = 'none';
         }
     });
@@ -3204,6 +3306,211 @@ function issuePurchaseOrderSubmit() {
     switchPoTab('tab-po-list');
 }
 
+/**
+ * --------------------------------------------------------------------------
+ * PO DIRECTORY COLUMN CONFIGURATION & PAGINATION SYSTEM
+ * --------------------------------------------------------------------------
+ */
+const PO_DIRECTORY_COLUMNS = [
+    { id: 'poNumber', label: 'PO Reference', default: true, lockVisible: true, defaultWidth: '135px', align: 'left' },
+    { id: 'type', label: 'Sourcing Type', default: true, lockVisible: false, defaultWidth: '120px', align: 'center' },
+    { id: 'vendor', label: 'Supplier / Stall', default: true, lockVisible: true, defaultWidth: '220px', align: 'left' },
+    { id: 'orderDate', label: 'Date Issued', default: true, lockVisible: false, defaultWidth: '105px', align: 'left' },
+    { id: 'expectedDelivery', label: 'Expected Delivery', default: true, lockVisible: false, defaultWidth: '130px', align: 'left' },
+    { id: 'itemsCount', label: 'Line Items', default: true, lockVisible: false, defaultWidth: '85px', align: 'center' },
+    { id: 'grossTotal', label: 'Total Amount', default: true, lockVisible: false, defaultWidth: '125px', align: 'right' },
+    { id: 'paymentStatus', label: 'Payment Status', default: true, lockVisible: false, defaultWidth: '130px', align: 'center' },
+    { id: 'status', label: 'Order Status', default: true, lockVisible: false, defaultWidth: '140px', align: 'center' },
+    { id: 'actions', label: 'Actions', default: true, lockVisible: true, defaultWidth: '130px', align: 'center' }
+];
+
+let activePoColIds = (() => {
+    try {
+        const saved = localStorage.getItem('rms_po_directory_cols');
+        if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return PO_DIRECTORY_COLUMNS.filter(c => c.default).map(c => c.id);
+})();
+
+let savedPoColWidths = (() => {
+    try {
+        const saved = localStorage.getItem('rms_po_directory_col_widths');
+        if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return {};
+})();
+
+function getPoColWidth(col) {
+    return savedPoColWidths[col.id] || col.defaultWidth || '120px';
+}
+
+function initPoColumns() {
+    renderPoTableHeader();
+    renderPoColumnChecklist();
+}
+
+function renderPoTableHeader() {
+    const theadRow = document.getElementById('poDirectoryTheadRow');
+    if (!theadRow) return;
+
+    let thHtml = '';
+    PO_DIRECTORY_COLUMNS.forEach(col => {
+        if (!activePoColIds.includes(col.id)) return;
+        const w = getPoColWidth(col);
+        const alignClass = col.align === 'right' ? 'th-num' : (col.align === 'center' ? 'th-center' : '');
+
+        if (col.id === 'actions') {
+            thHtml += `
+                <th class="${alignClass}" data-col-id="actions" style="width: ${w}; position: relative; user-select: none;">
+                    <div class="inv-header-action-wrapper">
+                        <span>Action</span>
+                        <button type="button" class="inv-table-filter-btn" id="btnPoActionColFilter" onclick="togglePoColumnConfigDropdown(event)" title="Column Display Filter" style="width: 22px; height: 22px; font-size: 11px; border-radius: 5px; color: #9333ea; background: rgba(168, 85, 247, 0.10); border: 1px solid rgba(168, 85, 247, 0.25);">
+                            <i class="ph ph-funnel"></i>
+                        </button>
+                    </div>
+                </th>
+            `;
+        } else {
+            thHtml += `
+                <th class="${alignClass}" data-col-id="${col.id}" style="width: ${w}; position: relative; user-select: none;">
+                    <span>${col.label}</span>
+                    <div class="po-col-resizer" onmousedown="initPoColResize(event, '${col.id}')"></div>
+                </th>
+            `;
+        }
+    });
+
+    theadRow.innerHTML = thHtml;
+    renderPoColumnChecklist();
+}
+
+function renderPoColumnChecklist() {
+    const listEl = document.getElementById('poColChecklist');
+    if (!listEl) return;
+
+    listEl.innerHTML = PO_DIRECTORY_COLUMNS.map(col => {
+        const isChecked = activePoColIds.includes(col.id);
+        const isDisabled = col.lockVisible ? 'disabled' : '';
+        return `
+            <label class="inv-col-item-row" title="${col.label}" style="display: flex; align-items: center; justify-content: space-between; padding: 5px 8px; font-size: 12px; border-radius: 6px; cursor: ${col.lockVisible ? 'default' : 'pointer'};">
+                <span style="display: flex; align-items: center; gap: 7px; color: ${col.lockVisible ? '#94a3b8' : '#1e293b'}; font-weight: ${isChecked ? '600' : '400'};">
+                    <input type="checkbox" ${isChecked ? 'checked' : ''} ${isDisabled} onchange="togglePoColumnVisibility('${col.id}', this.checked)" style="accent-color: #9333ea; width: 14px; height: 14px; cursor: ${col.lockVisible ? 'default' : 'pointer'};">
+                    ${col.label}
+                </span>
+                ${col.lockVisible ? '<span style="font-size: 10px; color: #94a3b8; font-weight: 600;">(Locked)</span>' : ''}
+            </label>
+        `;
+    }).join('');
+
+    const counter = document.getElementById('poColActiveCounter');
+    if (counter) {
+        counter.textContent = `${activePoColIds.length} of ${PO_DIRECTORY_COLUMNS.length} visible`;
+    }
+}
+
+function togglePoColumnConfigDropdown(event) {
+    if (event) event.stopPropagation();
+    const dropdown = document.getElementById('poColConfigDropdown');
+    const btn = document.getElementById('btnPoColConfig');
+    if (!dropdown) return;
+
+    const isVisible = dropdown.style.display !== 'none';
+    dropdown.style.display = isVisible ? 'none' : 'block';
+    if (btn) btn.classList.toggle('active', !isVisible);
+}
+
+function togglePoColumnVisibility(colId, isVisible) {
+    if (isVisible) {
+        if (!activePoColIds.includes(colId)) {
+            activePoColIds.push(colId);
+        }
+    } else {
+        activePoColIds = activePoColIds.filter(id => id !== colId);
+    }
+    localStorage.setItem('rms_po_directory_cols', JSON.stringify(activePoColIds));
+    renderPoTableHeader();
+    renderPoDirectory();
+}
+
+function showAllPoColumns() {
+    activePoColIds = PO_DIRECTORY_COLUMNS.map(c => c.id);
+    localStorage.setItem('rms_po_directory_cols', JSON.stringify(activePoColIds));
+    renderPoTableHeader();
+    renderPoDirectory();
+    showToast('✓ All columns visible', 'success');
+}
+
+function resetPoColumnDefaults() {
+    activePoColIds = PO_DIRECTORY_COLUMNS.filter(c => c.default).map(c => c.id);
+    localStorage.setItem('rms_po_directory_cols', JSON.stringify(activePoColIds));
+    renderPoTableHeader();
+    renderPoDirectory();
+    showToast('✓ Reset to default columns', 'success');
+}
+
+function resetPoColumns() {
+    resetPoColumnDefaults();
+}
+
+function resetPoColumnWidths() {
+    savedPoColWidths = {};
+    localStorage.removeItem('rms_po_directory_col_widths');
+    renderPoTableHeader();
+    renderPoDirectory();
+    showToast('✓ Column widths reset to defaults', 'success');
+}
+
+// Column Header Resizer Logic
+let poResizingColId = null;
+let poStartX = 0;
+let poStartW = 0;
+
+function initPoColResize(e, colId) {
+    e.preventDefault();
+    e.stopPropagation();
+    poResizingColId = colId;
+    poStartX = e.pageX;
+
+    const thEl = document.querySelector(`#poDirectoryTheadRow th[data-col-id="${colId}"]`);
+    poStartW = thEl ? thEl.offsetWidth : 120;
+
+    document.addEventListener('mousemove', handlePoColMouseMove);
+    document.addEventListener('mouseup', handlePoColMouseUp);
+}
+
+function handlePoColMouseMove(e) {
+    if (!poResizingColId) return;
+    const diff = e.pageX - poStartX;
+    const newWidth = Math.max(60, poStartW + diff);
+    savedPoColWidths[poResizingColId] = `${newWidth}px`;
+
+    const thEl = document.querySelector(`#poDirectoryTheadRow th[data-col-id="${poResizingColId}"]`);
+    if (thEl) {
+        thEl.style.width = `${newWidth}px`;
+    }
+}
+
+function handlePoColMouseUp() {
+    if (!poResizingColId) return;
+    localStorage.setItem('rms_po_directory_col_widths', JSON.stringify(savedPoColWidths));
+    poResizingColId = null;
+    document.removeEventListener('mousemove', handlePoColMouseMove);
+    document.removeEventListener('mouseup', handlePoColMouseUp);
+}
+
+function syncPoFilterPillActive(filterVal) {
+    const bar = document.getElementById('poStatusFilterBar');
+    if (!bar) return;
+    bar.querySelectorAll('.po-filter-pill').forEach(p => {
+        const val = p.getAttribute('data-filter');
+        if (val === filterVal) {
+            p.classList.add('active');
+        } else {
+            p.classList.remove('active');
+        }
+    });
+}
+
 function renderPoDirectory() {
     const tbody = document.getElementById('poDirectoryTbody');
     const pos = window.PoStore.purchaseOrders || [];
@@ -3240,11 +3547,30 @@ function renderPoDirectory() {
     document.getElementById('countPoPaid').textContent = paid;
 
     if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 36px; color: var(--po-text-muted);">No Purchase Orders found matching the filter criteria.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="${activePoColIds.length || 10}" style="text-align: center; padding: 36px; color: var(--po-text-muted);">No Purchase Orders found matching the filter criteria.</td></tr>`;
+        document.getElementById('poPaginationStart').textContent = '0';
+        document.getElementById('poPaginationEnd').textContent = '0';
+        document.getElementById('poPaginationTotal').textContent = '0';
+        renderPoPaginationControls(0);
         return;
     }
 
-    tbody.innerHTML = filtered.map(p => {
+    // Pagination Calculation
+    const totalFiltered = filtered.length;
+    const totalPages = Math.max(1, Math.ceil(totalFiltered / poPageSize));
+    if (poCurrentPage > totalPages) poCurrentPage = totalPages;
+    if (poCurrentPage < 1) poCurrentPage = 1;
+
+    const startIndex = (poCurrentPage - 1) * poPageSize;
+    const endIndex = Math.min(startIndex + poPageSize, totalFiltered);
+    const pageItems = filtered.slice(startIndex, endIndex);
+
+    document.getElementById('poPaginationStart').textContent = (startIndex + 1).toString();
+    document.getElementById('poPaginationEnd').textContent = endIndex.toString();
+    document.getElementById('poPaginationTotal').textContent = totalFiltered.toString();
+    renderPoPaginationControls(totalPages);
+
+    tbody.innerHTML = pageItems.map(p => {
         const gross = (p.items || []).reduce((acc, it) => acc + ((parseFloat(it.quantity) || 0) * (parseFloat(it.unitPrice) || 0)), 0);
         const isMarket = p.poType === 'wet_market';
         let payBadgeClass = 'unpaid';
@@ -3255,78 +3581,174 @@ function renderPoDirectory() {
         if (p.status === 'Approved / Issued') poStatusClass = 'approved';
         else if (p.status === 'Fully Received') poStatusClass = 'received';
 
-        return `
-            <tr>
-                <td style="font-family: monospace; font-weight: 700; color: var(--po-primary-dark);">
-                    <a href="javascript:void(0)" onclick="editPoFromDirectory('${p.poNumber}')" style="color: inherit; text-decoration: underline;">
-                        ${escapeHtml(p.poNumber)}
-                    </a>
-                </td>
-                <td>
-                    <span class="po-type-badge ${isMarket ? 'wet-market' : 'vendor'}">
-                        ${isMarket ? '<i class="ph ph-basket"></i> Wet Market' : '<i class="ph ph-buildings"></i> Vendor'}
-                    </span>
-                </td>
-                <td>
-                    <div style="font-weight: 700; color: var(--po-text-strong);">${escapeHtml(p.vendorTradeName || p.vendorName || 'Market Stall')}</div>
-                    <div style="font-size: 0.74rem; color: var(--po-text-muted);">
-                        ${escapeHtml(p.vendorContactPerson || 'Purchaser')} • ${escapeHtml(p.vendorPhone || '')}
-                    </div>
-                </td>
-                <td>${formatDateDisplay(p.orderDate)}</td>
-                <td><span style="font-weight: 600; color: var(--po-teal-dark);">${formatDateDisplay(p.expectedDelivery)}</span></td>
-                <td class="td-center"><span class="po-tab-count">${(p.items || []).length}</span></td>
-                <td class="td-num" style="font-weight: 800;">₱${formatMoney(gross)}</td>
-                <td class="td-center">
-                    <span class="pay-badge ${payBadgeClass}">
-                        ${escapeHtml(p.paymentStatus || 'Unpaid')}
-                    </span>
-                </td>
-                <td class="td-center">
-                    <span class="po-status-badge ${poStatusClass}">
-                        <i class="ph ph-dot"></i> ${escapeHtml(p.status)}
-                    </span>
-                </td>
-                <td class="td-center">
-                    <div style="display: flex; align-items: center; justify-content: center; gap: 4px;">
-                        <button type="button" class="inv-table-filter-btn" onclick="openPoSingleAuditModal('${p.poNumber}')" title="View Audit Trail for this PO">
-                            <i class="ph ph-clock-counter-clockwise"></i>
-                        </button>
-                        <button type="button" class="inv-table-filter-btn" onclick="previewPoFromDirectory('${p.poNumber}')" title="Preview Printable PO">
-                            <i class="ph ph-eye"></i>
-                        </button>
-                        <button type="button" class="inv-table-filter-btn" onclick="editPoFromDirectory('${p.poNumber}')" title="Edit Purchase Order">
-                            <i class="ph ph-pencil-simple"></i>
-                        </button>
-                        <button type="button" class="inv-table-filter-btn" style="color: var(--po-danger);" onclick="deletePo('${p.poNumber}')" title="Delete PO">
-                            <i class="ph ph-trash"></i>
-                        </button>
-                    </div>
-                </td>
-            </tr>
-        `;
+        let cellsHtml = '';
+        PO_DIRECTORY_COLUMNS.forEach(col => {
+            if (!activePoColIds.includes(col.id)) return;
+
+            if (col.id === 'poNumber') {
+                cellsHtml += `
+                    <td style="font-family: monospace; font-weight: 700; color: var(--po-primary-dark);">
+                        <a href="javascript:void(0)" onclick="editPoFromDirectory('${p.poNumber}')" style="color: inherit; text-decoration: underline;">
+                            ${escapeHtml(p.poNumber)}
+                        </a>
+                    </td>
+                `;
+            } else if (col.id === 'type') {
+                cellsHtml += `
+                    <td class="td-center">
+                        <span class="po-type-badge ${isMarket ? 'wet-market' : 'vendor'}">
+                            ${isMarket ? '<i class="ph ph-basket"></i> Wet Market' : '<i class="ph ph-buildings"></i> Vendor'}
+                        </span>
+                    </td>
+                `;
+            } else if (col.id === 'vendor') {
+                cellsHtml += `
+                    <td>
+                        <div style="font-weight: 700; color: var(--po-text-strong);">${escapeHtml(p.vendorTradeName || p.vendorName || 'Market Stall')}</div>
+                        <div style="font-size: 0.74rem; color: var(--po-text-muted);">
+                            ${escapeHtml(p.vendorContactPerson || 'Purchaser')} • ${escapeHtml(p.vendorPhone || '')}
+                        </div>
+                    </td>
+                `;
+            } else if (col.id === 'orderDate') {
+                cellsHtml += `<td>${formatDateDisplay(p.orderDate)}</td>`;
+            } else if (col.id === 'expectedDelivery') {
+                cellsHtml += `<td><span style="font-weight: 600; color: var(--po-teal-dark);">${formatDateDisplay(p.expectedDelivery)}</span></td>`;
+            } else if (col.id === 'itemsCount') {
+                cellsHtml += `<td class="td-center"><span class="po-tab-count">${(p.items || []).length}</span></td>`;
+            } else if (col.id === 'grossTotal') {
+                cellsHtml += `<td class="td-num" style="font-weight: 800;">₱${formatMoney(gross)}</td>`;
+            } else if (col.id === 'paymentStatus') {
+                cellsHtml += `
+                    <td class="td-center">
+                        <span class="pay-badge ${payBadgeClass}" style="cursor: pointer;" onclick="openPaymentSettlementModal('${p.poNumber}')" title="View Financial Settlement">
+                            ${escapeHtml(p.paymentStatus || 'Unpaid')}
+                        </span>
+                    </td>
+                `;
+            } else if (col.id === 'status') {
+                cellsHtml += `
+                    <td class="td-center">
+                        <span class="po-status-badge ${poStatusClass}">
+                            <i class="ph ph-dot"></i> ${escapeHtml(p.status)}
+                        </span>
+                    </td>
+                `;
+            } else if (col.id === 'actions') {
+                cellsHtml += `
+                    <td class="td-center">
+                        <div style="display: flex; align-items: center; justify-content: center; gap: 4px;">
+                            <button type="button" class="inv-table-filter-btn" onclick="openPaymentSettlementModal('${p.poNumber}')" title="Financial Settlement & Payments" style="color: #0284c7;">
+                                <i class="ph ph-bank"></i>
+                            </button>
+                            <button type="button" class="inv-table-filter-btn" onclick="openPoSingleAuditModal('${p.poNumber}')" title="View Audit Trail for this PO">
+                                <i class="ph ph-clock-counter-clockwise"></i>
+                            </button>
+                            <button type="button" class="inv-table-filter-btn" onclick="previewPoFromDirectory('${p.poNumber}')" title="Preview Printable PO">
+                                <i class="ph ph-eye"></i>
+                            </button>
+                            <button type="button" class="inv-table-filter-btn" onclick="editPoFromDirectory('${p.poNumber}')" title="Edit Purchase Order">
+                                <i class="ph ph-pencil-simple"></i>
+                            </button>
+                            <button type="button" class="inv-table-filter-btn" style="color: var(--po-danger);" onclick="deletePo('${p.poNumber}')" title="Delete PO">
+                                <i class="ph ph-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+            }
+        });
+
+        return `<tr>${cellsHtml}</tr>`;
     }).join('');
 }
 
-function filterPoStatus(status) {
+function renderPoPaginationControls(totalPages) {
+    const container = document.getElementById('poPaginationButtons');
+    if (!container) return;
+
+    if (totalPages <= 1) {
+        container.innerHTML = '';
+        return;
+    }
+
+    let html = `
+        <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" style="padding: 2px 8px; height: 26px; font-size: 11px;" ${poCurrentPage === 1 ? 'disabled' : ''} onclick="changePoPage(${poCurrentPage - 1})">
+            <i class="ph ph-caret-left"></i> Prev
+        </button>
+    `;
+
+    for (let p = 1; p <= totalPages; p++) {
+        if (p === 1 || p === totalPages || (p >= poCurrentPage - 1 && p <= poCurrentPage + 1)) {
+            const isActive = (p === poCurrentPage);
+            html += `
+                <button type="button" class="hr-btn hr-btn-sm ${isActive ? 'hr-btn-primary' : 'hr-btn-secondary'}" style="padding: 2px 8px; height: 26px; font-size: 11px; min-width: 26px;" onclick="changePoPage(${p})">
+                    ${p}
+                </button>
+            `;
+        } else if (p === poCurrentPage - 2 || p === poCurrentPage + 2) {
+            html += `<span style="padding: 0 4px; color: #94a3b8; font-size: 11px;">...</span>`;
+        }
+    }
+
+    html += `
+        <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" style="padding: 2px 8px; height: 26px; font-size: 11px;" ${poCurrentPage === totalPages ? 'disabled' : ''} onclick="changePoPage(${poCurrentPage + 1})">
+            Next <i class="ph ph-caret-right"></i>
+        </button>
+    `;
+
+    container.innerHTML = html;
+}
+
+function changePoPage(page) {
+    poCurrentPage = page;
+    renderPoDirectory();
+}
+
+function changePoPageSize(size) {
+    poPageSize = parseInt(size, 10) || 10;
+    poCurrentPage = 1;
+    renderPoDirectory();
+}
+
+function filterPoStatus(status, btn) {
     activePoStatusFilter = status;
     activePoTypeFilter = 'all';
+    poCurrentPage = 1;
+    if (btn) {
+        syncPoFilterPillActive(btn.getAttribute('data-filter') || 'all');
+    } else {
+        syncPoFilterPillActive(status === 'all' ? 'all' : (status === 'Approved / Issued' ? 'Pending' : 'Received'));
+    }
     renderPoDirectory();
 }
 
-function filterPoType(type) {
+function filterPoType(type, btn) {
     activePoTypeFilter = type;
+    poCurrentPage = 1;
+    if (btn) {
+        syncPoFilterPillActive(btn.getAttribute('data-filter'));
+    } else {
+        syncPoFilterPillActive(type === 'vendor' ? 'Standard' : 'WetMarket');
+    }
     renderPoDirectory();
 }
 
-function filterPoPayment(payStatus) {
+function filterPoPayment(payStatus, btn) {
     activePoStatusFilter = 'all';
     activePoTypeFilter = 'all';
+    poCurrentPage = 1;
+    if (btn) {
+        syncPoFilterPillActive(btn.getAttribute('data-filter'));
+    } else {
+        syncPoFilterPillActive('Paid');
+    }
     renderPoDirectory();
 }
 
 function handlePoSearch(q) {
     poSearchTerm = q;
+    poCurrentPage = 1;
     renderPoDirectory();
 }
 
