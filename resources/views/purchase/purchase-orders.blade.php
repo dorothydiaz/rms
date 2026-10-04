@@ -262,7 +262,13 @@
     display: flex;
     align-items: center;
     gap: 5px;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+.po-filter-pills-bar::-webkit-scrollbar {
+    display: none;
 }
 .po-filter-pill {
     padding: 3.5px 10px;
@@ -415,7 +421,13 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+.po-filter-pills-bar::-webkit-scrollbar {
+    display: none;
 }
 .po-filter-pill {
     padding: 6px 12px;
@@ -1420,8 +1432,8 @@
 
         <!-- Filter & Search Toolbar -->
         <div class="po-panel-card">
-            <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--po-border-subtle); flex-wrap: wrap; gap: 10px;">
-                <div style="display: flex; align-items: center; gap: 10px; flex: 1; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--po-border-subtle); flex-wrap: nowrap; gap: 10px; overflow-x: auto; scrollbar-width: none;">
+                <div style="display: flex; align-items: center; gap: 10px; flex: 1; flex-wrap: nowrap; min-width: 0;">
                     <div style="position: relative; flex: 1; min-width: 220px; max-width: 360px;">
                         <i class="ph ph-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 15px;"></i>
                         <input type="text" class="po-input" id="poSearchInput" oninput="handlePoSearch(this.value)" placeholder="Search PO #, vendor, RFQ ref, stall..." style="padding-left: 34px; height: 32px; font-size: 0.82rem;">
@@ -2590,54 +2602,126 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function initPoStore() {
+    const serverPos = @json($initialPurchaseOrders ?? []);
+    const serverVendors = @json($initialVendors ?? []);
+    const serverItems = @json($initialItems ?? []);
+
     // 1. Load Purchase Orders
-    const storedPos = localStorage.getItem('rms_purchase_orders');
-    if (storedPos) {
-        try {
-            window.PoStore.purchaseOrders = JSON.parse(storedPos);
-        } catch (e) {
-            window.PoStore.purchaseOrders = JSON.parse(JSON.stringify(SEEDED_PURCHASE_ORDERS));
-        }
-    } else {
-        window.PoStore.purchaseOrders = JSON.parse(JSON.stringify(SEEDED_PURCHASE_ORDERS));
+    if (Array.isArray(serverPos) && serverPos.length > 0) {
+        window.PoStore.purchaseOrders = serverPos.map(p => ({
+            id: p.id,
+            poNumber: p.po_number,
+            poType: p.po_type || 'vendor',
+            rfqReference: p.rfq_reference || '',
+            vendorId: p.vendor_id || '',
+            vendorName: p.vendor_name,
+            vendorTradeName: p.vendor_trade_name || p.vendor_name,
+            vendorContactPerson: p.vendor_contact_person || '',
+            vendorPhone: p.vendor_phone || '',
+            vendorEmail: p.vendor_email || '',
+            vendorAddress: p.vendor_address || '',
+            orderDate: p.order_date ? p.order_date.split('T')[0] : '',
+            expectedDelivery: p.expected_delivery ? p.expected_delivery.split('T')[0] : '',
+            deliveryLocation: p.delivery_location || 'Central Commissary - Receiving Dock A',
+            specialNotes: p.special_notes || '',
+            paymentStatus: p.payment_status || 'Unpaid / Credit',
+            paymentMethod: p.payment_method || 'Trade Credit (Net 30/15)',
+            amountPaid: parseFloat(p.amount_paid || 0),
+            balanceDue: parseFloat(p.balance_due || 0),
+            paymentReference: p.payment_reference || '',
+            paymentDate: p.payment_date || '',
+            fundSource: p.fund_source || '',
+            paymentRemarks: p.payment_remarks || '',
+            approvalNotes: p.approval_notes || '',
+            approvedBy: p.approved_by || 'Procurement Specialist',
+            status: p.status || 'Approved / Issued',
+            items: (p.items || []).map(it => ({
+                id: it.id,
+                sku: it.sku,
+                name: it.item_name,
+                specs: it.specifications || '',
+                category: it.category || 'Raw Ingredients',
+                unit: it.unit || 'Kg',
+                quantity: parseFloat(it.quantity_ordered),
+                unitPrice: parseFloat(it.unit_price)
+            }))
+        }));
         localStorage.setItem('rms_purchase_orders', JSON.stringify(window.PoStore.purchaseOrders));
+    } else {
+        const storedPos = localStorage.getItem('rms_purchase_orders');
+        if (storedPos) {
+            try {
+                window.PoStore.purchaseOrders = JSON.parse(storedPos);
+            } catch (e) {
+                window.PoStore.purchaseOrders = JSON.parse(JSON.stringify(SEEDED_PURCHASE_ORDERS));
+            }
+        } else {
+            window.PoStore.purchaseOrders = JSON.parse(JSON.stringify(SEEDED_PURCHASE_ORDERS));
+            localStorage.setItem('rms_purchase_orders', JSON.stringify(window.PoStore.purchaseOrders));
+        }
     }
 
     // 2. Automatically sync any newly approved / awarded RFQs into PO list
     syncApprovedRfqsToPoDirectory();
 
-    // 2. Load Vendors
-    const storedVendors = localStorage.getItem('rms_vendor_database_v6');
-    if (storedVendors) {
-        try {
-            window.PoStore.vendors = JSON.parse(storedVendors);
-        } catch (e) {
-            window.PoStore.vendors = [];
+    // 3. Load Vendors
+    if (Array.isArray(serverVendors) && serverVendors.length > 0) {
+        window.PoStore.vendors = serverVendors.map(v => ({
+            id: v.vendor_code || ('VEN-' + v.id),
+            vendorCode: v.vendor_code,
+            name: v.legal_name,
+            legalName: v.legal_name,
+            tradeName: v.trade_name || v.legal_name,
+            contactPerson: v.contact_person || '',
+            phone: v.phone || '',
+            email: v.email || '',
+            address: v.address || '',
+            paymentTerms: v.payment_terms || 'Net 30 Days'
+        }));
+    } else {
+        const storedVendors = localStorage.getItem('rms_vendor_database_v6');
+        if (storedVendors) {
+            try {
+                window.PoStore.vendors = JSON.parse(storedVendors);
+            } catch (e) {
+                window.PoStore.vendors = [];
+            }
         }
     }
 
-    // 3. Load Item Master
-    const storedProducts = localStorage.getItem('rms_inventory_products');
-    if (storedProducts) {
-        try {
-            const parsed = JSON.parse(storedProducts);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-                window.PoStore.itemMaster = parsed.map(p => ({
-                    sku: p.sku || 'SKU-' + p.id,
-                    name: p.product || p.name || 'Unnamed Product',
-                    specs: p.description || p.specs || '',
-                    unit: p.uom || 'Unit',
-                    defaultCost: parseFloat(p.cost_price || p.cost || 0),
-                    category: p.category || 'Raw Ingredients'
-                }));
-            } else {
+    // 4. Load Item Master
+    if (Array.isArray(serverItems) && serverItems.length > 0) {
+        window.PoStore.itemMaster = serverItems.map(p => ({
+            sku: p.sku || 'SKU-' + p.id,
+            name: p.name || 'Unnamed Product',
+            specs: p.description || p.category_name || '',
+            unit: p.unit || 'Unit',
+            defaultCost: parseFloat(p.unit_cost || 0),
+            category: p.category_name || 'Raw Ingredients'
+        }));
+    } else {
+        const storedProducts = localStorage.getItem('rms_inventory_products');
+        if (storedProducts) {
+            try {
+                const parsed = JSON.parse(storedProducts);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    window.PoStore.itemMaster = parsed.map(p => ({
+                        sku: p.sku || 'SKU-' + p.id,
+                        name: p.product || p.name || 'Unnamed Product',
+                        specs: p.description || p.specs || '',
+                        unit: p.uom || 'Unit',
+                        defaultCost: parseFloat(p.cost_price || p.cost || 0),
+                        category: p.category || 'Raw Ingredients'
+                    }));
+                } else {
+                    window.PoStore.itemMaster = PO_ITEM_MASTER;
+                }
+            } catch (e) {
                 window.PoStore.itemMaster = PO_ITEM_MASTER;
             }
-        } catch (e) {
+        } else {
             window.PoStore.itemMaster = PO_ITEM_MASTER;
         }
-    } else {
-        window.PoStore.itemMaster = PO_ITEM_MASTER;
     }
 
     // Next PO Number
@@ -3301,6 +3385,56 @@ function issuePurchaseOrderSubmit() {
     }
 
     localStorage.setItem('rms_purchase_orders', JSON.stringify(window.PoStore.purchaseOrders));
+
+    // Asynchronously synchronize issued PO to database backend
+    fetch('{{ route("purchase.api.orders.create") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+        },
+        body: JSON.stringify({
+            po_number: po.poNumber,
+            po_type: po.poType,
+            rfq_reference: po.rfqReference,
+            vendor_id: po.vendorId,
+            vendor_name: po.vendorName,
+            vendor_trade_name: po.vendorTradeName,
+            vendor_contact_person: po.vendorContactPerson,
+            vendor_phone: po.vendorPhone,
+            vendor_email: po.vendorEmail,
+            vendor_address: po.vendorAddress,
+            order_date: po.orderDate,
+            expected_delivery: po.expectedDelivery,
+            delivery_location: po.deliveryLocation,
+            special_notes: po.specialNotes,
+            payment_status: po.paymentStatus,
+            payment_method: po.paymentMethod,
+            amount_paid: po.amountPaid,
+            balance_due: po.balanceDue,
+            payment_reference: po.paymentReference,
+            payment_date: po.paymentDate,
+            fund_source: po.fundSource,
+            payment_remarks: po.paymentRemarks,
+            approval_notes: po.approvalNotes,
+            approved_by: po.approvedBy,
+            status: po.status,
+            items: (po.items || []).map(i => ({
+                sku: i.sku,
+                name: i.name,
+                specs: i.specs,
+                category: i.category,
+                unit: i.unit,
+                quantity: i.quantity,
+                unitPrice: i.unitPrice
+            }))
+        })
+    }).then(r => r.json()).then(res => {
+        if (res.success) {
+            console.log('PO database synchronization confirmed:', res.data?.po?.po_number);
+        }
+    }).catch(e => console.warn('PO DB sync note:', e));
 
     showToast(`✓ Purchase Order ${po.poNumber} successfully issued!`, 'success');
     switchPoTab('tab-po-list');

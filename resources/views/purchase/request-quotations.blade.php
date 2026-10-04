@@ -330,7 +330,13 @@
     display: flex;
     align-items: center;
     gap: 5px;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+.rfq-filter-pills-bar::-webkit-scrollbar {
+    display: none;
 }
 .rfq-filter-pill {
     padding: 3.5px 9px;
@@ -1864,8 +1870,8 @@
 
         <!-- Filter & Search Toolbar -->
         <div class="rfq-panel-card">
-            <div class="rfq-items-toolbar">
-                <div class="rfq-toolbar-left" style="flex: 1; flex-wrap: wrap; gap: 8px;">
+            <div class="rfq-items-toolbar" style="overflow-x: auto; scrollbar-width: none;">
+                <div class="rfq-toolbar-left" style="flex: 1; flex-wrap: nowrap; gap: 8px; min-width: 0;">
                     <div style="position: relative; flex: 1; min-width: 220px; max-width: 360px;">
                         <i class="ph ph-magnifying-glass" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 14px;"></i>
                         <input type="text" class="rfq-input" id="rfqDirectorySearch" oninput="handleRfqDirectorySearch(this.value)" placeholder="Search RFQ #, vendor partner, contact..." style="padding: 5px 10px 5px 30px; font-size: 12px; height: 32px;">

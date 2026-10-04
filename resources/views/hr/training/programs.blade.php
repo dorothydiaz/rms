@@ -14,7 +14,7 @@
 
 <!-- Filters -->
 <div class="hr-filter-bar">
-    <form method="GET" action="{{ route('hr.training.programs') }}" style="display: flex; gap: 8px; width: 100%; align-items: center; flex-wrap: wrap;">
+    <form method="GET" action="{{ route('hr.training.programs') }}" class="hr-filter-form" style="display: flex; gap: 8px; width: 100%; align-items: center; flex-wrap: nowrap;">
         <select name="status" class="hr-select" style="max-width: 200px;">
             <option value="">-- All Statuses --</option>
             <option value="Scheduled" {{ request('status') === 'Scheduled' ? 'selected' : '' }}>Scheduled</option>

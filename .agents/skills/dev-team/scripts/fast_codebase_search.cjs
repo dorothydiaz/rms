@@ -239,17 +239,22 @@ const command = args[0];
 
 if (!command || command === '--help' || command === '-h') {
   console.log(`
-AEC Fast Codebase Search & Structural AST Engine
+AEC Fast Codebase Search & Structural AST Engine (with Context-Mode FTS5)
 Usage:
   node .agents/skills/dev-team/scripts/fast_codebase_search.cjs bm25 <query>      Rank repository files using BM25
   node .agents/skills/dev-team/scripts/fast_codebase_search.cjs ast <filepath>    Extract class/method structural outline
   node .agents/skills/dev-team/scripts/fast_codebase_search.cjs rg <pattern>      Fast keyword / regex ripgrep search
+  node .agents/skills/dev-team/scripts/fast_codebase_search.cjs ctx <query>       Context-Mode SQLite FTS5 content search
+  node .agents/skills/dev-team/scripts/fast_codebase_search.cjs ctx-index <dir>   Index directory into Context-Mode FTS5
+  node .agents/skills/dev-team/scripts/fast_codebase_search.cjs ctx-doctor        Run Context-Mode environment diagnostics
   node .agents/skills/dev-team/scripts/fast_codebase_search.cjs symbol <name>     Instant O(1) Librarian symbol lookup
   node .agents/skills/dev-team/scripts/fast_codebase_search.cjs index             Rebuild Librarian global symbol index
   node .agents/skills/dev-team/scripts/fast_codebase_search.cjs map               Print top-level repository file count map
 `);
   process.exit(0);
 }
+
+const CTX_CLI = 'C:/Users/JABIGUERO/.gemini/config/plugins/context-mode/cli.bundle.mjs';
 
 switch (command) {
   case 'bm25':
@@ -263,6 +268,33 @@ switch (command) {
   case 'grep':
     runRipgrep(args[1]);
     break;
+  case 'ctx':
+  case 'ctx-search': {
+    const query = args.slice(1).join(' ');
+    try {
+      execSync(`node "${CTX_CLI}" search ${query}`, { stdio: 'inherit' });
+    } catch (e) {
+      console.error('Context-Mode search exited:', e.message);
+    }
+    break;
+  }
+  case 'ctx-index': {
+    const targetPath = args[1] || '.';
+    try {
+      execSync(`node "${CTX_CLI}" index "${targetPath}"`, { stdio: 'inherit' });
+    } catch (e) {
+      console.error('Context-Mode index exited:', e.message);
+    }
+    break;
+  }
+  case 'ctx-doctor': {
+    try {
+      execSync(`node "${CTX_CLI}" doctor`, { stdio: 'inherit' });
+    } catch (e) {
+      console.error('Context-Mode doctor exited:', e.message);
+    }
+    break;
+  }
   case 'symbol':
   case 'lookup': {
     const { execSync } = require('child_process');

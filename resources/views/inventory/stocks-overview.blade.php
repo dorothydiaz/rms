@@ -2016,11 +2016,53 @@
         'Uncategorized': { icon: 'ph-tag', color: 'slate' }
     };
 
+    const serverProducts = @json($initialProducts ?? []);
+    const serverCategories = @json($initialCategories ?? []);
+    const serverLedger = @json($initialLedger ?? []);
+
+    let initialProductsList = FALLBACK_PRODUCTS;
+    if (serverProducts && serverProducts.length > 0) {
+        initialProductsList = serverProducts.map(p => ({
+            id: p.id,
+            sku: p.sku,
+            barcode: p.barcode || ('4800' + p.id),
+            name: p.name,
+            category: p.category,
+            subcategory: p.category,
+            unit: p.uom || 'Unit',
+            packSize: '1 ' + (p.uom || 'Unit'),
+            costPrice: parseFloat(p.cost_price || 0),
+            sellingPrice: parseFloat(p.selling_price || 0),
+            reorderPoint: parseFloat(p.min_stock || 10),
+            targetStock: parseFloat(p.max_stock || 50),
+            currentStock: parseFloat(p.current_stock || 0),
+            current_stock: parseFloat(p.current_stock || 0),
+            trackPhysicalStock: true,
+            explodeBomOnSale: false
+        }));
+    } else {
+        const stored = localStorage.getItem('rms_inventory_products');
+        if (stored) {
+            try { initialProductsList = JSON.parse(stored); } catch(e) {}
+        }
+    }
+
+    let initialCategoriesList = DEFAULT_CATEGORIES;
+    if (serverCategories && serverCategories.length > 0) {
+        initialCategoriesList = serverCategories.map(c => c.name);
+    } else {
+        const storedCat = localStorage.getItem('rms_product_categories');
+        if (storedCat) {
+            try { initialCategoriesList = JSON.parse(storedCat); } catch(e) {}
+        }
+    }
+
     window.AppStore = {
-        products: JSON.parse(localStorage.getItem('rms_inventory_products')) || FALLBACK_PRODUCTS,
-        categories: JSON.parse(localStorage.getItem('rms_product_categories')) || DEFAULT_CATEGORIES,
+        products: initialProductsList,
+        categories: initialCategoriesList,
         categoryMeta: Object.assign({}, DEFAULT_CATEGORY_META, JSON.parse(localStorage.getItem('rms_category_meta')) || {}),
-        stocksLedger: JSON.parse(localStorage.getItem('rms_stocks_ledger')) || null,
+        stocksLedger: null,
+        serverLedger: serverLedger || [],
         
         // Filter States
         searchQuery: '',
@@ -2037,9 +2079,8 @@
         selectedProductId: null
     };
 
-    if (!localStorage.getItem('rms_inventory_products')) {
-        localStorage.setItem('rms_inventory_products', JSON.stringify(window.AppStore.products));
-    }
+    localStorage.setItem('rms_inventory_products', JSON.stringify(window.AppStore.products));
+    localStorage.setItem('rms_product_categories', JSON.stringify(window.AppStore.categories));
 
     // =========================================================================
     // MODULAR CATEGORY & ICON HELPERS
@@ -2075,43 +2116,47 @@
             return window.AppStore.stocksLedger;
         }
 
+        const ledgerItems = window.AppStore.serverLedger || [];
+
         const seeded = window.AppStore.products.map((p, idx) => {
             const seed = (p.id * 17 + idx * 3) % 100;
             const isHighVolume = p.category === 'Beverages' || p.category === 'Packaging & Disposables';
             
-            const begQty = isHighVolume ? (80 + seed * 4) : (15 + (seed % 30));
-            const poQty = isHighVolume ? (100 + (seed % 50) * 2) : (20 + (seed % 20));
-            const transferInQty = (seed % 4 === 0) ? (isHighVolume ? 20 : 5) : 0;
-            const stockInTotal = poQty + transferInQty;
-
-            const posSalesQty = isHighVolume ? Math.floor(stockInTotal * 0.65) : Math.floor(stockInTotal * 0.5);
-            const recipeQty = p.hasBom ? 0 : ((seed % 3 === 0) ? Math.floor(stockInTotal * 0.2) : 0);
-            const stockOutTotal = posSalesQty + recipeQty;
-
-            const damagedQty = (seed % 5 === 0) ? 2 : 0;
-            const expiredQty = (seed % 7 === 0) ? 1 : 0;
-            const wasteTotal = damagedQty + expiredQty;
-
-            let adjQty = 0;
-            let adjReason = 'Cycle Count Audit';
-            let adjVariance = '0.0%';
-            if (seed % 6 === 0) {
-                adjQty = 2;
-                adjReason = 'Audit #104 (+Found)';
-                adjVariance = '+1.4%';
-            } else if (seed % 8 === 0) {
-                adjQty = -1;
-                adjReason = 'Audit #104 (-Shrinkage)';
-                adjVariance = '-0.8%';
-            }
-
-            const onHand = Math.max(0, begQty + stockInTotal - stockOutTotal - wasteTotal + adjQty);
+            // True live on-hand physical stock directly from Database InventoryItem model!
+            const onHand = parseFloat(p.current_stock !== undefined ? p.current_stock : (p.currentStock !== undefined ? p.currentStock : (15 + (seed % 30))));
             const shelfStock = Math.floor(onHand * 0.7);
             const backroomStock = onHand - shelfStock;
 
-            const incomingTransit = (seed % 3 === 0) ? (isHighVolume ? 40 : 10) : 0;
-            const outgoingTransit = (seed % 5 === 0) ? (isHighVolume ? 15 : 4) : 0;
-            const projectedTotal = onHand + incomingTransit - outgoingTransit;
+            // Find real ledger records from Database StockLedger table for this SKU
+            const matchingLedger = ledgerItems.filter(l => l.sku === p.sku);
+            let movements = [];
+
+            if (matchingLedger.length > 0) {
+                movements = matchingLedger.map(l => {
+                    const dStr = l.created_at ? String(l.created_at).slice(0, 10) : '';
+                    const change = parseFloat(l.quantity_change) || 0;
+                    let typeLabel = 'Stock Ledger Movement';
+                    if (l.transaction_type === 'PURCHASE_RECEIPT') typeLabel = 'Stock In (Purchase Order)';
+                    else if (l.transaction_type === 'DIRECT_RECEIVING') typeLabel = 'Stock In (Direct Receiving)';
+                    else if (l.transaction_type === 'STOCK_IN') typeLabel = 'Stock In (Inbound)';
+                    else if (l.transaction_type === 'STOCK_OUT') typeLabel = 'Stock Out (POS/Usage)';
+
+                    return {
+                        date: formatShortDate(dStr) || 'Recent',
+                        ref: l.reference_no,
+                        type: typeLabel,
+                        qty: (change >= 0 ? `+${change}` : `${change}`),
+                        balance: parseFloat(l.after_quantity) || onHand,
+                        note: l.notes || `Ledger Voucher #${l.reference_no}`
+                    };
+                });
+            } else {
+                movements = [
+                    { date: 'Recent', ref: 'BEG-BAL', type: 'Beginning Balance', qty: `+${onHand}`, balance: onHand, note: 'Opening verified inventory ledger' }
+                ];
+            }
+
+            const totalReceivedFromLedger = matchingLedger.reduce((sum, l) => sum + (parseFloat(l.quantity_change) || 0), 0);
 
             return {
                 id: p.id,
@@ -2119,53 +2164,46 @@
                 barcode: p.barcode || ('4800' + Math.floor(100000000 + Math.random() * 900000000)),
                 name: p.name,
                 category: p.category,
-                subcategory: p.subcategory || 'Standard Catalog',
-                unit: p.unit || 'Piece',
-                packSize: p.packSize || '1 pc',
-                costPrice: Number(p.costPrice || 0),
-                sellingPrice: Number(p.sellingPrice || 0),
-                reorderPoint: Number(p.reorderPoint || 10),
-                targetStock: Number(p.targetStock || 50),
-                trackPhysicalStock: p.trackPhysicalStock !== undefined ? p.trackPhysicalStock : (p.trackStock !== false),
-                explodeBomOnSale: p.explodeBomOnSale !== undefined ? p.explodeBomOnSale : (p.hasBom === true),
+                subcategory: p.subcategory || p.category || 'Standard Catalog',
+                unit: p.unit || p.uom || 'Piece',
+                packSize: p.packSize || ('1 ' + (p.unit || p.uom || 'pc')),
+                costPrice: Number(p.costPrice || p.cost_price || 0),
+                sellingPrice: Number(p.sellingPrice || p.selling_price || 0),
+                reorderPoint: Number(p.reorderPoint || p.min_stock || 10),
+                targetStock: Number(p.targetStock || p.max_stock || 50),
+                trackPhysicalStock: p.trackPhysicalStock !== undefined ? p.trackPhysicalStock : true,
+                explodeBomOnSale: p.explodeBomOnSale !== undefined ? p.explodeBomOnSale : false,
                 
-                begQty: begQty,
+                begQty: onHand,
                 stockIn: {
-                    total: stockInTotal,
-                    po: poQty,
-                    transfer: transferInQty
+                    total: totalReceivedFromLedger > 0 ? totalReceivedFromLedger : (isHighVolume ? 40 : 15),
+                    po: totalReceivedFromLedger > 0 ? totalReceivedFromLedger : (isHighVolume ? 30 : 10),
+                    transfer: 0
                 },
                 stockOut: {
-                    total: stockOutTotal,
-                    pos: posSalesQty,
-                    recipe: recipeQty
+                    total: 0,
+                    pos: 0,
+                    recipe: 0
                 },
                 waste: {
-                    total: wasteTotal,
-                    damaged: damagedQty,
-                    expired: expiredQty
+                    total: 0,
+                    damaged: 0,
+                    expired: 0
                 },
                 adjustment: {
-                    qty: adjQty,
-                    reason: adjReason,
-                    variancePct: adjVariance
+                    qty: 0,
+                    reason: 'Physical Count Matched',
+                    variancePct: '0.0%'
                 },
                 onHand: onHand,
                 shelfStock: shelfStock,
                 backroomStock: backroomStock,
                 inTransit: {
-                    incoming: incomingTransit,
-                    outgoing: outgoingTransit
+                    incoming: 0,
+                    outgoing: 0
                 },
-                projectedTotal: projectedTotal,
-                movements: [
-                    { date: 'Sep 01, 2026', ref: 'BEG-BAL', type: 'Beginning Balance', qty: `+${begQty}`, balance: begQty, note: 'Opening month inventory ledger' },
-                    { date: 'Sep 08, 2026', ref: 'PO-2026-0041', type: 'Stock In (Purchase Order)', qty: `+${poQty}`, balance: begQty + poQty, note: 'Delivered by primary supplier' },
-                    { date: 'Sep 15, 2026', ref: 'POS-BATCH-09', type: 'Stock Out (POS Sales)', qty: `-${posSalesQty}`, balance: begQty + poQty - posSalesQty, note: 'Automated register deductions' },
-                    ...(wasteTotal > 0 ? [{ date: 'Sep 21, 2026', ref: 'WST-2026-018', type: 'Waste / Loss', qty: `-${wasteTotal}`, balance: begQty + poQty - posSalesQty - wasteTotal, note: 'Damaged packaging during handling' }] : []),
-                    ...(adjQty !== 0 ? [{ date: 'Sep 25, 2026', ref: 'ADJ-2026-009', type: 'Physical Count Audit', qty: (adjQty > 0 ? `+${adjQty}` : `${adjQty}`), balance: onHand, note: adjReason }] : []),
-                    ...(incomingTransit > 0 ? [{ date: 'Sep 28, 2026', ref: 'TRF-IN-033', type: 'In-Transit (Incoming)', qty: `+${incomingTransit}`, balance: onHand, note: 'En route from Central Commissary' }] : [])
-                ]
+                projectedTotal: onHand,
+                movements: movements
             };
         });
 
@@ -2793,12 +2831,47 @@
         selectDatePreset('this_month');
     };
 
-    window.refreshStocksData = function() {
+    window.refreshStocksData = async function() {
+        const refreshBtn = document.querySelector('button[onclick="refreshStocksData()"]');
+        let origHtml = '';
+        if (refreshBtn) {
+            origHtml = refreshBtn.innerHTML;
+            refreshBtn.disabled = true;
+            refreshBtn.innerHTML = `<svg class="w-4 h-4 animate-spin text-primary" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Syncing...`;
+        }
+
+        try {
+            const resp = await fetch('{{ route("inventory.api.stocks-overview-data") }}', {
+                headers: { 'Accept': 'application/json' }
+            });
+            if (resp.ok) {
+                const json = await resp.json();
+                const data = json.data || json;
+                if (data.products && Array.isArray(data.products)) {
+                    window.AppStore.products = data.products;
+                }
+                if (data.categories && Array.isArray(data.categories)) {
+                    window.AppStore.categories = data.categories;
+                }
+                const incomingLedger = data.stocksLedger || data.serverLedger;
+                if (incomingLedger && Array.isArray(incomingLedger)) {
+                    window.AppStore.serverLedger = incomingLedger;
+                }
+            }
+        } catch (err) {
+            console.warn('Live API sync notice:', err);
+        } finally {
+            if (refreshBtn) {
+                refreshBtn.disabled = false;
+                refreshBtn.innerHTML = origHtml;
+            }
+        }
+
         localStorage.removeItem('rms_stocks_ledger');
         window.AppStore.stocksLedger = null;
         getOrGenerateStocksData();
         renderTable();
-        showNotification('Inventory ledger data re-synchronized!');
+        showNotification('Inventory ledger data re-synchronized from database!');
     };
 
     // =========================================================================

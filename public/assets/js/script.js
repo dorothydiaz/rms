@@ -1815,6 +1815,201 @@ function getCellSortValue(cell) {
     }, true);
 })();
 
+/**
+ * ==========================================================================
+ * UNIVERSAL FILTER BAR SCROLLER ENGINE
+ * Enforces single-row non-expanding filter bars with caret-left and caret-right navigation
+ * ==========================================================================
+ */
+(function() {
+    function initUniversalFilterBarScrollers() {
+        const filterSelectors = [
+            '.hr-filter-bar',
+            '.inv-filter-bar',
+            '.bom-filter-bar',
+            '.po-filter-pills-bar',
+            '.rfq-filter-pills-bar',
+            '[data-filter-bar]',
+            '.filter-bar-scroll-track'
+        ];
 
+        const bars = document.querySelectorAll(filterSelectors.join(', '));
+        if (!bars || bars.length === 0) return;
 
+        bars.forEach((bar) => {
+            // If already initialized, update caret visibility and return
+            if (bar.dataset.scrollerInitialized === 'true') {
+                if (typeof bar._updateCaretControls === 'function') {
+                    bar._updateCaretControls();
+                }
+                return;
+            }
 
+            // Ensure the bar does not wrap
+            bar.classList.add('filter-bar-scroll-track');
+
+            let wrapper = bar.closest('.filter-bar-wrapper');
+            let leftBtn, rightBtn;
+
+            if (!wrapper) {
+                // If not inside a wrapper, create one dynamically
+                wrapper = document.createElement('div');
+                wrapper.className = 'filter-bar-wrapper';
+
+                // Preserve margin-bottom from bar onto wrapper if needed
+                const computedMargin = window.getComputedStyle(bar).marginBottom;
+                if (computedMargin && computedMargin !== '0px') {
+                    wrapper.style.marginBottom = computedMargin;
+                }
+
+                // Insert wrapper and move bar inside
+                bar.parentNode.insertBefore(wrapper, bar);
+
+                // Create Left Caret Button
+                leftBtn = document.createElement('button');
+                leftBtn.type = 'button';
+                leftBtn.className = 'filter-bar-scroll-btn filter-scroll-left is-hidden';
+                leftBtn.setAttribute('aria-label', 'Scroll filter bar left');
+                leftBtn.innerHTML = '<i class="ph ph-caret-left"></i>';
+
+                // Create Right Caret Button
+                rightBtn = document.createElement('button');
+                rightBtn.type = 'button';
+                rightBtn.className = 'filter-bar-scroll-btn filter-scroll-right is-hidden';
+                rightBtn.setAttribute('aria-label', 'Scroll filter bar right');
+                rightBtn.innerHTML = '<i class="ph ph-caret-right"></i>';
+
+                wrapper.appendChild(leftBtn);
+                wrapper.appendChild(bar);
+                wrapper.appendChild(rightBtn);
+            } else {
+                leftBtn = wrapper.querySelector('.filter-scroll-left');
+                rightBtn = wrapper.querySelector('.filter-scroll-right');
+
+                if (!leftBtn) {
+                    leftBtn = document.createElement('button');
+                    leftBtn.type = 'button';
+                    leftBtn.className = 'filter-bar-scroll-btn filter-scroll-left is-hidden';
+                    leftBtn.setAttribute('aria-label', 'Scroll filter bar left');
+                    leftBtn.innerHTML = '<i class="ph ph-caret-left"></i>';
+                    wrapper.insertBefore(leftBtn, bar);
+                }
+
+                if (!rightBtn) {
+                    rightBtn = document.createElement('button');
+                    rightBtn.type = 'button';
+                    rightBtn.className = 'filter-bar-scroll-btn filter-scroll-right is-hidden';
+                    rightBtn.setAttribute('aria-label', 'Scroll filter bar right');
+                    rightBtn.innerHTML = '<i class="ph ph-caret-right"></i>';
+                    wrapper.appendChild(rightBtn);
+                }
+            }
+
+            bar.dataset.scrollerInitialized = 'true';
+
+            // Function to evaluate overflow and toggle caret buttons
+            const updateCaretControls = () => {
+                const hasOverflow = bar.scrollWidth > bar.clientWidth + 4;
+                if (!hasOverflow) {
+                    if (leftBtn) leftBtn.classList.add('is-hidden');
+                    if (rightBtn) rightBtn.classList.add('is-hidden');
+                    return;
+                }
+
+                // Left Caret button visibility
+                if (leftBtn) {
+                    if (bar.scrollLeft > 6) {
+                        leftBtn.classList.remove('is-hidden');
+                    } else {
+                        leftBtn.classList.add('is-hidden');
+                    }
+                }
+
+                // Right Caret button visibility
+                if (rightBtn) {
+                    if (bar.scrollLeft + bar.clientWidth < bar.scrollWidth - 6) {
+                        rightBtn.classList.remove('is-hidden');
+                    } else {
+                        rightBtn.classList.add('is-hidden');
+                    }
+                }
+            };
+
+            bar._updateCaretControls = updateCaretControls;
+
+            // Wire up click handlers with smooth scrolling
+            if (leftBtn && !leftBtn._hasScrollHandler) {
+                leftBtn._hasScrollHandler = true;
+                leftBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const step = Math.max(220, Math.floor(bar.clientWidth * 0.65));
+                    bar.scrollBy({ left: -step, behavior: 'smooth' });
+                    setTimeout(updateCaretControls, 280);
+                });
+            }
+
+            if (rightBtn && !rightBtn._hasScrollHandler) {
+                rightBtn._hasScrollHandler = true;
+                rightBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const step = Math.max(220, Math.floor(bar.clientWidth * 0.65));
+                    bar.scrollBy({ left: step, behavior: 'smooth' });
+                    setTimeout(updateCaretControls, 280);
+                });
+            }
+
+            // Scroll listener with requestAnimationFrame throttling
+            let isTicking = false;
+            bar.addEventListener('scroll', () => {
+                if (!isTicking) {
+                    window.requestAnimationFrame(() => {
+                        updateCaretControls();
+                        isTicking = false;
+                    });
+                    isTicking = true;
+                }
+            }, { passive: true });
+
+            // Wheel listener: allow horizontal scroll with mouse wheel over overflowing bar
+            bar.addEventListener('wheel', (e) => {
+                if (Math.abs(e.deltaY) > Math.abs(e.deltaX) && bar.scrollWidth > bar.clientWidth) {
+                    e.preventDefault();
+                    bar.scrollLeft += e.deltaY;
+                    updateCaretControls();
+                }
+            }, { passive: false });
+
+            // ResizeObserver to detect layout / screen resize
+            if (window.ResizeObserver) {
+                const ro = new ResizeObserver(() => {
+                    updateCaretControls();
+                });
+                ro.observe(bar);
+                ro.observe(wrapper);
+            }
+
+            // Initial checks after layout and webfonts resolve
+            updateCaretControls();
+            setTimeout(updateCaretControls, 150);
+            setTimeout(updateCaretControls, 500);
+        });
+    }
+
+    // Expose globally so dynamic views can re-initialize
+    window.initUniversalFilterBarScrollers = initUniversalFilterBarScrollers;
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initUniversalFilterBarScrollers);
+    } else {
+        initUniversalFilterBarScrollers();
+    }
+
+    // Re-check on window resize
+    window.addEventListener('resize', () => {
+        if (window.initUniversalFilterBarScrollers) {
+            window.initUniversalFilterBarScrollers();
+        }
+    });
+})();

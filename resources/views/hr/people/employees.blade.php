@@ -115,9 +115,9 @@
 
 <!-- Real-Time Filter & Search Bar -->
 <div class="hr-filter-bar" style="margin-bottom: 8px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 6px 12px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
-    <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none;">
         <!-- Filters & Search Controls Group -->
-        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex: 1;">
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; flex: 1;">
             <!-- Search Input -->
             <div style="position: relative; width: 220px; flex-shrink: 0;">
                 <i class="ph ph-magnifying-glass" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 15px; pointer-events: none;"></i>

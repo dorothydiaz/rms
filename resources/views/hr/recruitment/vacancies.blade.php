@@ -112,7 +112,7 @@
 
 <!-- Search & Filter Bar -->
 <div class="hr-filter-bar" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 6px 12px; margin-bottom: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
-    <form method="GET" action="{{ route('hr.recruitment.vacancies') }}" class="hr-filter-form" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+    <form method="GET" action="{{ route('hr.recruitment.vacancies') }}" class="hr-filter-form" style="display: flex; gap: 8px; align-items: center; flex-wrap: nowrap;">
         <div style="flex: 1; min-width: 180px; position: relative;">
             <i class="ph ph-magnifying-glass" style="position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 14px;"></i>
             <input type="text" name="search" class="hr-input" placeholder="Search vacancy title, description..." value="{{ request('search') }}" style="padding-left: 28px; width: 100%;">

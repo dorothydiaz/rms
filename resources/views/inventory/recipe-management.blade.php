@@ -201,7 +201,9 @@
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
     background: #ffffff;
     border: 1px solid var(--bom-border-subtle);
     border-radius: 12px;

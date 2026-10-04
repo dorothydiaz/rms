@@ -363,6 +363,11 @@ Route::middleware('auth')->group(function () {
         Route::get('/waste-expiry', [InventoryController::class, 'wasteExpiry'])->name('waste-expiry');
         Route::get('/product-categories', [InventoryController::class, 'productCategories'])->name('product-categories');
         Route::get('/recipe-management', [InventoryController::class, 'recipeManagement'])->name('recipe-management');
+
+        // Inventory JSON API Bridges
+        Route::get('/api/stock-in-data', [InventoryController::class, 'apiGetStockInData'])->name('api.stock-in-data');
+        Route::get('/api/stocks-overview-data', [InventoryController::class, 'apiGetStocksOverviewData'])->name('api.stocks-overview-data');
+        Route::post('/api/receive-stock', [InventoryController::class, 'apiReceiveStock'])->name('api.receive-stock');
     });
 
     // Purchase Operations
@@ -373,6 +378,11 @@ Route::middleware('auth')->group(function () {
         Route::get('/purchase-orders', [PurchaseController::class, 'purchaseOrders'])->name('purchase-orders');
         Route::get('/vendor-masterlist', [PurchaseController::class, 'vendorMasterlist'])->name('vendor-masterlist');
         Route::get('/vendor-bills', [PurchaseController::class, 'vendorBills'])->name('vendor-bills');
+
+        // Purchase JSON API Bridges
+        Route::get('/api/orders', [PurchaseController::class, 'apiGetPurchaseOrders'])->name('api.orders');
+        Route::post('/api/orders', [PurchaseController::class, 'apiCreatePurchaseOrder'])->name('api.orders.create');
+        Route::get('/api/orders/{poNumber}/items', [PurchaseController::class, 'apiGetPoItems'])->name('api.orders.items');
     });
 
     // Settings (Business Configuration)

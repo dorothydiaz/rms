@@ -2439,35 +2439,133 @@ a {
     box-shadow: 0 4px 14px rgba(99, 102, 241, 0.16);
 }
 
-/* Compact Table Filter Bar Across All HR Operational Modules */
-.hr-filter-bar {
+/* ==========================================================================
+   UNIVERSAL FILTER BAR WRAPPER & CARET NAVIGATION BUTTONS
+   ========================================================================== */
+.filter-bar-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+.filter-bar-scroll-btn {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    border-radius: 50%;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #475569;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+    font-size: 13.5px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 25;
+    padding: 0;
+    user-select: none;
+    line-height: 1;
+}
+
+.filter-bar-scroll-btn:hover:not(.is-hidden) {
+    background: #f8fafc;
+    color: #0f172a;
+    border-color: #94a3b8;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
+    transform: scale(1.08);
+}
+
+.filter-bar-scroll-btn:active:not(.is-hidden) {
+    transform: scale(0.92);
+}
+
+.filter-bar-scroll-btn.is-hidden {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    min-width: 0 !important;
+    max-width: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    overflow: hidden !important;
+}
+
+/* Compact Table Filter Bar Across All HR & Operational Modules */
+.hr-filter-bar,
+.filter-bar,
+.filter-bar-scroll-track {
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     border: 1px solid #e2e8f0;
     border-radius: 10px !important;
     padding: 6px 12px !important;
-    margin-bottom: 8px !important;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
+    margin-bottom: 8px;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    flex-wrap: nowrap !important; /* CRITICAL: NO 2ND ROW WRAP */
+    white-space: nowrap !important;
     gap: 8px !important;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    position: relative;
+    z-index: 20;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+    scroll-behavior: smooth !important;
+    -webkit-overflow-scrolling: touch !important;
+    min-height: 42px;
+    max-height: 48px;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.filter-bar-wrapper .hr-filter-bar,
+.filter-bar-wrapper .inv-filter-bar,
+.filter-bar-wrapper .bom-filter-bar,
+.filter-bar-wrapper .filter-bar,
+.filter-bar-wrapper .filter-bar-scroll-track {
+    margin-bottom: 0 !important;
+}
+
+.hr-filter-bar::-webkit-scrollbar,
+.filter-bar::-webkit-scrollbar,
+.filter-bar-scroll-track::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+}
+
+.hr-filter-form {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    flex-wrap: nowrap !important; /* CRITICAL: NO 2ND ROW WRAP */
+    white-space: nowrap !important;
+    width: auto !important;
+    flex: 1 1 auto;
     position: relative;
     z-index: 20;
     overflow: visible;
 }
 
-.hr-filter-form {
-    display: flex;
-    align-items: center;
-    gap: 8px !important;
-    flex-wrap: wrap;
-    width: 100%;
-    position: relative;
-    z-index: 20;
-    overflow: visible;
+.hr-filter-bar > *,
+.hr-filter-form > *,
+.filter-bar-scroll-track > * {
+    flex-shrink: 0 !important;
 }
 
 /* Compact filter inputs & dropdowns */
@@ -2545,6 +2643,45 @@ a {
     font-size: 13.5px !important;
     left: 8px !important;
 }
+
+/* Inventory & Recipe BOM Filter Bars Universal Rules */
+.inv-filter-bar,
+.bom-filter-bar,
+.po-filter-pills-bar,
+.rfq-filter-pills-bar {
+    display: flex !important;
+    align-items: center !important;
+    flex-wrap: nowrap !important; /* CRITICAL: NO 2ND ROW WRAP */
+    white-space: nowrap !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+    scroll-behavior: smooth !important;
+    -webkit-overflow-scrolling: touch !important;
+}
+
+.inv-filter-bar::-webkit-scrollbar,
+.bom-filter-bar::-webkit-scrollbar,
+.po-filter-pills-bar::-webkit-scrollbar,
+.rfq-filter-pills-bar::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+}
+
+.inv-filter-bar > *,
+.bom-filter-bar > *,
+.inv-filter-left,
+.inv-filter-right,
+.bom-filter-left,
+.bom-filter-right,
+.po-filter-pill,
+.rfq-filter-pill {
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+}
+
 
 .hr-input, .hr-select, .hr-textarea {
     padding: 9px 13px;

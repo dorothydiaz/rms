@@ -186,10 +186,18 @@
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     white-space: nowrap;
+    flex-wrap: nowrap;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.inv-filter-bar::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
 }
 
 /* Custom Scrollbar for horizontal scrolling zones */
-.inv-filter-bar::-webkit-scrollbar,
 .inv-table-responsive::-webkit-scrollbar,
 .inv-filter-pills::-webkit-scrollbar {
     height: 6px;

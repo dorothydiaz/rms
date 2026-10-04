@@ -95,8 +95,8 @@
 </x-hr-tabs>
 
 <!-- Filter & Action Toolbar -->
-<div class="hr-filter-bar" style="margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
-    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex: 1;">
+<div class="hr-filter-bar" style="margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: nowrap;">
+    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; flex: 1;">
         <!-- Real-Time Text Search -->
         <div style="position: relative; width: 220px; flex-shrink: 0;">
             <i class="ph ph-magnifying-glass" style="position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 14px; pointer-events: none;"></i>
