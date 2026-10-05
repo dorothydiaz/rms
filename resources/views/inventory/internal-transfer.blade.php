@@ -64,98 +64,169 @@
 }
 
 /* Page Header */
+/* ==========================================================================
+   HR-STYLE FLAT PAGE HEADER & TITLE (Synced with HR Design System)
+   ========================================================================== */
+.hr-parent-header {
+    margin-bottom: 8px;
+    width: 100%;
+}
+.hr-parent-title-row,
 .trf-page-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 0px;
     flex-wrap: wrap;
-    gap: 16px;
 }
-
+.hr-parent-title,
 .trf-page-title-group h1 {
-    font-family: 'Outfit', sans-serif;
-    font-size: 1.75rem;
-    font-weight: 800;
-    color: var(--trf-text-strong);
-    margin: 0 0 4px 0;
-    letter-spacing: -0.02em;
+    font-family: var(--font-heading, 'Poppins', sans-serif);
+    font-size: 21px;
+    font-weight: 700;
+    color: #0f172a;
     display: flex;
     align-items: center;
     gap: 10px;
-}
-
-.trf-page-subtitle {
-    font-size: 0.875rem;
-    color: var(--trf-text-muted);
+    letter-spacing: -0.02em;
     margin: 0;
 }
-
-/* Tabs Navigation */
-.tabs-wrapper {
+.hr-parent-title i,
+.trf-page-title-group h1 i {
+    width: 34px;
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9px;
+    background: linear-gradient(135deg, rgba(236, 72, 153, 0.14), rgba(168, 85, 247, 0.20));
+    border: 1px solid rgba(168, 85, 247, 0.32);
+    color: #9333ea;
+    font-size: 18px;
+    box-shadow: 0 4px 14px rgba(168, 85, 247, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.8);
+    flex-shrink: 0;
+}
+.hr-parent-subtitle,
+.trf-page-subtitle {
+    font-size: 12.5px;
+    color: #64748b;
+    font-weight: 400;
+    margin: 3px 0 0 0;
+}
+.hr-page-actions {
     display: flex;
     align-items: center;
     gap: 8px;
-    background: rgba(241, 245, 249, 0.85);
-    padding: 6px;
-    border-radius: 14px;
-    border: 1px solid #e2e8f0;
-    width: fit-content;
+    flex-wrap: wrap;
 }
 
+/* ==========================================================================
+   PRIMARY TABS-WRAPPER BAR (Synced with HR Design System)
+   ========================================================================== */
+.hr-tabs-wrapper,
+.tabs-wrapper {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    border-radius: 12px;
+    padding: 4px 6px;
+    margin-top: 4px;
+    margin-bottom: 14px;
+    box-shadow: 0 4px 16px rgba(148, 163, 184, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.95);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    flex-wrap: wrap;
+    position: relative;
+    z-index: 20;
+}
 .tab-btn {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 9px 18px;
-    border-radius: 10px;
+    padding: 8px 16px;
+    border-radius: 9px;
+    font-family: inherit;
     font-size: 13px;
     font-weight: 600;
-    color: var(--trf-text-muted);
+    color: #64748b;
     background: transparent;
-    border: none;
+    border: 1px solid transparent;
     cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     white-space: nowrap;
+    position: relative;
+    flex-shrink: 0;
 }
-
+.tab-btn i {
+    font-size: 16px;
+    color: #94a3b8;
+    transition: color 0.2s ease, transform 0.2s ease;
+}
 .tab-btn:hover {
-    color: var(--trf-primary);
-    background: rgba(255, 255, 255, 0.6);
+    color: #9333ea;
+    background: rgba(168, 85, 247, 0.08);
 }
-
+.tab-btn:hover i {
+    color: #9333ea;
+    transform: scale(1.08);
+}
 .tab-btn.active {
     background: #ffffff;
-    color: var(--trf-primary);
-    box-shadow: 0 4px 12px rgba(147, 51, 234, 0.12), 0 1px 3px rgba(0, 0, 0, 0.05);
+    color: #9333ea;
+    font-weight: 700;
+    border-color: rgba(168, 85, 247, 0.28);
+    box-shadow: 0 4px 14px rgba(168, 85, 247, 0.14), 0 1px 3px rgba(0, 0, 0, 0.04);
 }
-
+.tab-btn.active i {
+    background: linear-gradient(135deg, #ec4899, #a855f7);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+.tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    left: 20%;
+    right: 20%;
+    height: 3px;
+    background: linear-gradient(90deg, #ec4899, #a855f7);
+    border-radius: 3px 3px 0 0;
+}
 .tab-count {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     min-width: 20px;
-    height: 20px;
+    height: 18px;
     padding: 0 6px;
-    border-radius: 10px;
     font-size: 11px;
     font-weight: 700;
+    border-radius: 9px;
     background: #f1f5f9;
-    color: var(--trf-text-muted);
+    color: #64748b;
+    transition: all 0.2s ease;
 }
-
 .tab-btn.active .tab-count {
-    background: #faf5ff;
-    color: var(--trf-primary);
+    background: rgba(168, 85, 247, 0.12);
+    color: #9333ea;
 }
-
 .tab-badge-pill {
-    padding: 2px 7px;
-    border-radius: 6px;
-    font-size: 10.5px;
+    padding: 2px 8px;
+    font-size: 10px;
     font-weight: 700;
-    background: #faf5ff;
-    color: var(--trf-primary);
-    border: 1px solid #f3e8ff;
+    border-radius: 8px;
+    background: linear-gradient(135deg, rgba(236, 72, 153, 0.12), rgba(168, 85, 247, 0.18));
+    border: 1px solid rgba(168, 85, 247, 0.28);
+    color: #9333ea;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
 }
 
 /* KPI Summary Cards */
@@ -515,32 +586,48 @@
 @endpush
 
 @section('content')
+<style>
+/* Compact Spacing Overrides (Employees Directory parity) */
+.trf-workspace {
+    gap: 8px !important;
+    padding: 12px 16px !important;
+}
+.hr-parent-header { margin-bottom: 6px !important; }
+.hr-parent-header .hr-parent-title-row { margin-bottom: 4px !important; }
+.hr-parent-header .hr-parent-title { font-size: 20px !important; gap: 8px !important; }
+.hr-parent-header .hr-parent-title i { width: 32px !important; height: 32px !important; font-size: 17px !important; border-radius: 8px !important; }
+.hr-parent-header .hr-parent-subtitle { font-size: 12px !important; margin-top: 2px !important; }
+.hr-tabs-wrapper { margin-top: 6px !important; margin-bottom: 8px !important; padding: 3px 5px !important; gap: 4px !important; border-radius: 10px !important; }
+.hr-tabs-wrapper .tab-btn { padding: 5px 12px !important; font-size: 12.5px !important; }
+.trf-tab-panel.active { gap: 8px !important; }
+.trf-filter-bar { padding: 8px 12px !important; gap: 8px !important; }
+</style>
+
 <div class="trf-workspace">
 
     <!-- =====================================================================
          PAGE HEADER
          ===================================================================== -->
-    <div class="trf-page-header">
-        <div class="trf-page-title-group">
-            <h1>
-                <i class="ph ph-arrows-left-right" style="color: var(--trf-primary);"></i>
-                <span>Internal Transfer</span>
-            </h1>
-            <p class="trf-page-subtitle">
-                Manage commissary-to-branch logistics, pending branch transfer requests & backlogs, and direct custom dispatches with real-time stock validation.
-            </p>
-        </div>
-
-        <div style="display: flex; align-items: center; gap: 10px;">
-            <a href="{{ route('inventory.stocks-overview') }}" class="hr-btn hr-btn-secondary" title="View Current Stock Levels">
-                <i class="ph ph-squares-four"></i> Stocks Overview
-            </a>
-            <a href="{{ route('inventory.product-categories') }}" class="hr-btn hr-btn-secondary" title="View Item Master">
-                <i class="ph ph-folder-simple"></i> Item Master
-            </a>
-            <button type="button" class="hr-btn hr-btn-primary" onclick="switchTrfTab('tab-custom-transfer')">
-                <i class="ph ph-paper-plane-tilt"></i> New Custom Transfer
-            </button>
+    <div class="hr-parent-header">
+        <div class="hr-parent-title-row trf-page-header">
+            <div class="trf-page-title-group">
+                <h1 class="hr-parent-title">
+                    <i class="ph ph-arrows-left-right"></i>
+                    <span>Internal Transfer</span>
+                </h1>
+                <p class="hr-parent-subtitle trf-page-subtitle">Manage commissary-to-branch logistics, pending branch transfer requests & backlogs, and direct custom dispatches with real-time stock validation.</p>
+            </div>
+            <div class="hr-page-actions">
+                <a href="{{ route('inventory.stocks-overview') }}" class="hr-btn hr-btn-secondary" title="View Current Stock Levels">
+                    <i class="ph ph-squares-four"></i> Stocks Overview
+                </a>
+                <a href="{{ route('inventory.product-categories') }}" class="hr-btn hr-btn-secondary" title="View Item Master">
+                    <i class="ph ph-folder-simple"></i> Item Master
+                </a>
+                <button type="button" class="hr-btn hr-btn-primary" onclick="switchTrfTab('tab-custom-transfer')">
+                    <i class="ph ph-paper-plane-tilt"></i> New Custom Transfer
+                </button>
+            </div>
         </div>
     </div>
 
@@ -550,7 +637,7 @@
          2. Pending Branch Requests & Backlog (Pending Transfer Request)
          3. Direct Push Transfer (Custom Transfer)
          ===================================================================== -->
-    <nav class="tabs-wrapper" id="internalTransferTabsBar">
+    <nav class="hr-tabs-wrapper tabs-wrapper" id="internalTransferTabsBar">
         <button type="button" class="tab-btn active" id="tabBtnList" onclick="switchTrfTab('tab-transfer-list')">
             <i class="ph ph-list-dashes"></i>
             <span>Transfer Register & Masterlist</span>
@@ -576,53 +663,6 @@
          TAB 1: TRANSFER REGISTER & MASTERLIST (List)
          ===================================================================== -->
     <div id="tab-transfer-list" class="trf-tab-panel active">
-        <!-- KPI Strip -->
-        <div class="trf-kpi-grid">
-            <div class="trf-kpi-card">
-                <div class="trf-kpi-icon" style="background: #faf5ff; color: var(--trf-primary);">
-                    <i class="ph ph-truck"></i>
-                </div>
-                <div class="trf-kpi-content">
-                    <div class="trf-kpi-label">Total Transfers MTD</div>
-                    <div class="trf-kpi-value" id="kpiTotalTransfers">{{ $initialTransfers->count() }}</div>
-                    <div class="trf-kpi-meta">All internal routes</div>
-                </div>
-            </div>
-
-            <div class="trf-kpi-card">
-                <div class="trf-kpi-icon" style="background: #fffbeb; color: #d97706;">
-                    <i class="ph ph-clock-countdown"></i>
-                </div>
-                <div class="trf-kpi-content">
-                    <div class="trf-kpi-label">Pending / Backlogs</div>
-                    <div class="trf-kpi-value" id="kpiPendingCount">{{ $initialTransfers->where('status', 'PENDING')->count() }}</div>
-                    <div class="trf-kpi-meta">Awaiting dispatch</div>
-                </div>
-            </div>
-
-            <div class="trf-kpi-card">
-                <div class="trf-kpi-icon" style="background: #f0f9ff; color: #0284c7;">
-                    <i class="ph ph-arrows-clockwise"></i>
-                </div>
-                <div class="trf-kpi-content">
-                    <div class="trf-kpi-label">In-Transit Shipments</div>
-                    <div class="trf-kpi-value" id="kpiInTransitCount">{{ $initialTransfers->where('status', 'IN_TRANSIT')->count() }}</div>
-                    <div class="trf-kpi-meta">On delivery truck</div>
-                </div>
-            </div>
-
-            <div class="trf-kpi-card">
-                <div class="trf-kpi-icon" style="background: #ecfdf5; color: #059669;">
-                    <i class="ph ph-coins"></i>
-                </div>
-                <div class="trf-kpi-content">
-                    <div class="trf-kpi-label">Transferred Valuation</div>
-                    <div class="trf-kpi-value" id="kpiValuation">₱{{ number_format($initialTransfers->whereIn('status', ['IN_TRANSIT', 'COMPLETED'])->sum('total_valuation'), 2) }}</div>
-                    <div class="trf-kpi-meta">Dispatched value</div>
-                </div>
-            </div>
-        </div>
-
         <!-- Filter & Search Toolbar -->
         <div class="trf-card-strip" style="margin-top: 16px;">
             <div class="trf-filter-bar">

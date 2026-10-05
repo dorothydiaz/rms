@@ -1732,11 +1732,36 @@
                                 </div>
                             </div>
                             <div class="po-field">
+                                <div style="display: flex; align-items: center; justify-content: space-between;">
+                                    <label class="po-label" for="poAmountPaid"><span>Amount Paid / Disbursed (₱)</span></label>
+                                    <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="fillFullRemainingBalance()" style="font-size: 10px; padding: 1px 6px; height: 18px; color: #059669; border-color: #a7f3d0; background: #ecfdf5;" title="Fill total remaining balance"><i class="ph ph-lightning"></i> Full</button>
+                                </div>
+                                <input type="number" step="0.01" min="0" class="po-input" id="poAmountPaid" placeholder="0.00" oninput="handlePoInlineAmountPaid(this.value)" style="font-weight: 700;">
+                                <input type="hidden" id="poPaymentStatus" value="Unpaid / Credit">
+                                <input type="hidden" id="poPaymentMethod" value="Trade Credit (Net 30/15)">
+                                <input type="hidden" id="poPaymentRef" value="">
+                                <input type="hidden" id="poPaymentDate" value="">
+                                <input type="hidden" id="poFundSource" value="Main Commissary Checking Acct">
+                                <input type="hidden" id="poPaymentRemarks" value="">
+                            </div>
+                        </div>
+
+                        <div class="po-form-row">
+                            <div class="po-field">
                                 <label class="po-label" for="poExpectedDelivery">
                                     <span>Expected Delivery *</span>
                                     <span class="po-label-badge" style="color: #0369a1;">Lead Time</span>
                                 </label>
                                 <input type="date" class="po-input" id="poExpectedDelivery">
+                            </div>
+                            <div class="po-field">
+                                <label class="po-label" for="poDeliveryLocation">Destination Facility</label>
+                                <select class="po-select" id="poDeliveryLocation">
+                                    <option value="Central Commissary - Receiving Dock A">Central Commissary - Dock A</option>
+                                    <option value="Branch 1 - Makati Flagship">Branch 1 - Makati Flagship</option>
+                                    <option value="Branch 2 - BGC Bistro">Branch 2 - BGC Bistro</option>
+                                    <option value="Branch 3 - Ortigas Kitchen">Branch 3 - Ortigas Kitchen</option>
+                                </select>
                             </div>
                         </div>
 
@@ -3024,41 +3049,77 @@ function handlePoVendorSelect(vendorId) {
  * --------------------------------------------------------------------------
  */
 function handlePaymentStatusChange(status) {
-    const badge = document.getElementById('paymentStatusBadge');
+    const badge = document.getElementById('paymentStatusBadge') || document.getElementById('poSummaryPayBadge');
     const gross = calculatePoGrossTotal();
+    const inlineAmt = document.getElementById('poAmountPaid');
 
     if (status === 'Paid in Full / Cash Out') {
-        badge.className = 'pay-badge paid';
-        badge.textContent = 'Paid in Full';
-        document.getElementById('poAmountPaid').value = gross.toFixed(2);
+        if (badge) {
+            badge.className = 'pay-badge paid';
+            badge.textContent = 'Paid in Full';
+        }
+        if (inlineAmt) inlineAmt.value = gross.toFixed(2);
+        window.PoStore.activePo.amountPaid = gross;
     } else if (status === 'Partial Payment') {
-        badge.className = 'pay-badge partial';
-        badge.textContent = 'Partial Payment';
-        document.getElementById('poAmountPaid').value = (gross / 2).toFixed(2);
+        if (badge) {
+            badge.className = 'pay-badge partial';
+            badge.textContent = 'Partial Payment';
+        }
+        if (inlineAmt) inlineAmt.value = (gross / 2).toFixed(2);
+        window.PoStore.activePo.amountPaid = (gross / 2);
     } else {
-        badge.className = 'pay-badge unpaid';
-        badge.textContent = 'Unpaid / Credit';
-        document.getElementById('poAmountPaid').value = '0.00';
+        if (badge) {
+            badge.className = 'pay-badge unpaid';
+            badge.textContent = 'Unpaid / Credit';
+        }
+        if (inlineAmt) inlineAmt.value = '0.00';
+        window.PoStore.activePo.amountPaid = 0;
     }
     calculateBalanceDue();
 }
 
+function handlePoInlineAmountPaid(val) {
+    const paid = parseFloat(val) || 0;
+    window.PoStore.activePo.amountPaid = paid;
+    const gross = calculatePoGrossTotal();
+    const balance = Math.max(0, gross - paid);
+    window.PoStore.activePo.balanceDue = balance;
+
+    const statusInput = document.getElementById('poPaymentStatus');
+    let statusText = 'Unpaid / Credit';
+    if (paid >= gross && gross > 0) {
+        statusText = 'Paid in Full / Cash Out';
+    } else if (paid > 0) {
+        statusText = 'Partial Payment';
+    }
+    if (statusInput) statusInput.value = statusText;
+    window.PoStore.activePo.paymentStatus = statusText;
+
+    updatePoSummaryPayBadge();
+    const docBadge = document.getElementById('docPoPaymentStatus');
+    if (docBadge) docBadge.textContent = statusText;
+}
+
 function calculateBalanceDue() {
     const gross = calculatePoGrossTotal();
-    const paid = parseFloat(document.getElementById('poAmountPaid').value) || 0;
+    const inlinePaid = document.getElementById('poAmountPaid') ? parseFloat(document.getElementById('poAmountPaid').value) : null;
+    const paid = (inlinePaid !== null && !isNaN(inlinePaid)) ? inlinePaid : (parseFloat(window.PoStore.activePo.amountPaid) || 0);
     const balance = Math.max(0, gross - paid);
-    document.getElementById('poBalanceDue').value = `₱${formatMoney(balance)}`;
+    const balInput = document.getElementById('poBalanceDue');
+    if (balInput) balInput.value = `₱${formatMoney(balance)}`;
 
-    const badge = document.getElementById('paymentStatusBadge');
-    if (paid >= gross && gross > 0) {
-        badge.className = 'pay-badge paid';
-        badge.textContent = 'Paid in Full';
-    } else if (paid > 0 && paid < gross) {
-        badge.className = 'pay-badge partial';
-        badge.textContent = 'Partial Payment';
-    } else {
-        badge.className = 'pay-badge unpaid';
-        badge.textContent = 'Unpaid / Credit';
+    const badge = document.getElementById('paymentStatusBadge') || document.getElementById('poSummaryPayBadge');
+    if (badge) {
+        if (paid >= gross && gross > 0) {
+            badge.className = 'pay-badge paid';
+            badge.textContent = 'Paid in Full';
+        } else if (paid > 0 && paid < gross) {
+            badge.className = 'pay-badge partial';
+            badge.textContent = `Partial (${formatMoney(paid)})`;
+        } else {
+            badge.className = 'pay-badge unpaid';
+            badge.textContent = 'Unpaid / Credit';
+        }
     }
 }
 
@@ -3305,14 +3366,14 @@ function issuePurchaseOrderSubmit() {
     po.specialNotes = document.getElementById('poSpecialNotes').value.trim();
 
     // Financial payment collection
-    po.paymentStatus = document.getElementById('poPaymentStatus').value;
-    po.paymentMethod = document.getElementById('poPaymentMethod').value;
-    po.amountPaid = parseFloat(document.getElementById('poAmountPaid').value) || 0;
+    po.paymentStatus = document.getElementById('poPaymentStatus')?.value || window.PoStore.activePo.paymentStatus || 'Unpaid / Credit';
+    po.paymentMethod = document.getElementById('poPaymentMethod')?.value || window.PoStore.activePo.paymentMethod || 'Trade Credit (Net 30/15)';
+    po.amountPaid = parseFloat(document.getElementById('poAmountPaid')?.value ?? window.PoStore.activePo.amountPaid) || 0;
     po.balanceDue = Math.max(0, calculatePoGrossTotal() - po.amountPaid);
-    po.paymentReference = document.getElementById('poPaymentRef').value.trim();
-    po.paymentDate = document.getElementById('poPaymentDate').value;
-    po.fundSource = document.getElementById('poFundSource').value;
-    po.paymentRemarks = document.getElementById('poPaymentRemarks').value.trim();
+    po.paymentReference = document.getElementById('poPaymentRef')?.value?.trim() || window.PoStore.activePo.paymentReference || '';
+    po.paymentDate = document.getElementById('poPaymentDate')?.value || window.PoStore.activePo.paymentDate || '';
+    po.fundSource = document.getElementById('poFundSource')?.value || window.PoStore.activePo.fundSource || 'Main Commissary Checking Acct';
+    po.paymentRemarks = document.getElementById('poPaymentRemarks')?.value?.trim() || window.PoStore.activePo.paymentRemarks || '';
     po.status = (po.paymentStatus === 'Paid in Full / Cash Out') ? 'Fully Received' : 'Approved / Issued';
 
     // Save to list
@@ -4854,7 +4915,10 @@ function updatePoSummaryPayBadge() {
     const po = window.PoStore.activePo;
     const gross = calculatePoGrossTotal();
     const payments = getStoredPayments().filter(p => p.poNumber === po.poNumber);
-    const paid = payments.reduce((acc, p) => acc + (parseFloat(p.amount) || 0), 0);
+    const inlinePaid = document.getElementById('poAmountPaid') ? parseFloat(document.getElementById('poAmountPaid').value) : null;
+    const paid = (payments.length > 0)
+        ? payments.reduce((acc, p) => acc + (parseFloat(p.amount) || 0), 0)
+        : ((inlinePaid !== null && !isNaN(inlinePaid)) ? inlinePaid : (parseFloat(po.amountPaid) || 0));
 
     if (paid >= gross && gross > 0) {
         badge.className = 'pay-badge paid';
@@ -5044,6 +5108,11 @@ function fillFullRemainingBalance() {
     if (amountInput) {
         amountInput.value = balanceDue.toFixed(2);
         amountInput.focus();
+    }
+    const inlineInput = document.getElementById('poAmountPaid');
+    if (inlineInput && isActivePo) {
+        inlineInput.value = balanceDue.toFixed(2);
+        handlePoInlineAmountPaid(balanceDue);
     }
 }
 

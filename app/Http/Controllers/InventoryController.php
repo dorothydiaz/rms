@@ -97,7 +97,7 @@ class InventoryController extends Controller
         $purchaseOrders = PurchaseOrder::with('items')->orderByDesc('id')->get();
         $vendors = ProcurementVendor::where('is_active', true)->orderBy('legal_name')->get();
         $products = InventoryItem::where('is_active', true)->orderBy('name')->get();
-        $recentReceipts = GoodsReceipt::with('items')->orderByDesc('id')->take(20)->get();
+        $recentReceipts = GoodsReceipt::with('items')->orderByDesc('id')->take(200)->get();
 
         return view('inventory.stock-in', [
             'initialPurchaseOrders' => $purchaseOrders,
@@ -115,7 +115,7 @@ class InventoryController extends Controller
         $purchaseOrders = PurchaseOrder::with('items')->orderByDesc('id')->get();
         $vendors = ProcurementVendor::where('is_active', true)->orderBy('legal_name')->get();
         $products = InventoryItem::where('is_active', true)->orderBy('name')->get();
-        $recentReceipts = GoodsReceipt::with('items')->orderByDesc('id')->take(20)->get();
+        $recentReceipts = GoodsReceipt::with('items')->orderByDesc('id')->take(200)->get();
 
         return response()->json([
             'success' => true,
@@ -231,6 +231,10 @@ class InventoryController extends Controller
             'settlement_mode' => 'nullable|string|max:100',
             'payment_method' => 'nullable|string|max:100',
             'payment_ref' => 'nullable|string|max:100',
+            'amount_paid' => 'nullable|numeric|min:0',
+            'payment_date' => 'nullable|date',
+            'fund_source' => 'nullable|string|max:255',
+            'payment_remarks' => 'nullable|string|max:500',
             'freight' => 'nullable|numeric|min:0',
             'customs' => 'nullable|numeric|min:0',
             'handling' => 'nullable|numeric|min:0',
@@ -266,6 +270,11 @@ class InventoryController extends Controller
             }
             $grossTotal = $itemsSubtotal + $landedCosts;
 
+            $amountPaid = (float) ($validated['amount_paid'] ?? 0);
+            $paymentStatus = ($amountPaid >= $grossTotal && $grossTotal > 0) ? 'Paid in Full / Cash Out' : ($amountPaid > 0 ? 'Partial Payment' : 'Unpaid / Credit');
+            $payRef = !empty($validated['payment_ref']) ? " (Ref: {$validated['payment_ref']})" : '';
+            $userRemarks = !empty($validated['payment_remarks']) ? " | Remarks: {$validated['payment_remarks']}" : '';
+
             $po = null;
             if (!empty($validated['po_number'])) {
                 $po = PurchaseOrder::where('po_number', $validated['po_number'])->lockForUpdate()->first();
@@ -298,7 +307,7 @@ class InventoryController extends Controller
                 'received_at' => now(),
                 'received_by' => $performedBy,
                 'status' => 'COMPLETED',
-                'notes' => $po ? "Fulfillment for PO {$po->po_number}" : "Direct inbound stock receiving",
+                'notes' => ($po ? "Fulfillment for PO {$po->po_number}" : "Direct inbound stock receiving") . $userRemarks,
             ]);
 
             // Process line items & update inventory / ledger atomically
@@ -425,6 +434,9 @@ class InventoryController extends Controller
                     'po_number' => $receipt->po_number,
                     'received_at' => $receipt->received_at->toIso8601String(),
                     'gross_total' => $receipt->gross_total,
+                    'amount_paid' => $amountPaid,
+                    'balance_due' => max(0, $grossTotal - $amountPaid),
+                    'payment_status' => $paymentStatus,
                     'items_count' => count($validated['items']),
                 ],
             ]);

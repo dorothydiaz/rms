@@ -65,117 +65,159 @@
 }
 
 /* Page Header */
+/* ==========================================================================
+   HR-STYLE FLAT PAGE HEADER & TITLE (Synced with HR Design System)
+   ========================================================================== */
+.hr-parent-header {
+    margin-bottom: 8px;
+    width: 100%;
+}
+.hr-parent-title-row,
 .prd-page-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 0px;
     flex-wrap: wrap;
-    gap: 16px;
-    padding: 22px 28px;
 }
-
-.prd-header-title-box {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-}
-
-.prd-header-icon-box {
-    width: 48px;
-    height: 48px;
-    border-radius: 14px;
-    background: linear-gradient(135deg, rgba(236, 72, 153, 0.12) 0%, rgba(168, 85, 247, 0.18) 100%);
-    color: var(--prd-primary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 24px;
-    box-shadow: 0 4px 12px rgba(168, 85, 247, 0.15);
-}
-
+.hr-parent-title,
 .prd-page-title {
-    font-family: 'Outfit', sans-serif;
-    font-size: 1.65rem;
-    font-weight: 800;
-    color: var(--prd-text-strong);
-    margin: 0 0 4px 0;
-    letter-spacing: -0.02em;
+    font-family: var(--font-heading, 'Poppins', sans-serif);
+    font-size: 21px;
+    font-weight: 700;
+    color: #0f172a;
     display: flex;
     align-items: center;
     gap: 10px;
-}
-
-.prd-page-subtitle {
-    font-size: 0.86rem;
-    color: var(--prd-text-muted);
+    letter-spacing: -0.02em;
     margin: 0;
 }
-
+.hr-parent-title i {
+    width: 34px;
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9px;
+    background: linear-gradient(135deg, rgba(236, 72, 153, 0.14), rgba(168, 85, 247, 0.20));
+    border: 1px solid rgba(168, 85, 247, 0.32);
+    color: #9333ea;
+    font-size: 18px;
+    box-shadow: 0 4px 14px rgba(168, 85, 247, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.8);
+    flex-shrink: 0;
+}
+.hr-parent-subtitle,
+.prd-page-subtitle {
+    font-size: 12.5px;
+    color: #64748b;
+    font-weight: 400;
+    margin: 3px 0 0 0;
+}
+.hr-page-actions,
 .prd-header-actions {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     flex-wrap: wrap;
 }
 
-/* Tabs Navigation */
+/* ==========================================================================
+   PRIMARY TABS-WRAPPER BAR (Synced with HR Design System)
+   ========================================================================== */
+.hr-tabs-wrapper,
 .tabs-wrapper {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    border-radius: 12px;
+    padding: 4px 6px;
+    margin-top: 4px;
+    margin-bottom: 14px;
+    box-shadow: 0 4px 16px rgba(148, 163, 184, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.95);
     display: flex;
     align-items: center;
-    gap: 8px;
-    background: rgba(241, 245, 249, 0.85);
-    padding: 6px;
-    border-radius: 14px;
-    border: 1px solid #e2e8f0;
-    width: fit-content;
+    gap: 6px;
+    max-width: 100%;
+    min-width: 0;
     overflow-x: auto;
+    flex-wrap: wrap;
+    position: relative;
+    z-index: 20;
 }
-
 .tab-btn {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 9px 18px;
-    border-radius: 10px;
+    padding: 8px 16px;
+    border-radius: 9px;
+    font-family: inherit;
     font-size: 13px;
     font-weight: 600;
-    color: var(--prd-text-muted);
+    color: #64748b;
     background: transparent;
-    border: none;
+    border: 1px solid transparent;
     cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     white-space: nowrap;
+    position: relative;
+    flex-shrink: 0;
     text-decoration: none;
 }
-
-.tab-btn:hover {
-    color: var(--prd-primary);
-    background: rgba(255, 255, 255, 0.6);
+.tab-btn i {
+    font-size: 16px;
+    color: #94a3b8;
+    transition: color 0.2s ease, transform 0.2s ease;
 }
-
+.tab-btn:hover {
+    color: #9333ea;
+    background: rgba(168, 85, 247, 0.08);
+}
+.tab-btn:hover i {
+    color: #9333ea;
+    transform: scale(1.08);
+}
 .tab-btn.active {
     background: #ffffff;
-    color: var(--prd-primary);
-    box-shadow: 0 4px 12px rgba(147, 51, 234, 0.12), 0 1px 3px rgba(0, 0, 0, 0.05);
+    color: #9333ea;
+    font-weight: 700;
+    border-color: rgba(168, 85, 247, 0.28);
+    box-shadow: 0 4px 14px rgba(168, 85, 247, 0.14), 0 1px 3px rgba(0, 0, 0, 0.04);
 }
-
+.tab-btn.active i {
+    background: linear-gradient(135deg, #ec4899, #a855f7);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+.tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    left: 20%;
+    right: 20%;
+    height: 3px;
+    background: linear-gradient(90deg, #ec4899, #a855f7);
+    border-radius: 3px 3px 0 0;
+}
 .tab-count {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     min-width: 20px;
-    height: 20px;
+    height: 18px;
     padding: 0 6px;
-    border-radius: 10px;
     font-size: 11px;
     font-weight: 700;
+    border-radius: 9px;
     background: #f1f5f9;
-    color: var(--prd-text-muted);
+    color: #64748b;
+    transition: all 0.2s ease;
 }
-
 .tab-btn.active .tab-count {
-    background: #faf5ff;
-    color: var(--prd-primary);
+    background: rgba(168, 85, 247, 0.12);
+    color: #9333ea;
 }
 
 /* Tab Panels */
@@ -589,24 +631,37 @@
 @endpush
 
 @section('content')
+<style>
+/* Compact Spacing Overrides (Employees Directory parity) */
+.prd-workspace {
+    gap: 8px !important;
+    padding: 12px 16px !important;
+}
+.hr-parent-header { margin-bottom: 6px !important; }
+.hr-parent-header .hr-parent-title-row { margin-bottom: 4px !important; }
+.hr-parent-header .hr-parent-title { font-size: 20px !important; gap: 8px !important; }
+.hr-parent-header .hr-parent-title i { width: 32px !important; height: 32px !important; font-size: 17px !important; border-radius: 8px !important; }
+.hr-parent-header .hr-parent-subtitle { font-size: 12px !important; margin-top: 2px !important; }
+.hr-tabs-wrapper { margin-top: 6px !important; margin-bottom: 8px !important; padding: 3px 5px !important; gap: 4px !important; border-radius: 10px !important; }
+.hr-tabs-wrapper .tab-btn { padding: 5px 12px !important; font-size: 12.5px !important; }
+.prd-tab-panel.active { gap: 8px !important; }
+.prd-filter-bar { padding: 8px 12px !important; gap: 8px !important; }
+</style>
+
 <div class="prd-workspace">
 
-    <!-- 1. Page Header Card -->
-    <div class="prd-card-strip">
-        <div class="prd-page-header">
-            <div class="prd-header-title-box">
-                <div class="prd-header-icon-box">
+    <!-- 1. Page Header -->
+    <div class="hr-parent-header">
+        <div class="hr-parent-title-row prd-page-header">
+            <div>
+                <h1 class="hr-parent-title prd-page-title">
                     <i class="ph ph-factory"></i>
-                </div>
-                <div>
-                    <h1 class="prd-page-title">
-                        <span>Production & Kitchen Assembly</span>
-                        <span class="hr-badge hr-badge-purple" style="font-size: 11px;">BOM Connected</span>
-                    </h1>
-                    <p class="prd-page-subtitle">Batch assembly runs, recipe yield scaling, real-time ingredient stock lookup, and automated ledger deductions.</p>
-                </div>
+                    <span>Production & Kitchen Assembly</span>
+                    <span class="hr-badge hr-badge-purple" style="font-size: 11px;">BOM Connected</span>
+                </h1>
+                <p class="hr-parent-subtitle prd-page-subtitle">Batch assembly runs, recipe yield scaling, real-time ingredient stock lookup, and automated ledger deductions.</p>
             </div>
-            <div class="prd-header-actions">
+            <div class="hr-page-actions prd-header-actions">
                 <a href="{{ route('inventory.product-categories') }}" class="hr-btn hr-btn-secondary" title="View Item Master Catalog">
                     <i class="ph ph-package"></i>
                     <span>Item Master</span>
@@ -627,52 +682,8 @@
         </div>
     </div>
 
-    <!-- 2. KPI Metrics Bar -->
-    <div class="prd-kpi-grid">
-        <div class="prd-kpi-card">
-            <div class="prd-kpi-icon kpi-icon-purple">
-                <i class="ph ph-check-square-offset"></i>
-            </div>
-            <div class="prd-kpi-content">
-                <div class="prd-kpi-label">Batches Completed</div>
-                <div class="prd-kpi-value" id="kpiCompletedBatches">{{ $stats['completedBatches'] ?? 0 }}</div>
-                <div class="prd-kpi-meta"><i class="ph ph-check-circle" style="color: #9333ea;"></i> Production runs finished</div>
-            </div>
-        </div>
-        <div class="prd-kpi-card">
-            <div class="prd-kpi-icon kpi-icon-green">
-                <i class="ph ph-stack"></i>
-            </div>
-            <div class="prd-kpi-content">
-                <div class="prd-kpi-label">Finished Units Produced</div>
-                <div class="prd-kpi-value" id="kpiUnitsProduced">{{ number_format($stats['totalUnitsProduced'] ?? 0, 1) }}</div>
-                <div class="prd-kpi-meta"><i class="ph ph-arrow-up-right" style="color: #059669;"></i> Added to finished goods</div>
-            </div>
-        </div>
-        <div class="prd-kpi-card">
-            <div class="prd-kpi-icon kpi-icon-blue">
-                <i class="ph ph-scales"></i>
-            </div>
-            <div class="prd-kpi-content">
-                <div class="prd-kpi-label">Manufactured Valuation</div>
-                <div class="prd-kpi-value" id="kpiProductionValuation">₱{{ number_format($stats['totalProductionValuation'] ?? 0, 2) }}</div>
-                <div class="prd-kpi-meta"><i class="ph ph-currency-circle-dollar" style="color: #2563eb;"></i> Total cost of goods</div>
-            </div>
-        </div>
-        <div class="prd-kpi-card">
-            <div class="prd-kpi-icon kpi-icon-amber">
-                <i class="ph ph-chart-polar"></i>
-            </div>
-            <div class="prd-kpi-content">
-                <div class="prd-kpi-label">Avg Yield Efficiency</div>
-                <div class="prd-kpi-value" id="kpiAvgEfficiency">{{ number_format($stats['avgYieldEfficiency'] ?? 100, 1) }}%</div>
-                <div class="prd-kpi-meta"><i class="ph ph-trend-up" style="color: #d97706;"></i> Actual vs Planned Yield</div>
-            </div>
-        </div>
-    </div>
-
     <!-- 3. Universal HR Tabs Bar -->
-    <div class="tabs-wrapper">
+    <nav class="hr-tabs-wrapper tabs-wrapper">
         <button type="button" class="tab-btn active" id="btn-tab-batch-list" onclick="switchPrdTab('tab-batch-list')">
             <i class="ph ph-list-dashes"></i>
             <span>Production Batches & Runs</span>
@@ -687,7 +698,7 @@
             <span>BOM Recipe Reference Catalog</span>
             <span class="tab-count" id="badgeBomCount">{{ count($initialBoms ?? []) }}</span>
         </button>
-    </div>
+    </nav>
 
     <!-- =========================================================================
          TAB 1: PRODUCTION BATCHES & RUNS (MASTER REGISTER)
@@ -1495,13 +1506,6 @@ async function fetchLiveProductionData() {
             rawOrders = json.data.orders || [];
             rawBoms = json.data.boms || [];
             rawProducts = json.data.products || [];
-
-            if (json.data.stats) {
-                document.getElementById('kpiCompletedBatches').textContent = json.data.stats.completedBatches || 0;
-                document.getElementById('kpiUnitsProduced').textContent = Number(json.data.stats.totalUnitsProduced || 0).toLocaleString('en-US', { minimumFractionDigits: 1 });
-                document.getElementById('kpiProductionValuation').textContent = '₱' + Number(json.data.stats.totalProductionValuation || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                document.getElementById('kpiAvgEfficiency').textContent = Number(json.data.stats.avgYieldEfficiency || 100).toFixed(1) + '%';
-            }
 
             renderProductionOrders();
             renderBomCatalog();

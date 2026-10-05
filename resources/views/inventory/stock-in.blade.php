@@ -92,37 +92,61 @@
 }
 
 /* Header & Breadcrumb Info */
+/* ==========================================================================
+   HR-STYLE FLAT PAGE HEADER & TITLE (Synced with HR Design System)
+   ========================================================================== */
+.hr-parent-header {
+    margin-bottom: 8px;
+    width: 100%;
+}
+.hr-parent-title-row,
 .grn-header-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 0px;
     flex-wrap: wrap;
-    gap: 16px;
 }
+.hr-parent-title,
 .grn-title-group h1 {
-    font-family: 'League Spartan', 'Poppins', sans-serif;
-    font-size: 26px;
-    font-weight: 800;
-    margin: 0;
-    letter-spacing: -0.02em;
-    color: var(--grn-text-strong);
+    font-family: var(--font-heading, 'Poppins', sans-serif);
+    font-size: 21px;
+    font-weight: 700;
+    color: #0f172a;
     display: flex;
     align-items: center;
     gap: 10px;
+    letter-spacing: -0.02em;
+    margin: 0;
 }
+.hr-parent-title i,
 .grn-title-group h1 i {
-    color: var(--grn-primary);
-    font-size: 28px;
+    width: 34px;
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9px;
+    background: linear-gradient(135deg, rgba(236, 72, 153, 0.14), rgba(168, 85, 247, 0.20));
+    border: 1px solid rgba(168, 85, 247, 0.32);
+    color: #9333ea;
+    font-size: 18px;
+    box-shadow: 0 4px 14px rgba(168, 85, 247, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.8);
+    flex-shrink: 0;
 }
+.hr-parent-subtitle,
 .grn-title-group p {
-    margin: 4px 0 0 0;
-    font-size: 13px;
-    color: var(--grn-text-muted);
+    font-size: 12.5px;
+    color: #64748b;
+    font-weight: 400;
+    margin: 3px 0 0 0;
 }
+.hr-page-actions,
 .grn-actions-group {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     flex-wrap: wrap;
 }
 
@@ -203,74 +227,122 @@
 }
 
 /* ==========================================================================
-   PRIMARY TABS-WRAPPER BAR
+   PRIMARY TABS-WRAPPER BAR (Synced with HR Design System)
    List of the PO | Pending PO | Create new PO to received
    ========================================================================== */
+.hr-tabs-wrapper,
 .tabs-wrapper {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    border-radius: 12px;
+    padding: 4px 6px;
+    margin-top: 4px;
+    margin-bottom: 14px;
+    box-shadow: 0 4px 16px rgba(148, 163, 184, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.95);
     display: flex;
     align-items: center;
-    gap: 10px;
-    border-bottom: 2px solid #e2e8f0;
-    padding-bottom: 2px;
+    gap: 6px;
+    max-width: 100%;
+    min-width: 0;
     overflow-x: auto;
+    flex-wrap: wrap;
+    position: relative;
+    z-index: 20;
 }
-.tabs-wrapper .tab-btn {
+.tabs-wrapper .tab-btn,
+.hr-tabs-wrapper .tab-btn {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 12px 22px;
-    font-size: 14px;
-    font-weight: 700;
-    color: var(--grn-text-muted);
-    border: none;
-    background: transparent;
-    cursor: pointer;
-    border-radius: 12px 12px 0 0;
-    position: relative;
-    transition: all 0.2s ease;
-    white-space: nowrap;
+    padding: 8px 16px;
+    border-radius: 9px;
     font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+    background: transparent;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    white-space: nowrap;
+    position: relative;
+    flex-shrink: 0;
 }
-.tabs-wrapper .tab-btn:hover {
-    color: var(--grn-primary);
-    background: rgba(168, 85, 247, 0.06);
+.tabs-wrapper .tab-btn i,
+.hr-tabs-wrapper .tab-btn i {
+    font-size: 16px;
+    color: #94a3b8;
+    transition: color 0.2s ease, transform 0.2s ease;
 }
-.tabs-wrapper .tab-btn.active {
-    color: var(--grn-primary);
+.tabs-wrapper .tab-btn:hover,
+.hr-tabs-wrapper .tab-btn:hover {
+    color: #9333ea;
+    background: rgba(168, 85, 247, 0.08);
+}
+.tabs-wrapper .tab-btn:hover i,
+.hr-tabs-wrapper .tab-btn:hover i {
+    color: #9333ea;
+    transform: scale(1.08);
+}
+.tabs-wrapper .tab-btn.active,
+.hr-tabs-wrapper .tab-btn.active {
     background: #ffffff;
-    box-shadow: 0 -3px 12px rgba(168, 85, 247, 0.08);
+    color: #9333ea;
+    font-weight: 700;
+    border-color: rgba(168, 85, 247, 0.28);
+    box-shadow: 0 4px 14px rgba(168, 85, 247, 0.14), 0 1px 3px rgba(0, 0, 0, 0.04);
 }
-.tabs-wrapper .tab-btn.active::after {
+.tabs-wrapper .tab-btn.active i,
+.hr-tabs-wrapper .tab-btn.active i {
+    background: linear-gradient(135deg, #ec4899, #a855f7);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+.tabs-wrapper .tab-btn.active::after,
+.hr-tabs-wrapper .tab-btn.active::after {
     content: '';
     position: absolute;
-    bottom: -2px;
-    left: 0;
-    right: 0;
-    height: 3.5px;
-    background: var(--grn-primary-gradient);
+    bottom: -6px;
+    left: 20%;
+    right: 20%;
+    height: 3px;
+    background: linear-gradient(90deg, #ec4899, #a855f7);
     border-radius: 3px 3px 0 0;
 }
-.tabs-wrapper .tab-count {
-    padding: 2.5px 8px;
+.tabs-wrapper .tab-count,
+.hr-tabs-wrapper .tab-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 18px;
+    padding: 0 6px;
     font-size: 11px;
-    font-weight: 800;
-    border-radius: 12px;
+    font-weight: 700;
+    border-radius: 9px;
     background: #f1f5f9;
-    color: var(--grn-text-medium);
+    color: #64748b;
+    transition: all 0.2s ease;
 }
-.tabs-wrapper .tab-btn.active .tab-count {
-    background: var(--grn-purple-bg);
-    color: var(--grn-primary);
+.tabs-wrapper .tab-btn.active .tab-count,
+.hr-tabs-wrapper .tab-btn.active .tab-count {
+    background: rgba(168, 85, 247, 0.12);
+    color: #9333ea;
 }
-.tabs-wrapper .tab-badge-pill {
-    padding: 2.5px 8px;
+.tabs-wrapper .tab-badge-pill,
+.hr-tabs-wrapper .tab-badge-pill {
+    padding: 2px 8px;
     font-size: 10px;
-    font-weight: 800;
-    border-radius: 10px;
-    background: var(--grn-primary-gradient);
-    color: #ffffff;
+    font-weight: 700;
+    border-radius: 8px;
+    background: linear-gradient(135deg, rgba(236, 72, 153, 0.12), rgba(168, 85, 247, 0.18));
+    border: 1px solid rgba(168, 85, 247, 0.28);
+    color: #9333ea;
     text-transform: uppercase;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.03em;
 }
 
 /* Universal HR Buttons */
@@ -672,103 +744,105 @@
     gap: 10px;
     background: #f8fafc;
 }
+
+/* ERP Split Action Button + Dropdown */
+.grn-act-split { display: inline-flex; align-items: stretch; border-radius: 6px; box-shadow: 0 1px 2px rgba(15,23,42,.12); }
+.grn-act-primary { display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; font: 600 12px/1.2 inherit; font-family: inherit; color: #fff; background: var(--grn-primary, #7c3aed); border: 1px solid transparent; border-radius: 6px 0 0 6px; cursor: pointer; white-space: nowrap; }
+.grn-act-primary:hover { filter: brightness(1.08); }
+.grn-act-primary.grn-act-neutral { color: #334155; background: #f1f5f9; border-color: #cbd5e1; }
+.grn-act-caret { padding: 0 7px; color: #fff; background: var(--grn-primary, #7c3aed); border: 0; border-left: 1px solid rgba(255,255,255,.35); border-radius: 0 6px 6px 0; cursor: pointer; }
+.grn-act-primary.grn-act-neutral + .grn-act-caret { color: #334155; background: #f1f5f9; border: 1px solid #cbd5e1; border-left-color: #cbd5e1; }
+.grn-act-caret:hover { filter: brightness(1.08); }
+.grn-act-primary:focus-visible, .grn-act-caret:focus-visible, .grn-act-menu button:focus-visible { outline: 2px solid #2563eb; outline-offset: 1px; }
+.grn-act-menu { position: fixed; z-index: 10000; min-width: 220px; padding: 4px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 10px 24px rgba(15,23,42,.18); }
+.grn-act-menu button { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 10px; font: 500 12.5px/1.2 inherit; font-family: inherit; color: #1e293b; background: transparent; border: 0; border-radius: 6px; cursor: pointer; text-align: left; }
+.grn-act-menu button:hover { background: #f1f5f9; }
+.grn-act-menu button i { font-size: 15px; color: #64748b; }
+
+/* Inbound Receiving Inspection (compact redesign) */
+.grn-insp-body { gap: 10px !important; padding: 12px 16px !important; }
+.grn-insp-grid { display: grid; grid-template-columns: 1.1fr 1fr 1fr; gap: 10px; }
+@media (max-width: 760px) { .grn-insp-grid { grid-template-columns: 1fr; } }
+.grn-insp-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 12px; min-width: 0; }
+.grn-insp-h { margin: 0 0 8px; font-size: 12.5px; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 6px; }
+.grn-insp-h i { color: var(--grn-primary); font-size: 15px; }
+.grn-insp-hint { margin-left: auto; font-size: 10.5px; font-weight: 500; color: #94a3b8; }
+.grn-insp-chip { margin-left: auto; font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: #f1f5f9; color: #475569; }
+.grn-insp-chip:empty { display: none; }
+.grn-insp-dl { display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; margin: 0; font-size: 12px; }
+.grn-insp-dl dt { color: #64748b; }
+.grn-insp-dl dd { margin: 0; text-align: right; color: #1e293b; overflow-wrap: anywhere; }
+.grn-insp-lbl { display: block; font-size: 10.5px; color: #64748b; margin: 4px 0 2px; }
+.grn-insp-input { padding: 5px 8px !important; font-size: 12px !important; width: 100%; box-sizing: border-box; }
+.grn-insp-table { font-size: 12px; }
+.grn-insp-table th { padding: 6px 8px !important; font-size: 10.5px !important; white-space: nowrap; }
+.grn-insp-table td { padding: 5px 8px !important; vertical-align: middle; }
+.grn-insp-table .c { text-align: center; } .grn-insp-table .r { text-align: right; }
+.grn-insp-item { font-weight: 600; color: #0f172a; line-height: 1.25; }
+.grn-insp-sub { font-size: 10.5px; color: #64748b; }
+.grn-insp-qty { font-weight: 700; }
+.grn-insp-num { width: 62px !important; text-align: center; padding: 3px 4px !important; font-size: 12px !important; }
+.grn-insp-ok { border-color: #10b981 !important; color: #047857; }
+.grn-insp-bad { border-color: #fca5a5 !important; color: #b91c1c; background: #fef2f2 !important; }
+.grn-insp-rej { display: inline-flex; align-items: center; gap: 4px; }
+.grn-insp-reason { padding: 3px 4px !important; font-size: 11px !important; max-width: 92px; }
 </style>
 @endpush
 
 @section('content')
 <div class="grn-workspace">
     <!-- Header Row -->
-    <div class="grn-header-row">
-        <div class="grn-title-group">
-            <h1><i class="ph ph-tray-arrow-down"></i> Stock In / Receiving (GRN)</h1>
-            <p>Purchase Order Receiving, Backlog Tracking, and Direct Inbound Receiving Builder</p>
-        </div>
-        <div class="grn-actions-group">
-            <a href="{{ route('inventory.stocks-overview') }}" class="hr-btn hr-btn-secondary hr-btn-sm" title="View Current Stock Levels">
-                <i class="ph ph-squares-four"></i> Stocks Overview
-            </a>
-            <a href="{{ route('inventory.product-categories') }}" class="hr-btn hr-btn-secondary hr-btn-sm" title="View Item Master">
-                <i class="ph ph-folder-simple"></i> Item Master
-            </a>
-            <a href="{{ route('purchase.purchase-orders') }}" class="hr-btn hr-btn-secondary hr-btn-sm" title="View Purchase Orders Workspace">
-                <i class="ph ph-receipt"></i> Purchase Orders
-            </a>
-            <button class="hr-btn hr-btn-secondary hr-btn-sm" onclick="exportOrdersToCsv()">
-                <i class="ph ph-file-csv"></i> Export CSV
-            </button>
-            <button class="hr-btn hr-btn-primary hr-btn-sm" onclick="switchGrnTab('tab-create-po')">
-                <i class="ph ph-plus-circle"></i> + Create New Receiving Order (F2)
-            </button>
-        </div>
-    </div>
-
-    <!-- KPI Summary Grid -->
-    <div class="grn-kpi-grid">
-        <div class="grn-card-strip grn-kpi-card" onclick="switchGrnTab('tab-po-list')">
-            <div class="grn-kpi-info">
-                <span class="grn-kpi-label">Total Purchase Orders</span>
-                <span class="grn-kpi-value" id="kpiTotalPos">0</span>
-                <span class="grn-kpi-meta"><i class="ph ph-receipt" style="color: #9333ea;"></i> Purchase Module Masterlist</span>
+    <div class="hr-parent-header">
+        <div class="hr-parent-title-row grn-header-row">
+            <div class="grn-title-group">
+                <h1 class="hr-parent-title">
+                    <i class="ph ph-tray-arrow-down"></i>
+                    <span>Stock In / Receiving (GRN)</span>
+                </h1>
+                <p class="hr-parent-subtitle">Purchase Order Receiving, Backlog Tracking, and Direct Inbound Receiving Builder</p>
             </div>
-            <div class="grn-kpi-icon-wrap grn-kpi-icon-purple">
-                <i class="ph ph-files"></i>
-            </div>
-        </div>
-
-        <div class="grn-card-strip grn-kpi-card" onclick="switchGrnTab('tab-pending-po')">
-            <div class="grn-kpi-info">
-                <span class="grn-kpi-label">Pending POs & Backlogs</span>
-                <span class="grn-kpi-value" id="kpiPendingPos" style="color: #b45309;">0</span>
-                <span class="grn-kpi-meta"><i class="ph ph-clock-countdown" style="color: #f59e0b;"></i> Orders awaiting delivery / partial</span>
-            </div>
-            <div class="grn-kpi-icon-wrap grn-kpi-icon-amber">
-                <i class="ph ph-hourglass-high"></i>
-            </div>
-        </div>
-
-        <div class="grn-card-strip grn-kpi-card" onclick="switchGrnTab('tab-po-list')">
-            <div class="grn-kpi-info">
-                <span class="grn-kpi-label">Fulfilled Deliveries</span>
-                <span class="grn-kpi-value" id="kpiCompletedPos" style="color: #047857;">0</span>
-                <span class="grn-kpi-meta"><i class="ph ph-check-circle" style="color: #10b981;"></i> Fully received stock</span>
-            </div>
-            <div class="grn-kpi-icon-wrap grn-kpi-icon-green">
-                <i class="ph ph-package"></i>
-            </div>
-        </div>
-
-        <div class="grn-card-strip grn-kpi-card" onclick="switchGrnTab('tab-create-po')">
-            <div class="grn-kpi-info">
-                <span class="grn-kpi-label">Direct Received Value</span>
-                <span class="grn-kpi-value" id="kpiTotalReceivedValue">₱0.00</span>
-                <span class="grn-kpi-meta"><i class="ph ph-coins" style="color: #0284c7;"></i> Capitalized to Stock Overview</span>
-            </div>
-            <div class="grn-kpi-icon-wrap grn-kpi-icon-sky">
-                <i class="ph ph-trend-up"></i>
+            <div class="hr-page-actions grn-actions-group">
+                <a href="{{ route('inventory.stocks-overview') }}" class="hr-btn hr-btn-secondary hr-btn-sm" title="View Current Stock Levels">
+                    <i class="ph ph-squares-four"></i> Stocks Overview
+                </a>
+                <a href="{{ route('inventory.product-categories') }}" class="hr-btn hr-btn-secondary hr-btn-sm" title="View Item Master">
+                    <i class="ph ph-folder-simple"></i> Item Master
+                </a>
+                <a href="{{ route('purchase.purchase-orders') }}" class="hr-btn hr-btn-secondary hr-btn-sm" title="View Purchase Orders Workspace">
+                    <i class="ph ph-receipt"></i> Purchase Orders
+                </a>
+                <button class="hr-btn hr-btn-secondary hr-btn-sm" onclick="exportOrdersToCsv()">
+                    <i class="ph ph-file-csv"></i> Export CSV
+                </button>
+                <button class="hr-btn hr-btn-primary hr-btn-sm" onclick="switchGrnTab('tab-create-po')">
+                    <i class="ph ph-plus-circle"></i> + Create New Receiving Order (F2)
+                </button>
             </div>
         </div>
     </div>
+
+
 
     <!-- =====================================================================
          PRIMARY TABS-WRAPPER BAR
-         1. List of the PO  2. Pending PO  3. Create new PO to received
+         1. All Orders  2. Pending & Backlogs  3. Direct Receiving
          ===================================================================== -->
-    <nav class="tabs-wrapper" id="grnTabsBar">
+    <nav class="hr-tabs-wrapper tabs-wrapper" id="grnTabsBar">
         <button type="button" class="tab-btn active" id="tabBtnPoList" onclick="switchGrnTab('tab-po-list')">
             <i class="ph ph-list-dashes"></i>
-            <span>List of the PO</span>
+            <span>All Orders</span>
             <span class="tab-count" id="badgePoListCount">0</span>
         </button>
 
         <button type="button" class="tab-btn" id="tabBtnPendingPo" onclick="switchGrnTab('tab-pending-po')">
             <i class="ph ph-clock-countdown"></i>
-            <span>Pending PO</span>
+            <span>Pending &amp; Backlogs</span>
             <span class="tab-count" id="badgePendingPoCount">0</span>
         </button>
 
         <button type="button" class="tab-btn" id="tabBtnCreatePo" onclick="switchGrnTab('tab-create-po')">
             <i class="ph ph-plus-circle"></i>
-            <span>Create new PO to received</span>
+            <span>Direct Receiving</span>
             <span class="tab-badge-pill">Bypass PO</span>
         </button>
     </nav>
@@ -988,10 +1062,27 @@
 
                     <!-- Card 4: Financial Settlement & Payment Integration -->
                     <div class="rfq-panel-card">
-                        <div class="rfq-panel-header">
+                        <div class="rfq-panel-header" style="display: flex; align-items: center; justify-content: space-between;">
                             <div class="rfq-panel-title">
                                 <i class="ph ph-bank"></i>
                                 <span>Financial Settlement & Payment</span>
+                            </div>
+                            <span id="directPaymentStatusBadge" class="hr-badge hr-badge-neutral" style="font-size: 11px;">Unpaid / Credit</span>
+                        </div>
+
+                        <!-- Mini Financial Calculation KPIs -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 10px; margin-bottom: 2px;">
+                            <div>
+                                <div style="font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase;">Due Total</div>
+                                <div id="directSettlementGrossDisplay" style="font-size: 13px; font-weight: 800; color: #0f172a;">₱0.00</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 10px; font-weight: 700; color: #059669; text-transform: uppercase;">Paid Out</div>
+                                <div id="directSettlementPaidDisplay" style="font-size: 13px; font-weight: 800; color: #059669;">₱0.00</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 10px; font-weight: 700; color: #dc2626; text-transform: uppercase;">Balance Due</div>
+                                <div id="directSettlementBalanceDisplay" style="font-size: 13px; font-weight: 800; color: #dc2626;">₱0.00</div>
                             </div>
                         </div>
 
@@ -1004,21 +1095,55 @@
                             </select>
                         </div>
 
+                        <!-- Amount to Disburse (₱) field with Quick Pay Full Balance button -->
+                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                            <div style="display: flex; align-items: center; justify-content: space-between;">
+                                <label style="font-size: 11.5px; font-weight: 600; color: #475569;" for="directPaymentAmount">Amount to Disburse / Settle (₱) *</label>
+                                <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="fillDirectFullBalance()" style="font-size: 10.5px; padding: 1px 7px; height: 20px; color: #059669; border-color: #a7f3d0; background: #ecfdf5;" title="Fill full capitalized valuation">
+                                    <i class="ph ph-lightning"></i> Pay Full Amount
+                                </button>
+                            </div>
+                            <input type="number" step="0.01" min="0" id="directPaymentAmount" class="grn-search-input" style="padding-left: 10px; font-weight: 700; font-size: 13px; color: #0f172a;" placeholder="0.00" oninput="handleDirectPaymentAmountChange(this.value)">
+                        </div>
+
                         <div id="directCodFields" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                             <div style="display: flex; flex-direction: column; gap: 4px;">
                                 <label style="font-size: 11px; font-weight: 600; color: #475569;">Payment Mode</label>
                                 <select id="directPaymentMethod" class="grn-select" style="font-size: 12px; padding: 6px 10px;">
                                     <option value="Cash / Currency">Cash / Currency</option>
                                     <option value="Petty Cash Fund">Petty Cash Fund</option>
-                                    <option value="GCash / Maya">GCash / Maya</option>
+                                    <option value="Trade Credit (Net 30/15)">Trade Credit (Net 30/15)</option>
+                                    <option value="Company Check">Company Check (Spot / Post-Dated)</option>
                                     <option value="Bank Transfer / Electronic">Bank Transfer / Electronic</option>
+                                    <option value="GCash / Maya">GCash / Maya</option>
                                     <option value="Corporate Credit Card">Corporate Credit Card</option>
                                 </select>
                             </div>
                             <div style="display: flex; flex-direction: column; gap: 4px;">
-                                <label style="font-size: 11px; font-weight: 600; color: #475569;">Official Receipt (OR) #</label>
-                                <input type="text" id="directPaymentRef" class="grn-search-input" style="padding-left: 10px;" placeholder="e.g. OR #882019">
+                                <label style="font-size: 11px; font-weight: 600; color: #475569;">Official Receipt (OR) / Ref #</label>
+                                <input type="text" id="directPaymentRef" class="grn-search-input" style="padding-left: 10px;" placeholder="e.g. OR #882019, Check #00412">
                             </div>
+                        </div>
+
+                        <div id="directDisbursementExtraFields" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <div style="display: flex; flex-direction: column; gap: 4px;">
+                                <label style="font-size: 11px; font-weight: 600; color: #475569;">Disbursing Fund Source</label>
+                                <select id="directPaymentFundSource" class="grn-select" style="font-size: 12px; padding: 6px 10px;">
+                                    <option value="Branch Petty Cash Fund">Branch Petty Cash Fund</option>
+                                    <option value="Main Commissary Checking Acct">Main Commissary Checking Account</option>
+                                    <option value="Purchaser Cash Advance">Purchaser Cash Advance Fund</option>
+                                    <option value="Corporate Card Account">Corporate Card Account</option>
+                                </select>
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 4px;">
+                                <label style="font-size: 11px; font-weight: 600; color: #475569;">Payment Date</label>
+                                <input type="date" id="directPaymentDate" class="grn-search-input" style="padding-left: 10px;">
+                            </div>
+                        </div>
+
+                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                            <label style="font-size: 11px; font-weight: 600; color: #475569;">Financial Remarks / Settlement Notes</label>
+                            <input type="text" id="directPaymentRemarks" class="grn-search-input" style="padding-left: 10px;" placeholder="e.g. Paid in cash at dock upon unloading">
                         </div>
                     </div>
 
@@ -1145,43 +1270,58 @@
             <button class="grn-drawer-close" onclick="closeInspectionDrawer()"><i class="ph ph-x"></i></button>
         </div>
 
-        <div class="grn-drawer-body">
-            <!-- Inspection Header Info -->
-            <div class="rfq-panel-card">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                    <div>
-                        <span style="font-size: 11px; color: #64748b;">Supplier / Vendor:</span>
-                        <div style="font-weight: 700; font-size: 13px;" id="drawerVendorName">--</div>
-                    </div>
-                    <div>
-                        <span style="font-size: 11px; color: #64748b;">Delivery Slip / DR # *</span>
-                        <input type="text" id="drawerDeliverySlip" class="grn-search-input" style="padding-left: 10px;" placeholder="e.g. DR-SMF-9941">
-                    </div>
-                </div>
+        <div class="grn-drawer-body grn-insp-body">
+            <!-- Summary strip: PO info | Delivery doc | Payment linkage -->
+            <div class="grn-insp-grid">
+                <section class="grn-insp-card" aria-label="Purchase order">
+                    <h3 class="grn-insp-h"><i class="ph ph-receipt"></i> Purchase Order <span id="drawerPoStatus" class="grn-insp-chip"></span></h3>
+                    <dl class="grn-insp-dl">
+                        <dt>Supplier</dt><dd id="drawerVendorName" style="font-weight:700;">--</dd>
+                        <dt>Ordered</dt><dd id="drawerOrderDate">--</dd>
+                        <dt>Expected</dt><dd id="drawerExpectedDate">--</dd>
+                        <dt>Deliver to</dt><dd id="drawerDeliverTo">--</dd>
+                    </dl>
+                </section>
+
+                <section class="grn-insp-card" aria-label="Delivery document">
+                    <h3 class="grn-insp-h"><i class="ph ph-truck"></i> Delivery Document</h3>
+                    <label class="grn-insp-lbl" for="drawerDeliverySlip">Delivery Slip / DR # *</label>
+                    <input type="text" id="drawerDeliverySlip" class="grn-search-input grn-insp-input" placeholder="e.g. DR-SMF-9941">
+                    <label class="grn-insp-lbl" for="drawerPaymentRef">Payment / OR Ref (optional)</label>
+                    <input type="text" id="drawerPaymentRef" class="grn-search-input grn-insp-input" placeholder="e.g. OR-10234">
+                </section>
+
+                <section class="grn-insp-card grn-insp-pay" aria-label="Payment linkage">
+                    <h3 class="grn-insp-h"><i class="ph ph-credit-card"></i> Payment <span id="drawerPayStatus" class="grn-insp-chip"></span></h3>
+                    <dl class="grn-insp-dl">
+                        <dt>Method</dt><dd id="drawerPayMethod">--</dd>
+                        <dt>PO Total</dt><dd id="drawerPayTotal">--</dd>
+                        <dt>Paid</dt><dd id="drawerPayPaid" style="color:#047857;font-weight:700;">--</dd>
+                        <dt>Balance</dt><dd id="drawerPayBalance" style="color:#b45309;font-weight:700;">--</dd>
+                    </dl>
+                </section>
             </div>
 
             <!-- Over-Tolerance Warning Box -->
-            <div id="drawerOverToleranceBox" style="display: none; background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px; padding: 12px; font-size: 12px; color: #92400e; align-items: center; justify-content: space-between;">
+            <div id="drawerOverToleranceBox" style="display: none; background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px; padding: 10px 12px; font-size: 12px; color: #92400e; align-items: center; justify-content: space-between;">
                 <div><strong>⚠️ Over-Receiving Warning:</strong> Delivered units exceed standard 5% tolerance. Supervisor Override required.</div>
                 <button type="button" class="hr-btn hr-btn-sm hr-btn-primary" onclick="openSupervisorOverrideModal()">Authorize</button>
             </div>
 
-            <!-- Line Items Table -->
-            <div class="rfq-panel-card">
-                <div style="font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 8px;">Line Items & Quantity Inspection Triad</div>
+            <!-- Line Items (compressed) -->
+            <section class="grn-insp-card" aria-label="Line items inspection">
+                <h3 class="grn-insp-h"><i class="ph ph-list-checks"></i> Line Items &amp; Quantity Inspection <span class="grn-insp-hint">Rejected = Delivered − Accepted</span></h3>
                 <div style="overflow-x: auto;">
-                    <table class="grn-table" style="font-size: 12px;">
+                    <table class="grn-table grn-insp-table">
                         <thead>
                             <tr>
-                                <th>Item & SKU</th>
-                                <th style="text-align: center;">Ordered</th>
-                                <th style="text-align: center;">Prior Recv</th>
-                                <th style="text-align: center;">Delivered</th>
-                                <th style="text-align: center;">Accepted</th>
-                                <th style="text-align: center;">Rejected</th>
-                                <th>Rejection Reason</th>
-                                <th style="text-align: right;">Unit Price</th>
-                                <th style="text-align: center;">Short-Close</th>
+                                <th>Item</th>
+                                <th class="c">Ordered · Rcvd · Open</th>
+                                <th class="c">Delivered</th>
+                                <th class="c">Accepted</th>
+                                <th class="c">Rejected / Reason</th>
+                                <th class="r">Value</th>
+                                <th class="c" title="Short-close remaining units">SC</th>
                             </tr>
                         </thead>
                         <tbody id="drawerLinesTableBody">
@@ -1189,7 +1329,20 @@
                         </tbody>
                     </table>
                 </div>
-            </div>
+            </section>
+
+            <!-- Payment & receiving history (linked to PO) -->
+            <section class="grn-insp-card" aria-label="Payment and receiving history">
+                <h3 class="grn-insp-h"><i class="ph ph-clock-counter-clockwise"></i> Payment &amp; Receiving History <span id="drawerHistCount" class="grn-insp-chip"></span></h3>
+                <div style="overflow-x: auto;">
+                    <table class="grn-table grn-insp-table">
+                        <thead>
+                            <tr><th>Date</th><th>Type</th><th>Reference</th><th>Method</th><th class="r">Amount</th><th>Note</th></tr>
+                        </thead>
+                        <tbody id="drawerHistoryBody"></tbody>
+                    </table>
+                </div>
+            </section>
         </div>
 
         <div class="grn-drawer-footer">
@@ -1823,14 +1976,20 @@ function updateHeaderKpis() {
     const receipts = window.StockInStore.goodsReceipts || [];
     const totalReceivedVal = receipts.reduce((acc, r) => acc + (parseFloat(r.totalValuation) || 0), 0);
 
-    document.getElementById('kpiTotalPos').textContent = totalPos;
-    document.getElementById('kpiPendingPos').textContent = pendingPos;
-    document.getElementById('kpiCompletedPos').textContent = completedPos;
-    document.getElementById('kpiTotalReceivedValue').textContent = `₱${formatMoney(totalReceivedVal)}`;
+    const elTotal = document.getElementById('kpiTotalPos');
+    if (elTotal) elTotal.textContent = totalPos;
+    const elPending = document.getElementById('kpiPendingPos');
+    if (elPending) elPending.textContent = pendingPos;
+    const elComp = document.getElementById('kpiCompletedPos');
+    if (elComp) elComp.textContent = completedPos;
+    const elVal = document.getElementById('kpiTotalReceivedValue');
+    if (elVal) elVal.textContent = `₱${formatMoney(totalReceivedVal)}`;
 
     // Tab badges
-    document.getElementById('badgePoListCount').textContent = totalPos;
-    document.getElementById('badgePendingPoCount').textContent = pendingPos;
+    const bTotal = document.getElementById('badgePoListCount');
+    if (bTotal) bTotal.textContent = totalPos;
+    const bPending = document.getElementById('badgePendingPoCount');
+    if (bPending) bPending.textContent = pendingPos;
 }
 
 /**
@@ -1892,22 +2051,107 @@ function renderPoMasterList() {
                 <td style="text-align: center;">${getPaymentBadge(p.paymentStatus)}</td>
                 <td style="text-align: center;">${getOrderStatusBadge(p.status)}</td>
                 <td style="text-align: center;">
-                    <div style="display: inline-flex; align-items: center; gap: 5px; flex-wrap: wrap; justify-content: center;">
-                        <button type="button" class="hr-btn hr-btn-sm hr-btn-secondary" onclick="openPoItemsModal('${p.poNumber}')" title="Inspect items & quantities">
-                            <i class="ph ph-eye"></i> View Items
-                        </button>
-                        ${canReceive ? `
-                        <button type="button" class="hr-btn hr-btn-sm hr-btn-primary" onclick="pushPoToReceivingBuilder('${p.poNumber}')" title="Move this PO into Receiving Builder (Tab 3)">
-                            <i class="ph ph-arrow-fat-line-right"></i> To Builder
-                        </button>
-                        <button type="button" class="hr-btn hr-btn-sm hr-btn-secondary" onclick="openReceiveForPo('${p.poNumber}')" title="Direct Dock Check-In Drawer">
-                            <i class="ph ph-tray-arrow-down"></i> Dock
-                        </button>` : ''}
-                    </div>
+                    ${grnActionCell(p.poNumber, canReceive)}
                 </td>
             </tr>
         `;
     }).join('');
+}
+
+/**
+ * Standard ERP action cell: one primary button + dropdown (View / Edit / Print GRN).
+ */
+function grnEsc(v) {
+    return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function grnActionCell(poNumber, canReceive) {
+    const po = grnEsc(poNumber);
+    const primary = canReceive
+        ? `<button type="button" class="grn-act-primary" data-act="receive" data-po="${po}" title="Open dock check-in drawer"><i class="ph ph-tray-arrow-down"></i> Receive Inbound</button>`
+        : `<button type="button" class="grn-act-primary grn-act-neutral" data-act="view" data-po="${po}" title="Inspect items &amp; quantities"><i class="ph ph-eye"></i> View Items</button>`;
+    return `<div class="grn-act-split">${primary}<button type="button" class="grn-act-caret" data-act="menu" data-po="${po}" aria-haspopup="true" aria-label="More actions"><i class="ph ph-caret-down"></i></button></div>`;
+}
+
+(function initGrnActionMenu() {
+    let menu = null;
+    function closeMenu() { if (menu) { menu.remove(); menu = null; } }
+
+    function runAction(act, po) {
+        closeMenu();
+        if (act === 'receive') openReceiveForPo(po);
+        else if (act === 'view') openPoItemsModal(po);
+        else if (act === 'edit') editPurchaseOrder(po);
+        else if (act === 'print') printGrnSlip(po);
+    }
+
+    function openMenu(btn, po) {
+        closeMenu();
+        menu = document.createElement('div');
+        menu.className = 'grn-act-menu';
+        menu.setAttribute('role', 'menu');
+        menu.innerHTML = `
+            <button type="button" role="menuitem" data-act="view" data-po="${po}"><i class="ph ph-eye"></i> View Items</button>
+            <button type="button" role="menuitem" data-act="edit" data-po="${po}"><i class="ph ph-pencil-simple"></i> Edit Purchase Order</button>
+            <button type="button" role="menuitem" data-act="print" data-po="${po}"><i class="ph ph-printer"></i> Print Receiving Slip / GRN</button>`;
+        document.body.appendChild(menu);
+        const r = btn.getBoundingClientRect();
+        const mw = menu.offsetWidth, mh = menu.offsetHeight;
+        let left = Math.min(Math.max(8, r.right - mw), window.innerWidth - mw - 8);
+        let top = r.bottom + 4;
+        if (top + mh > window.innerHeight - 8) top = Math.max(8, r.top - mh - 4);
+        menu.style.left = left + 'px';
+        menu.style.top = top + 'px';
+    }
+
+    // Event delegation: single document-level listener
+    document.addEventListener('click', function (e) {
+        const t = e.target.closest('[data-act]');
+        if (!t || !t.dataset.po) { if (!e.target.closest('.grn-act-menu')) closeMenu(); return; }
+        e.stopPropagation();
+        if (t.dataset.act === 'menu') {
+            const wasOpen = menu && menu.dataset.owner === t.dataset.po;
+            closeMenu();
+            if (!wasOpen) { openMenu(t, t.dataset.po); menu.dataset.owner = t.dataset.po; }
+            return;
+        }
+        runAction(t.dataset.act, t.dataset.po);
+    });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMenu(); });
+    window.addEventListener('resize', closeMenu);
+    window.addEventListener('scroll', closeMenu, true);
+})();
+
+function editPurchaseOrder(poNumber) {
+    window.location.href = "{{ route('purchase.purchase-orders') }}?edit=" + encodeURIComponent(poNumber);
+}
+
+function printGrnSlip(poNumber) {
+    const po = (window.StockInStore.purchaseOrders || []).find(p => p.poNumber === poNumber);
+    if (!po) return;
+    const rows = (po.items || []).map((it, i) => {
+        const ord = parseFloat(it.quantity) || 0;
+        const rec = parseFloat(it.receivedQuantity) || 0;
+        return `<tr><td>${i + 1}</td><td>${grnEsc(it.name || it.itemName)}<br><small>${grnEsc(it.sku)}</small></td><td>${grnEsc(it.unit || it.uom)}</td><td class="n">${ord}</td><td class="n">${rec}</td><td class="n">${Math.max(0, ord - rec)}</td><td class="box"></td><td class="box"></td></tr>`;
+    }).join('');
+    const w = window.open('', '_blank', 'width=900,height=700');
+    if (!w) { alert('Pop-up blocked. Please allow pop-ups to print the receiving slip.'); return; }
+    w.document.write(`<!doctype html><html><head><title>GRN - ${grnEsc(po.poNumber)}</title><style>
+        body{font-family:Arial,sans-serif;font-size:12px;color:#111;margin:24px}
+        h1{font-size:18px;margin:0 0 4px} .meta{display:grid;grid-template-columns:1fr 1fr;gap:4px 24px;margin:12px 0}
+        table{width:100%;border-collapse:collapse;margin-top:8px} th,td{border:1px solid #444;padding:5px 6px;text-align:left}
+        th{background:#eee} .n{text-align:right} .box{width:70px} .sig{display:flex;gap:40px;margin-top:48px}
+        .sig div{flex:1;border-top:1px solid #111;padding-top:4px;text-align:center}
+    </style></head><body>
+        <h1>Receiving Slip / Goods Received Note</h1>
+        <div class="meta"><div><b>PO No.:</b> ${grnEsc(po.poNumber)}</div><div><b>Order Date:</b> ${grnEsc(po.orderDate || 'N/A')}</div>
+        <div><b>Vendor:</b> ${grnEsc(po.vendorTradeName || po.vendorName)}</div><div><b>Deliver To:</b> ${grnEsc(po.deliveryLocation || 'Central Warehouse')}</div>
+        <div><b>Status:</b> ${grnEsc(po.status)}</div><div><b>Delivery Slip No.:</b> ______________</div></div>
+        <table><thead><tr><th>#</th><th>Item</th><th>UoM</th><th>Ordered</th><th>Prior Rcvd</th><th>Open</th><th>Accepted</th><th>Rejected</th></tr></thead><tbody>${rows}</tbody></table>
+        <div class="sig"><div>Received by</div><div>Checked by</div><div>Supplier Rep.</div></div>
+        <script>window.onload=function(){window.print();}<\/script>
+    </body></html>`);
+    w.document.close();
 }
 
 function getPaymentBadge(status) {
@@ -1976,9 +2220,7 @@ function renderPendingPoList() {
                 <td style="text-align: right;" class="grn-currency">₱${formatMoney(backlogValue)}</td>
                 <td style="text-align: center;">${getOrderStatusBadge(p.status)}</td>
                 <td style="text-align: center;">
-                    <button class="hr-btn hr-btn-sm hr-btn-primary" onclick="openReceiveForPo('${p.poNumber}')">
-                        <i class="ph ph-tray-arrow-down"></i> Receive Inbound
-                    </button>
+                    ${grnActionCell(p.poNumber, true)}
                 </td>
             </tr>
         `;
@@ -2009,6 +2251,10 @@ function resetDirectReceivingForm() {
         settlementMode: 'IMMEDIATE_COD',
         paymentMethod: 'Cash / Currency',
         paymentRef: '',
+        amountPaid: 0,
+        paymentDate: new Date().toISOString().slice(0, 10),
+        fundSource: 'Branch Petty Cash Fund',
+        paymentRemarks: '',
         freight: 0,
         customs: 0,
         handling: 0,
@@ -2022,6 +2268,22 @@ function resetDirectReceivingForm() {
     document.getElementById('directCustomStallName').value = '';
     document.getElementById('directVendorSelect').value = '';
     document.getElementById('directVendorPillBox').style.display = 'none';
+
+    // Reset financial settlement inputs
+    const elPayAmt = document.getElementById('directPaymentAmount');
+    if (elPayAmt) elPayAmt.value = '';
+    const elPayRef = document.getElementById('directPaymentRef');
+    if (elPayRef) elPayRef.value = '';
+    const elPayRem = document.getElementById('directPaymentRemarks');
+    if (elPayRem) elPayRem.value = '';
+    const elPayDate = document.getElementById('directPaymentDate');
+    if (elPayDate) elPayDate.value = new Date().toISOString().slice(0, 10);
+    const elSettlementMode = document.getElementById('directSettlementMode');
+    if (elSettlementMode) elSettlementMode.value = 'IMMEDIATE_COD';
+    const elPaymentMethod = document.getElementById('directPaymentMethod');
+    if (elPaymentMethod) elPaymentMethod.value = 'Cash / Currency';
+    const elFundSource = document.getElementById('directPaymentFundSource');
+    if (elFundSource) elFundSource.value = 'Branch Petty Cash Fund';
 
     renderDirectItemsTable();
     calculateDirectTotals();
@@ -2069,8 +2331,68 @@ function handleDirectVendorSelect(vendorId) {
 function handleDirectSettlementChange(val) {
     window.StockInStore.directForm.settlementMode = val;
     const codBox = document.getElementById('directCodFields');
-    if (codBox) {
-        codBox.style.display = val === 'IMMEDIATE_COD' ? 'grid' : 'none';
+    const extraBox = document.getElementById('directDisbursementExtraFields');
+    const methodSelect = document.getElementById('directPaymentMethod');
+
+    if (val === 'IMMEDIATE_COD') {
+        if (codBox) codBox.style.display = 'grid';
+        if (extraBox) extraBox.style.display = 'grid';
+        if (methodSelect && methodSelect.value.includes('Trade Credit')) {
+            methodSelect.value = 'Cash / Currency';
+        }
+        fillDirectFullBalance();
+    } else if (val === 'CREDIT_NET30') {
+        if (codBox) codBox.style.display = 'grid';
+        if (extraBox) extraBox.style.display = 'grid';
+        if (methodSelect) methodSelect.value = 'Trade Credit (Net 30/15)';
+        const amtInput = document.getElementById('directPaymentAmount');
+        if (amtInput) amtInput.value = '0.00';
+        handleDirectPaymentAmountChange(0);
+    } else {
+        if (codBox) codBox.style.display = 'grid';
+        if (extraBox) extraBox.style.display = 'grid';
+        fillDirectFullBalance();
+    }
+}
+
+function fillDirectFullBalance() {
+    const grandValuation = window.StockInStore.directForm.totalValuation || 0;
+    const amtInput = document.getElementById('directPaymentAmount');
+    if (amtInput) {
+        amtInput.value = grandValuation.toFixed(2);
+        handleDirectPaymentAmountChange(grandValuation);
+        amtInput.focus();
+    }
+}
+
+function handleDirectPaymentAmountChange(amount) {
+    const val = parseFloat(amount) || 0;
+    window.StockInStore.directForm.amountPaid = val;
+    const grandValuation = window.StockInStore.directForm.totalValuation || 0;
+    const balanceDue = Math.max(0, grandValuation - val);
+
+    const grossEl = document.getElementById('directSettlementGrossDisplay');
+    if (grossEl) grossEl.textContent = `₱${formatMoney(grandValuation)}`;
+    const paidEl = document.getElementById('directSettlementPaidDisplay');
+    if (paidEl) paidEl.textContent = `₱${formatMoney(val)}`;
+    const balEl = document.getElementById('directSettlementBalanceDisplay');
+    if (balEl) balEl.textContent = `₱${formatMoney(balanceDue)}`;
+
+    const badge = document.getElementById('directPaymentStatusBadge');
+    if (badge) {
+        if (val >= grandValuation && grandValuation > 0) {
+            badge.className = 'hr-badge hr-badge-success';
+            badge.innerHTML = '<i class="ph ph-check-circle"></i> Paid in Full';
+            window.StockInStore.directForm.paymentStatus = 'Paid in Full / Cash Out';
+        } else if (val > 0) {
+            badge.className = 'hr-badge hr-badge-amber';
+            badge.innerHTML = `<i class="ph ph-clock"></i> Partial (₱${formatMoney(val)})`;
+            window.StockInStore.directForm.paymentStatus = 'Partial Payment';
+        } else {
+            badge.className = 'hr-badge hr-badge-neutral';
+            badge.innerHTML = '<i class="ph ph-credit-card"></i> Unpaid / Credit';
+            window.StockInStore.directForm.paymentStatus = 'Unpaid / Credit';
+        }
     }
 }
 
@@ -2219,6 +2541,21 @@ function calculateDirectTotals() {
     window.StockInStore.directForm.totalValuation = grandValuation;
 
     document.getElementById('directTotalValuationDisplay').textContent = `₱${formatMoney(grandValuation)}`;
+
+    // Sync settlement displays
+    const grossEl = document.getElementById('directSettlementGrossDisplay');
+    if (grossEl) grossEl.textContent = `₱${formatMoney(grandValuation)}`;
+
+    const amtInput = document.getElementById('directPaymentAmount');
+    const settlementMode = document.getElementById('directSettlementMode')?.value || 'IMMEDIATE_COD';
+    
+    // Auto-update amount if COD and not yet manually entered or is full
+    if (amtInput) {
+        if (settlementMode === 'IMMEDIATE_COD' && (!amtInput.value || parseFloat(amtInput.value) === 0)) {
+            amtInput.value = grandValuation.toFixed(2);
+        }
+        handleDirectPaymentAmountChange(amtInput.value);
+    }
 }
 
 /**
@@ -2264,6 +2601,13 @@ async function submitDirectReceivingOrder() {
     const customs = parseFloat(document.getElementById('directCustomsFee')?.value) || 0;
     const handling = parseFloat(document.getElementById('directHandlingFee')?.value) || 0;
 
+    const amountPaidVal = parseFloat(document.getElementById('directPaymentAmount')?.value) || 0;
+    const paymentMethodVal = document.getElementById('directPaymentMethod')?.value || 'Cash / Currency';
+    const paymentRefVal = document.getElementById('directPaymentRef')?.value?.trim() || '';
+    const paymentDateVal = document.getElementById('directPaymentDate')?.value || new Date().toISOString().slice(0, 10);
+    const fundSourceVal = document.getElementById('directPaymentFundSource')?.value || 'Branch Petty Cash Fund';
+    const paymentRemarksVal = document.getElementById('directPaymentRemarks')?.value?.trim() || '';
+
     const payload = {
         po_number: form.poNumber || null,
         vendor_id: form.vendorId || vendorId || null,
@@ -2274,8 +2618,12 @@ async function submitDirectReceivingOrder() {
         reason_code: document.getElementById('directReasonCode')?.value || (form.poNumber ? `PO Fulfillment: ${form.poNumber}` : 'Direct Spot Purchase'),
         delivery_location: loc,
         settlement_mode: settlement,
-        payment_method: document.getElementById('directPaymentMethod')?.value || 'Trade Credit (Net 30/15)',
-        payment_ref: document.getElementById('directPaymentRef')?.value || '',
+        payment_method: paymentMethodVal,
+        payment_ref: paymentRefVal,
+        amount_paid: amountPaidVal,
+        payment_date: paymentDateVal,
+        fund_source: fundSourceVal,
+        payment_remarks: paymentRemarksVal,
         freight: freight,
         customs: customs,
         handling: handling,
@@ -2320,6 +2668,28 @@ async function submitDirectReceivingOrder() {
 
         showToast(`✓ Stock In Received! Voucher ${json.data.grn_number} posted to Stock Ledger & Live Inventory.`, 'success');
 
+        // Record payment in shared rms_po_payments for cross-module consistency
+        if (amountPaidVal > 0) {
+            try {
+                const storedPayments = JSON.parse(localStorage.getItem('rms_po_payments') || '[]');
+                storedPayments.push({
+                    id: `PAY-DIR-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+                    poNumber: json.data?.grn_number || 'DIR-REC-2026-0001',
+                    amount: amountPaidVal,
+                    method: paymentMethodVal,
+                    reference: paymentRefVal || `DOCK-${Date.now().toString().slice(-4)}`,
+                    paymentDate: paymentDateVal,
+                    fundSource: fundSourceVal,
+                    remarks: paymentRemarksVal || `Direct Inbound Stock Settlement for ${finalVendorName}`,
+                    recordedAt: new Date().toISOString(),
+                    actor: '{{ auth()->user()->name ?? "Warehouse Logistics Supervisor" }}'
+                });
+                localStorage.setItem('rms_po_payments', JSON.stringify(storedPayments));
+            } catch (payErr) {
+                console.warn('Failed to mirror payment to localStorage:', payErr);
+            }
+        }
+
         const poBanner = document.getElementById('builderPoFulfillmentBanner');
         if (poBanner) poBanner.style.display = 'none';
 
@@ -2353,7 +2723,18 @@ function openReceiveForPo(poNumber) {
     document.getElementById('drawerDeliverySlip').value = '';
     document.getElementById('drawerOverToleranceBox').style.display = 'none';
 
-    // Populate line items with open balance
+    // Header / payment linkage
+    const setTxt = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    setTxt('drawerOrderDate', po.orderDate || 'N/A');
+    setTxt('drawerExpectedDate', po.expectedDelivery || 'Scheduled');
+    setTxt('drawerDeliverTo', po.deliveryLocation || 'Central Warehouse');
+    const stEl = document.getElementById('drawerPoStatus');
+    if (stEl) stEl.textContent = po.status || '';
+    const payRefEl = document.getElementById('drawerPaymentRef');
+    if (payRefEl) payRefEl.value = po.payment_reference || '';
+    renderDrawerPaymentLinkage(po);
+
+    // Populate line items with open balance (compressed columns)
     const items = po.items || [];
     const tbody = document.getElementById('drawerLinesTableBody');
 
@@ -2361,36 +2742,30 @@ function openReceiveForPo(poNumber) {
         const ordered = parseFloat(it.quantity) || 0;
         const prior = parseFloat(it.receivedQuantity) || 0;
         const open = Math.max(0, ordered - prior);
+        const price = parseFloat(it.unitPrice) || 0;
 
         return `
-            <tr>
+            <tr id="drawerLineRow_${idx}">
                 <td>
-                    <div style="font-weight: 600;">${it.name || it.itemName}</div>
-                    <div class="grn-mono" style="font-size: 11px; color: #64748b;">SKU: ${it.sku} &bull; ${it.unit || it.uom}</div>
+                    <div class="grn-insp-item">${grnEsc(it.name || it.itemName)}</div>
+                    <div class="grn-mono grn-insp-sub">${grnEsc(it.sku)} · ${grnEsc(it.unit || it.uom)} · ₱${formatMoney(price)}</div>
                 </td>
-                <td style="text-align: center; font-weight: 600;">${ordered}</td>
-                <td style="text-align: center; color: #047857; font-weight: 600;">${prior}</td>
-                <td style="text-align: center;">
-                    <input type="number" class="grn-search-input" style="width: 70px; text-align: center; padding: 4px;" id="lineDelivered_${idx}" value="${open}" oninput="calcDrawerTriad(${idx})">
+                <td class="c"><span class="grn-insp-qty">${ordered}</span> · <span class="grn-insp-qty" style="color:#047857;">${prior}</span> · <span class="grn-insp-qty" style="color:#b45309;">${open}</span></td>
+                <td class="c"><input type="number" min="0" class="grn-search-input grn-insp-num" id="lineDelivered_${idx}" value="${open}" oninput="calcDrawerTriad(${idx})" aria-label="Delivered quantity"></td>
+                <td class="c"><input type="number" min="0" class="grn-search-input grn-insp-num grn-insp-ok" id="lineAccepted_${idx}" value="${open}" oninput="calcDrawerTriad(${idx})" aria-label="Accepted quantity"></td>
+                <td class="c">
+                    <div class="grn-insp-rej">
+                        <input type="number" class="grn-search-input grn-insp-num grn-insp-bad" id="lineRejected_${idx}" value="0" readonly tabindex="-1" aria-label="Rejected quantity">
+                        <select class="grn-select grn-insp-reason" id="lineReason_${idx}" style="display:none;" aria-label="Rejection reason">
+                            <option value="">Reason…</option>
+                            <option value="Damaged in Transit">Damaged</option>
+                            <option value="Expired / Near Expiry">Expired</option>
+                            <option value="Wrong Specification">Wrong spec</option>
+                        </select>
+                    </div>
                 </td>
-                <td style="text-align: center;">
-                    <input type="number" class="grn-search-input" style="width: 70px; text-align: center; padding: 4px; border-color: #10b981; color: #047857;" id="lineAccepted_${idx}" value="${open}" oninput="calcDrawerTriad(${idx})">
-                </td>
-                <td style="text-align: center;">
-                    <input type="number" class="grn-search-input" style="width: 65px; text-align: center; padding: 4px; border-color: #ef4444; color: #b91c1c;" id="lineRejected_${idx}" value="0" oninput="calcDrawerTriad(${idx})">
-                </td>
-                <td>
-                    <select class="grn-select" style="padding: 4px 6px; font-size: 11px;" id="lineReason_${idx}">
-                        <option value="">None</option>
-                        <option value="Damaged in Transit">Damaged in Transit</option>
-                        <option value="Expired / Near Expiry">Expired</option>
-                        <option value="Wrong Specification">Wrong Spec</option>
-                    </select>
-                </td>
-                <td style="text-align: right;" class="grn-currency">₱${formatMoney(it.unitPrice)}</td>
-                <td style="text-align: center;">
-                    <input type="checkbox" id="lineShortClose_${idx}" title="Short-Close remaining units if supplier confirmed out of stock">
-                </td>
+                <td class="r grn-currency" id="lineValue_${idx}">₱${formatMoney(open * price)}</td>
+                <td class="c"><input type="checkbox" id="lineShortClose_${idx}" title="Short-Close remaining units if supplier confirmed out of stock" aria-label="Short-close"></td>
             </tr>
         `;
     }).join('');
@@ -2407,13 +2782,71 @@ function calcDrawerTriad(idx) {
     const elDel = document.getElementById(`lineDelivered_${idx}`);
     const elAcc = document.getElementById(`lineAccepted_${idx}`);
     const elRej = document.getElementById(`lineRejected_${idx}`);
+    const elReason = document.getElementById(`lineReason_${idx}`);
 
     const del = parseFloat(elDel?.value) || 0;
     const acc = parseFloat(elAcc?.value) || 0;
     const rej = Math.max(0, del - acc);
     if (elRej) elRej.value = rej;
+    if (elReason) elReason.style.display = rej > 0 ? '' : 'none';
+
+    const it = (window.StockInStore.activePoReceiving?.items || [])[idx];
+    const elVal = document.getElementById(`lineValue_${idx}`);
+    if (it && elVal) elVal.textContent = `₱${formatMoney(acc * (parseFloat(it.unitPrice) || 0))}`;
 
     calcDrawerTotalValuation();
+}
+
+function renderDrawerPaymentLinkage(po) {
+    const setTxt = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    const gross = parseFloat(po.grossTotal) || (po.items || []).reduce((a, it) => a + (parseFloat(it.quantity) || 0) * (parseFloat(it.unitPrice) || 0), 0);
+    const paid = parseFloat(po.amount_paid) || 0;
+    const balance = po.balance_due != null && po.balance_due !== '' ? (parseFloat(po.balance_due) || 0) : Math.max(0, gross - paid);
+
+    setTxt('drawerPayMethod', po.paymentMethod || 'N/A');
+    setTxt('drawerPayTotal', `₱${formatMoney(gross)}`);
+    setTxt('drawerPayPaid', `₱${formatMoney(paid)}`);
+    setTxt('drawerPayBalance', `₱${formatMoney(balance)}`);
+    setTxt('drawerPayStatus', po.paymentStatus || 'Unpaid');
+
+    // Build unified history: PO payment record + locally registered payments + linked GRNs
+    const hist = [];
+    if (paid > 0 || po.payment_date) {
+        hist.push({
+            date: po.payment_date || '', type: 'Payment', ref: po.payment_reference || '—',
+            method: po.paymentMethod || '', amount: paid, note: po.payment_remarks || po.fund_source || ''
+        });
+    }
+    try {
+        JSON.parse(localStorage.getItem('rms_po_payments') || '[]')
+            .filter(x => x.poNumber === po.poNumber)
+            .forEach(x => hist.push({
+                date: x.paymentDate || '', type: 'Payment', ref: x.reference || x.id || '—',
+                method: x.paymentMethod || '', amount: parseFloat(x.amount) || 0, note: x.remarks || ''
+            }));
+    } catch (e) {}
+    (window.StockInStore.goodsReceipts || [])
+        .filter(r => (r.po_number || r.poNumber) === po.poNumber)
+        .forEach(r => hist.push({
+            date: String(r.received_at || r.receivedAt || '').slice(0, 10), type: 'Receipt',
+            ref: (r.grn_number || r.grnNumber || '—') + ((r.delivery_slip_no || r.deliverySlip) ? ' · ' + (r.delivery_slip_no || r.deliverySlip) : ''),
+            method: r.payment_method || r.paymentMethod || '', amount: parseFloat(r.gross_total ?? r.totalValuation) || 0,
+            note: r.status || ''
+        }));
+    hist.sort((a, b) => String(b.date).localeCompare(String(a.date)));
+
+    setTxt('drawerHistCount', hist.length + (hist.length === 1 ? ' entry' : ' entries'));
+    const hb = document.getElementById('drawerHistoryBody');
+    if (!hb) return;
+    hb.innerHTML = hist.length === 0
+        ? '<tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:14px;">No payments or prior receipts recorded for this PO yet.</td></tr>'
+        : hist.map(h => `<tr>
+            <td>${grnEsc(h.date || '—')}</td>
+            <td><span class="hr-badge ${h.type === 'Payment' ? 'hr-badge-success' : 'hr-badge-purple'}">${h.type}</span></td>
+            <td class="grn-mono">${grnEsc(h.ref)}</td>
+            <td>${grnEsc(h.method)}</td>
+            <td class="r grn-currency">₱${formatMoney(h.amount)}</td>
+            <td style="color:#64748b;">${grnEsc(h.note)}</td></tr>`).join('');
 }
 
 function calcDrawerTotalValuation() {
@@ -2443,6 +2876,8 @@ async function commitInspectionReceipt() {
     const itemsToReceive = [];
     (po.items || []).forEach((it, idx) => {
         const acc = parseFloat(document.getElementById(`lineAccepted_${idx}`)?.value) || 0;
+        const rejQty = parseFloat(document.getElementById(`lineRejected_${idx}`)?.value) || 0;
+        const rejNote = rejQty > 0 ? (document.getElementById(`lineReason_${idx}`)?.value || 'unspecified') : '';
         if (acc > 0) {
             itemsToReceive.push({
                 sku: it.sku,
@@ -2454,7 +2889,7 @@ async function commitInspectionReceipt() {
                 unit_cost: parseFloat(it.unitPrice) || 0,
                 lot_number: null,
                 expiry_date: null,
-                notes: `Received via Dock Inspection for ${po.poNumber}`
+                notes: `Received via Dock Inspection for ${po.poNumber}` + (rejNote ? ` | Rejected ${rejQty}: ${rejNote}` : '')
             });
         }
     });
@@ -2475,7 +2910,7 @@ async function commitInspectionReceipt() {
         delivery_location: po.deliveryLocation || 'Central Commissary - Receiving Dock 1',
         settlement_mode: po.paymentStatus || 'PURCHASE_ORDER',
         payment_method: po.paymentMethod || 'Trade Credit (Net 30/15)',
-        payment_ref: '',
+        payment_ref: (document.getElementById('drawerPaymentRef')?.value || '').trim(),
         freight: 0,
         customs: 0,
         handling: 0,

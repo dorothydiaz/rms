@@ -81,117 +81,159 @@
 }
 
 /* Page Header */
+/* ==========================================================================
+   HR-STYLE FLAT PAGE HEADER & TITLE (Synced with HR Design System)
+   ========================================================================== */
+.hr-parent-header {
+    margin-bottom: 8px;
+    width: 100%;
+}
+.hr-parent-title-row,
 .wst-page-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 0px;
     flex-wrap: wrap;
-    gap: 16px;
-    padding: 22px 28px;
 }
-
-.wst-header-title-box {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-}
-
-.wst-header-icon-box {
-    width: 48px;
-    height: 48px;
-    border-radius: 14px;
-    background: linear-gradient(135deg, rgba(236, 72, 153, 0.12) 0%, rgba(168, 85, 247, 0.18) 100%);
-    color: var(--wst-primary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 24px;
-    box-shadow: 0 4px 12px rgba(168, 85, 247, 0.15);
-}
-
+.hr-parent-title,
 .wst-page-title {
-    font-family: 'Outfit', sans-serif;
-    font-size: 1.65rem;
-    font-weight: 800;
-    color: var(--wst-text-strong);
-    margin: 0 0 4px 0;
-    letter-spacing: -0.02em;
+    font-family: var(--font-heading, 'Poppins', sans-serif);
+    font-size: 21px;
+    font-weight: 700;
+    color: #0f172a;
     display: flex;
     align-items: center;
     gap: 10px;
-}
-
-.wst-page-subtitle {
-    font-size: 0.86rem;
-    color: var(--wst-text-muted);
+    letter-spacing: -0.02em;
     margin: 0;
 }
-
+.hr-parent-title i {
+    width: 34px;
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9px;
+    background: linear-gradient(135deg, rgba(236, 72, 153, 0.14), rgba(168, 85, 247, 0.20));
+    border: 1px solid rgba(168, 85, 247, 0.32);
+    color: #9333ea;
+    font-size: 18px;
+    box-shadow: 0 4px 14px rgba(168, 85, 247, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.8);
+    flex-shrink: 0;
+}
+.hr-parent-subtitle,
+.wst-page-subtitle {
+    font-size: 12.5px;
+    color: #64748b;
+    font-weight: 400;
+    margin: 3px 0 0 0;
+}
+.hr-page-actions,
 .wst-header-actions {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     flex-wrap: wrap;
 }
 
-/* Tabs Navigation */
+/* ==========================================================================
+   PRIMARY TABS-WRAPPER BAR (Synced with HR Design System)
+   ========================================================================== */
+.hr-tabs-wrapper,
 .tabs-wrapper {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    border-radius: 12px;
+    padding: 4px 6px;
+    margin-top: 4px;
+    margin-bottom: 14px;
+    box-shadow: 0 4px 16px rgba(148, 163, 184, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.95);
     display: flex;
     align-items: center;
-    gap: 8px;
-    background: rgba(241, 245, 249, 0.85);
-    padding: 6px;
-    border-radius: 14px;
-    border: 1px solid #e2e8f0;
-    width: fit-content;
+    gap: 6px;
+    max-width: 100%;
+    min-width: 0;
     overflow-x: auto;
+    flex-wrap: wrap;
+    position: relative;
+    z-index: 20;
 }
-
 .tab-btn {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 9px 18px;
-    border-radius: 10px;
+    padding: 8px 16px;
+    border-radius: 9px;
+    font-family: inherit;
     font-size: 13px;
     font-weight: 600;
-    color: var(--wst-text-muted);
+    color: #64748b;
     background: transparent;
-    border: none;
+    border: 1px solid transparent;
     cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     white-space: nowrap;
+    position: relative;
+    flex-shrink: 0;
     text-decoration: none;
 }
-
-.tab-btn:hover {
-    color: var(--wst-primary);
-    background: rgba(255, 255, 255, 0.6);
+.tab-btn i {
+    font-size: 16px;
+    color: #94a3b8;
+    transition: color 0.2s ease, transform 0.2s ease;
 }
-
+.tab-btn:hover {
+    color: #9333ea;
+    background: rgba(168, 85, 247, 0.08);
+}
+.tab-btn:hover i {
+    color: #9333ea;
+    transform: scale(1.08);
+}
 .tab-btn.active {
     background: #ffffff;
-    color: var(--wst-primary);
-    box-shadow: 0 4px 12px rgba(147, 51, 234, 0.12), 0 1px 3px rgba(0, 0, 0, 0.05);
+    color: #9333ea;
+    font-weight: 700;
+    border-color: rgba(168, 85, 247, 0.28);
+    box-shadow: 0 4px 14px rgba(168, 85, 247, 0.14), 0 1px 3px rgba(0, 0, 0, 0.04);
 }
-
+.tab-btn.active i {
+    background: linear-gradient(135deg, #ec4899, #a855f7);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+.tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    left: 20%;
+    right: 20%;
+    height: 3px;
+    background: linear-gradient(90deg, #ec4899, #a855f7);
+    border-radius: 3px 3px 0 0;
+}
 .tab-count {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     min-width: 20px;
-    height: 20px;
+    height: 18px;
     padding: 0 6px;
-    border-radius: 10px;
     font-size: 11px;
     font-weight: 700;
+    border-radius: 9px;
     background: #f1f5f9;
-    color: var(--wst-text-muted);
+    color: #64748b;
+    transition: all 0.2s ease;
 }
-
 .tab-btn.active .tab-count {
-    background: #faf5ff;
-    color: var(--wst-primary);
+    background: rgba(168, 85, 247, 0.12);
+    color: #9333ea;
 }
 
 /* Tab Panels */
@@ -633,25 +675,37 @@ textarea.wst-form-control {
 @endpush
 
 @section('content')
+<style>
+/* Compact Spacing Overrides (Employees Directory parity) */
+.wst-workspace {
+    gap: 8px !important;
+    padding: 12px 16px !important;
+}
+.hr-parent-header { margin-bottom: 6px !important; }
+.hr-parent-header .hr-parent-title-row { margin-bottom: 4px !important; }
+.hr-parent-header .hr-parent-title { font-size: 20px !important; gap: 8px !important; }
+.hr-parent-header .hr-parent-title i { width: 32px !important; height: 32px !important; font-size: 17px !important; border-radius: 8px !important; }
+.hr-parent-header .hr-parent-subtitle { font-size: 12px !important; margin-top: 2px !important; }
+.hr-tabs-wrapper { margin-top: 6px !important; margin-bottom: 8px !important; padding: 3px 5px !important; gap: 4px !important; border-radius: 10px !important; }
+.hr-tabs-wrapper .tab-btn { padding: 5px 12px !important; font-size: 12.5px !important; }
+.wst-tab-panel.active { gap: 8px !important; }
+.wst-filter-bar { padding: 8px 12px !important; gap: 8px !important; }
+</style>
+
 <div class="wst-workspace">
 
-    <!-- Top Card Strip: Header & Universal Tabs -->
-    <div class="wst-card-strip">
-        <div class="wst-page-header">
-            <div class="wst-header-title-box">
-                <div class="wst-header-icon-box">
+    <!-- Top Header -->
+    <div class="hr-parent-header">
+        <div class="hr-parent-title-row wst-page-header">
+            <div>
+                <h1 class="hr-parent-title wst-page-title">
                     <i class="ph ph-trash-simple"></i>
-                </div>
-                <div>
-                    <h1 class="wst-page-title">
-                        Waste, Defect & Expiry Tracking
-                        <span class="hr-badge hr-badge-purple">Kitchen Audit</span>
-                    </h1>
-                    <p class="wst-page-subtitle">Track spoilage, handling defects, batch expirations, and stock write-offs synchronized with Item Masterlist and Stocks Overview.</p>
-                </div>
+                    <span>Waste, Defect & Expiry Tracking</span>
+                    <span class="hr-badge hr-badge-purple">Kitchen Audit</span>
+                </h1>
+                <p class="hr-parent-subtitle wst-page-subtitle">Track spoilage, handling defects, batch expirations, and stock write-offs synchronized with Item Masterlist and Stocks Overview.</p>
             </div>
-
-            <div class="wst-header-actions">
+            <div class="hr-page-actions wst-header-actions">
                 <a href="{{ route('inventory.product-categories') }}" class="hr-btn hr-btn-secondary" title="View Item Master Catalog">
                     <i class="ph ph-folder-simple"></i> Item Master
                 </a>
@@ -663,72 +717,23 @@ textarea.wst-form-control {
                 </button>
             </div>
         </div>
-
-        <!-- Navigation Tabs -->
-        <div style="padding: 0 28px 18px 28px;">
-            <div class="tabs-wrapper">
-                <button type="button" class="tab-btn active" id="btnTabRecords" onclick="switchTab('tab-records')">
-                    <i class="ph ph-list-dashes"></i> Waste & Defect Logs
-                    <span class="tab-count" id="badgeCountRecords">{{ $wasteRecords->count() }}</span>
-                </button>
-                <button type="button" class="tab-btn" id="btnTabLogWaste" onclick="switchTab('tab-log-waste')">
-                    <i class="ph ph-pencil-simple-line"></i> Log Waste / Defect Entry
-                    <span class="tab-count"><i class="ph ph-plus" style="font-size: 10px;"></i></span>
-                </button>
-                <button type="button" class="tab-btn" id="btnTabExpiryWatchlist" onclick="switchTab('tab-expiry-watchlist')">
-                    <i class="ph ph-clock-countdown"></i> Expiry & At-Risk Watchlist
-                    <span class="tab-count" id="badgeCountWatchlist">{{ $atRiskLots->count() }}</span>
-                </button>
-            </div>
-        </div>
     </div>
 
-    <!-- KPI Summary Cards Row -->
-    <div class="wst-kpi-grid">
-        <div class="wst-kpi-card">
-            <div class="wst-kpi-icon kpi-icon-purple">
-                <i class="ph ph-currency-dollar"></i>
-            </div>
-            <div class="wst-kpi-content">
-                <div class="wst-kpi-label">Total Waste Valuation</div>
-                <div class="wst-kpi-value" id="kpiTotalValuation">₱{{ number_format($kpiStats['totalWasteValue'], 2) }}</div>
-                <div class="wst-kpi-meta"><i class="ph ph-info"></i> Approved stock loss value</div>
-            </div>
-        </div>
-
-        <div class="wst-kpi-card">
-            <div class="wst-kpi-icon kpi-icon-amber">
-                <i class="ph ph-package"></i>
-            </div>
-            <div class="wst-kpi-content">
-                <div class="wst-kpi-label">Total Waste Volume</div>
-                <div class="wst-kpi-value" id="kpiTotalUnits">{{ number_format($kpiStats['totalWasteItemsCount'], 2) }}</div>
-                <div class="wst-kpi-meta"><i class="ph ph-scales"></i> Total units written off</div>
-            </div>
-        </div>
-
-        <div class="wst-kpi-card">
-            <div class="wst-kpi-icon kpi-icon-red">
-                <i class="ph ph-calendar-x"></i>
-            </div>
-            <div class="wst-kpi-content">
-                <div class="wst-kpi-label">Expired On Shelf</div>
-                <div class="wst-kpi-value" id="kpiExpiredUnits">{{ number_format($kpiStats['expiredCount'], 2) }}</div>
-                <div class="wst-kpi-meta"><i class="ph ph-warning-circle"></i> Past expiration shelf life</div>
-            </div>
-        </div>
-
-        <div class="wst-kpi-card">
-            <div class="wst-kpi-icon kpi-icon-blue">
-                <i class="ph ph-shield-warning"></i>
-            </div>
-            <div class="wst-kpi-content">
-                <div class="wst-kpi-label">Defects & Damage</div>
-                <div class="wst-kpi-value" id="kpiDefectUnits">{{ number_format($kpiStats['defectDamageCount'], 2) }}</div>
-                <div class="wst-kpi-meta"><i class="ph ph-trash"></i> Handling, storage & prep</div>
-            </div>
-        </div>
-    </div>
+    <!-- Navigation Tabs -->
+    <nav class="hr-tabs-wrapper tabs-wrapper">
+        <button type="button" class="tab-btn active" id="btnTabRecords" onclick="switchTab('tab-records')">
+            <i class="ph ph-list-dashes"></i> Waste & Defect Logs
+            <span class="tab-count" id="badgeCountRecords">{{ $wasteRecords->count() }}</span>
+        </button>
+        <button type="button" class="tab-btn" id="btnTabLogWaste" onclick="switchTab('tab-log-waste')">
+            <i class="ph ph-pencil-simple-line"></i> Log Waste / Defect Entry
+            <span class="tab-count"><i class="ph ph-plus" style="font-size: 10px;"></i></span>
+        </button>
+        <button type="button" class="tab-btn" id="btnTabExpiryWatchlist" onclick="switchTab('tab-expiry-watchlist')">
+            <i class="ph ph-clock-countdown"></i> Expiry & At-Risk Watchlist
+            <span class="tab-count" id="badgeCountWatchlist">{{ $atRiskLots->count() }}</span>
+        </button>
+    </nav>
 
     <!-- =========================================================================
          TAB 1: WASTE & DEFECT LOGS / REGISTRY
