@@ -3772,6 +3772,11 @@ function renderPoDirectory() {
                 cellsHtml += `
                     <td class="td-center">
                         <div style="display: flex; align-items: center; justify-content: center; gap: 4px;">
+                            ${(p.status === 'Approved / Issued' || p.status === 'Partially Received') ? `
+                                <a href="{{ route('inventory.stock-in') }}?po=${encodeURIComponent(p.poNumber)}" class="inv-table-filter-btn" style="color: #059669; text-decoration: none;" title="Receive Stock in Inventory (Stock In / GRN)">
+                                    <i class="ph ph-tray-arrow-down"></i>
+                                </a>
+                            ` : ''}
                             <button type="button" class="inv-table-filter-btn" onclick="openPaymentSettlementModal('${p.poNumber}')" title="Financial Settlement & Payments" style="color: #0284c7;">
                                 <i class="ph ph-bank"></i>
                             </button>

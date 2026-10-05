@@ -96,6 +96,8 @@ class RmsNavigationAndAuthTest extends TestCase
             'inventory.beg-balance',
             'inventory.stock-in',
             'inventory.stock-out',
+            'inventory.internal-transfer',
+            'inventory.production',
             'inventory.stock-adjustment',
             'inventory.waste-expiry',
             'inventory.product-categories',

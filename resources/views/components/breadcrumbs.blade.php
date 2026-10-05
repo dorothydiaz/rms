@@ -202,6 +202,8 @@
                         ['title' => 'Beg Balance', 'url' => route('inventory.beg-balance'), 'icon' => 'ph-scales', 'route' => 'inventory.beg-balance'],
                         ['title' => 'Stock In / Receiving', 'url' => route('inventory.stock-in'), 'icon' => 'ph-arrow-down-left', 'route' => 'inventory.stock-in'],
                         ['title' => 'Stock Out / Usage', 'url' => route('inventory.stock-out'), 'icon' => 'ph-arrow-up-right', 'route' => 'inventory.stock-out'],
+                        ['title' => 'Internal Transfer', 'url' => route('inventory.internal-transfer'), 'icon' => 'ph-arrows-left-right', 'route' => 'inventory.internal-transfer'],
+                        ['title' => 'Production / Assembly', 'url' => route('inventory.production'), 'icon' => 'ph-factory', 'route' => 'inventory.production'],
                         ['title' => 'Stock Adjustment', 'url' => route('inventory.stock-adjustment'), 'icon' => 'ph-sliders-horizontal', 'route' => 'inventory.stock-adjustment'],
                         ['title' => 'Waste & Expiry', 'url' => route('inventory.waste-expiry'), 'icon' => 'ph-trash-simple', 'route' => 'inventory.waste-expiry']
                     ]

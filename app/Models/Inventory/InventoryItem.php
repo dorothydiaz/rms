@@ -43,4 +43,19 @@ class InventoryItem extends Model
     {
         return $this->hasOne(StockLedger::class, 'inventory_item_id')->latestOfMany('id');
     }
+
+    public function billOfMaterials()
+    {
+        return $this->hasOne(BillOfMaterials::class, 'finished_item_id');
+    }
+
+    public function productionOrders(): HasMany
+    {
+        return $this->hasMany(ProductionOrder::class, 'finished_item_id');
+    }
+
+    public function wasteItems(): HasMany
+    {
+        return $this->hasMany(WasteRecordItem::class, 'inventory_item_id');
+    }
 }

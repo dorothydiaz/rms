@@ -1140,6 +1140,14 @@
                 <p class="bom-parent-subtitle">Configure product recipes, raw ingredient deductions, live component costing, and profit margin analysis.</p>
             </div>
             <div class="bom-header-actions">
+                <a href="{{ route('inventory.stocks-overview') }}" class="bom-action-btn-secondary" title="View Live Stock Overview">
+                    <i class="ph ph-squares-four"></i>
+                    <span>Stocks Overview</span>
+                </a>
+                <a href="{{ route('inventory.production') }}" class="bom-action-btn-secondary" title="Execute Batch Assembly & Production Runs">
+                    <i class="ph ph-factory"></i>
+                    <span>Production</span>
+                </a>
                 <a href="{{ route('inventory.product-categories') }}" class="bom-action-btn-secondary" title="View Item Master Catalog">
                     <i class="ph ph-package"></i>
                     <span>Item Master</span>

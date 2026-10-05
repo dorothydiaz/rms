@@ -684,10 +684,19 @@
             <p>Purchase Order Receiving, Backlog Tracking, and Direct Inbound Receiving Builder</p>
         </div>
         <div class="grn-actions-group">
+            <a href="{{ route('inventory.stocks-overview') }}" class="hr-btn hr-btn-secondary hr-btn-sm" title="View Current Stock Levels">
+                <i class="ph ph-squares-four"></i> Stocks Overview
+            </a>
+            <a href="{{ route('inventory.product-categories') }}" class="hr-btn hr-btn-secondary hr-btn-sm" title="View Item Master">
+                <i class="ph ph-folder-simple"></i> Item Master
+            </a>
+            <a href="{{ route('purchase.purchase-orders') }}" class="hr-btn hr-btn-secondary hr-btn-sm" title="View Purchase Orders Workspace">
+                <i class="ph ph-receipt"></i> Purchase Orders
+            </a>
             <button class="hr-btn hr-btn-secondary hr-btn-sm" onclick="exportOrdersToCsv()">
                 <i class="ph ph-file-csv"></i> Export CSV
             </button>
-            <button class="hr-btn hr-btn-primary" onclick="switchGrnTab('tab-create-po')">
+            <button class="hr-btn hr-btn-primary hr-btn-sm" onclick="switchGrnTab('tab-create-po')">
                 <i class="ph ph-plus-circle"></i> + Create New Receiving Order (F2)
             </button>
         </div>
@@ -1511,6 +1520,14 @@ function initStockInModule() {
     renderPoMasterList();
     renderPendingPoList();
     updateHeaderKpis();
+
+    // Check for deep-link from Purchase Orders module: ?po=PO-2026-0103
+    const urlParams = new URLSearchParams(window.location.search);
+    const poParam = urlParams.get('po');
+    if (poParam) {
+        switchGrnTab('tab-pending-po');
+        openReceiveForPo(poParam);
+    }
 }
 
 /**
@@ -1707,7 +1724,7 @@ function resetToAdHocBuilder() {
 
 async function refreshStockInDataFromServer() {
     try {
-        const res = await fetch('/inventory/api/stock-in-data');
+        const res = await fetch("{{ route('inventory.api.stock-in-data') }}");
         const json = await res.json();
         if (json.success && json.data) {
             const serverPos = json.data.purchaseOrders || [];
@@ -2286,7 +2303,7 @@ async function submitDirectReceivingOrder() {
 
     try {
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-        const res = await fetch('/inventory/api/receive-stock', {
+        const res = await fetch("{{ route('inventory.api.receive-stock') }}", {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -2474,7 +2491,7 @@ async function commitInspectionReceipt() {
 
     try {
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-        const res = await fetch('/inventory/api/receive-stock', {
+        const res = await fetch("{{ route('inventory.api.receive-stock') }}", {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

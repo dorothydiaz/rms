@@ -359,6 +359,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/beg-balance', [InventoryController::class, 'begBalance'])->name('beg-balance');
         Route::get('/stock-in', [InventoryController::class, 'stockIn'])->name('stock-in');
         Route::get('/stock-out', [InventoryController::class, 'stockOut'])->name('stock-out');
+        Route::get('/internal-transfer', [InventoryController::class, 'internalTransfer'])->name('internal-transfer');
+        Route::get('/production', [InventoryController::class, 'production'])->name('production');
         Route::get('/stock-adjustment', [InventoryController::class, 'stockAdjustment'])->name('stock-adjustment');
         Route::get('/waste-expiry', [InventoryController::class, 'wasteExpiry'])->name('waste-expiry');
         Route::get('/product-categories', [InventoryController::class, 'productCategories'])->name('product-categories');
@@ -371,6 +373,17 @@ Route::middleware('auth')->group(function () {
         Route::post('/api/stock-out/update-pack', [InventoryController::class, 'apiUpdateStockOutPickPack'])->name('api.update-stock-out-pack');
         Route::post('/api/stock-out/confirm-ship', [InventoryController::class, 'apiConfirmShipStockOut'])->name('api.confirm-ship-stock-out');
         Route::post('/api/stock-out/cancel', [InventoryController::class, 'apiCancelStockOut'])->name('api.cancel-stock-out');
+        Route::get('/api/internal-transfer-data', [InventoryController::class, 'apiGetInternalTransferData'])->name('api.internal-transfer-data');
+        Route::post('/api/internal-transfer/create-custom', [InventoryController::class, 'apiCreateCustomTransfer'])->name('api.create-custom-transfer');
+        Route::post('/api/internal-transfer/dispatch', [InventoryController::class, 'apiDispatchTransfer'])->name('api.dispatch-transfer');
+        Route::post('/api/internal-transfer/receive', [InventoryController::class, 'apiReceiveTransfer'])->name('api.receive-transfer');
+        Route::post('/api/internal-transfer/cancel', [InventoryController::class, 'apiCancelTransfer'])->name('api.cancel-transfer');
+        Route::get('/api/production-data', [InventoryController::class, 'apiGetProductionData'])->name('api.production-data');
+        Route::post('/api/production/create-batch', [InventoryController::class, 'apiCreateProductionOrder'])->name('api.create-production-batch');
+        Route::post('/api/production/cancel-batch', [InventoryController::class, 'apiCancelProductionOrder'])->name('api.cancel-production-batch');
+        Route::get('/api/waste-expiry-data', [InventoryController::class, 'apiGetWasteExpiryData'])->name('api.waste-expiry-data');
+        Route::post('/api/waste/create', [InventoryController::class, 'apiCreateWasteRecord'])->name('api.create-waste-record');
+        Route::post('/api/waste/update-status', [InventoryController::class, 'apiUpdateWasteStatus'])->name('api.update-waste-status');
         Route::get('/api/stocks-overview-data', [InventoryController::class, 'apiGetStocksOverviewData'])->name('api.stocks-overview-data');
         Route::post('/api/receive-stock', [InventoryController::class, 'apiReceiveStock'])->name('api.receive-stock');
     });

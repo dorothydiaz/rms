@@ -2293,6 +2293,18 @@ body.is-column-resizing * {
                 <p class="inv-parent-subtitle">Centralized catalog for managing raw materials, packaging, suppliers, units of measure (UOM), and stock pricing.</p>
             </div>
             <div class="inv-header-actions">
+                <a href="{{ route('inventory.stocks-overview') }}" class="inv-action-btn-secondary" title="View Live Stock Levels & Balances">
+                    <i class="ph ph-squares-four"></i>
+                    <span>Stocks Overview</span>
+                </a>
+                <a href="{{ route('inventory.recipe-management') }}" class="inv-action-btn-secondary" title="View Bill of Materials (BOM) Recipes">
+                    <i class="ph ph-cooking-pot"></i>
+                    <span>BOM Recipes</span>
+                </a>
+                <a href="{{ route('inventory.stock-in') }}" class="inv-action-btn-secondary" title="Receive Stock (Inbound GRN)">
+                    <i class="ph ph-tray-arrow-down"></i>
+                    <span>Stock In</span>
+                </a>
                 <!-- Button to Export Products to CSV -->
                 <button type="button" class="inv-action-btn-secondary" onclick="exportProductsCSV()" title="Export Product Catalog to CSV">
                     <i class="ph ph-file-arrow-down"></i>

@@ -1354,7 +1354,7 @@
 /* Quick Action Operations Buttons in Drawer */
 .stk-quick-actions-bar {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 8px;
 }
 
@@ -1395,6 +1395,18 @@
     background: var(--stk-warning-subtle);
     color: var(--stk-warning-dark);
     border-color: #fde68a;
+}
+
+.stk-quick-btn.btn-transfer {
+    background: #f3e8ff;
+    color: #7e22ce;
+    border-color: #d8b4fe;
+}
+
+.stk-quick-btn.btn-production {
+    background: #fef3c7;
+    color: #b45309;
+    border-color: #fcd34d;
 }
 
 .stk-quick-btn:hover {
@@ -1478,6 +1490,16 @@
             </div>
         </div>
         <div class="stk-header-actions">
+            <!-- Item Master -->
+            <a href="{{ route('inventory.product-categories') }}" class="stk-btn-secondary" title="View Item Master Catalog">
+                <i class="ph ph-folder-simple"></i>
+                <span>Item Master</span>
+            </a>
+            <!-- Bill of Materials -->
+            <a href="{{ route('inventory.recipe-management') }}" class="stk-btn-secondary" title="View Bill of Materials (BOM)">
+                <i class="ph ph-cooking-pot"></i>
+                <span>BOM Recipes</span>
+            </a>
             <!-- Sync / Refresh -->
             <button type="button" class="stk-btn-secondary" onclick="refreshStocksData()" title="Recompute Live Inventory Movements">
                 <i class="ph ph-arrows-clockwise"></i>
@@ -1759,6 +1781,14 @@
                             </div>
                         </th>
 
+                        <!-- Col 8: Production (±) -->
+                        <th style="width: 8%; min-width: 85px;">
+                            <div class="stk-th-header-box">
+                                <span class="stk-th-title" style="color: #9333ea;"><i class="ph ph-factory"></i> Production (&plusmn;)</span>
+                                <span class="stk-th-sub">Yield (+) &bull; Consumed (-)</span>
+                            </div>
+                        </th>
+
                         <!-- Col 8: Physical On-Hand -->
                         <th style="width: 10%; min-width: 95px;">
                             <div class="stk-th-header-box">
@@ -1869,6 +1899,14 @@
                 <a href="{{ route('inventory.stock-out') }}" class="stk-quick-btn btn-stock-out" title="Dispatch / Transfer Out">
                     <i class="ph ph-arrow-up-right" style="font-size: 16px;"></i>
                     <span>Stock Out</span>
+                </a>
+                <a href="{{ route('inventory.internal-transfer') }}" class="stk-quick-btn btn-transfer" title="Branch Transfer / Requisition">
+                    <i class="ph ph-arrows-left-right" style="font-size: 16px;"></i>
+                    <span>Transfer</span>
+                </a>
+                <a href="{{ route('inventory.production') }}" class="stk-quick-btn btn-production" title="Batch Assembly & Recipe Run">
+                    <i class="ph ph-factory" style="font-size: 16px;"></i>
+                    <span>Produce</span>
                 </a>
                 <a href="{{ route('inventory.waste-expiry') }}" class="stk-quick-btn btn-waste" title="Log Spoilage / Damage">
                     <i class="ph ph-trash" style="font-size: 16px;"></i>
@@ -2037,14 +2075,30 @@
             targetStock: parseFloat(p.max_stock || 50),
             currentStock: parseFloat(p.current_stock || 0),
             current_stock: parseFloat(p.current_stock || 0),
+            production_produced: parseFloat(p.production_produced || 0),
+            production_consumed: parseFloat(p.production_consumed || 0),
+            production_net: parseFloat(p.production_net || 0),
+            waste_total: parseFloat(p.waste_total || 0),
+            waste_expired: parseFloat(p.waste_expired || 0),
+            waste_damaged: parseFloat(p.waste_damaged || 0),
+            waste_cost: parseFloat(p.waste_cost || 0),
             trackPhysicalStock: true,
             explodeBomOnSale: false
         }));
     } else {
         const stored = localStorage.getItem('rms_inventory_products');
         if (stored) {
-            try { initialProductsList = JSON.parse(stored); } catch(e) {}
+            try { 
+                const parsed = JSON.parse(stored);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    initialProductsList = parsed;
+                }
+            } catch(e) {}
         }
+    }
+
+    if (!initialProductsList || initialProductsList.length === 0) {
+        initialProductsList = FALLBACK_PRODUCTS;
     }
 
     let initialCategoriesList = DEFAULT_CATEGORIES;
@@ -2053,8 +2107,17 @@
     } else {
         const storedCat = localStorage.getItem('rms_product_categories');
         if (storedCat) {
-            try { initialCategoriesList = JSON.parse(storedCat); } catch(e) {}
+            try { 
+                const parsedCat = JSON.parse(storedCat);
+                if (Array.isArray(parsedCat) && parsedCat.length > 0) {
+                    initialCategoriesList = parsedCat;
+                }
+            } catch(e) {}
         }
+    }
+
+    if (!initialCategoriesList || initialCategoriesList.length === 0) {
+        initialCategoriesList = DEFAULT_CATEGORIES;
     }
 
     window.AppStore = {
@@ -2156,7 +2219,9 @@
                 ];
             }
 
-            const totalReceivedFromLedger = matchingLedger.reduce((sum, l) => sum + (parseFloat(l.quantity_change) || 0), 0);
+            const ledgerStockIn = matchingLedger.filter(l => (parseFloat(l.quantity_change) || 0) > 0).reduce((sum, l) => sum + (parseFloat(l.quantity_change) || 0), 0);
+            const ledgerStockOut = matchingLedger.filter(l => (parseFloat(l.quantity_change) || 0) < 0).reduce((sum, l) => sum + Math.abs(parseFloat(l.quantity_change) || 0), 0);
+            const totalReceivedFromLedger = ledgerStockIn;
 
             return {
                 id: p.id,
@@ -2176,24 +2241,29 @@
                 
                 begQty: onHand,
                 stockIn: {
-                    total: totalReceivedFromLedger > 0 ? totalReceivedFromLedger : (isHighVolume ? 40 : 15),
-                    po: totalReceivedFromLedger > 0 ? totalReceivedFromLedger : (isHighVolume ? 30 : 10),
+                    total: ledgerStockIn > 0 ? ledgerStockIn : (isHighVolume ? 40 : 15),
+                    po: ledgerStockIn > 0 ? ledgerStockIn : (isHighVolume ? 30 : 10),
                     transfer: 0
                 },
                 stockOut: {
-                    total: 0,
+                    total: ledgerStockOut,
                     pos: 0,
                     recipe: 0
                 },
                 waste: {
-                    total: 0,
-                    damaged: 0,
-                    expired: 0
+                    total: Number(p.waste_total || 0),
+                    damaged: Number(p.waste_damaged || 0),
+                    expired: Number(p.waste_expired || 0)
                 },
                 adjustment: {
                     qty: 0,
                     reason: 'Physical Count Matched',
                     variancePct: '0.0%'
+                },
+                production: {
+                    in: Number(p.production_produced || 0),
+                    out: Number(p.production_consumed || 0),
+                    net: Number(p.production_net || 0)
                 },
                 onHand: onHand,
                 shelfStock: shelfStock,
@@ -2480,6 +2550,32 @@
                         <div class="stk-cell-stack">
                             <span class="stk-badge-pill ${item.adjustment.qty > 0 ? 'pill-inflow' : (item.adjustment.qty < 0 ? 'pill-waste' : 'pill-neutral')}">${adjSign}${item.adjustment.qty.toLocaleString()}</span>
                             <span class="stk-sub-text">${item.adjustment.reason} &bull; ${item.adjustment.variancePct}</span>
+                        </div>
+                    </td>
+
+                    <!-- Col 8: Production (±) -->
+                    <td>
+                        <div class="stk-cell-stack">
+                            ${(() => {
+                                const pIn = Number(item.production?.in || 0);
+                                const pOut = Number(item.production?.out || 0);
+                                if (pIn > 0) {
+                                    return `
+                                        <span class="stk-badge-pill pill-inflow" title="Manufactured finished goods batch yield">+${pIn.toLocaleString()}</span>
+                                        <span class="stk-sub-text" style="color: #059669; font-weight: 600;">Yield (+)</span>
+                                    `;
+                                } else if (pOut > 0) {
+                                    return `
+                                        <span class="stk-badge-pill pill-outflow" title="Raw materials consumed in production batch">-${pOut.toLocaleString()}</span>
+                                        <span class="stk-sub-text" style="color: #d97706; font-weight: 600;">Consumed (-)</span>
+                                    `;
+                                } else {
+                                    return `
+                                        <span class="stk-badge-pill pill-neutral">0</span>
+                                        <span class="stk-sub-text">No batches</span>
+                                    `;
+                                }
+                            })()}
                         </div>
                     </td>
 
@@ -2961,6 +3057,8 @@
             'Waste (Expired)',
             'Audit Adjustment Qty',
             'Adjustment Reason',
+            'Production Yield (+)',
+            'Production Consumed (-)',
             'Physical On-Hand',
             'Shelf Stock',
             'Backroom Stock',
@@ -2996,6 +3094,8 @@
                 item.waste.expired,
                 item.adjustment.qty,
                 escapeCSV(item.adjustment.reason),
+                item.production ? item.production.in : 0,
+                item.production ? item.production.out : 0,
                 item.onHand,
                 item.shelfStock,
                 item.backroomStock,

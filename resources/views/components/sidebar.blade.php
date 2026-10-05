@@ -235,7 +235,7 @@
                 </a>
             </div>
             <div class="nav-section">
-                @php $invMgtActive = request()->routeIs('inventory.stocks-overview', 'inventory.beg-balance', 'inventory.stock-in', 'inventory.stock-out', 'inventory.stock-adjustment', 'inventory.waste-expiry'); @endphp
+                @php $invMgtActive = request()->routeIs('inventory.stocks-overview', 'inventory.beg-balance', 'inventory.stock-in', 'inventory.stock-out', 'inventory.internal-transfer', 'inventory.production', 'inventory.stock-adjustment', 'inventory.waste-expiry'); @endphp
                 <div class="nav-item-group" data-group-id="inv-mgt">
                     <a href="#" class="nav-item">
                         <i class="ph ph-package"></i>
@@ -248,6 +248,8 @@
                     <a href="{{ route('inventory.beg-balance') }}" class="sub-nav-item{{ request()->routeIs('inventory.beg-balance') ? ' active' : '' }}"><span>Beg Balance</span></a>
                     <a href="{{ route('inventory.stock-in') }}" class="sub-nav-item{{ request()->routeIs('inventory.stock-in') ? ' active' : '' }}"><span>Stock In / Receiving</span></a>
                     <a href="{{ route('inventory.stock-out') }}" class="sub-nav-item{{ request()->routeIs('inventory.stock-out') ? ' active' : '' }}"><span>Stock Out / Usage</span></a>
+                    <a href="{{ route('inventory.internal-transfer') }}" class="sub-nav-item{{ request()->routeIs('inventory.internal-transfer') ? ' active' : '' }}"><span>Internal Transfer</span></a>
+                    <a href="{{ route('inventory.production') }}" class="sub-nav-item{{ request()->routeIs('inventory.production') ? ' active' : '' }}" title="Batch production runs, BOM recipe assembly, yield tracking, and ingredient stock deduction."><span>Production / Assembly</span></a>
                     <a href="{{ route('inventory.stock-adjustment') }}" class="sub-nav-item{{ request()->routeIs('inventory.stock-adjustment') ? ' active' : '' }}"><span>Stock Adjustment</span></a>
                     <a href="{{ route('inventory.waste-expiry') }}" class="sub-nav-item{{ request()->routeIs('inventory.waste-expiry') ? ' active' : '' }}"><span>Waste & Expiry</span></a>
                 </div>
