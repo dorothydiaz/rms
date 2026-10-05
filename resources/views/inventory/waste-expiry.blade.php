@@ -51,10 +51,11 @@
 .wst-workspace {
     display: flex;
     flex-direction: column;
-    gap: 20px;
-    padding: 24px 28px;
-    background-color: var(--wst-canvas-bg);
-    min-height: calc(100vh - 72px);
+    gap: 8px;
+    padding: 0;
+    background-color: transparent;
+    min-height: auto;
+    width: 100%;
     box-sizing: border-box;
     font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
     color: var(--wst-text-strong);
@@ -679,7 +680,13 @@ textarea.wst-form-control {
 /* Compact Spacing Overrides (Employees Directory parity) */
 .wst-workspace {
     gap: 8px !important;
-    padding: 12px 16px !important;
+    padding: 0 !important;
+    background-color: transparent !important;
+    min-height: auto !important;
+    width: 100% !important;
+}
+.wst-card-strip {
+    margin-top: 0 !important;
 }
 .hr-parent-header { margin-bottom: 6px !important; }
 .hr-parent-header .hr-parent-title-row { margin-bottom: 4px !important; }
@@ -689,7 +696,7 @@ textarea.wst-form-control {
 .hr-tabs-wrapper { margin-top: 6px !important; margin-bottom: 8px !important; padding: 3px 5px !important; gap: 4px !important; border-radius: 10px !important; }
 .hr-tabs-wrapper .tab-btn { padding: 5px 12px !important; font-size: 12.5px !important; }
 .wst-tab-panel.active { gap: 8px !important; }
-.wst-filter-bar { padding: 8px 12px !important; gap: 8px !important; }
+.wst-filter-bar { padding: 8px 14px !important; gap: 8px !important; min-height: 48px !important; }
 </style>
 
 <div class="wst-workspace">

@@ -1852,6 +1852,20 @@ a {
     box-sizing: border-box;
 }
 
+/* Zero-Margin Workspace Normalization for Inventory Management (HR Theme Parity) */
+.content-area > .trf-workspace,
+.content-area > .prd-workspace,
+.content-area > .out-workspace,
+.content-area > .wst-workspace,
+.content-area > .grn-workspace,
+.content-area > .stk-page-container {
+    padding: 0 !important;
+    background-color: transparent !important;
+    min-height: auto !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .content-area {
@@ -2454,10 +2468,10 @@ a {
 }
 
 .filter-bar-scroll-btn {
-    width: 28px;
-    height: 28px;
-    min-width: 28px;
-    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    border-radius: 8px;
     border: 1px solid #cbd5e1;
     background: #ffffff;
     color: #475569;
@@ -2467,7 +2481,7 @@ a {
     cursor: pointer;
     flex-shrink: 0;
     box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
-    font-size: 13.5px;
+    font-size: 14px;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 25;
     padding: 0;
@@ -2480,14 +2494,15 @@ a {
     color: #0f172a;
     border-color: #94a3b8;
     box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
-    transform: scale(1.08);
+    transform: scale(1.05);
 }
 
 .filter-bar-scroll-btn:active:not(.is-hidden) {
-    transform: scale(0.92);
+    transform: scale(0.95);
 }
 
 .filter-bar-scroll-btn.is-hidden {
+    display: none !important;
     opacity: 0 !important;
     pointer-events: none !important;
     visibility: hidden !important;
@@ -2504,17 +2519,26 @@ a {
 /* Compact Table Filter Bar Across All HR & Operational Modules */
 .hr-filter-bar,
 .filter-bar,
-.filter-bar-scroll-track {
+.filter-bar-scroll-track,
+.inv-filter-bar,
+.bom-filter-bar,
+.trf-filter-bar,
+.prd-filter-bar,
+.out-filter-bar,
+.wst-filter-bar,
+.grn-filter-bar,
+.po-filter-pills-bar,
+.rfq-filter-pills-bar {
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     border: 1px solid #e2e8f0;
     border-radius: 10px !important;
-    padding: 6px 12px !important;
+    padding: 8px 14px !important;
     margin-bottom: 8px;
     display: flex !important;
     align-items: center !important;
-    justify-content: flex-start !important;
+    justify-content: space-between !important;
     flex-wrap: nowrap !important; /* CRITICAL: NO 2ND ROW WRAP */
     white-space: nowrap !important;
     gap: 8px !important;
@@ -2527,8 +2551,9 @@ a {
     -ms-overflow-style: none !important;
     scroll-behavior: smooth !important;
     -webkit-overflow-scrolling: touch !important;
-    min-height: 42px;
-    max-height: 48px;
+    min-height: 48px !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
     flex: 1 1 auto;
     min-width: 0;
 }
@@ -2536,6 +2561,13 @@ a {
 .filter-bar-wrapper .hr-filter-bar,
 .filter-bar-wrapper .inv-filter-bar,
 .filter-bar-wrapper .bom-filter-bar,
+.filter-bar-wrapper .trf-filter-bar,
+.filter-bar-wrapper .prd-filter-bar,
+.filter-bar-wrapper .out-filter-bar,
+.filter-bar-wrapper .wst-filter-bar,
+.filter-bar-wrapper .grn-filter-bar,
+.filter-bar-wrapper .po-filter-pills-bar,
+.filter-bar-wrapper .rfq-filter-pills-bar,
 .filter-bar-wrapper .filter-bar,
 .filter-bar-wrapper .filter-bar-scroll-track {
     margin-bottom: 0 !important;
@@ -2543,29 +2575,95 @@ a {
 
 .hr-filter-bar::-webkit-scrollbar,
 .filter-bar::-webkit-scrollbar,
-.filter-bar-scroll-track::-webkit-scrollbar {
+.filter-bar-scroll-track::-webkit-scrollbar,
+.inv-filter-bar::-webkit-scrollbar,
+.bom-filter-bar::-webkit-scrollbar,
+.trf-filter-bar::-webkit-scrollbar,
+.prd-filter-bar::-webkit-scrollbar,
+.out-filter-bar::-webkit-scrollbar,
+.wst-filter-bar::-webkit-scrollbar,
+.grn-filter-bar::-webkit-scrollbar,
+.po-filter-pills-bar::-webkit-scrollbar,
+.rfq-filter-pills-bar::-webkit-scrollbar {
     display: none !important;
     width: 0 !important;
     height: 0 !important;
 }
 
+/* Universal inner row wrapper for filter bars */
+.hr-filter-bar > div:first-child,
+.filter-bar-scroll-track > div:first-child,
+.inv-filter-bar > div:first-child,
+.bom-filter-bar > div:first-child,
+.trf-filter-bar > div:first-child,
+.prd-filter-bar > div:first-child,
+.out-filter-bar > div:first-child,
+.wst-filter-bar > div:first-child,
+.grn-filter-bar > div:first-child,
 .hr-filter-form {
+    width: 100% !important;
     display: flex !important;
     align-items: center !important;
+    justify-content: space-between !important;
     gap: 8px !important;
-    flex-wrap: nowrap !important; /* CRITICAL: NO 2ND ROW WRAP */
+    flex-wrap: nowrap !important;
     white-space: nowrap !important;
-    width: auto !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
     flex: 1 1 auto;
     position: relative;
     z-index: 20;
     overflow: visible;
 }
 
+/* Start tool group */
+.hr-filter-bar > div:first-child > div:first-child,
+.filter-bar-scroll-track > div:first-child > div:first-child,
+.filter-controls-start {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+}
+
+/* End tool group (badges, counters, reset) */
+.hr-filter-bar > div:first-child > div:last-child,
+.filter-bar-scroll-track > div:first-child > div:last-child,
+.filter-controls-end,
+.hr-filter-bar .hr-badge,
+.filter-bar-scroll-track .hr-badge,
+.inv-filter-bar .hr-badge,
+.bom-filter-bar .hr-badge,
+.trf-filter-bar .hr-badge,
+.prd-filter-bar .hr-badge,
+.out-filter-bar .hr-badge,
+.wst-filter-bar .hr-badge,
+.grn-filter-bar .hr-badge {
+    margin-left: auto !important;
+    flex-shrink: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+}
+
 .hr-filter-bar > *,
 .hr-filter-form > *,
-.filter-bar-scroll-track > * {
+.filter-bar-scroll-track > *,
+.inv-filter-bar > *,
+.bom-filter-bar > *,
+.trf-filter-bar > *,
+.prd-filter-bar > *,
+.out-filter-bar > *,
+.wst-filter-bar > *,
+.grn-filter-bar > *,
+.inv-filter-left,
+.inv-filter-right,
+.bom-filter-left,
+.bom-filter-right,
+.po-filter-pill,
+.rfq-filter-pill {
     flex-shrink: 0 !important;
+    white-space: nowrap !important;
 }
 
 /* Compact filter inputs & dropdowns */
@@ -2582,42 +2680,105 @@ a {
 .hr-filter-form .hr-select,
 .hr-filter-form input[type="text"],
 .hr-filter-form input[type="date"],
-.hr-filter-form select {
-    height: 31px !important;
-    min-height: 31px !important;
-    max-height: 31px !important;
-    padding: 3px 8px !important;
+.hr-filter-form select,
+.filter-bar input,
+.filter-bar select,
+.filter-bar-scroll-track input,
+.filter-bar-scroll-track select,
+.inv-filter-bar input,
+.inv-filter-bar select,
+.bom-filter-bar input,
+.bom-filter-bar select,
+.trf-filter-bar input,
+.trf-filter-bar select,
+.prd-filter-bar input,
+.prd-filter-bar select,
+.out-filter-bar input,
+.out-filter-bar select,
+.wst-filter-bar input,
+.wst-filter-bar select,
+.grn-filter-bar input,
+.grn-filter-bar select {
+    height: 32px !important;
+    min-height: 32px !important;
+    max-height: 32px !important;
+    padding: 4px 10px !important;
     font-size: 12px !important;
-    border-radius: 7px !important;
+    border-radius: 8px !important;
     line-height: 1.2 !important;
     border: 1px solid #cbd5e1 !important;
     background: #ffffff !important;
+    box-sizing: border-box !important;
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+    margin: 0 !important;
 }
 
 /* Compact filter buttons */
 .hr-filter-bar .hr-btn,
-.hr-filter-form .hr-btn {
-    height: 31px !important;
-    min-height: 31px !important;
-    max-height: 31px !important;
-    padding: 3px 10px !important;
+.hr-filter-form .hr-btn,
+.filter-bar .hr-btn,
+.filter-bar-scroll-track .hr-btn,
+.inv-filter-bar .hr-btn,
+.bom-filter-bar .hr-btn,
+.trf-filter-bar .hr-btn,
+.prd-filter-bar .hr-btn,
+.out-filter-bar .hr-btn,
+.wst-filter-bar .hr-btn,
+.grn-filter-bar .hr-btn {
+    height: 32px !important;
+    min-height: 32px !important;
+    max-height: 32px !important;
+    padding: 4px 10px !important;
     font-size: 12px !important;
     font-weight: 600 !important;
-    border-radius: 7px !important;
+    border-radius: 8px !important;
     gap: 5px !important;
     display: inline-flex !important;
     align-items: center !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
 }
 
 .hr-filter-bar .hr-btn i,
-.hr-filter-form .hr-btn i {
+.hr-filter-form .hr-btn i,
+.filter-bar .hr-btn i,
+.filter-bar-scroll-track .hr-btn i,
+.inv-filter-bar .hr-btn i,
+.bom-filter-bar .hr-btn i,
+.trf-filter-bar .hr-btn i,
+.prd-filter-bar .hr-btn i,
+.out-filter-bar .hr-btn i,
+.wst-filter-bar .hr-btn i,
+.grn-filter-bar .hr-btn i {
     font-size: 13.5px !important;
+}
+
+/* Filter bar counter badges */
+.hr-filter-bar .hr-badge,
+.filter-bar-scroll-track .hr-badge,
+.inv-filter-bar .hr-badge,
+.bom-filter-bar .hr-badge,
+.trf-filter-bar .hr-badge,
+.prd-filter-bar .hr-badge,
+.out-filter-bar .hr-badge,
+.wst-filter-bar .hr-badge,
+.grn-filter-bar .hr-badge {
+    height: 32px !important;
+    min-height: 32px !important;
+    padding: 4px 10px !important;
+    font-size: 11.5px !important;
+    font-weight: 600 !important;
+    border-radius: 8px !important;
+    box-sizing: border-box !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    margin: 0 !important;
 }
 
 /* Compact labels inside filter bars */
 .hr-filter-bar label,
-.hr-filter-form label {
+.hr-filter-form label,
+.filter-bar-scroll-track label {
     font-size: 11.5px !important;
     font-weight: 600 !important;
     color: #475569 !important;
@@ -2630,8 +2791,13 @@ a {
 .hr-filter-bar input[id*="search"],
 .hr-filter-form input[name="search"],
 .hr-filter-form input[id*="Search"],
-.hr-filter-form input[id*="search"] {
-    padding-left: 28px !important;
+.hr-filter-form input[id*="search"],
+.filter-bar-scroll-track input[name="search"],
+.filter-bar-scroll-track input[id*="Search"],
+.filter-bar-scroll-track input[id*="search"],
+.wst-search-input,
+.grn-search-input {
+    padding-left: 30px !important;
 }
 
 .hr-filter-bar div:has(> input[name="search"]) > i,
@@ -2639,47 +2805,12 @@ a {
 .hr-filter-bar div:has(> input[id*="search"]) > i,
 .hr-filter-form div:has(> input[name="search"]) > i,
 .hr-filter-form div:has(> input[id*="Search"]) > i,
-.hr-filter-form div:has(> input[id*="search"]) > i {
+.hr-filter-form div:has(> input[id*="search"]) > i,
+.filter-bar-scroll-track div:has(> input[id*="search"]) > i,
+.wst-search-box i,
+.grn-search-box i {
     font-size: 13.5px !important;
-    left: 8px !important;
-}
-
-/* Inventory & Recipe BOM Filter Bars Universal Rules */
-.inv-filter-bar,
-.bom-filter-bar,
-.po-filter-pills-bar,
-.rfq-filter-pills-bar {
-    display: flex !important;
-    align-items: center !important;
-    flex-wrap: nowrap !important; /* CRITICAL: NO 2ND ROW WRAP */
-    white-space: nowrap !important;
-    overflow-x: auto !important;
-    overflow-y: hidden !important;
-    scrollbar-width: none !important;
-    -ms-overflow-style: none !important;
-    scroll-behavior: smooth !important;
-    -webkit-overflow-scrolling: touch !important;
-}
-
-.inv-filter-bar::-webkit-scrollbar,
-.bom-filter-bar::-webkit-scrollbar,
-.po-filter-pills-bar::-webkit-scrollbar,
-.rfq-filter-pills-bar::-webkit-scrollbar {
-    display: none !important;
-    width: 0 !important;
-    height: 0 !important;
-}
-
-.inv-filter-bar > *,
-.bom-filter-bar > *,
-.inv-filter-left,
-.inv-filter-right,
-.bom-filter-left,
-.bom-filter-right,
-.po-filter-pill,
-.rfq-filter-pill {
-    flex-shrink: 0 !important;
-    white-space: nowrap !important;
+    left: 9px !important;
 }
 
 

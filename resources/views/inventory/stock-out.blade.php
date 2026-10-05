@@ -51,10 +51,11 @@
 .out-workspace {
     display: flex;
     flex-direction: column;
-    gap: 20px;
-    padding: 24px 28px;
-    background-color: var(--out-canvas-bg);
-    min-height: calc(100vh - 72px);
+    gap: 8px;
+    padding: 0;
+    background-color: transparent;
+    min-height: auto;
+    width: 100%;
     box-sizing: border-box;
     font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
     color: var(--out-text-strong);
@@ -687,7 +688,13 @@
 /* Compact Spacing Overrides (Employees Directory parity) */
 .out-workspace {
     gap: 8px !important;
-    padding: 12px 16px !important;
+    padding: 0 !important;
+    background-color: transparent !important;
+    min-height: auto !important;
+    width: 100% !important;
+}
+.out-card-strip {
+    margin-top: 0 !important;
 }
 .hr-parent-header { margin-bottom: 6px !important; }
 .hr-parent-header .hr-parent-title-row { margin-bottom: 4px !important; }
@@ -697,7 +704,7 @@
 .hr-tabs-wrapper { margin-top: 6px !important; margin-bottom: 8px !important; padding: 3px 5px !important; gap: 4px !important; border-radius: 10px !important; }
 .hr-tabs-wrapper .tab-btn { padding: 5px 12px !important; font-size: 12.5px !important; }
 .out-tab-panel.active { gap: 8px !important; }
-.out-filter-bar { padding: 8px 12px !important; gap: 8px !important; }
+.out-filter-bar { padding: 8px 14px !important; gap: 8px !important; min-height: 48px !important; }
 </style>
 
 <div class="out-workspace">
@@ -759,7 +766,7 @@
          ===================================================================== -->
     <div id="tab-out-list" class="out-tab-panel active">
         <!-- Filter & Search Toolbar Strip -->
-        <div class="out-card-strip" style="margin-top: 16px;">
+        <div class="out-card-strip">
             <div class="out-filter-bar">
                 <div class="out-search-box">
                     <i class="ph ph-magnifying-glass"></i>

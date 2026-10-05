@@ -61,10 +61,11 @@
 .grn-workspace {
     display: flex;
     flex-direction: column;
-    gap: 20px;
-    padding: 24px 28px;
-    background-color: var(--grn-canvas-bg);
-    min-height: calc(100vh - 72px);
+    gap: 8px;
+    padding: 0;
+    background-color: transparent;
+    min-height: auto;
+    width: 100%;
     box-sizing: border-box;
     font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
     color: var(--grn-text-strong);
@@ -790,6 +791,29 @@
 @endpush
 
 @section('content')
+<style>
+/* Compact Spacing Overrides (Employees Directory parity) */
+.grn-workspace {
+    gap: 8px !important;
+    padding: 0 !important;
+    background-color: transparent !important;
+    min-height: auto !important;
+    width: 100% !important;
+}
+.grn-card-strip {
+    margin-top: 0 !important;
+}
+.hr-parent-header { margin-bottom: 6px !important; }
+.hr-parent-header .hr-parent-title-row { margin-bottom: 4px !important; }
+.hr-parent-header .hr-parent-title { font-size: 20px !important; gap: 8px !important; }
+.hr-parent-header .hr-parent-title i { width: 32px !important; height: 32px !important; font-size: 17px !important; border-radius: 8px !important; }
+.hr-parent-header .hr-parent-subtitle { font-size: 12px !important; margin-top: 2px !important; }
+.hr-tabs-wrapper { margin-top: 6px !important; margin-bottom: 8px !important; padding: 3px 5px !important; gap: 4px !important; border-radius: 10px !important; }
+.hr-tabs-wrapper .tab-btn { padding: 5px 12px !important; font-size: 12.5px !important; }
+.grn-tab-panel.active { gap: 8px !important; }
+.grn-filter-bar { padding: 8px 14px !important; gap: 8px !important; min-height: 48px !important; }
+</style>
+
 <div class="grn-workspace">
     <!-- Header Row -->
     <div class="hr-parent-header">

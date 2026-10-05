@@ -52,10 +52,11 @@
 .stk-page-container {
     display: flex;
     flex-direction: column;
-    gap: 20px;
-    padding: 24px 28px;
-    background-color: var(--stk-surface-canvas);
-    min-height: calc(100vh - 72px);
+    gap: 12px;
+    padding: 0;
+    background-color: transparent;
+    min-height: auto;
+    width: 100%;
     box-sizing: border-box;
     font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
 }
@@ -1476,6 +1477,21 @@
 @endpush
 
 @section('content')
+<style>
+/* Compact Spacing Overrides (Employees Directory parity) */
+.stk-page-container {
+    gap: 12px !important;
+    padding: 0 !important;
+    background-color: transparent !important;
+    min-height: auto !important;
+    width: 100% !important;
+}
+.stk-header-bar {
+    padding: 12px 18px !important;
+    margin-bottom: 2px !important;
+}
+</style>
+
 <div class="stk-page-container">
 
     <!-- 1. Page Header Section -->

@@ -114,18 +114,18 @@
 @endif
 
 <!-- Real-Time Filter & Search Bar -->
-<div class="hr-filter-bar" style="margin-bottom: 8px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 6px 12px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
-    <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none;">
+<div class="hr-filter-bar" style="margin-bottom: 8px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.02); width: 100%;">
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; width: 100%;">
         <!-- Filters & Search Controls Group -->
-        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; flex: 1;">
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; flex: 1 1 auto; min-width: 0;">
             <!-- Search Input -->
-            <div style="position: relative; width: 220px; flex-shrink: 0;">
-                <i class="ph ph-magnifying-glass" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 15px; pointer-events: none;"></i>
-                <input type="text" id="empSearchInput" class="hr-input" placeholder="Search employee..." oninput="filterEmployeesDirectory()" style="width: 100%; box-sizing: border-box; padding-left: 32px; height: 31px; font-size: 12.5px;">
+            <div style="position: relative; flex: 0 1 240px; min-width: 180px; flex-shrink: 0;">
+                <i class="ph ph-magnifying-glass" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 14px; pointer-events: none;"></i>
+                <input type="text" id="empSearchInput" class="hr-input" placeholder="Search employee..." oninput="filterEmployeesDirectory()" style="width: 100%; box-sizing: border-box; padding-left: 32px;">
             </div>
 
             <!-- Department Filter -->
-            <select id="empDeptFilter" class="hr-select" style="height: 31px; max-width: 155px; font-size: 12.5px; padding: 2px 8px;" onchange="filterEmployeesDirectory()">
+            <select id="empDeptFilter" class="hr-select" style="max-width: 155px; font-size: 12px; padding: 2px 8px;" onchange="filterEmployeesDirectory()">
                 <option value="">All Departments</option>
                 @foreach($departments as $d)
                     <option value="{{ $d->name }}" {{ $activeDept === $d->name ? 'selected' : '' }}>{{ $d->name }}</option>
@@ -134,7 +134,7 @@
 
             <!-- Branch Filter -->
             @if(Auth::user()->isSuperAdmin() || Auth::user()->isHrAdmin())
-                <select id="empBranchFilter" class="hr-select" style="height: 31px; max-width: 155px; font-size: 12.5px; padding: 2px 8px;" onchange="filterEmployeesDirectory()">
+                <select id="empBranchFilter" class="hr-select" style="max-width: 155px; font-size: 12px; padding: 2px 8px;" onchange="filterEmployeesDirectory()">
                     <option value="">All Branches</option>
                     @foreach($branches as $b)
                         <option value="{{ $b->name }}" {{ $activeBranch === $b->name ? 'selected' : '' }}>{{ $b->name }}</option>
@@ -143,7 +143,7 @@
             @endif
 
             <!-- Position Filter -->
-            <select id="empPositionFilter" class="hr-select" style="height: 31px; max-width: 155px; font-size: 12.5px; padding: 2px 8px;" onchange="filterEmployeesDirectory()">
+            <select id="empPositionFilter" class="hr-select" style="max-width: 155px; font-size: 12px; padding: 2px 8px;" onchange="filterEmployeesDirectory()">
                 <option value="">All Positions</option>
                 @foreach($positions as $p)
                     <option value="{{ $p->name }}" {{ $activePos === $p->name ? 'selected' : '' }}>{{ $p->name }}</option>
@@ -151,7 +151,7 @@
             </select>
 
             <!-- Employment Type Filter -->
-            <select id="empTypeFilter" class="hr-select" style="height: 31px; max-width: 135px; font-size: 12.5px; padding: 2px 8px;" onchange="filterEmployeesDirectory()">
+            <select id="empTypeFilter" class="hr-select" style="max-width: 135px; font-size: 12px; padding: 2px 8px;" onchange="filterEmployeesDirectory()">
                 <option value="">All Types</option>
                 @foreach(['Regular', 'Probationary', 'Contractual', 'Part-time', 'Seasonal', 'Intern / OJT'] as $t)
                     <option value="{{ $t }}">{{ $t }}</option>
@@ -159,7 +159,7 @@
             </select>
 
             <!-- Status Filter -->
-            <select id="empStatusFilter" class="hr-select" style="height: 31px; max-width: 130px; font-size: 12.5px; padding: 2px 8px;" onchange="filterEmployeesDirectory()">
+            <select id="empStatusFilter" class="hr-select" style="max-width: 130px; font-size: 12px; padding: 2px 8px;" onchange="filterEmployeesDirectory()">
                 <option value="">All Statuses</option>
                 @foreach(['Active', 'Probationary', 'On Leave', 'Suspended', 'Resigned', 'Terminated', 'Retired'] as $st)
                     <option value="{{ $st }}">{{ $st }}</option>
@@ -167,21 +167,21 @@
             </select>
 
             <!-- More Filters Toggle -->
-            <button type="button" class="hr-btn hr-btn-secondary" onclick="toggleMoreFilters()" id="moreFiltersBtn" style="height: 31px; padding: 0 10px; font-size: 12px;">
+            <button type="button" class="hr-btn hr-btn-secondary" onclick="toggleMoreFilters()" id="moreFiltersBtn" style="padding: 0 10px; font-size: 12px;">
                 <i class="ph ph-funnel"></i>
                 <span>More Filters</span>
             </button>
 
             <!-- Reset Filter Button -->
-            <button type="button" class="hr-btn hr-btn-secondary" onclick="resetEmployeesDirectory()" title="Reset all filters" style="height: 31px; padding: 0 10px; font-size: 12px;">
+            <button type="button" class="hr-btn hr-btn-secondary" onclick="resetEmployeesDirectory()" title="Reset all filters" style="padding: 0 10px; font-size: 12px;">
                 <i class="ph ph-arrows-counter-clockwise"></i>
                 <span>Reset</span>
             </button>
         </div>
 
         <!-- Live Counter Badge -->
-        <div style="flex-shrink: 0;">
-            <span class="hr-badge hr-badge-neutral" style="font-size: 11.5px; font-weight: 600; padding: 3px 9px; border-radius: 7px; background: #f8fafc; border: 1px solid #e2e8f0; color: #475569; display: inline-flex; align-items: center; gap: 4px;">
+        <div style="flex-shrink: 0; margin-left: auto;">
+            <span class="hr-badge hr-badge-neutral" style="background: #f8fafc; border: 1px solid #e2e8f0; color: #475569; display: inline-flex; align-items: center; gap: 4px;">
                 Showing <strong id="empVisibleCount" style="color: #0f172a;">{{ $employees->count() }}</strong> of {{ $employees->count() }} employees
             </span>
         </div>
