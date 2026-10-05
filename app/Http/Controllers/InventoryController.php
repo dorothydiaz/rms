@@ -7,6 +7,8 @@ use App\Models\Inventory\GoodsReceiptItem;
 use App\Models\Inventory\InventoryCategory;
 use App\Models\Inventory\InventoryItem;
 use App\Models\Inventory\StockLedger;
+use App\Models\Inventory\StockOutOrder;
+use App\Models\Inventory\StockOutOrderItem;
 use App\Models\Purchase\ProcurementVendor;
 use App\Models\Purchase\PurchaseOrder;
 use App\Models\Purchase\PurchaseOrderItem;
@@ -345,7 +347,384 @@ class InventoryController extends Controller
 
     public function stockOut(): View
     {
-        return view('inventory.stock-out');
+        $orders = StockOutOrder::with(['items', 'vendor'])->orderByDesc('id')->get();
+        $products = InventoryItem::where('is_active', true)->orderBy('name')->get();
+        $vendors = ProcurementVendor::where('is_active', true)->orderBy('legal_name')->get();
+        $categories = InventoryCategory::where('is_active', true)->orderBy('name')->get();
+
+        return view('inventory.stock-out', [
+            'initialOrders' => $orders,
+            'initialProducts' => $products,
+            'initialVendors' => $vendors,
+            'initialCategories' => $categories,
+        ]);
+    }
+
+    /**
+     * API: Stock Out Initial Hydration Payload
+     */
+    public function apiGetStockOutData(): JsonResponse
+    {
+        $orders = StockOutOrder::with(['items', 'vendor'])->orderByDesc('id')->get();
+        $products = InventoryItem::where('is_active', true)->orderBy('name')->get();
+        $vendors = ProcurementVendor::where('is_active', true)->orderBy('legal_name')->get();
+        $categories = InventoryCategory::where('is_active', true)->orderBy('name')->get();
+
+        $stats = [
+            'totalOrders' => $orders->count(),
+            'draftCount' => $orders->where('status', 'DRAFT')->count(),
+            'pickingCount' => $orders->whereIn('status', ['PICKING', 'PACKED'])->count(),
+            'shippedCount' => $orders->where('status', 'SHIPPED')->count(),
+            'totalValueDispatched' => (float) $orders->where('status', 'SHIPPED')->sum('total_cost_value'),
+        ];
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'orders' => $orders,
+                'products' => $products,
+                'vendors' => $vendors,
+                'categories' => $categories,
+                'stats' => $stats,
+            ],
+        ]);
+    }
+
+    /**
+     * API: Create Stock Out Draft Requisition
+     */
+    public function apiCreateStockOutDraft(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'order_type' => 'required|string|max:50',
+            'destination_type' => 'nullable|string|max:50',
+            'destination_location' => 'required|string|max:255',
+            'vendor_id' => 'nullable|integer',
+            'vendor_name' => 'nullable|string|max:255',
+            'requested_by' => 'required|string|max:255',
+            'department' => 'nullable|string|max:100',
+            'priority' => 'nullable|string|max:50',
+            'reference_no' => 'nullable|string|max:100',
+            'required_at' => 'nullable|date',
+            'notes' => 'nullable|string|max:1000',
+            'items' => 'required|array|min:1',
+            'items.*.sku' => 'required|string|max:100',
+            'items.*.inventory_item_id' => 'nullable|integer',
+            'items.*.item_name' => 'required|string|max:255',
+            'items.*.category' => 'nullable|string|max:100',
+            'items.*.uom' => 'nullable|string|max:50',
+            'items.*.requested_qty' => 'required|numeric|min:0.001',
+            'items.*.unit_cost' => 'required|numeric|min:0',
+            'items.*.storage_location' => 'nullable|string|max:255',
+            'items.*.notes' => 'nullable|string|max:500',
+        ]);
+
+        return DB::transaction(function () use ($validated) {
+            $year = date('Y');
+            $count = StockOutOrder::whereYear('created_at', $year)->count() + 1;
+            $orderNumber = sprintf('SO-%s-%04d', $year, $count);
+
+            $totalItemsCount = count($validated['items']);
+            $totalRequestedQty = 0.00;
+            $totalCostValue = 0.00;
+
+            foreach ($validated['items'] as $item) {
+                $qty = (float) $item['requested_qty'];
+                $cost = (float) $item['unit_cost'];
+                $totalRequestedQty += $qty;
+                $totalCostValue += ($qty * $cost);
+            }
+
+            $order = StockOutOrder::create([
+                'order_number' => $orderNumber,
+                'order_type' => $validated['order_type'],
+                'status' => 'DRAFT',
+                'priority' => $validated['priority'] ?? 'NORMAL',
+                'destination_type' => $validated['destination_type'] ?? 'INTERNAL_KITCHEN',
+                'destination_location' => $validated['destination_location'],
+                'vendor_id' => $validated['vendor_id'] ?? null,
+                'vendor_name' => $validated['vendor_name'] ?? null,
+                'requested_by' => $validated['requested_by'],
+                'department' => $validated['department'] ?? 'Kitchen Operations',
+                'reference_no' => $validated['reference_no'] ?? null,
+                'required_at' => $validated['required_at'] ?? null,
+                'total_items_count' => $totalItemsCount,
+                'total_requested_qty' => $totalRequestedQty,
+                'total_packed_qty' => 0.00,
+                'total_cost_value' => $totalCostValue,
+                'notes' => $validated['notes'] ?? null,
+            ]);
+
+            foreach ($validated['items'] as $item) {
+                $invItem = null;
+                if (!empty($item['inventory_item_id'])) {
+                    $invItem = InventoryItem::find($item['inventory_item_id']);
+                } elseif (!empty($item['sku'])) {
+                    $invItem = InventoryItem::where('sku', $item['sku'])->first();
+                }
+
+                $availableStock = $invItem ? (float) $invItem->current_stock : 0.00;
+                $qty = (float) $item['requested_qty'];
+                $unitCost = (float) $item['unit_cost'];
+
+                StockOutOrderItem::create([
+                    'stock_out_order_id' => $order->id,
+                    'inventory_item_id' => $invItem ? $invItem->id : null,
+                    'sku' => $item['sku'],
+                    'item_name' => $item['item_name'],
+                    'category' => $item['category'] ?? ($invItem ? $invItem->category : 'General'),
+                    'uom' => $item['uom'] ?? ($invItem ? $invItem->uom : 'Unit'),
+                    'available_stock' => $availableStock,
+                    'requested_qty' => $qty,
+                    'packed_qty' => 0.00,
+                    'unit_cost' => $unitCost,
+                    'total_cost' => $qty * $unitCost,
+                    'storage_location' => $item['storage_location'] ?? ($invItem ? $invItem->storage_location : null),
+                    'notes' => $item['notes'] ?? null,
+                ]);
+            }
+
+            $order->load(['items', 'vendor']);
+
+            return response()->json([
+                'success' => true,
+                'message' => "Draft Requisition {$orderNumber} successfully created.",
+                'data' => [
+                    'order' => $order,
+                ],
+            ], 201);
+        });
+    }
+
+    /**
+     * API: Update Pick & Pack Quantities
+     */
+    public function apiUpdateStockOutPickPack(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'order_id' => 'required|exists:stock_out_orders,id',
+            'picker_name' => 'nullable|string|max:255',
+            'carrier_name' => 'nullable|string|max:255',
+            'tracking_waybill' => 'nullable|string|max:100',
+            'items' => 'required|array|min:1',
+            'items.*.sku' => 'required|string|max:100',
+            'items.*.packed_qty' => 'required|numeric|min:0',
+            'items.*.batch_lot_no' => 'nullable|string|max:100',
+        ]);
+
+        return DB::transaction(function () use ($validated) {
+            $order = StockOutOrder::where('id', $validated['order_id'])->lockForUpdate()->firstOrFail();
+
+            if ($order->status === 'SHIPPED') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cannot update an already dispatched/shipped order.',
+                ], 422);
+            }
+
+            $totalPacked = 0.00;
+            $allMatchedOrExceeded = true;
+            $hasAnyPacked = false;
+
+            foreach ($validated['items'] as $itemUpdate) {
+                $lineItem = StockOutOrderItem::where('stock_out_order_id', $order->id)
+                    ->where('sku', $itemUpdate['sku'])
+                    ->first();
+
+                if ($lineItem) {
+                    $packedQty = (float) $itemUpdate['packed_qty'];
+                    $lineItem->packed_qty = $packedQty;
+                    if (isset($itemUpdate['batch_lot_no'])) {
+                        $lineItem->batch_lot_no = $itemUpdate['batch_lot_no'];
+                    }
+                    $lineItem->save();
+
+                    $totalPacked += $packedQty;
+                    if ($packedQty > 0) {
+                        $hasAnyPacked = true;
+                    }
+                    if ($packedQty < $lineItem->requested_qty) {
+                        $allMatchedOrExceeded = false;
+                    }
+                }
+            }
+
+            $newStatus = 'DRAFT';
+            if ($allMatchedOrExceeded && $hasAnyPacked) {
+                $newStatus = 'PACKED';
+            } elseif ($hasAnyPacked) {
+                $newStatus = 'PICKING';
+            }
+
+            $order->update([
+                'status' => $newStatus,
+                'total_packed_qty' => $totalPacked,
+                'picker_name' => $validated['picker_name'] ?? $order->picker_name,
+                'carrier_name' => $validated['carrier_name'] ?? $order->carrier_name,
+                'tracking_waybill' => $validated['tracking_waybill'] ?? $order->tracking_waybill,
+            ]);
+
+            $order->load(['items', 'vendor']);
+
+            return response()->json([
+                'success' => true,
+                'message' => "Pick & Pack progress saved for {$order->order_number}.",
+                'data' => [
+                    'order' => $order,
+                ],
+            ]);
+        });
+    }
+
+    /**
+     * API: Confirm Ship & Complete Stock Out (Deducts Inventory & Appends to Master Ledger)
+     */
+    public function apiConfirmShipStockOut(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'order_id' => 'required|exists:stock_out_orders,id',
+            'picker_name' => 'nullable|string|max:255',
+            'carrier_name' => 'nullable|string|max:255',
+            'tracking_waybill' => 'nullable|string|max:100',
+            'items' => 'nullable|array',
+            'items.*.sku' => 'required_with:items|string|max:100',
+            'items.*.packed_qty' => 'required_with:items|numeric|min:0',
+            'items.*.batch_lot_no' => 'nullable|string|max:100',
+        ]);
+
+        return DB::transaction(function () use ($validated, $request) {
+            $order = StockOutOrder::where('id', $validated['order_id'])->lockForUpdate()->firstOrFail();
+
+            if ($order->status === 'SHIPPED') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Order is already marked as SHIPPED. Inventory has already been decremented.',
+                ], 422);
+            }
+
+            // If line items packed quantities were submitted in this call, update them first
+            if (!empty($validated['items'])) {
+                foreach ($validated['items'] as $itemUpdate) {
+                    $lineItem = StockOutOrderItem::where('stock_out_order_id', $order->id)
+                        ->where('sku', $itemUpdate['sku'])
+                        ->first();
+                    if ($lineItem) {
+                        $lineItem->packed_qty = (float) $itemUpdate['packed_qty'];
+                        if (isset($itemUpdate['batch_lot_no'])) {
+                            $lineItem->batch_lot_no = $itemUpdate['batch_lot_no'];
+                        }
+                        $lineItem->save();
+                    }
+                }
+            }
+
+            $order->load('items');
+            $performedBy = auth()->user()->full_name ?? auth()->user()->name ?? auth()->user()->username ?? 'Warehouse Lead';
+
+            $totalShippedQty = 0.00;
+            $totalActualCost = 0.00;
+
+            foreach ($order->items as $item) {
+                $qtyToDeduct = (float) $item->packed_qty;
+                if ($qtyToDeduct <= 0) {
+                    continue; // Skip items not packed
+                }
+
+                $inventoryItem = InventoryItem::where('sku', $item->sku)->lockForUpdate()->first();
+                if (!$inventoryItem) {
+                    throw new \RuntimeException("Inventory item with SKU {$item->sku} not found in Item Master.");
+                }
+
+                $beforeQty = (float) $inventoryItem->current_stock;
+                $afterQty = $beforeQty - $qtyToDeduct;
+
+                // Update inventory_items current stock
+                $inventoryItem->current_stock = $afterQty;
+                $inventoryItem->save();
+
+                // Append to immutable StockLedger
+                StockLedger::create([
+                    'transaction_uuid' => (string) Str::uuid(),
+                    'sku' => $item->sku,
+                    'inventory_item_id' => $inventoryItem->id,
+                    'item_name' => $item->item_name,
+                    'transaction_type' => 'STOCK_OUT',
+                    'reference_type' => 'stock_out_orders',
+                    'reference_id' => $order->id,
+                    'reference_no' => $order->order_number,
+                    'before_quantity' => $beforeQty,
+                    'quantity_change' => -$qtyToDeduct,
+                    'after_quantity' => $afterQty,
+                    'unit_cost' => $item->unit_cost,
+                    'total_value' => $qtyToDeduct * (float)$item->unit_cost,
+                    'batch_lot_no' => $item->batch_lot_no,
+                    'storage_location' => $item->storage_location ?? $inventoryItem->storage_location,
+                    'performed_by' => $performedBy,
+                    'notes' => "Stock Out: [{$order->order_type}] Destination: {$order->destination_location}",
+                ]);
+
+                $totalShippedQty += $qtyToDeduct;
+                $totalActualCost += ($qtyToDeduct * (float)$item->unit_cost);
+            }
+
+            if ($totalShippedQty <= 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cannot ship order with 0 packed items. Please pack items before dispatching.',
+                ], 422);
+            }
+
+            // Update order status to SHIPPED
+            $order->update([
+                'status' => 'SHIPPED',
+                'dispatched_at' => now(),
+                'picker_name' => $validated['picker_name'] ?? $order->picker_name ?? $performedBy,
+                'carrier_name' => $validated['carrier_name'] ?? $order->carrier_name,
+                'tracking_waybill' => $validated['tracking_waybill'] ?? $order->tracking_waybill,
+                'total_packed_qty' => $totalShippedQty,
+                'total_cost_value' => $totalActualCost,
+            ]);
+
+            $order->load(['items', 'vendor']);
+
+            return response()->json([
+                'success' => true,
+                'message' => "Order {$order->order_number} successfully dispatched & inventory deducted.",
+                'data' => [
+                    'order' => $order,
+                    'dispatched_at' => $order->dispatched_at->format('Y-m-d H:i:s'),
+                ],
+            ]);
+        });
+    }
+
+    /**
+     * API: Cancel Stock Out Order
+     */
+    public function apiCancelStockOut(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'order_id' => 'required|exists:stock_out_orders,id',
+            'reason' => 'nullable|string|max:500',
+        ]);
+
+        $order = StockOutOrder::findOrFail($validated['order_id']);
+        if ($order->status === 'SHIPPED') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot cancel an order that has already been shipped and deducted from ledger.',
+            ], 422);
+        }
+
+        $order->status = 'CANCELLED';
+        $order->notes = ($order->notes ? $order->notes . ' | ' : '') . 'Cancelled: ' . ($validated['reason'] ?? 'No reason provided');
+        $order->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => "Order {$order->order_number} has been cancelled.",
+            'data' => ['order' => $order],
+        ]);
     }
 
     public function stockAdjustment(): View

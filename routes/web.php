@@ -366,6 +366,11 @@ Route::middleware('auth')->group(function () {
 
         // Inventory JSON API Bridges
         Route::get('/api/stock-in-data', [InventoryController::class, 'apiGetStockInData'])->name('api.stock-in-data');
+        Route::get('/api/stock-out-data', [InventoryController::class, 'apiGetStockOutData'])->name('api.stock-out-data');
+        Route::post('/api/stock-out/create-draft', [InventoryController::class, 'apiCreateStockOutDraft'])->name('api.create-stock-out-draft');
+        Route::post('/api/stock-out/update-pack', [InventoryController::class, 'apiUpdateStockOutPickPack'])->name('api.update-stock-out-pack');
+        Route::post('/api/stock-out/confirm-ship', [InventoryController::class, 'apiConfirmShipStockOut'])->name('api.confirm-ship-stock-out');
+        Route::post('/api/stock-out/cancel', [InventoryController::class, 'apiCancelStockOut'])->name('api.cancel-stock-out');
         Route::get('/api/stocks-overview-data', [InventoryController::class, 'apiGetStocksOverviewData'])->name('api.stocks-overview-data');
         Route::post('/api/receive-stock', [InventoryController::class, 'apiReceiveStock'])->name('api.receive-stock');
     });
