@@ -325,42 +325,225 @@
     color: #94a3b8;
 }
 
-/* Status Filter Pills Bar - Compact */
-.rfq-filter-pills-bar {
-    display: flex;
+/* Header Filter Triggers & Popover System */
+.rfq-th-filter-wrapper {
+    display: inline-flex;
     align-items: center;
     gap: 5px;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 6px;
+    transition: all 0.15s ease;
 }
-.rfq-filter-pills-bar::-webkit-scrollbar {
-    display: none;
+.rfq-th-filter-wrapper:hover {
+    background: rgba(148, 163, 184, 0.18);
 }
-.rfq-filter-pill {
-    padding: 3.5px 9px;
-    border-radius: 20px;
+.rfq-th-funnel-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: #94a3b8;
     font-size: 11px;
+    cursor: pointer;
+    position: relative;
+    padding: 0;
+    transition: all 0.15s ease;
+}
+.rfq-th-filter-wrapper:hover .rfq-th-funnel-btn,
+.rfq-th-funnel-btn.is-active {
+    color: #7c3aed;
+    background: rgba(124, 58, 237, 0.10);
+    border-color: rgba(124, 58, 237, 0.25);
+}
+.rfq-th-funnel-dot {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #7c3aed;
+}
+
+/* Floating Header Filter Popover */
+.rfq-header-filter-popover {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 12px 30px -4px rgba(15, 23, 42, 0.18), 0 4px 10px -2px rgba(15, 23, 42, 0.08);
+    padding: 12px;
+    max-width: 380px;
+    z-index: 1200;
+}
+.rfq-filter-popover-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 8px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #f1f5f9;
+}
+.rfq-popover-reset-btn {
+    font-size: 11px;
+    color: #7c3aed;
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-decoration: underline;
     font-weight: 600;
-    color: var(--rfq-text-muted);
+}
+.rfq-filter-section-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.rfq-section-active-badge {
+    font-size: 10px;
+    color: #7c3aed;
+    background: rgba(124, 58, 237, 0.10);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+    text-transform: none;
+}
+.rfq-filter-pill-row {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+}
+.rfq-filter-pill-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 5px;
+}
+.rfq-popover-chip {
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 11.5px;
+    font-weight: 500;
+    color: #334155;
     background: #f8fafc;
-    border: 1px solid var(--rfq-border-subtle);
+    border: 1px solid #e2e8f0;
     cursor: pointer;
     transition: all 0.15s ease;
-    font-family: inherit;
-    line-height: 1.2;
+    text-align: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    white-space: nowrap;
 }
-.rfq-filter-pill:hover {
+.rfq-popover-chip:hover {
     background: #f1f5f9;
-    color: var(--rfq-text-strong);
+    border-color: #cbd5e1;
 }
-.rfq-filter-pill.active {
-    background: linear-gradient(135deg, rgba(236, 72, 153, 0.12), rgba(168, 85, 247, 0.18));
-    color: #9333ea;
-    border-color: rgba(168, 85, 247, 0.35);
+.rfq-popover-chip.is-active {
+    background: #7c3aed;
+    color: #ffffff;
+    border-color: #7c3aed;
     font-weight: 700;
-    box-shadow: 0 1px 3px rgba(168, 85, 247, 0.08);
+    box-shadow: 0 1px 3px rgba(124, 58, 237, 0.3);
+}
+.rfq-popover-chip.is-success.is-active {
+    background: #059669;
+    border-color: #059669;
+}
+.rfq-popover-chip.is-warning.is-active {
+    background: #d97706;
+    border-color: #d97706;
+}
+.rfq-popover-chip.is-purple.is-active {
+    background: #8b5cf6;
+    border-color: #8b5cf6;
+}
+.rfq-popover-chip.is-danger.is-active {
+    background: #dc2626;
+    border-color: #dc2626;
+}
+
+/* Radio List for Terms */
+.rfq-filter-radio-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.rfq-filter-radio-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    color: #334155;
+    transition: background 0.15s ease;
+}
+.rfq-filter-radio-row:hover {
+    background: #f8fafc;
+}
+.rfq-filter-radio-row.is-selected {
+    background: rgba(124, 58, 237, 0.08);
+    color: #7c3aed;
+    font-weight: 600;
+}
+.rfq-filter-radio-row input {
+    accent-color: #7c3aed;
+}
+.rfq-radio-label {
+    flex: 1;
+}
+.rfq-radio-count {
+    font-size: 11px;
+    color: #94a3b8;
+}
+
+/* Active Chips in Toolbar */
+.rfq-active-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: rgba(124, 58, 237, 0.10);
+    border: 1px solid rgba(124, 58, 237, 0.25);
+    color: #6d28d9;
+    font-size: 11.5px;
+    font-weight: 500;
+}
+.rfq-active-chip strong {
+    font-weight: 700;
+}
+.rfq-active-chip button {
+    background: none;
+    border: none;
+    color: #6d28d9;
+    font-size: 13px;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+}
+.rfq-clear-all-chip-btn {
+    background: none;
+    border: none;
+    color: #64748b;
+    font-size: 11px;
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 2px 4px;
+}
+.rfq-clear-all-chip-btn:hover {
+    color: #dc2626;
 }
 
 /* Directory Status Badges - HR Theme Glass Badges */
@@ -974,6 +1157,53 @@
 }
 .rfq-table tbody tr:hover td {
     background: #f8fafc;
+}
+
+/* RFQ Summary Directory Table Fixed Height & Anti-Wrap Architecture */
+#rfqDirectoryTable {
+    table-layout: fixed;
+    width: 100%;
+}
+#rfqDirectoryTable tbody tr {
+    height: 52px;
+}
+#rfqDirectoryTable td {
+    height: 52px;
+    padding: 6px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+    background: #ffffff;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    box-sizing: border-box;
+}
+.rms-cell-stack {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+    line-height: 1.25;
+    min-width: 0;
+    overflow: hidden;
+}
+.rms-cell-title {
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--rfq-text-strong, #0f172a);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.rms-cell-sub {
+    font-size: 0.72rem;
+    color: var(--rfq-text-muted, #64748b);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
 .rfq-table td input, .rfq-table td select {
     width: 100%;
@@ -1876,13 +2106,7 @@
                         <i class="ph ph-magnifying-glass" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 14px;"></i>
                         <input type="text" class="rfq-input" id="rfqDirectorySearch" oninput="handleRfqDirectorySearch(this.value)" placeholder="Search RFQ #, vendor partner, contact..." style="padding: 5px 10px 5px 30px; font-size: 12px; height: 32px;">
                     </div>
-                    <div class="rfq-filter-pills-bar" id="rfqStatusFilterBar">
-                        <button type="button" class="rfq-filter-pill active" data-status="all" onclick="filterRfqByStatus('all')">All (<span id="countPillAll">0</span>)</button>
-                        <button type="button" class="rfq-filter-pill" data-status="Draft" onclick="filterRfqByStatus('Draft')">Drafts (<span id="countPillDraft">0</span>)</button>
-                        <button type="button" class="rfq-filter-pill" data-status="Quote Requested" onclick="filterRfqByStatus('Quote Requested')">Quote Requested (<span id="countPillSent">0</span>)</button>
-                        <button type="button" class="rfq-filter-pill" data-status="Quotation Received" onclick="filterRfqByStatus('Quotation Received')">Received (<span id="countPillReceived">0</span>)</button>
-                        <button type="button" class="rfq-filter-pill" data-status="Awarded" onclick="filterRfqByStatus('Awarded')">Awarded (<span id="countPillAwarded">0</span>)</button>
-                    </div>
+                    <div id="rfqActiveFilterChips" style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;"></div>
                 </div>
                 <div class="rfq-toolbar-right" style="position: relative; display: flex; align-items: center; gap: 8px;">
                     <!-- Column Visibility Filter Trigger -->
@@ -1923,6 +2147,7 @@
                         <!-- Rendered dynamically -->
                     </tbody>
                 </table>
+                <div id="rfqHeaderFilterPopover" class="rfq-header-filter-popover" style="display: none;"></div>
             </div>
 
             <!-- Client-Side Pagination Container -->
@@ -4281,6 +4506,9 @@ function formatDateDisplay(isoDate) {
  * --------------------------------------------------------------------------
  */
 let activeRfqStatusFilter = 'all';
+let activeRfqApprovalFilter = 'all';
+let activeRfqPaymentTermsFilter = 'all';
+let activeHeaderFilterType = null;
 let rfqSearchTerm = '';
 let activeAuditActionFilter = 'ALL';
 let activeAuditModuleFilter = 'ALL';
@@ -4377,31 +4605,39 @@ function switchRfqTab(tabId) {
  * --------------------------------------------------------------------------
  */
 const DIRECTORY_COLUMNS = [
-    { id: 'ref', label: 'RFQ Reference', default: true, lockVisible: true, defaultWidth: '135px', align: 'left' },
-    { id: 'vendor', label: 'Vendor Partner', default: true, lockVisible: true, defaultWidth: '220px', align: 'left' },
-    { id: 'dateIssued', label: 'Date Issued', default: true, lockVisible: false, defaultWidth: '105px', align: 'left' },
-    { id: 'dueDate', label: 'Quotation Due', default: true, lockVisible: false, defaultWidth: '110px', align: 'left' },
-    { id: 'itemsCount', label: 'Line Items', default: true, lockVisible: false, defaultWidth: '85px', align: 'center' },
-    { id: 'estBudget', label: 'Est. Budget', default: true, lockVisible: false, defaultWidth: '125px', align: 'right' },
-    { id: 'statusApproval', label: 'M. Approval / Status', default: true, lockVisible: false, defaultWidth: '170px', align: 'center' },
+    { id: 'ref', label: 'Ref #', default: true, lockVisible: true, defaultWidth: '135px', align: 'left' },
+    { id: 'vendor', label: 'Vendor & Contact', default: true, lockVisible: true, defaultWidth: '220px', align: 'left' },
+    { id: 'notes', label: 'Notes', default: true, lockVisible: false, defaultWidth: '180px', align: 'left' },
+    { id: 'issuedDue', label: 'Issued / Due', default: true, lockVisible: false, defaultWidth: '135px', align: 'left' },
+    { id: 'items', label: 'Line Items', default: true, lockVisible: false, defaultWidth: '110px', align: 'center' },
+    { id: 'terms', label: 'Payment Terms', default: true, lockVisible: false, defaultWidth: '125px', align: 'left' },
+    { id: 'status', label: 'Status', default: true, lockVisible: false, defaultWidth: '150px', align: 'center' },
     { id: 'actions', label: 'Actions', default: true, lockVisible: true, defaultWidth: '115px', align: 'center' }
 ];
 
 let activeDirectoryColIds = (() => {
     try {
-        const saved = localStorage.getItem('rms_rfq_directory_cols');
-        if (saved) return JSON.parse(saved);
+        const saved = localStorage.getItem('rms_rfq_directory_cols_v2');
+        if (saved) {
+            const parsed = JSON.parse(saved);
+            const validIds = DIRECTORY_COLUMNS.map(c => c.id);
+            if (Array.isArray(parsed) && parsed.length > 0 && parsed.every(id => validIds.includes(id))) {
+                return parsed;
+            }
+        }
     } catch (e) {}
     return DIRECTORY_COLUMNS.filter(c => c.default).map(c => c.id);
 })();
 
 let savedDirectoryColWidths = (() => {
     try {
-        const saved = localStorage.getItem('rms_rfq_directory_col_widths');
+        const saved = localStorage.getItem('rms_rfq_directory_col_widths_v2');
         if (saved) return JSON.parse(saved);
     } catch (e) {}
     return {};
 })();
+
+// Directory filter state initialized in global scope above
 
 let directoryCurrentPage = 1;
 let directoryPageSize = 10;
@@ -4419,25 +4655,58 @@ function renderDirectoryTableHeader() {
     const theadRow = document.getElementById('rfqDirectoryTheadRow');
     if (!theadRow) return;
 
+    const isStatusFiltered = (activeRfqStatusFilter !== 'all' || activeRfqApprovalFilter !== 'all');
+    const isTermsFiltered = (activeRfqPaymentTermsFilter !== 'all');
+
     let thHtml = '';
     DIRECTORY_COLUMNS.forEach(col => {
         if (!activeDirectoryColIds.includes(col.id)) return;
         const w = getDirectoryColWidth(col);
         const alignClass = col.align === 'right' ? 'th-num' : (col.align === 'center' ? 'th-center' : '');
-        thHtml += `
-            <th class="${alignClass}" data-col-id="${col.id}" style="width: ${w}; position: relative; user-select: none;">
-                <span>${col.label}</span>
-                <div class="rfq-col-resizer" onmousedown="initDirectoryColResize(event, '${col.id}')"></div>
-            </th>
-        `;
+
+        if (col.id === 'status') {
+            thHtml += `
+                <th class="${alignClass}" data-col-id="status" style="width: ${w}; position: relative; user-select: none;">
+                    <div class="rfq-th-filter-wrapper" onclick="toggleRfqHeaderFilter(event, 'status')" title="Click to filter by Approval Status & RFQ Status">
+                        <span>${col.label}</span>
+                        <button type="button" class="rfq-th-funnel-btn ${isStatusFiltered ? 'is-active' : ''}">
+                            <i class="ph ph-funnel"></i>
+                            ${isStatusFiltered ? '<span class="rfq-th-funnel-dot"></span>' : ''}
+                        </button>
+                    </div>
+                    <div class="rfq-col-resizer" onmousedown="initDirectoryColResize(event, '${col.id}')"></div>
+                </th>
+            `;
+        } else if (col.id === 'terms') {
+            thHtml += `
+                <th class="${alignClass}" data-col-id="terms" style="width: ${w}; position: relative; user-select: none;">
+                    <div class="rfq-th-filter-wrapper" onclick="toggleRfqHeaderFilter(event, 'terms')" title="Click to filter by Payment Terms">
+                        <span>${col.label}</span>
+                        <button type="button" class="rfq-th-funnel-btn ${isTermsFiltered ? 'is-active' : ''}">
+                            <i class="ph ph-funnel"></i>
+                            ${isTermsFiltered ? '<span class="rfq-th-funnel-dot"></span>' : ''}
+                        </button>
+                    </div>
+                    <div class="rfq-col-resizer" onmousedown="initDirectoryColResize(event, '${col.id}')"></div>
+                </th>
+            `;
+        } else {
+            thHtml += `
+                <th class="${alignClass}" data-col-id="${col.id}" style="width: ${w}; position: relative; user-select: none;">
+                    <span>${col.label}</span>
+                    <div class="rfq-col-resizer" onmousedown="initDirectoryColResize(event, '${col.id}')"></div>
+                </th>
+            `;
+        }
     });
 
     theadRow.innerHTML = thHtml;
     renderDirectoryColDropdownChecklist();
+    renderRfqActiveFilterChips();
 }
 
 function renderDirectoryColDropdownChecklist() {
-    const listEl = document.getElementById('directoryColDropdownList');
+    const listEl = document.getElementById('directoryColCheckboxesList') || document.getElementById('directoryColDropdownList');
     if (!listEl) return;
 
     listEl.innerHTML = DIRECTORY_COLUMNS.map(col => {
@@ -4481,28 +4750,32 @@ function toggleDirectoryColVisibility(colId, isVisible) {
     } else {
         activeDirectoryColIds = activeDirectoryColIds.filter(id => id !== colId);
     }
-    localStorage.setItem('rms_rfq_directory_cols', JSON.stringify(activeDirectoryColIds));
+    localStorage.setItem('rms_rfq_directory_cols_v2', JSON.stringify(activeDirectoryColIds));
     renderDirectoryTableHeader();
     renderRfqDirectory();
 }
 
 function showAllDirectoryColumns() {
     activeDirectoryColIds = DIRECTORY_COLUMNS.map(c => c.id);
-    localStorage.setItem('rms_rfq_directory_cols', JSON.stringify(activeDirectoryColIds));
+    localStorage.setItem('rms_rfq_directory_cols_v2', JSON.stringify(activeDirectoryColIds));
     renderDirectoryTableHeader();
     renderRfqDirectory();
 }
 
 function resetDirectoryColumnDefaults() {
     activeDirectoryColIds = DIRECTORY_COLUMNS.filter(c => c.default).map(c => c.id);
-    localStorage.setItem('rms_rfq_directory_cols', JSON.stringify(activeDirectoryColIds));
+    localStorage.setItem('rms_rfq_directory_cols_v2', JSON.stringify(activeDirectoryColIds));
     renderDirectoryTableHeader();
     renderRfqDirectory();
 }
 
+function resetDirectoryColumns() {
+    resetDirectoryColumnDefaults();
+}
+
 function resetDirectoryColumnWidths() {
     savedDirectoryColWidths = {};
-    localStorage.removeItem('rms_rfq_directory_col_widths');
+    localStorage.removeItem('rms_rfq_directory_col_widths_v2');
     renderDirectoryTableHeader();
     renderRfqDirectory();
     showToast('✓ Directory column widths reset to defaults', 'success');
@@ -4622,16 +4895,28 @@ function renderRfqDirectory() {
     const rfqs = window.AppStore.rfqs || [];
     if (!tbody) return;
 
-    // Filter by status & search
+    // Filter by status, approval, payment terms & search
     const filtered = rfqs.filter(r => {
         const matchesStatus = (activeRfqStatusFilter === 'all') || (r.status === activeRfqStatusFilter);
+        
+        const isApproved = (r.isApproved === true || r.status === 'Awarded' || r.status === 'Approved' || !!r.poReference);
+        let matchesApproval = true;
+        if (activeRfqApprovalFilter === 'approved') matchesApproval = isApproved;
+        else if (activeRfqApprovalFilter === 'pending') matchesApproval = !isApproved;
+
+        const matchesTerms = (activeRfqPaymentTermsFilter === 'all') || ((r.paymentTerms || '').toLowerCase() === activeRfqPaymentTermsFilter.toLowerCase());
+
         const q = (rfqSearchTerm || '').toLowerCase().trim();
         const matchesSearch = !q || 
             (r.rfqNumber && r.rfqNumber.toLowerCase().includes(q)) ||
             (r.vendorName && r.vendorName.toLowerCase().includes(q)) ||
             (r.vendorTradeName && r.vendorTradeName.toLowerCase().includes(q)) ||
-            (r.vendorContactPerson && r.vendorContactPerson.toLowerCase().includes(q));
-        return matchesStatus && matchesSearch;
+            (r.vendorContactPerson && r.vendorContactPerson.toLowerCase().includes(q)) ||
+            (r.specialInstructions && r.specialInstructions.toLowerCase().includes(q)) ||
+            (r.notes && r.notes.toLowerCase().includes(q)) ||
+            (r.paymentTerms && r.paymentTerms.toLowerCase().includes(q));
+
+        return matchesStatus && matchesApproval && matchesTerms && matchesSearch;
     });
 
     // Update KPI Counts
@@ -4653,17 +4938,7 @@ function renderRfqDirectory() {
     if (elAwarded) elAwarded.textContent = awardedCount;
     if (elTabCount) elTabCount.textContent = totalCount;
 
-    const pAll = document.getElementById('countPillAll');
-    const pDraft = document.getElementById('countPillDraft');
-    const pSent = document.getElementById('countPillSent');
-    const pRec = document.getElementById('countPillReceived');
-    const pAward = document.getElementById('countPillAwarded');
-
-    if (pAll) pAll.textContent = totalCount;
-    if (pDraft) pDraft.textContent = draftCount;
-    if (pSent) pSent.textContent = sentCount;
-    if (pRec) pRec.textContent = receivedCount;
-    if (pAward) pAward.textContent = awardedCount;
+    renderRfqActiveFilterChips();
 
     const visibleColsCount = activeDirectoryColIds.length;
 
@@ -4695,7 +4970,7 @@ function renderRfqDirectory() {
         if (activeDirectoryColIds.includes('ref')) {
             rowCells += `
                 <td style="font-family: monospace; font-weight: 700; color: var(--rfq-primary-dark);">
-                    <a href="javascript:void(0)" onclick="editRfqFromDirectory('${r.rfqNumber}')" style="color: inherit; text-decoration: underline;">
+                    <a href="javascript:void(0)" onclick="editRfqFromDirectory('${escapeHtml(r.rfqNumber)}')" title="${escapeHtml(r.rfqNumber)}" style="color: inherit; text-decoration: underline;">
                         ${escapeHtml(r.rfqNumber)}
                     </a>
                 </td>
@@ -4705,44 +4980,79 @@ function renderRfqDirectory() {
         if (activeDirectoryColIds.includes('vendor')) {
             rowCells += `
                 <td>
-                    <div style="font-weight: 700; color: var(--rfq-text-strong);">${escapeHtml(r.vendorTradeName || r.vendorName || 'Unassigned')}</div>
-                    <div style="font-size: 0.74rem; color: var(--rfq-text-muted);">
-                        ${escapeHtml(r.vendorContactPerson || 'No Contact')} • ${escapeHtml(r.vendorEmail || '')}
+                    <div class="rms-cell-stack">
+                        <div class="rms-cell-title" title="${escapeHtml(r.vendorTradeName || r.vendorName || 'Unassigned')}">
+                            ${escapeHtml(r.vendorTradeName || r.vendorName || 'Unassigned')}
+                        </div>
+                        <div class="rms-cell-sub" title="${escapeHtml((r.vendorContactPerson || 'No Contact') + ' • ' + (r.vendorEmail || r.vendorPhone || ''))}">
+                            ${escapeHtml(r.vendorContactPerson || 'No Contact')} • ${escapeHtml(r.vendorEmail || r.vendorPhone || '')}
+                        </div>
                     </div>
                 </td>
             `;
         }
 
-        if (activeDirectoryColIds.includes('dateIssued')) {
-            rowCells += `<td>${formatDateDisplay(r.dateIssued)}</td>`;
+        if (activeDirectoryColIds.includes('notes')) {
+            const noteText = r.specialInstructions || r.notes || r.approvalNotes || '—';
+            rowCells += `
+                <td>
+                    <div class="rms-cell-title" style="font-weight: 500; color: #475569;" title="${escapeHtml(noteText)}">
+                        ${escapeHtml(noteText)}
+                    </div>
+                </td>
+            `;
         }
 
-        if (activeDirectoryColIds.includes('dueDate')) {
-            rowCells += `<td><span style="font-weight: 600; color: #b45309;">${formatDateDisplay(r.dueDate)}</span></td>`;
+        if (activeDirectoryColIds.includes('issuedDue')) {
+            rowCells += `
+                <td>
+                    <div class="rms-cell-stack">
+                        <div class="rms-cell-title" style="font-size: 0.78rem;">
+                            <span style="color: #64748b; font-weight: 500;">Issued:</span> ${formatDateDisplay(r.dateIssued)}
+                        </div>
+                        <div class="rms-cell-sub" style="color: #b45309; font-weight: 600;">
+                            <span style="color: #94a3b8; font-weight: 500;">Due:</span> ${formatDateDisplay(r.dueDate)}
+                        </div>
+                    </div>
+                </td>
+            `;
         }
 
-        if (activeDirectoryColIds.includes('itemsCount')) {
-            rowCells += `<td class="td-center"><span class="rfq-items-counter-pill">${(r.items || []).length}</span></td>`;
+        if (activeDirectoryColIds.includes('items')) {
+            rowCells += `
+                <td class="td-center">
+                    <div class="rms-cell-stack" style="align-items: center;">
+                        <span class="rfq-items-counter-pill">${(r.items || []).length} items</span>
+                        <span style="font-size: 0.72rem; color: #0f172a; font-weight: 700;">₱${formatMoney(estTotal)}</span>
+                    </div>
+                </td>
+            `;
         }
 
-        if (activeDirectoryColIds.includes('estBudget')) {
-            rowCells += `<td class="td-num" style="font-weight: 700;">₱${formatMoney(estTotal)}</td>`;
+        if (activeDirectoryColIds.includes('terms')) {
+            rowCells += `
+                <td>
+                    <span class="terms-pill" style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.74rem; font-weight: 600; background: #f1f5f9; color: #334155; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;" title="${escapeHtml(r.paymentTerms || 'Net 30 Days')}">
+                        ${escapeHtml(r.paymentTerms || 'Net 30 Days')}
+                    </span>
+                </td>
+            `;
         }
 
-        if (activeDirectoryColIds.includes('statusApproval')) {
+        if (activeDirectoryColIds.includes('status')) {
             const isApproved = (r.isApproved === true || r.status === 'Awarded' || r.status === 'Approved' || !!r.poReference);
             rowCells += `
                 <td class="td-center">
-                    <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                    <div class="rms-cell-stack" style="align-items: center; gap: 3px;">
                         <span class="status-pill ${pillClass}">
                             <i class="ph ph-dot"></i> ${escapeHtml(r.status)}
                         </span>
                         ${isApproved ? `
-                            <button type="button" class="hr-badge hr-badge-success" onclick="openManagerApprovalModal('${r.rfqNumber}')" title="Approved by ${escapeHtml(r.approvedBy || 'Manager')}" style="cursor: pointer; border: none; font-size: 10px; padding: 2px 8px; display: inline-flex; align-items: center; gap: 3px;">
+                            <button type="button" class="hr-badge hr-badge-success" onclick="openManagerApprovalModal('${r.rfqNumber}')" title="Approved by ${escapeHtml(r.approvedBy || 'Manager')}" style="cursor: pointer; border: none; font-size: 9.5px; padding: 1px 6px; display: inline-flex; align-items: center; gap: 2px;">
                                 <i class="ph ph-check-circle"></i> Approved
                             </button>
                         ` : `
-                            <button type="button" class="hr-badge hr-badge-warning" onclick="openManagerApprovalModal('${r.rfqNumber}')" title="Manager Action: Click to Toggle Approval for ${escapeHtml(r.rfqNumber)}" style="cursor: pointer; border: none; font-size: 10px; padding: 2px 8px; display: inline-flex; align-items: center; gap: 3px;">
+                            <button type="button" class="hr-badge hr-badge-warning" onclick="openManagerApprovalModal('${r.rfqNumber}')" title="Manager Action: Click to Toggle Approval for ${escapeHtml(r.rfqNumber)}" style="cursor: pointer; border: none; font-size: 9.5px; padding: 1px 6px; display: inline-flex; align-items: center; gap: 2px;">
                                 <i class="ph ph-hourglass-simple"></i> Pending
                             </button>
                         `}
@@ -4754,14 +5064,14 @@ function renderRfqDirectory() {
         if (activeDirectoryColIds.includes('actions')) {
             rowCells += `
                 <td class="td-center">
-                    <div style="display: flex; align-items: center; justify-content: center; gap: 5px;">
-                        <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="editRfqFromDirectory('${r.rfqNumber}')" title="Edit RFQ" style="padding: 4px 8px; font-size: 13px;">
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 4px;">
+                        <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="editRfqFromDirectory('${r.rfqNumber}')" title="Edit RFQ" style="padding: 3px 6px; font-size: 12px;">
                             <i class="ph ph-pencil-simple"></i>
                         </button>
-                        <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="previewRfqFromDirectory('${r.rfqNumber}')" title="View Document Preview" style="padding: 4px 8px; font-size: 13px;">
+                        <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="previewRfqFromDirectory('${r.rfqNumber}')" title="View Document Preview" style="padding: 3px 6px; font-size: 12px;">
                             <i class="ph ph-eye"></i>
                         </button>
-                        <button type="button" class="hr-btn hr-btn-danger hr-btn-sm" onclick="deleteRfqFromDirectory('${r.rfqNumber}')" title="Delete RFQ" style="padding: 4px 8px; font-size: 13px;">
+                        <button type="button" class="hr-btn hr-btn-danger hr-btn-sm" onclick="deleteRfqFromDirectory('${r.rfqNumber}')" title="Delete RFQ" style="padding: 3px 6px; font-size: 12px;">
                             <i class="ph ph-trash"></i>
                         </button>
                     </div>
@@ -4778,16 +5088,273 @@ function renderRfqDirectory() {
 function filterRfqByStatus(status) {
     activeRfqStatusFilter = status;
     directoryCurrentPage = 1;
-    const pills = document.querySelectorAll('#rfqStatusFilterBar .rfq-filter-pill');
-    pills.forEach(p => {
-        if (p.getAttribute('data-status') === status) {
-            p.classList.add('active');
-        } else {
-            p.classList.remove('active');
-        }
-    });
+    renderDirectoryTableHeader();
     renderRfqDirectory();
 }
+
+function toggleRfqHeaderFilter(event, filterType) {
+    if (event) event.stopPropagation();
+    const popover = document.getElementById('rfqHeaderFilterPopover');
+    if (!popover) return;
+
+    if (activeHeaderFilterType === filterType && popover.style.display !== 'none') {
+        closeRfqHeaderFilter();
+        return;
+    }
+
+    activeHeaderFilterType = filterType;
+    const triggerEl = event.currentTarget;
+    const rect = triggerEl.getBoundingClientRect();
+
+    popover.innerHTML = filterType === 'status' ? buildStatusFilterPopoverHtml() : buildPaymentTermsFilterPopoverHtml();
+    popover.style.display = 'block';
+    popover.style.position = 'fixed';
+    popover.style.top = `${rect.bottom + 6}px`;
+
+    const popoverWidth = filterType === 'status' ? 360 : 280;
+    let left = rect.left;
+    if (left + popoverWidth > window.innerWidth - 16) {
+        left = window.innerWidth - popoverWidth - 16;
+    }
+    popover.style.left = `${Math.max(10, left)}px`;
+    popover.style.zIndex = '1200';
+}
+
+function closeRfqHeaderFilter() {
+    const popover = document.getElementById('rfqHeaderFilterPopover');
+    if (popover) popover.style.display = 'none';
+    activeHeaderFilterType = null;
+}
+
+function buildStatusFilterPopoverHtml() {
+    const rfqs = window.AppStore.rfqs || [];
+    const totalCount = rfqs.length;
+    const approvedCount = rfqs.filter(r => r.isApproved === true || r.status === 'Awarded' || r.status === 'Approved' || !!r.poReference).length;
+    const pendingCount = totalCount - approvedCount;
+
+    const draftCount = rfqs.filter(r => r.status === 'Draft').length;
+    const sentCount = rfqs.filter(r => r.status === 'Quote Requested').length;
+    const receivedCount = rfqs.filter(r => r.status === 'Quotation Received').length;
+    const awardedCount = rfqs.filter(r => r.status === 'Awarded').length;
+    const cancelledCount = rfqs.filter(r => r.status === 'Cancelled').length;
+
+    return `
+        <div class="rfq-filter-popover-card">
+            <div class="rfq-filter-popover-header">
+                <div style="display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 12.5px; color: #0f172a;">
+                    <i class="ph ph-sliders-horizontal" style="color: #7c3aed; font-size: 15px;"></i>
+                    <span>Status & Approval Filters</span>
+                </div>
+                <button type="button" class="rfq-popover-reset-btn" onclick="resetRfqStatusFilters(event)">Reset Both</button>
+            </div>
+            
+            <div class="rfq-filter-popover-body">
+                <!-- ROW 1: APPROVAL STATUS -->
+                <div class="rfq-filter-section">
+                    <div class="rfq-filter-section-title">
+                        <span>Row 1: Approval Status</span>
+                        ${activeRfqApprovalFilter !== 'all' ? `<span class="rfq-section-active-badge">${escapeHtml(activeRfqApprovalFilter)}</span>` : ''}
+                    </div>
+                    <div class="rfq-filter-pill-row">
+                        <button type="button" class="rfq-popover-chip ${activeRfqApprovalFilter === 'all' ? 'is-active' : ''}" onclick="setRfqApprovalFilter(event, 'all')">
+                            All (${totalCount})
+                        </button>
+                        <button type="button" class="rfq-popover-chip is-success ${activeRfqApprovalFilter === 'approved' ? 'is-active' : ''}" onclick="setRfqApprovalFilter(event, 'approved')">
+                            <i class="ph ph-check-circle"></i> Approved (${approvedCount})
+                        </button>
+                        <button type="button" class="rfq-popover-chip is-warning ${activeRfqApprovalFilter === 'pending' ? 'is-active' : ''}" onclick="setRfqApprovalFilter(event, 'pending')">
+                            <i class="ph ph-hourglass-simple"></i> Pending (${pendingCount})
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ROW 2: RFQ STATUS -->
+                <div class="rfq-filter-section" style="margin-top: 12px;">
+                    <div class="rfq-filter-section-title">
+                        <span>Row 2: RFQ Status</span>
+                        ${activeRfqStatusFilter !== 'all' ? `<span class="rfq-section-active-badge">${escapeHtml(activeRfqStatusFilter)}</span>` : ''}
+                    </div>
+                    <div class="rfq-filter-pill-grid">
+                        <button type="button" class="rfq-popover-chip ${activeRfqStatusFilter === 'all' ? 'is-active' : ''}" onclick="setRfqStatusFilter(event, 'all')">
+                            All (${totalCount})
+                        </button>
+                        <button type="button" class="rfq-popover-chip ${activeRfqStatusFilter === 'Draft' ? 'is-active' : ''}" onclick="setRfqStatusFilter(event, 'Draft')">
+                            Draft (${draftCount})
+                        </button>
+                        <button type="button" class="rfq-popover-chip ${activeRfqStatusFilter === 'Quote Requested' ? 'is-active' : ''}" onclick="setRfqStatusFilter(event, 'Quote Requested')">
+                            Requested (${sentCount})
+                        </button>
+                        <button type="button" class="rfq-popover-chip ${activeRfqStatusFilter === 'Quotation Received' ? 'is-active' : ''}" onclick="setRfqStatusFilter(event, 'Quotation Received')">
+                            Received (${receivedCount})
+                        </button>
+                        <button type="button" class="rfq-popover-chip is-purple ${activeRfqStatusFilter === 'Awarded' ? 'is-active' : ''}" onclick="setRfqStatusFilter(event, 'Awarded')">
+                            Awarded (${awardedCount})
+                        </button>
+                        <button type="button" class="rfq-popover-chip is-danger ${activeRfqStatusFilter === 'Cancelled' ? 'is-active' : ''}" onclick="setRfqStatusFilter(event, 'Cancelled')">
+                            Cancelled (${cancelledCount})
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function buildPaymentTermsFilterPopoverHtml() {
+    const rfqs = window.AppStore.rfqs || [];
+    const totalCount = rfqs.length;
+    
+    const termsMap = {};
+    rfqs.forEach(r => {
+        const t = (r.paymentTerms || '').trim();
+        if (t) {
+            termsMap[t] = (termsMap[t] || 0) + 1;
+        }
+    });
+    ['Net 30 Days', 'Net 15 Days', 'Advance Payment'].forEach(t => {
+        if (!termsMap[t]) termsMap[t] = 0;
+    });
+
+    const distinctTerms = Object.keys(termsMap);
+
+    return `
+        <div class="rfq-filter-popover-card">
+            <div class="rfq-filter-popover-header">
+                <div style="display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 12.5px; color: #0f172a;">
+                    <i class="ph ph-credit-card" style="color: #7c3aed; font-size: 15px;"></i>
+                    <span>Payment Terms Filter</span>
+                </div>
+                <button type="button" class="rfq-popover-reset-btn" onclick="setRfqPaymentTermsFilter(event, 'all')">Reset</button>
+            </div>
+            
+            <div class="rfq-filter-popover-body">
+                <div class="rfq-filter-radio-list">
+                    <label class="rfq-filter-radio-row ${activeRfqPaymentTermsFilter === 'all' ? 'is-selected' : ''}">
+                        <input type="radio" name="rfqTermsRadio" value="all" ${activeRfqPaymentTermsFilter === 'all' ? 'checked' : ''} onchange="setRfqPaymentTermsFilter(event, 'all')">
+                        <span class="rfq-radio-label">All Payment Terms</span>
+                        <span class="rfq-radio-count">${totalCount}</span>
+                    </label>
+                    ${distinctTerms.map(term => `
+                        <label class="rfq-filter-radio-row ${activeRfqPaymentTermsFilter.toLowerCase() === term.toLowerCase() ? 'is-selected' : ''}">
+                            <input type="radio" name="rfqTermsRadio" value="${escapeHtml(term)}" ${activeRfqPaymentTermsFilter.toLowerCase() === term.toLowerCase() ? 'checked' : ''} onchange="setRfqPaymentTermsFilter(event, '${escapeHtml(term)}')">
+                            <span class="rfq-radio-label">${escapeHtml(term)}</span>
+                            <span class="rfq-radio-count">${termsMap[term] || 0}</span>
+                        </label>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function setRfqApprovalFilter(event, val) {
+    if (event) event.stopPropagation();
+    activeRfqApprovalFilter = val;
+    directoryCurrentPage = 1;
+    renderDirectoryTableHeader();
+    renderRfqDirectory();
+    const popover = document.getElementById('rfqHeaderFilterPopover');
+    if (popover && popover.style.display !== 'none' && activeHeaderFilterType === 'status') {
+        popover.innerHTML = buildStatusFilterPopoverHtml();
+    }
+}
+
+function setRfqStatusFilter(event, val) {
+    if (event) event.stopPropagation();
+    activeRfqStatusFilter = val;
+    directoryCurrentPage = 1;
+    renderDirectoryTableHeader();
+    renderRfqDirectory();
+    const popover = document.getElementById('rfqHeaderFilterPopover');
+    if (popover && popover.style.display !== 'none' && activeHeaderFilterType === 'status') {
+        popover.innerHTML = buildStatusFilterPopoverHtml();
+    }
+}
+
+function resetRfqStatusFilters(event) {
+    if (event) event.stopPropagation();
+    activeRfqStatusFilter = 'all';
+    activeRfqApprovalFilter = 'all';
+    directoryCurrentPage = 1;
+    renderDirectoryTableHeader();
+    renderRfqDirectory();
+    closeRfqHeaderFilter();
+}
+
+function setRfqPaymentTermsFilter(event, val) {
+    if (event) event.stopPropagation();
+    activeRfqPaymentTermsFilter = val;
+    directoryCurrentPage = 1;
+    renderDirectoryTableHeader();
+    renderRfqDirectory();
+    closeRfqHeaderFilter();
+}
+
+function clearAllRfqFilters() {
+    activeRfqStatusFilter = 'all';
+    activeRfqApprovalFilter = 'all';
+    activeRfqPaymentTermsFilter = 'all';
+    rfqSearchTerm = '';
+    const searchInput = document.getElementById('rfqDirectorySearch');
+    if (searchInput) searchInput.value = '';
+    directoryCurrentPage = 1;
+    renderDirectoryTableHeader();
+    renderRfqDirectory();
+    closeRfqHeaderFilter();
+}
+
+function renderRfqActiveFilterChips() {
+    const container = document.getElementById('rfqActiveFilterChips');
+    if (!container) return;
+
+    let chipsHtml = '';
+
+    if (activeRfqApprovalFilter !== 'all') {
+        chipsHtml += `
+            <span class="rfq-active-chip" title="Active Approval Filter">
+                <span>Approval: <strong>${escapeHtml(activeRfqApprovalFilter)}</strong></span>
+                <button type="button" onclick="setRfqApprovalFilter(event, 'all')" title="Clear approval filter">&times;</button>
+            </span>
+        `;
+    }
+
+    if (activeRfqStatusFilter !== 'all') {
+        chipsHtml += `
+            <span class="rfq-active-chip" title="Active RFQ Status Filter">
+                <span>Status: <strong>${escapeHtml(activeRfqStatusFilter)}</strong></span>
+                <button type="button" onclick="setRfqStatusFilter(event, 'all')" title="Clear status filter">&times;</button>
+            </span>
+        `;
+    }
+
+    if (activeRfqPaymentTermsFilter !== 'all') {
+        chipsHtml += `
+            <span class="rfq-active-chip" title="Active Payment Terms Filter">
+                <span>Terms: <strong>${escapeHtml(activeRfqPaymentTermsFilter)}</strong></span>
+                <button type="button" onclick="setRfqPaymentTermsFilter(event, 'all')" title="Clear payment terms filter">&times;</button>
+            </span>
+        `;
+    }
+
+    if (chipsHtml) {
+        chipsHtml += `
+            <button type="button" class="rfq-clear-all-chip-btn" onclick="clearAllRfqFilters()" title="Reset all active filters">
+                Clear Filters
+            </button>
+        `;
+    }
+
+    container.innerHTML = chipsHtml;
+}
+
+// Global outside-click dismissal for table header popover
+document.addEventListener('pointerdown', function(e) {
+    const popover = document.getElementById('rfqHeaderFilterPopover');
+    if (!popover || popover.style.display === 'none') return;
+    if (!popover.contains(e.target) && !e.target.closest('.rfq-th-filter-wrapper')) {
+        closeRfqHeaderFilter();
+    }
+});
 
 function handleRfqDirectorySearch(query) {
     rfqSearchTerm = query;

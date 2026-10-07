@@ -257,43 +257,7 @@
     transform: translateY(-1px);
 }
 
-/* Status Filter Pills Bar - Compact HR Theme */
-.po-filter-pills-bar {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-}
-.po-filter-pills-bar::-webkit-scrollbar {
-    display: none;
-}
-.po-filter-pill {
-    padding: 3.5px 10px;
-    border-radius: 20px;
-    font-size: 11px;
-    font-weight: 600;
-    color: #64748b;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    font-family: inherit;
-    line-height: 1.2;
-}
-.po-filter-pill:hover {
-    background: #f1f5f9;
-    color: #0f172a;
-}
-.po-filter-pill.active {
-    background: linear-gradient(135deg, rgba(236, 72, 153, 0.12), rgba(168, 85, 247, 0.18));
-    color: #9333ea;
-    border-color: rgba(168, 85, 247, 0.35);
-    font-weight: 700;
-    box-shadow: 0 1px 3px rgba(168, 85, 247, 0.08);
-}
+
 
 /* Header Column Resizer Handle */
 .po-col-resizer {
@@ -416,40 +380,7 @@
     overflow-y: auto;
 }
 
-/* Filter Pills Bar */
-.po-filter-pills-bar {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-}
-.po-filter-pills-bar::-webkit-scrollbar {
-    display: none;
-}
-.po-filter-pill {
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 0.78rem;
-    font-weight: 600;
-    color: var(--po-text-muted);
-    background: #f8fafc;
-    border: 1px solid var(--po-border-subtle);
-    cursor: pointer;
-    transition: all 0.15s ease;
-    font-family: inherit;
-}
-.po-filter-pill:hover {
-    background: #f1f5f9;
-    color: var(--po-text-strong);
-}
-.po-filter-pill.active {
-    background: var(--po-primary);
-    color: #ffffff;
-    border-color: var(--po-primary);
-}
+
 
 /* Status Badges */
 .po-status-badge {
@@ -482,6 +413,29 @@
     background: #fef2f2;
     color: #b91c1c;
     border: 1px solid #fca5a5;
+}
+
+/* PO Approval Badges */
+.po-approval-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 9.5px;
+    font-weight: 700;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+.po-approval-badge.approved {
+    background: #ecfdf5;
+    color: #059669;
+    border: 1px solid #a7f3d0;
+}
+.po-approval-badge.pending {
+    background: #fffbeb;
+    color: #d97706;
+    border: 1px solid #fde68a;
 }
 
 /* Payment Status Badges */
@@ -1060,6 +1014,53 @@
 .po-table tbody tr:hover td {
     background: #f8fafc;
 }
+
+/* PO Summary Directory Table Fixed Height & Anti-Wrap Architecture */
+#poDirectoryTable {
+    table-layout: fixed;
+    width: 100%;
+}
+#poDirectoryTable tbody tr {
+    height: 52px;
+}
+#poDirectoryTable td {
+    height: 52px;
+    padding: 6px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+    background: #ffffff;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    box-sizing: border-box;
+}
+.rms-cell-stack {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+    line-height: 1.25;
+    min-width: 0;
+    overflow: hidden;
+}
+.rms-cell-title {
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--po-text-strong, #0f172a);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.rms-cell-sub {
+    font-size: 0.72rem;
+    color: var(--po-text-muted, #64748b);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
 .po-table td input, .po-table td select {
     width: 100%;
     padding: 6px 9px;
@@ -1069,6 +1070,224 @@
     background: #ffffff;
     font-family: inherit;
     box-sizing: border-box;
+}
+
+/* PO Table Header Filter Triggers & Popover System */
+.po-th-filter-wrapper {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.15s ease;
+}
+.po-th-filter-wrapper:hover {
+    color: var(--po-primary, #0284c7);
+}
+.po-th-funnel-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 5px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: #94a3b8;
+    font-size: 11px;
+    cursor: pointer;
+    position: relative;
+    padding: 0;
+    transition: all 0.15s ease;
+}
+.po-th-filter-wrapper:hover .po-th-funnel-btn,
+.po-th-funnel-btn.is-active {
+    color: #0284c7;
+    background: rgba(2, 132, 199, 0.10);
+    border-color: rgba(2, 132, 199, 0.25);
+}
+.po-th-funnel-dot {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #0284c7;
+}
+
+/* Floating Header Filter Popover */
+.po-header-filter-popover {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 12px 30px -4px rgba(15, 23, 42, 0.18), 0 4px 10px -2px rgba(15, 23, 42, 0.08);
+    padding: 12px;
+    max-width: 380px;
+    z-index: 1200;
+}
+.po-filter-popover-card {
+    display: flex;
+    flex-direction: column;
+}
+.po-filter-popover-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 8px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #f1f5f9;
+}
+.po-popover-reset-btn {
+    font-size: 11px;
+    color: #0284c7;
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-decoration: underline;
+    font-weight: 600;
+}
+.po-filter-popover-body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.po-filter-section-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.po-section-active-badge {
+    font-size: 10px;
+    color: #0284c7;
+    background: rgba(2, 132, 199, 0.10);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+    text-transform: none;
+}
+.po-filter-pill-row {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+}
+.po-filter-pill-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 5px;
+}
+.po-popover-chip {
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 11.5px;
+    font-weight: 500;
+    color: #334155;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-align: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+.po-popover-chip:hover {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+}
+.po-popover-chip.is-active {
+    background: #0284c7;
+    color: #ffffff;
+    border-color: #0284c7;
+    font-weight: 700;
+    box-shadow: 0 1px 3px rgba(2, 132, 199, 0.3);
+}
+.po-popover-chip.is-success.is-active {
+    background: #059669;
+    border-color: #059669;
+}
+.po-popover-chip.is-warning.is-active {
+    background: #d97706;
+    border-color: #d97706;
+}
+.po-popover-chip.is-danger.is-active {
+    background: #dc2626;
+    border-color: #dc2626;
+}
+
+/* Radio List for PO Payment Filter */
+.po-filter-radio-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.po-filter-radio-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    color: #334155;
+    transition: background 0.15s ease;
+}
+.po-filter-radio-row:hover {
+    background: #f8fafc;
+}
+.po-filter-radio-row.is-selected {
+    background: rgba(2, 132, 199, 0.08);
+    color: #0284c7;
+    font-weight: 600;
+}
+.po-filter-radio-row input {
+    accent-color: #0284c7;
+}
+
+/* Active Chips in PO Toolbar */
+.po-active-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: rgba(2, 132, 199, 0.10);
+    border: 1px solid rgba(2, 132, 199, 0.25);
+    color: #0369a1;
+    font-size: 11.5px;
+    font-weight: 500;
+}
+.po-active-chip strong {
+    font-weight: 700;
+}
+.po-active-chip button {
+    background: none;
+    border: none;
+    color: #0369a1;
+    font-size: 13px;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+}
+.po-clear-all-chip-btn {
+    background: none;
+    border: none;
+    color: #64748b;
+    font-size: 11px;
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 2px 4px;
+}
+.po-clear-all-chip-btn:hover {
+    color: #dc2626;
 }
 
 /* Modals */
@@ -1438,14 +1657,7 @@
                         <i class="ph ph-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 15px;"></i>
                         <input type="text" class="po-input" id="poSearchInput" oninput="handlePoSearch(this.value)" placeholder="Search PO #, vendor, RFQ ref, stall..." style="padding-left: 34px; height: 32px; font-size: 0.82rem;">
                     </div>
-                    <div class="po-filter-pills-bar" id="poStatusFilterBar">
-                        <button type="button" class="po-filter-pill active" data-filter="all" onclick="filterPoStatus('all', this)">All (<span id="countPoAll">0</span>)</button>
-                        <button type="button" class="po-filter-pill" data-filter="Standard" onclick="filterPoType('vendor', this)">Vendor Supplier</button>
-                        <button type="button" class="po-filter-pill" data-filter="WetMarket" onclick="filterPoType('wet_market', this)">Wet Market Cash Run</button>
-                        <button type="button" class="po-filter-pill" data-filter="Pending" onclick="filterPoStatus('Approved / Issued', this)">Pending Delivery (<span id="countPoPending">0</span>)</button>
-                        <button type="button" class="po-filter-pill" data-filter="Received" onclick="filterPoStatus('Fully Received', this)">Received (<span id="countPoReceived">0</span>)</button>
-                        <button type="button" class="po-filter-pill" data-filter="Paid" onclick="filterPoPayment('Paid in Full / Cash Out', this)">Paid (<span id="countPoPaid">0</span>)</button>
-                    </div>
+                    <div id="poActiveFilterChips" style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;"></div>
                 </div>
                 <div style="display: flex; align-items: center; gap: 8px;">
                     <!-- Column Visibility Selector Dropdown -->
@@ -1503,6 +1715,7 @@
                         <!-- Rendered dynamically -->
                     </tbody>
                 </table>
+                <div id="poHeaderFilterPopover" class="po-header-filter-popover" style="display: none;"></div>
             </div>
 
             <!-- Table Pagination Bar -->
@@ -2586,7 +2799,10 @@ window.PoStore = {
 };
 
 let activePoStatusFilter = 'all';
+let activePoApprovalFilter = 'all';
+let activePoPaymentFilter = 'all';
 let activePoTypeFilter = 'all';
+let activePoHeaderFilterType = null;
 let poSearchTerm = '';
 let poCurrentPage = 1;
 let poPageSize = 10;
@@ -2598,6 +2814,16 @@ document.addEventListener('DOMContentLoaded', () => {
     renderPoVendorDropdown();
     renderPoItemsTable();
     renderPoDirectory();
+
+    // Close header filter popover when clicking outside
+    document.addEventListener('click', (e) => {
+        const popover = document.getElementById('poHeaderFilterPopover');
+        if (popover && popover.style.display !== 'none') {
+            if (!popover.contains(e.target) && !e.target.closest('.po-th-filter-wrapper')) {
+                closePoHeaderFilter();
+            }
+        }
+    });
 
     // Hotkey listener (F2: Item Master, F8: Document Preview, F10: Issue PO)
     document.addEventListener('keydown', (e) => {
@@ -2686,8 +2912,17 @@ function initPoStore() {
         }
     }
 
+    if (!Array.isArray(window.PoStore.purchaseOrders) || window.PoStore.purchaseOrders.length === 0) {
+        window.PoStore.purchaseOrders = JSON.parse(JSON.stringify(SEEDED_PURCHASE_ORDERS));
+        localStorage.setItem('rms_purchase_orders', JSON.stringify(window.PoStore.purchaseOrders));
+    }
+
     // 2. Automatically sync any newly approved / awarded RFQs into PO list
-    syncApprovedRfqsToPoDirectory();
+    try {
+        syncApprovedRfqsToPoDirectory();
+    } catch (e) {
+        console.warn('syncApprovedRfqsToPoDirectory call error:', e);
+    }
 
     // 3. Load Vendors
     if (Array.isArray(serverVendors) && serverVendors.length > 0) {
@@ -2750,11 +2985,13 @@ function initPoStore() {
     }
 
     // Next PO Number
-    const count = window.PoStore.purchaseOrders.length;
+    const count = (window.PoStore.purchaseOrders || []).length;
     const poNum = `PO-2026-${String(count + 105).padStart(4, '0')}`;
     window.PoStore.activePo.poNumber = poNum;
-    document.getElementById('poNumberInput').value = poNum;
-    document.getElementById('poRefDisplay').textContent = poNum;
+    const poNumberInputEl = document.getElementById('poNumberInput');
+    if (poNumberInputEl) poNumberInputEl.value = poNum;
+    const poRefDisplayEl = document.getElementById('poRefDisplay');
+    if (poRefDisplayEl) poRefDisplayEl.textContent = poNum;
 }
 
 function initPoDates() {
@@ -2763,13 +3000,34 @@ function initPoDates() {
     delDate.setDate(delDate.getDate() + 3);
     const delDateStr = delDate.toISOString().split('T')[0];
 
-    document.getElementById('poOrderDate').value = today;
-    document.getElementById('poExpectedDelivery').value = delDateStr;
-    document.getElementById('poPaymentDate').value = today;
+    const orderDateEl = document.getElementById('poOrderDate');
+    if (orderDateEl) orderDateEl.value = today;
+    const expDelEl = document.getElementById('poExpectedDelivery');
+    if (expDelEl) expDelEl.value = delDateStr;
+    const payDateEl = document.getElementById('poPaymentDate');
+    if (payDateEl) payDateEl.value = today;
 
     window.PoStore.activePo.orderDate = today;
     window.PoStore.activePo.expectedDelivery = delDateStr;
     window.PoStore.activePo.paymentDate = today;
+}
+
+function syncApprovedRfqsToPoDirectory() {
+    try {
+        const storedRfqs = localStorage.getItem('rms_rfq_directory');
+        if (!storedRfqs) return;
+        const rfqs = JSON.parse(storedRfqs);
+        if (!Array.isArray(rfqs)) return;
+
+        const approvedRfqs = rfqs.filter(r => (r.status === 'Awarded' || r.isApproved === true));
+        if (approvedRfqs.length === 0) return;
+
+        const pos = window.PoStore.purchaseOrders || [];
+        const existingRfqRefs = new Set(pos.map(p => p.rfqReference).filter(Boolean));
+        // Available awarded RFQs can be imported on demand via openImportRfqModal
+    } catch (e) {
+        console.warn('syncApprovedRfqsToPoDirectory error:', e);
+    }
 }
 
 let poVendorComboSearchTerm = '';
@@ -3507,29 +3765,33 @@ function issuePurchaseOrderSubmit() {
  * --------------------------------------------------------------------------
  */
 const PO_DIRECTORY_COLUMNS = [
-    { id: 'poNumber', label: 'PO Reference', default: true, lockVisible: true, defaultWidth: '135px', align: 'left' },
-    { id: 'type', label: 'Sourcing Type', default: true, lockVisible: false, defaultWidth: '120px', align: 'center' },
-    { id: 'vendor', label: 'Supplier / Stall', default: true, lockVisible: true, defaultWidth: '220px', align: 'left' },
-    { id: 'orderDate', label: 'Date Issued', default: true, lockVisible: false, defaultWidth: '105px', align: 'left' },
-    { id: 'expectedDelivery', label: 'Expected Delivery', default: true, lockVisible: false, defaultWidth: '130px', align: 'left' },
-    { id: 'itemsCount', label: 'Line Items', default: true, lockVisible: false, defaultWidth: '85px', align: 'center' },
-    { id: 'grossTotal', label: 'Total Amount', default: true, lockVisible: false, defaultWidth: '125px', align: 'right' },
-    { id: 'paymentStatus', label: 'Payment Status', default: true, lockVisible: false, defaultWidth: '130px', align: 'center' },
-    { id: 'status', label: 'Order Status', default: true, lockVisible: false, defaultWidth: '140px', align: 'center' },
-    { id: 'actions', label: 'Actions', default: true, lockVisible: true, defaultWidth: '130px', align: 'center' }
+    { id: 'ref', label: 'Ref #', default: true, lockVisible: true, defaultWidth: '140px', align: 'left' },
+    { id: 'vendor', label: 'Vendor & Contact', default: true, lockVisible: true, defaultWidth: '220px', align: 'left' },
+    { id: 'dates', label: 'Order / Delivery Date', default: true, lockVisible: false, defaultWidth: '140px', align: 'left' },
+    { id: 'destination', label: 'Ship To / Warehouse', default: true, lockVisible: false, defaultWidth: '170px', align: 'left' },
+    { id: 'items', label: 'Line Items', default: true, lockVisible: false, defaultWidth: '110px', align: 'center' },
+    { id: 'payment', label: 'Payment / Terms', default: true, lockVisible: false, defaultWidth: '145px', align: 'center' },
+    { id: 'status', label: 'Status', default: true, lockVisible: false, defaultWidth: '130px', align: 'center' },
+    { id: 'actions', label: 'Actions', default: true, lockVisible: true, defaultWidth: '150px', align: 'center' }
 ];
 
 let activePoColIds = (() => {
     try {
-        const saved = localStorage.getItem('rms_po_directory_cols');
-        if (saved) return JSON.parse(saved);
+        const saved = localStorage.getItem('rms_po_directory_cols_v3');
+        if (saved) {
+            const parsed = JSON.parse(saved);
+            const validIds = PO_DIRECTORY_COLUMNS.map(c => c.id);
+            if (Array.isArray(parsed) && parsed.length >= 6 && parsed.every(id => validIds.includes(id))) {
+                return parsed;
+            }
+        }
     } catch (e) {}
-    return PO_DIRECTORY_COLUMNS.filter(c => c.default).map(c => c.id);
+    return PO_DIRECTORY_COLUMNS.map(c => c.id);
 })();
 
 let savedPoColWidths = (() => {
     try {
-        const saved = localStorage.getItem('rms_po_directory_col_widths');
+        const saved = localStorage.getItem('rms_po_directory_col_widths_v2');
         if (saved) return JSON.parse(saved);
     } catch (e) {}
     return {};
@@ -3548,18 +3810,47 @@ function renderPoTableHeader() {
     const theadRow = document.getElementById('poDirectoryTheadRow');
     if (!theadRow) return;
 
+    const isStatusFiltered = (activePoStatusFilter !== 'all' || activePoApprovalFilter !== 'all');
+    const isPaymentFiltered = (activePoPaymentFilter !== 'all' || activePoTypeFilter !== 'all');
+
     let thHtml = '';
     PO_DIRECTORY_COLUMNS.forEach(col => {
         if (!activePoColIds.includes(col.id)) return;
         const w = getPoColWidth(col);
         const alignClass = col.align === 'right' ? 'th-num' : (col.align === 'center' ? 'th-center' : '');
 
-        if (col.id === 'actions') {
+        if (col.id === 'status') {
+            thHtml += `
+                <th class="${alignClass}" data-col-id="status" style="width: ${w}; position: relative; user-select: none;">
+                    <div class="po-th-filter-wrapper" onclick="togglePoHeaderFilter(event, 'status')" title="Click to filter by Approval Status & Order Status">
+                        <span>${col.label}</span>
+                        <button type="button" class="po-th-funnel-btn ${isStatusFiltered ? 'is-active' : ''}">
+                            <i class="ph ph-funnel"></i>
+                            ${isStatusFiltered ? '<span class="po-th-funnel-dot"></span>' : ''}
+                        </button>
+                    </div>
+                    <div class="po-col-resizer" onmousedown="initPoColResize(event, '${col.id}')"></div>
+                </th>
+            `;
+        } else if (col.id === 'payment') {
+            thHtml += `
+                <th class="${alignClass}" data-col-id="payment" style="width: ${w}; position: relative; user-select: none;">
+                    <div class="po-th-filter-wrapper" onclick="togglePoHeaderFilter(event, 'payment')" title="Click to filter by Payment & Terms">
+                        <span>${col.label}</span>
+                        <button type="button" class="po-th-funnel-btn ${isPaymentFiltered ? 'is-active' : ''}">
+                            <i class="ph ph-funnel"></i>
+                            ${isPaymentFiltered ? '<span class="po-th-funnel-dot"></span>' : ''}
+                        </button>
+                    </div>
+                    <div class="po-col-resizer" onmousedown="initPoColResize(event, '${col.id}')"></div>
+                </th>
+            `;
+        } else if (col.id === 'actions') {
             thHtml += `
                 <th class="${alignClass}" data-col-id="actions" style="width: ${w}; position: relative; user-select: none;">
-                    <div class="inv-header-action-wrapper">
+                    <div class="inv-header-action-wrapper" style="display: flex; align-items: center; justify-content: center; gap: 4px;">
                         <span>Action</span>
-                        <button type="button" class="inv-table-filter-btn" id="btnPoActionColFilter" onclick="togglePoColumnConfigDropdown(event)" title="Column Display Filter" style="width: 22px; height: 22px; font-size: 11px; border-radius: 5px; color: #9333ea; background: rgba(168, 85, 247, 0.10); border: 1px solid rgba(168, 85, 247, 0.25);">
+                        <button type="button" class="inv-table-filter-btn" id="btnPoActionColFilter" onclick="togglePoColumnConfigDropdown(event)" title="Column Display Filter" style="width: 22px; height: 22px; font-size: 11px; border-radius: 5px; color: #0284c7; background: rgba(2, 132, 199, 0.10); border: 1px solid rgba(2, 132, 199, 0.25);">
                             <i class="ph ph-funnel"></i>
                         </button>
                     </div>
@@ -3577,6 +3868,7 @@ function renderPoTableHeader() {
 
     theadRow.innerHTML = thHtml;
     renderPoColumnChecklist();
+    renderPoActiveFilterChips();
 }
 
 function renderPoColumnChecklist() {
@@ -3622,14 +3914,14 @@ function togglePoColumnVisibility(colId, isVisible) {
     } else {
         activePoColIds = activePoColIds.filter(id => id !== colId);
     }
-    localStorage.setItem('rms_po_directory_cols', JSON.stringify(activePoColIds));
+    localStorage.setItem('rms_po_directory_cols_v3', JSON.stringify(activePoColIds));
     renderPoTableHeader();
     renderPoDirectory();
 }
 
 function showAllPoColumns() {
     activePoColIds = PO_DIRECTORY_COLUMNS.map(c => c.id);
-    localStorage.setItem('rms_po_directory_cols', JSON.stringify(activePoColIds));
+    localStorage.setItem('rms_po_directory_cols_v3', JSON.stringify(activePoColIds));
     renderPoTableHeader();
     renderPoDirectory();
     showToast('✓ All columns visible', 'success');
@@ -3637,7 +3929,7 @@ function showAllPoColumns() {
 
 function resetPoColumnDefaults() {
     activePoColIds = PO_DIRECTORY_COLUMNS.filter(c => c.default).map(c => c.id);
-    localStorage.setItem('rms_po_directory_cols', JSON.stringify(activePoColIds));
+    localStorage.setItem('rms_po_directory_cols_v3', JSON.stringify(activePoColIds));
     renderPoTableHeader();
     renderPoDirectory();
     showToast('✓ Reset to default columns', 'success');
@@ -3649,7 +3941,7 @@ function resetPoColumns() {
 
 function resetPoColumnWidths() {
     savedPoColWidths = {};
-    localStorage.removeItem('rms_po_directory_col_widths');
+    localStorage.removeItem('rms_po_directory_col_widths_v2');
     renderPoTableHeader();
     renderPoDirectory();
     showToast('✓ Column widths reset to defaults', 'success');
@@ -3714,14 +4006,32 @@ function renderPoDirectory() {
     // Filter
     const filtered = pos.filter(p => {
         const matchesStatus = (activePoStatusFilter === 'all') || (p.status === activePoStatusFilter);
+        
+        let matchesApproval = true;
+        if (activePoApprovalFilter === 'approved') {
+            matchesApproval = (p.status === 'Approved / Issued' || p.status === 'Partially Received' || p.status === 'Fully Received' || p.isApproved === true);
+        } else if (activePoApprovalFilter === 'pending') {
+            matchesApproval = (p.status === 'Draft PO' || p.status === 'Draft' || p.status === 'Pending Approval');
+        }
+
+        const matchesPayment = (activePoPaymentFilter === 'all') || 
+            (p.paymentStatus && p.paymentStatus.toLowerCase().includes(activePoPaymentFilter.toLowerCase()));
+
         const matchesType = (activePoTypeFilter === 'all') || (p.poType === activePoTypeFilter);
+
         const q = (poSearchTerm || '').toLowerCase().trim();
         const matchesSearch = !q || 
             (p.poNumber && p.poNumber.toLowerCase().includes(q)) ||
             (p.vendorName && p.vendorName.toLowerCase().includes(q)) ||
+            (p.vendorTradeName && p.vendorTradeName.toLowerCase().includes(q)) ||
             (p.rfqReference && p.rfqReference.toLowerCase().includes(q)) ||
-            (p.vendorContactPerson && p.vendorContactPerson.toLowerCase().includes(q));
-        return matchesStatus && matchesType && matchesSearch;
+            (p.vendorContactPerson && p.vendorContactPerson.toLowerCase().includes(q)) ||
+            (p.deliveryLocation && p.deliveryLocation.toLowerCase().includes(q)) ||
+            (p.shippingNotes && p.shippingNotes.toLowerCase().includes(q)) ||
+            (p.paymentStatus && p.paymentStatus.toLowerCase().includes(q)) ||
+            (p.paymentMethod && p.paymentMethod.toLowerCase().includes(q));
+
+        return matchesStatus && matchesApproval && matchesPayment && matchesType && matchesSearch;
     });
 
     // KPI Counts
@@ -3730,22 +4040,37 @@ function renderPoDirectory() {
     const received = pos.filter(p => p.status === 'Fully Received').length;
     const paid = pos.filter(p => p.paymentStatus === 'Paid in Full / Cash Out').length;
 
-    document.getElementById('kpiPoTotal').textContent = total;
-    document.getElementById('kpiPoPending').textContent = pending;
-    document.getElementById('kpiPoReceived').textContent = received;
-    document.getElementById('kpiPoPaid').textContent = paid;
-    document.getElementById('tabPoCount').textContent = total;
+    const elKpiTotal = document.getElementById('kpiPoTotal');
+    const elKpiPending = document.getElementById('kpiPoPending');
+    const elKpiReceived = document.getElementById('kpiPoReceived');
+    const elKpiPaid = document.getElementById('kpiPoPaid');
+    const elTabCount = document.getElementById('tabPoCount');
 
-    document.getElementById('countPoAll').textContent = total;
-    document.getElementById('countPoPending').textContent = pending;
-    document.getElementById('countPoReceived').textContent = received;
-    document.getElementById('countPoPaid').textContent = paid;
+    if (elKpiTotal) elKpiTotal.textContent = total;
+    if (elKpiPending) elKpiPending.textContent = pending;
+    if (elKpiReceived) elKpiReceived.textContent = received;
+    if (elKpiPaid) elKpiPaid.textContent = paid;
+    if (elTabCount) elTabCount.textContent = total;
+
+    const elCountAll = document.getElementById('countPoAll');
+    const elCountPending = document.getElementById('countPoPending');
+    const elCountReceived = document.getElementById('countPoReceived');
+    const elCountPaid = document.getElementById('countPoPaid');
+    if (elCountAll) elCountAll.textContent = total;
+    if (elCountPending) elCountPending.textContent = pending;
+    if (elCountReceived) elCountReceived.textContent = received;
+    if (elCountPaid) elCountPaid.textContent = paid;
+
+    renderPoActiveFilterChips();
 
     if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="${activePoColIds.length || 10}" style="text-align: center; padding: 36px; color: var(--po-text-muted);">No Purchase Orders found matching the filter criteria.</td></tr>`;
-        document.getElementById('poPaginationStart').textContent = '0';
-        document.getElementById('poPaginationEnd').textContent = '0';
-        document.getElementById('poPaginationTotal').textContent = '0';
+        tbody.innerHTML = `<tr><td colspan="${activePoColIds.length || 8}" style="text-align: center; padding: 36px; color: var(--po-text-muted);">No Purchase Orders found matching the filter criteria.</td></tr>`;
+        const pStart = document.getElementById('poPaginationStart');
+        const pEnd = document.getElementById('poPaginationEnd');
+        const pTotal = document.getElementById('poPaginationTotal');
+        if (pStart) pStart.textContent = '0';
+        if (pEnd) pEnd.textContent = '0';
+        if (pTotal) pTotal.textContent = '0';
         renderPoPaginationControls(0);
         return;
     }
@@ -3760,9 +4085,12 @@ function renderPoDirectory() {
     const endIndex = Math.min(startIndex + poPageSize, totalFiltered);
     const pageItems = filtered.slice(startIndex, endIndex);
 
-    document.getElementById('poPaginationStart').textContent = (startIndex + 1).toString();
-    document.getElementById('poPaginationEnd').textContent = endIndex.toString();
-    document.getElementById('poPaginationTotal').textContent = totalFiltered.toString();
+    const pStart = document.getElementById('poPaginationStart');
+    const pEnd = document.getElementById('poPaginationEnd');
+    const pTotal = document.getElementById('poPaginationTotal');
+    if (pStart) pStart.textContent = (startIndex + 1).toString();
+    if (pEnd) pEnd.textContent = endIndex.toString();
+    if (pTotal) pTotal.textContent = totalFiltered.toString();
     renderPoPaginationControls(totalPages);
 
     tbody.innerHTML = pageItems.map(p => {
@@ -3780,53 +4108,101 @@ function renderPoDirectory() {
         PO_DIRECTORY_COLUMNS.forEach(col => {
             if (!activePoColIds.includes(col.id)) return;
 
-            if (col.id === 'poNumber') {
+            if (col.id === 'ref') {
                 cellsHtml += `
-                    <td style="font-family: monospace; font-weight: 700; color: var(--po-primary-dark);">
-                        <a href="javascript:void(0)" onclick="editPoFromDirectory('${p.poNumber}')" style="color: inherit; text-decoration: underline;">
-                            ${escapeHtml(p.poNumber)}
-                        </a>
-                    </td>
-                `;
-            } else if (col.id === 'type') {
-                cellsHtml += `
-                    <td class="td-center">
-                        <span class="po-type-badge ${isMarket ? 'wet-market' : 'vendor'}">
-                            ${isMarket ? '<i class="ph ph-basket"></i> Wet Market' : '<i class="ph ph-buildings"></i> Vendor'}
-                        </span>
+                    <td>
+                        <div class="rms-cell-stack">
+                            <div class="rms-cell-title" style="font-family: monospace; color: var(--po-primary-dark, #0284c7);">
+                                <a href="javascript:void(0)" onclick="editPoFromDirectory('${escapeHtml(p.poNumber)}')" title="PO: ${escapeHtml(p.poNumber)}" style="color: inherit; text-decoration: underline; font-weight: 700;">
+                                    ${escapeHtml(p.poNumber)}
+                                </a>
+                            </div>
+                            <div class="rms-cell-sub" title="RFQ: ${escapeHtml(p.rfqReference || 'Direct Buy')}">
+                                <span style="color: #94a3b8; font-family: monospace;">RFQ:</span> <span style="font-family: monospace;">${escapeHtml(p.rfqReference || 'Direct Buy')}</span>
+                            </div>
+                        </div>
                     </td>
                 `;
             } else if (col.id === 'vendor') {
                 cellsHtml += `
                     <td>
-                        <div style="font-weight: 700; color: var(--po-text-strong);">${escapeHtml(p.vendorTradeName || p.vendorName || 'Market Stall')}</div>
-                        <div style="font-size: 0.74rem; color: var(--po-text-muted);">
-                            ${escapeHtml(p.vendorContactPerson || 'Purchaser')} • ${escapeHtml(p.vendorPhone || '')}
+                        <div class="rms-cell-stack">
+                            <div class="rms-cell-title" title="${escapeHtml(p.vendorTradeName || p.vendorName || 'Supplier')}">
+                                ${escapeHtml(p.vendorTradeName || p.vendorName || 'Supplier')}
+                                ${isMarket ? '<span style="font-size: 0.65rem; background: #fef3c7; color: #b45309; padding: 1px 4px; border-radius: 3px; font-weight: 600; margin-left: 4px;">Market</span>' : ''}
+                            </div>
+                            <div class="rms-cell-sub" title="${escapeHtml((p.vendorContactPerson || 'Purchaser') + ' • ' + (p.vendorPhone || p.vendorEmail || ''))}">
+                                ${escapeHtml(p.vendorContactPerson || 'Purchaser')} • ${escapeHtml(p.vendorPhone || p.vendorEmail || '')}
+                            </div>
                         </div>
                     </td>
                 `;
-            } else if (col.id === 'orderDate') {
-                cellsHtml += `<td>${formatDateDisplay(p.orderDate)}</td>`;
-            } else if (col.id === 'expectedDelivery') {
-                cellsHtml += `<td><span style="font-weight: 600; color: var(--po-teal-dark);">${formatDateDisplay(p.expectedDelivery)}</span></td>`;
-            } else if (col.id === 'itemsCount') {
-                cellsHtml += `<td class="td-center"><span class="po-tab-count">${(p.items || []).length}</span></td>`;
-            } else if (col.id === 'grossTotal') {
-                cellsHtml += `<td class="td-num" style="font-weight: 800;">₱${formatMoney(gross)}</td>`;
-            } else if (col.id === 'paymentStatus') {
+            } else if (col.id === 'dates') {
+                cellsHtml += `
+                    <td>
+                        <div class="rms-cell-stack">
+                            <div class="rms-cell-title" style="font-size: 0.78rem;" title="Order Date: ${formatDateDisplay(p.orderDate)}">
+                                <span style="color: #64748b; font-weight: 500;">Order:</span> ${formatDateDisplay(p.orderDate)}
+                            </div>
+                            <div class="rms-cell-sub" style="color: var(--po-teal-dark, #0f766e); font-weight: 600;" title="Expected Delivery: ${formatDateDisplay(p.expectedDelivery)}">
+                                <span style="color: #94a3b8; font-weight: 500;">Arrival:</span> ${formatDateDisplay(p.expectedDelivery)}
+                            </div>
+                        </div>
+                    </td>
+                `;
+            } else if (col.id === 'destination') {
+                cellsHtml += `
+                    <td>
+                        <div class="rms-cell-stack">
+                            <div class="rms-cell-title" style="font-weight: 600; color: #334155;" title="${escapeHtml(p.deliveryLocation || 'Main Commissary / Outlet')}">
+                                <i class="ph ph-map-pin" style="color: #94a3b8; font-size: 12px; margin-right: 2px;"></i>${escapeHtml(p.deliveryLocation || 'Main Commissary')}
+                            </div>
+                            <div class="rms-cell-sub" title="${escapeHtml(p.shippingNotes || 'Central Warehouse')}">
+                                ${escapeHtml(p.shippingNotes || 'Central Warehouse')}
+                            </div>
+                        </div>
+                    </td>
+                `;
+            } else if (col.id === 'items') {
                 cellsHtml += `
                     <td class="td-center">
-                        <span class="pay-badge ${payBadgeClass}" style="cursor: pointer;" onclick="openPaymentSettlementModal('${p.poNumber}')" title="View Financial Settlement">
-                            ${escapeHtml(p.paymentStatus || 'Unpaid')}
-                        </span>
+                        <div class="rms-cell-stack" style="align-items: center;">
+                            <span class="po-tab-count">${(p.items || []).length} items</span>
+                            <span style="font-size: 0.72rem; color: #0f172a; font-weight: 800;">₱${formatMoney(gross)}</span>
+                        </div>
+                    </td>
+                `;
+            } else if (col.id === 'payment') {
+                cellsHtml += `
+                    <td class="td-center">
+                        <div class="rms-cell-stack" style="align-items: center; gap: 2px;">
+                            <span class="pay-badge ${payBadgeClass}" style="cursor: pointer; padding: 2px 7px; font-size: 10px;" onclick="openPaymentSettlementModal('${escapeHtml(p.poNumber)}')" title="View Financial Settlement">
+                                ${escapeHtml(p.paymentStatus || 'Unpaid')}
+                            </span>
+                            <span class="rms-cell-sub" style="font-size: 0.70rem; color: #64748b;" title="${escapeHtml(p.paymentMethod || p.paymentRemarks || 'Standard Terms')}">
+                                ${escapeHtml(p.paymentMethod || 'Terms')}
+                            </span>
+                        </div>
                     </td>
                 `;
             } else if (col.id === 'status') {
+                const isApproved = (p.status === 'Approved / Issued' || p.status === 'Partially Received' || p.status === 'Fully Received' || p.isApproved === true);
                 cellsHtml += `
                     <td class="td-center">
-                        <span class="po-status-badge ${poStatusClass}">
-                            <i class="ph ph-dot"></i> ${escapeHtml(p.status)}
-                        </span>
+                        <div class="rms-cell-stack" style="align-items: center; gap: 2px;">
+                            <span class="po-status-badge ${poStatusClass}" style="font-size: 0.70rem; padding: 1px 7px;">
+                                <i class="ph ph-dot"></i> ${escapeHtml(p.status)}
+                            </span>
+                            ${isApproved ? `
+                                <span class="po-approval-badge approved" title="Procurement Approval: Approved">
+                                    <i class="ph ph-check-circle"></i> Approved
+                                </span>
+                            ` : `
+                                <span class="po-approval-badge pending" title="Procurement Approval: Pending Approval">
+                                    <i class="ph ph-hourglass-simple"></i> Pending
+                                </span>
+                            `}
+                        </div>
                     </td>
                 `;
             } else if (col.id === 'actions') {
@@ -3834,23 +4210,23 @@ function renderPoDirectory() {
                     <td class="td-center">
                         <div style="display: flex; align-items: center; justify-content: center; gap: 4px;">
                             ${(p.status === 'Approved / Issued' || p.status === 'Partially Received') ? `
-                                <a href="{{ route('inventory.stock-in') }}?po=${encodeURIComponent(p.poNumber)}" class="inv-table-filter-btn" style="color: #059669; text-decoration: none;" title="Receive Stock in Inventory (Stock In / GRN)">
+                                <a href="{{ route('inventory.stock-in') }}?po=${encodeURIComponent(p.poNumber)}" class="inv-table-filter-btn" style="color: #059669; text-decoration: none; width: 24px; height: 24px; font-size: 12px;" title="Receive Stock in Inventory (Stock In / GRN)">
                                     <i class="ph ph-tray-arrow-down"></i>
                                 </a>
                             ` : ''}
-                            <button type="button" class="inv-table-filter-btn" onclick="openPaymentSettlementModal('${p.poNumber}')" title="Financial Settlement & Payments" style="color: #0284c7;">
+                            <button type="button" class="inv-table-filter-btn" onclick="openPaymentSettlementModal('${escapeHtml(p.poNumber)}')" title="Financial Settlement & Payments" style="color: #0284c7; width: 24px; height: 24px; font-size: 12px;">
                                 <i class="ph ph-bank"></i>
                             </button>
-                            <button type="button" class="inv-table-filter-btn" onclick="openPoSingleAuditModal('${p.poNumber}')" title="View Audit Trail for this PO">
+                            <button type="button" class="inv-table-filter-btn" onclick="openPoSingleAuditModal('${escapeHtml(p.poNumber)}')" title="View Audit Trail for this PO" style="width: 24px; height: 24px; font-size: 12px;">
                                 <i class="ph ph-clock-counter-clockwise"></i>
                             </button>
-                            <button type="button" class="inv-table-filter-btn" onclick="previewPoFromDirectory('${p.poNumber}')" title="Preview Printable PO">
+                            <button type="button" class="inv-table-filter-btn" onclick="previewPoFromDirectory('${escapeHtml(p.poNumber)}')" title="Preview Printable PO" style="width: 24px; height: 24px; font-size: 12px;">
                                 <i class="ph ph-eye"></i>
                             </button>
-                            <button type="button" class="inv-table-filter-btn" onclick="editPoFromDirectory('${p.poNumber}')" title="Edit Purchase Order">
+                            <button type="button" class="inv-table-filter-btn" onclick="editPoFromDirectory('${escapeHtml(p.poNumber)}')" title="Edit Purchase Order" style="width: 24px; height: 24px; font-size: 12px;">
                                 <i class="ph ph-pencil-simple"></i>
                             </button>
-                            <button type="button" class="inv-table-filter-btn" style="color: var(--po-danger);" onclick="deletePo('${p.poNumber}')" title="Delete PO">
+                            <button type="button" class="inv-table-filter-btn" style="color: var(--po-danger); width: 24px; height: 24px; font-size: 12px;" onclick="deletePo('${escapeHtml(p.poNumber)}')" title="Delete PO">
                                 <i class="ph ph-trash"></i>
                             </button>
                         </div>
@@ -3913,37 +4289,336 @@ function changePoPageSize(size) {
 
 function filterPoStatus(status, btn) {
     activePoStatusFilter = status;
-    activePoTypeFilter = 'all';
     poCurrentPage = 1;
-    if (btn) {
-        syncPoFilterPillActive(btn.getAttribute('data-filter') || 'all');
-    } else {
-        syncPoFilterPillActive(status === 'all' ? 'all' : (status === 'Approved / Issued' ? 'Pending' : 'Received'));
-    }
+    renderPoTableHeader();
     renderPoDirectory();
 }
 
 function filterPoType(type, btn) {
     activePoTypeFilter = type;
     poCurrentPage = 1;
-    if (btn) {
-        syncPoFilterPillActive(btn.getAttribute('data-filter'));
-    } else {
-        syncPoFilterPillActive(type === 'vendor' ? 'Standard' : 'WetMarket');
-    }
+    renderPoTableHeader();
     renderPoDirectory();
 }
 
 function filterPoPayment(payStatus, btn) {
+    activePoPaymentFilter = payStatus;
+    poCurrentPage = 1;
+    renderPoTableHeader();
+    renderPoDirectory();
+}
+
+function togglePoHeaderFilter(event, filterType) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    const popover = document.getElementById('poHeaderFilterPopover');
+    if (!popover) return;
+
+    if (activePoHeaderFilterType === filterType && popover.style.display !== 'none') {
+        closePoHeaderFilter();
+        return;
+    }
+
+    activePoHeaderFilterType = filterType;
+    const triggerEl = event.currentTarget;
+    const rect = triggerEl.getBoundingClientRect();
+
+    popover.innerHTML = filterType === 'status' ? buildPoStatusFilterPopoverHtml() : buildPoPaymentFilterPopoverHtml();
+    popover.style.display = 'block';
+    popover.style.position = 'fixed';
+    popover.style.top = `${rect.bottom + 6}px`;
+
+    const popoverWidth = filterType === 'status' ? 360 : 320;
+    let left = rect.left;
+    if (left + popoverWidth > window.innerWidth - 16) {
+        left = window.innerWidth - popoverWidth - 16;
+    }
+    popover.style.left = `${Math.max(10, left)}px`;
+    popover.style.zIndex = '1200';
+}
+
+function closePoHeaderFilter() {
+    const popover = document.getElementById('poHeaderFilterPopover');
+    if (popover) popover.style.display = 'none';
+    activePoHeaderFilterType = null;
+}
+
+function buildPoStatusFilterPopoverHtml() {
+    const pos = window.PoStore.purchaseOrders || [];
+    const totalCount = pos.length;
+    const approvedCount = pos.filter(p => p.status === 'Approved / Issued' || p.status === 'Partially Received' || p.status === 'Fully Received' || p.isApproved === true).length;
+    const pendingCount = totalCount - approvedCount;
+
+    const draftCount = pos.filter(p => p.status === 'Draft PO' || p.status === 'Draft').length;
+    const issuedCount = pos.filter(p => p.status === 'Approved / Issued').length;
+    const partialCount = pos.filter(p => p.status === 'Partially Received').length;
+    const receivedCount = pos.filter(p => p.status === 'Fully Received').length;
+    const cancelledCount = pos.filter(p => p.status === 'Cancelled').length;
+
+    return `
+        <div class="po-filter-popover-card">
+            <div class="po-filter-popover-header">
+                <div style="display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 12.5px; color: #0f172a;">
+                    <i class="ph ph-sliders-horizontal" style="color: #0284c7; font-size: 15px;"></i>
+                    <span>Status & Approval Filters</span>
+                </div>
+                <button type="button" class="po-popover-reset-btn" onclick="resetPoStatusFilters(event)">Reset Both</button>
+            </div>
+            
+            <div class="po-filter-popover-body">
+                <!-- ROW 1: APPROVAL STATUS -->
+                <div class="po-filter-section">
+                    <div class="po-filter-section-title">
+                        <span>Row 1: Approval Status</span>
+                        ${activePoApprovalFilter !== 'all' ? `<span class="po-section-active-badge">${escapeHtml(activePoApprovalFilter)}</span>` : ''}
+                    </div>
+                    <div class="po-filter-pill-row">
+                        <button type="button" class="po-popover-chip ${activePoApprovalFilter === 'all' ? 'is-active' : ''}" onclick="setPoApprovalFilter(event, 'all')">
+                            All (${totalCount})
+                        </button>
+                        <button type="button" class="po-popover-chip is-success ${activePoApprovalFilter === 'approved' ? 'is-active' : ''}" onclick="setPoApprovalFilter(event, 'approved')">
+                            <i class="ph ph-check-circle"></i> Approved (${approvedCount})
+                        </button>
+                        <button type="button" class="po-popover-chip is-warning ${activePoApprovalFilter === 'pending' ? 'is-active' : ''}" onclick="setPoApprovalFilter(event, 'pending')">
+                            <i class="ph ph-hourglass-simple"></i> Pending (${pendingCount})
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ROW 2: PO STATUS -->
+                <div class="po-filter-section" style="margin-top: 10px;">
+                    <div class="po-filter-section-title">
+                        <span>Row 2: PO Status</span>
+                        ${activePoStatusFilter !== 'all' ? `<span class="po-section-active-badge">${escapeHtml(activePoStatusFilter)}</span>` : ''}
+                    </div>
+                    <div class="po-filter-pill-grid">
+                        <button type="button" class="po-popover-chip ${activePoStatusFilter === 'all' ? 'is-active' : ''}" onclick="setPoStatusFilter(event, 'all')">
+                            All (${totalCount})
+                        </button>
+                        <button type="button" class="po-popover-chip ${activePoStatusFilter === 'Draft PO' ? 'is-active' : ''}" onclick="setPoStatusFilter(event, 'Draft PO')">
+                            Draft (${draftCount})
+                        </button>
+                        <button type="button" class="po-popover-chip ${activePoStatusFilter === 'Approved / Issued' ? 'is-active' : ''}" onclick="setPoStatusFilter(event, 'Approved / Issued')">
+                            Issued (${issuedCount})
+                        </button>
+                        <button type="button" class="po-popover-chip ${activePoStatusFilter === 'Partially Received' ? 'is-active' : ''}" onclick="setPoStatusFilter(event, 'Partially Received')">
+                            Partial (${partialCount})
+                        </button>
+                        <button type="button" class="po-popover-chip is-success ${activePoStatusFilter === 'Fully Received' ? 'is-active' : ''}" onclick="setPoStatusFilter(event, 'Fully Received')">
+                            Received (${receivedCount})
+                        </button>
+                        <button type="button" class="po-popover-chip is-danger ${activePoStatusFilter === 'Cancelled' ? 'is-active' : ''}" onclick="setPoStatusFilter(event, 'Cancelled')">
+                            Cancelled (${cancelledCount})
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function buildPoPaymentFilterPopoverHtml() {
+    const pos = window.PoStore.purchaseOrders || [];
+    const totalCount = pos.length;
+    const paidCount = pos.filter(p => p.paymentStatus === 'Paid in Full / Cash Out').length;
+    const unpaidCount = pos.filter(p => !p.paymentStatus || p.paymentStatus === 'Pending Settlement / Unpaid' || p.paymentStatus === 'Unpaid').length;
+    const partialCount = pos.filter(p => p.paymentStatus === 'Partial Payment' || p.paymentStatus === 'Partial').length;
+
+    const vendorCount = pos.filter(p => p.poType === 'vendor' || !p.poType).length;
+    const wetMarketCount = pos.filter(p => p.poType === 'wet_market').length;
+
+    return `
+        <div class="po-filter-popover-card">
+            <div class="po-filter-popover-header">
+                <div style="display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 12.5px; color: #0f172a;">
+                    <i class="ph ph-credit-card" style="color: #0284c7; font-size: 15px;"></i>
+                    <span>Payment & Sourcing Filter</span>
+                </div>
+                <button type="button" class="po-popover-reset-btn" onclick="resetPoPaymentFilters(event)">Reset Both</button>
+            </div>
+            
+            <div class="po-filter-popover-body">
+                <!-- Section 1: Payment Status -->
+                <div class="po-filter-section">
+                    <div class="po-filter-section-title">
+                        <span>Payment Status</span>
+                        ${activePoPaymentFilter !== 'all' ? `<span class="po-section-active-badge">${escapeHtml(activePoPaymentFilter)}</span>` : ''}
+                    </div>
+                    <div class="po-filter-pill-row">
+                        <button type="button" class="po-popover-chip ${activePoPaymentFilter === 'all' ? 'is-active' : ''}" onclick="setPoPaymentFilter(event, 'all')">
+                            All (${totalCount})
+                        </button>
+                        <button type="button" class="po-popover-chip is-success ${activePoPaymentFilter === 'Paid in Full / Cash Out' ? 'is-active' : ''}" onclick="setPoPaymentFilter(event, 'Paid in Full / Cash Out')">
+                            Paid (${paidCount})
+                        </button>
+                        <button type="button" class="po-popover-chip is-warning ${activePoPaymentFilter === 'Pending Settlement / Unpaid' ? 'is-active' : ''}" onclick="setPoPaymentFilter(event, 'Pending Settlement / Unpaid')">
+                            Unpaid (${unpaidCount})
+                        </button>
+                        <button type="button" class="po-popover-chip ${activePoPaymentFilter === 'Partial Payment' ? 'is-active' : ''}" onclick="setPoPaymentFilter(event, 'Partial Payment')">
+                            Partial (${partialCount})
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Section 2: Sourcing Type -->
+                <div class="po-filter-section" style="margin-top: 10px;">
+                    <div class="po-filter-section-title">
+                        <span>Sourcing Channel</span>
+                        ${activePoTypeFilter !== 'all' ? `<span class="po-section-active-badge">${activePoTypeFilter === 'wet_market' ? 'Wet Market' : 'Vendor'}</span>` : ''}
+                    </div>
+                    <div class="po-filter-pill-row">
+                        <button type="button" class="po-popover-chip ${activePoTypeFilter === 'all' ? 'is-active' : ''}" onclick="setPoTypeFilter(event, 'all')">
+                            All Channels (${totalCount})
+                        </button>
+                        <button type="button" class="po-popover-chip ${activePoTypeFilter === 'vendor' ? 'is-active' : ''}" onclick="setPoTypeFilter(event, 'vendor')">
+                            Standard Vendor (${vendorCount})
+                        </button>
+                        <button type="button" class="po-popover-chip is-warning ${activePoTypeFilter === 'wet_market' ? 'is-active' : ''}" onclick="setPoTypeFilter(event, 'wet_market')">
+                            Wet Market Run (${wetMarketCount})
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function setPoApprovalFilter(event, val) {
+    if (event) event.stopPropagation();
+    activePoApprovalFilter = val;
+    poCurrentPage = 1;
+    renderPoTableHeader();
+    renderPoDirectory();
+    const popover = document.getElementById('poHeaderFilterPopover');
+    if (popover && popover.style.display !== 'none' && activePoHeaderFilterType === 'status') {
+        popover.innerHTML = buildPoStatusFilterPopoverHtml();
+    }
+}
+
+function setPoStatusFilter(event, val) {
+    if (event) event.stopPropagation();
+    activePoStatusFilter = val;
+    poCurrentPage = 1;
+    renderPoTableHeader();
+    renderPoDirectory();
+    const popover = document.getElementById('poHeaderFilterPopover');
+    if (popover && popover.style.display !== 'none' && activePoHeaderFilterType === 'status') {
+        popover.innerHTML = buildPoStatusFilterPopoverHtml();
+    }
+}
+
+function resetPoStatusFilters(event) {
+    if (event) event.stopPropagation();
     activePoStatusFilter = 'all';
+    activePoApprovalFilter = 'all';
+    poCurrentPage = 1;
+    renderPoTableHeader();
+    renderPoDirectory();
+    closePoHeaderFilter();
+}
+
+function setPoPaymentFilter(event, val) {
+    if (event) event.stopPropagation();
+    activePoPaymentFilter = val;
+    poCurrentPage = 1;
+    renderPoTableHeader();
+    renderPoDirectory();
+    const popover = document.getElementById('poHeaderFilterPopover');
+    if (popover && popover.style.display !== 'none' && activePoHeaderFilterType === 'payment') {
+        popover.innerHTML = buildPoPaymentFilterPopoverHtml();
+    }
+}
+
+function setPoTypeFilter(event, val) {
+    if (event) event.stopPropagation();
+    activePoTypeFilter = val;
+    poCurrentPage = 1;
+    renderPoTableHeader();
+    renderPoDirectory();
+    const popover = document.getElementById('poHeaderFilterPopover');
+    if (popover && popover.style.display !== 'none' && activePoHeaderFilterType === 'payment') {
+        popover.innerHTML = buildPoPaymentFilterPopoverHtml();
+    }
+}
+
+function resetPoPaymentFilters(event) {
+    if (event) event.stopPropagation();
+    activePoPaymentFilter = 'all';
     activePoTypeFilter = 'all';
     poCurrentPage = 1;
-    if (btn) {
-        syncPoFilterPillActive(btn.getAttribute('data-filter'));
-    } else {
-        syncPoFilterPillActive('Paid');
-    }
+    renderPoTableHeader();
     renderPoDirectory();
+    closePoHeaderFilter();
+}
+
+function clearAllPoFilters() {
+    activePoStatusFilter = 'all';
+    activePoApprovalFilter = 'all';
+    activePoPaymentFilter = 'all';
+    activePoTypeFilter = 'all';
+    poSearchTerm = '';
+    const searchInput = document.getElementById('poSearchInput');
+    if (searchInput) searchInput.value = '';
+    poCurrentPage = 1;
+    renderPoTableHeader();
+    renderPoDirectory();
+    closePoHeaderFilter();
+}
+
+function renderPoActiveFilterChips() {
+    const container = document.getElementById('poActiveFilterChips');
+    if (!container) return;
+
+    let chipsHtml = '';
+
+    if (activePoApprovalFilter !== 'all') {
+        chipsHtml += `
+            <span class="po-active-chip" title="Active Approval Filter">
+                <span>Approval: <strong>${escapeHtml(activePoApprovalFilter)}</strong></span>
+                <button type="button" onclick="setPoApprovalFilter(event, 'all')" title="Clear approval filter">&times;</button>
+            </span>
+        `;
+    }
+
+    if (activePoStatusFilter !== 'all') {
+        chipsHtml += `
+            <span class="po-active-chip" title="Active PO Status Filter">
+                <span>Status: <strong>${escapeHtml(activePoStatusFilter)}</strong></span>
+                <button type="button" onclick="setPoStatusFilter(event, 'all')" title="Clear status filter">&times;</button>
+            </span>
+        `;
+    }
+
+    if (activePoPaymentFilter !== 'all') {
+        chipsHtml += `
+            <span class="po-active-chip" title="Active Payment Filter">
+                <span>Payment: <strong>${escapeHtml(activePoPaymentFilter)}</strong></span>
+                <button type="button" onclick="setPoPaymentFilter(event, 'all')" title="Clear payment filter">&times;</button>
+            </span>
+        `;
+    }
+
+    if (activePoTypeFilter !== 'all') {
+        const typeLabel = activePoTypeFilter === 'wet_market' ? 'Wet Market' : 'Vendor';
+        chipsHtml += `
+            <span class="po-active-chip" title="Active Sourcing Filter">
+                <span>Type: <strong>${escapeHtml(typeLabel)}</strong></span>
+                <button type="button" onclick="setPoTypeFilter(event, 'all')" title="Clear sourcing filter">&times;</button>
+            </span>
+        `;
+    }
+
+    if (chipsHtml) {
+        chipsHtml += `
+            <button type="button" class="po-clear-all-chip-btn" onclick="clearAllPoFilters()" title="Reset all directory filters">
+                Clear all
+            </button>
+        `;
+    }
+
+    container.innerHTML = chipsHtml;
 }
 
 function handlePoSearch(q) {
