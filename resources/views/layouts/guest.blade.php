@@ -7,7 +7,7 @@
     <title>@yield('title', 'Sign In - Restaurant Management System')</title>
 
     <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="{{ asset('assets/img/logo.svg') }}">
+    <link rel="icon" type="image/svg+xml" href="{{ asset('assets/img/logo-tab.svg') }}?v={{ file_exists(public_path('assets/img/logo-tab.svg')) ? filemtime(public_path('assets/img/logo-tab.svg')) : '1.0' }}">
 
     <!-- Custom RMS Stylesheet -->
     <link rel="stylesheet" href="{{ asset('assets/css/styles.css') }}?v={{ time() }}">
