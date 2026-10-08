@@ -6,6 +6,9 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Sign In - Restaurant Management System')</title>
 
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="{{ asset('assets/img/logo.svg') }}">
+
     <!-- Custom RMS Stylesheet -->
     <link rel="stylesheet" href="{{ asset('assets/css/styles.css') }}?v={{ time() }}">
 

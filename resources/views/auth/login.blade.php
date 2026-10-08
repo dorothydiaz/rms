@@ -8,7 +8,7 @@
         <!-- Brand Header -->
         <div class="login-header">
             <div class="login-brand-logo">
-                <i class="ph ph-fork-knife"></i>
+                <img src="{{ asset('assets/img/logo.svg') }}" alt="RMS Logo" class="login-brand-logo-img">
             </div>
             <div class="login-brand-text">
                 <span class="login-system-title">Restaurant Management System</span>
