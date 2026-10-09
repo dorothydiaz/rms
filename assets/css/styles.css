@@ -4265,7 +4265,7 @@ select option {
     left: 0;
     right: 0;
     height: 4px;
-    background: linear-gradient(90deg, #ec4899, #a855f7);
+    background: linear-gradient(90deg, #ec4899 0%, #a855f7 50%, #8b5cf6 100%);
     border-radius: 18px 18px 0 0;
 }
 
