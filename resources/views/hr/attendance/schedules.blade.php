@@ -3170,10 +3170,10 @@
 }
 
 .sched-custom-time-card {
-    padding: 7px 10px;
+    padding: 9px 10px;
     background: #fdf4ff;
     border: 1.5px dashed #e879f9;
-    border-radius: 99px;
+    border-radius: 10px;
     margin: 2px 0 0 0;
 }
 
