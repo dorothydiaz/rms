@@ -1,0 +1,397 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Restaurant Management System (RMS) Architecture",
+    "output": ".archify/architecture-rms-system-overview-20260930-080540/rms-system-overview.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/dorothydiaz/rms.git",
+      "provider": "github",
+      "revision": "8855bab043a687ebc59e5be308436f9ddd79f339"
+    },
+    "views": [
+      {
+        "id": "full-system",
+        "label": "Full System Overview",
+        "focus": [
+          "staff",
+          "auth_guard",
+          "ops_hub",
+          "sales_module",
+          "inventory_module",
+          "purchasing_module",
+          "hr_module",
+          "rms_database"
+        ],
+        "note": "Complete overview of RMS authentication, operational subsystems, and storage tier"
+      },
+      {
+        "id": "inventory-flow",
+        "label": "Inventory & Recipes",
+        "focus": [
+          "sales_module",
+          "inventory_module",
+          "purchasing_module",
+          "rms_database"
+        ],
+        "note": "Recipe ingredient consumption by POS sales and replenishment via purchasing"
+      },
+      {
+        "id": "hr-operations",
+        "label": "HR & Admin Suite",
+        "focus": [
+          "auth_guard",
+          "session_cache",
+          "hr_module",
+          "rms_database"
+        ],
+        "note": "Role-based authentication, employee records, attendance, and payroll administration"
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "staff",
+      "type": "external",
+      "label": "Restaurant Staff",
+      "sublabel": "Cashier, Kitchen & Mgmt",
+      "icon": "person",
+      "pos": [40, 240],
+      "size": [150, 68]
+    },
+    {
+      "id": "auth_guard",
+      "type": "security",
+      "label": "Auth & Access Guard",
+      "sublabel": "RBAC & Lockout Guard",
+      "tag": "Session & CSRF",
+      "icon": "security",
+      "pos": [250, 240],
+      "size": [160, 68],
+      "sources": [
+        {
+          "path": "app/Http/Controllers/AuthController.php",
+          "line": 27,
+          "end_line": 65,
+          "label": "AuthController"
+        },
+        {
+          "path": "routes/web.php",
+          "line": 20,
+          "end_line": 29,
+          "label": "Auth Routes"
+        }
+      ]
+    },
+    {
+      "id": "session_cache",
+      "type": "database",
+      "label": "Session & Lockouts",
+      "sublabel": "Login Attempts & Tokens",
+      "icon": "database",
+      "pos": [250, 390],
+      "size": [160, 64],
+      "sources": [
+        {
+          "path": "app/Models/LoginAttempt.php",
+          "line": 1,
+          "end_line": 26,
+          "label": "LoginAttempt Model"
+        },
+        {
+          "path": "config/database.php",
+          "line": 35,
+          "end_line": 45,
+          "label": "Cache & Sessions"
+        }
+      ]
+    },
+    {
+      "id": "ops_hub",
+      "type": "backend",
+      "label": "Operations Hub",
+      "sublabel": "DashboardController",
+      "tag": "Blade Layouts",
+      "icon": "backend",
+      "pos": [490, 230],
+      "size": [160, 88],
+      "sources": [
+        {
+          "path": "app/Http/Controllers/DashboardController.php",
+          "line": 1,
+          "end_line": 13,
+          "label": "DashboardController"
+        },
+        {
+          "path": "routes/web.php",
+          "line": 31,
+          "end_line": 33,
+          "label": "Dashboard Route"
+        }
+      ]
+    },
+    {
+      "id": "sales_module",
+      "type": "backend",
+      "label": "Sales & POS",
+      "sublabel": "Orders, Billing & Vouchers",
+      "tag": "Daily Sales",
+      "icon": "backend",
+      "pos": [740, 70],
+      "size": [170, 68],
+      "sources": [
+        {
+          "path": "app/Http/Controllers/SalesController.php",
+          "line": 8,
+          "end_line": 48,
+          "label": "SalesController"
+        },
+        {
+          "path": "routes/web.php",
+          "line": 222,
+          "end_line": 231,
+          "label": "Sales Routes"
+        }
+      ]
+    },
+    {
+      "id": "inventory_module",
+      "type": "backend",
+      "label": "Inventory & Recipes",
+      "sublabel": "Stock Levels & Recipes",
+      "tag": "Recipe BOM",
+      "icon": "backend",
+      "pos": [740, 190],
+      "size": [170, 68],
+      "sources": [
+        {
+          "path": "app/Http/Controllers/InventoryController.php",
+          "line": 8,
+          "end_line": 53,
+          "label": "InventoryController"
+        },
+        {
+          "path": "routes/web.php",
+          "line": 234,
+          "end_line": 244,
+          "label": "Inventory Routes"
+        }
+      ]
+    },
+    {
+      "id": "purchasing_module",
+      "type": "backend",
+      "label": "Purchasing & Vendors",
+      "sublabel": "PO, RFQ & Vendor Bills",
+      "tag": "Procurement",
+      "icon": "backend",
+      "pos": [740, 310],
+      "size": [170, 68],
+      "sources": [
+        {
+          "path": "app/Http/Controllers/PurchaseController.php",
+          "line": 8,
+          "end_line": 33,
+          "label": "PurchaseController"
+        },
+        {
+          "path": "routes/web.php",
+          "line": 247,
+          "end_line": 253,
+          "label": "Purchase Routes"
+        }
+      ]
+    },
+    {
+      "id": "hr_module",
+      "type": "backend",
+      "label": "HR & People Suite",
+      "sublabel": "Attendance & Payroll",
+      "tag": "HRIS Suite",
+      "icon": "backend",
+      "pos": [740, 430],
+      "size": [170, 68],
+      "sources": [
+        {
+          "path": "app/Http/Controllers/HrController.php",
+          "line": 8,
+          "end_line": 38,
+          "label": "HrController"
+        },
+        {
+          "path": "routes/web.php",
+          "line": 35,
+          "end_line": 65,
+          "label": "HR Routes"
+        }
+      ]
+    },
+    {
+      "id": "rms_database",
+      "type": "database",
+      "label": "Primary Database",
+      "sublabel": "SQLite / MySQL Schema",
+      "tag": "Eloquent ORM",
+      "icon": "database",
+      "pos": [1000, 220],
+      "size": [170, 100],
+      "sources": [
+        {
+          "path": "config/database.php",
+          "line": 20,
+          "end_line": 60,
+          "label": "Database Config"
+        },
+        {
+          "path": "app/Models/User.php",
+          "line": 1,
+          "end_line": 40,
+          "label": "User & Roles"
+        }
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "security-group",
+      "label": "Ingress & Authentication Boundary",
+      "wraps": ["auth_guard", "session_cache"]
+    },
+    {
+      "kind": "region",
+      "label": "RMS Core Application Services (Laravel 12)",
+      "wraps": [
+        "ops_hub",
+        "sales_module",
+        "inventory_module",
+        "purchasing_module",
+        "hr_module"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "Relational Persistence Tier",
+      "wraps": ["rms_database"]
+    }
+  ],
+  "connections": [
+    {
+      "id": "staff-to-auth",
+      "from": "staff",
+      "to": "auth_guard",
+      "label": "HTTPS",
+      "variant": "emphasis"
+    },
+    {
+      "id": "auth-to-session",
+      "from": "auth_guard",
+      "to": "session_cache",
+      "label": "Lockouts",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "auth-to-ops",
+      "from": "auth_guard",
+      "to": "ops_hub",
+      "label": "Session",
+      "variant": "security"
+    },
+    {
+      "id": "ops-to-sales",
+      "from": "ops_hub",
+      "to": "sales_module",
+      "label": "Orders",
+      "fromSide": "top",
+      "toSide": "left"
+    },
+    {
+      "id": "ops-to-inventory",
+      "from": "ops_hub",
+      "to": "inventory_module",
+      "label": "Stocks"
+    },
+    {
+      "id": "ops-to-purchasing",
+      "from": "ops_hub",
+      "to": "purchasing_module",
+      "label": "Procure"
+    },
+    {
+      "id": "ops-to-hr",
+      "from": "ops_hub",
+      "to": "hr_module",
+      "label": "HR Admin"
+    },
+    {
+      "id": "sales-depletes-inventory",
+      "from": "sales_module",
+      "to": "inventory_module",
+      "label": "Recipe BOM",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "po-stocks-inventory",
+      "from": "purchasing_module",
+      "to": "inventory_module",
+      "label": "Receiving",
+      "variant": "dashed",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "sales-to-db",
+      "from": "sales_module",
+      "to": "rms_database",
+      "label": "Transactions"
+    },
+    {
+      "id": "inventory-to-db",
+      "from": "inventory_module",
+      "to": "rms_database",
+      "label": "Stock Ledger"
+    },
+    {
+      "id": "purchasing-to-db",
+      "from": "purchasing_module",
+      "to": "rms_database",
+      "label": "POs & Bills"
+    },
+    {
+      "id": "hr-to-db",
+      "from": "hr_module",
+      "to": "rms_database",
+      "label": "HR & Payroll"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Ingress & Role Security",
+      "items": [
+        "Granular RBAC distinguishing Admin, Manager, Cashier, Kitchen, and Staff roles",
+        "Automated brute-force lockout via LoginAttempt tracking IP and identity attempts"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Restaurant Operations & Recipe Management",
+      "items": [
+        "POS daily sales deplete raw material quantities mapped in Recipe Management",
+        "Purchase Orders feed stock directly into receiving and beginning balance ledgers"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Enterprise HR & Data Persistence",
+      "items": [
+        "Comprehensive HRIS covering attendance, shift scheduling, leaves, and payroll",
+        "Multi-database support (SQLite/MySQL) using Laravel Eloquent ORM migrations"
+      ]
+    }
+  ]
+}

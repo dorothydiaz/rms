@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "ok": false,
+  "command": "finalize",
+  "status": "fail",
+  "type": "architecture",
+  "quality": "showcase",
+  "specification": {
+    "path": "C:\\Users\\JABIGUERO\\Documents\\GitHub\\rms\\.archify\\architecture-rms-system-overview-20260930-080540\\candidate.json",
+    "sha256": "514965c1db12d6488f7717f848457419327ea5875b1f2b1c3d57dfb39323444a",
+    "bytes": 9820
+  },
+  "artifact": {
+    "path": "C:\\Users\\JABIGUERO\\Documents\\GitHub\\rms\\.archify\\architecture-rms-system-overview-20260930-080540\\rms-system-overview.html",
+    "sha256": "d37149ea9a5f208eeef200c6d88e06f04ad55309c362deffc6ef94d5789308f7",
+    "bytes": 774487
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "fail"
+  },
+  "failedStage": "browser-check",
+  "diagnostics": [
+    {
+      "code": "viewer/evidence-path-conflict",
+      "severity": "error",
+      "message": "browser-check will not replace the existing unowned evidence path \"C:\\Users\\JABIGUERO\\Documents\\GitHub\\rms\\.archify\\architecture-rms-system-overview-20260930-080540\\rms-system-overview.browser-check.json\".",
+      "subject": {
+        "artifact": "C:\\Users\\JABIGUERO\\Documents\\GitHub\\rms\\.archify\\architecture-rms-system-overview-20260930-080540\\rms-system-overview.html",
+        "evidencePath": "C:\\Users\\JABIGUERO\\Documents\\GitHub\\rms\\.archify\\architecture-rms-system-overview-20260930-080540\\rms-system-overview.browser-check.json"
+      },
+      "evidence": {
+        "reason": {
+          "code": "ownership-artifact-mismatch"
+        }
+      },
+      "supportedFixes": [
+        "move the conflicting file aside, or choose a separate --out-dir, then rerun browser-check"
+      ]
+    }
+  ],
+  "diagnosticSummary": {
+    "total": 1,
+    "shown": 1,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "C:\\Users\\JABIGUERO\\Documents\\GitHub\\rms\\.archify\\architecture-rms-system-overview-20260930-080540\\rms-system-overview.finalize.json",
+    "summaryReceipt": "C:\\Users\\JABIGUERO\\Documents\\GitHub\\rms\\.archify\\architecture-rms-system-overview-20260930-080540\\rms-system-overview.finalize-summary.json",
+    "browserCheckReceipt": "C:\\Users\\JABIGUERO\\Documents\\GitHub\\rms\\.archify\\architecture-rms-system-overview-20260930-080540\\rms-system-overview.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.0.1",
+    "availableVersion": "3.0.1",
+    "releaseNotes": null,
+    "checkedAt": "2026-09-30T00:07:53.950Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 1943
+}

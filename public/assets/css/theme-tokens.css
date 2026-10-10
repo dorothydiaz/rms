@@ -1,0 +1,267 @@
+/**
+ * ============================================================================
+ * RMS ENTERPRISE THEME TOKENS & DESIGN SYSTEM
+ * Extracted from the HR Operations (HRIS) Module
+ * Standardized for Universal Cross-Module Adoption (Purchasing, Inventory, POS, etc.)
+ * ============================================================================
+ */
+
+:root {
+    /* -------------------------------------------------------------------------
+       1. BRAND & PRIMARY ACCENT SYSTEM (Vibrant Lavender / Pink-Purple Mesh)
+       ------------------------------------------------------------------------- */
+    --brand-primary: #9333ea;
+    --brand-primary-hover: #7c3aed;
+    --brand-accent-pink: #ec4899;
+    --brand-accent-deep-pink: #db2777;
+    --brand-accent-indigo: #6366f1;
+    --brand-accent-purple-light: #c084fc;
+    
+    /* Primary Action Gradients */
+    --gradient-primary: linear-gradient(135deg, #ec4899 0%, #a855f7 100%);
+    --gradient-primary-hover: linear-gradient(135deg, #db2777 0%, #9333ea 100%);
+    --gradient-primary-subtle: linear-gradient(135deg, rgba(236, 72, 153, 0.14) 0%, rgba(168, 85, 247, 0.20) 100%);
+    --gradient-accent-strip: linear-gradient(90deg, #ec4899 0%, #a855f7 50%, #8b5cf6 100%);
+    
+    /* -------------------------------------------------------------------------
+       2. CANVAS & AMBIENT ATMOSPHERE
+       ------------------------------------------------------------------------- */
+    --canvas-bg: #faf7fd;
+    --ambient-mesh-1: rgba(216, 180, 254, 0.45);
+    --ambient-mesh-2: rgba(233, 213, 255, 0.55);
+    --ambient-mesh-3: rgba(192, 132, 252, 0.35);
+    --ambient-mesh-4: rgba(255, 255, 255, 0.95);
+
+    /* -------------------------------------------------------------------------
+       3. SURFACES & GLASSMORPHISM
+       ------------------------------------------------------------------------- */
+    --surface-pure-white: #ffffff;
+    --surface-glass-90: rgba(255, 255, 255, 0.90);
+    --surface-glass-85: rgba(255, 255, 255, 0.85);
+    --surface-glass-75: rgba(255, 255, 255, 0.75);
+    --surface-glass-65: rgba(255, 255, 255, 0.65);
+    --surface-subtle-gray: #f8fafc;
+    --surface-subtle-hover: rgba(245, 243, 255, 0.65);
+    
+    /* Backdrop Filter Blurs */
+    --blur-glass-dense: blur(24px) saturate(180%);
+    --blur-glass-nav: blur(16px);
+    --blur-glass-subtle: blur(12px);
+    --blur-overlay: blur(4px);
+
+    /* -------------------------------------------------------------------------
+       4. BORDERS & SHADOWS
+       ------------------------------------------------------------------------- */
+    --border-glass-bright: 1px solid rgba(255, 255, 255, 0.95);
+    --border-glass-card: 1px solid rgba(255, 255, 255, 0.85);
+    --border-glass-subtle: 1px solid rgba(226, 232, 240, 0.85);
+    --border-subtle: 1px solid #e2e8f0;
+    --border-focus-purple: rgba(168, 85, 247, 0.38);
+
+    /* Elevation Shadows */
+    --shadow-card-ambient: 0 10px 32px rgba(148, 163, 184, 0.08), 0 2px 8px rgba(0, 0, 0, 0.02), inset 0 1px 1.5px rgba(255, 255, 255, 0.95);
+    --shadow-card-hover: 0 14px 32px rgba(168, 85, 247, 0.14), 0 4px 10px rgba(236, 72, 153, 0.08);
+    --shadow-btn-primary: 0 4px 14px rgba(168, 85, 247, 0.32), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+    --shadow-btn-primary-hover: 0 8px 22px rgba(168, 85, 247, 0.42);
+    --shadow-dropdown: 0 10px 25px -5px rgba(15, 23, 42, 0.12), 0 8px 10px -6px rgba(15, 23, 42, 0.08);
+    --shadow-drawer-modal: -12px 0 45px -4px rgba(15, 23, 42, 0.18), -4px 0 16px -2px rgba(15, 23, 42, 0.08);
+    --shadow-focus-ring: 0 0 0 3.5px rgba(168, 85, 247, 0.18), 0 2px 8px rgba(168, 85, 247, 0.08);
+    --shadow-tooltip: 0 10px 25px -5px rgba(15, 23, 42, 0.3), 0 4px 8px -2px rgba(0, 0, 0, 0.1);
+
+    /* -------------------------------------------------------------------------
+       5. TYPOGRAPHY SCALE (Google Fonts: Poppins, League Spartan, Outfit)
+       ------------------------------------------------------------------------- */
+    --font-family-body: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-family-heading: 'Poppins', sans-serif;
+    --font-family-display: 'League Spartan', sans-serif;
+    --font-family-accent: 'Outfit', sans-serif;
+
+    /* Typographic Hierarchy */
+    --text-display: 26px;     /* Metric Values, Major Totals */
+    --text-title-lg: 22px;    /* Page Titles */
+    --text-title-md: 17px;    /* Drawer / Modal Titles */
+    --text-title-sm: 15px;    /* Card & Section Titles */
+    --text-body: 13px;        /* Standard Body, Table Cells, Form Inputs */
+    --text-table-th: 11.5px;  /* Uppercase Column Headers */
+    --text-label: 12px;       /* Metric & Field Labels */
+    --text-badge: 11px;       /* Status Badges, Tabs, Tooltips */
+    --text-micro: 10.5px;     /* Pills, Timestamps, Footers */
+
+    /* Text Colors */
+    --text-primary: #0f172a;      /* Slate 900 */
+    --text-secondary: #334155;    /* Slate 700 */
+    --text-muted: #64748b;        /* Slate 500 */
+    --text-placeholder: #94a3b8;  /* Slate 400 */
+    --text-white: #ffffff;
+
+    /* -------------------------------------------------------------------------
+       6. SEMANTIC STATUS PALETTES
+       ------------------------------------------------------------------------- */
+    /* Success / Active / Approved (Emerald) */
+    --status-success-solid: #10b981;
+    --status-success-hover: #059669;
+    --status-success-text: #047857;
+    --status-success-bg: linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(5, 150, 105, 0.18));
+    --status-success-border: rgba(16, 185, 129, 0.32);
+    --status-success-shadow: 0 4px 12px rgba(16, 185, 129, 0.28);
+
+    /* Warning / Pending / Review (Amber) */
+    --status-warning-solid: #f59e0b;
+    --status-warning-hover: #d97706;
+    --status-warning-text: #b45309;
+    --status-warning-bg: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(217, 119, 6, 0.18));
+    --status-warning-border: rgba(245, 158, 11, 0.32);
+    --status-warning-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
+
+    /* Danger / Rejected / Overdue (Rose / Red) */
+    --status-danger-solid: #ef4444;
+    --status-danger-hover: #dc2626;
+    --status-danger-text: #b91c1c;
+    --status-danger-bg: linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(220, 38, 38, 0.18));
+    --status-danger-border: rgba(239, 68, 68, 0.32);
+    --status-danger-shadow: 0 4px 12px rgba(239, 68, 68, 0.28);
+
+    /* Info / Processing / Sky (Sky / Blue) */
+    --status-info-solid: #0284c7;
+    --status-info-text: #0369a1;
+    --status-info-bg: linear-gradient(135deg, rgba(59, 130, 246, 0.12), rgba(14, 165, 233, 0.18));
+    --status-info-border: rgba(14, 165, 233, 0.32);
+
+    /* Neutral / Archived / Regular (Slate) */
+    --status-neutral-text: #334155;
+    --status-neutral-bg: linear-gradient(135deg, rgba(241, 245, 249, 0.95), rgba(226, 232, 240, 0.85));
+    --status-neutral-border: rgba(203, 213, 225, 0.8);
+
+    /* -------------------------------------------------------------------------
+       7. TOOLTIPS SPECIFICATION
+       ------------------------------------------------------------------------- */
+    --tooltip-bg: rgba(15, 23, 42, 0.94);
+    --tooltip-color: #ffffff;
+    --tooltip-font-size: 11px;
+    --tooltip-font-weight: 700;
+    --tooltip-letter-spacing: 0.02em;
+    --tooltip-padding: 4.5px 9px;
+    --tooltip-radius: 6px;
+    --tooltip-border: 1px solid rgba(255, 255, 255, 0.15);
+    --tooltip-blur: blur(12px);
+
+    /* -------------------------------------------------------------------------
+       8. RADII & SPACING SCALE
+       ------------------------------------------------------------------------- */
+    --radius-pill: 9999px;
+    --radius-badge: 20px;
+    --radius-card: 18px;
+    --radius-modal: 20px 0 0 20px;
+    --radius-metric: 16px;
+    --radius-input: 10px;
+    --radius-btn: 10px;
+    --radius-sm: 7px;
+    --radius-tooltip: 6px;
+
+    --space-2xs: 4px;
+    --space-xs: 8px;
+    --space-sm: 12px;
+    --space-md: 16px;
+    --space-lg: 20px;
+    --space-xl: 24px;
+    --space-2xl: 32px;
+
+    /* Transitions */
+    --transition-fast: 0.15s ease;
+    --transition-smooth: 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    --transition-bounce: 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ============================================================================
+   UNIVERSAL REUSABLE COMPONENT ALIASES
+   Developers can use either .erp-* or .hr-* interchangeably
+   ============================================================================ */
+
+/* Tooltip System: Attach [data-tooltip] or [data-erp-tooltip] to any element */
+[data-tooltip],
+[data-erp-tooltip] {
+    position: relative;
+}
+
+[data-tooltip]::after,
+[data-erp-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 7px);
+    left: 50%;
+    transform: translateX(-50%) translateY(4px);
+    background: var(--tooltip-bg);
+    backdrop-filter: var(--tooltip-blur);
+    -webkit-backdrop-filter: var(--tooltip-blur);
+    color: var(--tooltip-color);
+    font-family: var(--font-family-body);
+    font-size: var(--tooltip-font-size);
+    font-weight: var(--tooltip-font-weight);
+    letter-spacing: var(--tooltip-letter-spacing);
+    line-height: 1.2;
+    padding: var(--tooltip-padding);
+    border-radius: var(--tooltip-radius);
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity var(--transition-smooth), transform var(--transition-smooth), visibility var(--transition-smooth);
+    box-shadow: var(--shadow-tooltip);
+    border: var(--tooltip-border);
+    z-index: 100000;
+    display: inline-flex;
+    align-items: center;
+    box-sizing: border-box;
+    height: auto;
+}
+
+[data-tooltip]::before,
+[data-erp-tooltip]::before {
+    content: '';
+    position: absolute;
+    bottom: calc(100% + 2px);
+    left: 50%;
+    transform: translateX(-50%) translateY(4px);
+    width: 0;
+    height: 0;
+    border-width: 5px 4.5px 0 4.5px;
+    border-style: solid;
+    border-color: var(--tooltip-bg) transparent transparent transparent;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity var(--transition-smooth), transform var(--transition-smooth), visibility var(--transition-smooth);
+    z-index: 100001;
+    box-sizing: border-box;
+}
+
+[data-tooltip]:hover::after,
+[data-tooltip]:hover::before,
+[data-erp-tooltip]:hover::after,
+[data-erp-tooltip]:hover::before {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* Tooltip Position Right Variation */
+[data-tooltip-pos="right"]::after {
+    bottom: auto !important;
+    top: 50% !important;
+    left: calc(100% + 10px) !important;
+    transform: translateY(-50%) translateX(-4px) !important;
+}
+[data-tooltip-pos="right"]::before {
+    bottom: auto !important;
+    top: 50% !important;
+    left: calc(100% + 5px) !important;
+    transform: translateY(-50%) translateX(-4px) !important;
+    width: 0 !important;
+    height: 0 !important;
+    border-width: 5px 5px 5px 0 !important;
+    border-color: transparent var(--tooltip-bg) transparent transparent !important;
+}
+[data-tooltip-pos="right"]:hover::after,
+[data-tooltip-pos="right"]:hover::before {
+    transform: translateY(-50%) translateX(0) !important;
+}
