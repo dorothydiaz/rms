@@ -1,0 +1,30 @@
+Schema Table headers	/	Top Row	/	Bottom Row	/	Default	/	Top Row (Purpose)	/	Bottom Row (Purpose)
+
+RFQ Info	/	rfq_number	/	rfq_date	/	TRUE	/	Internal procurement document number (e.g., RFQ-2026-00089)	/	Date the RFQ was officially published/sent
+Company	/	company_id	/		/	FALSE	/	FK referencing companies (the buying legal entity)	/	
+Branch & Warehouse	/	branch_id	/	ship_to_warehouse_id	/	FALSE	/	FK referencing branches (the purchasing branch)	/	FK referencing warehouses (the destination receiving facility)
+Vendor & Contact	/	vendor_id	/	vendor_contact_id	/	TRUE	/	FK referencing vendor_master (the supplier invited to bid)	/	FK referencing vendor_contacts (contact person shown beside the vendor on the RFQ screen)
+Submission Deadline	/	submission_deadline	/		/	TRUE	/	Cutoff date for the vendor to submit their bids	/	
+Quote Validity Date	/	quote_valid_until_date	/		/	FALSE	/	Date until which the vendor quote stays valid	/	
+Requested Delivery Date	/	rfq_requested_delivery_date	/		/	FALSE	/	Desired date goods must arrive at the warehouse	/	
+Currency	/	rfq_currency_code	/		/	FALSE	/	ISO 4217 bidding currency (e.g., PHP, USD)	/	
+Payment Terms	/	rfq_payment_terms_code	/		/	TRUE	/	Requested payment terms (e.g., NET30) (from vendor_master)	/	
+Incoterms	/	rfq_incoterms_code	/		/	FALSE	/	Shipping trade terms (e.g., FOB, DDP, CIF) (from vendor_master)	/	
+Total Amount	/	rfq_quoted_total_amount	/	rfq_estimated_total_amount	/	FALSE	/	Sum of quoted_line_total; amount basis for the RFQ award approval	/	Sum of requested_quantity x target_unit_price; amount basis for the RFQ issue approval
+RFQ Status	/	rfq_status	/		/	TRUE	/	Lifecycle (DRAFT, SENT, QUOTED, AWARDED, REJECTED, CANCELLED). Issue and award approvals are tracked in rfq_approval_status / rfq_award_approval_status	/	
+Issue Approval Status	/	rfq_approval_status	/		/	TRUE	/	Approval summary for this RFQ issue (NOT_REQUIRED, PENDING, APPROVED, REJECTED, CANCELLED); denormalized from approval_requests for fast filtering. Matching workflow decides if approval is required	/	
+Issue Approval Request ID	/	approval_request_id	/		/	FALSE	/	FK referencing approval_requests (current approval cycle; NULL when no approval is required)	/	
+Award Approval Status	/	rfq_award_approval_status	/		/	FALSE	/	Approval summary for awarding the quote (NOT_REQUIRED, PENDING, APPROVED, REJECTED, CANCELLED)	/	
+Award Approval Request ID	/	award_approval_request_id	/		/	FALSE	/	FK referencing approval_requests (document type RFQ_AWARD)	/	
+RFQ Notes	/	rfq_notes	/		/	FALSE	/	Special bidding instructions, delivery specs, or commercial terms	/	
+Created By	/	rfq_created_by	/	rfq_created_at	/	FALSE	/	User ID of the buyer/procurement officer	/	Creation timestamp
+Last Modified By	/	rfq_updated_by	/	rfq_updated_at	/	FALSE	/	User ID who modified the record	/	Modification timestamp
+Line #	/	line_number	/		/	FALSE	/	Line item sequence number (1, 2, 3)	/	
+Item Details	/	item_id	/	rfq_line_notes	/	FALSE	/	FK referencing item_master	/	Item technical notes or vendor remarks
+Quantity	/	requested_quantity	/	purchase_uom_code	/	TRUE	/	Quantity the company intends to purchase	/	Purchasing unit of measure (from item_master, e.g., BOX)
+Unit Price	/	quoted_unit_price	/	target_unit_price	/	FALSE	/	Official unit price offered back by the vendor	/	Internal budgeted/target unit price (optional benchmark)
+Line Total	/	quoted_line_total	/		/	FALSE	/	Bid line total (requested_quantity × quoted_unit_price)	/	
+Lead Time	/	lead_time_days	/		/	FALSE	/	Vendor's promised manufacturing/shipping time in days	/	
+Award Status	/	is_awarded	/		/	FALSE	/	Indicates if this item/bid was officially accepted	/	
+Line Created By	/	rfq_line_created_by	/	rfq_line_created_at	/	FALSE	/	User ID who added the line	/	Timestamp when line was created
+Line Modified By	/	rfq_line_updated_by	/	rfq_line_updated_at	/	FALSE	/	User ID who modified the line	/	Timestamp when vendor response was logged

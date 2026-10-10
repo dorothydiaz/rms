@@ -1270,6 +1270,304 @@
 }
 
 /* ==========================================================================
+   RFQ DIRECTORY MODULAR STACKED HEADERS & SETTINGS DROPDOWN STYLES
+   ========================================================================== */
+.rfq-th-stacked {
+    position: relative;
+    user-select: none;
+    cursor: default;
+    padding: 8px 12px !important;
+    vertical-align: middle;
+    transition: background 0.15s ease;
+}
+.rfq-th-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+.rfq-th-title {
+    font-size: 0.77rem;
+    font-weight: 700;
+    color: var(--rfq-text-strong, #0f172a);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.rfq-th-sub {
+    font-size: 0.67rem;
+    font-weight: 500;
+    color: var(--rfq-text-muted, #64748b);
+    text-transform: none;
+    letter-spacing: normal;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Actions Header & Settings Gear */
+.rfq-header-action-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    position: relative;
+}
+.rfq-th-settings-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    background: #ffffff;
+    border: 1px solid var(--rfq-border-subtle, #e2e8f0);
+    color: var(--rfq-text-medium, #334155);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    transition: all 0.15s ease;
+    padding: 0;
+    flex-shrink: 0;
+}
+.rfq-th-settings-btn:hover, .rfq-th-settings-btn.is-active {
+    background: var(--rfq-primary-subtle, rgba(168, 85, 247, 0.12));
+    border-color: var(--rfq-primary-light, #c084fc);
+    color: var(--rfq-primary-dark, #7c3aed);
+}
+
+/* Tooltip Dropdown Menu for Directory Column Settings */
+.rfq-table-settings-dropdown {
+    position: fixed;
+    width: 370px;
+    max-width: min(370px, 92vw);
+    background: #ffffff;
+    border: 1.5px solid var(--rfq-border-subtle, #e2e8f0);
+    border-radius: 14px;
+    box-shadow: 0 20px 48px rgba(15, 23, 42, 0.22), 0 4px 14px rgba(15, 23, 42, 0.08);
+    padding: 14px 16px;
+    z-index: 9999;
+    display: none;
+    text-align: left;
+    box-sizing: border-box;
+    font-size: 0.82rem;
+}
+.rfq-table-settings-dropdown.is-active {
+    display: block;
+    animation: dropdownFadeIn 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.rfq-settings-dropdown-header {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #f1f5f9;
+    margin-bottom: 10px;
+}
+.rfq-settings-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.rfq-settings-title {
+    font-size: 0.86rem;
+    font-weight: 700;
+    color: var(--rfq-text-strong);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.rfq-settings-title i {
+    color: var(--rfq-primary-dark);
+    font-size: 16px;
+}
+.rfq-settings-links-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 0.74rem;
+}
+.rfq-settings-link-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--rfq-primary-dark);
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.74rem;
+}
+.rfq-settings-link-btn:hover {
+    text-decoration: underline;
+}
+.rfq-settings-search-input {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid var(--rfq-border-subtle);
+    border-radius: 7px;
+    font-size: 0.78rem;
+    background: #f8fafc;
+    box-sizing: border-box;
+}
+.rfq-settings-search-input:focus {
+    outline: none;
+    border-color: var(--rfq-primary);
+    background: #ffffff;
+}
+
+/* Draggable Column Items List */
+.rfq-settings-col-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 320px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+.rfq-dropdown-col-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 8px;
+    border-radius: 6px;
+    background: #ffffff;
+    border: 1px solid transparent;
+    cursor: grab;
+    user-select: none;
+    transition: background 0.12s ease, border-color 0.12s ease;
+}
+.rfq-dropdown-col-item:hover {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+}
+.rfq-dropdown-col-item.is-dragging {
+    opacity: 0.35;
+    background: #f1f5f9;
+}
+.rfq-dropdown-col-item.is-drag-over {
+    border-top: 2px solid var(--rfq-primary, #9333ea);
+    background: rgba(147, 51, 234, 0.05);
+}
+.rfq-drag-handle {
+    cursor: grab;
+    color: #94a3b8;
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    padding: 2px;
+}
+.rfq-drag-handle:hover {
+    color: var(--rfq-primary);
+}
+.rfq-col-item-label {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    cursor: pointer;
+    min-width: 0;
+}
+.rfq-col-name {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--rfq-text-strong);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.rfq-col-subname {
+    font-size: 0.68rem;
+    color: var(--rfq-text-muted);
+}
+.rfq-col-badge-default {
+    font-size: 0.64rem;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: rgba(16, 185, 129, 0.12);
+    color: #059669;
+}
+
+/* Header Drag & Drop Visuals */
+th.is-header-dragging {
+    opacity: 0.4 !important;
+    background: #e2e8f0 !important;
+}
+th.is-header-drag-over {
+    border-left: 3px solid var(--rfq-primary, #9333ea) !important;
+    background: rgba(147, 51, 234, 0.08) !important;
+}
+
+/* Expandable Multi-Line Subtable Accordion */
+.rfq-row-expand-btn {
+    width: 22px;
+    height: 22px;
+    border-radius: 4px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    color: #64748b;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 11px;
+    transition: all 0.15s ease;
+    margin-right: 6px;
+    flex-shrink: 0;
+}
+.rfq-row-expand-btn:hover {
+    border-color: var(--rfq-primary);
+    color: var(--rfq-primary);
+    background: var(--rfq-primary-subtle);
+}
+.rfq-row-expand-btn.is-expanded {
+    background: var(--rfq-primary);
+    border-color: var(--rfq-primary);
+    color: #ffffff;
+}
+.rfq-row-expand-btn.is-expanded i {
+    transform: rotate(90deg);
+}
+.rfq-line-expansion-row {
+    background: #fafafa !important;
+}
+.rfq-subtable-container {
+    padding: 10px 14px 14px 34px;
+    background: #f8fafc;
+    border-top: 1px dashed #e2e8f0;
+    border-bottom: 2px solid #e2e8f0;
+}
+.rfq-subtable {
+    width: 100%;
+    border-collapse: collapse;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    overflow: hidden;
+    font-size: 0.77rem;
+}
+.rfq-subtable th {
+    background: #f1f5f9;
+    padding: 6px 10px;
+    font-size: 0.70rem;
+    font-weight: 700;
+    color: #475569;
+    border-bottom: 1px solid #cbd5e1;
+    text-transform: uppercase;
+    text-align: left;
+}
+.rfq-subtable td {
+    padding: 6px 10px;
+    border-bottom: 1px solid #f1f5f9;
+    height: auto !important;
+    vertical-align: middle;
+    font-size: 0.76rem;
+}
+
+
+/* ==========================================================================
    FLOATING COLUMN FILTER DROPDOWN
    (Generously Sized Industrial Dropdown Anchored After Action Header)
    ========================================================================== */
@@ -2111,22 +2409,11 @@
                 <div class="rfq-toolbar-right" style="position: relative; display: flex; align-items: center; gap: 8px;">
                     <!-- Column Visibility Filter Trigger -->
                     <div style="position: relative;">
-                        <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" id="btnDirectoryColFilter" onclick="toggleDirectoryColDropdown(event)" data-tooltip="Customize visible columns" style="padding: 5px 10px; font-size: 12px; border-radius: 8px;">
+                        <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" id="btnDirectoryColFilter" onclick="toggleRfqTableSettingsDropdown(event)" data-tooltip="Customize visible columns & order" style="padding: 5px 10px; font-size: 12px; border-radius: 8px;">
                             <i class="ph ph-columns"></i>
                             <span>Columns</span>
                             <i class="ph ph-caret-down" style="font-size: 10px; margin-left: 2px;"></i>
                         </button>
-
-                        <!-- Dynamic Column Filter Dropdown Menu -->
-                        <div class="inv-col-dropdown-menu" id="directoryColDropdownMenu" style="display: none; position: absolute; right: 0; top: calc(100% + 6px); background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(15,23,42,0.15); padding: 12px; min-width: 220px; z-index: 1000;">
-                            <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; margin-bottom: 8px;">
-                                <span style="font-size: 12px; font-weight: 700; color: #0f172a;">Column Visibility</span>
-                                <button type="button" onclick="resetDirectoryColumns()" style="font-size: 11px; color: #9333ea; background: none; border: none; cursor: pointer; text-decoration: underline;">Reset</button>
-                            </div>
-                            <div id="directoryColCheckboxesList" style="display: flex; flex-direction: column; gap: 6px; max-height: 260px; overflow-y: auto;">
-                                <!-- Generated by JS -->
-                            </div>
-                        </div>
                     </div>
 
                     <button type="button" class="rfq-btn rfq-btn-primary" onclick="startNewRfqFromDirectory()" style="padding: 6px 12px; font-size: 12px; border-radius: 8px;">
@@ -2140,14 +2427,36 @@
                 <table class="rfq-table" id="rfqDirectoryTable">
                     <thead id="rfqDirectoryThead">
                         <tr id="rfqDirectoryTheadRow">
-                            <!-- Rendered dynamically by renderDirectoryTableHeader() with column resizers & display filters -->
+                            <!-- Rendered dynamically by renderDirectoryTableHeader() with modular stacked headers, column resizers & drag/drop -->
                         </tr>
                     </thead>
                     <tbody id="rfqDirectoryTbody">
-                        <!-- Rendered dynamically -->
+                        <!-- Rendered dynamically by renderRfqDirectory() -->
                     </tbody>
                 </table>
                 <div id="rfqHeaderFilterPopover" class="rfq-header-filter-popover" style="display: none;"></div>
+
+                <!-- Floating Settings Dropdown Menu Anchored to End Column Settings Gear -->
+                <div id="rfqTableSettingsDropdown" class="rfq-table-settings-dropdown" style="display: none;">
+                    <div class="rfq-settings-dropdown-header">
+                        <div class="rfq-settings-title-row">
+                            <div class="rfq-settings-title">
+                                <i class="ph ph-gear-six"></i>
+                                <span>Table Columns & Sequence</span>
+                            </div>
+                            <span class="rfq-col-badge-default" id="directoryColActiveCounter">8 of 29 visible</span>
+                        </div>
+                        <div class="rfq-settings-links-row">
+                            <button type="button" class="rfq-settings-link-btn" onclick="resetDirectoryColumnDefaults()">Reset to Default</button>
+                            <button type="button" class="rfq-settings-link-btn" onclick="showAllDirectoryColumns()">Select All</button>
+                            <button type="button" class="rfq-settings-link-btn" onclick="resetDirectoryColumnWidths()">Reset Widths</button>
+                        </div>
+                        <input type="text" class="rfq-settings-search-input" id="directoryColSearchInput" placeholder="Filter columns..." oninput="handleDirectoryColSearch(this.value)">
+                    </div>
+                    <div class="rfq-settings-col-list" id="directoryColCheckboxesList">
+                        <!-- Populated dynamically with draggable items -->
+                    </div>
+                </div>
             </div>
 
             <!-- Client-Side Pagination Container -->
@@ -3061,95 +3370,272 @@ const SEEDED_VENDORS = [
     }
 ];
 
-// Seeded Requests for Quotation Directory (Synced with Procurement Ledger)
+// Seeded Requests for Quotation Directory (Synced with Procurement Ledger & RFQ Overview Status Spec)
 const SEEDED_RFQS = [
     {
         rfqNumber: 'RFQ-2026-0038',
+        rfqDate: '2026-09-24',
+        companyId: 'CMP-001',
+        companyName: 'RMS Holdings Philippines Corp.',
+        branchId: 'BR-01',
+        branchName: 'Makati Central Flagship',
+        shipToWarehouseId: 'WH-MAIN',
+        shipToWarehouseName: 'Central Commissary - Main Cold Dock',
         vendorId: 'VND-SAN-002',
         vendorName: 'San Miguel Pure Foods Company Inc.',
         vendorTradeName: 'San Miguel Foods',
         vendorEmail: 'orders.foodservice@sanmiguel.com.ph',
         vendorPhone: '+63 917 882 1044',
+        vendorContactId: 'VNC-002',
         vendorContactPerson: 'Patricia Lim',
         vendorContactTitle: 'Key Foodservice Exec',
         vendorAddress: '40 San Miguel Ave, Mandaluyong City',
+        submissionDeadline: '2026-10-01',
+        quoteValidUntilDate: '2026-10-15',
+        rfqRequestedDeliveryDate: '2026-10-06',
+        rfqCurrencyCode: 'PHP',
+        rfqPaymentTermsCode: 'Net 30 Days',
+        rfqIncotermsCode: 'FOB',
+        rfqEstimatedTotalAmount: 34600.00,
+        rfqQuotedTotalAmount: 34600.00,
+        rfqStatus: 'Awarded',
+        rfqApprovalStatus: 'APPROVED',
+        approvalRequestId: 'APR-2026-0088',
+        rfqAwardApprovalStatus: 'APPROVED',
+        awardApprovalRequestId: 'AWD-2026-0038',
+        rfqNotes: 'Cold-chain delivery certificates required for all meat products.',
+        rfqCreatedBy: 'USR-BUYER-01',
+        rfqCreatedAt: '2026-09-24 09:30:00',
+        rfqUpdatedBy: 'USR-MGR-02',
+        rfqUpdatedAt: '2026-10-01 14:15:00',
         dateIssued: '2026-09-24',
         dueDate: '2026-10-01',
         expectedDelivery: '2026-10-06',
         paymentTerms: 'Net 30 Days',
-        deliveryLocation: 'Central Commissary - Main Dock',
-        specialInstructions: 'Cold-chain delivery certificates required for meats.',
+        deliveryLocation: 'Central Commissary - Main Cold Dock',
+        specialInstructions: 'Cold-chain delivery certificates required for all meat products.',
         status: 'Awarded',
         items: [
-            { sku: 'RAW-308', name: 'US Choice Ribeye Beef Primal', specs: 'Grain-Fed Chilled Steer Cut', category: 'Raw Ingredients', unit: 'Kg', quantity: 25.0, targetPrice: 840.0, requiredDate: '2026-10-06', notes: 'Chilled 2-4°C' },
-            { sku: 'RAW-309', name: 'Pork Belly Skin-On Slab', specs: 'Fresh Local Triple-A Liempo Cut', category: 'Raw Ingredients', unit: 'Kg', quantity: 40.0, targetPrice: 340.0, requiredDate: '2026-10-06', notes: '' }
+            { lineNumber: 1, itemId: 'RAW-308', name: 'US Choice Ribeye Beef Primal', specs: 'Grain-Fed Chilled Steer Cut', category: 'Raw Ingredients', purchaseUomCode: 'Kg', unit: 'Kg', requestedQuantity: 25.0, quantity: 25.0, targetUnitPrice: 800.0, targetPrice: 800.0, quotedUnitPrice: 840.0, quotedLineTotal: 21000.0, leadTimeDays: 3, isAwarded: true, rfqLineNotes: 'Chilled 2-4°C, Box packaging', rfqLineCreatedBy: 'USR-BUYER-01', rfqLineCreatedAt: '2026-09-24 09:35:00', rfqLineUpdatedBy: 'USR-MGR-02', rfqLineUpdatedAt: '2026-09-28 11:20:00' },
+            { lineNumber: 2, itemId: 'RAW-309', name: 'Pork Belly Skin-On Slab', specs: 'Fresh Local Triple-A Liempo Cut', category: 'Raw Ingredients', purchaseUomCode: 'Kg', unit: 'Kg', requestedQuantity: 40.0, quantity: 40.0, targetUnitPrice: 320.0, targetPrice: 320.0, quotedUnitPrice: 340.0, quotedLineTotal: 13600.0, leadTimeDays: 2, isAwarded: true, rfqLineNotes: 'Triple-A NMIS Inspection Certificate', rfqLineCreatedBy: 'USR-BUYER-01', rfqLineCreatedAt: '2026-09-24 09:36:00', rfqLineUpdatedBy: 'USR-MGR-02', rfqLineUpdatedAt: '2026-09-28 11:20:00' }
         ]
     },
     {
         rfqNumber: 'RFQ-2026-0039',
+        rfqDate: '2026-09-26',
+        companyId: 'CMP-001',
+        companyName: 'RMS Holdings Philippines Corp.',
+        branchId: 'BR-02',
+        branchName: 'BGC High Street Hub',
+        shipToWarehouseId: 'WH-DRY',
+        shipToWarehouseName: 'Central Warehouse - Dry Storage',
         vendorId: 'VND-ROB-003',
         vendorName: 'Universal Robina Corporation',
         vendorTradeName: 'URC Agro-Industrial Group',
         vendorEmail: 'commercial.sales@urc.com.ph',
         vendorPhone: '+63 918 334 5591',
+        vendorContactId: 'VNC-003',
         vendorContactPerson: 'Carlos Mendoza',
         vendorContactTitle: 'Institutional Accounts Officer',
         vendorAddress: 'Tera Tower, Bridgetowne, Quezon City',
+        submissionDeadline: '2026-10-03',
+        quoteValidUntilDate: '2026-10-24',
+        rfqRequestedDeliveryDate: '2026-10-08',
+        rfqCurrencyCode: 'PHP',
+        rfqPaymentTermsCode: 'Net 30 Days',
+        rfqIncotermsCode: 'DDP',
+        rfqEstimatedTotalAmount: 5880.00,
+        rfqQuotedTotalAmount: 5880.00,
+        rfqStatus: 'Quotation Received',
+        rfqApprovalStatus: 'PENDING',
+        approvalRequestId: 'APR-2026-0091',
+        rfqAwardApprovalStatus: 'NOT_REQUIRED',
+        awardApprovalRequestId: '',
+        rfqNotes: 'Palletized delivery with stretch shrink wrap.',
+        rfqCreatedBy: 'USR-BUYER-02',
+        rfqCreatedAt: '2026-09-26 10:15:00',
+        rfqUpdatedBy: 'USR-BUYER-02',
+        rfqUpdatedAt: '2026-10-02 16:40:00',
         dateIssued: '2026-09-26',
         dueDate: '2026-10-03',
         expectedDelivery: '2026-10-08',
         paymentTerms: 'Net 30 Days',
         deliveryLocation: 'Central Warehouse - Dry Storage',
-        specialInstructions: 'Palletized delivery with shrink wrap.',
+        specialInstructions: 'Palletized delivery with stretch shrink wrap.',
         status: 'Quotation Received',
         items: [
-            { sku: 'RAW-306', name: 'All-Purpose Wheat Flour', specs: 'Unbleached Baking Wheat Flour', category: 'Raw Ingredients', unit: 'Kg', quantity: 150.0, targetPrice: 39.2, requiredDate: '2026-10-08', notes: 'Dry clean sacks' }
+            { lineNumber: 1, itemId: 'RAW-306', name: 'All-Purpose Wheat Flour', specs: 'Unbleached Baking Wheat Flour', category: 'Raw Ingredients', purchaseUomCode: 'Kg', unit: 'Kg', requestedQuantity: 150.0, quantity: 150.0, targetUnitPrice: 38.0, targetPrice: 38.0, quotedUnitPrice: 39.2, quotedLineTotal: 5880.0, leadTimeDays: 4, isAwarded: false, rfqLineNotes: 'Dry clean paper sacks 25kg each', rfqLineCreatedBy: 'USR-BUYER-02', rfqLineCreatedAt: '2026-09-26 10:16:00', rfqLineUpdatedBy: 'USR-BUYER-02', rfqLineUpdatedAt: '2026-10-02 16:40:00' }
         ]
     },
     {
         rfqNumber: 'RFQ-2026-0040',
+        rfqDate: '2026-09-28',
+        companyId: 'CMP-002',
+        companyName: 'Apex Food Services Inc.',
+        branchId: 'BR-01',
+        branchName: 'Makati Central Flagship',
+        shipToWarehouseId: 'WH-MAIN',
+        shipToWarehouseName: 'Central Commissary - Main Dock',
         vendorId: 'VND-ECO-004',
         vendorName: 'EcoPack Solutions Philippines Corp.',
         vendorTradeName: 'EcoPack Packaging',
         vendorEmail: 'sales@ecopack.ph',
         vendorPhone: '+63 920 918 2234',
+        vendorContactId: 'VNC-004',
         vendorContactPerson: 'Grace Villanueva',
         vendorContactTitle: 'Client Solutions Specialist',
         vendorAddress: '14 Industrial Ave, Valenzuela City',
+        submissionDeadline: '2026-10-05',
+        quoteValidUntilDate: '2026-10-30',
+        rfqRequestedDeliveryDate: '2026-10-10',
+        rfqCurrencyCode: 'PHP',
+        rfqPaymentTermsCode: 'Net 15 Days',
+        rfqIncotermsCode: 'FOB',
+        rfqEstimatedTotalAmount: 17200.00,
+        rfqQuotedTotalAmount: 17200.00,
+        rfqStatus: 'Quote Requested',
+        rfqApprovalStatus: 'APPROVED',
+        approvalRequestId: 'APR-2026-0095',
+        rfqAwardApprovalStatus: 'PENDING',
+        awardApprovalRequestId: '',
+        rfqNotes: 'Biodegradable certification required for takeaway boxes.',
+        rfqCreatedBy: 'USR-BUYER-01',
+        rfqCreatedAt: '2026-09-28 14:00:00',
+        rfqUpdatedBy: 'USR-BUYER-01',
+        rfqUpdatedAt: '2026-09-28 14:30:00',
         dateIssued: '2026-09-28',
         dueDate: '2026-10-05',
         expectedDelivery: '2026-10-10',
         paymentTerms: 'Net 15 Days',
         deliveryLocation: 'Central Commissary - Main Dock',
-        specialInstructions: 'Biodegradable certification required.',
+        specialInstructions: 'Biodegradable certification required for takeaway boxes.',
         status: 'Quote Requested',
         items: [
-            { sku: 'PKG-501', name: 'Hot Coffee Paper Cups 12oz', specs: 'Double-Wall Insulated Kraft Paper', category: 'Packaging', unit: 'Pc', quantity: 2000.0, targetPrice: 4.5, requiredDate: '2026-10-10', notes: 'Box of 1000' },
-            { sku: 'PKG-502', name: 'Kraft Takeout Food Boxes', specs: 'Greaseproof Food Grade Hinged Clamshell', category: 'Packaging', unit: 'Pc', quantity: 1000.0, targetPrice: 8.2, requiredDate: '2026-10-10', notes: '' }
+            { lineNumber: 1, itemId: 'PKG-501', name: 'Hot Coffee Paper Cups 12oz', specs: 'Double-Wall Insulated Kraft Paper', category: 'Packaging', purchaseUomCode: 'Pc', unit: 'Pc', requestedQuantity: 2000.0, quantity: 2000.0, targetUnitPrice: 4.2, targetPrice: 4.2, quotedUnitPrice: 4.5, quotedLineTotal: 9000.0, leadTimeDays: 2, isAwarded: false, rfqLineNotes: 'Carton box of 1000 pcs', rfqLineCreatedBy: 'USR-BUYER-01', rfqLineCreatedAt: '2026-09-28 14:05:00', rfqLineUpdatedBy: 'USR-BUYER-01', rfqLineUpdatedAt: '2026-09-28 14:05:00' },
+            { lineNumber: 2, itemId: 'PKG-502', name: 'Kraft Takeout Food Boxes', specs: 'Greaseproof Food Grade Hinged Clamshell', category: 'Packaging', purchaseUomCode: 'Pc', unit: 'Pc', requestedQuantity: 1000.0, quantity: 1000.0, targetUnitPrice: 8.0, targetPrice: 8.0, quotedUnitPrice: 8.2, quotedLineTotal: 8200.0, leadTimeDays: 2, isAwarded: false, rfqLineNotes: 'Certified biodegradable embossed stamp', rfqLineCreatedBy: 'USR-BUYER-01', rfqLineCreatedAt: '2026-09-28 14:06:00', rfqLineUpdatedBy: 'USR-BUYER-01', rfqLineUpdatedAt: '2026-09-28 14:06:00' }
         ]
     },
     {
         rfqNumber: 'RFQ-2026-0041',
+        rfqDate: '2026-09-29',
+        companyId: 'CMP-001',
+        companyName: 'RMS Holdings Philippines Corp.',
+        branchId: 'BR-01',
+        branchName: 'Makati Central Flagship',
+        shipToWarehouseId: 'WH-MAIN',
+        shipToWarehouseName: 'Branch 1 - Makati Flagship',
         vendorId: 'VND-MER-001',
         vendorName: 'Manila Electric Company',
         vendorTradeName: 'Meralco Power Systems',
         vendorEmail: 'corporate.accounts@meralco.com.ph',
         vendorPhone: '+63 917 554 9011',
+        vendorContactId: 'VNC-001',
         vendorContactPerson: 'Engr. Marco Santos',
         vendorContactTitle: 'Industrial Key Account Manager',
         vendorAddress: 'Lopez Building, Meralco Center, Pasig City',
+        submissionDeadline: '2026-10-06',
+        quoteValidUntilDate: '2026-10-25',
+        rfqRequestedDeliveryDate: '2026-10-12',
+        rfqCurrencyCode: 'PHP',
+        rfqPaymentTermsCode: 'Net 15 Days',
+        rfqIncotermsCode: 'CIF',
+        rfqEstimatedTotalAmount: 8500.00,
+        rfqQuotedTotalAmount: 8500.00,
+        rfqStatus: 'Draft',
+        rfqApprovalStatus: 'PENDING',
+        approvalRequestId: '',
+        rfqAwardApprovalStatus: 'NOT_REQUIRED',
+        awardApprovalRequestId: '',
+        rfqNotes: 'Kitchen electrical submeter upgrade quotation and transformer service.',
+        rfqCreatedBy: 'USR-BUYER-03',
+        rfqCreatedAt: '2026-09-29 11:00:00',
+        rfqUpdatedBy: 'USR-BUYER-03',
+        rfqUpdatedAt: '2026-09-29 11:00:00',
         dateIssued: '2026-09-29',
         dueDate: '2026-10-06',
         expectedDelivery: '2026-10-12',
         paymentTerms: 'Net 15 Days',
         deliveryLocation: 'Branch 1 - Makati Flagship',
-        specialInstructions: 'Kitchen electrical submeter upgrade quotation.',
+        specialInstructions: 'Kitchen electrical submeter upgrade quotation and transformer service.',
         status: 'Draft',
         items: [
-            { sku: 'RAW-301', name: 'Barista Whole Fresh Milk', specs: '100% Pure Cow Fresh Chilled Milk', category: 'Raw Ingredients', unit: 'Liter', quantity: 100.0, targetPrice: 85.0, requiredDate: '2026-10-12', notes: 'Daily delivery' }
+            { lineNumber: 1, itemId: 'RAW-301', name: 'Barista Whole Fresh Milk', specs: '100% Pure Cow Fresh Chilled Milk', category: 'Raw Ingredients', purchaseUomCode: 'Liter', unit: 'Liter', requestedQuantity: 100.0, quantity: 100.0, targetUnitPrice: 85.0, targetPrice: 85.0, quotedUnitPrice: 85.0, quotedLineTotal: 8500.0, leadTimeDays: 1, isAwarded: false, rfqLineNotes: 'Daily early morning delivery', rfqLineCreatedBy: 'USR-BUYER-03', rfqLineCreatedAt: '2026-09-29 11:05:00', rfqLineUpdatedBy: 'USR-BUYER-03', rfqLineUpdatedAt: '2026-09-29 11:05:00' }
         ]
     }
 ];
+
+function normalizeRfqItem(r) {
+    if (!r) return null;
+    const estTotal = (r.items || []).reduce((acc, it) => acc + ((parseFloat(it.requestedQuantity || it.quantity) || 0) * (parseFloat(it.targetUnitPrice || it.targetPrice) || 0)), 0);
+    const quotedTotal = (r.items || []).reduce((acc, it) => acc + (parseFloat(it.quotedLineTotal) || ((parseFloat(it.requestedQuantity || it.quantity) || 0) * (parseFloat(it.quotedUnitPrice || it.targetPrice) || 0))), 0);
+
+    return {
+        rfqNumber: r.rfqNumber || r.rfq_number || 'RFQ-2026-0001',
+        rfqDate: r.rfqDate || r.rfq_date || r.dateIssued || '2026-10-01',
+        companyId: r.companyId || r.company_id || 'CMP-001',
+        companyName: r.companyName || 'RMS Holdings Corp.',
+        branchId: r.branchId || r.branch_id || 'BR-01',
+        branchName: r.branchName || 'Makati Central Flagship',
+        shipToWarehouseId: r.shipToWarehouseId || r.ship_to_warehouse_id || 'WH-MAIN',
+        shipToWarehouseName: r.shipToWarehouseName || r.deliveryLocation || 'Central Commissary - Main Dock',
+        vendorId: r.vendorId || r.vendor_id || 'VND-GEN-001',
+        vendorName: r.vendorName || 'General Supplier',
+        vendorTradeName: r.vendorTradeName || r.vendorName || 'General Supplier',
+        vendorContactId: r.vendorContactId || r.vendor_contact_id || 'VNC-001',
+        vendorContactPerson: r.vendorContactPerson || 'Primary Contact',
+        vendorEmail: r.vendorEmail || '',
+        vendorPhone: r.vendorPhone || '',
+        submissionDeadline: r.submissionDeadline || r.submission_deadline || r.dueDate || '2026-10-08',
+        quoteValidUntilDate: r.quoteValidUntilDate || r.quote_valid_until_date || '2026-10-25',
+        rfqRequestedDeliveryDate: r.rfqRequestedDeliveryDate || r.rfq_requested_delivery_date || r.expectedDelivery || '2026-10-15',
+        rfqCurrencyCode: r.rfqCurrencyCode || r.rfq_currency_code || 'PHP',
+        rfqPaymentTermsCode: r.rfqPaymentTermsCode || r.rfq_payment_terms_code || r.paymentTerms || 'Net 30 Days',
+        rfqIncotermsCode: r.rfqIncotermsCode || r.rfq_incoterms_code || 'FOB',
+        rfqEstimatedTotalAmount: parseFloat(r.rfqEstimatedTotalAmount || r.rfq_estimated_total_amount || estTotal || 0),
+        rfqQuotedTotalAmount: parseFloat(r.rfqQuotedTotalAmount || r.rfq_quoted_total_amount || quotedTotal || estTotal || 0),
+        rfqStatus: r.rfqStatus || r.rfq_status || r.status || 'Draft',
+        rfqApprovalStatus: r.rfqApprovalStatus || r.rfq_approval_status || (r.isApproved ? 'APPROVED' : 'PENDING'),
+        approvalRequestId: r.approvalRequestId || r.approval_request_id || (r.rfqApprovalStatus === 'APPROVED' ? 'APR-2026-0088' : ''),
+        rfqAwardApprovalStatus: r.rfqAwardApprovalStatus || r.rfq_award_approval_status || (r.status === 'Awarded' ? 'APPROVED' : 'NOT_REQUIRED'),
+        awardApprovalRequestId: r.awardApprovalRequestId || r.award_approval_request_id || (r.status === 'Awarded' ? 'AWD-2026-0038' : ''),
+        rfqNotes: r.rfqNotes || r.rfq_notes || r.specialInstructions || r.notes || '',
+        rfqCreatedBy: r.rfqCreatedBy || r.rfq_created_by || 'Buyer Officer',
+        rfqCreatedAt: r.rfqCreatedAt || r.rfq_created_at || r.dateIssued || '2026-09-24',
+        rfqUpdatedBy: r.rfqUpdatedBy || r.rfq_updated_by || 'Purchasing Lead',
+        rfqUpdatedAt: r.rfqUpdatedAt || r.rfq_updated_at || '2026-10-01',
+        dateIssued: r.dateIssued || r.rfqDate || '2026-09-24',
+        dueDate: r.dueDate || r.submissionDeadline || '2026-10-01',
+        expectedDelivery: r.expectedDelivery || r.rfqRequestedDeliveryDate || '2026-10-06',
+        paymentTerms: r.paymentTerms || r.rfqPaymentTermsCode || 'Net 30 Days',
+        deliveryLocation: r.deliveryLocation || r.shipToWarehouseName || 'Central Commissary',
+        specialInstructions: r.specialInstructions || r.rfqNotes || '',
+        status: r.status || r.rfqStatus || 'Draft',
+        isApproved: (r.rfqApprovalStatus === 'APPROVED' || r.status === 'Awarded' || r.isApproved === true),
+        items: (r.items || []).map((line, idx) => ({
+            lineNumber: line.lineNumber || line.line_number || (idx + 1),
+            itemId: line.itemId || line.item_id || line.sku || 'SKU-ITEM',
+            name: line.name || 'Quoted Product',
+            specs: line.specs || '',
+            category: line.category || 'Supplies',
+            purchaseUomCode: line.purchaseUomCode || line.purchase_uom_code || line.unit || 'Unit',
+            unit: line.unit || line.purchaseUomCode || 'Unit',
+            requestedQuantity: parseFloat(line.requestedQuantity || line.requested_quantity || line.quantity || 1),
+            quantity: parseFloat(line.quantity || line.requestedQuantity || 1),
+            targetUnitPrice: parseFloat(line.targetUnitPrice || line.target_unit_price || line.targetPrice || 0),
+            targetPrice: parseFloat(line.targetPrice || line.targetUnitPrice || 0),
+            quotedUnitPrice: parseFloat(line.quotedUnitPrice || line.quoted_unit_price || line.quotedPrice || line.targetPrice || 0),
+            quotedLineTotal: parseFloat(line.quotedLineTotal || line.quoted_line_total || ((line.quantity || 1) * (line.targetPrice || 0))),
+            leadTimeDays: parseInt(line.leadTimeDays || line.lead_time_days || 3, 10),
+            isAwarded: Boolean(line.isAwarded !== undefined ? line.isAwarded : (r.status === 'Awarded')),
+            rfqLineNotes: line.rfqLineNotes || line.rfq_line_notes || line.notes || '',
+            rfqLineCreatedBy: line.rfqLineCreatedBy || line.rfq_line_created_by || 'Buyer Officer',
+            rfqLineCreatedAt: line.rfqLineCreatedAt || line.rfq_line_created_at || '2026-09-24',
+            rfqLineUpdatedBy: line.rfqLineUpdatedBy || line.rfq_line_updated_by || 'Purchasing Lead',
+            rfqLineUpdatedAt: line.rfqLineUpdatedAt || line.rfq_line_updated_at || '2026-10-01'
+        }))
+    };
+}
+
 
 // Master Application Store State
 window.AppStore = {
@@ -3224,11 +3710,17 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        const dirDropdown = document.getElementById('directoryColDropdownMenu');
+        const dirDropdown = document.getElementById('rfqTableSettingsDropdown');
+        const dirSettingsBtn = document.getElementById('btnRfqTableSettings');
         const dirFilterBtn = document.getElementById('btnDirectoryColFilter');
-        if (dirDropdown && dirDropdown.classList.contains('is-active')) {
-            if (!dirDropdown.contains(e.target) && !dirFilterBtn.contains(e.target)) {
+        if (dirDropdown && (dirDropdown.classList.contains('is-active') || dirDropdown.style.display !== 'none')) {
+            if (!dirDropdown.contains(e.target) && 
+                (!dirSettingsBtn || !dirSettingsBtn.contains(e.target)) && 
+                (!dirFilterBtn || !dirFilterBtn.contains(e.target))) {
                 dirDropdown.classList.remove('is-active');
+                dirDropdown.style.display = 'none';
+                if (dirSettingsBtn) dirSettingsBtn.classList.remove('is-active');
+                if (dirFilterBtn) dirFilterBtn.classList.remove('is-active');
             }
         }
 
@@ -3287,12 +3779,13 @@ function initAppStore() {
     const storedRfqs = localStorage.getItem('rms_rfq_directory');
     if (storedRfqs) {
         try {
-            window.AppStore.rfqs = JSON.parse(storedRfqs);
+            const raw = JSON.parse(storedRfqs);
+            window.AppStore.rfqs = (Array.isArray(raw) && raw.length > 0) ? raw.map(normalizeRfqItem) : SEEDED_RFQS.map(normalizeRfqItem);
         } catch (e) {
-            window.AppStore.rfqs = JSON.parse(JSON.stringify(SEEDED_RFQS));
+            window.AppStore.rfqs = SEEDED_RFQS.map(normalizeRfqItem);
         }
     } else {
-        window.AppStore.rfqs = JSON.parse(JSON.stringify(SEEDED_RFQS));
+        window.AppStore.rfqs = SEEDED_RFQS.map(normalizeRfqItem);
         localStorage.setItem('rms_rfq_directory', JSON.stringify(window.AppStore.rfqs));
     }
 
@@ -4605,45 +5098,448 @@ function switchRfqTab(tabId) {
  * --------------------------------------------------------------------------
  */
 const DIRECTORY_COLUMNS = [
-    { id: 'ref', label: 'Ref #', default: true, lockVisible: true, defaultWidth: '135px', align: 'left' },
-    { id: 'vendor', label: 'Vendor & Contact', default: true, lockVisible: true, defaultWidth: '220px', align: 'left' },
-    { id: 'notes', label: 'Notes', default: true, lockVisible: false, defaultWidth: '180px', align: 'left' },
-    { id: 'issuedDue', label: 'Issued / Due', default: true, lockVisible: false, defaultWidth: '135px', align: 'left' },
-    { id: 'items', label: 'Line Items', default: true, lockVisible: false, defaultWidth: '110px', align: 'center' },
-    { id: 'terms', label: 'Payment Terms', default: true, lockVisible: false, defaultWidth: '125px', align: 'left' },
-    { id: 'status', label: 'Status', default: true, lockVisible: false, defaultWidth: '150px', align: 'center' },
-    { id: 'actions', label: 'Actions', default: true, lockVisible: true, defaultWidth: '115px', align: 'center' }
+    {
+        id: 'rfq_info',
+        label: 'RFQ Info',
+        subLabel: 'RFQ # / Date',
+        default: true,
+        lockVisible: true,
+        defaultWidth: '165px',
+        align: 'left',
+        topField: 'rfqNumber',
+        bottomField: 'rfqDate',
+        topPurpose: 'Internal procurement document number (e.g., RFQ-2026-00089)',
+        bottomPurpose: 'Date the RFQ was officially published/sent'
+    },
+    {
+        id: 'company',
+        label: 'Company',
+        subLabel: 'Legal Entity',
+        default: false,
+        lockVisible: false,
+        defaultWidth: '160px',
+        align: 'left',
+        topField: 'companyName',
+        bottomField: 'companyId',
+        topPurpose: 'FK referencing companies (the buying legal entity)',
+        bottomPurpose: ''
+    },
+    {
+        id: 'branch_warehouse',
+        label: 'Branch & Warehouse',
+        subLabel: 'Branch / Ship-to',
+        default: false,
+        lockVisible: false,
+        defaultWidth: '185px',
+        align: 'left',
+        topField: 'branchName',
+        bottomField: 'shipToWarehouseName',
+        topPurpose: 'FK referencing branches (the purchasing branch)',
+        bottomPurpose: 'FK referencing warehouses (destination receiving facility)'
+    },
+    {
+        id: 'vendor_contact',
+        label: 'Vendor & Contact',
+        subLabel: 'Vendor / Contact Person',
+        default: true,
+        lockVisible: false,
+        defaultWidth: '220px',
+        align: 'left',
+        topField: 'vendorTradeName',
+        bottomField: 'vendorContactPerson',
+        topPurpose: 'FK referencing vendor_master (supplier invited to bid)',
+        bottomPurpose: 'FK referencing vendor_contacts (contact person shown on RFQ screen)'
+    },
+    {
+        id: 'submission_deadline',
+        label: 'Submission Deadline',
+        subLabel: 'Cutoff Date',
+        default: true,
+        lockVisible: false,
+        defaultWidth: '140px',
+        align: 'left',
+        topField: 'submissionDeadline',
+        bottomField: '',
+        topPurpose: 'Cutoff date for the vendor to submit their bids',
+        bottomPurpose: ''
+    },
+    {
+        id: 'quote_validity_date',
+        label: 'Quote Validity Date',
+        subLabel: 'Valid Until',
+        default: false,
+        lockVisible: false,
+        defaultWidth: '135px',
+        align: 'left',
+        topField: 'quoteValidUntilDate',
+        bottomField: '',
+        topPurpose: 'Date until which the vendor quote stays valid',
+        bottomPurpose: ''
+    },
+    {
+        id: 'requested_delivery_date',
+        label: 'Requested Delivery Date',
+        subLabel: 'Desired Arrival',
+        default: false,
+        lockVisible: false,
+        defaultWidth: '140px',
+        align: 'left',
+        topField: 'rfqRequestedDeliveryDate',
+        bottomField: '',
+        topPurpose: 'Desired date goods must arrive at the warehouse',
+        bottomPurpose: ''
+    },
+    {
+        id: 'currency',
+        label: 'Currency',
+        subLabel: 'ISO 4217',
+        default: false,
+        lockVisible: false,
+        defaultWidth: '95px',
+        align: 'center',
+        topField: 'rfqCurrencyCode',
+        bottomField: '',
+        topPurpose: 'ISO 4217 bidding currency (e.g., PHP, USD)',
+        bottomPurpose: ''
+    },
+    {
+        id: 'payment_terms',
+        label: 'Payment Terms',
+        subLabel: 'Requested Terms',
+        default: true,
+        lockVisible: false,
+        defaultWidth: '135px',
+        align: 'left',
+        topField: 'rfqPaymentTermsCode',
+        bottomField: '',
+        topPurpose: 'Requested payment terms (e.g., NET30) from vendor_master',
+        bottomPurpose: ''
+    },
+    {
+        id: 'incoterms',
+        label: 'Incoterms',
+        subLabel: 'Trade Terms',
+        default: false,
+        lockVisible: false,
+        defaultWidth: '105px',
+        align: 'center',
+        topField: 'rfqIncotermsCode',
+        bottomField: '',
+        topPurpose: 'Shipping trade terms (e.g., FOB, DDP, CIF) from vendor_master',
+        bottomPurpose: ''
+    },
+    {
+        id: 'total_amount',
+        label: 'Total Amount',
+        subLabel: 'Quoted / Target',
+        default: false,
+        lockVisible: false,
+        defaultWidth: '160px',
+        align: 'right',
+        topField: 'rfqQuotedTotalAmount',
+        bottomField: 'rfqEstimatedTotalAmount',
+        topPurpose: 'Sum of quoted_line_total; award approval basis',
+        bottomPurpose: 'Sum of requested_quantity x target_unit_price; issue approval basis'
+    },
+    {
+        id: 'rfq_status',
+        label: 'RFQ Status',
+        subLabel: 'Lifecycle State',
+        default: true,
+        lockVisible: false,
+        defaultWidth: '145px',
+        align: 'center',
+        topField: 'rfqStatus',
+        bottomField: '',
+        topPurpose: 'Lifecycle (DRAFT, SENT, QUOTED, AWARDED, REJECTED, CANCELLED)',
+        bottomPurpose: ''
+    },
+    {
+        id: 'rfq_approval_status',
+        label: 'Issue Approval Status',
+        subLabel: 'Issue State',
+        default: true,
+        lockVisible: false,
+        defaultWidth: '140px',
+        align: 'center',
+        topField: 'rfqApprovalStatus',
+        bottomField: '',
+        topPurpose: 'Approval summary for RFQ issue (NOT_REQUIRED, PENDING, APPROVED, etc.)',
+        bottomPurpose: ''
+    },
+    {
+        id: 'approval_request_id',
+        label: 'Issue Approval ID',
+        subLabel: 'Current Cycle',
+        default: false,
+        lockVisible: false,
+        defaultWidth: '150px',
+        align: 'left',
+        topField: 'approvalRequestId',
+        bottomField: '',
+        topPurpose: 'FK referencing approval_requests (current approval cycle)',
+        bottomPurpose: ''
+    },
+    {
+        id: 'rfq_award_approval_status',
+        label: 'Award Approval Status',
+        subLabel: 'Award State',
+        default: false,
+        lockVisible: false,
+        defaultWidth: '140px',
+        align: 'center',
+        topField: 'rfqAwardApprovalStatus',
+        bottomField: '',
+        topPurpose: 'Approval summary for awarding quote (NOT_REQUIRED, PENDING, etc.)',
+        bottomPurpose: ''
+    },
+    {
+        id: 'award_approval_request_id',
+        label: 'Award Approval ID',
+        subLabel: 'Award Doc',
+        default: false,
+        lockVisible: false,
+        defaultWidth: '150px',
+        align: 'left',
+        topField: 'awardApprovalRequestId',
+        bottomField: '',
+        topPurpose: 'FK referencing approval_requests (document type RFQ_AWARD)',
+        bottomPurpose: ''
+    },
+    {
+        id: 'rfq_notes',
+        label: 'RFQ Notes',
+        subLabel: 'Instructions',
+        default: false,
+        lockVisible: false,
+        defaultWidth: '185px',
+        align: 'left',
+        topField: 'rfqNotes',
+        bottomField: '',
+        topPurpose: 'Special bidding instructions, delivery specs, or commercial terms',
+        bottomPurpose: ''
+    },
+    {
+        id: 'created_by',
+        label: 'Created By',
+        subLabel: 'Buyer / Timestamp',
+        default: false,
+        lockVisible: false,
+        defaultWidth: '160px',
+        align: 'left',
+        topField: 'rfqCreatedBy',
+        bottomField: 'rfqCreatedAt',
+        topPurpose: 'User ID of the buyer/procurement officer',
+        bottomPurpose: 'Creation timestamp'
+    },
+    {
+        id: 'last_modified_by',
+        label: 'Last Modified By',
+        subLabel: 'User / Timestamp',
+        default: false,
+        lockVisible: false,
+        defaultWidth: '160px',
+        align: 'left',
+        topField: 'rfqUpdatedBy',
+        bottomField: 'rfqUpdatedAt',
+        topPurpose: 'User ID who modified the record',
+        bottomPurpose: 'Modification timestamp'
+    },
+    {
+        id: 'line_number',
+        label: 'Line #',
+        subLabel: 'Items Count',
+        default: false,
+        lockVisible: false,
+        defaultWidth: '95px',
+        align: 'center',
+        topField: 'itemCount',
+        bottomField: '',
+        topPurpose: 'Line item sequence number (1, 2, 3)',
+        bottomPurpose: ''
+    },
+    {
+        id: 'item_details',
+        label: 'Item Details',
+        subLabel: 'Item / Remarks',
+        default: false,
+        lockVisible: false,
+        defaultWidth: '210px',
+        align: 'left',
+        topField: 'primaryItemName',
+        bottomField: 'primaryLineNotes',
+        topPurpose: 'FK referencing item_master',
+        bottomPurpose: 'Item technical notes or vendor remarks'
+    },
+    {
+        id: 'quantity',
+        label: 'Quantity',
+        subLabel: 'Requested Qty / UOM',
+        default: true,
+        lockVisible: false,
+        defaultWidth: '135px',
+        align: 'right',
+        topField: 'totalQuantity',
+        bottomField: 'primaryUom',
+        topPurpose: 'Quantity the company intends to purchase',
+        bottomPurpose: 'Purchasing unit of measure (e.g., BOX, KG)'
+    },
+    {
+        id: 'unit_price',
+        label: 'Unit Price',
+        subLabel: 'Quoted / Target',
+        default: false,
+        lockVisible: false,
+        defaultWidth: '145px',
+        align: 'right',
+        topField: 'primaryQuotedPrice',
+        bottomField: 'primaryTargetPrice',
+        topPurpose: 'Official unit price offered back by the vendor',
+        bottomPurpose: 'Internal budgeted/target unit price (benchmark)'
+    },
+    {
+        id: 'line_total',
+        label: 'Line Total',
+        subLabel: 'Bid Line Sum',
+        default: false,
+        lockVisible: false,
+        defaultWidth: '135px',
+        align: 'right',
+        topField: 'primaryLineTotal',
+        bottomField: '',
+        topPurpose: 'Bid line total (requested_quantity x quoted_unit_price)',
+        bottomPurpose: ''
+    },
+    {
+        id: 'lead_time',
+        label: 'Lead Time',
+        subLabel: 'Promised Days',
+        default: false,
+        lockVisible: false,
+        defaultWidth: '110px',
+        align: 'center',
+        topField: 'primaryLeadTime',
+        bottomField: '',
+        topPurpose: 'Vendor promised manufacturing/shipping time in days',
+        bottomPurpose: ''
+    },
+    {
+        id: 'is_awarded',
+        label: 'Award Status',
+        subLabel: 'Line Acceptance',
+        default: false,
+        lockVisible: false,
+        defaultWidth: '115px',
+        align: 'center',
+        topField: 'isAwarded',
+        bottomField: '',
+        topPurpose: 'Indicates if this item/bid was officially accepted',
+        bottomPurpose: ''
+    },
+    {
+        id: 'line_created_by',
+        label: 'Line Created By',
+        subLabel: 'User / Timestamp',
+        default: false,
+        lockVisible: false,
+        defaultWidth: '155px',
+        align: 'left',
+        topField: 'primaryLineCreatedBy',
+        bottomField: 'primaryLineCreatedAt',
+        topPurpose: 'User ID who added the line',
+        bottomPurpose: 'Timestamp when line was created'
+    },
+    {
+        id: 'line_modified_by',
+        label: 'Line Modified By',
+        subLabel: 'User / Timestamp',
+        default: false,
+        lockVisible: false,
+        defaultWidth: '155px',
+        align: 'left',
+        topField: 'primaryLineUpdatedBy',
+        bottomField: 'primaryLineUpdatedAt',
+        topPurpose: 'User ID who modified the line',
+        bottomPurpose: 'Timestamp when vendor response was logged'
+    },
+    {
+        id: 'actions',
+        label: 'Actions',
+        subLabel: 'Edit / View / Del',
+        default: true,
+        lockVisible: true,
+        defaultWidth: '125px',
+        align: 'center',
+        topField: '',
+        bottomField: '',
+        topPurpose: 'Action Button (Edit, View, Delete) the RFQ',
+        bottomPurpose: 'Settings Icon at the end column of the header'
+    }
 ];
 
+// 1. Column Sequence Order State (Saved in LocalStorage)
+let directoryColOrder = (() => {
+    try {
+        const savedOrder = localStorage.getItem('rms_rfq_directory_cols_order_v3');
+        if (savedOrder) {
+            const parsed = JSON.parse(savedOrder);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+                const allIds = DIRECTORY_COLUMNS.map(c => c.id);
+                const validOrder = parsed.filter(id => allIds.includes(id));
+                // Append any newly declared columns
+                allIds.forEach(id => {
+                    if (!validOrder.includes(id)) validOrder.push(id);
+                });
+                // Ensure 'actions' is always at the end
+                const actionsIdx = validOrder.indexOf('actions');
+                if (actionsIdx > -1 && actionsIdx !== validOrder.length - 1) {
+                    validOrder.splice(actionsIdx, 1);
+                    validOrder.push('actions');
+                }
+                return validOrder;
+            }
+        }
+    } catch (e) {}
+    return DIRECTORY_COLUMNS.map(c => c.id);
+})();
+
+// 2. Active Visible Column IDs State (Saved in LocalStorage)
 let activeDirectoryColIds = (() => {
     try {
-        const saved = localStorage.getItem('rms_rfq_directory_cols_v2');
+        const saved = localStorage.getItem('rms_rfq_directory_cols_v3');
         if (saved) {
             const parsed = JSON.parse(saved);
-            const validIds = DIRECTORY_COLUMNS.map(c => c.id);
-            if (Array.isArray(parsed) && parsed.length > 0 && parsed.every(id => validIds.includes(id))) {
+            const allIds = DIRECTORY_COLUMNS.map(c => c.id);
+            if (Array.isArray(parsed) && parsed.length > 0 && parsed.every(id => allIds.includes(id))) {
+                if (!parsed.includes('actions')) parsed.push('actions');
                 return parsed;
             }
         }
     } catch (e) {}
+    // Default = TRUE columns only
     return DIRECTORY_COLUMNS.filter(c => c.default).map(c => c.id);
 })();
 
+// 3. Saved Column Widths State (Saved in LocalStorage)
 let savedDirectoryColWidths = (() => {
     try {
-        const saved = localStorage.getItem('rms_rfq_directory_col_widths_v2');
+        const saved = localStorage.getItem('rms_rfq_directory_col_widths_v3');
         if (saved) return JSON.parse(saved);
     } catch (e) {}
     return {};
 })();
 
-// Directory filter state initialized in global scope above
+// 4. Multi-Line Accordion Expansion Set
+let expandedRfqNumbers = new Set();
+
+// 5. Search Filter inside Column Dropdown
+let directoryColSearchTerm = '';
 
 let directoryCurrentPage = 1;
 let directoryPageSize = 10;
 
 function getDirectoryColWidth(col) {
-    return savedDirectoryColWidths[col.id] || col.defaultWidth || '120px';
+    return savedDirectoryColWidths[col.id] || col.defaultWidth || '130px';
 }
 
 function initDirectoryColumns() {
@@ -4651,6 +5547,9 @@ function initDirectoryColumns() {
     renderDirectoryColDropdownChecklist();
 }
 
+/**
+ * Render Modular Stacked Table Header with Drag-and-Drop and Settings Icon
+ */
 function renderDirectoryTableHeader() {
     const theadRow = document.getElementById('rfqDirectoryTheadRow');
     if (!theadRow) return;
@@ -4658,42 +5557,61 @@ function renderDirectoryTableHeader() {
     const isStatusFiltered = (activeRfqStatusFilter !== 'all' || activeRfqApprovalFilter !== 'all');
     const isTermsFiltered = (activeRfqPaymentTermsFilter !== 'all');
 
+    // Build visible columns according to current user sequence order
+    const visibleCols = directoryColOrder
+        .filter(id => activeDirectoryColIds.includes(id))
+        .map(id => DIRECTORY_COLUMNS.find(c => c.id === id))
+        .filter(Boolean);
+
     let thHtml = '';
-    DIRECTORY_COLUMNS.forEach(col => {
-        if (!activeDirectoryColIds.includes(col.id)) return;
+    visibleCols.forEach(col => {
         const w = getDirectoryColWidth(col);
         const alignClass = col.align === 'right' ? 'th-num' : (col.align === 'center' ? 'th-center' : '');
 
-        if (col.id === 'status') {
+        if (col.id === 'actions') {
+            // End Column Header with Settings Gear Icon
             thHtml += `
-                <th class="${alignClass}" data-col-id="status" style="width: ${w}; position: relative; user-select: none;">
-                    <div class="rfq-th-filter-wrapper" onclick="toggleRfqHeaderFilter(event, 'status')" title="Click to filter by Approval Status & RFQ Status">
-                        <span>${col.label}</span>
-                        <button type="button" class="rfq-th-funnel-btn ${isStatusFiltered ? 'is-active' : ''}">
-                            <i class="ph ph-funnel"></i>
-                            ${isStatusFiltered ? '<span class="rfq-th-funnel-dot"></span>' : ''}
+                <th class="th-center th-actions-sticky" data-col-id="actions" style="width: ${w}; text-align: center; user-select: none;">
+                    <div class="rfq-header-action-wrapper">
+                        <span>Action</span>
+                        <button type="button" class="rfq-th-settings-btn" id="btnRfqTableSettings" onclick="toggleRfqTableSettingsDropdown(event)" title="Customize Columns & Drag Sequence">
+                            <i class="ph ph-gear"></i>
                         </button>
                     </div>
-                    <div class="rfq-col-resizer" onmousedown="initDirectoryColResize(event, '${col.id}')"></div>
-                </th>
-            `;
-        } else if (col.id === 'terms') {
-            thHtml += `
-                <th class="${alignClass}" data-col-id="terms" style="width: ${w}; position: relative; user-select: none;">
-                    <div class="rfq-th-filter-wrapper" onclick="toggleRfqHeaderFilter(event, 'terms')" title="Click to filter by Payment Terms">
-                        <span>${col.label}</span>
-                        <button type="button" class="rfq-th-funnel-btn ${isTermsFiltered ? 'is-active' : ''}">
-                            <i class="ph ph-funnel"></i>
-                            ${isTermsFiltered ? '<span class="rfq-th-funnel-dot"></span>' : ''}
-                        </button>
-                    </div>
-                    <div class="rfq-col-resizer" onmousedown="initDirectoryColResize(event, '${col.id}')"></div>
                 </th>
             `;
         } else {
+            // Modular Stacked Header with Drag & Drop Reordering and Col Resizer
+            const hasStatusFilter = (col.id === 'rfq_status');
+            const hasTermsFilter = (col.id === 'payment_terms');
+
             thHtml += `
-                <th class="${alignClass}" data-col-id="${col.id}" style="width: ${w}; position: relative; user-select: none;">
-                    <span>${col.label}</span>
+                <th class="rfq-th-stacked ${alignClass}" data-col-id="${col.id}" draggable="true"
+                    ondragstart="handleHeaderDragStart(event, '${col.id}')"
+                    ondragover="handleHeaderDragOver(event, '${col.id}')"
+                    ondragleave="handleHeaderDragLeave(event)"
+                    ondrop="handleHeaderDrop(event, '${col.id}')"
+                    ondragend="handleHeaderDragEnd(event)"
+                    style="width: ${w}; position: relative; user-select: none;"
+                    title="${escapeHtml(col.topPurpose || col.label)}">
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 4px; min-width: 0;">
+                        <div class="rfq-th-content">
+                            <div class="rfq-th-title">${escapeHtml(col.label)}</div>
+                            ${col.subLabel ? `<div class="rfq-th-sub">${escapeHtml(col.subLabel)}</div>` : ''}
+                        </div>
+                        ${hasStatusFilter ? `
+                            <button type="button" class="rfq-th-funnel-btn ${isStatusFiltered ? 'is-active' : ''}" onclick="toggleRfqHeaderFilter(event, 'status')" title="Filter Status & Approvals">
+                                <i class="ph ph-funnel"></i>
+                                ${isStatusFiltered ? '<span class="rfq-th-funnel-dot"></span>' : ''}
+                            </button>
+                        ` : ''}
+                        ${hasTermsFilter ? `
+                            <button type="button" class="rfq-th-funnel-btn ${isTermsFiltered ? 'is-active' : ''}" onclick="toggleRfqHeaderFilter(event, 'terms')" title="Filter Payment Terms">
+                                <i class="ph ph-funnel"></i>
+                                ${isTermsFiltered ? '<span class="rfq-th-funnel-dot"></span>' : ''}
+                            </button>
+                        ` : ''}
+                    </div>
                     <div class="rfq-col-resizer" onmousedown="initDirectoryColResize(event, '${col.id}')"></div>
                 </th>
             `;
@@ -4705,20 +5623,60 @@ function renderDirectoryTableHeader() {
     renderRfqActiveFilterChips();
 }
 
+/**
+ * Render Checkboxes and Drag-and-Drop Handles in Settings Dropdown
+ */
 function renderDirectoryColDropdownChecklist() {
-    const listEl = document.getElementById('directoryColCheckboxesList') || document.getElementById('directoryColDropdownList');
+    const listEl = document.getElementById('directoryColCheckboxesList');
     if (!listEl) return;
 
-    listEl.innerHTML = DIRECTORY_COLUMNS.map(col => {
-        const isChecked = activeDirectoryColIds.includes(col.id);
-        const isDisabled = col.lockVisible ? 'disabled' : '';
-        return `
-            <label class="inv-col-item-row" title="${col.label}">
-                <input type="checkbox" ${isChecked ? 'checked' : ''} ${isDisabled} onchange="toggleDirectoryColVisibility('${col.id}', this.checked)">
-                <span>${col.label} ${col.lockVisible ? '<span style="font-size: 0.68rem; color:#94a3b8;">(Locked)</span>' : ''}</span>
-            </label>
-        `;
-    }).join('');
+    const query = (directoryColSearchTerm || '').toLowerCase().trim();
+
+    // Render list ordered by current directoryColOrder
+    const orderedCols = directoryColOrder.map(id => DIRECTORY_COLUMNS.find(c => c.id === id)).filter(Boolean);
+
+    listEl.innerHTML = orderedCols
+        .filter(col => {
+            if (!query) return true;
+            return col.label.toLowerCase().includes(query) ||
+                   (col.subLabel && col.subLabel.toLowerCase().includes(query)) ||
+                   col.id.toLowerCase().includes(query);
+        })
+        .map(col => {
+            const isChecked = activeDirectoryColIds.includes(col.id);
+            const isDisabled = col.lockVisible ? 'disabled' : '';
+            const isDefault = col.default;
+
+            return `
+                <div class="rfq-dropdown-col-item" data-col-id="${col.id}" draggable="${col.id !== 'actions' ? 'true' : 'false'}"
+                    ondragstart="handleDropdownDragStart(event, '${col.id}')"
+                    ondragover="handleDropdownDragOver(event, '${col.id}')"
+                    ondragleave="handleDropdownDragLeave(event)"
+                    ondrop="handleDropdownDrop(event, '${col.id}')"
+                    ondragend="handleDropdownDragEnd(event)">
+                    ${col.id !== 'actions' ? `
+                        <span class="rfq-drag-handle" title="Drag to reorder column sequence">
+                            <i class="ph ph-dots-six-vertical"></i>
+                        </span>
+                    ` : `
+                        <span style="width: 14px; display: inline-block;"></span>
+                    `}
+                    <label class="rfq-col-item-label" title="${escapeHtml(col.topPurpose || col.label)}">
+                        <div style="display: flex; align-items: center; gap: 6px; min-width: 0;">
+                            <input type="checkbox" ${isChecked ? 'checked' : ''} ${isDisabled} onchange="toggleDirectoryColVisibility('${col.id}', this.checked)">
+                            <div style="display: flex; flex-direction: column; min-width: 0;">
+                                <span class="rfq-col-name">${escapeHtml(col.label)}</span>
+                                ${col.subLabel ? `<span class="rfq-col-subname">${escapeHtml(col.subLabel)}</span>` : ''}
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 4px;">
+                            ${isDefault ? '<span class="rfq-col-badge-default">Default</span>' : ''}
+                            ${col.lockVisible ? '<span style="font-size: 0.65rem; color:#94a3b8; font-weight:600;">(Locked)</span>' : ''}
+                        </div>
+                    </label>
+                </div>
+            `;
+        }).join('');
 
     const counter = document.getElementById('directoryColActiveCounter');
     if (counter) {
@@ -4726,22 +5684,164 @@ function renderDirectoryColDropdownChecklist() {
     }
 }
 
-function toggleDirectoryColDropdown(event) {
+/**
+ * Toggle Settings Dropdown Positioned at Trigger Icon
+ */
+function toggleRfqTableSettingsDropdown(event) {
     if (event) event.stopPropagation();
-    const dropdown = document.getElementById('directoryColDropdownMenu');
-    const btn = document.getElementById('btnDirectoryColFilter');
-    if (!dropdown || !btn) return;
+    const dropdown = document.getElementById('rfqTableSettingsDropdown');
+    const trigger = event ? event.currentTarget : document.getElementById('btnRfqTableSettings');
+    if (!dropdown) return;
 
-    const isActive = dropdown.classList.contains('is-active');
-    if (isActive) {
+    const isOpen = dropdown.classList.contains('is-active');
+    if (isOpen) {
         dropdown.classList.remove('is-active');
-        btn.classList.remove('is-active');
+        dropdown.style.display = 'none';
+        if (trigger) trigger.classList.remove('is-active');
     } else {
+        dropdown.style.display = 'block';
         dropdown.classList.add('is-active');
-        btn.classList.add('is-active');
+        if (trigger) trigger.classList.add('is-active');
+
+        // Anchored positioning clamping
+        if (trigger) {
+            const rect = trigger.getBoundingClientRect();
+            const dropdownWidth = 370;
+            let left = rect.right - dropdownWidth;
+            if (left < 10) left = 10;
+            let top = rect.bottom + 6;
+            if (top + 400 > window.innerHeight) {
+                top = Math.max(10, rect.top - 410);
+            }
+            dropdown.style.left = `${left}px`;
+            dropdown.style.top = `${top}px`;
+        }
+
+        renderDirectoryColDropdownChecklist();
     }
 }
 
+function handleDirectoryColSearch(val) {
+    directoryColSearchTerm = val;
+    renderDirectoryColDropdownChecklist();
+}
+
+/**
+ * Reorder Columns in Sequence and Persist
+ */
+function reorderDirectoryColumns(sourceColId, targetColId) {
+    if (!sourceColId || !targetColId || sourceColId === targetColId) return;
+    if (sourceColId === 'actions' || targetColId === 'actions') return;
+
+    const sourceIdx = directoryColOrder.indexOf(sourceColId);
+    const targetIdx = directoryColOrder.indexOf(targetColId);
+    if (sourceIdx === -1 || targetIdx === -1) return;
+
+    // Move source to target position
+    directoryColOrder.splice(sourceIdx, 1);
+    directoryColOrder.splice(targetIdx, 0, sourceColId);
+
+    // Save to LocalStorage
+    localStorage.setItem('rms_rfq_directory_cols_order_v3', JSON.stringify(directoryColOrder));
+
+    renderDirectoryTableHeader();
+    renderDirectoryColDropdownChecklist();
+    renderRfqDirectory();
+    showToast('✓ Column sequence updated', 'success');
+}
+
+// Drag & Drop Handlers for Dropdown Menu List
+let dropdownDragSourceId = null;
+
+function handleDropdownDragStart(e, colId) {
+    dropdownDragSourceId = colId;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', colId);
+    const item = e.currentTarget;
+    if (item) item.classList.add('is-dragging');
+}
+
+function handleDropdownDragOver(e, colId) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    const item = e.currentTarget;
+    if (item && dropdownDragSourceId && dropdownDragSourceId !== colId) {
+        item.classList.add('is-drag-over');
+    }
+}
+
+function handleDropdownDragLeave(e) {
+    const item = e.currentTarget;
+    if (item) item.classList.remove('is-drag-over');
+}
+
+function handleDropdownDrop(e, targetColId) {
+    e.preventDefault();
+    const item = e.currentTarget;
+    if (item) item.classList.remove('is-drag-over');
+    if (dropdownDragSourceId && targetColId && dropdownDragSourceId !== targetColId) {
+        reorderDirectoryColumns(dropdownDragSourceId, targetColId);
+    }
+    dropdownDragSourceId = null;
+}
+
+function handleDropdownDragEnd(e) {
+    dropdownDragSourceId = null;
+    document.querySelectorAll('.rfq-dropdown-col-item').forEach(el => {
+        el.classList.remove('is-dragging', 'is-drag-over');
+    });
+}
+
+// Drag & Drop Handlers for Table Header (TH) Cells
+let headerDragSourceId = null;
+
+function handleHeaderDragStart(e, colId) {
+    if (colId === 'actions') {
+        e.preventDefault();
+        return;
+    }
+    headerDragSourceId = colId;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', colId);
+    const th = e.currentTarget;
+    if (th) th.classList.add('is-header-dragging');
+}
+
+function handleHeaderDragOver(e, colId) {
+    if (colId === 'actions') return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    const th = e.currentTarget;
+    if (th && headerDragSourceId && headerDragSourceId !== colId) {
+        th.classList.add('is-header-drag-over');
+    }
+}
+
+function handleHeaderDragLeave(e) {
+    const th = e.currentTarget;
+    if (th) th.classList.remove('is-header-drag-over');
+}
+
+function handleHeaderDrop(e, targetColId) {
+    e.preventDefault();
+    const th = e.currentTarget;
+    if (th) th.classList.remove('is-header-drag-over');
+    if (headerDragSourceId && targetColId && headerDragSourceId !== targetColId && targetColId !== 'actions') {
+        reorderDirectoryColumns(headerDragSourceId, targetColId);
+    }
+    headerDragSourceId = null;
+}
+
+function handleHeaderDragEnd(e) {
+    headerDragSourceId = null;
+    document.querySelectorAll('#rfqDirectoryThead th').forEach(el => {
+        el.classList.remove('is-header-dragging', 'is-header-drag-over');
+    });
+}
+
+/**
+ * Toggle Column Visibility
+ */
 function toggleDirectoryColVisibility(colId, isVisible) {
     if (isVisible) {
         if (!activeDirectoryColIds.includes(colId)) {
@@ -4750,23 +5850,28 @@ function toggleDirectoryColVisibility(colId, isVisible) {
     } else {
         activeDirectoryColIds = activeDirectoryColIds.filter(id => id !== colId);
     }
-    localStorage.setItem('rms_rfq_directory_cols_v2', JSON.stringify(activeDirectoryColIds));
+    localStorage.setItem('rms_rfq_directory_cols_v3', JSON.stringify(activeDirectoryColIds));
     renderDirectoryTableHeader();
     renderRfqDirectory();
 }
 
 function showAllDirectoryColumns() {
     activeDirectoryColIds = DIRECTORY_COLUMNS.map(c => c.id);
-    localStorage.setItem('rms_rfq_directory_cols_v2', JSON.stringify(activeDirectoryColIds));
+    localStorage.setItem('rms_rfq_directory_cols_v3', JSON.stringify(activeDirectoryColIds));
     renderDirectoryTableHeader();
     renderRfqDirectory();
+    showToast('✓ Showing all columns', 'success');
 }
 
 function resetDirectoryColumnDefaults() {
+    // Reset to only Default = True columns
     activeDirectoryColIds = DIRECTORY_COLUMNS.filter(c => c.default).map(c => c.id);
-    localStorage.setItem('rms_rfq_directory_cols_v2', JSON.stringify(activeDirectoryColIds));
+    directoryColOrder = DIRECTORY_COLUMNS.map(c => c.id);
+    localStorage.setItem('rms_rfq_directory_cols_v3', JSON.stringify(activeDirectoryColIds));
+    localStorage.removeItem('rms_rfq_directory_cols_order_v3');
     renderDirectoryTableHeader();
     renderRfqDirectory();
+    showToast('✓ Reset to Default headers', 'success');
 }
 
 function resetDirectoryColumns() {
@@ -4775,13 +5880,15 @@ function resetDirectoryColumns() {
 
 function resetDirectoryColumnWidths() {
     savedDirectoryColWidths = {};
-    localStorage.removeItem('rms_rfq_directory_col_widths_v2');
+    localStorage.removeItem('rms_rfq_directory_col_widths_v3');
     renderDirectoryTableHeader();
     renderRfqDirectory();
     showToast('✓ Directory column widths reset to defaults', 'success');
 }
 
-// Directory Column Header Resizer Logic
+/**
+ * Column Resizing Handlers
+ */
 let dirResizingColId = null;
 let dirStartX = 0;
 let dirStartW = 0;
@@ -4802,7 +5909,7 @@ function initDirectoryColResize(e, colId) {
 function handleDirectoryColMouseMove(e) {
     if (!dirResizingColId) return;
     const diff = e.pageX - dirStartX;
-    const newWidth = Math.max(50, dirStartW + diff);
+    const newWidth = Math.max(70, dirStartW + diff);
     savedDirectoryColWidths[dirResizingColId] = `${newWidth}px`;
 
     const thEl = document.querySelector(`#rfqDirectoryThead th[data-col-id="${dirResizingColId}"]`);
@@ -4813,10 +5920,23 @@ function handleDirectoryColMouseMove(e) {
 
 function handleDirectoryColMouseUp() {
     if (!dirResizingColId) return;
-    localStorage.setItem('rms_rfq_directory_col_widths', JSON.stringify(savedDirectoryColWidths));
+    localStorage.setItem('rms_rfq_directory_col_widths_v3', JSON.stringify(savedDirectoryColWidths));
     dirResizingColId = null;
     document.removeEventListener('mousemove', handleDirectoryColMouseMove);
     document.removeEventListener('mouseup', handleDirectoryColMouseUp);
+}
+
+function toggleRfqRowExpansion(rfqNumber, event) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    if (expandedRfqNumbers.has(rfqNumber)) {
+        expandedRfqNumbers.delete(rfqNumber);
+    } else {
+        expandedRfqNumbers.add(rfqNumber);
+    }
+    renderRfqDirectory();
 }
 
 function changeDirectoryPageSize(newSize) {
@@ -4847,7 +5967,6 @@ function renderDirectoryPagination(totalItems) {
     if (!btnsEl) return;
 
     let btnsHtml = '';
-    // Previous button
     btnsHtml += `
         <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" 
             onclick="goToDirectoryPage(${directoryCurrentPage - 1})" 
@@ -4857,7 +5976,6 @@ function renderDirectoryPagination(totalItems) {
         </button>
     `;
 
-    // Page number buttons (sliding window)
     const maxButtons = 5;
     let startPage = Math.max(1, directoryCurrentPage - Math.floor(maxButtons / 2));
     let endPage = Math.min(totalPages, startPage + maxButtons - 1);
@@ -4877,7 +5995,6 @@ function renderDirectoryPagination(totalItems) {
         `;
     }
 
-    // Next button
     btnsHtml += `
         <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" 
             onclick="goToDirectoryPage(${directoryCurrentPage + 1})" 
@@ -4890,21 +6007,28 @@ function renderDirectoryPagination(totalItems) {
     btnsEl.innerHTML = btnsHtml;
 }
 
+/**
+ * Render RFQ Directory Rows with Modular Stacked Cells and Multi-Line Accordion
+ */
 function renderRfqDirectory() {
     const tbody = document.getElementById('rfqDirectoryTbody');
-    const rfqs = window.AppStore.rfqs || [];
+    const rawRfqs = window.AppStore.rfqs || [];
     if (!tbody) return;
+
+    const rfqs = rawRfqs.map(normalizeRfqItem).filter(Boolean);
 
     // Filter by status, approval, payment terms & search
     const filtered = rfqs.filter(r => {
-        const matchesStatus = (activeRfqStatusFilter === 'all') || (r.status === activeRfqStatusFilter);
+        const matchesStatus = (activeRfqStatusFilter === 'all') || (r.status === activeRfqStatusFilter) || (r.rfqStatus === activeRfqStatusFilter);
         
-        const isApproved = (r.isApproved === true || r.status === 'Awarded' || r.status === 'Approved' || !!r.poReference);
+        const isApproved = (r.isApproved === true || r.rfqApprovalStatus === 'APPROVED' || r.status === 'Awarded');
         let matchesApproval = true;
         if (activeRfqApprovalFilter === 'approved') matchesApproval = isApproved;
         else if (activeRfqApprovalFilter === 'pending') matchesApproval = !isApproved;
 
-        const matchesTerms = (activeRfqPaymentTermsFilter === 'all') || ((r.paymentTerms || '').toLowerCase() === activeRfqPaymentTermsFilter.toLowerCase());
+        const matchesTerms = (activeRfqPaymentTermsFilter === 'all') || 
+            ((r.paymentTerms || '').toLowerCase() === activeRfqPaymentTermsFilter.toLowerCase()) ||
+            ((r.rfqPaymentTermsCode || '').toLowerCase() === activeRfqPaymentTermsFilter.toLowerCase());
 
         const q = (rfqSearchTerm || '').toLowerCase().trim();
         const matchesSearch = !q || 
@@ -4912,8 +6036,10 @@ function renderRfqDirectory() {
             (r.vendorName && r.vendorName.toLowerCase().includes(q)) ||
             (r.vendorTradeName && r.vendorTradeName.toLowerCase().includes(q)) ||
             (r.vendorContactPerson && r.vendorContactPerson.toLowerCase().includes(q)) ||
+            (r.companyName && r.companyName.toLowerCase().includes(q)) ||
+            (r.branchName && r.branchName.toLowerCase().includes(q)) ||
             (r.specialInstructions && r.specialInstructions.toLowerCase().includes(q)) ||
-            (r.notes && r.notes.toLowerCase().includes(q)) ||
+            (r.rfqNotes && r.rfqNotes.toLowerCase().includes(q)) ||
             (r.paymentTerms && r.paymentTerms.toLowerCase().includes(q));
 
         return matchesStatus && matchesApproval && matchesTerms && matchesSearch;
@@ -4921,10 +6047,9 @@ function renderRfqDirectory() {
 
     // Update KPI Counts
     const totalCount = rfqs.length;
-    const draftCount = rfqs.filter(r => r.status === 'Draft').length;
-    const sentCount = rfqs.filter(r => r.status === 'Quote Requested').length;
-    const receivedCount = rfqs.filter(r => r.status === 'Quotation Received').length;
-    const awardedCount = rfqs.filter(r => r.status === 'Awarded').length;
+    const draftCount = rfqs.filter(r => r.status === 'Draft' || r.rfqStatus === 'Draft').length;
+    const sentCount = rfqs.filter(r => r.status === 'Quote Requested' || r.rfqStatus === 'Quote Requested').length;
+    const awardedCount = rfqs.filter(r => r.status === 'Awarded' || r.rfqStatus === 'Awarded').length;
 
     const elTotal = document.getElementById('kpiTotalRfqs');
     const elDraft = document.getElementById('kpiDraftRfqs');
@@ -4940,10 +6065,14 @@ function renderRfqDirectory() {
 
     renderRfqActiveFilterChips();
 
-    const visibleColsCount = activeDirectoryColIds.length;
+    // Get visible columns in user order
+    const visibleCols = directoryColOrder
+        .filter(id => activeDirectoryColIds.includes(id))
+        .map(id => DIRECTORY_COLUMNS.find(c => c.id === id))
+        .filter(Boolean);
 
     if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="${visibleColsCount}" style="text-align: center; padding: 36px; color: var(--rfq-text-muted);">No Requests for Quotation match your criteria.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="${visibleCols.length}" style="text-align: center; padding: 36px; color: var(--rfq-text-muted);">No Requests for Quotation match your criteria.</td></tr>`;
         renderDirectoryPagination(0);
         return;
     }
@@ -4957,131 +6086,436 @@ function renderRfqDirectory() {
     const startIndex = (directoryCurrentPage - 1) * directoryPageSize;
     const paginatedItems = filtered.slice(startIndex, startIndex + directoryPageSize);
 
-    tbody.innerHTML = paginatedItems.map(r => {
-        const estTotal = (r.items || []).reduce((acc, it) => acc + ((parseFloat(it.quantity) || 0) * (parseFloat(it.targetPrice) || 0)), 0);
+    let rowsHtml = '';
+    paginatedItems.forEach(r => {
+        const isExpanded = expandedRfqNumbers.has(r.rfqNumber);
+        const items = r.items || [];
+        const primaryItem = items.length > 0 ? items[0] : {};
+        const totalQty = items.reduce((acc, it) => acc + (parseFloat(it.requestedQuantity || it.quantity) || 0), 0);
+        const primaryUom = primaryItem.purchaseUomCode || primaryItem.unit || 'Unit';
+        const quotedTotal = r.rfqQuotedTotalAmount || items.reduce((acc, it) => acc + (parseFloat(it.quotedLineTotal) || 0), 0);
+        const estTotal = r.rfqEstimatedTotalAmount || items.reduce((acc, it) => acc + ((parseFloat(it.requestedQuantity || it.quantity) || 0) * (parseFloat(it.targetUnitPrice || it.targetPrice) || 0)), 0);
+
         let pillClass = 'draft';
-        if (r.status === 'Quote Requested') pillClass = 'sent';
-        else if (r.status === 'Quotation Received') pillClass = 'received';
-        else if (r.status === 'Awarded') pillClass = 'awarded';
-        else if (r.status === 'Cancelled') pillClass = 'cancelled';
+        if (r.status === 'Quote Requested' || r.rfqStatus === 'Quote Requested') pillClass = 'sent';
+        else if (r.status === 'Quotation Received' || r.rfqStatus === 'Quotation Received') pillClass = 'received';
+        else if (r.status === 'Awarded' || r.rfqStatus === 'Awarded') pillClass = 'awarded';
+        else if (r.status === 'Cancelled' || r.rfqStatus === 'Cancelled') pillClass = 'cancelled';
 
         let rowCells = '';
+        visibleCols.forEach(col => {
+            switch (col.id) {
+                case 'rfq_info':
+                    rowCells += `
+                        <td style="font-family: monospace; font-weight: 700; color: var(--rfq-primary-dark);">
+                            <div style="display: flex; align-items: center; gap: 4px;">
+                                <button type="button" class="rfq-row-expand-btn ${isExpanded ? 'is-expanded' : ''}" 
+                                    onclick="toggleRfqRowExpansion('${escapeHtml(r.rfqNumber)}', event)" 
+                                    title="${isExpanded ? 'Collapse Line Items' : 'Expand ' + items.length + ' Line Items'}">
+                                    <i class="ph ph-caret-right"></i>
+                                </button>
+                                <div class="rms-cell-stack">
+                                    <div class="rms-cell-title">
+                                        <a href="javascript:void(0)" onclick="editRfqFromDirectory('${escapeHtml(r.rfqNumber)}')" title="${escapeHtml(r.rfqNumber)}" style="color: inherit; text-decoration: underline;">
+                                            ${escapeHtml(r.rfqNumber)}
+                                        </a>
+                                    </div>
+                                    <div class="rms-cell-sub" style="font-size: 0.70rem; color: #64748b; font-family: sans-serif;">
+                                        ${formatDateDisplay(r.rfqDate || r.dateIssued)}
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    `;
+                    break;
 
-        if (activeDirectoryColIds.includes('ref')) {
-            rowCells += `
-                <td style="font-family: monospace; font-weight: 700; color: var(--rfq-primary-dark);">
-                    <a href="javascript:void(0)" onclick="editRfqFromDirectory('${escapeHtml(r.rfqNumber)}')" title="${escapeHtml(r.rfqNumber)}" style="color: inherit; text-decoration: underline;">
-                        ${escapeHtml(r.rfqNumber)}
-                    </a>
-                </td>
-            `;
-        }
+                case 'company':
+                    rowCells += `
+                        <td>
+                            <div class="rms-cell-stack">
+                                <div class="rms-cell-title" title="${escapeHtml(r.companyName)}">${escapeHtml(r.companyName)}</div>
+                                <div class="rms-cell-sub" style="font-family: monospace; font-size: 0.69rem;">${escapeHtml(r.companyId || '—')}</div>
+                            </div>
+                        </td>
+                    `;
+                    break;
 
-        if (activeDirectoryColIds.includes('vendor')) {
-            rowCells += `
-                <td>
-                    <div class="rms-cell-stack">
-                        <div class="rms-cell-title" title="${escapeHtml(r.vendorTradeName || r.vendorName || 'Unassigned')}">
-                            ${escapeHtml(r.vendorTradeName || r.vendorName || 'Unassigned')}
+                case 'branch_warehouse':
+                    rowCells += `
+                        <td>
+                            <div class="rms-cell-stack">
+                                <div class="rms-cell-title" title="${escapeHtml(r.branchName)}">${escapeHtml(r.branchName)}</div>
+                                <div class="rms-cell-sub" title="${escapeHtml(r.shipToWarehouseName)}"><i class="ph ph-warehouse" style="font-size: 11px;"></i> ${escapeHtml(r.shipToWarehouseName)}</div>
+                            </div>
+                        </td>
+                    `;
+                    break;
+
+                case 'vendor_contact':
+                    rowCells += `
+                        <td>
+                            <div class="rms-cell-stack">
+                                <div class="rms-cell-title" title="${escapeHtml(r.vendorTradeName || r.vendorName)}">
+                                    ${escapeHtml(r.vendorTradeName || r.vendorName)}
+                                </div>
+                                <div class="rms-cell-sub" title="${escapeHtml((r.vendorContactPerson || 'No Contact') + ' • ' + (r.vendorEmail || r.vendorPhone || ''))}">
+                                    ${escapeHtml(r.vendorContactPerson || 'No Contact')}
+                                </div>
+                            </div>
+                        </td>
+                    `;
+                    break;
+
+                case 'submission_deadline':
+                    rowCells += `
+                        <td>
+                            <div class="rms-cell-stack">
+                                <div class="rms-cell-title" style="color: #b45309; font-weight: 700;">
+                                    ${formatDateDisplay(r.submissionDeadline || r.dueDate)}
+                                </div>
+                                <div class="rms-cell-sub" style="font-size: 0.68rem; color: #94a3b8;">Cutoff Deadline</div>
+                            </div>
+                        </td>
+                    `;
+                    break;
+
+                case 'quote_validity_date':
+                    rowCells += `
+                        <td>
+                            <div class="rms-cell-stack">
+                                <div class="rms-cell-title">${formatDateDisplay(r.quoteValidUntilDate)}</div>
+                                <div class="rms-cell-sub" style="font-size: 0.68rem;">Validity Date</div>
+                            </div>
+                        </td>
+                    `;
+                    break;
+
+                case 'requested_delivery_date':
+                    rowCells += `
+                        <td>
+                            <div class="rms-cell-stack">
+                                <div class="rms-cell-title" style="color: #4f46e5; font-weight: 600;">${formatDateDisplay(r.rfqRequestedDeliveryDate || r.expectedDelivery)}</div>
+                                <div class="rms-cell-sub" style="font-size: 0.68rem;">Target Arrival</div>
+                            </div>
+                        </td>
+                    `;
+                    break;
+
+                case 'currency':
+                    rowCells += `
+                        <td class="td-center">
+                            <span class="hr-badge hr-badge-neutral" style="font-weight: 700; font-size: 11px;">
+                                ${escapeHtml(r.rfqCurrencyCode || 'PHP')}
+                            </span>
+                        </td>
+                    `;
+                    break;
+
+                case 'payment_terms':
+                    rowCells += `
+                        <td>
+                            <span class="terms-pill" style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.74rem; font-weight: 600; background: #f1f5f9; color: #334155; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;" title="${escapeHtml(r.rfqPaymentTermsCode || r.paymentTerms)}">
+                                ${escapeHtml(r.rfqPaymentTermsCode || r.paymentTerms)}
+                            </span>
+                        </td>
+                    `;
+                    break;
+
+                case 'incoterms':
+                    rowCells += `
+                        <td class="td-center">
+                            <span class="hr-badge hr-badge-neutral" style="font-weight: 600; font-size: 10.5px;">
+                                ${escapeHtml(r.rfqIncotermsCode || 'FOB')}
+                            </span>
+                        </td>
+                    `;
+                    break;
+
+                case 'total_amount':
+                    rowCells += `
+                        <td class="td-num">
+                            <div class="rms-cell-stack" style="align-items: flex-end;">
+                                <div class="rms-cell-title" style="color: #0f172a; font-weight: 800;">₱${formatMoney(quotedTotal)}</div>
+                                <div class="rms-cell-sub" style="font-size: 0.69rem; color: #64748b;">Target: ₱${formatMoney(estTotal)}</div>
+                            </div>
+                        </td>
+                    `;
+                    break;
+
+                case 'rfq_status':
+                    rowCells += `
+                        <td class="td-center">
+                            <span class="status-pill ${pillClass}">
+                                <i class="ph ph-dot"></i> ${escapeHtml(r.rfqStatus || r.status)}
+                            </span>
+                        </td>
+                    `;
+                    break;
+
+                case 'rfq_approval_status':
+                    const isAppr = (r.rfqApprovalStatus === 'APPROVED' || r.isApproved === true || r.status === 'Awarded');
+                    rowCells += `
+                        <td class="td-center">
+                            ${isAppr ? `
+                                <button type="button" class="hr-badge hr-badge-success" onclick="openManagerApprovalModal('${r.rfqNumber}')" title="Issue Approved - Click to view" style="cursor: pointer; border: none; font-size: 9.5px; padding: 2px 7px; display: inline-flex; align-items: center; gap: 3px;">
+                                    <i class="ph ph-check-circle"></i> Approved
+                                </button>
+                            ` : `
+                                <button type="button" class="hr-badge hr-badge-warning" onclick="openManagerApprovalModal('${r.rfqNumber}')" title="Issue Pending - Click to toggle" style="cursor: pointer; border: none; font-size: 9.5px; padding: 2px 7px; display: inline-flex; align-items: center; gap: 3px;">
+                                    <i class="ph ph-hourglass-simple"></i> Pending
+                                </button>
+                            `}
+                        </td>
+                    `;
+                    break;
+
+                case 'approval_request_id':
+                    rowCells += `
+                        <td>
+                            <span style="font-family: monospace; font-size: 0.72rem; color: #475569;" title="${escapeHtml(r.approvalRequestId || 'N/A')}">
+                                ${escapeHtml(r.approvalRequestId || '—')}
+                            </span>
+                        </td>
+                    `;
+                    break;
+
+                case 'rfq_award_approval_status':
+                    const isAwardedAppr = (r.rfqAwardApprovalStatus === 'APPROVED' || r.status === 'Awarded');
+                    rowCells += `
+                        <td class="td-center">
+                            <span class="hr-badge ${isAwardedAppr ? 'hr-badge-success' : 'hr-badge-neutral'}" style="font-size: 9.5px; padding: 2px 6px;">
+                                ${escapeHtml(r.rfqAwardApprovalStatus || (isAwardedAppr ? 'APPROVED' : 'NOT_REQUIRED'))}
+                            </span>
+                        </td>
+                    `;
+                    break;
+
+                case 'award_approval_request_id':
+                    rowCells += `
+                        <td>
+                            <span style="font-family: monospace; font-size: 0.72rem; color: #475569;" title="${escapeHtml(r.awardApprovalRequestId || 'N/A')}">
+                                ${escapeHtml(r.awardApprovalRequestId || '—')}
+                            </span>
+                        </td>
+                    `;
+                    break;
+
+                case 'rfq_notes':
+                    const noteStr = r.rfqNotes || r.specialInstructions || r.notes || '—';
+                    rowCells += `
+                        <td>
+                            <div class="rms-cell-title" style="font-weight: 500; color: #475569;" title="${escapeHtml(noteStr)}">
+                                ${escapeHtml(noteStr)}
+                            </div>
+                        </td>
+                    `;
+                    break;
+
+                case 'created_by':
+                    rowCells += `
+                        <td>
+                            <div class="rms-cell-stack">
+                                <div class="rms-cell-title">${escapeHtml(r.rfqCreatedBy || 'Admin')}</div>
+                                <div class="rms-cell-sub" style="font-size: 0.69rem;">${formatDateDisplay(r.rfqCreatedAt || r.dateIssued)}</div>
+                            </div>
+                        </td>
+                    `;
+                    break;
+
+                case 'last_modified_by':
+                    rowCells += `
+                        <td>
+                            <div class="rms-cell-stack">
+                                <div class="rms-cell-title">${escapeHtml(r.rfqUpdatedBy || 'Lead')}</div>
+                                <div class="rms-cell-sub" style="font-size: 0.69rem;">${formatDateDisplay(r.rfqUpdatedAt || r.rfqCreatedAt)}</div>
+                            </div>
+                        </td>
+                    `;
+                    break;
+
+                case 'line_number':
+                    rowCells += `
+                        <td class="td-center">
+                            <span class="rfq-items-counter-pill">${items.length} Lines</span>
+                        </td>
+                    `;
+                    break;
+
+                case 'item_details':
+                    rowCells += `
+                        <td>
+                            <div class="rms-cell-stack">
+                                <div class="rms-cell-title" title="${escapeHtml(primaryItem.name || 'No Items')}">
+                                    ${escapeHtml(primaryItem.name || 'No Items')}
+                                </div>
+                                <div class="rms-cell-sub" title="${escapeHtml(primaryItem.specs || primaryItem.rfqLineNotes || '')}">
+                                    ${escapeHtml(primaryItem.specs || primaryItem.rfqLineNotes || (items.length > 1 ? '+' + (items.length - 1) + ' more items' : ''))}
+                                </div>
+                            </div>
+                        </td>
+                    `;
+                    break;
+
+                case 'quantity':
+                    rowCells += `
+                        <td class="td-num">
+                            <div class="rms-cell-stack" style="align-items: flex-end;">
+                                <div class="rms-cell-title" style="font-weight: 700;">${formatMoney(totalQty, 1)}</div>
+                                <div class="rms-cell-sub" style="font-size: 0.69rem; color: #94a3b8;">${escapeHtml(primaryUom)}</div>
+                            </div>
+                        </td>
+                    `;
+                    break;
+
+                case 'unit_price':
+                    rowCells += `
+                        <td class="td-num">
+                            <div class="rms-cell-stack" style="align-items: flex-end;">
+                                <div class="rms-cell-title">₱${formatMoney(primaryItem.quotedUnitPrice || primaryItem.targetUnitPrice || 0)}</div>
+                                <div class="rms-cell-sub" style="font-size: 0.68rem; color: #64748b;">Target: ₱${formatMoney(primaryItem.targetUnitPrice || 0)}</div>
+                            </div>
+                        </td>
+                    `;
+                    break;
+
+                case 'line_total':
+                    rowCells += `
+                        <td class="td-num">
+                            <span style="font-weight: 700; color: #0f172a;">₱${formatMoney(primaryItem.quotedLineTotal || ((primaryItem.requestedQuantity || 0) * (primaryItem.quotedUnitPrice || 0)))}</span>
+                        </td>
+                    `;
+                    break;
+
+                case 'lead_time':
+                    rowCells += `
+                        <td class="td-center">
+                            <span class="hr-badge hr-badge-neutral" style="font-size: 11px;">${primaryItem.leadTimeDays || 3}d</span>
+                        </td>
+                    `;
+                    break;
+
+                case 'is_awarded':
+                    rowCells += `
+                        <td class="td-center">
+                            <span class="hr-badge ${primaryItem.isAwarded ? 'hr-badge-success' : 'hr-badge-neutral'}" style="font-size: 10px;">
+                                ${primaryItem.isAwarded ? 'Accepted' : 'Pending'}
+                            </span>
+                        </td>
+                    `;
+                    break;
+
+                case 'line_created_by':
+                    rowCells += `
+                        <td>
+                            <div class="rms-cell-stack">
+                                <div class="rms-cell-title">${escapeHtml(primaryItem.rfqLineCreatedBy || 'Admin')}</div>
+                                <div class="rms-cell-sub" style="font-size: 0.68rem;">${formatDateDisplay(primaryItem.rfqLineCreatedAt || r.rfqCreatedAt)}</div>
+                            </div>
+                        </td>
+                    `;
+                    break;
+
+                case 'line_modified_by':
+                    rowCells += `
+                        <td>
+                            <div class="rms-cell-stack">
+                                <div class="rms-cell-title">${escapeHtml(primaryItem.rfqLineUpdatedBy || 'Lead')}</div>
+                                <div class="rms-cell-sub" style="font-size: 0.68rem;">${formatDateDisplay(primaryItem.rfqLineUpdatedAt || r.rfqUpdatedAt)}</div>
+                            </div>
+                        </td>
+                    `;
+                    break;
+
+                case 'actions':
+                    rowCells += `
+                        <td class="td-center">
+                            <div style="display: flex; align-items: center; justify-content: center; gap: 4px;">
+                                <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="editRfqFromDirectory('${r.rfqNumber}')" title="Edit RFQ" style="padding: 3px 6px; font-size: 12px;">
+                                    <i class="ph ph-pencil-simple"></i>
+                                </button>
+                                <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="previewRfqFromDirectory('${r.rfqNumber}')" title="View Document Preview" style="padding: 3px 6px; font-size: 12px;">
+                                    <i class="ph ph-eye"></i>
+                                </button>
+                                <button type="button" class="hr-btn hr-btn-danger hr-btn-sm" onclick="deleteRfqFromDirectory('${r.rfqNumber}')" title="Delete RFQ" style="padding: 3px 6px; font-size: 12px;">
+                                    <i class="ph ph-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    `;
+                    break;
+
+                default:
+                    rowCells += `<td>—</td>`;
+                    break;
+            }
+        });
+
+        rowsHtml += `<tr>${rowCells}</tr>`;
+
+        // Multi-line Accordion Drawer (Expanded Subtable)
+        if (isExpanded) {
+            rowsHtml += `
+                <tr class="rfq-line-expansion-row">
+                    <td colspan="${visibleCols.length}" style="padding: 0; background: #f8fafc;">
+                        <div class="rfq-subtable-container">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                                <div style="font-weight: 700; font-size: 0.80rem; color: #0f172a; display: flex; align-items: center; gap: 6px;">
+                                    <i class="ph ph-list-numbers" style="color: var(--rfq-primary);"></i>
+                                    <span>Quotation Specification Lines (${items.length} items)</span>
+                                </div>
+                                <div style="font-size: 0.73rem; color: #64748b;">
+                                    Vendor Quote Basis for Award Approval
+                                </div>
+                            </div>
+                            <table class="rfq-subtable">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 50px; text-align: center;">Line #</th>
+                                        <th style="width: 110px;">Item SKU</th>
+                                        <th>Description & Technical Specs</th>
+                                        <th style="width: 90px; text-align: right;">Qty</th>
+                                        <th style="width: 70px; text-align: center;">UOM</th>
+                                        <th style="width: 110px; text-align: right;">Target Price</th>
+                                        <th style="width: 110px; text-align: right;">Quoted Price</th>
+                                        <th style="width: 120px; text-align: right;">Line Total</th>
+                                        <th style="width: 80px; text-align: center;">Lead Time</th>
+                                        <th style="width: 90px; text-align: center;">Award</th>
+                                        <th style="width: 150px;">Line Remarks</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${items.map((line, lIdx) => `
+                                        <tr>
+                                            <td style="text-align: center; font-weight: 700; color: #64748b;">${line.lineNumber || (lIdx + 1)}</td>
+                                            <td style="font-family: monospace; font-weight: 700; color: #475569;">${escapeHtml(line.itemId || line.sku || '—')}</td>
+                                            <td>
+                                                <div style="font-weight: 600; color: #0f172a;">${escapeHtml(line.name)}</div>
+                                                ${line.specs ? `<div style="font-size: 0.70rem; color: #64748b;">${escapeHtml(line.specs)}</div>` : ''}
+                                            </td>
+                                            <td style="text-align: right; font-weight: 700;">${formatMoney(line.requestedQuantity || line.quantity, 1)}</td>
+                                            <td style="text-align: center;"><span class="hr-badge hr-badge-neutral">${escapeHtml(line.purchaseUomCode || line.unit)}</span></td>
+                                            <td style="text-align: right; color: #64748b;">₱${formatMoney(line.targetUnitPrice || line.targetPrice)}</td>
+                                            <td style="text-align: right; font-weight: 700; color: var(--rfq-primary-dark);">₱${formatMoney(line.quotedUnitPrice || line.targetPrice)}</td>
+                                            <td style="text-align: right; font-weight: 800; color: #0f172a;">₱${formatMoney(line.quotedLineTotal || ((line.quantity || 1) * (line.targetPrice || 0)))}</td>
+                                            <td style="text-align: center;">${line.leadTimeDays || 3}d</td>
+                                            <td style="text-align: center;">
+                                                <span class="hr-badge ${line.isAwarded ? 'hr-badge-success' : 'hr-badge-neutral'}">
+                                                    ${line.isAwarded ? 'Accepted' : 'Pending'}
+                                                </span>
+                                            </td>
+                                            <td style="font-size: 0.71rem; color: #64748b;">${escapeHtml(line.rfqLineNotes || line.notes || '—')}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
                         </div>
-                        <div class="rms-cell-sub" title="${escapeHtml((r.vendorContactPerson || 'No Contact') + ' • ' + (r.vendorEmail || r.vendorPhone || ''))}">
-                            ${escapeHtml(r.vendorContactPerson || 'No Contact')} • ${escapeHtml(r.vendorEmail || r.vendorPhone || '')}
-                        </div>
-                    </div>
-                </td>
+                    </td>
+                </tr>
             `;
         }
+    });
 
-        if (activeDirectoryColIds.includes('notes')) {
-            const noteText = r.specialInstructions || r.notes || r.approvalNotes || '—';
-            rowCells += `
-                <td>
-                    <div class="rms-cell-title" style="font-weight: 500; color: #475569;" title="${escapeHtml(noteText)}">
-                        ${escapeHtml(noteText)}
-                    </div>
-                </td>
-            `;
-        }
-
-        if (activeDirectoryColIds.includes('issuedDue')) {
-            rowCells += `
-                <td>
-                    <div class="rms-cell-stack">
-                        <div class="rms-cell-title" style="font-size: 0.78rem;">
-                            <span style="color: #64748b; font-weight: 500;">Issued:</span> ${formatDateDisplay(r.dateIssued)}
-                        </div>
-                        <div class="rms-cell-sub" style="color: #b45309; font-weight: 600;">
-                            <span style="color: #94a3b8; font-weight: 500;">Due:</span> ${formatDateDisplay(r.dueDate)}
-                        </div>
-                    </div>
-                </td>
-            `;
-        }
-
-        if (activeDirectoryColIds.includes('items')) {
-            rowCells += `
-                <td class="td-center">
-                    <div class="rms-cell-stack" style="align-items: center;">
-                        <span class="rfq-items-counter-pill">${(r.items || []).length} items</span>
-                        <span style="font-size: 0.72rem; color: #0f172a; font-weight: 700;">₱${formatMoney(estTotal)}</span>
-                    </div>
-                </td>
-            `;
-        }
-
-        if (activeDirectoryColIds.includes('terms')) {
-            rowCells += `
-                <td>
-                    <span class="terms-pill" style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.74rem; font-weight: 600; background: #f1f5f9; color: #334155; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;" title="${escapeHtml(r.paymentTerms || 'Net 30 Days')}">
-                        ${escapeHtml(r.paymentTerms || 'Net 30 Days')}
-                    </span>
-                </td>
-            `;
-        }
-
-        if (activeDirectoryColIds.includes('status')) {
-            const isApproved = (r.isApproved === true || r.status === 'Awarded' || r.status === 'Approved' || !!r.poReference);
-            rowCells += `
-                <td class="td-center">
-                    <div class="rms-cell-stack" style="align-items: center; gap: 3px;">
-                        <span class="status-pill ${pillClass}">
-                            <i class="ph ph-dot"></i> ${escapeHtml(r.status)}
-                        </span>
-                        ${isApproved ? `
-                            <button type="button" class="hr-badge hr-badge-success" onclick="openManagerApprovalModal('${r.rfqNumber}')" title="Approved by ${escapeHtml(r.approvedBy || 'Manager')}" style="cursor: pointer; border: none; font-size: 9.5px; padding: 1px 6px; display: inline-flex; align-items: center; gap: 2px;">
-                                <i class="ph ph-check-circle"></i> Approved
-                            </button>
-                        ` : `
-                            <button type="button" class="hr-badge hr-badge-warning" onclick="openManagerApprovalModal('${r.rfqNumber}')" title="Manager Action: Click to Toggle Approval for ${escapeHtml(r.rfqNumber)}" style="cursor: pointer; border: none; font-size: 9.5px; padding: 1px 6px; display: inline-flex; align-items: center; gap: 2px;">
-                                <i class="ph ph-hourglass-simple"></i> Pending
-                            </button>
-                        `}
-                    </div>
-                </td>
-            `;
-        }
-
-        if (activeDirectoryColIds.includes('actions')) {
-            rowCells += `
-                <td class="td-center">
-                    <div style="display: flex; align-items: center; justify-content: center; gap: 4px;">
-                        <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="editRfqFromDirectory('${r.rfqNumber}')" title="Edit RFQ" style="padding: 3px 6px; font-size: 12px;">
-                            <i class="ph ph-pencil-simple"></i>
-                        </button>
-                        <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="previewRfqFromDirectory('${r.rfqNumber}')" title="View Document Preview" style="padding: 3px 6px; font-size: 12px;">
-                            <i class="ph ph-eye"></i>
-                        </button>
-                        <button type="button" class="hr-btn hr-btn-danger hr-btn-sm" onclick="deleteRfqFromDirectory('${r.rfqNumber}')" title="Delete RFQ" style="padding: 3px 6px; font-size: 12px;">
-                            <i class="ph ph-trash"></i>
-                        </button>
-                    </div>
-                </td>
-            `;
-        }
-
-        return `<tr>${rowCells}</tr>`;
-    }).join('');
-
+    tbody.innerHTML = rowsHtml;
     renderDirectoryPagination(totalItems);
 }
 
