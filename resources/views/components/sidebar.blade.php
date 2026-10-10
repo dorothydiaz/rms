@@ -41,8 +41,8 @@
     <!-- Left Rail -->
     <div class="sidebar-rail">
         <div class="rail-header">
-            <a href="{{ route('dashboard') }}" class="brand-logo" data-tooltip="RMS Dashboard" data-tooltip-pos="right">
-                <i class="ph ph-fork-knife"></i>
+            <a href="{{ route('dashboard') }}" class="brand-logo" aria-label="RMS Dashboard">
+                <img src="{{ asset('assets/img/logo.svg') }}" alt="RMS Logo" class="brand-logo-img">
             </a>
         </div>
         

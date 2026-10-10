@@ -117,33 +117,322 @@
     flex-wrap: wrap;
 }
 
-/* Filter Controls Grid */
-.wd-filter-panel {
-    background: #f8fafc;
-    padding: 10px 16px;
-    border-bottom: 1px solid #e2e8f0;
+/* Filter Dropdown Architecture */
+.wd-filter-toolbar {
+    padding: 10px 18px;
+    background: #ffffff;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    position: relative;
+    z-index: 30;
+    min-height: 48px;
+}
+
+.wd-filter-dropdown-container {
+    position: relative;
+    display: inline-block;
+}
+
+.wd-filter-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    z-index: 1000;
+    width: 820px;
+    max-width: min(820px, calc(100vw - 40px));
+    max-height: 85vh;
+    overflow-y: auto;
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid rgba(226, 232, 240, 0.95);
+    border-radius: 16px;
+    box-shadow: 0 20px 50px -10px rgba(15, 23, 42, 0.22), 0 8px 24px rgba(124, 58, 237, 0.1), inset 0 1px 1px rgba(255, 255, 255, 0.95);
+    padding: 20px;
     box-sizing: border-box;
-    width: 100%;
+    animation: wdDropdownFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes wdDropdownFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.wd-filter-dropdown-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 12px;
+    margin-bottom: 14px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.wd-filter-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11.5px;
+    font-weight: 650;
+    color: #334155;
+    margin-bottom: 5px;
+    height: 18px;
+    line-height: 18px;
+    white-space: nowrap;
+}
+
+.wd-filter-label i {
+    color: #7c3aed;
+    font-size: 13.5px;
+    flex-shrink: 0;
 }
 
 .wd-filter-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 8px;
-    width: 100%;
-    box-sizing: border-box;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 14px 16px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+.wd-filter-grid > div {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
 }
 
 .wd-search-span {
-    grid-column: span 2;
+    grid-column: span 1 !important;
+}
+
+.wd-filter-grid .hr-input,
+.wd-filter-grid .hr-select {
+    width: 100% !important;
+    height: 36px !important;
+    box-sizing: border-box !important;
+    font-size: 12px !important;
+    border-radius: 8px !important;
+    border: 1px solid #cbd5e1 !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    transition: all 0.2s ease !important;
+}
+
+.wd-filter-grid .hr-input:focus,
+.wd-filter-grid .hr-select:focus {
+    border-color: #9333ea !important;
+    box-shadow: 0 0 0 3px rgba(147, 51, 234, 0.12) !important;
+    outline: none !important;
+}
+
+.wd-salary-range {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    height: 36px;
+    box-sizing: border-box;
+}
+
+.wd-salary-range .hr-input {
+    width: calc(50% - 7px) !important;
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    height: 36px !important;
+    padding: 0 8px !important;
+    text-align: left;
+}
+
+.wd-salary-presets {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+    height: 36px;
+    box-sizing: border-box;
+}
+
+.wd-salary-presets button {
+    flex: 1 1 0;
+    min-width: 0;
+    height: 36px !important;
+    padding: 0 2px !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    border-radius: 8px !important;
+    border: 1px solid #cbd5e1 !important;
+    background: #f8fafc !important;
+    color: #475569 !important;
+    white-space: nowrap !important;
+    cursor: pointer;
+    transition: all 0.15s ease !important;
+}
+
+.wd-salary-presets button:hover {
+    background: #f1f5f9 !important;
+    border-color: #9333ea !important;
+    color: #9333ea !important;
+}
+
+.wd-filter-dropdown-footer {
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+/* Modals Override for Wage Distortion */
+#applyModal,
+#breakdownModal {
+    position: fixed !important;
+    inset: 0 !important;
+    background: rgba(15, 23, 42, 0.6) !important;
+    backdrop-filter: blur(4px) !important;
+    -webkit-backdrop-filter: blur(4px) !important;
+    z-index: 9999 !important;
+    align-items: center !important;
+    justify-content: center !important;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+#applyModal.open,
+#applyModal.active,
+#breakdownModal.open,
+#breakdownModal.active {
+    display: flex !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+#applyModal > div,
+#breakdownModal > div {
+    pointer-events: auto !important;
+}
+
+/* Active Filter Pill Styling */
+.hr-filter-tag-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11.5px;
+    font-weight: 500;
+    color: #1e293b;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(253, 242, 248, 0.85) 45%, rgba(243, 232, 255, 0.85) 100%);
+    backdrop-filter: blur(14px) saturate(180%);
+    -webkit-backdrop-filter: blur(14px) saturate(180%);
+    border: 1px solid rgba(168, 85, 247, 0.35);
+    border-radius: 9999px;
+    padding: 3px 10px;
+    line-height: 1.4;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 2px 8px rgba(168, 85, 247, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.95);
+    user-select: none;
+}
+
+.hr-filter-tag-chip:hover {
+    border-color: #ec4899;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(236, 72, 153, 0.16);
+}
+
+.hr-chip-category {
+    font-weight: 700;
+    background: linear-gradient(135deg, #ec4899 0%, #9333ea 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-size: 11px;
+}
+
+.hr-chip-value {
+    color: #0f172a;
+    font-weight: 600;
+    font-size: 11.5px;
+}
+
+.hr-chip-remove-btn {
+    cursor: pointer;
+    color: #94a3b8;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1;
+    background: none;
+    border: none;
+    padding: 0;
+    width: 17px;
+    height: 17px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.15s ease;
+    margin-left: 2px;
+}
+
+.hr-chip-remove-btn:hover {
+    color: #ffffff;
+    background: linear-gradient(135deg, #ec4899, #db2777);
+    box-shadow: 0 2px 6px rgba(236, 72, 153, 0.4);
+}
+
+.hr-clear-all-chips-btn {
+    background: linear-gradient(135deg, rgba(236, 72, 153, 0.08) 0%, rgba(168, 85, 247, 0.12) 100%);
+    border: 1px solid rgba(168, 85, 247, 0.28);
+    color: #9333ea;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 9999px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s ease;
+}
+
+.hr-clear-all-chips-btn:hover {
+    background: linear-gradient(135deg, rgba(236, 72, 153, 0.15) 0%, rgba(168, 85, 247, 0.22) 100%);
+    color: #7c3aed;
+    border-color: #ec4899;
+}
+
+@media (max-width: 900px) {
+    .wd-filter-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+    .wd-search-span {
+        grid-column: span 2 !important;
+    }
 }
 
 @media (max-width: 768px) {
+    .wd-filter-grid {
+        grid-template-columns: 1fr !important;
+    }
     .wd-search-span {
         grid-column: span 1 !important;
     }
-    .wd-filter-grid {
-        grid-template-columns: 1fr;
+    .wd-filter-dropdown-menu {
+        width: calc(100vw - 32px);
+        left: -10px;
     }
 }
 
@@ -305,7 +594,7 @@
     <!-- ======================================================== -->
     <!-- SECTION 1: EMPLOYEE SELECTION & ADVANCED FILTERING       -->
     <!-- ======================================================== -->
-    <div class="hr-table-card">
+    <div class="hr-table-card" style="overflow: visible !important;">
         <div class="hr-table-header wd-card-header">
             <div class="wd-card-title-group">
                 <div style="width: 32px; height: 32px; border-radius: 8px; background: #f3e8ff; color: #7c3aed; display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 700; flex-shrink: 0;">
@@ -332,172 +621,231 @@
             </div>
         </div>
 
-        <!-- Filter Controls Panel -->
-        <div class="wd-filter-panel">
-            <div class="wd-filter-grid">
-                
-                <!-- Quick Search -->
-                <div class="wd-search-span">
-                    <label style="display: block; font-size: 11px; font-weight: 600; color: #475569; margin-bottom: 3px;">
-                        <i class="ph ph-magnifying-glass"></i> Search Employee (Name or ID)
-                    </label>
-                    <div style="position: relative;">
-                        <i class="ph ph-magnifying-glass" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 14px;"></i>
-                        <input type="text" id="filterSearch" class="hr-input" placeholder="Type name, EMP-XXXX, or title..." oninput="onFilterChange()" style="padding-left: 30px; width: 100%; box-sizing: border-box; height: 31px; font-size: 12px;">
+        <!-- Filter Controls Toolbar with Dropdown & Active Filter Pills -->
+        <div class="wd-filter-toolbar">
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex: 1; min-width: 0;">
+                <!-- Filter Dropdown Container -->
+                <div class="wd-filter-dropdown-container">
+                    <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" id="btnFilterDropdown" onclick="toggleFilterDropdown(event)" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: 12px; padding: 6px 13px; border-radius: 8px; white-space: nowrap;">
+                        <i class="ph ph-funnel" style="font-size: 14px; color: #7c3aed;"></i>
+                        <span>Filter Employees</span>
+                        <span id="activeFilterBadge" class="hr-badge hr-badge-purple" style="display: none; font-size: 10.5px; padding: 1.5px 6px;">0</span>
+                        <i class="ph ph-caret-down" id="filterDropdownCaret" style="transition: transform 0.2s ease; font-size: 11px;"></i>
+                    </button>
+
+                    <!-- The Dropdown Menu containing everything inside -->
+                    <div id="wdFilterDropdownMenu" class="wd-filter-dropdown-menu" style="display: none;">
+                        <div class="wd-filter-dropdown-header">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <div style="width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(135deg, rgba(236, 72, 153, 0.12), rgba(168, 85, 247, 0.18)); color: #7c3aed; display: flex; align-items: center; justify-content: center; font-size: 15px;">
+                                    <i class="ph ph-sliders-horizontal"></i>
+                                </div>
+                                <div>
+                                    <span style="font-size: 13.5px; font-weight: 700; color: #0f172a;">Filter Workforce</span>
+                                    <span style="font-size: 11px; color: #64748b; margin-left: 6px;">Configure target criteria</span>
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="resetFilters()" style="font-size: 11px; padding: 3px 9px; color: #64748b;">
+                                    <i class="ph ph-funnel-simple-x"></i> Reset All
+                                </button>
+                                <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="closeFilterDropdown()" style="font-size: 11px; padding: 3px 9px;">
+                                    <i class="ph ph-x"></i> Close
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="wd-filter-grid">
+                            <!-- Row 1, Col 1: Search Employee (1 Col) -->
+                            <div>
+                                <label class="wd-filter-label">
+                                    <i class="ph ph-magnifying-glass"></i> Search Employee (Name or ID)
+                                </label>
+                                <div style="position: relative; width: 100%;">
+                                    <i class="ph ph-magnifying-glass" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 14px; pointer-events: none;"></i>
+                                    <input type="text" id="filterSearch" class="hr-input" placeholder="Type name, EMP-XXXX, or title..." oninput="onFilterChange()" style="padding-left: 32px; width: 100%; box-sizing: border-box;">
+                                </div>
+                            </div>
+
+                            <!-- Row 1, Col 2: Salary Range Min/Max -->
+                            <div>
+                                <label class="wd-filter-label">
+                                    <i class="ph ph-currency-circle-dollar"></i> Salary Range (Min - Max)
+                                </label>
+                                <div class="wd-salary-range">
+                                    <input type="number" id="filterSalaryMin" class="hr-input" placeholder="Min ₱" oninput="onFilterChange()">
+                                    <span style="color: #94a3b8; font-weight: 600;">-</span>
+                                    <input type="number" id="filterSalaryMax" class="hr-input" placeholder="Max ₱" oninput="onFilterChange()">
+                                </div>
+                            </div>
+
+                            <!-- Row 1, Col 3: Salary Quick Presets (1 Col) -->
+                            <div>
+                                <label class="wd-filter-label">
+                                    <i class="ph ph-lightning"></i> Salary Presets
+                                </label>
+                                <div class="wd-salary-presets">
+                                    <button type="button" class="hr-btn" onclick="setSalaryPreset(0, 20000)">&lt;20k</button>
+                                    <button type="button" class="hr-btn" onclick="setSalaryPreset(20000, 30000)">20k-30k</button>
+                                    <button type="button" class="hr-btn" onclick="setSalaryPreset(30000, 50000)">30k-50k</button>
+                                    <button type="button" class="hr-btn" onclick="setSalaryPreset(50000, 999999)">&gt;50k</button>
+                                </div>
+                            </div>
+
+                            <!-- Row 2, Col 1: Department -->
+                            <div>
+                                <label class="wd-filter-label">
+                                    <i class="ph ph-tree-structure"></i> Department
+                                </label>
+                                <select id="filterDept" class="hr-select" onchange="onFilterChange()">
+                                    <option value="">All Departments</option>
+                                    @foreach($departments as $d)
+                                        <option value="{{ $d->name }}">{{ $d->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <!-- Row 2, Col 2: Position -->
+                            <div>
+                                <label class="wd-filter-label">
+                                    <i class="ph ph-identification-card"></i> Position
+                                </label>
+                                <select id="filterPosition" class="hr-select" onchange="onFilterChange()">
+                                    <option value="">All Positions</option>
+                                    @foreach($positions as $p)
+                                        <option value="{{ $p->name }}">{{ $p->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <!-- Row 2, Col 3: Branch -->
+                            <div>
+                                <label class="wd-filter-label">
+                                    <i class="ph ph-storefront"></i> Branch
+                                </label>
+                                <select id="filterBranch" class="hr-select" onchange="onFilterChange()">
+                                    <option value="">All Branches</option>
+                                    @foreach($branches as $b)
+                                        <option value="{{ $b->name }}">{{ $b->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <!-- Row 3, Col 1: Employment Status -->
+                            <div>
+                                <label class="wd-filter-label">
+                                    <i class="ph ph-user-check"></i> Employment Status
+                                </label>
+                                <select id="filterStatus" class="hr-select" onchange="onFilterChange()">
+                                    <option value="ACTIVE_ALL" selected>Active Workforce Only</option>
+                                    <option value="">All Statuses (Inc. Separated)</option>
+                                    <option value="Regular">Regular</option>
+                                    <option value="Probationary">Probationary</option>
+                                    <option value="Contractual">Contractual</option>
+                                    <option value="Project-Based">Project-Based</option>
+                                    <option value="Temporary">Temporary</option>
+                                    <option value="On-the-Job Training">On-the-Job Training</option>
+                                    <option value="Resigned">Resigned</option>
+                                    <option value="Terminated">Terminated</option>
+                                    <option value="Inactive">Inactive</option>
+                                </select>
+                            </div>
+
+                            <!-- Row 3, Col 2: Employee Type -->
+                            <div>
+                                <label class="wd-filter-label">
+                                    <i class="ph ph-briefcase"></i> Employee Type
+                                </label>
+                                <select id="filterType" class="hr-select" onchange="onFilterChange()">
+                                    <option value="">All Types</option>
+                                    <option value="Regular">Regular</option>
+                                    <option value="Probationary">Probationary</option>
+                                    <option value="Contractual">Contractual</option>
+                                    <option value="Part-time">Part-time</option>
+                                    <option value="Seasonal">Seasonal</option>
+                                    <option value="Intern / OJT">Intern / OJT</option>
+                                </select>
+                            </div>
+
+                            <!-- Row 3, Col 3: Pay Group -->
+                            <div>
+                                <label class="wd-filter-label">
+                                    <i class="ph ph-clock-clockwise"></i> Pay Group
+                                </label>
+                                <select id="filterPayGroup" class="hr-select" onchange="onFilterChange()">
+                                    <option value="">All Pay Groups</option>
+                                    <option value="Semi-Monthly">Semi-Monthly</option>
+                                    <option value="Monthly">Monthly</option>
+                                    <option value="Weekly">Weekly</option>
+                                </select>
+                            </div>
+
+                            <!-- Row 4, Col 1: Salary Grade / Job Level -->
+                            <div>
+                                <label class="wd-filter-label">
+                                    <i class="ph ph-chart-bar"></i> Salary Grade / Job Level
+                                </label>
+                                <select id="filterJobLevel" class="hr-select" onchange="onFilterChange()">
+                                    <option value="">All Salary Grades</option>
+                                    @foreach($jobLevels as $jl)
+                                        <option value="{{ $jl->name }}">{{ $jl->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <!-- Row 4, Col 2: Employment Classification -->
+                            <div>
+                                <label class="wd-filter-label">
+                                    <i class="ph ph-buildings"></i> Classification
+                                </label>
+                                <select id="filterSource" class="hr-select" onchange="onFilterChange()">
+                                    <option value="">All Classifications</option>
+                                    <option value="Direct">Direct Company Hire</option>
+                                    <option value="Agency">Agency Deployed</option>
+                                </select>
+                            </div>
+
+                            <!-- Row 4, Col 3: Current Payroll Period Reference -->
+                            <div>
+                                <label class="wd-filter-label">
+                                    <i class="ph ph-calendar-blank"></i> Payroll Period Target
+                                </label>
+                                <select id="filterPayrollPeriod" class="hr-select" onchange="onFilterChange()">
+                                    <option value="">Immediate Effective Date</option>
+                                    @foreach($periods as $p)
+                                        <option value="{{ $p->id }}">{{ $p->name }} ({{ \Carbon\Carbon::parse($p->start_date)->format('M d') }} - {{ \Carbon\Carbon::parse($p->end_date)->format('M d, Y') }})</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Dropdown Footer Actions -->
+                        <div class="wd-filter-dropdown-footer">
+                            <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="resetFilters()" style="font-size: 11.5px; padding: 6px 14px; border-radius: 8px; color: #64748b;">
+                                <i class="ph ph-arrow-counterclockwise"></i> Reset All Filters
+                            </button>
+                            <button type="button" class="hr-btn hr-btn-primary hr-btn-sm" onclick="closeFilterDropdown()" style="padding: 6px 20px; font-size: 12px; font-weight: 650; border-radius: 8px; background: linear-gradient(135deg, #ec4899, #8b5cf6); border: none; color: #fff; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.25);">
+                                <i class="ph ph-check"></i> Apply & Close
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Salary Range Min/Max -->
-                <div>
-                    <label style="display: block; font-size: 11px; font-weight: 600; color: #475569; margin-bottom: 3px;">
-                        <i class="ph ph-currency-circle-dollar"></i> Salary Range (Min - Max)
-                    </label>
-                    <div style="display: flex; align-items: center; gap: 6px;">
-                        <input type="number" id="filterSalaryMin" class="hr-input" placeholder="Min ₱" oninput="onFilterChange()" style="width: 50%; height: 31px; font-size: 12px; padding: 0 8px;">
-                        <span style="color: #94a3b8;">-</span>
-                        <input type="number" id="filterSalaryMax" class="hr-input" placeholder="Max ₱" oninput="onFilterChange()" style="width: 50%; height: 31px; font-size: 12px; padding: 0 8px;">
-                    </div>
-                </div>
+                <!-- Separator line (shown when pills exist) -->
+                <div id="filterToolbarSeparator" style="display: none; width: 1px; height: 22px; background: #e2e8f0; margin: 0 4px;"></div>
 
-                <!-- Department -->
-                <div>
-                    <label style="display: block; font-size: 11px; font-weight: 600; color: #475569; margin-bottom: 3px;">
-                        <i class="ph ph-tree-structure"></i> Department
-                    </label>
-                    <select id="filterDept" class="hr-select" onchange="onFilterChange()" style="height: 31px; font-size: 12px; width: 100%;">
-                        <option value="">All Departments</option>
-                        @foreach($departments as $d)
-                            <option value="{{ $d->name }}">{{ $d->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <!-- Position -->
-                <div>
-                    <label style="display: block; font-size: 11px; font-weight: 600; color: #475569; margin-bottom: 3px;">
-                        <i class="ph ph-identification-card"></i> Position
-                    </label>
-                    <select id="filterPosition" class="hr-select" onchange="onFilterChange()" style="height: 31px; font-size: 12px; width: 100%;">
-                        <option value="">All Positions</option>
-                        @foreach($positions as $p)
-                            <option value="{{ $p->name }}">{{ $p->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <!-- Branch -->
-                <div>
-                    <label style="display: block; font-size: 11px; font-weight: 600; color: #475569; margin-bottom: 3px;">
-                        <i class="ph ph-storefront"></i> Branch
-                    </label>
-                    <select id="filterBranch" class="hr-select" onchange="onFilterChange()" style="height: 31px; font-size: 12px; width: 100%;">
-                        <option value="">All Branches</option>
-                        @foreach($branches as $b)
-                            <option value="{{ $b->name }}">{{ $b->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <!-- Employment Status -->
-                <div>
-                    <label style="display: block; font-size: 11px; font-weight: 600; color: #475569; margin-bottom: 3px;">
-                        <i class="ph ph-user-check"></i> Employment Status
-                    </label>
-                    <select id="filterStatus" class="hr-select" onchange="onFilterChange()" style="height: 31px; font-size: 12px; width: 100%;">
-                        <option value="ACTIVE_ALL" selected>Active Workforce Only</option>
-                        <option value="">All Statuses (Inc. Separated)</option>
-                        <option value="Regular">Regular</option>
-                        <option value="Probationary">Probationary</option>
-                        <option value="Contractual">Contractual</option>
-                        <option value="Project-Based">Project-Based</option>
-                        <option value="Temporary">Temporary</option>
-                        <option value="On-the-Job Training">On-the-Job Training</option>
-                        <option value="Resigned">Resigned</option>
-                        <option value="Terminated">Terminated</option>
-                        <option value="Inactive">Inactive</option>
-                    </select>
-                </div>
-
-                <!-- Employee Type -->
-                <div>
-                    <label style="display: block; font-size: 11px; font-weight: 600; color: #475569; margin-bottom: 3px;">
-                        <i class="ph ph-briefcase"></i> Employee Type
-                    </label>
-                    <select id="filterType" class="hr-select" onchange="onFilterChange()" style="height: 31px; font-size: 12px; width: 100%;">
-                        <option value="">All Types</option>
-                        <option value="Regular">Regular</option>
-                        <option value="Probationary">Probationary</option>
-                        <option value="Contractual">Contractual</option>
-                        <option value="Part-time">Part-time</option>
-                        <option value="Seasonal">Seasonal</option>
-                        <option value="Intern / OJT">Intern / OJT</option>
-                    </select>
-                </div>
-
-                <!-- Pay Group (Frequency) -->
-                <div>
-                    <label style="display: block; font-size: 11px; font-weight: 600; color: #475569; margin-bottom: 3px;">
-                        <i class="ph ph-clock-clockwise"></i> Pay Group
-                    </label>
-                    <select id="filterPayGroup" class="hr-select" onchange="onFilterChange()" style="height: 31px; font-size: 12px; width: 100%;">
-                        <option value="">All Pay Groups</option>
-                        <option value="Semi-Monthly">Semi-Monthly</option>
-                        <option value="Monthly">Monthly</option>
-                        <option value="Weekly">Weekly</option>
-                    </select>
-                </div>
-
-                <!-- Salary Grade / Job Level -->
-                <div>
-                    <label style="display: block; font-size: 11px; font-weight: 600; color: #475569; margin-bottom: 3px;">
-                        <i class="ph ph-chart-bar"></i> Salary Grade / Job Level
-                    </label>
-                    <select id="filterJobLevel" class="hr-select" onchange="onFilterChange()" style="height: 31px; font-size: 12px; width: 100%;">
-                        <option value="">All Salary Grades</option>
-                        @foreach($jobLevels as $jl)
-                            <option value="{{ $jl->name }}">{{ $jl->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <!-- Employment Classification / Source -->
-                <div>
-                    <label style="display: block; font-size: 11px; font-weight: 600; color: #475569; margin-bottom: 3px;">
-                        <i class="ph ph-buildings"></i> Classification
-                    </label>
-                    <select id="filterSource" class="hr-select" onchange="onFilterChange()" style="height: 31px; font-size: 12px; width: 100%;">
-                        <option value="">All Classifications</option>
-                        <option value="Direct">Direct Company Hire</option>
-                        <option value="Agency">Agency Deployed</option>
-                    </select>
-                </div>
-
-                <!-- Current Payroll Period Reference -->
-                <div>
-                    <label style="display: block; font-size: 11px; font-weight: 600; color: #475569; margin-bottom: 3px;">
-                        <i class="ph ph-calendar-blank"></i> Payroll Period Target
-                    </label>
-                    <select id="filterPayrollPeriod" class="hr-select" style="height: 31px; font-size: 12px; width: 100%;">
-                        <option value="">Immediate Effective Date</option>
-                        @foreach($periods as $p)
-                            <option value="{{ $p->id }}">{{ $p->name }} ({{ \Carbon\Carbon::parse($p->start_date)->format('M d') }} - {{ \Carbon\Carbon::parse($p->end_date)->format('M d, Y') }})</option>
-                        @endforeach
-                    </select>
-                </div>
+                <!-- Active Filter Pills Row with X -->
+                <div id="activeFilterPillsRow" class="hr-filter-chips-row" style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 0; min-height: auto;"></div>
             </div>
 
-            <!-- Quick Filter Chips & Reset -->
-            <div style="margin-top: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
-                <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-                    <span style="font-size: 11.5px; color: #64748b; font-weight: 600;">Salary Quick Filters:</span>
-                    <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" style="font-size: 11px; padding: 2px 8px;" onclick="setSalaryPreset(0, 20000)">Under ₱20k</button>
-                    <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" style="font-size: 11px; padding: 2px 8px;" onclick="setSalaryPreset(20000, 30000)">₱20k - ₱30k</button>
-                    <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" style="font-size: 11px; padding: 2px 8px;" onclick="setSalaryPreset(30000, 50000)">₱30k - ₱50k</button>
-                    <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" style="font-size: 11px; padding: 2px 8px;" onclick="setSalaryPreset(50000, 999999)">Above ₱50k</button>
-                </div>
-                <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="resetFilters()" style="color: #64748b;">
+            <!-- Right Toolbar Status / Quick Reset -->
+            <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0; margin-left: auto;">
+                <button type="button" id="btnQuickResetFilters" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="resetFilters()" style="display: none; font-size: 11px; padding: 4px 10px; color: #64748b; border-radius: 6px;">
                     <i class="ph ph-funnel-simple-x"></i> Reset Filters
                 </button>
+                <span class="hr-badge hr-badge-neutral" style="background: #f8fafc; border: 1px solid #e2e8f0; color: #475569; font-size: 11.5px; padding: 4px 10px; display: inline-flex; align-items: center; gap: 4px;">
+                    Showing <strong id="lblFilteredCountToolbar" style="color: #0f172a;">{{ count($employeesData) }}</strong> of {{ count($employeesData) }} employees
+                </span>
             </div>
         </div>
 
@@ -1205,7 +1553,234 @@ function applyFilters() {
     sortFilteredEmployees();
     renderEmployeeTable();
     recalculateAll();
+
+    // Update count in toolbar
+    const lblToolbar = document.getElementById('lblFilteredCountToolbar');
+    if (lblToolbar) {
+        lblToolbar.textContent = state.filteredEmployees.length;
+    }
+
+    // Compute active filter count
+    let activeCount = 0;
+    if (search) activeCount++;
+    if (salMin > 0 || (document.getElementById('filterSalaryMax').value !== '' && salMax < 999999999)) activeCount++;
+    if (dept) activeCount++;
+    if (pos) activeCount++;
+    if (branch) activeCount++;
+    if (status && status !== 'ACTIVE_ALL') activeCount++;
+    if (empType) activeCount++;
+    if (payGroup) activeCount++;
+    if (jobLevel) activeCount++;
+    if (source) activeCount++;
+    const periodSelect = document.getElementById('filterPayrollPeriod');
+    if (periodSelect && periodSelect.value) activeCount++;
+
+    updateFilterUIState(activeCount);
+    renderActiveFilterPills();
 }
+
+function updateFilterUIState(count) {
+    const badge = document.getElementById('activeFilterBadge');
+    const quickReset = document.getElementById('btnQuickResetFilters');
+    if (badge) {
+        if (count > 0) {
+            badge.textContent = count;
+            badge.style.display = 'inline-flex';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+    if (quickReset) {
+        quickReset.style.display = count > 0 ? 'inline-flex' : 'none';
+    }
+}
+
+function renderActiveFilterPills() {
+    const pillsRow = document.getElementById('activeFilterPillsRow');
+    const sep = document.getElementById('filterToolbarSeparator');
+    if (!pillsRow) return;
+
+    const search = (document.getElementById('filterSearch').value || '').trim();
+    const salMinVal = document.getElementById('filterSalaryMin').value.trim();
+    const salMaxVal = document.getElementById('filterSalaryMax').value.trim();
+    const dept = document.getElementById('filterDept').value;
+    const pos = document.getElementById('filterPosition').value;
+    const branch = document.getElementById('filterBranch').value;
+    const status = document.getElementById('filterStatus').value;
+    const empType = document.getElementById('filterType').value;
+    const payGroup = document.getElementById('filterPayGroup').value;
+    const jobLevel = document.getElementById('filterJobLevel').value;
+    const source = document.getElementById('filterSource').value;
+    const periodSelect = document.getElementById('filterPayrollPeriod');
+    const period = periodSelect ? periodSelect.value : '';
+
+    const chips = [];
+
+    if (search) {
+        chips.push({ key: 'search', cat: 'Search', val: `"${search}"` });
+    }
+
+    if (salMinVal || salMaxVal) {
+        let salLabel = '';
+        const minNum = parseFloat(salMinVal);
+        const maxNum = parseFloat(salMaxVal);
+        if (salMinVal && salMaxVal) {
+            salLabel = `₱${minNum.toLocaleString()} - ₱${maxNum.toLocaleString()}`;
+        } else if (salMinVal) {
+            salLabel = `≥ ₱${minNum.toLocaleString()}`;
+        } else if (salMaxVal) {
+            salLabel = `≤ ₱${maxNum.toLocaleString()}`;
+        }
+        chips.push({ key: 'salary', cat: 'Salary', val: salLabel });
+    }
+
+    if (dept) {
+        chips.push({ key: 'dept', cat: 'Department', val: dept });
+    }
+
+    if (pos) {
+        chips.push({ key: 'pos', cat: 'Position', val: pos });
+    }
+
+    if (branch) {
+        chips.push({ key: 'branch', cat: 'Branch', val: branch });
+    }
+
+    if (status && status !== 'ACTIVE_ALL') {
+        chips.push({ key: 'status', cat: 'Status', val: status });
+    }
+
+    if (empType) {
+        chips.push({ key: 'empType', cat: 'Type', val: empType });
+    }
+
+    if (payGroup) {
+        chips.push({ key: 'payGroup', cat: 'Pay Group', val: payGroup });
+    }
+
+    if (jobLevel) {
+        chips.push({ key: 'jobLevel', cat: 'Level', val: jobLevel });
+    }
+
+    if (source) {
+        chips.push({ key: 'source', cat: 'Classification', val: source === 'Direct' ? 'Direct Hire' : 'Agency' });
+    }
+
+    if (period && periodSelect && periodSelect.selectedIndex > 0) {
+        const periodText = periodSelect.options[periodSelect.selectedIndex].text.split('(')[0].trim();
+        chips.push({ key: 'period', cat: 'Period', val: periodText });
+    }
+
+    // Toggle separator
+    if (sep) {
+        sep.style.display = chips.length > 0 ? 'block' : 'none';
+    }
+
+    // Render chips HTML
+    if (chips.length === 0) {
+        pillsRow.innerHTML = '';
+        return;
+    }
+
+    let html = '';
+    chips.forEach(chip => {
+        html += `
+            <span class="hr-filter-tag-chip" style="margin: 0; display: inline-flex; align-items: center; gap: 5px;">
+                <span class="hr-chip-text" style="display: inline-flex; align-items: center; gap: 4px;">
+                    <strong class="hr-chip-category">${chip.cat}:</strong>
+                    <span class="hr-chip-value">${escapeHtml(chip.val)}</span>
+                </span>
+                <button type="button" class="hr-chip-remove-btn" onclick="removeFilter('${chip.key}')" title="Remove ${chip.cat} filter" aria-label="Remove filter">&times;</button>
+            </span>
+        `;
+    });
+
+    if (chips.length >= 2) {
+        html += `
+            <button type="button" class="hr-clear-all-chips-btn" onclick="resetFilters()" title="Clear all filters">
+                <i class="ph ph-x"></i> Clear all
+            </button>
+        `;
+    }
+
+    pillsRow.innerHTML = html;
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function removeFilter(key) {
+    switch (key) {
+        case 'search':
+            document.getElementById('filterSearch').value = '';
+            break;
+        case 'salary':
+            document.getElementById('filterSalaryMin').value = '';
+            document.getElementById('filterSalaryMax').value = '';
+            break;
+        case 'dept':
+            document.getElementById('filterDept').value = '';
+            break;
+        case 'pos':
+            document.getElementById('filterPosition').value = '';
+            break;
+        case 'branch':
+            document.getElementById('filterBranch').value = '';
+            break;
+        case 'status':
+            document.getElementById('filterStatus').value = 'ACTIVE_ALL';
+            break;
+        case 'empType':
+            document.getElementById('filterType').value = '';
+            break;
+        case 'payGroup':
+            document.getElementById('filterPayGroup').value = '';
+            break;
+        case 'jobLevel':
+            document.getElementById('filterJobLevel').value = '';
+            break;
+        case 'source':
+            document.getElementById('filterSource').value = '';
+            break;
+        case 'period':
+            const pSel = document.getElementById('filterPayrollPeriod');
+            if (pSel) pSel.value = '';
+            break;
+    }
+    applyFilters();
+}
+
+function toggleFilterDropdown(event) {
+    if (event) {
+        event.stopPropagation();
+    }
+    const menu = document.getElementById('wdFilterDropdownMenu');
+    const caret = document.getElementById('filterDropdownCaret');
+    if (!menu) return;
+    const isHidden = (menu.style.display === 'none' || menu.style.display === '');
+    menu.style.display = isHidden ? 'block' : 'none';
+    if (caret) {
+        caret.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+    }
+}
+
+function closeFilterDropdown() {
+    const menu = document.getElementById('wdFilterDropdownMenu');
+    const caret = document.getElementById('filterDropdownCaret');
+    if (menu) menu.style.display = 'none';
+    if (caret) caret.style.transform = 'rotate(0deg)';
+}
+
+// Close dropdown on outside click
+document.addEventListener('click', function(e) {
+    const container = document.querySelector('.wd-filter-dropdown-container');
+    const menu = document.getElementById('wdFilterDropdownMenu');
+    if (container && menu && !container.contains(e.target)) {
+        closeFilterDropdown();
+    }
+});
 
 function onFilterChange() {
     applyFilters();
@@ -1229,6 +1804,8 @@ function resetFilters() {
     document.getElementById('filterPayGroup').value = '';
     document.getElementById('filterJobLevel').value = '';
     document.getElementById('filterSource').value = '';
+    const pSel = document.getElementById('filterPayrollPeriod');
+    if (pSel) pSel.value = '';
     applyFilters();
 }
 
@@ -1755,35 +2332,78 @@ function showBreakdownModal(idx) {
     document.getElementById('breakdownCurrentSalary').innerText = formatPhp(item.current_monthly_salary);
     document.getElementById('breakdownNewSalary').innerText = formatPhp(item.new_monthly_salary);
 
-    document.getElementById('breakdownModal').style.display = 'flex';
+    const modal = document.getElementById('breakdownModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        modal.classList.add('open');
+        modal.classList.add('active');
+    }
 }
 
 function closeBreakdownModal() {
-    document.getElementById('breakdownModal').style.display = 'none';
+    const modal = document.getElementById('breakdownModal');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.remove('open');
+        modal.classList.remove('active');
+    }
 }
 
 function openApplyAdjustmentModal() {
+    if (state.results.length === 0 && state.selectedEmpIds.size > 0) {
+        recalculateAll();
+    }
+
     if (state.results.length === 0) {
         alert('Please select at least one employee in Section 1 to calculate and apply wage distortion adjustments.');
         return;
     }
 
     let totalSpend = 0.0;
-    state.results.forEach(r => totalSpend += r.monthly_adjustment);
+    state.results.forEach(r => totalSpend += (parseFloat(r.monthly_adjustment) || 0));
     const avgSpend = state.results.length > 0 ? (totalSpend / state.results.length) : 0.0;
 
-    document.getElementById('modalEmpCount').innerText = state.results.length + ' Employees';
-    document.getElementById('modalFormulaName').innerText = FORMULAS_CONFIG[state.activeFormulaKey]?.name || 'Standard';
-    document.getElementById('modalTotalSpend').innerText = '+' + formatPhp(totalSpend);
-    document.getElementById('modalAvgSpend').innerText = '+' + formatPhp(avgSpend);
-    document.getElementById('applyReason').value = `Compliance with Wage Order (${FORMULAS_CONFIG[state.activeFormulaKey]?.name})`;
+    const modalEmpCount = document.getElementById('modalEmpCount');
+    if (modalEmpCount) modalEmpCount.innerText = state.results.length + ' Employees';
 
-    document.getElementById('applyModal').style.display = 'flex';
+    const modalFormulaName = document.getElementById('modalFormulaName');
+    if (modalFormulaName) modalFormulaName.innerText = FORMULAS_CONFIG[state.activeFormulaKey]?.name || 'Standard';
+
+    const modalTotalSpend = document.getElementById('modalTotalSpend');
+    if (modalTotalSpend) modalTotalSpend.innerText = '+' + formatPhp(totalSpend);
+
+    const modalAvgSpend = document.getElementById('modalAvgSpend');
+    if (modalAvgSpend) modalAvgSpend.innerText = '+' + formatPhp(avgSpend);
+
+    const applyReason = document.getElementById('applyReason');
+    if (applyReason) applyReason.value = `Compliance with Wage Order (${FORMULAS_CONFIG[state.activeFormulaKey]?.name || 'Standard'})`;
+
+    const modal = document.getElementById('applyModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        modal.classList.add('open');
+        modal.classList.add('active');
+    }
 }
 
 function closeApplyModal() {
-    document.getElementById('applyModal').style.display = 'none';
+    const modal = document.getElementById('applyModal');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.remove('open');
+        modal.classList.remove('active');
+    }
 }
+
+// Close on backdrop click for Wage Distortion
+document.addEventListener('click', function(e) {
+    if (e.target && e.target.id === 'applyModal') {
+        closeApplyModal();
+    }
+    if (e.target && e.target.id === 'breakdownModal') {
+        closeBreakdownModal();
+    }
+});
 
 async function submitApplyAdjustments(e) {
     e.preventDefault();

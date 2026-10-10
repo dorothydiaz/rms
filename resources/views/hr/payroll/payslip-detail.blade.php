@@ -2,10 +2,446 @@
 
 @section('title', 'Payslip - ' . ($record->employee?->full_name ?? 'Employee'))
 
+@push('styles')
+<style>
+/* Header Spacing */
+.hr-page-header.no-print {
+    margin-top: 0 !important;
+    margin-bottom: 22px !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: flex-end !important;
+}
+
+.hr-page-header.no-print .hr-page-title {
+    margin: 0 !important;
+}
+
+/* Executive Official Payslip Document - True Glassmorphism */
+.payslip-card-wrapper {
+    max-width: 860px;
+    margin: 0 auto 40px auto;
+}
+
+.payslip-container {
+    background: rgba(255, 255, 255, 0.72) !important;
+    backdrop-filter: blur(24px) saturate(190%) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(190%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.85) !important;
+    border-radius: 20px !important;
+    padding: 36px 40px !important;
+    box-shadow: 0 20px 50px -10px rgba(124, 58, 237, 0.12),
+                0 4px 16px rgba(0, 0, 0, 0.03),
+                inset 0 1px 2px rgba(255, 255, 255, 0.95) !important;
+    position: relative;
+    overflow: hidden;
+}
+
+.payslip-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #ec4899 0%, #a855f7 50%, #8b5cf6 100%) !important;
+}
+
+/* Header */
+.payslip-brand-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding-bottom: 20px;
+    margin-bottom: 22px;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.payslip-brand-title {
+    font-size: 19px;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0;
+    letter-spacing: -0.01em;
+    text-transform: uppercase;
+}
+
+.payslip-brand-meta {
+    font-size: 12.5px;
+    color: #64748b;
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.payslip-tin-badge {
+    display: inline-block;
+    font-size: 11px;
+    font-family: monospace;
+    font-weight: 600;
+    color: #475569;
+    background: rgba(255, 255, 255, 0.75);
+    border: 1px solid rgba(226, 232, 240, 0.85);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    padding: 2.5px 8px;
+    border-radius: 6px;
+    margin-top: 5px;
+}
+
+.payslip-badge-official {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: linear-gradient(135deg, rgba(236, 72, 153, 0.08) 0%, rgba(147, 51, 234, 0.12) 100%);
+    border: 1px solid rgba(168, 85, 247, 0.32);
+    color: #7c3aed;
+    font-weight: 650;
+    font-size: 11px;
+    padding: 3.5px 10px;
+    border-radius: 9999px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow: 0 1px 4px rgba(124, 58, 237, 0.06);
+}
+
+.payslip-badge-official i {
+    color: #9333ea;
+    font-size: 13px;
+}
+
+.payslip-dates-box {
+    margin-top: 8px;
+    text-align: right;
+    font-size: 12px;
+    color: #64748b;
+    line-height: 1.5;
+}
+
+.payslip-dates-box strong {
+    color: #1e293b;
+    font-weight: 600;
+}
+
+/* Employee Ribbon - Glassmorphic */
+.payslip-emp-ribbon {
+    display: grid;
+    grid-template-columns: 1.2fr 0.9fr 1.3fr 1fr;
+    gap: 14px;
+    background: rgba(255, 255, 255, 0.60);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.85);
+    border-radius: 14px;
+    padding: 15px 18px;
+    margin-bottom: 22px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02), inset 0 1px 1px rgba(255, 255, 255, 0.9);
+}
+
+.payslip-emp-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.payslip-emp-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #64748b;
+}
+
+.payslip-emp-val {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.3;
+}
+
+.payslip-emp-id-pill {
+    font-family: monospace;
+    font-size: 12px;
+    font-weight: 600;
+    color: #475569;
+    background: rgba(255, 255, 255, 0.88);
+    border: 1px solid rgba(203, 213, 225, 0.8);
+    padding: 2px 8px;
+    border-radius: 5px;
+    display: inline-block;
+    width: fit-content;
+}
+
+/* Tables Section - Glassmorphic Cards */
+.payslip-grid-tables {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    margin-bottom: 22px;
+}
+
+.payslip-table-card {
+    border: 1px solid rgba(255, 255, 255, 0.85);
+    border-radius: 14px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.65);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03), inset 0 1px 1px rgba(255, 255, 255, 0.9);
+}
+
+.payslip-table-card-header {
+    padding: 10px 16px;
+    font-weight: 700;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.6);
+}
+
+.payslip-table-card-header.earnings {
+    background: rgba(240, 253, 244, 0.85);
+    color: #166534;
+    border-bottom-color: rgba(187, 247, 208, 0.6);
+}
+
+.payslip-table-card-header.deductions {
+    background: rgba(255, 241, 242, 0.85);
+    color: #9f1239;
+    border-bottom-color: rgba(254, 205, 211, 0.6);
+}
+
+.payslip-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+}
+
+.payslip-table td {
+    padding: 9.5px 16px;
+    border-bottom: 1px solid rgba(241, 245, 249, 0.7);
+    color: #334155;
+}
+
+.payslip-table td.amount {
+    text-align: right;
+    font-weight: 600;
+    color: #0f172a;
+    font-variant-numeric: tabular-nums;
+}
+
+.payslip-table td.amount.deduction {
+    color: #e11d48;
+}
+
+.payslip-table tr:hover td {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+.payslip-table tfoot td {
+    padding: 11px 16px;
+    font-weight: 700;
+    font-size: 12px;
+}
+
+.payslip-table tfoot.earnings td {
+    background: rgba(240, 253, 244, 0.88);
+    border-top: 1.5px solid rgba(187, 247, 208, 0.8);
+    color: #15803d;
+}
+
+.payslip-table tfoot.earnings td.amount {
+    font-size: 14.5px;
+    font-weight: 750;
+    color: #166534;
+}
+
+.payslip-table tfoot.deductions td {
+    background: rgba(255, 241, 242, 0.88);
+    border-top: 1.5px solid rgba(254, 205, 211, 0.8);
+    color: #be123c;
+}
+
+.payslip-table tfoot.deductions td.amount {
+    font-size: 14.5px;
+    font-weight: 750;
+    color: #9f1239;
+}
+
+/* Take Home Pay - Glassmorphic Card */
+.payslip-takehome-card {
+    background: linear-gradient(135deg, #7c3aed 0%, #9333ea 40%, #c026d3 75%, #db2777 100%);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    color: #ffffff;
+    border-radius: 14px;
+    padding: 18px 26px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    box-shadow: 0 10px 28px -4px rgba(147, 51, 234, 0.32), 0 4px 12px rgba(219, 39, 119, 0.18), inset 0 1px 1px rgba(255, 255, 255, 0.45);
+}
+
+.payslip-takehome-label {
+    font-size: 11.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #f5d0fe;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.payslip-takehome-sub {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.88);
+    margin-top: 2px;
+}
+
+.payslip-takehome-amount {
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    font-variant-numeric: tabular-nums;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* Employer Contributions - Glassmorphic */
+.payslip-employer-box {
+    background: rgba(255, 255, 255, 0.60);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.85);
+    border-radius: 12px;
+    padding: 12px 18px;
+    margin-bottom: 26px;
+    font-size: 11.5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+}
+
+.payslip-employer-title {
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+    font-size: 10.5px;
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.payslip-employer-pill {
+    background: rgba(255, 255, 255, 0.88);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    padding: 3.5px 11px;
+    border-radius: 6px;
+    font-weight: 600;
+    color: #334155;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Signatures */
+.payslip-signatures-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 60px;
+    margin-top: 30px;
+    padding-top: 8px;
+}
+
+.payslip-sign-block {
+    text-align: center;
+}
+
+.payslip-sign-line {
+    border-top: 1.5px solid #94a3b8;
+    width: 220px;
+    margin: 0 auto 6px auto;
+}
+
+.payslip-sign-title {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #475569;
+    display: block;
+}
+
+.payslip-sign-date {
+    font-size: 10.5px;
+    color: #94a3b8;
+    margin-top: 2px;
+    display: block;
+}
+
+@media print {
+    body * { visibility: hidden !important; }
+    .payslip-container, .payslip-container * { visibility: visible !important; }
+    .payslip-container {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 10px !important;
+        background: #ffffff !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+    .payslip-emp-ribbon,
+    .payslip-table-card,
+    .payslip-employer-box {
+        background: #ffffff !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+    .payslip-takehome-card {
+        background: #f8fafc !important;
+        border: 1.5px solid #0f172a !important;
+        color: #0f172a !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        box-shadow: none !important;
+    }
+    .payslip-takehome-label,
+    .payslip-takehome-sub,
+    .payslip-takehome-amount {
+        color: #0f172a !important;
+        text-shadow: none !important;
+    }
+    .payslip-badge-official {
+        background: transparent !important;
+        border: 1px solid #94a3b8 !important;
+        color: #475569 !important;
+        box-shadow: none !important;
+    }
+    .payslip-badge-official i {
+        color: #475569 !important;
+    }
+    .payslip-container::before { display: none !important; }
+    .no-print { display: none !important; }
+}
+</style>
+@endpush
+
 @section('content')
 <div class="hr-page-header no-print">
     <div>
-        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
             <a href="{{ route('hr.payroll.payslips', ['payroll_period_id' => $record->payroll_period_id]) }}" class="hr-btn hr-btn-secondary hr-btn-sm">
                 <i class="ph ph-arrow-left"></i> Back to Payslips
             </a>
@@ -25,189 +461,209 @@
 </div>
 
 <!-- Printable Payslip Document -->
-<div class="payslip-container">
-    <!-- Header -->
-    <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0f172a; padding-bottom: 16px; margin-bottom: 20px;">
-        <div>
-            <h2 style="font-size: 20px; font-weight: 800; color: #0f172a; margin: 0; text-transform: uppercase; letter-spacing: 0.05em;">
-                {{ $record->employee?->branch?->company?->name ?? 'Bistro Hospitality Group Inc.' }}
-            </h2>
-            <div style="font-size: 13px; color: #475569; margin-top: 2px;">
-                {{ $record->employee?->branch?->name }} &bull; {{ $record->employee?->branch?->address }}
+<div class="payslip-card-wrapper">
+    <div class="payslip-container">
+        <!-- Header -->
+        <div class="payslip-brand-row">
+            <div>
+                <h2 class="payslip-brand-title">
+                    {{ $record->employee?->branch?->company?->name ?? 'Bistro Hospitality Group Inc.' }}
+                </h2>
+                <div class="payslip-brand-meta">
+                    <i class="ph ph-map-pin" style="color: #94a3b8;"></i>
+                    <span>{{ $record->employee?->branch?->name }} &bull; {{ $record->employee?->branch?->address }}</span>
+                </div>
+                <div class="payslip-tin-badge">
+                    TIN: {{ $record->employee?->branch?->company?->tin ?? '123-456-789-000' }}
+                </div>
             </div>
-            <div style="font-size: 12px; color: #64748b;">
-                TIN: {{ $record->employee?->branch?->company?->tin ?? '123-456-789-000' }}
+            <div style="text-align: right;">
+                <span class="payslip-badge-official">
+                    <i class="ph ph-seal-check"></i>
+                    Official Payslip
+                </span>
+                <div class="payslip-dates-box">
+                    Cutoff: <strong>{{ \Carbon\Carbon::parse($record->payrollPeriod?->start_date)->format('M d') }} – {{ \Carbon\Carbon::parse($record->payrollPeriod?->end_date)->format('M d, Y') }}</strong><br>
+                    Payout Date: <strong>{{ \Carbon\Carbon::parse($record->payrollPeriod?->payout_date)->format('M d, Y') }}</strong>
+                </div>
             </div>
         </div>
-        <div style="text-align: right;">
-            <span style="display: inline-block; background: #0f172a; color: #ffffff; font-weight: 700; font-size: 12px; padding: 4px 10px; border-radius: 4px; text-transform: uppercase;">
-                Official Payslip
+
+        <!-- Employee Info Ribbon -->
+        <div class="payslip-emp-ribbon">
+            <div class="payslip-emp-item">
+                <span class="payslip-emp-label">Employee Name</span>
+                <span class="payslip-emp-val">{{ $record->employee?->full_name }}</span>
+            </div>
+            <div class="payslip-emp-item">
+                <span class="payslip-emp-label">Employee ID</span>
+                <span class="payslip-emp-id-pill">{{ $record->employee?->employee_id }}</span>
+            </div>
+            <div class="payslip-emp-item">
+                <span class="payslip-emp-label">Department &amp; Position</span>
+                <span class="payslip-emp-val" style="font-size: 13px;">
+                    {{ $record->employee?->department?->name ?? 'Staff' }} / {{ $record->employee?->position?->name ?? 'Staff' }}
+                </span>
+            </div>
+            <div class="payslip-emp-item">
+                <span class="payslip-emp-label">Days / Hours Worked</span>
+                <span class="payslip-emp-val" style="font-size: 13px;">
+                    {{ $record->total_work_days }} Days ({{ number_format($record->total_hours, 2) }} hrs)
+                </span>
+            </div>
+        </div>
+
+        <!-- Earnings & Deductions Tables -->
+        <div class="payslip-grid-tables">
+            <!-- Earnings Column -->
+            <div class="payslip-table-card">
+                <div class="payslip-table-card-header earnings">
+                    <i class="ph ph-plus-circle" style="font-size: 15px;"></i>
+                    <span>Earnings</span>
+                </div>
+                <table class="payslip-table">
+                    <tbody>
+                        <tr>
+                            <td>Basic Salary Pay</td>
+                            <td class="amount">₱{{ number_format($record->basic_pay, 2) }}</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Overtime Pay ({{ number_format($record->overtime_hours, 2) }} hrs @ 125%)
+                            </td>
+                            <td class="amount">₱{{ number_format($record->overtime_pay, 2) }}</td>
+                        </tr>
+                        <tr>
+                            <td>Holiday Pay</td>
+                            <td class="amount">₱{{ number_format($record->holiday_pay, 2) }}</td>
+                        </tr>
+                        <tr style="background: #faf5ff;">
+                            <td>
+                                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px;">
+                                    <span style="font-weight: 600; color: #7c3aed;">Premium Pay</span>
+                                    <button type="button" onclick="openPayslipModal('payslipPremiumPayModal')" style="background: #f3e8ff; border: 1px solid #d8b4fe; border-radius: 4px; font-size: 11px; color: #7c3aed; cursor: pointer; font-weight: 600; padding: 2px 7px;" title="View DOLE calculation breakdown">
+                                        <i class="ph ph-calculator"></i> Calculation Details
+                                    </button>
+                                </div>
+                            </td>
+                            <td class="amount" style="color: #7c3aed; font-weight: 700; cursor: pointer;" onclick="openPayslipModal('payslipPremiumPayModal')" title="Click to view calculation breakdown">
+                                ₱{{ number_format($record->premium_pay > 0 ? $record->premium_pay : $record->rest_day_pay, 2) }}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Night Shift Differential ({{ number_format($record->night_diff_hours, 2) }} hrs)
+                            </td>
+                            <td class="amount">₱{{ number_format($record->night_diff_pay, 2) }}</td>
+                        </tr>
+                        <tr>
+                            <td>Allowances</td>
+                            <td class="amount">₱{{ number_format($record->allowances, 2) }}</td>
+                        </tr>
+                        @if($record->other_earnings > 0)
+                            <tr>
+                                <td>Bonuses &amp; Adjustments</td>
+                                <td class="amount">₱{{ number_format($record->other_earnings, 2) }}</td>
+                            </tr>
+                        @endif
+                    </tbody>
+                    <tfoot class="earnings">
+                        <tr>
+                            <td>GROSS EARNINGS</td>
+                            <td class="amount">₱{{ number_format($record->gross_pay, 2) }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <!-- Deductions Column -->
+            <div class="payslip-table-card">
+                <div class="payslip-table-card-header deductions">
+                    <i class="ph ph-minus-circle" style="font-size: 15px;"></i>
+                    <span>Deductions</span>
+                </div>
+                <table class="payslip-table">
+                    <tbody>
+                        <tr>
+                            <td>Late &amp; Undertime Deductions</td>
+                            <td class="amount deduction">-₱{{ number_format($record->late_deduction + $record->undertime_deduction, 2) }}</td>
+                        </tr>
+                        <tr>
+                            <td>Absence Deductions</td>
+                            <td class="amount deduction">-₱{{ number_format($record->absence_deduction, 2) }}</td>
+                        </tr>
+                        <tr>
+                            <td>SSS Employee Share</td>
+                            <td class="amount deduction">-₱{{ number_format($record->sss_employee, 2) }}</td>
+                        </tr>
+                        <tr>
+                            <td>PhilHealth Employee Share (2.5%)</td>
+                            <td class="amount deduction">-₱{{ number_format($record->philhealth_employee, 2) }}</td>
+                        </tr>
+                        <tr>
+                            <td>Pag-IBIG Employee Share</td>
+                            <td class="amount deduction">-₱{{ number_format($record->pagibig_employee, 2) }}</td>
+                        </tr>
+                        <tr>
+                            <td>BIR Withholding Tax</td>
+                            <td class="amount deduction">-₱{{ number_format($record->withholding_tax, 2) }}</td>
+                        </tr>
+                        @if($record->other_deductions > 0)
+                            <tr>
+                                <td>Loans &amp; Adjustments</td>
+                                <td class="amount deduction">-₱{{ number_format($record->other_deductions, 2) }}</td>
+                            </tr>
+                        @endif
+                    </tbody>
+                    <tfoot class="deductions">
+                        <tr>
+                            <td>TOTAL DEDUCTIONS</td>
+                            <td class="amount">-₱{{ number_format($record->total_deductions, 2) }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <!-- Net Pay Total Highlight Card -->
+        <div class="payslip-takehome-card">
+            <div>
+                <div class="payslip-takehome-label">
+                    <i class="ph ph-wallet" style="font-size: 15px;"></i>
+                    <span>Total Net Pay (Take Home)</span>
+                </div>
+                <div class="payslip-takehome-sub">Philippine Pesos (PHP) &bull; Direct Deposit / Cash Disbursement</div>
+            </div>
+            <div class="payslip-takehome-amount">
+                ₱{{ number_format($record->net_pay, 2) }}
+            </div>
+        </div>
+
+        <!-- Employer Statutory Shares (Informational) -->
+        <div class="payslip-employer-box">
+            <span class="payslip-employer-title">
+                <i class="ph ph-shield-check" style="color: #6366f1;"></i>
+                Employer Contributions (Non-Deductible):
             </span>
-            <div style="font-size: 12px; color: #64748b; margin-top: 6px;">
-                Cutoff: <strong>{{ \Carbon\Carbon::parse($record->payrollPeriod?->start_date)->format('M d') }} - {{ \Carbon\Carbon::parse($record->payrollPeriod?->end_date)->format('M d, Y') }}</strong><br>
-                Payout Date: <strong>{{ \Carbon\Carbon::parse($record->payrollPeriod?->payout_date)->format('M d, Y') }}</strong>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <span class="payslip-employer-pill">SSS ER: ₱{{ number_format($record->sss_employer, 2) }}</span>
+                <span class="payslip-employer-pill">PhilHealth ER: ₱{{ number_format($record->philhealth_employer, 2) }}</span>
+                <span class="payslip-employer-pill">Pag-IBIG ER: ₱{{ number_format($record->pagibig_employer, 2) }}</span>
             </div>
         </div>
-    </div>
 
-    <!-- Employee Info Bar -->
-    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; margin-bottom: 20px; font-size: 12.5px;">
-        <div>
-            <span style="color: #64748b; display: block; font-size: 11px; text-transform: uppercase;">Employee Name:</span>
-            <strong style="color: #0f172a; font-size: 14px;">{{ $record->employee?->full_name }}</strong>
-        </div>
-        <div>
-            <span style="color: #64748b; display: block; font-size: 11px; text-transform: uppercase;">Employee ID:</span>
-            <strong style="font-family: monospace; font-size: 13px;">{{ $record->employee?->employee_id }}</strong>
-        </div>
-        <div>
-            <span style="color: #64748b; display: block; font-size: 11px; text-transform: uppercase;">Department & Position:</span>
-            <strong>{{ $record->employee?->department?->name }} / {{ $record->employee?->position?->name }}</strong>
-        </div>
-        <div>
-            <span style="color: #64748b; display: block; font-size: 11px; text-transform: uppercase;">Days / Hours Worked:</span>
-            <strong>{{ $record->total_work_days }} Days ({{ number_format($record->total_hours, 2) }} hrs)</strong>
-        </div>
-    </div>
-
-    <!-- Earnings & Deductions Tables -->
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px;">
-        <!-- Earnings Column -->
-        <div style="border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
-            <div style="background: #f1f5f9; padding: 10px 14px; font-weight: 700; font-size: 13px; color: #0f172a; text-transform: uppercase; border-bottom: 1px solid #e2e8f0;">
-                Earnings
+        <!-- Signatures -->
+        <div class="payslip-signatures-grid">
+            <div class="payslip-sign-block">
+                <div class="payslip-sign-line"></div>
+                <span class="payslip-sign-title">Prepared &amp; Approved by HR / Admin</span>
+                <span class="payslip-sign-date">Date: ________________________</span>
             </div>
-            <table style="width: 100%; border-collapse: collapse; font-size: 12.5px;">
-                <tbody>
-                    <tr>
-                        <td style="padding: 9px 14px; border-bottom: 1px solid #f1f5f9;">Basic Salary Pay</td>
-                        <td style="padding: 9px 14px; border-bottom: 1px solid #f1f5f9; text-align: right; font-weight: 600;">₱{{ number_format($record->basic_pay, 2) }}</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 9px 14px; border-bottom: 1px solid #f1f5f9;">
-                            Overtime Pay ({{ number_format($record->overtime_hours, 2) }} hrs @ 125%)
-                        </td>
-                        <td style="padding: 9px 14px; border-bottom: 1px solid #f1f5f9; text-align: right; font-weight: 600;">₱{{ number_format($record->overtime_pay, 2) }}</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 9px 14px; border-bottom: 1px solid #f1f5f9;">Holiday Pay</td>
-                        <td style="padding: 9px 14px; border-bottom: 1px solid #f1f5f9; text-align: right; font-weight: 600;">₱{{ number_format($record->holiday_pay, 2) }}</td>
-                    </tr>
-                    <tr style="background: #faf5ff;">
-                        <td style="padding: 9px 14px; border-bottom: 1px solid #f1f5f9;">
-                            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px;">
-                                <span style="font-weight: 600; color: #7c3aed;">Premium Pay</span>
-                                <button type="button" onclick="openPayslipModal('payslipPremiumPayModal')" style="background: #f3e8ff; border: 1px solid #d8b4fe; border-radius: 4px; font-size: 11px; color: #7c3aed; cursor: pointer; font-weight: 600; padding: 2px 7px;" title="View DOLE calculation breakdown">
-                                    <i class="ph ph-calculator"></i> Calculation Details
-                                </button>
-                            </div>
-                        </td>
-                        <td style="padding: 9px 14px; border-bottom: 1px solid #f1f5f9; text-align: right; font-weight: 700; color: #7c3aed; cursor: pointer;" onclick="openPayslipModal('payslipPremiumPayModal')" title="Click to view calculation breakdown">
-                            ₱{{ number_format($record->premium_pay > 0 ? $record->premium_pay : $record->rest_day_pay, 2) }}
-                        </td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 9px 14px; border-bottom: 1px solid #f1f5f9;">
-                            Night Shift Differential ({{ number_format($record->night_diff_hours, 2) }} hrs)
-                        </td>
-                        <td style="padding: 9px 14px; border-bottom: 1px solid #f1f5f9; text-align: right; font-weight: 600;">₱{{ number_format($record->night_diff_pay, 2) }}</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 9px 14px; border-bottom: 1px solid #f1f5f9;">Allowances</td>
-                        <td style="padding: 9px 14px; border-bottom: 1px solid #f1f5f9; text-align: right; font-weight: 600;">₱{{ number_format($record->allowances, 2) }}</td>
-                    </tr>
-                    @if($record->other_earnings > 0)
-                        <tr>
-                            <td style="padding: 9px 14px; border-bottom: 1px solid #f1f5f9;">Bonuses & Adjustments</td>
-                            <td style="padding: 9px 14px; border-bottom: 1px solid #f1f5f9; text-align: right; font-weight: 600;">₱{{ number_format($record->other_earnings, 2) }}</td>
-                        </tr>
-                    @endif
-                </tbody>
-                <tfoot>
-                    <tr style="background: #faf5ff; font-weight: 700; color: #7e22ce;">
-                        <td style="padding: 10px 14px; border-top: 1px solid #e9d5ff;">GROSS EARNINGS</td>
-                        <td style="padding: 10px 14px; border-top: 1px solid #e9d5ff; text-align: right; font-size: 14px;">₱{{ number_format($record->gross_pay, 2) }}</td>
-                    </tr>
-                </tfoot>
-            </table>
-        </div>
-
-        <!-- Deductions Column -->
-        <div style="border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
-            <div style="background: #f1f5f9; padding: 10px 14px; font-weight: 700; font-size: 13px; color: #0f172a; text-transform: uppercase; border-bottom: 1px solid #e2e8f0;">
-                Deductions
+            <div class="payslip-sign-block">
+                <div class="payslip-sign-line"></div>
+                <span class="payslip-sign-title">Received &amp; Acknowledged by Employee</span>
+                <span class="payslip-sign-date">Date: ________________________</span>
             </div>
-            <table style="width: 100%; border-collapse: collapse; font-size: 12.5px;">
-                <tbody>
-                    <tr>
-                        <td style="padding: 9px 14px; border-bottom: 1px solid #f1f5f9;">Late & Undertime Deductions</td>
-                        <td style="padding: 9px 14px; border-bottom: 1px solid #f1f5f9; text-align: right; font-weight: 600; color: #ef4444;">-₱{{ number_format($record->late_deduction + $record->undertime_deduction, 2) }}</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 9px 14px; border-bottom: 1px solid #f1f5f9;">Absence Deductions</td>
-                        <td style="padding: 9px 14px; border-bottom: 1px solid #f1f5f9; text-align: right; font-weight: 600; color: #ef4444;">-₱{{ number_format($record->absence_deduction, 2) }}</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 9px 14px; border-bottom: 1px solid #f1f5f9;">SSS Employee Share</td>
-                        <td style="padding: 9px 14px; border-bottom: 1px solid #f1f5f9; text-align: right; font-weight: 600;">-₱{{ number_format($record->sss_employee, 2) }}</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 9px 14px; border-bottom: 1px solid #f1f5f9;">PhilHealth Employee Share (2.5%)</td>
-                        <td style="padding: 9px 14px; border-bottom: 1px solid #f1f5f9; text-align: right; font-weight: 600;">-₱{{ number_format($record->philhealth_employee, 2) }}</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 9px 14px; border-bottom: 1px solid #f1f5f9;">Pag-IBIG Employee Share</td>
-                        <td style="padding: 9px 14px; border-bottom: 1px solid #f1f5f9; text-align: right; font-weight: 600;">-₱{{ number_format($record->pagibig_employee, 2) }}</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 9px 14px; border-bottom: 1px solid #f1f5f9;">BIR Withholding Tax</td>
-                        <td style="padding: 9px 14px; border-bottom: 1px solid #f1f5f9; text-align: right; font-weight: 600;">-₱{{ number_format($record->withholding_tax, 2) }}</td>
-                    </tr>
-                    @if($record->other_deductions > 0)
-                        <tr>
-                            <td style="padding: 9px 14px; border-bottom: 1px solid #f1f5f9;">Loans & Adjustments</td>
-                            <td style="padding: 9px 14px; border-bottom: 1px solid #f1f5f9; text-align: right; font-weight: 600; color: #ef4444;">-₱{{ number_format($record->other_deductions, 2) }}</td>
-                        </tr>
-                    @endif
-                </tbody>
-                <tfoot>
-                    <tr style="background: #fff1f2; font-weight: 700; color: #e11d48;">
-                        <td style="padding: 10px 14px; border-top: 1px solid #fecdd3;">TOTAL DEDUCTIONS</td>
-                        <td style="padding: 10px 14px; border-top: 1px solid #fecdd3; text-align: right; font-size: 14px;">-₱{{ number_format($record->total_deductions, 2) }}</td>
-                    </tr>
-                </tfoot>
-            </table>
-        </div>
-    </div>
-
-    <!-- Net Pay Total Highlight Card -->
-    <div style="background: linear-gradient(135deg, #059669, #047857); color: #ffffff; border-radius: 10px; padding: 18px 24px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-        <div>
-            <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.9;">Total Net Pay (Take Home)</div>
-            <div style="font-size: 13px; opacity: 0.85;">Philippine Pesos (PHP)</div>
-        </div>
-        <div style="font-size: 28px; font-weight: 800; letter-spacing: 0.02em;">
-            ₱{{ number_format($record->net_pay, 2) }}
-        </div>
-    </div>
-
-    <!-- Employer Statutory Shares (Informational) -->
-    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 18px; margin-bottom: 30px; font-size: 11.5px; color: #64748b; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
-        <span><strong>Employer Contributions:</strong></span>
-        <span>SSS ER: ₱{{ number_format($record->sss_employer, 2) }}</span>
-        <span>PhilHealth ER: ₱{{ number_format($record->philhealth_employer, 2) }}</span>
-        <span>Pag-IBIG ER: ₱{{ number_format($record->pagibig_employer, 2) }}</span>
-    </div>
-
-    <!-- Signatures -->
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 60px; margin-top: 40px; font-size: 12px;">
-        <div style="text-align: center;">
-            <div style="border-top: 1px solid #475569; width: 220px; margin: 0 auto 6px auto;"></div>
-            <span style="color: #64748b;">Prepared & Approved by HR / Admin</span>
-        </div>
-        <div style="text-align: center;">
-            <div style="border-top: 1px solid #475569; width: 220px; margin: 0 auto 6px auto;"></div>
-            <span style="color: #64748b;">Received & Acknowledged by Employee</span>
         </div>
     </div>
 </div>

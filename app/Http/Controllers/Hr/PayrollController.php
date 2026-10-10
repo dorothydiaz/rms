@@ -214,7 +214,7 @@ class PayrollController extends Controller
         $periods = PayrollPeriod::orderBy('start_date', 'desc')->get();
         $selectedPeriodId = $request->get('payroll_period_id', $periods->first()?->id);
 
-        $query = PayrollRecord::with(['employee.branch', 'payrollPeriod']);
+        $query = PayrollRecord::with(['employee.branch', 'employee.position', 'payrollPeriod']);
         if ($selectedPeriodId) {
             $query->where('payroll_period_id', $selectedPeriodId);
         }
