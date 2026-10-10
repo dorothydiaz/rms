@@ -124,18 +124,6 @@
                         ['title' => 'Individual Attendance Summary', 'url' => route('hr.reports.individual-attendance-summary'), 'icon' => 'ph-user-list', 'route' => 'hr.reports.individual-attendance-summary'],
                         ['title' => 'Employee Attendance Profile', 'url' => route('hr.reports.employee-attendance-profile'), 'icon' => 'ph-identification-card', 'route' => 'hr.reports.employee-attendance-profile'],
                     ]
-                ],
-                'admin' => [
-                    'title' => 'System Administration',
-                    'url' => route('hr.admin.users'),
-                    'icon' => 'ph-shield-check',
-                    'items' => [
-                        ['title' => 'User Accounts', 'url' => route('hr.admin.users'), 'icon' => 'ph-users-three', 'route' => 'hr.admin.users'],
-                        ['title' => 'Roles & Permissions', 'url' => route('hr.admin.roles'), 'icon' => 'ph-key', 'route' => 'hr.admin.roles'],
-                        ['title' => 'System Settings', 'url' => route('hr.admin.settings'), 'icon' => 'ph-gear', 'route' => 'hr.admin.settings'],
-                        ['title' => 'Audit Logs', 'url' => route('hr.admin.audit-logs'), 'icon' => 'ph-shield-check', 'route' => 'hr.admin.audit-logs'],
-                        ['title' => 'Users Auth (Legacy)', 'url' => route('hr.users-auth'), 'icon' => 'ph-lock', 'route' => 'hr.users-auth'],
-                    ]
                 ]
             ]
         ],
@@ -261,6 +249,18 @@
                     'url' => route('config.business-settings'),
                     'items' => [
                         ['title' => 'Business Settings', 'url' => route('config.business-settings'), 'icon' => 'ph-storefront', 'route' => 'config.business-settings']
+                    ]
+                ],
+                'admin' => [
+                    'title' => 'System Administration',
+                    'url' => route('hr.admin.users'),
+                    'icon' => 'ph-shield-check',
+                    'items' => [
+                        ['title' => 'User Management', 'url' => route('hr.admin.users'), 'icon' => 'ph-users-three', 'route' => 'hr.admin.users'],
+                        ['title' => 'Role & Permission', 'url' => route('hr.admin.roles'), 'icon' => 'ph-key', 'route' => 'hr.admin.roles'],
+                        ['title' => 'System Settings', 'url' => route('hr.admin.settings'), 'icon' => 'ph-gear', 'route' => 'hr.admin.settings'],
+                        ['title' => 'Audit Logs', 'url' => route('hr.admin.audit-logs'), 'icon' => 'ph-shield-check', 'route' => 'hr.admin.audit-logs'],
+                        ['title' => 'Users Auth (Legacy)', 'url' => route('hr.users-auth'), 'icon' => 'ph-lock', 'route' => 'hr.users-auth'],
                     ]
                 ]
             ]

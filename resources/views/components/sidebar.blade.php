@@ -2,11 +2,11 @@
     $isHome = request()->routeIs('dashboard');
     $isAccountSettings = request()->routeIs('account-settings*');
     $activeModule = '';
-    if (request()->routeIs('hr.*')) $activeModule = 'hr';
+    if (request()->routeIs('hr.admin.*', 'hr.users-auth', 'config.*')) $activeModule = 'config';
+    elseif (request()->routeIs('hr.*')) $activeModule = 'hr';
     elseif (request()->routeIs('sales.*')) $activeModule = 'sales';
     elseif (request()->routeIs('inventory.*')) $activeModule = 'inventory';
     elseif (request()->routeIs('purchase.*')) $activeModule = 'purchase';
-    elseif (request()->routeIs('config.*')) $activeModule = 'config';
     elseif (request()->routeIs('credits.*')) $activeModule = 'credits';
 
     $user = Auth::user();
@@ -136,20 +136,6 @@
                 </div>
             </div>
 
-            <!-- Administration -->
-            <div class="nav-section">
-                @php $adminActive = request()->routeIs('hr.admin.*', 'hr.users-auth'); @endphp
-                <div class="nav-item-group" data-group-id="hr-admin">
-                    <a href="#" class="nav-item">
-                        <i class="ph ph-gear-six"></i>
-                        <span>Administration</span>
-                    </a>
-                    <button type="button" class="add-btn"><i class="ph {{ $adminActive ? 'ph-minus' : 'ph-plus' }}"></i></button>
-                </div>
-                <div class="sub-nav{{ $adminActive ? ' expanded' : '' }}">
-                    <a href="{{ route('hr.admin.users') }}" class="sub-nav-item{{ request()->routeIs('hr.admin.*', 'hr.users-auth') ? ' active' : '' }}" title="User accounts, role assignments, security permissions, and audit logs"><span>System Administration</span></a>
-                </div>
-            </div>
 
             <!-- Analytics Hub -->
             <div class="nav-section">
@@ -328,7 +314,7 @@
             </div>
         </div>
 
-        <!-- Settings (Business Configuration) -->
+        <!-- Settings (Business Configuration & System Administration) -->
         <div id="submenu-config" class="panel-content submenu{{ $activeModule === 'config' ? ' active' : '' }}">
             <div class="submenu-header">
                 <span class="submenu-title">Settings</span>
@@ -338,6 +324,22 @@
                     <i class="ph ph-storefront"></i>
                     <span>Business Settings</span>
                 </a>
+            </div>
+            <div class="nav-section">
+                @php $adminActive = request()->routeIs('hr.admin.*', 'hr.users-auth'); @endphp
+                <div class="nav-item-group" data-group-id="config-admin">
+                    <a href="#" class="nav-item">
+                        <i class="ph ph-shield-check"></i>
+                        <span>System Administration</span>
+                    </a>
+                    <button type="button" class="add-btn"><i class="ph {{ $adminActive ? 'ph-minus' : 'ph-plus' }}"></i></button>
+                </div>
+                <div class="sub-nav{{ $adminActive ? ' expanded' : '' }}">
+                    <a href="{{ route('hr.admin.users') }}" class="sub-nav-item{{ request()->routeIs('hr.admin.users*', 'hr.users-auth') ? ' active' : '' }}" title="User accounts, role assignments, security permissions, and audit logs"><span>User Management</span></a>
+                    <a href="{{ route('hr.admin.roles') }}" class="sub-nav-item{{ request()->routeIs('hr.admin.roles*') ? ' active' : '' }}" title="Role and permission assignments"><span>Role & Permission</span></a>
+                    <a href="{{ route('hr.admin.settings') }}" class="sub-nav-item{{ request()->routeIs('hr.admin.settings*') ? ' active' : '' }}" title="Company entity settings"><span>System Settings</span></a>
+                    <a href="{{ route('hr.admin.audit-logs') }}" class="sub-nav-item{{ request()->routeIs('hr.admin.audit-logs*', 'hr.admin.audit_logs*') ? ' active' : '' }}" title="Security and activity audit logs"><span>Audit Logs</span></a>
+                </div>
             </div>
         </div>
 
