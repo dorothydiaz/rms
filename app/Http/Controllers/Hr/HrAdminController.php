@@ -36,8 +36,7 @@ class HrAdminController extends Controller
             $query->where('branch_id', $request->branch_id);
         }
 
-        $perPage = (int) $request->get('per_page', 10);
-        $users = $query->paginate($perPage)->withQueryString();
+        $users = $query->get();
         $roles = Role::all();
         $branches = Branch::where('is_active', true)->get();
         $employees = Employee::orderBy('first_name')->orderBy('last_name')->get();
@@ -321,8 +320,7 @@ class HrAdminController extends Controller
             $query->where('user_id', $request->user_id);
         }
 
-        $perPage = (int) $request->get('per_page', 10);
-        $logs = $query->orderBy('created_at', 'desc')->paginate($perPage)->withQueryString();
+        $logs = $query->orderBy('created_at', 'desc')->get();
         $users = User::all();
 
         return view('hr.admin.audit-logs', compact('logs', 'users'));

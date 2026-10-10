@@ -54,42 +54,42 @@
         <table class="hr-table" id="logsTable">
             <thead>
                 <tr>
-                    <th>Timestamp</th>
-                    <th>User</th>
-                    <th>Module</th>
-                    <th>Action</th>
-                    <th>Record ID</th>
-                    <th>IP Address</th>
-                    <th>Activity Details</th>
+                    <th style="white-space: nowrap;">Timestamp</th>
+                    <th style="white-space: nowrap;">User</th>
+                    <th style="white-space: nowrap;">Module</th>
+                    <th style="white-space: nowrap;">Action</th>
+                    <th style="white-space: nowrap;">Record ID</th>
+                    <th style="white-space: nowrap;">IP Address</th>
+                    <th style="white-space: nowrap;">Activity Details</th>
                 </tr>
             </thead>
             <tbody id="logsTableBody">
                 @forelse($logs as $log)
                     <tr class="log-row">
-                        <td style="white-space: nowrap; font-size: 12px; color: #94a3b8;">
+                        <td style="white-space: nowrap; font-size: 12px; color: #64748b;">
                             {{ $log->created_at->format('M d, Y h:i:s A') }}
                         </td>
-                        <td>
+                        <td style="white-space: nowrap;">
                             <strong>{{ $log->user->full_name ?? 'System' }}</strong>
-                            <div style="font-size: 11px; color: #94a3b8;">@ {{ $log->user->username ?? 'system' }}</div>
+                            <div style="font-size: 11px; color: #64748b;">@ {{ $log->user->username ?? 'system' }}</div>
                         </td>
-                        <td>
-                            <span class="hr-badge hr-badge-neutral">{{ $log->module }}</span>
+                        <td style="white-space: nowrap;">
+                            <span class="hr-badge hr-badge-neutral" style="white-space: nowrap;">{{ $log->module }}</span>
                         </td>
-                        <td>
+                        <td style="white-space: nowrap;">
                             @php
                                 $badgeClass = 'hr-badge-blue';
-                                if (in_array($log->action, ['Create', 'Approve', 'Finalize'])) $badgeClass = 'hr-badge-success';
-                                elseif (in_array($log->action, ['Delete', 'Reject'])) $badgeClass = 'hr-badge-danger';
+                                if (in_array($log->action, ['Create', 'Approve', 'Finalize', 'BulkApprove'])) $badgeClass = 'hr-badge-success';
+                                elseif (in_array($log->action, ['Delete', 'Reject', 'BulkReject'])) $badgeClass = 'hr-badge-danger';
                                 elseif ($log->action === 'Update') $badgeClass = 'hr-badge-warning';
                             @endphp
-                            <span class="hr-badge {{ $badgeClass }}">
+                            <span class="hr-badge {{ $badgeClass }}" style="white-space: nowrap;">
                                 {{ $log->action }}
                             </span>
                         </td>
-                        <td>#{{ $log->record_id ?: '—' }}</td>
-                        <td style="font-family: monospace; font-size: 11px; color: #94a3b8;">{{ $log->ip_address ?: '127.0.0.1' }}</td>
-                        <td style="font-size: 12px; color: #e2e8f0; max-width: 380px;">
+                        <td style="font-family: monospace; font-size: 12px; color: #475569; font-weight: 600; white-space: nowrap;">#{{ $log->record_id ?: '—' }}</td>
+                        <td style="font-family: monospace; font-size: 11.5px; color: #64748b; white-space: nowrap;">{{ $log->ip_address ?: '127.0.0.1' }}</td>
+                        <td style="font-size: 12.5px; color: #334155; line-height: 1.45; word-break: break-word; min-width: 260px;">
                             {{ $log->details ?: 'No additional metadata' }}
                         </td>
                     </tr>
@@ -111,7 +111,7 @@
             <div class="hr-per-page-wrap">
                 <span class="hr-per-page-label">Show</span>
                 <select class="hr-per-page-select" id="logsPerPageSelect" onchange="logsChangePerPage()" aria-label="Rows per page">
-                    <option value="15" selected>15</option>
+                    <option value="10" selected>10</option>
                     <option value="25">25</option>
                     <option value="50">50</option>
                     <option value="100">100</option>
@@ -129,7 +129,7 @@
 // Client-Side Pagination — Audit Logs
 // =========================================================================
 let _logsPage = 1, _logsRows = [];
-function logsGetPerPage() { return parseInt(document.getElementById('logsPerPageSelect')?.value || '15', 10); }
+function logsGetPerPage() { return parseInt(document.getElementById('logsPerPageSelect')?.value || '10', 10); }
 function logsChangePerPage() { _logsPage = 1; renderLogsPage(); }
 function logsGoToPage(p) { _logsPage = p; renderLogsPage(); const w = document.getElementById('logsTableWrapper'); if(w) w.scrollTop = 0; }
 
