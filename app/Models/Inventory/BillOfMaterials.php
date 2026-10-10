@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class BillOfMaterials extends Model
 {
-    protected $table = 'bill_of_materials';
+    protected $table = 'bom_header';
 
     protected $fillable = [
         'bom_code',

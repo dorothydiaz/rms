@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class StockLedger extends Model
 {
-    protected $table = 'stock_ledger';
+    protected $table = 'inventory_ledger';
 
     public $timestamps = false; // Uses custom created_at only (immutable append-only)
 

@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class InternalTransfer extends Model
 {
-    protected $table = 'internal_transfers';
+    protected $table = 'stock_transfer_header';
 
     protected $fillable = [
         'transfer_number',

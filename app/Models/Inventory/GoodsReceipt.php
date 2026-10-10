@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class GoodsReceipt extends Model
 {
-    protected $table = 'goods_receipts';
+    protected $table = 'stock_in_header';
 
     protected $fillable = [
         'grn_number',

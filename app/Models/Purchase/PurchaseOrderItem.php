@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PurchaseOrderItem extends Model
 {
-    protected $table = 'purchase_order_items';
+    protected $table = 'purchase_order_lines';
 
     protected $fillable = [
         'purchase_order_id',

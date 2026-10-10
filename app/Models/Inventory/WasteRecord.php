@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class WasteRecord extends Model
 {
-    protected $table = 'waste_records';
+    protected $table = 'stock_waste_header';
 
     protected $fillable = [
         'waste_number',

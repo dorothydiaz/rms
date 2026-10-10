@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ProductionOrder extends Model
 {
-    protected $table = 'production_orders';
+    protected $table = 'work_order_header';
 
     protected $fillable = [
         'production_number',

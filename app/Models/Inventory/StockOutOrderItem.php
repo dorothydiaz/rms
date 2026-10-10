@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class StockOutOrderItem extends Model
 {
-    protected $table = 'stock_out_items';
+    protected $table = 'stock_out_lines';
 
     protected $fillable = [
         'stock_out_order_id',

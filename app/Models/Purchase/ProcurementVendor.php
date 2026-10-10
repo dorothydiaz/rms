@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ProcurementVendor extends Model
 {
-    protected $table = 'procurement_vendors';
+    protected $table = 'vendor_master';
 
     protected $fillable = [
         'vendor_code',

@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class InventoryItem extends Model
 {
-    protected $table = 'inventory_items';
+    protected $table = 'item_master';
 
     protected $fillable = [
         'sku',

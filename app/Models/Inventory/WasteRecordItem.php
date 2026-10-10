@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class WasteRecordItem extends Model
 {
-    protected $table = 'waste_record_items';
+    protected $table = 'stock_waste_lines';
 
     protected $fillable = [
         'waste_record_id',

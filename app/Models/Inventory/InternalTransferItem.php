@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class InternalTransferItem extends Model
 {
-    protected $table = 'internal_transfer_items';
+    protected $table = 'stock_transfer_lines';
 
     protected $fillable = [
         'internal_transfer_id',

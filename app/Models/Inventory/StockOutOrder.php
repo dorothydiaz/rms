@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class StockOutOrder extends Model
 {
-    protected $table = 'stock_out_orders';
+    protected $table = 'stock_out_header';
 
     protected $fillable = [
         'order_number',

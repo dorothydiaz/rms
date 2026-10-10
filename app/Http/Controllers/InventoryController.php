@@ -605,7 +605,7 @@ class InventoryController extends Controller
     public function apiUpdateStockOutPickPack(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'order_id' => 'required|exists:stock_out_orders,id',
+            'order_id' => 'required|exists:stock_out_header,id',
             'picker_name' => 'nullable|string|max:255',
             'carrier_name' => 'nullable|string|max:255',
             'tracking_waybill' => 'nullable|string|max:100',
@@ -685,7 +685,7 @@ class InventoryController extends Controller
     public function apiConfirmShipStockOut(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'order_id' => 'required|exists:stock_out_orders,id',
+            'order_id' => 'required|exists:stock_out_header,id',
             'picker_name' => 'nullable|string|max:255',
             'carrier_name' => 'nullable|string|max:255',
             'tracking_waybill' => 'nullable|string|max:100',
@@ -807,7 +807,7 @@ class InventoryController extends Controller
     public function apiCancelStockOut(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'order_id' => 'required|exists:stock_out_orders,id',
+            'order_id' => 'required|exists:stock_out_header,id',
             'reason' => 'nullable|string|max:500',
         ]);
 
@@ -1044,7 +1044,7 @@ class InventoryController extends Controller
     public function apiDispatchTransfer(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'transfer_id' => 'required|exists:internal_transfers,id',
+            'transfer_id' => 'required|exists:stock_transfer_header,id',
             'dispatched_by' => 'required|string|max:255',
             'carrier_name' => 'nullable|string|max:255',
             'driver_plate' => 'nullable|string|max:100',
@@ -1168,7 +1168,7 @@ class InventoryController extends Controller
     public function apiReceiveTransfer(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'transfer_id' => 'required|exists:internal_transfers,id',
+            'transfer_id' => 'required|exists:stock_transfer_header,id',
             'received_by' => 'required|string|max:255',
             'notes' => 'nullable|string|max:500',
         ]);
@@ -1215,7 +1215,7 @@ class InventoryController extends Controller
     public function apiCancelTransfer(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'transfer_id' => 'required|exists:internal_transfers,id',
+            'transfer_id' => 'required|exists:stock_transfer_header,id',
             'reason' => 'nullable|string|max:500',
         ]);
 
@@ -1341,7 +1341,7 @@ class InventoryController extends Controller
     public function apiCreateProductionOrder(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'bill_of_materials_id' => 'required|exists:bill_of_materials,id',
+            'bill_of_materials_id' => 'required|exists:bom_header,id',
             'planned_quantity' => 'required|numeric|min:0.01',
             'actual_quantity' => 'nullable|numeric|min:0.01',
             'production_date' => 'required|date',
@@ -1556,7 +1556,7 @@ class InventoryController extends Controller
     public function apiCancelProductionOrder(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'production_order_id' => 'required|exists:production_orders,id',
+            'production_order_id' => 'required|exists:work_order_header,id',
             'reason' => 'nullable|string|max:255',
         ]);
 
@@ -1708,7 +1708,7 @@ class InventoryController extends Controller
             'notes' => 'nullable|string|max:1000',
             'force_override' => 'nullable|boolean',
             'items' => 'required|array|min:1',
-            'items.*.inventory_item_id' => 'required|exists:inventory_items,id',
+            'items.*.inventory_item_id' => 'required|exists:item_master,id',
             'items.*.quantity' => 'required|numeric|min:0.01',
             'items.*.reason_code' => 'required|string|max:100',
             'items.*.batch_lot_no' => 'nullable|string|max:100',
@@ -1835,7 +1835,7 @@ class InventoryController extends Controller
     public function apiUpdateWasteStatus(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'waste_record_id' => 'required|exists:waste_records,id',
+            'waste_record_id' => 'required|exists:stock_waste_header,id',
             'status' => 'required|in:APPROVED,DISPOSED,CANCELLED',
             'notes' => 'nullable|string|max:255',
         ]);

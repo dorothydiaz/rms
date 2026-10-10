@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class InventoryCategory extends Model
 {
-    protected $table = 'inventory_categories';
+    protected $table = 'item_categories';
 
     protected $fillable = [
         'name',

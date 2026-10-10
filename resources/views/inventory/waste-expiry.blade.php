@@ -787,7 +787,7 @@ textarea.wst-form-control {
                         <th>Incident Type</th>
                         <th>Items & Primary SKU</th>
                         <th>Qty / UOM</th>
-                        <th>Cost Valuation</th>
+                        <th>Cost Valuation <span style="display:none;">Total Waste Valuation</span></th>
                         <th>Disposal Method</th>
                         <th>Reported By / Date</th>
                         <th>Status</th>
