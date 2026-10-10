@@ -41,57 +41,64 @@
         <table class="hr-table">
             <thead>
                 <tr>
-                    <th>Username / Name</th>
-                    <th>Email</th>
-                    <th>Assigned Role</th>
-                    <th>Linked Employee Profile</th>
-                    <th>Branch Access Scope</th>
-                    <th>Status</th>
-                    <th>Last Active</th>
-                    <th style="text-align: right;">Actions</th>
+                    <th style="white-space: nowrap;">Username / Name</th>
+                    <th style="white-space: nowrap;">Email</th>
+                    <th style="white-space: nowrap;">Assigned Role</th>
+                    <th style="white-space: nowrap;">Linked Employee Profile</th>
+                    <th style="white-space: nowrap;">Branch Access Scope</th>
+                    <th style="white-space: nowrap;">Status</th>
+                    <th style="white-space: nowrap;">Last Active</th>
+                    <th style="text-align: right; white-space: nowrap;">Actions</th>
                 </tr>
             </thead>
             <tbody id="usersTableBody">
                 @forelse($users as $u)
                     <tr class="user-row">
-                        <td>
+                        <td style="white-space: nowrap;">
                             <strong>{{ $u->full_name }}</strong>
                             <div style="font-size: 11px; color: #94a3b8;">@ {{ $u->username }}</div>
                         </td>
-                        <td>{{ $u->email }}</td>
-                        <td>
-                            @foreach($u->roles as $role)
-                                <span class="hr-badge {{ $role->slug === 'super-admin' ? 'hr-badge-purple' : ($role->slug === 'hr-admin' ? 'hr-badge-blue' : 'hr-badge-warning') }}">
-                                    {{ $role->name }}
-                                </span>
-                            @endforeach
-                        </td>
-                        <td>
-                            @if($u->employee)
-                                <a href="{{ route('hr.people.employees.show', $u->employee->id) }}" style="text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
-                                    <span class="hr-badge hr-badge-neutral" style="font-size: 12px; font-weight: 600;">
-                                        <i class="ph ph-identification-card" style="color: #7c3aed;"></i> {{ $u->employee->full_name }}
+                        <td style="white-space: nowrap;">{{ $u->email }}</td>
+                        <td style="white-space: nowrap;">
+                            <div style="display: flex; flex-wrap: wrap; gap: 5px; align-items: center;">
+                                @forelse($u->roles as $role)
+                                    <span class="hr-badge {{ $role->slug === 'super-admin' ? 'hr-badge-purple' : ($role->slug === 'hr-admin' ? 'hr-badge-blue' : 'hr-badge-warning') }}" style="white-space: nowrap;">
+                                        {{ $role->name }}
                                     </span>
-                                    <span style="font-size: 11px; color: #64748b; font-family: monospace;">{{ $u->employee->employee_id }}</span>
+                                @empty
+                                    <span style="color: #94a3b8; font-size: 12px; font-style: italic;">No Role</span>
+                                @endforelse
+                            </div>
+                        </td>
+                        <td style="white-space: nowrap;">
+                            @if($u->employee)
+                                <a href="{{ route('hr.people.employees.show', $u->employee->id) }}" style="text-decoration: none; display: inline-flex; align-items: center; gap: 7px; padding: 4px 10px 4px 7px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 20px; transition: all 0.15s ease; white-space: nowrap;" onmouseover="this.style.background='#faf5ff'; this.style.borderColor='#c084fc'" onmouseout="this.style.background='#f8fafc'; this.style.borderColor='#e2e8f0'" title="View {{ $u->employee->full_name }} 201 File">
+                                    <span style="width: 22px; height: 22px; border-radius: 50%; background: #f3e8ff; color: #7c3aed; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0;">
+                                        <i class="ph ph-identification-card"></i>
+                                    </span>
+                                    <span style="font-size: 12.5px; font-weight: 600; color: #0f172a; white-space: nowrap;">{{ $u->employee->full_name }}</span>
+                                    <span style="font-size: 10.5px; color: #64748b; font-family: monospace; background: #ffffff; border: 1px solid #e2e8f0; padding: 1.5px 6px; border-radius: 10px; font-weight: 500; white-space: nowrap;">{{ $u->employee->employee_id }}</span>
                                 </a>
                             @else
-                                <span style="color: #94a3b8; font-size: 12px; font-style: italic;">No Employee Linked</span>
+                                <span style="display: inline-flex; align-items: center; gap: 5px; color: #94a3b8; font-size: 12px; font-style: italic; white-space: nowrap;">
+                                    <i class="ph ph-user-minus"></i> No Employee Linked
+                                </span>
                             @endif
                         </td>
-                        <td>
+                        <td style="white-space: nowrap;">
                             @if($u->branch)
-                                <span class="hr-badge hr-badge-neutral"><i class="ph ph-storefront"></i> {{ $u->branch->name }}</span>
+                                <span class="hr-badge hr-badge-neutral" style="white-space: nowrap;"><i class="ph ph-storefront"></i> {{ $u->branch->name }}</span>
                             @else
-                                <span class="hr-badge hr-badge-success"><i class="ph ph-globe"></i> All Branches</span>
+                                <span class="hr-badge hr-badge-success" style="white-space: nowrap;"><i class="ph ph-globe"></i> All Branches</span>
                             @endif
                         </td>
-                        <td>
-                            <span class="hr-badge {{ $u->status === 'Active' ? 'hr-badge-success' : 'hr-badge-danger' }}">
+                        <td style="white-space: nowrap;">
+                            <span class="hr-badge {{ $u->status === 'Active' ? 'hr-badge-success' : 'hr-badge-danger' }}" style="white-space: nowrap;">
                                 {{ $u->status }}
                             </span>
                         </td>
-                        <td style="color: #94a3b8; font-size: 12px;">{{ $u->updated_at ? $u->updated_at->diffForHumans() : '—' }}</td>
-                        <td style="text-align: right;">
+                        <td style="color: #94a3b8; font-size: 12px; white-space: nowrap;">{{ $u->updated_at ? $u->updated_at->diffForHumans() : '—' }}</td>
+                        <td style="text-align: right; white-space: nowrap;">
                             <div style="display: flex; gap: 6px; justify-content: flex-end;">
                                 <button class="icon-btn" title="Edit User" onclick="editUser({{ json_encode($u) }})">
                                     <i class="ph ph-pencil-simple"></i>
@@ -120,7 +127,7 @@
             <div class="hr-per-page-wrap">
                 <span class="hr-per-page-label">Show</span>
                 <select class="hr-per-page-select" id="usersPerPageSelect" onchange="usersChangePerPage()" aria-label="Rows per page">
-                    <option value="15" selected>15</option>
+                    <option value="10" selected>10</option>
                     <option value="25">25</option>
                     <option value="50">50</option>
                     <option value="100">100</option>
@@ -306,7 +313,7 @@ function closeModal(id) { document.getElementById(id).classList.remove('open'); 
 // Client-Side Pagination — Users
 // =========================================================================
 let _usersPage = 1, _usersRows = [];
-function usersGetPerPage() { return parseInt(document.getElementById('usersPerPageSelect')?.value || '15', 10); }
+function usersGetPerPage() { return parseInt(document.getElementById('usersPerPageSelect')?.value || '10', 10); }
 function usersChangePerPage() { _usersPage = 1; renderUsersPage(); }
 function usersGoToPage(p) { _usersPage = p; renderUsersPage(); const w = document.getElementById('usersTableWrapper'); if(w) w.scrollTop = 0; }
 
