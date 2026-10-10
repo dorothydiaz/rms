@@ -135,6 +135,7 @@
 
     <!-- FILTER TOOLBAR WITH DROPDOWN & ACTIVE PILLS -->
     <form method="GET" action="{{ route('hr.payroll.premium-pay') }}" id="premiumFilterForm" style="margin: 0; width: 100%;">
+        <input type="hidden" name="per_page" id="filterPerPage" value="{{ request('per_page', 10) }}">
         <div class="pp-filter-toolbar">
             <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex: 1;">
                 <!-- Filter Dropdown Container -->
@@ -384,15 +385,15 @@
                         <th style="padding: 12px 14px; width: 44px; text-align: center;">
                             <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)" style="cursor: pointer; width: 16px; height: 16px;">
                         </th>
-                        <th style="padding: 12px 14px; font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.5px;">Employee</th>
-                        <th style="padding: 12px 14px; font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.5px;">Date</th>
-                        <th style="padding: 12px 14px; font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.5px;">Work Type</th>
-                        <th style="padding: 12px 14px; font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.5px;">Holiday</th>
-                        <th style="padding: 12px 14px; font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; text-align: right;">Hours</th>
-                        <th style="padding: 12px 14px; font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; text-align: right;">Rate</th>
-                        <th style="padding: 12px 14px; font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; text-align: right;">Premium Pay</th>
-                        <th style="padding: 12px 14px; font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; text-align: center;">Status</th>
-                        <th style="padding: 12px 14px; font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; text-align: right;">Action</th>
+                        <th style="padding: 12px 14px; font-size: 12px; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: 0.5px;">Employee</th>
+                        <th style="padding: 12px 14px; font-size: 12px; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: 0.5px;">Date</th>
+                        <th style="padding: 12px 14px; font-size: 12px; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: 0.5px;">Work Type</th>
+                        <th style="padding: 12px 14px; font-size: 12px; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: 0.5px;">Holiday</th>
+                        <th style="padding: 12px 14px; font-size: 12px; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; text-align: right;">Hours</th>
+                        <th style="padding: 12px 14px; font-size: 12px; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; text-align: right;">Rate</th>
+                        <th style="padding: 12px 14px; font-size: 12px; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; text-align: right;">Premium Pay</th>
+                        <th style="padding: 12px 14px; font-size: 12px; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; text-align: center;">Status</th>
+                        <th style="padding: 12px 14px; font-size: 12px; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; text-align: right;">Action</th>
                     </tr>
                 </thead>
                 <tbody id="premiumPayTableBody">
@@ -437,11 +438,11 @@
                             <!-- Employee Info -->
                             <td style="padding: 12px 14px;">
                                 <div style="display: flex; align-items: center; gap: 9px;">
-                                    <div style="width: 32px; height: 32px; border-radius: 50%; background: #e0e7ff; color: #4338ca; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0;">
+                                    <div style="width: 32px; height: 32px; border-radius: 50%; background: #e0e7ff; color: #4338ca; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; flex-shrink: 0;">
                                         {{ strtoupper(substr($empName, 0, 2)) }}
                                     </div>
                                     <div>
-                                        <div style="font-size: 13px; font-weight: 600; color: #0f172a;">{{ $empName }}</div>
+                                        <div style="font-size: 13px; font-weight: 500; color: #0f172a;">{{ $empName }}</div>
                                         <div style="font-size: 11px; color: #64748b;">
                                             {{ $emp->employee_id ?? 'ID: ' . $item->employee_id }} • {{ $dept }} ({{ $branch }})
                                         </div>
@@ -457,7 +458,7 @@
 
                             <!-- Work Type -->
                             <td style="padding: 12px 14px;">
-                                <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 600; padding: 3px 8px; border-radius: 6px; background: {{ $workTypeBg }}; color: {{ $workTypeColor }};">
+                                <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 500; padding: 3px 8px; border-radius: 6px; background: {{ $workTypeBg }}; color: {{ $workTypeColor }};">
                                     <i class="ph ph-tag"></i> {{ $item->work_type }}
                                 </span>
                             </td>
@@ -465,7 +466,7 @@
                             <!-- Holiday -->
                             <td style="padding: 12px 14px; font-size: 12.5px; color: #334155;">
                                 @if($item->holiday_name)
-                                    <div style="font-weight: 600; color: #0f172a;">{{ $item->holiday_name }}</div>
+                                    <div style="font-weight: 500; color: #0f172a;">{{ $item->holiday_name }}</div>
                                     <span style="font-size: 10.5px; color: #7c3aed;">{{ $item->holiday_type }}</span>
                                 @else
                                     <span style="color: #94a3b8;">—</span>
@@ -473,7 +474,7 @@
                             </td>
 
                             <!-- Hours -->
-                            <td style="padding: 12px 14px; text-align: right; font-size: 13px; font-weight: 600; color: #0f172a;">
+                            <td style="padding: 12px 14px; text-align: right; font-size: 13px; font-weight: 500; color: #0f172a;">
                                 {{ number_format($item->hours_worked, 1) }} hrs
                                 @if($item->overtime_hours > 0)
                                     <div style="font-size: 11px; font-weight: 500; color: #d97706;">+ {{ number_format($item->overtime_hours, 1) }}h OT</div>
@@ -481,14 +482,14 @@
                             </td>
 
                             <!-- Rate Multiplier -->
-                            <td style="padding: 12px 14px; text-align: right; font-size: 13px; font-weight: 700; color: #7c3aed;">
+                            <td style="padding: 12px 14px; text-align: right; font-size: 13px; font-weight: 600; color: #7c3aed;">
                                 {{ number_format($item->applied_multiplier * 100, 0) }}%
                             </td>
 
                             <!-- Premium Pay Amount (Clickable to open calculation drawer) -->
                             <td style="padding: 12px 14px; text-align: right;">
                                 <button type="button" class="view-calc-btn" onclick="openCalculationDrawer({{ json_encode($item) }})" style="background: none; border: none; cursor: pointer; text-align: right; padding: 0;" title="Click to view real-time calculation breakdown">
-                                    <div style="font-size: 13.5px; font-weight: 800; color: #0f172a; text-decoration: underline dotted #a855f7;">
+                                    <div style="font-size: 13.5px; font-weight: 600; color: #0f172a; text-decoration: underline dotted #a855f7;">
                                         ₱{{ number_format($item->premium_amount, 2) }}
                                     </div>
                                     <span style="font-size: 10.5px; color: #7c3aed;"><i class="ph ph-calculator"></i> Breakdown</span>
@@ -497,7 +498,7 @@
 
                             <!-- Status -->
                             <td style="padding: 12px 14px; text-align: center;">
-                                <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 600; padding: 3px 9px; border-radius: 20px; background: {{ $statusBg }}; color: {{ $statusColor }};">
+                                <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 500; padding: 3px 9px; border-radius: 20px; background: {{ $statusBg }}; color: {{ $statusColor }};">
                                     @if($item->status === 'Approved')
                                         <i class="ph ph-check-circle"></i> Approved
                                     @elseif($item->status === 'Rejected')
@@ -554,9 +555,8 @@
             </table>
         </div>
 
-        @if($items->hasPages())
-            <div style="padding: 12px 18px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
-                <span style="font-size: 12px; color: #64748b;">Showing {{ $items->firstItem() }} to {{ $items->lastItem() }} of {{ $items->total() }} premium records</span>
+        @if($items->total() > 0)
+            <div class="hr-table-footer" style="padding: 12px 18px; border-top: 1px solid #e2e8f0;">
                 {{ $items->links() }}
             </div>
         @endif
@@ -700,7 +700,7 @@
                             <strong style="font-size: 13.5px; color: #581c87;">Total Premium Pay</strong>
                             <div style="font-size: 11px; color: #7c3aed;">DOLE compliant net compensation</div>
                         </div>
-                        <div style="font-size: 18px; font-weight: 800; color: #7c3aed;" id="drawerTotalPremium">
+                        <div style="font-size: 18px; font-weight: 650; color: #7c3aed;" id="drawerTotalPremium">
                             ₱1,200.00
                         </div>
                     </div>

@@ -10,8 +10,8 @@
                 <select class="hr-per-page-select" onchange="changeTablePerPage(this)" aria-label="Rows per page">
                     @php
                         $currPerPage = (int) $paginator->perPage();
-                        if ($currPerPage <= 0) $currPerPage = 10;
-                        $perPageOptions = [5, 10, 15, 25, 50, 100];
+                        if ($currPerPage < 10) $currPerPage = 10;
+                        $perPageOptions = [10, 25, 50, 100];
                         if (!in_array($currPerPage, $perPageOptions)) {
                             $perPageOptions[] = $currPerPage;
                             sort($perPageOptions);
@@ -104,8 +104,8 @@
                 <select class="hr-per-page-select" onchange="changeTablePerPage(this)" aria-label="Rows per page">
                     @php
                         $currPerPage = (int) $paginator->perPage();
-                        if ($currPerPage <= 0) $currPerPage = 10;
-                        $perPageOptions = [5, 10, 15, 25, 50, 100];
+                        if ($currPerPage < 10) $currPerPage = 10;
+                        $perPageOptions = [10, 25, 50, 100];
                         if (!in_array($currPerPage, $perPageOptions)) {
                             $perPageOptions[] = $currPerPage;
                             sort($perPageOptions);

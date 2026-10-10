@@ -864,7 +864,12 @@ class PayrollController extends Controller
             $query->where('holiday_type', $request->holiday_type);
         }
 
-        $items = $query->paginate(25)->withQueryString();
+        $perPage = (int) $request->get('per_page', 10);
+        if ($perPage < 10) {
+            $perPage = 10;
+        }
+
+        $items = $query->paginate($perPage)->withQueryString();
 
         // 4 Compact Summary Cards
         $allSummary = PremiumPayItem::query();
