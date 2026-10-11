@@ -170,10 +170,10 @@ class EmployeeManagementModuleTest extends TestCase
         $response->assertRedirect();
         $this->assertEquals($newPosition->id, $this->employee->fresh()->position_id);
         $this->assertDatabaseHas('hr_employment_histories', [
-            'employee_id' => $this->employee->id,
-            'action_type' => 'Position Change',
-            'new_value' => $newPosition->name,
-            'remarks' => 'Promotion to supervisor',
+            'employment_history_employee_id' => $this->employee->id,
+            'employment_history_action_type' => 'Position Change',
+            'employment_history_new_value' => $newPosition->name,
+            'employment_history_remarks' => 'Promotion to supervisor',
         ]);
 
         // 2. Adjust salary
@@ -224,9 +224,9 @@ class EmployeeManagementModuleTest extends TestCase
         ]);
         $respEmer->assertRedirect();
         $this->assertDatabaseHas('hr_emergency_contacts', [
-            'employee_id' => $this->employee->id,
-            'contact_name' => 'Pedro Dela Cruz',
-            'is_primary' => true,
+            'emergency_contact_employee_id' => $this->employee->id,
+            'emergency_contact_contact_name' => 'Pedro Dela Cruz',
+            'emergency_contact_is_primary' => true,
         ]);
 
         // 3. Add Education

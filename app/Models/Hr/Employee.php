@@ -2,6 +2,8 @@
 
 namespace App\Models\Hr;
 
+use App\Traits\HasEntityPrimaryKey;
+
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,7 +15,14 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Employee extends Model
 {
+    use HasEntityPrimaryKey;
+
+    protected $primaryKey = 'employee_id';
     use HasFactory, SoftDeletes;
+
+    const DELETED_AT = 'employee_deleted_at';
+    const CREATED_AT = 'employee_created_at';
+    const UPDATED_AT = 'employee_updated_at';
 
     protected $table = 'hr_employees';
 
@@ -124,6 +133,30 @@ class Employee extends Model
             'tin_verified' => 'boolean',
             'other_gov_id_verified' => 'boolean',
         ];
+    }
+
+    public function getEmployeeCodeAttribute() { return $this->attributes['employee_code'] ?? null; }
+    public function setEmployeeCodeAttribute($v) { $this->attributes['employee_code'] = $v; }
+
+    public function getEmployeeIdAttribute()
+    {
+        return !empty($this->attributes['employee_code'])
+            ? $this->attributes['employee_code']
+            : ($this->attributes['employee_id'] ?? null);
+    }
+
+    public function setEmployeeIdAttribute($value)
+    {
+        if (is_string($value) && !ctype_digit($value) && !is_numeric($value)) {
+            $this->attributes['employee_code'] = $value;
+        } else {
+            $this->attributes['employee_id'] = $value;
+        }
+    }
+
+    public function getKey()
+    {
+        return $this->attributes['employee_id'] ?? parent::getKey();
     }
 
     public function getAllDepartmentIdsAttribute(): array
@@ -246,7 +279,14 @@ class Employee extends Model
 
     public function permissions(): BelongsToMany
     {
-        return $this->belongsToMany(Permission::class, 'hr_employee_permissions');
+        return $this->belongsToMany(
+            Permission::class,
+            'hr_employee_permissions',
+            'employee_permission_employee_id',
+            'employee_permission_permission_id',
+            'id',
+            'id'
+        );
     }
 
     public function getAssignedRoleAttribute(): ?Role
@@ -404,7 +444,7 @@ class Employee extends Model
      */
     public function applicant(): \Illuminate\Database\Eloquent\Relations\HasOne
     {
-        return $this->hasOne(Applicant::class, 'hired_as_employee_id');
+        return $this->hasOne(Applicant::class, 'hired_as_employee_id', 'id');
     }
 
     /**

@@ -1,0 +1,4176 @@
+{
+    "foreign_keys": {
+        "audit_logs": {
+            "user_id": {
+                "ref_table": "users",
+                "ref_column": "user_id"
+            }
+        },
+        "bom_header": {
+            "finished_item_id": {
+                "ref_table": "item_master",
+                "ref_column": "item_id"
+            }
+        },
+        "bom_lines": {
+            "bill_of_materials_id": {
+                "ref_table": "bom_header",
+                "ref_column": "bom_id"
+            },
+            "raw_item_id": {
+                "ref_table": "item_master",
+                "ref_column": "item_id"
+            }
+        },
+        "hr_applicants": {
+            "hired_as_employee_id": {
+                "ref_table": "hr_employees",
+                "ref_column": "employee_id"
+            },
+            "job_vacancy_id": {
+                "ref_table": "hr_job_vacancies",
+                "ref_column": "job_vacancy_id"
+            }
+        },
+        "hr_assessments": {
+            "applicant_id": {
+                "ref_table": "hr_applicants",
+                "ref_column": "applicant_id"
+            }
+        },
+        "hr_attendance_action_logs": {
+            "action_by": {
+                "ref_table": "users",
+                "ref_column": "user_id"
+            },
+            "attendance_record_id": {
+                "ref_table": "hr_attendance_records",
+                "ref_column": "attendance_record_id"
+            },
+            "employee_id": {
+                "ref_table": "hr_employees",
+                "ref_column": "employee_id"
+            }
+        },
+        "hr_attendance_corrections": {
+            "attendance_record_id": {
+                "ref_table": "hr_attendance_records",
+                "ref_column": "attendance_record_id"
+            },
+            "employee_id": {
+                "ref_table": "hr_employees",
+                "ref_column": "employee_id"
+            },
+            "requested_by": {
+                "ref_table": "users",
+                "ref_column": "user_id"
+            },
+            "reviewed_by": {
+                "ref_table": "users",
+                "ref_column": "user_id"
+            }
+        },
+        "hr_attendance_records": {
+            "branch_id": {
+                "ref_table": "hr_branches",
+                "ref_column": "branch_id"
+            },
+            "employee_id": {
+                "ref_table": "hr_employees",
+                "ref_column": "employee_id"
+            },
+            "schedule_id": {
+                "ref_table": "hr_employee_schedules",
+                "ref_column": "employee_schedule_id"
+            }
+        },
+        "hr_branches": {
+            "company_id": {
+                "ref_table": "hr_companies",
+                "ref_column": "company_id"
+            }
+        },
+        "hr_departments": {
+            "branch_id": {
+                "ref_table": "hr_branches",
+                "ref_column": "branch_id"
+            }
+        },
+        "hr_emergency_contacts": {
+            "employee_id": {
+                "ref_table": "hr_employees",
+                "ref_column": "employee_id"
+            }
+        },
+        "hr_employees": {
+            "branch_id": {
+                "ref_table": "hr_branches",
+                "ref_column": "branch_id"
+            },
+            "company_id": {
+                "ref_table": "hr_companies",
+                "ref_column": "company_id"
+            },
+            "department_id": {
+                "ref_table": "hr_departments",
+                "ref_column": "department_id"
+            },
+            "position_id": {
+                "ref_table": "hr_positions",
+                "ref_column": "position_id"
+            },
+            "supervisor_id": {
+                "ref_table": "hr_employees",
+                "ref_column": "employee_id"
+            },
+            "user_id": {
+                "ref_table": "users",
+                "ref_column": "user_id"
+            }
+        },
+        "hr_employee_clearance": {
+            "cleared_by": {
+                "ref_table": "users",
+                "ref_column": "user_id"
+            },
+            "employee_id": {
+                "ref_table": "hr_employees",
+                "ref_column": "employee_id"
+            },
+            "separation_id": {
+                "ref_table": "hr_separation",
+                "ref_column": "separation_id"
+            }
+        },
+        "hr_employee_disciplinary": {
+            "employee_id": {
+                "ref_table": "hr_employees",
+                "ref_column": "employee_id"
+            },
+            "recorded_by": {
+                "ref_table": "users",
+                "ref_column": "user_id"
+            }
+        },
+        "hr_employee_documents": {
+            "employee_id": {
+                "ref_table": "hr_employees",
+                "ref_column": "employee_id"
+            },
+            "uploaded_by": {
+                "ref_table": "users",
+                "ref_column": "user_id"
+            },
+            "verified_by": {
+                "ref_table": "users",
+                "ref_column": "user_id"
+            }
+        },
+        "hr_employee_education": {
+            "employee_id": {
+                "ref_table": "hr_employees",
+                "ref_column": "employee_id"
+            }
+        },
+        "hr_employee_family": {
+            "employee_id": {
+                "ref_table": "hr_employees",
+                "ref_column": "employee_id"
+            }
+        },
+        "hr_employee_permissions": {
+            "employee_id": {
+                "ref_table": "hr_employees",
+                "ref_column": "employee_id"
+            },
+            "permission_id": {
+                "ref_table": "permissions",
+                "ref_column": "permission_id"
+            }
+        },
+        "hr_employee_schedules": {
+            "branch_id": {
+                "ref_table": "hr_branches",
+                "ref_column": "branch_id"
+            },
+            "employee_id": {
+                "ref_table": "hr_employees",
+                "ref_column": "employee_id"
+            },
+            "shift_template_id": {
+                "ref_table": "hr_shift_templates",
+                "ref_column": "shift_template_id"
+            }
+        },
+        "hr_employment_histories": {
+            "employee_id": {
+                "ref_table": "hr_employees",
+                "ref_column": "employee_id"
+            },
+            "recorded_by": {
+                "ref_table": "users",
+                "ref_column": "user_id"
+            }
+        },
+        "hr_holiday_locations": {
+            "holiday_id": {
+                "ref_table": "hr_holidays",
+                "ref_column": "holiday_id"
+            }
+        },
+        "hr_interviews": {
+            "applicant_id": {
+                "ref_table": "hr_applicants",
+                "ref_column": "applicant_id"
+            },
+            "interviewer_id": {
+                "ref_table": "users",
+                "ref_column": "user_id"
+            }
+        },
+        "hr_job_vacancies": {
+            "branch_id": {
+                "ref_table": "hr_branches",
+                "ref_column": "branch_id"
+            },
+            "department_id": {
+                "ref_table": "hr_departments",
+                "ref_column": "department_id"
+            },
+            "position_id": {
+                "ref_table": "hr_positions",
+                "ref_column": "position_id"
+            }
+        },
+        "hr_leave_balances": {
+            "employee_id": {
+                "ref_table": "hr_employees",
+                "ref_column": "employee_id"
+            },
+            "leave_type_id": {
+                "ref_table": "hr_leave_types",
+                "ref_column": "leave_type_id"
+            }
+        },
+        "hr_leave_requests": {
+            "approver_id": {
+                "ref_table": "users",
+                "ref_column": "user_id"
+            },
+            "employee_id": {
+                "ref_table": "hr_employees",
+                "ref_column": "employee_id"
+            },
+            "leave_type_id": {
+                "ref_table": "hr_leave_types",
+                "ref_column": "leave_type_id"
+            }
+        },
+        "hr_payroll_adjustments": {
+            "approved_by": {
+                "ref_table": "users",
+                "ref_column": "user_id"
+            },
+            "payroll_record_id": {
+                "ref_table": "hr_payroll_records",
+                "ref_column": "payroll_record_id"
+            }
+        },
+        "hr_payroll_periods": {
+            "approved_by": {
+                "ref_table": "users",
+                "ref_column": "user_id"
+            },
+            "processed_by": {
+                "ref_table": "users",
+                "ref_column": "user_id"
+            }
+        },
+        "hr_payroll_records": {
+            "employee_id": {
+                "ref_table": "hr_employees",
+                "ref_column": "employee_id"
+            },
+            "payroll_period_id": {
+                "ref_table": "hr_payroll_periods",
+                "ref_column": "payroll_period_id"
+            }
+        },
+        "hr_performance_evaluations": {
+            "employee_id": {
+                "ref_table": "hr_employees",
+                "ref_column": "employee_id"
+            },
+            "evaluator_id": {
+                "ref_table": "users",
+                "ref_column": "user_id"
+            },
+            "performance_period_id": {
+                "ref_table": "hr_performance_periods",
+                "ref_column": "performance_period_id"
+            }
+        },
+        "hr_performance_ratings": {
+            "criterion_id": {
+                "ref_table": "hr_performance_criteria",
+                "ref_column": "performance_criteria_id"
+            },
+            "evaluation_id": {
+                "ref_table": "hr_performance_evaluations",
+                "ref_column": "performance_evaluation_id"
+            }
+        },
+        "hr_positions": {
+            "department_id": {
+                "ref_table": "hr_departments",
+                "ref_column": "department_id"
+            }
+        },
+        "hr_premium_pay_rule_versions": {
+            "premium_pay_rule_id": {
+                "ref_table": "hr_premium_pay_rules",
+                "ref_column": "premium_pay_rule_id"
+            }
+        },
+        "hr_salary_history": {
+            "approved_by": {
+                "ref_table": "users",
+                "ref_column": "user_id"
+            },
+            "employee_id": {
+                "ref_table": "hr_employees",
+                "ref_column": "employee_id"
+            }
+        },
+        "hr_schedule_change_logs": {
+            "changed_by": {
+                "ref_table": "users",
+                "ref_column": "user_id"
+            },
+            "employee_id": {
+                "ref_table": "hr_employees",
+                "ref_column": "employee_id"
+            }
+        },
+        "hr_separation": {
+            "employee_id": {
+                "ref_table": "hr_employees",
+                "ref_column": "employee_id"
+            },
+            "processed_by": {
+                "ref_table": "users",
+                "ref_column": "user_id"
+            }
+        },
+        "hr_training_enrollments": {
+            "employee_id": {
+                "ref_table": "hr_employees",
+                "ref_column": "employee_id"
+            },
+            "training_program_id": {
+                "ref_table": "hr_training_programs",
+                "ref_column": "training_program_id"
+            }
+        },
+        "internal_notifications": {
+            "branch_id": {
+                "ref_table": "hr_branches",
+                "ref_column": "branch_id"
+            },
+            "user_id": {
+                "ref_table": "users",
+                "ref_column": "user_id"
+            }
+        },
+        "inventory_ledger": {
+            "inventory_item_id": {
+                "ref_table": "item_master",
+                "ref_column": "item_id"
+            }
+        },
+        "permission_role": {
+            "permission_id": {
+                "ref_table": "permissions",
+                "ref_column": "permission_id"
+            },
+            "role_id": {
+                "ref_table": "roles",
+                "ref_column": "role_id"
+            }
+        },
+        "permission_user": {
+            "permission_id": {
+                "ref_table": "permissions",
+                "ref_column": "permission_id"
+            },
+            "user_id": {
+                "ref_table": "users",
+                "ref_column": "user_id"
+            }
+        },
+        "purchase_order_lines": {
+            "purchase_order_id": {
+                "ref_table": "purchase_order_header",
+                "ref_column": "purchase_order_id"
+            }
+        },
+        "role_user": {
+            "role_id": {
+                "ref_table": "roles",
+                "ref_column": "role_id"
+            },
+            "user_id": {
+                "ref_table": "users",
+                "ref_column": "user_id"
+            }
+        },
+        "stock_in_header": {
+            "purchase_order_id": {
+                "ref_table": "purchase_order_header",
+                "ref_column": "purchase_order_id"
+            }
+        },
+        "stock_in_lines": {
+            "goods_receipt_id": {
+                "ref_table": "stock_in_header",
+                "ref_column": "stock_in_id"
+            },
+            "purchase_order_item_id": {
+                "ref_table": "purchase_order_lines",
+                "ref_column": "po_line_id"
+            }
+        },
+        "stock_out_header": {
+            "vendor_id": {
+                "ref_table": "vendor_master",
+                "ref_column": "vendor_id"
+            }
+        },
+        "stock_out_lines": {
+            "inventory_item_id": {
+                "ref_table": "item_master",
+                "ref_column": "item_id"
+            },
+            "stock_out_order_id": {
+                "ref_table": "stock_out_header",
+                "ref_column": "stock_out_id"
+            }
+        },
+        "stock_transfer_header": {
+            "destination_branch_id": {
+                "ref_table": "hr_branches",
+                "ref_column": "branch_id"
+            },
+            "source_branch_id": {
+                "ref_table": "hr_branches",
+                "ref_column": "branch_id"
+            }
+        },
+        "stock_transfer_lines": {
+            "internal_transfer_id": {
+                "ref_table": "stock_transfer_header",
+                "ref_column": "transfer_id"
+            },
+            "inventory_item_id": {
+                "ref_table": "item_master",
+                "ref_column": "item_id"
+            }
+        },
+        "stock_waste_header": {
+            "branch_id": {
+                "ref_table": "hr_branches",
+                "ref_column": "branch_id"
+            }
+        },
+        "stock_waste_lines": {
+            "inventory_item_id": {
+                "ref_table": "item_master",
+                "ref_column": "item_id"
+            },
+            "waste_record_id": {
+                "ref_table": "stock_waste_header",
+                "ref_column": "waste_id"
+            }
+        },
+        "users": {
+            "branch_id": {
+                "ref_table": "hr_branches",
+                "ref_column": "branch_id"
+            }
+        },
+        "work_order_components": {
+            "production_order_id": {
+                "ref_table": "work_order_header",
+                "ref_column": "work_order_id"
+            },
+            "raw_item_id": {
+                "ref_table": "item_master",
+                "ref_column": "item_id"
+            }
+        },
+        "work_order_header": {
+            "bill_of_materials_id": {
+                "ref_table": "bom_header",
+                "ref_column": "bom_id"
+            },
+            "finished_item_id": {
+                "ref_table": "item_master",
+                "ref_column": "item_id"
+            }
+        }
+    },
+    "table_columns": {
+        "hr_applicants": {
+            "applicant_id": {
+                "key": "PRI",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "job_vacancy_id": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "YES"
+            },
+            "first_name": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "middle_name": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "last_name": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "suffix": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "preferred_name": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "date_of_birth": {
+                "key": "",
+                "type": "date",
+                "nullable": "YES"
+            },
+            "gender": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "civil_status": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "nationality": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "contact_number": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "email": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "address": {
+                "key": "",
+                "type": "text",
+                "nullable": "YES"
+            },
+            "city": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "province": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "resume_path": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "applied_position": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "desired_salary": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "YES"
+            },
+            "employment_type": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "available_start_date": {
+                "key": "",
+                "type": "date",
+                "nullable": "YES"
+            },
+            "years_of_experience": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "work_setup_preference": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "source": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "recruiter_id": {
+                "key": "",
+                "type": "bigint",
+                "nullable": "YES"
+            },
+            "recruiter_name": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "hiring_manager_id": {
+                "key": "",
+                "type": "bigint",
+                "nullable": "YES"
+            },
+            "hiring_manager_name": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "education": {
+                "key": "",
+                "type": "longtext",
+                "nullable": "YES"
+            },
+            "work_experience": {
+                "key": "",
+                "type": "longtext",
+                "nullable": "YES"
+            },
+            "skills": {
+                "key": "",
+                "type": "longtext",
+                "nullable": "YES"
+            },
+            "certifications": {
+                "key": "",
+                "type": "longtext",
+                "nullable": "YES"
+            },
+            "languages": {
+                "key": "",
+                "type": "longtext",
+                "nullable": "YES"
+            },
+            "application_answers": {
+                "key": "",
+                "type": "longtext",
+                "nullable": "YES"
+            },
+            "documents": {
+                "key": "",
+                "type": "longtext",
+                "nullable": "YES"
+            },
+            "privacy_consent": {
+                "key": "",
+                "type": "tinyint",
+                "nullable": "NO"
+            },
+            "data_processing_consent": {
+                "key": "",
+                "type": "tinyint",
+                "nullable": "NO"
+            },
+            "applicant_declaration": {
+                "key": "",
+                "type": "tinyint",
+                "nullable": "NO"
+            },
+            "screening_data": {
+                "key": "",
+                "type": "longtext",
+                "nullable": "YES"
+            },
+            "final_review_data": {
+                "key": "",
+                "type": "longtext",
+                "nullable": "YES"
+            },
+            "offer_data": {
+                "key": "",
+                "type": "longtext",
+                "nullable": "YES"
+            },
+            "pre_employment_requirements": {
+                "key": "",
+                "type": "longtext",
+                "nullable": "YES"
+            },
+            "preboarding_tasks": {
+                "key": "",
+                "type": "longtext",
+                "nullable": "YES"
+            },
+            "onboarding_data": {
+                "key": "",
+                "type": "longtext",
+                "nullable": "YES"
+            },
+            "activity_history": {
+                "key": "",
+                "type": "longtext",
+                "nullable": "YES"
+            },
+            "application_date": {
+                "key": "",
+                "type": "date",
+                "nullable": "NO"
+            },
+            "status": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "hired_as_employee_id": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "YES"
+            },
+            "created_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            },
+            "updated_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            }
+        },
+        "hr_assessments": {
+            "assessment_id": {
+                "key": "PRI",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "applicant_id": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "assessment_type": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "title": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "assessment_date": {
+                "key": "",
+                "type": "date",
+                "nullable": "YES"
+            },
+            "score": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "YES"
+            },
+            "passing_score": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "YES"
+            },
+            "result": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "evaluator_id": {
+                "key": "",
+                "type": "bigint",
+                "nullable": "YES"
+            },
+            "evaluator_name": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "attachment_path": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "remarks": {
+                "key": "",
+                "type": "text",
+                "nullable": "YES"
+            },
+            "created_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            },
+            "updated_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            }
+        },
+        "hr_attendance_action_logs": {
+            "attendance_action_log_id": {
+                "key": "PRI",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "attendance_record_id": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "YES"
+            },
+            "employee_id": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "action_type": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "details": {
+                "key": "",
+                "type": "longtext",
+                "nullable": "YES"
+            },
+            "notes": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "action_by": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "YES"
+            },
+            "created_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            },
+            "updated_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            }
+        },
+        "hr_attendance_corrections": {
+            "attendance_correction_id": {
+                "key": "PRI",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "attendance_record_id": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "employee_id": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "requested_by": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "original_time_in": {
+                "key": "",
+                "type": "time",
+                "nullable": "YES"
+            },
+            "original_time_out": {
+                "key": "",
+                "type": "time",
+                "nullable": "YES"
+            },
+            "requested_time_in": {
+                "key": "",
+                "type": "time",
+                "nullable": "YES"
+            },
+            "requested_time_out": {
+                "key": "",
+                "type": "time",
+                "nullable": "YES"
+            },
+            "reason": {
+                "key": "",
+                "type": "text",
+                "nullable": "NO"
+            },
+            "supporting_document": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "status": {
+                "key": "",
+                "type": "enum",
+                "nullable": "NO"
+            },
+            "reviewed_by": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "YES"
+            },
+            "reviewed_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            },
+            "reviewer_notes": {
+                "key": "",
+                "type": "text",
+                "nullable": "YES"
+            },
+            "created_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            },
+            "updated_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            }
+        },
+        "hr_attendance_records": {
+            "attendance_record_id": {
+                "key": "PRI",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "employee_id": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "schedule_id": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "YES"
+            },
+            "branch_id": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "YES"
+            },
+            "date": {
+                "key": "",
+                "type": "date",
+                "nullable": "NO"
+            },
+            "in_1": {
+                "key": "",
+                "type": "time",
+                "nullable": "YES"
+            },
+            "out_1": {
+                "key": "",
+                "type": "time",
+                "nullable": "YES"
+            },
+            "in_2": {
+                "key": "",
+                "type": "time",
+                "nullable": "YES"
+            },
+            "out_2": {
+                "key": "",
+                "type": "time",
+                "nullable": "YES"
+            },
+            "in_3": {
+                "key": "",
+                "type": "time",
+                "nullable": "YES"
+            },
+            "out_3": {
+                "key": "",
+                "type": "time",
+                "nullable": "YES"
+            },
+            "time_in": {
+                "key": "",
+                "type": "time",
+                "nullable": "YES"
+            },
+            "break_out": {
+                "key": "",
+                "type": "time",
+                "nullable": "YES"
+            },
+            "break_in": {
+                "key": "",
+                "type": "time",
+                "nullable": "YES"
+            },
+            "coffee_break_out": {
+                "key": "",
+                "type": "time",
+                "nullable": "YES"
+            },
+            "coffee_break_in": {
+                "key": "",
+                "type": "time",
+                "nullable": "YES"
+            },
+            "time_out": {
+                "key": "",
+                "type": "time",
+                "nullable": "YES"
+            },
+            "total_hours": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "regular_hours": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "late_minutes": {
+                "key": "",
+                "type": "int",
+                "nullable": "NO"
+            },
+            "undertime_minutes": {
+                "key": "",
+                "type": "int",
+                "nullable": "NO"
+            },
+            "undertime_status": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "undertime_approved_by": {
+                "key": "",
+                "type": "bigint",
+                "nullable": "YES"
+            },
+            "undertime_approved_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            },
+            "undertime_remarks": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "overtime_hours": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "overtime_status": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "overtime_approved_by": {
+                "key": "",
+                "type": "bigint",
+                "nullable": "YES"
+            },
+            "overtime_approved_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            },
+            "overtime_remarks": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "absence_days": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "night_diff_hours": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "holiday_type": {
+                "key": "",
+                "type": "enum",
+                "nullable": "NO"
+            },
+            "is_rest_day": {
+                "key": "",
+                "type": "tinyint",
+                "nullable": "NO"
+            },
+            "status": {
+                "key": "",
+                "type": "enum",
+                "nullable": "NO"
+            },
+            "dtr_remarks": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "source": {
+                "key": "",
+                "type": "enum",
+                "nullable": "NO"
+            },
+            "notes": {
+                "key": "",
+                "type": "text",
+                "nullable": "YES"
+            },
+            "created_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            },
+            "updated_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            }
+        },
+        "hr_branches": {
+            "branch_id": {
+                "key": "PRI",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "company_id": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "YES"
+            },
+            "branch_name": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "branch_code": {
+                "key": "UNI",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "address": {
+                "key": "",
+                "type": "text",
+                "nullable": "YES"
+            },
+            "branch_phone_number": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "branch_email_address": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "branch_is_active": {
+                "key": "",
+                "type": "tinyint",
+                "nullable": "NO"
+            },
+            "branch_created_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            },
+            "branch_updated_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            }
+        },
+        "hr_companies": {
+            "company_id": {
+                "key": "PRI",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "company_legal_name": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "type": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "company_code": {
+                "key": "UNI",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "company_tax_id": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "contact_person": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "company_email_address": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "company_phone_number": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "address": {
+                "key": "",
+                "type": "text",
+                "nullable": "YES"
+            },
+            "logo": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "company_is_active": {
+                "key": "",
+                "type": "tinyint",
+                "nullable": "NO"
+            },
+            "notes": {
+                "key": "",
+                "type": "text",
+                "nullable": "YES"
+            },
+            "company_created_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            },
+            "company_updated_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            }
+        },
+        "hr_departments": {
+            "department_id": {
+                "key": "PRI",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "branch_id": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "YES"
+            },
+            "name": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "code": {
+                "key": "UNI",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "description": {
+                "key": "",
+                "type": "text",
+                "nullable": "YES"
+            },
+            "is_active": {
+                "key": "",
+                "type": "tinyint",
+                "nullable": "NO"
+            },
+            "created_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            },
+            "updated_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            }
+        },
+        "hr_dtr_absence_codes": {
+            "dtr_absence_code_id": {
+                "key": "PRI",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "code": {
+                "key": "UNI",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "name": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "description": {
+                "key": "",
+                "type": "text",
+                "nullable": "YES"
+            },
+            "is_absence": {
+                "key": "",
+                "type": "tinyint",
+                "nullable": "NO"
+            },
+            "is_active": {
+                "key": "",
+                "type": "tinyint",
+                "nullable": "NO"
+            },
+            "created_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            },
+            "updated_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            }
+        },
+        "hr_emergency_contacts": {
+            "emergency_contact_id": {
+                "key": "PRI",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "employee_id": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "contact_name": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "relationship": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "contact_number": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "address": {
+                "key": "",
+                "type": "text",
+                "nullable": "YES"
+            },
+            "is_primary": {
+                "key": "",
+                "type": "tinyint",
+                "nullable": "NO"
+            },
+            "telephone": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "remarks": {
+                "key": "",
+                "type": "text",
+                "nullable": "YES"
+            },
+            "created_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            },
+            "updated_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            }
+        },
+        "hr_employees": {
+            "employee_id": {
+                "key": "PRI",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "employee_code": {
+                "key": "UNI",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "user_id": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "YES"
+            },
+            "first_name": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "middle_name": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "last_name": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "suffix": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "preferred_name": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "date_of_birth": {
+                "key": "",
+                "type": "date",
+                "nullable": "YES"
+            },
+            "birth_place": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "gender": {
+                "key": "",
+                "type": "enum",
+                "nullable": "YES"
+            },
+            "civil_status": {
+                "key": "",
+                "type": "enum",
+                "nullable": "NO"
+            },
+            "nationality": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "mobile_number": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "telephone_number": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "email": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "company_email": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "address": {
+                "key": "",
+                "type": "text",
+                "nullable": "YES"
+            },
+            "permanent_address": {
+                "key": "",
+                "type": "text",
+                "nullable": "YES"
+            },
+            "family_dependents": {
+                "key": "",
+                "type": "longtext",
+                "nullable": "YES"
+            },
+            "education_history": {
+                "key": "",
+                "type": "longtext",
+                "nullable": "YES"
+            },
+            "salary_history": {
+                "key": "",
+                "type": "longtext",
+                "nullable": "YES"
+            },
+            "photo": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "branch_id": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "YES"
+            },
+            "assigned_branch_ids": {
+                "key": "",
+                "type": "longtext",
+                "nullable": "YES"
+            },
+            "work_location": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "work_schedule": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "default_shift_template_id": {
+                "key": "",
+                "type": "bigint",
+                "nullable": "YES"
+            },
+            "job_level": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "company_id": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "YES"
+            },
+            "department_id": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "YES"
+            },
+            "assigned_department_ids": {
+                "key": "",
+                "type": "longtext",
+                "nullable": "YES"
+            },
+            "position_id": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "YES"
+            },
+            "assigned_position_ids": {
+                "key": "",
+                "type": "longtext",
+                "nullable": "YES"
+            },
+            "supervisor_id": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "YES"
+            },
+            "date_hired": {
+                "key": "",
+                "type": "date",
+                "nullable": "NO"
+            },
+            "employment_status": {
+                "key": "",
+                "type": "enum",
+                "nullable": "NO"
+            },
+            "employment_type": {
+                "key": "",
+                "type": "enum",
+                "nullable": "NO"
+            },
+            "company_name": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "agency_name": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "employment_source": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "company_agency_name": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "date_of_regularization": {
+                "key": "",
+                "type": "date",
+                "nullable": "YES"
+            },
+            "probation_end_date": {
+                "key": "",
+                "type": "date",
+                "nullable": "YES"
+            },
+            "date_separated": {
+                "key": "",
+                "type": "date",
+                "nullable": "YES"
+            },
+            "contract_start_date": {
+                "key": "",
+                "type": "date",
+                "nullable": "YES"
+            },
+            "contract_end_date": {
+                "key": "",
+                "type": "date",
+                "nullable": "YES"
+            },
+            "sss_number": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "sss_verified": {
+                "key": "",
+                "type": "tinyint",
+                "nullable": "NO"
+            },
+            "sss_membership_status": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "philhealth_number": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "philhealth_verified": {
+                "key": "",
+                "type": "tinyint",
+                "nullable": "NO"
+            },
+            "philhealth_membership_status": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "pagibig_number": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "pagibig_verified": {
+                "key": "",
+                "type": "tinyint",
+                "nullable": "NO"
+            },
+            "pagibig_membership_status": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "tin": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "tin_verified": {
+                "key": "",
+                "type": "tinyint",
+                "nullable": "NO"
+            },
+            "rdo_code": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "philsys_id": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "passport_number": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "driver_license": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "other_gov_id_type": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "other_gov_id_number": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "other_gov_id_verified": {
+                "key": "",
+                "type": "tinyint",
+                "nullable": "NO"
+            },
+            "basic_salary": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "payroll_type": {
+                "key": "",
+                "type": "enum",
+                "nullable": "NO"
+            },
+            "salary_type": {
+                "key": "",
+                "type": "enum",
+                "nullable": "NO"
+            },
+            "pay_frequency": {
+                "key": "",
+                "type": "enum",
+                "nullable": "NO"
+            },
+            "allowances": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "other_compensation": {
+                "key": "",
+                "type": "text",
+                "nullable": "YES"
+            },
+            "deleted_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            },
+            "created_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            },
+            "updated_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            }
+        },
+        "hr_employee_clearance": {
+            "employee_clearance_id": {
+                "key": "PRI",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "employee_id": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "separation_id": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "YES"
+            },
+            "department": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "accountability": {
+                "key": "",
+                "type": "text",
+                "nullable": "NO"
+            },
+            "status": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "cleared_by": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "YES"
+            },
+            "cleared_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            },
+            "remarks": {
+                "key": "",
+                "type": "text",
+                "nullable": "YES"
+            },
+            "created_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            },
+            "updated_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            }
+        },
+        "hr_employee_disciplinary": {
+            "employee_disciplinary_id": {
+                "key": "PRI",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "employee_id": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "incident_date": {
+                "key": "",
+                "type": "date",
+                "nullable": "NO"
+            },
+            "case_type": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "description": {
+                "key": "",
+                "type": "text",
+                "nullable": "NO"
+            },
+            "action_taken": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "status": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "resolution_date": {
+                "key": "",
+                "type": "date",
+                "nullable": "YES"
+            },
+            "remarks": {
+                "key": "",
+                "type": "text",
+                "nullable": "YES"
+            },
+            "recorded_by": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "YES"
+            },
+            "created_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            },
+            "updated_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            }
+        },
+        "hr_employee_documents": {
+            "employee_document_id": {
+                "key": "PRI",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "employee_id": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "document_type": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "document_name": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "category": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "issue_date": {
+                "key": "",
+                "type": "date",
+                "nullable": "YES"
+            },
+            "file_path": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "expiry_date": {
+                "key": "",
+                "type": "date",
+                "nullable": "YES"
+            },
+            "status": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "is_verified": {
+                "key": "",
+                "type": "tinyint",
+                "nullable": "NO"
+            },
+            "notes": {
+                "key": "",
+                "type": "text",
+                "nullable": "YES"
+            },
+            "uploaded_by": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "YES"
+            },
+            "created_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            },
+            "updated_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            },
+            "verified_by": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "YES"
+            },
+            "verified_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            },
+            "remarks": {
+                "key": "",
+                "type": "text",
+                "nullable": "YES"
+            }
+        },
+        "hr_employee_education": {
+            "employee_education_id": {
+                "key": "PRI",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "employee_id": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "education_level": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "school_name": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "school_address": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "course_degree": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "major": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "year_started": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "year_completed": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "graduation_date": {
+                "key": "",
+                "type": "date",
+                "nullable": "YES"
+            },
+            "honors": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "units_earned": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "remarks": {
+                "key": "",
+                "type": "text",
+                "nullable": "YES"
+            },
+            "created_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            },
+            "updated_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            }
+        },
+        "hr_employee_family": {
+            "employee_family_id": {
+                "key": "PRI",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "employee_id": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "name": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "relationship": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "birth_date": {
+                "key": "",
+                "type": "date",
+                "nullable": "YES"
+            },
+            "sex": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "occupation": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "employer": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "contact_number": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "address": {
+                "key": "",
+                "type": "text",
+                "nullable": "YES"
+            },
+            "is_dependent": {
+                "key": "",
+                "type": "tinyint",
+                "nullable": "NO"
+            },
+            "is_beneficiary": {
+                "key": "",
+                "type": "tinyint",
+                "nullable": "NO"
+            },
+            "remarks": {
+                "key": "",
+                "type": "text",
+                "nullable": "YES"
+            },
+            "created_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            },
+            "updated_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            }
+        },
+        "hr_employee_permissions": {
+            "employee_id": {
+                "key": "PRI",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "permission_id": {
+                "key": "PRI",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "created_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            },
+            "updated_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            }
+        },
+        "hr_employee_schedules": {
+            "employee_schedule_id": {
+                "key": "PRI",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "employee_id": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "branch_id": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "YES"
+            },
+            "shift_template_id": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "YES"
+            },
+            "schedule_date": {
+                "key": "",
+                "type": "date",
+                "nullable": "NO"
+            },
+            "custom_start_time": {
+                "key": "",
+                "type": "time",
+                "nullable": "YES"
+            },
+            "custom_end_time": {
+                "key": "",
+                "type": "time",
+                "nullable": "YES"
+            },
+            "is_rest_day": {
+                "key": "",
+                "type": "tinyint",
+                "nullable": "NO"
+            },
+            "notes": {
+                "key": "",
+                "type": "text",
+                "nullable": "YES"
+            },
+            "created_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            },
+            "updated_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            }
+        },
+        "hr_employment_histories": {
+            "employment_history_id": {
+                "key": "PRI",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "employee_id": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "action_type": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "previous_value": {
+                "key": "",
+                "type": "text",
+                "nullable": "YES"
+            },
+            "new_value": {
+                "key": "",
+                "type": "text",
+                "nullable": "YES"
+            },
+            "remarks": {
+                "key": "",
+                "type": "text",
+                "nullable": "YES"
+            },
+            "effective_date": {
+                "key": "",
+                "type": "date",
+                "nullable": "NO"
+            },
+            "recorded_by": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "YES"
+            },
+            "created_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            },
+            "updated_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            }
+        },
+        "hr_holidays": {
+            "holiday_id": {
+                "key": "PRI",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "name": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "date": {
+                "key": "MUL",
+                "type": "date",
+                "nullable": "NO"
+            },
+            "year": {
+                "key": "MUL",
+                "type": "smallint",
+                "nullable": "NO"
+            },
+            "holiday_type": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "scope": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "region": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "province": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "city_municipality": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "applicable_branches": {
+                "key": "",
+                "type": "longtext",
+                "nullable": "YES"
+            },
+            "payroll_treatment": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "official_reference": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "source": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "description": {
+                "key": "",
+                "type": "text",
+                "nullable": "YES"
+            },
+            "is_active": {
+                "key": "",
+                "type": "tinyint",
+                "nullable": "NO"
+            },
+            "created_by": {
+                "key": "",
+                "type": "bigint",
+                "nullable": "YES"
+            },
+            "updated_by": {
+                "key": "",
+                "type": "bigint",
+                "nullable": "YES"
+            },
+            "created_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            },
+            "updated_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            }
+        },
+        "hr_holiday_locations": {
+            "holiday_location_id": {
+                "key": "PRI",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "holiday_id": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "branch_id": {
+                "key": "",
+                "type": "bigint",
+                "nullable": "YES"
+            },
+            "region": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "province": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "city_municipality": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "created_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            },
+            "updated_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            }
+        },
+        "hr_holiday_pay_rules": {
+            "holiday_pay_rule_id": {
+                "key": "PRI",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "holiday_type": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "year": {
+                "key": "",
+                "type": "smallint",
+                "nullable": "YES"
+            },
+            "effective_from": {
+                "key": "",
+                "type": "date",
+                "nullable": "YES"
+            },
+            "effective_to": {
+                "key": "",
+                "type": "date",
+                "nullable": "YES"
+            },
+            "unworked_rate": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "worked_rate": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "rest_day_worked_rate": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "overtime_multiplier": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "rest_day_overtime_multiplier": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "calculation_rule_description": {
+                "key": "",
+                "type": "text",
+                "nullable": "YES"
+            },
+            "is_active": {
+                "key": "",
+                "type": "tinyint",
+                "nullable": "NO"
+            },
+            "created_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            },
+            "updated_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            }
+        },
+        "hr_interviews": {
+            "interview_id": {
+                "key": "PRI",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "applicant_id": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "interview_date": {
+                "key": "",
+                "type": "datetime",
+                "nullable": "NO"
+            },
+            "interview_time": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "interviewer_id": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "YES"
+            },
+            "interviewer_name": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "location_or_link": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "instructions": {
+                "key": "",
+                "type": "text",
+                "nullable": "YES"
+            },
+            "interview_type": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "interview_stage": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "notes": {
+                "key": "",
+                "type": "text",
+                "nullable": "YES"
+            },
+            "rating": {
+                "key": "",
+                "type": "tinyint",
+                "nullable": "YES"
+            },
+            "recommendation": {
+                "key": "",
+                "type": "text",
+                "nullable": "YES"
+            },
+            "scorecard": {
+                "key": "",
+                "type": "longtext",
+                "nullable": "YES"
+            },
+            "status": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "created_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            },
+            "updated_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            }
+        },
+        "hr_job_levels": {
+            "job_level_id": {
+                "key": "PRI",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "name": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "level": {
+                "key": "",
+                "type": "int",
+                "nullable": "NO"
+            },
+            "description": {
+                "key": "",
+                "type": "text",
+                "nullable": "YES"
+            },
+            "created_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            },
+            "updated_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            }
+        },
+        "hr_job_vacancies": {
+            "job_vacancy_id": {
+                "key": "PRI",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "title": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "position_id": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "YES"
+            },
+            "department_id": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "YES"
+            },
+            "branch_id": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "YES"
+            },
+            "number_of_openings": {
+                "key": "",
+                "type": "int",
+                "nullable": "NO"
+            },
+            "employment_type": {
+                "key": "",
+                "type": "enum",
+                "nullable": "NO"
+            },
+            "work_setup": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "salary_range_min": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "YES"
+            },
+            "salary_range_max": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "YES"
+            },
+            "job_description": {
+                "key": "",
+                "type": "text",
+                "nullable": "YES"
+            },
+            "responsibilities": {
+                "key": "",
+                "type": "text",
+                "nullable": "YES"
+            },
+            "qualifications": {
+                "key": "",
+                "type": "text",
+                "nullable": "YES"
+            },
+            "required_skills": {
+                "key": "",
+                "type": "text",
+                "nullable": "YES"
+            },
+            "preferred_skills": {
+                "key": "",
+                "type": "text",
+                "nullable": "YES"
+            },
+            "benefits": {
+                "key": "",
+                "type": "text",
+                "nullable": "YES"
+            },
+            "requirements": {
+                "key": "",
+                "type": "text",
+                "nullable": "YES"
+            },
+            "opening_date": {
+                "key": "",
+                "type": "date",
+                "nullable": "NO"
+            },
+            "closing_date": {
+                "key": "",
+                "type": "date",
+                "nullable": "YES"
+            },
+            "hiring_manager_id": {
+                "key": "",
+                "type": "bigint",
+                "nullable": "YES"
+            },
+            "hiring_manager_name": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "recruiter_id": {
+                "key": "",
+                "type": "bigint",
+                "nullable": "YES"
+            },
+            "recruiter_name": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "application_questions": {
+                "key": "",
+                "type": "longtext",
+                "nullable": "YES"
+            },
+            "status": {
+                "key": "",
+                "type": "enum",
+                "nullable": "NO"
+            },
+            "created_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            },
+            "updated_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            }
+        },
+        "hr_leave_balances": {
+            "leave_balance_id": {
+                "key": "PRI",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "employee_id": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "leave_type_id": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "year": {
+                "key": "",
+                "type": "smallint",
+                "nullable": "NO"
+            },
+            "beginning_balance": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "earned": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "used": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "remaining": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "encashed": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "created_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            },
+            "updated_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            }
+        },
+        "hr_leave_requests": {
+            "leave_request_id": {
+                "key": "PRI",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "employee_id": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "leave_type_id": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "start_date": {
+                "key": "",
+                "type": "date",
+                "nullable": "NO"
+            },
+            "end_date": {
+                "key": "",
+                "type": "date",
+                "nullable": "NO"
+            },
+            "number_of_days": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "reason": {
+                "key": "",
+                "type": "text",
+                "nullable": "NO"
+            },
+            "supporting_document": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "status": {
+                "key": "",
+                "type": "enum",
+                "nullable": "NO"
+            },
+            "approver_id": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "YES"
+            },
+            "approval_date": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            },
+            "rejection_reason": {
+                "key": "",
+                "type": "text",
+                "nullable": "YES"
+            },
+            "created_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            },
+            "updated_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            }
+        },
+        "hr_leave_types": {
+            "leave_type_id": {
+                "key": "PRI",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "name": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "code": {
+                "key": "UNI",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "description": {
+                "key": "",
+                "type": "text",
+                "nullable": "YES"
+            },
+            "is_paid": {
+                "key": "",
+                "type": "tinyint",
+                "nullable": "NO"
+            },
+            "default_credits": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "is_cumulative": {
+                "key": "",
+                "type": "tinyint",
+                "nullable": "NO"
+            },
+            "created_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            },
+            "updated_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            }
+        },
+        "hr_payroll_adjustments": {
+            "payroll_adjustment_id": {
+                "key": "PRI",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "payroll_record_id": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "adjustment_type": {
+                "key": "",
+                "type": "enum",
+                "nullable": "NO"
+            },
+            "name": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "amount": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "remarks": {
+                "key": "",
+                "type": "text",
+                "nullable": "YES"
+            },
+            "approved_by": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "YES"
+            },
+            "created_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            },
+            "updated_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            }
+        },
+        "hr_payroll_periods": {
+            "payroll_period_id": {
+                "key": "PRI",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "name": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "start_date": {
+                "key": "",
+                "type": "date",
+                "nullable": "NO"
+            },
+            "end_date": {
+                "key": "",
+                "type": "date",
+                "nullable": "NO"
+            },
+            "payout_date": {
+                "key": "",
+                "type": "date",
+                "nullable": "NO"
+            },
+            "pay_frequency": {
+                "key": "",
+                "type": "enum",
+                "nullable": "NO"
+            },
+            "status": {
+                "key": "",
+                "type": "enum",
+                "nullable": "NO"
+            },
+            "processed_by": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "YES"
+            },
+            "approved_by": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "YES"
+            },
+            "finalized_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            },
+            "created_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            },
+            "updated_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            }
+        },
+        "hr_payroll_records": {
+            "payroll_record_id": {
+                "key": "PRI",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "payroll_period_id": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "employee_id": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "basic_pay": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "total_work_days": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "total_hours": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "regular_hours_pay": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "overtime_hours": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "overtime_pay": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "night_diff_hours": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "night_diff_pay": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "holiday_pay": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "rest_day_pay": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "premium_pay": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "premium_pay_details": {
+                "key": "",
+                "type": "longtext",
+                "nullable": "YES"
+            },
+            "allowances": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "bonuses": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "other_earnings": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "gross_pay": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "late_deduction": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "undertime_deduction": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "absence_deduction": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "sss_employee": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "sss_employer": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "philhealth_employee": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "philhealth_employer": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "pagibig_employee": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "pagibig_employer": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "withholding_tax": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "salary_advance": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "employee_loan": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "other_deductions": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "total_deductions": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "net_pay": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "status": {
+                "key": "",
+                "type": "enum",
+                "nullable": "NO"
+            },
+            "created_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            },
+            "updated_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            }
+        },
+        "hr_performance_criteria": {
+            "performance_criteria_id": {
+                "key": "PRI",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "name": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "description": {
+                "key": "",
+                "type": "text",
+                "nullable": "YES"
+            },
+            "weight_percentage": {
+                "key": "",
+                "type": "tinyint",
+                "nullable": "NO"
+            },
+            "is_active": {
+                "key": "",
+                "type": "tinyint",
+                "nullable": "NO"
+            },
+            "created_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            },
+            "updated_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            }
+        },
+        "hr_performance_evaluations": {
+            "performance_evaluation_id": {
+                "key": "PRI",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "performance_period_id": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "employee_id": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "evaluator_id": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "overall_score": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "status": {
+                "key": "",
+                "type": "enum",
+                "nullable": "NO"
+            },
+            "manager_comments": {
+                "key": "",
+                "type": "text",
+                "nullable": "YES"
+            },
+            "hr_comments": {
+                "key": "",
+                "type": "text",
+                "nullable": "YES"
+            },
+            "recommendation": {
+                "key": "",
+                "type": "text",
+                "nullable": "YES"
+            },
+            "created_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            },
+            "updated_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            }
+        },
+        "hr_performance_periods": {
+            "performance_period_id": {
+                "key": "PRI",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "name": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "start_date": {
+                "key": "",
+                "type": "date",
+                "nullable": "NO"
+            },
+            "end_date": {
+                "key": "",
+                "type": "date",
+                "nullable": "NO"
+            },
+            "status": {
+                "key": "",
+                "type": "enum",
+                "nullable": "NO"
+            },
+            "created_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            },
+            "updated_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            }
+        },
+        "hr_performance_ratings": {
+            "performance_rating_id": {
+                "key": "PRI",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "evaluation_id": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "criterion_id": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "rating": {
+                "key": "",
+                "type": "tinyint",
+                "nullable": "NO"
+            },
+            "comments": {
+                "key": "",
+                "type": "text",
+                "nullable": "YES"
+            },
+            "created_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            },
+            "updated_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            }
+        },
+        "hr_positions": {
+            "position_id": {
+                "key": "PRI",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "department_id": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "YES"
+            },
+            "name": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "code": {
+                "key": "UNI",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "description": {
+                "key": "",
+                "type": "text",
+                "nullable": "YES"
+            },
+            "created_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            },
+            "updated_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            }
+        },
+        "hr_premium_pay_items": {
+            "premium_pay_item_id": {
+                "key": "PRI",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "payroll_period_id": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "YES"
+            },
+            "payroll_record_id": {
+                "key": "",
+                "type": "bigint",
+                "nullable": "YES"
+            },
+            "employee_id": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "work_date": {
+                "key": "",
+                "type": "date",
+                "nullable": "NO"
+            },
+            "attendance_record_id": {
+                "key": "",
+                "type": "bigint",
+                "nullable": "YES"
+            },
+            "holiday_id": {
+                "key": "",
+                "type": "bigint",
+                "nullable": "YES"
+            },
+            "work_type": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "holiday_type": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "is_rest_day": {
+                "key": "",
+                "type": "tinyint",
+                "nullable": "NO"
+            },
+            "hours_worked": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "regular_hours": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "overtime_hours": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "daily_rate": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "hourly_rate": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "applied_rate_multiplier": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "regular_premium_pay": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "overtime_premium_pay": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "premium_amount": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "calculation_breakdown": {
+                "key": "",
+                "type": "longtext",
+                "nullable": "YES"
+            },
+            "rule_version": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "status": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "rejection_reason": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "approved_by": {
+                "key": "",
+                "type": "bigint",
+                "nullable": "YES"
+            },
+            "approved_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            },
+            "rejected_by": {
+                "key": "",
+                "type": "bigint",
+                "nullable": "YES"
+            },
+            "rejected_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            },
+            "created_by": {
+                "key": "",
+                "type": "bigint",
+                "nullable": "YES"
+            },
+            "updated_by": {
+                "key": "",
+                "type": "bigint",
+                "nullable": "YES"
+            },
+            "created_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            },
+            "updated_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            }
+        },
+        "hr_premium_pay_rules": {
+            "premium_pay_rule_id": {
+                "key": "PRI",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "rule_code": {
+                "key": "UNI",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "name": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "category": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "base_multiplier": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "holiday_multiplier": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "YES"
+            },
+            "rest_day_multiplier": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "YES"
+            },
+            "overtime_multiplier": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "YES"
+            },
+            "night_diff_multiplier": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "YES"
+            },
+            "effective_from": {
+                "key": "",
+                "type": "date",
+                "nullable": "YES"
+            },
+            "effective_to": {
+                "key": "",
+                "type": "date",
+                "nullable": "YES"
+            },
+            "rule_type": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "is_active": {
+                "key": "",
+                "type": "tinyint",
+                "nullable": "NO"
+            },
+            "description": {
+                "key": "",
+                "type": "text",
+                "nullable": "YES"
+            },
+            "created_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            },
+            "updated_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            }
+        },
+        "hr_premium_pay_rule_versions": {
+            "premium_pay_rule_version_id": {
+                "key": "PRI",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "premium_pay_rule_id": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "version_number": {
+                "key": "",
+                "type": "int",
+                "nullable": "NO"
+            },
+            "version_code": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "effective_date": {
+                "key": "",
+                "type": "date",
+                "nullable": "NO"
+            },
+            "configuration_snapshot": {
+                "key": "",
+                "type": "longtext",
+                "nullable": "NO"
+            },
+            "created_by": {
+                "key": "",
+                "type": "bigint",
+                "nullable": "YES"
+            },
+            "change_reason": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "created_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            },
+            "updated_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            }
+        },
+        "hr_salary_history": {
+            "salary_history_id": {
+                "key": "PRI",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "employee_id": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "effective_date": {
+                "key": "",
+                "type": "date",
+                "nullable": "NO"
+            },
+            "basic_salary": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "salary_frequency": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "employment_type": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "reason": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "approved_by": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "YES"
+            },
+            "remarks": {
+                "key": "",
+                "type": "text",
+                "nullable": "YES"
+            },
+            "created_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            },
+            "updated_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            }
+        },
+        "hr_schedule_change_logs": {
+            "schedule_change_log_id": {
+                "key": "PRI",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "employee_id": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "schedule_date": {
+                "key": "",
+                "type": "date",
+                "nullable": "NO"
+            },
+            "previous_shift_template_id": {
+                "key": "",
+                "type": "bigint",
+                "nullable": "YES"
+            },
+            "new_shift_template_id": {
+                "key": "",
+                "type": "bigint",
+                "nullable": "YES"
+            },
+            "previous_time_range": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "new_time_range": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "reason": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "changed_by": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "YES"
+            },
+            "created_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            },
+            "updated_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            }
+        },
+        "hr_separation": {
+            "separation_id": {
+                "key": "PRI",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "employee_id": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "separation_type": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "separation_date": {
+                "key": "",
+                "type": "date",
+                "nullable": "NO"
+            },
+            "last_working_day": {
+                "key": "",
+                "type": "date",
+                "nullable": "YES"
+            },
+            "reason": {
+                "key": "",
+                "type": "text",
+                "nullable": "YES"
+            },
+            "remarks": {
+                "key": "",
+                "type": "text",
+                "nullable": "YES"
+            },
+            "eligible_for_rehire": {
+                "key": "",
+                "type": "tinyint",
+                "nullable": "NO"
+            },
+            "processed_by": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "YES"
+            },
+            "created_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            },
+            "updated_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            }
+        },
+        "hr_shift_templates": {
+            "shift_template_id": {
+                "key": "PRI",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "name": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "code": {
+                "key": "UNI",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "start_time": {
+                "key": "",
+                "type": "time",
+                "nullable": "NO"
+            },
+            "end_time": {
+                "key": "",
+                "type": "time",
+                "nullable": "NO"
+            },
+            "is_overnight": {
+                "key": "",
+                "type": "tinyint",
+                "nullable": "NO"
+            },
+            "break_minutes": {
+                "key": "",
+                "type": "int",
+                "nullable": "NO"
+            },
+            "color": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "description": {
+                "key": "",
+                "type": "text",
+                "nullable": "YES"
+            },
+            "created_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            },
+            "updated_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            }
+        },
+        "hr_statutory_contribution_rules": {
+            "statutory_contribution_rule_id": {
+                "key": "PRI",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "rule_name": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "rule_type": {
+                "key": "",
+                "type": "enum",
+                "nullable": "NO"
+            },
+            "rate": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "min_salary": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "max_salary": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "employee_share": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "employer_share": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "fixed_amount": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "bracket_json": {
+                "key": "",
+                "type": "longtext",
+                "nullable": "YES"
+            },
+            "effective_date": {
+                "key": "",
+                "type": "date",
+                "nullable": "NO"
+            },
+            "end_date": {
+                "key": "",
+                "type": "date",
+                "nullable": "YES"
+            },
+            "is_active": {
+                "key": "",
+                "type": "tinyint",
+                "nullable": "NO"
+            },
+            "created_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            },
+            "updated_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            }
+        },
+        "hr_training_enrollments": {
+            "training_enrollment_id": {
+                "key": "PRI",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "training_program_id": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "employee_id": {
+                "key": "MUL",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "enrollment_date": {
+                "key": "",
+                "type": "date",
+                "nullable": "NO"
+            },
+            "attendance_status": {
+                "key": "",
+                "type": "enum",
+                "nullable": "NO"
+            },
+            "completion_status": {
+                "key": "",
+                "type": "enum",
+                "nullable": "NO"
+            },
+            "score": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "YES"
+            },
+            "certificate_path": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "completion_date": {
+                "key": "",
+                "type": "date",
+                "nullable": "YES"
+            },
+            "remarks": {
+                "key": "",
+                "type": "text",
+                "nullable": "YES"
+            },
+            "created_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            },
+            "updated_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            }
+        },
+        "hr_training_programs": {
+            "training_program_id": {
+                "key": "PRI",
+                "type": "bigint",
+                "nullable": "NO"
+            },
+            "name": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "NO"
+            },
+            "description": {
+                "key": "",
+                "type": "text",
+                "nullable": "YES"
+            },
+            "trainer": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "training_type": {
+                "key": "",
+                "type": "enum",
+                "nullable": "NO"
+            },
+            "location": {
+                "key": "",
+                "type": "varchar",
+                "nullable": "YES"
+            },
+            "start_date": {
+                "key": "",
+                "type": "date",
+                "nullable": "NO"
+            },
+            "end_date": {
+                "key": "",
+                "type": "date",
+                "nullable": "YES"
+            },
+            "duration_hours": {
+                "key": "",
+                "type": "smallint",
+                "nullable": "NO"
+            },
+            "cost": {
+                "key": "",
+                "type": "decimal",
+                "nullable": "NO"
+            },
+            "status": {
+                "key": "",
+                "type": "enum",
+                "nullable": "NO"
+            },
+            "created_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            },
+            "updated_at": {
+                "key": "",
+                "type": "timestamp",
+                "nullable": "YES"
+            }
+        }
+    }
+}

@@ -1,0 +1,879 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Map of HR tables and entity-prefixed column renames.
+     */
+    protected array $renames = array (
+  'hr_applicants' => 
+  array (
+    'job_vacancy_id' => 'applicant_job_vacancy_id',
+    'first_name' => 'applicant_first_name',
+    'middle_name' => 'applicant_middle_name',
+    'last_name' => 'applicant_last_name',
+    'suffix' => 'applicant_suffix',
+    'preferred_name' => 'applicant_preferred_name',
+    'date_of_birth' => 'applicant_date_of_birth',
+    'gender' => 'applicant_gender',
+    'civil_status' => 'applicant_civil_status',
+    'nationality' => 'applicant_nationality',
+    'contact_number' => 'applicant_contact_number',
+    'email' => 'applicant_email',
+    'address' => 'applicant_address',
+    'city' => 'applicant_city',
+    'province' => 'applicant_province',
+    'resume_path' => 'applicant_resume_path',
+    'applied_position' => 'applicant_applied_position',
+    'desired_salary' => 'applicant_desired_salary',
+    'employment_type' => 'applicant_employment_type',
+    'available_start_date' => 'applicant_available_start_date',
+    'years_of_experience' => 'applicant_years_of_experience',
+    'work_setup_preference' => 'applicant_work_setup_preference',
+    'source' => 'applicant_source',
+    'recruiter_id' => 'applicant_recruiter_id',
+    'recruiter_name' => 'applicant_recruiter_name',
+    'hiring_manager_id' => 'applicant_hiring_manager_id',
+    'hiring_manager_name' => 'applicant_hiring_manager_name',
+    'education' => 'applicant_education',
+    'work_experience' => 'applicant_work_experience',
+    'skills' => 'applicant_skills',
+    'certifications' => 'applicant_certifications',
+    'languages' => 'applicant_languages',
+    'application_answers' => 'applicant_application_answers',
+    'documents' => 'applicant_documents',
+    'privacy_consent' => 'applicant_privacy_consent',
+    'data_processing_consent' => 'applicant_data_processing_consent',
+    'screening_data' => 'applicant_screening_data',
+    'final_review_data' => 'applicant_final_review_data',
+    'offer_data' => 'applicant_offer_data',
+    'pre_employment_requirements' => 'applicant_pre_employment_requirements',
+    'preboarding_tasks' => 'applicant_preboarding_tasks',
+    'onboarding_data' => 'applicant_onboarding_data',
+    'activity_history' => 'applicant_activity_history',
+    'application_date' => 'applicant_application_date',
+    'status' => 'applicant_status',
+    'hired_as_employee_id' => 'applicant_hired_as_employee_id',
+    'created_at' => 'applicant_created_at',
+    'updated_at' => 'applicant_updated_at',
+  ),
+  'hr_assessments' => 
+  array (
+    'applicant_id' => 'assessment_applicant_id',
+    'title' => 'assessment_title',
+    'score' => 'assessment_score',
+    'passing_score' => 'assessment_passing_score',
+    'result' => 'assessment_result',
+    'evaluator_id' => 'assessment_evaluator_id',
+    'evaluator_name' => 'assessment_evaluator_name',
+    'attachment_path' => 'assessment_attachment_path',
+    'remarks' => 'assessment_remarks',
+    'created_at' => 'assessment_created_at',
+    'updated_at' => 'assessment_updated_at',
+  ),
+  'hr_attendance_action_logs' => 
+  array (
+    'attendance_record_id' => 'attendance_action_log_attendance_record_id',
+    'employee_id' => 'attendance_action_log_employee_id',
+    'action_type' => 'attendance_action_log_action_type',
+    'details' => 'attendance_action_log_details',
+    'notes' => 'attendance_action_log_notes',
+    'action_by' => 'attendance_action_log_action_by',
+    'created_at' => 'attendance_action_log_created_at',
+    'updated_at' => 'attendance_action_log_updated_at',
+  ),
+  'hr_attendance_corrections' => 
+  array (
+    'attendance_record_id' => 'attendance_correction_attendance_record_id',
+    'employee_id' => 'attendance_correction_employee_id',
+    'requested_by' => 'attendance_correction_requested_by',
+    'original_time_in' => 'attendance_correction_original_time_in',
+    'original_time_out' => 'attendance_correction_original_time_out',
+    'requested_time_in' => 'attendance_correction_requested_time_in',
+    'requested_time_out' => 'attendance_correction_requested_time_out',
+    'reason' => 'attendance_correction_reason',
+    'supporting_document' => 'attendance_correction_supporting_document',
+    'status' => 'attendance_correction_status',
+    'reviewed_by' => 'attendance_correction_reviewed_by',
+    'reviewed_at' => 'attendance_correction_reviewed_at',
+    'reviewer_notes' => 'attendance_correction_reviewer_notes',
+    'created_at' => 'attendance_correction_created_at',
+    'updated_at' => 'attendance_correction_updated_at',
+  ),
+  'hr_attendance_records' => 
+  array (
+    'employee_id' => 'attendance_record_employee_id',
+    'schedule_id' => 'attendance_record_schedule_id',
+    'branch_id' => 'attendance_record_branch_id',
+    'date' => 'attendance_record_date',
+    'in_1' => 'attendance_record_in_1',
+    'out_1' => 'attendance_record_out_1',
+    'in_2' => 'attendance_record_in_2',
+    'out_2' => 'attendance_record_out_2',
+    'in_3' => 'attendance_record_in_3',
+    'out_3' => 'attendance_record_out_3',
+    'time_in' => 'attendance_record_time_in',
+    'break_out' => 'attendance_record_break_out',
+    'break_in' => 'attendance_record_break_in',
+    'coffee_break_out' => 'attendance_record_coffee_break_out',
+    'coffee_break_in' => 'attendance_record_coffee_break_in',
+    'time_out' => 'attendance_record_time_out',
+    'total_hours' => 'attendance_record_total_hours',
+    'regular_hours' => 'attendance_record_regular_hours',
+    'late_minutes' => 'attendance_record_late_minutes',
+    'undertime_minutes' => 'attendance_record_undertime_minutes',
+    'undertime_status' => 'attendance_record_undertime_status',
+    'undertime_approved_by' => 'attendance_record_undertime_approved_by',
+    'undertime_approved_at' => 'attendance_record_undertime_approved_at',
+    'undertime_remarks' => 'attendance_record_undertime_remarks',
+    'overtime_hours' => 'attendance_record_overtime_hours',
+    'overtime_status' => 'attendance_record_overtime_status',
+    'overtime_approved_by' => 'attendance_record_overtime_approved_by',
+    'overtime_approved_at' => 'attendance_record_overtime_approved_at',
+    'overtime_remarks' => 'attendance_record_overtime_remarks',
+    'absence_days' => 'attendance_record_absence_days',
+    'night_diff_hours' => 'attendance_record_night_diff_hours',
+    'holiday_type' => 'attendance_record_holiday_type',
+    'is_rest_day' => 'attendance_record_is_rest_day',
+    'status' => 'attendance_record_status',
+    'dtr_remarks' => 'attendance_record_dtr_remarks',
+    'source' => 'attendance_record_source',
+    'notes' => 'attendance_record_notes',
+    'created_at' => 'attendance_record_created_at',
+    'updated_at' => 'attendance_record_updated_at',
+  ),
+  'hr_branches' => 
+  array (
+    'company_id' => 'branch_company_id',
+    'address' => 'branch_address',
+  ),
+  'hr_companies' => 
+  array (
+    'type' => 'company_type',
+    'contact_person' => 'company_contact_person',
+    'address' => 'company_address',
+    'logo' => 'company_logo',
+    'notes' => 'company_notes',
+  ),
+  'hr_departments' => 
+  array (
+    'branch_id' => 'department_branch_id',
+    'name' => 'department_name',
+    'code' => 'department_code',
+    'description' => 'department_description',
+    'is_active' => 'department_is_active',
+    'created_at' => 'department_created_at',
+    'updated_at' => 'department_updated_at',
+  ),
+  'hr_dtr_absence_codes' => 
+  array (
+    'code' => 'dtr_absence_code_code',
+    'name' => 'dtr_absence_code_name',
+    'description' => 'dtr_absence_code_description',
+    'is_absence' => 'dtr_absence_code_is_absence',
+    'is_active' => 'dtr_absence_code_is_active',
+    'created_at' => 'dtr_absence_code_created_at',
+    'updated_at' => 'dtr_absence_code_updated_at',
+  ),
+  'hr_emergency_contacts' => 
+  array (
+    'employee_id' => 'emergency_contact_employee_id',
+    'contact_name' => 'emergency_contact_contact_name',
+    'relationship' => 'emergency_contact_relationship',
+    'contact_number' => 'emergency_contact_contact_number',
+    'address' => 'emergency_contact_address',
+    'is_primary' => 'emergency_contact_is_primary',
+    'telephone' => 'emergency_contact_telephone',
+    'remarks' => 'emergency_contact_remarks',
+    'created_at' => 'emergency_contact_created_at',
+    'updated_at' => 'emergency_contact_updated_at',
+  ),
+  'hr_employee_clearance' => 
+  array (
+    'employee_id' => 'employee_clearance_employee_id',
+    'separation_id' => 'employee_clearance_separation_id',
+    'department' => 'employee_clearance_department',
+    'accountability' => 'employee_clearance_accountability',
+    'status' => 'employee_clearance_status',
+    'cleared_by' => 'employee_clearance_cleared_by',
+    'cleared_at' => 'employee_clearance_cleared_at',
+    'remarks' => 'employee_clearance_remarks',
+    'created_at' => 'employee_clearance_created_at',
+    'updated_at' => 'employee_clearance_updated_at',
+  ),
+  'hr_employee_disciplinary' => 
+  array (
+    'employee_id' => 'employee_disciplinary_employee_id',
+    'incident_date' => 'employee_disciplinary_incident_date',
+    'case_type' => 'employee_disciplinary_case_type',
+    'description' => 'employee_disciplinary_description',
+    'action_taken' => 'employee_disciplinary_action_taken',
+    'status' => 'employee_disciplinary_status',
+    'resolution_date' => 'employee_disciplinary_resolution_date',
+    'remarks' => 'employee_disciplinary_remarks',
+    'recorded_by' => 'employee_disciplinary_recorded_by',
+    'created_at' => 'employee_disciplinary_created_at',
+    'updated_at' => 'employee_disciplinary_updated_at',
+  ),
+  'hr_employee_documents' => 
+  array (
+    'employee_id' => 'employee_document_employee_id',
+    'document_type' => 'employee_document_document_type',
+    'document_name' => 'employee_document_document_name',
+    'category' => 'employee_document_category',
+    'issue_date' => 'employee_document_issue_date',
+    'file_path' => 'employee_document_file_path',
+    'expiry_date' => 'employee_document_expiry_date',
+    'status' => 'employee_document_status',
+    'is_verified' => 'employee_document_is_verified',
+    'notes' => 'employee_document_notes',
+    'uploaded_by' => 'employee_document_uploaded_by',
+    'created_at' => 'employee_document_created_at',
+    'updated_at' => 'employee_document_updated_at',
+    'verified_by' => 'employee_document_verified_by',
+    'verified_at' => 'employee_document_verified_at',
+    'remarks' => 'employee_document_remarks',
+  ),
+  'hr_employee_education' => 
+  array (
+    'employee_id' => 'employee_education_employee_id',
+    'education_level' => 'employee_education_education_level',
+    'school_name' => 'employee_education_school_name',
+    'school_address' => 'employee_education_school_address',
+    'course_degree' => 'employee_education_course_degree',
+    'major' => 'employee_education_major',
+    'year_started' => 'employee_education_year_started',
+    'year_completed' => 'employee_education_year_completed',
+    'graduation_date' => 'employee_education_graduation_date',
+    'honors' => 'employee_education_honors',
+    'units_earned' => 'employee_education_units_earned',
+    'remarks' => 'employee_education_remarks',
+    'created_at' => 'employee_education_created_at',
+    'updated_at' => 'employee_education_updated_at',
+  ),
+  'hr_employee_family' => 
+  array (
+    'employee_id' => 'employee_family_employee_id',
+    'name' => 'employee_family_name',
+    'relationship' => 'employee_family_relationship',
+    'birth_date' => 'employee_family_birth_date',
+    'sex' => 'employee_family_sex',
+    'occupation' => 'employee_family_occupation',
+    'employer' => 'employee_family_employer',
+    'contact_number' => 'employee_family_contact_number',
+    'address' => 'employee_family_address',
+    'is_dependent' => 'employee_family_is_dependent',
+    'is_beneficiary' => 'employee_family_is_beneficiary',
+    'remarks' => 'employee_family_remarks',
+    'created_at' => 'employee_family_created_at',
+    'updated_at' => 'employee_family_updated_at',
+  ),
+  'hr_employee_permissions' => 
+  array (
+    'employee_id' => 'employee_permission_employee_id',
+    'permission_id' => 'employee_permission_permission_id',
+    'created_at' => 'employee_permission_created_at',
+    'updated_at' => 'employee_permission_updated_at',
+  ),
+  'hr_employee_schedules' => 
+  array (
+    'employee_id' => 'employee_schedule_employee_id',
+    'branch_id' => 'employee_schedule_branch_id',
+    'shift_template_id' => 'employee_schedule_shift_template_id',
+    'schedule_date' => 'employee_schedule_schedule_date',
+    'custom_start_time' => 'employee_schedule_custom_start_time',
+    'custom_end_time' => 'employee_schedule_custom_end_time',
+    'is_rest_day' => 'employee_schedule_is_rest_day',
+    'notes' => 'employee_schedule_notes',
+    'created_at' => 'employee_schedule_created_at',
+    'updated_at' => 'employee_schedule_updated_at',
+  ),
+  'hr_employees' => 
+  array (
+    'user_id' => 'employee_user_id',
+    'first_name' => 'employee_first_name',
+    'middle_name' => 'employee_middle_name',
+    'last_name' => 'employee_last_name',
+    'suffix' => 'employee_suffix',
+    'preferred_name' => 'employee_preferred_name',
+    'date_of_birth' => 'employee_date_of_birth',
+    'birth_place' => 'employee_birth_place',
+    'gender' => 'employee_gender',
+    'civil_status' => 'employee_civil_status',
+    'nationality' => 'employee_nationality',
+    'mobile_number' => 'employee_mobile_number',
+    'telephone_number' => 'employee_telephone_number',
+    'email' => 'employee_email',
+    'company_email' => 'employee_company_email',
+    'address' => 'employee_address',
+    'permanent_address' => 'employee_permanent_address',
+    'family_dependents' => 'employee_family_dependents',
+    'education_history' => 'employee_education_history',
+    'salary_history' => 'employee_salary_history',
+    'photo' => 'employee_photo',
+    'branch_id' => 'employee_branch_id',
+    'assigned_branch_ids' => 'employee_assigned_branch_ids',
+    'work_location' => 'employee_work_location',
+    'work_schedule' => 'employee_work_schedule',
+    'default_shift_template_id' => 'employee_default_shift_template_id',
+    'job_level' => 'employee_job_level',
+    'company_id' => 'employee_company_id',
+    'department_id' => 'employee_department_id',
+    'assigned_department_ids' => 'employee_assigned_department_ids',
+    'position_id' => 'employee_position_id',
+    'assigned_position_ids' => 'employee_assigned_position_ids',
+    'supervisor_id' => 'employee_supervisor_id',
+    'date_hired' => 'employee_date_hired',
+    'employment_status' => 'employee_employment_status',
+    'employment_type' => 'employee_employment_type',
+    'company_name' => 'employee_company_name',
+    'agency_name' => 'employee_agency_name',
+    'employment_source' => 'employee_employment_source',
+    'company_agency_name' => 'employee_company_agency_name',
+    'date_of_regularization' => 'employee_date_of_regularization',
+    'probation_end_date' => 'employee_probation_end_date',
+    'date_separated' => 'employee_date_separated',
+    'contract_start_date' => 'employee_contract_start_date',
+    'contract_end_date' => 'employee_contract_end_date',
+    'sss_number' => 'employee_sss_number',
+    'sss_verified' => 'employee_sss_verified',
+    'sss_membership_status' => 'employee_sss_membership_status',
+    'philhealth_number' => 'employee_philhealth_number',
+    'philhealth_verified' => 'employee_philhealth_verified',
+    'philhealth_membership_status' => 'employee_philhealth_membership_status',
+    'pagibig_number' => 'employee_pagibig_number',
+    'pagibig_verified' => 'employee_pagibig_verified',
+    'pagibig_membership_status' => 'employee_pagibig_membership_status',
+    'tin' => 'employee_tin',
+    'tin_verified' => 'employee_tin_verified',
+    'rdo_code' => 'employee_rdo_code',
+    'philsys_id' => 'employee_philsys_id',
+    'passport_number' => 'employee_passport_number',
+    'driver_license' => 'employee_driver_license',
+    'other_gov_id_type' => 'employee_other_gov_id_type',
+    'other_gov_id_number' => 'employee_other_gov_id_number',
+    'other_gov_id_verified' => 'employee_other_gov_id_verified',
+    'basic_salary' => 'employee_basic_salary',
+    'payroll_type' => 'employee_payroll_type',
+    'salary_type' => 'employee_salary_type',
+    'pay_frequency' => 'employee_pay_frequency',
+    'allowances' => 'employee_allowances',
+    'other_compensation' => 'employee_other_compensation',
+    'deleted_at' => 'employee_deleted_at',
+    'created_at' => 'employee_created_at',
+    'updated_at' => 'employee_updated_at',
+  ),
+  'hr_employment_histories' => 
+  array (
+    'employee_id' => 'employment_history_employee_id',
+    'action_type' => 'employment_history_action_type',
+    'previous_value' => 'employment_history_previous_value',
+    'new_value' => 'employment_history_new_value',
+    'remarks' => 'employment_history_remarks',
+    'effective_date' => 'employment_history_effective_date',
+    'recorded_by' => 'employment_history_recorded_by',
+    'created_at' => 'employment_history_created_at',
+    'updated_at' => 'employment_history_updated_at',
+  ),
+  'hr_holiday_locations' => 
+  array (
+    'holiday_id' => 'holiday_location_holiday_id',
+    'branch_id' => 'holiday_location_branch_id',
+    'region' => 'holiday_location_region',
+    'province' => 'holiday_location_province',
+    'city_municipality' => 'holiday_location_city_municipality',
+    'created_at' => 'holiday_location_created_at',
+    'updated_at' => 'holiday_location_updated_at',
+  ),
+  'hr_holiday_pay_rules' => 
+  array (
+    'holiday_type' => 'holiday_pay_rule_holiday_type',
+    'year' => 'holiday_pay_rule_year',
+    'effective_from' => 'holiday_pay_rule_effective_from',
+    'effective_to' => 'holiday_pay_rule_effective_to',
+    'unworked_rate' => 'holiday_pay_rule_unworked_rate',
+    'worked_rate' => 'holiday_pay_rule_worked_rate',
+    'rest_day_worked_rate' => 'holiday_pay_rule_rest_day_worked_rate',
+    'overtime_multiplier' => 'holiday_pay_rule_overtime_multiplier',
+    'rest_day_overtime_multiplier' => 'holiday_pay_rule_rest_day_overtime_multiplier',
+    'calculation_rule_description' => 'holiday_pay_rule_calculation_rule_description',
+    'is_active' => 'holiday_pay_rule_is_active',
+    'created_at' => 'holiday_pay_rule_created_at',
+    'updated_at' => 'holiday_pay_rule_updated_at',
+  ),
+  'hr_holidays' => 
+  array (
+    'name' => 'holiday_name',
+    'date' => 'holiday_date',
+    'year' => 'holiday_year',
+    'scope' => 'holiday_scope',
+    'region' => 'holiday_region',
+    'province' => 'holiday_province',
+    'city_municipality' => 'holiday_city_municipality',
+    'applicable_branches' => 'holiday_applicable_branches',
+    'payroll_treatment' => 'holiday_payroll_treatment',
+    'official_reference' => 'holiday_official_reference',
+    'source' => 'holiday_source',
+    'description' => 'holiday_description',
+    'is_active' => 'holiday_is_active',
+    'created_by' => 'holiday_created_by',
+    'updated_by' => 'holiday_updated_by',
+    'created_at' => 'holiday_created_at',
+    'updated_at' => 'holiday_updated_at',
+  ),
+  'hr_interviews' => 
+  array (
+    'applicant_id' => 'interview_applicant_id',
+    'interviewer_id' => 'interview_interviewer_id',
+    'interviewer_name' => 'interview_interviewer_name',
+    'location_or_link' => 'interview_location_or_link',
+    'instructions' => 'interview_instructions',
+    'notes' => 'interview_notes',
+    'rating' => 'interview_rating',
+    'recommendation' => 'interview_recommendation',
+    'scorecard' => 'interview_scorecard',
+    'status' => 'interview_status',
+    'created_at' => 'interview_created_at',
+    'updated_at' => 'interview_updated_at',
+  ),
+  'hr_job_levels' => 
+  array (
+    'name' => 'job_level_name',
+    'level' => 'job_level_level',
+    'description' => 'job_level_description',
+    'created_at' => 'job_level_created_at',
+    'updated_at' => 'job_level_updated_at',
+  ),
+  'hr_job_vacancies' => 
+  array (
+    'title' => 'job_vacancy_title',
+    'position_id' => 'job_vacancy_position_id',
+    'department_id' => 'job_vacancy_department_id',
+    'branch_id' => 'job_vacancy_branch_id',
+    'number_of_openings' => 'job_vacancy_number_of_openings',
+    'employment_type' => 'job_vacancy_employment_type',
+    'work_setup' => 'job_vacancy_work_setup',
+    'salary_range_min' => 'job_vacancy_salary_range_min',
+    'salary_range_max' => 'job_vacancy_salary_range_max',
+    'job_description' => 'job_vacancy_job_description',
+    'responsibilities' => 'job_vacancy_responsibilities',
+    'qualifications' => 'job_vacancy_qualifications',
+    'required_skills' => 'job_vacancy_required_skills',
+    'preferred_skills' => 'job_vacancy_preferred_skills',
+    'benefits' => 'job_vacancy_benefits',
+    'requirements' => 'job_vacancy_requirements',
+    'opening_date' => 'job_vacancy_opening_date',
+    'closing_date' => 'job_vacancy_closing_date',
+    'hiring_manager_id' => 'job_vacancy_hiring_manager_id',
+    'hiring_manager_name' => 'job_vacancy_hiring_manager_name',
+    'recruiter_id' => 'job_vacancy_recruiter_id',
+    'recruiter_name' => 'job_vacancy_recruiter_name',
+    'application_questions' => 'job_vacancy_application_questions',
+    'status' => 'job_vacancy_status',
+    'created_at' => 'job_vacancy_created_at',
+    'updated_at' => 'job_vacancy_updated_at',
+  ),
+  'hr_leave_balances' => 
+  array (
+    'employee_id' => 'leave_balance_employee_id',
+    'leave_type_id' => 'leave_balance_leave_type_id',
+    'year' => 'leave_balance_year',
+    'beginning_balance' => 'leave_balance_beginning_balance',
+    'earned' => 'leave_balance_earned',
+    'used' => 'leave_balance_used',
+    'remaining' => 'leave_balance_remaining',
+    'encashed' => 'leave_balance_encashed',
+    'created_at' => 'leave_balance_created_at',
+    'updated_at' => 'leave_balance_updated_at',
+  ),
+  'hr_leave_requests' => 
+  array (
+    'employee_id' => 'leave_request_employee_id',
+    'leave_type_id' => 'leave_request_leave_type_id',
+    'start_date' => 'leave_request_start_date',
+    'end_date' => 'leave_request_end_date',
+    'number_of_days' => 'leave_request_number_of_days',
+    'reason' => 'leave_request_reason',
+    'supporting_document' => 'leave_request_supporting_document',
+    'status' => 'leave_request_status',
+    'approver_id' => 'leave_request_approver_id',
+    'approval_date' => 'leave_request_approval_date',
+    'rejection_reason' => 'leave_request_rejection_reason',
+    'created_at' => 'leave_request_created_at',
+    'updated_at' => 'leave_request_updated_at',
+  ),
+  'hr_leave_types' => 
+  array (
+    'name' => 'leave_type_name',
+    'code' => 'leave_type_code',
+    'description' => 'leave_type_description',
+    'is_paid' => 'leave_type_is_paid',
+    'default_credits' => 'leave_type_default_credits',
+    'is_cumulative' => 'leave_type_is_cumulative',
+    'created_at' => 'leave_type_created_at',
+    'updated_at' => 'leave_type_updated_at',
+  ),
+  'hr_payroll_adjustments' => 
+  array (
+    'payroll_record_id' => 'payroll_adjustment_payroll_record_id',
+    'adjustment_type' => 'payroll_adjustment_adjustment_type',
+    'name' => 'payroll_adjustment_name',
+    'amount' => 'payroll_adjustment_amount',
+    'remarks' => 'payroll_adjustment_remarks',
+    'approved_by' => 'payroll_adjustment_approved_by',
+    'created_at' => 'payroll_adjustment_created_at',
+    'updated_at' => 'payroll_adjustment_updated_at',
+  ),
+  'hr_payroll_periods' => 
+  array (
+    'name' => 'payroll_period_name',
+    'start_date' => 'payroll_period_start_date',
+    'end_date' => 'payroll_period_end_date',
+    'payout_date' => 'payroll_period_payout_date',
+    'pay_frequency' => 'payroll_period_pay_frequency',
+    'status' => 'payroll_period_status',
+    'processed_by' => 'payroll_period_processed_by',
+    'approved_by' => 'payroll_period_approved_by',
+    'finalized_at' => 'payroll_period_finalized_at',
+    'created_at' => 'payroll_period_created_at',
+    'updated_at' => 'payroll_period_updated_at',
+  ),
+  'hr_payroll_records' => 
+  array (
+    'payroll_period_id' => 'payroll_record_payroll_period_id',
+    'employee_id' => 'payroll_record_employee_id',
+    'basic_pay' => 'payroll_record_basic_pay',
+    'total_work_days' => 'payroll_record_total_work_days',
+    'total_hours' => 'payroll_record_total_hours',
+    'regular_hours_pay' => 'payroll_record_regular_hours_pay',
+    'overtime_hours' => 'payroll_record_overtime_hours',
+    'overtime_pay' => 'payroll_record_overtime_pay',
+    'night_diff_hours' => 'payroll_record_night_diff_hours',
+    'night_diff_pay' => 'payroll_record_night_diff_pay',
+    'holiday_pay' => 'payroll_record_holiday_pay',
+    'rest_day_pay' => 'payroll_record_rest_day_pay',
+    'premium_pay' => 'payroll_record_premium_pay',
+    'premium_pay_details' => 'payroll_record_premium_pay_details',
+    'allowances' => 'payroll_record_allowances',
+    'bonuses' => 'payroll_record_bonuses',
+    'other_earnings' => 'payroll_record_other_earnings',
+    'gross_pay' => 'payroll_record_gross_pay',
+    'late_deduction' => 'payroll_record_late_deduction',
+    'undertime_deduction' => 'payroll_record_undertime_deduction',
+    'absence_deduction' => 'payroll_record_absence_deduction',
+    'sss_employee' => 'payroll_record_sss_employee',
+    'sss_employer' => 'payroll_record_sss_employer',
+    'philhealth_employee' => 'payroll_record_philhealth_employee',
+    'philhealth_employer' => 'payroll_record_philhealth_employer',
+    'pagibig_employee' => 'payroll_record_pagibig_employee',
+    'pagibig_employer' => 'payroll_record_pagibig_employer',
+    'withholding_tax' => 'payroll_record_withholding_tax',
+    'salary_advance' => 'payroll_record_salary_advance',
+    'employee_loan' => 'payroll_record_employee_loan',
+    'other_deductions' => 'payroll_record_other_deductions',
+    'total_deductions' => 'payroll_record_total_deductions',
+    'net_pay' => 'payroll_record_net_pay',
+    'status' => 'payroll_record_status',
+    'created_at' => 'payroll_record_created_at',
+    'updated_at' => 'payroll_record_updated_at',
+  ),
+  'hr_performance_criteria' => 
+  array (
+    'name' => 'performance_criteria_name',
+    'description' => 'performance_criteria_description',
+    'weight_percentage' => 'performance_criteria_weight_percentage',
+    'is_active' => 'performance_criteria_is_active',
+    'created_at' => 'performance_criteria_created_at',
+    'updated_at' => 'performance_criteria_updated_at',
+  ),
+  'hr_performance_evaluations' => 
+  array (
+    'performance_period_id' => 'performance_evaluation_performance_period_id',
+    'employee_id' => 'performance_evaluation_employee_id',
+    'evaluator_id' => 'performance_evaluation_evaluator_id',
+    'overall_score' => 'performance_evaluation_overall_score',
+    'status' => 'performance_evaluation_status',
+    'manager_comments' => 'performance_evaluation_manager_comments',
+    'hr_comments' => 'performance_evaluation_hr_comments',
+    'recommendation' => 'performance_evaluation_recommendation',
+    'created_at' => 'performance_evaluation_created_at',
+    'updated_at' => 'performance_evaluation_updated_at',
+  ),
+  'hr_performance_periods' => 
+  array (
+    'name' => 'performance_period_name',
+    'start_date' => 'performance_period_start_date',
+    'end_date' => 'performance_period_end_date',
+    'status' => 'performance_period_status',
+    'created_at' => 'performance_period_created_at',
+    'updated_at' => 'performance_period_updated_at',
+  ),
+  'hr_performance_ratings' => 
+  array (
+    'evaluation_id' => 'performance_rating_evaluation_id',
+    'criterion_id' => 'performance_rating_criterion_id',
+    'rating' => 'performance_rating_rating',
+    'comments' => 'performance_rating_comments',
+    'created_at' => 'performance_rating_created_at',
+    'updated_at' => 'performance_rating_updated_at',
+  ),
+  'hr_positions' => 
+  array (
+    'department_id' => 'position_department_id',
+    'name' => 'position_name',
+    'code' => 'position_code',
+    'description' => 'position_description',
+    'created_at' => 'position_created_at',
+    'updated_at' => 'position_updated_at',
+  ),
+  'hr_premium_pay_items' => 
+  array (
+    'payroll_period_id' => 'premium_pay_item_payroll_period_id',
+    'payroll_record_id' => 'premium_pay_item_payroll_record_id',
+    'employee_id' => 'premium_pay_item_employee_id',
+    'work_date' => 'premium_pay_item_work_date',
+    'attendance_record_id' => 'premium_pay_item_attendance_record_id',
+    'holiday_id' => 'premium_pay_item_holiday_id',
+    'work_type' => 'premium_pay_item_work_type',
+    'holiday_type' => 'premium_pay_item_holiday_type',
+    'is_rest_day' => 'premium_pay_item_is_rest_day',
+    'hours_worked' => 'premium_pay_item_hours_worked',
+    'regular_hours' => 'premium_pay_item_regular_hours',
+    'overtime_hours' => 'premium_pay_item_overtime_hours',
+    'daily_rate' => 'premium_pay_item_daily_rate',
+    'hourly_rate' => 'premium_pay_item_hourly_rate',
+    'applied_rate_multiplier' => 'premium_pay_item_applied_rate_multiplier',
+    'regular_premium_pay' => 'premium_pay_item_regular_premium_pay',
+    'overtime_premium_pay' => 'premium_pay_item_overtime_premium_pay',
+    'premium_amount' => 'premium_pay_item_premium_amount',
+    'calculation_breakdown' => 'premium_pay_item_calculation_breakdown',
+    'rule_version' => 'premium_pay_item_rule_version',
+    'status' => 'premium_pay_item_status',
+    'rejection_reason' => 'premium_pay_item_rejection_reason',
+    'approved_by' => 'premium_pay_item_approved_by',
+    'approved_at' => 'premium_pay_item_approved_at',
+    'rejected_by' => 'premium_pay_item_rejected_by',
+    'rejected_at' => 'premium_pay_item_rejected_at',
+    'created_by' => 'premium_pay_item_created_by',
+    'updated_by' => 'premium_pay_item_updated_by',
+    'created_at' => 'premium_pay_item_created_at',
+    'updated_at' => 'premium_pay_item_updated_at',
+  ),
+  'hr_premium_pay_rule_versions' => 
+  array (
+    'premium_pay_rule_id' => 'premium_pay_rule_version_premium_pay_rule_id',
+    'version_number' => 'premium_pay_rule_version_version_number',
+    'version_code' => 'premium_pay_rule_version_version_code',
+    'effective_date' => 'premium_pay_rule_version_effective_date',
+    'configuration_snapshot' => 'premium_pay_rule_version_configuration_snapshot',
+    'created_by' => 'premium_pay_rule_version_created_by',
+    'change_reason' => 'premium_pay_rule_version_change_reason',
+    'created_at' => 'premium_pay_rule_version_created_at',
+    'updated_at' => 'premium_pay_rule_version_updated_at',
+  ),
+  'hr_premium_pay_rules' => 
+  array (
+    'rule_code' => 'premium_pay_rule_rule_code',
+    'name' => 'premium_pay_rule_name',
+    'category' => 'premium_pay_rule_category',
+    'base_multiplier' => 'premium_pay_rule_base_multiplier',
+    'holiday_multiplier' => 'premium_pay_rule_holiday_multiplier',
+    'rest_day_multiplier' => 'premium_pay_rule_rest_day_multiplier',
+    'overtime_multiplier' => 'premium_pay_rule_overtime_multiplier',
+    'night_diff_multiplier' => 'premium_pay_rule_night_diff_multiplier',
+    'effective_from' => 'premium_pay_rule_effective_from',
+    'effective_to' => 'premium_pay_rule_effective_to',
+    'rule_type' => 'premium_pay_rule_rule_type',
+    'is_active' => 'premium_pay_rule_is_active',
+    'description' => 'premium_pay_rule_description',
+    'created_at' => 'premium_pay_rule_created_at',
+    'updated_at' => 'premium_pay_rule_updated_at',
+  ),
+  'hr_salary_history' => 
+  array (
+    'employee_id' => 'salary_history_employee_id',
+    'effective_date' => 'salary_history_effective_date',
+    'basic_salary' => 'salary_history_basic_salary',
+    'salary_frequency' => 'salary_history_salary_frequency',
+    'employment_type' => 'salary_history_employment_type',
+    'reason' => 'salary_history_reason',
+    'approved_by' => 'salary_history_approved_by',
+    'remarks' => 'salary_history_remarks',
+    'created_at' => 'salary_history_created_at',
+    'updated_at' => 'salary_history_updated_at',
+  ),
+  'hr_schedule_change_logs' => 
+  array (
+    'employee_id' => 'schedule_change_log_employee_id',
+    'schedule_date' => 'schedule_change_log_schedule_date',
+    'previous_shift_template_id' => 'schedule_change_log_previous_shift_template_id',
+    'new_shift_template_id' => 'schedule_change_log_new_shift_template_id',
+    'previous_time_range' => 'schedule_change_log_previous_time_range',
+    'new_time_range' => 'schedule_change_log_new_time_range',
+    'reason' => 'schedule_change_log_reason',
+    'changed_by' => 'schedule_change_log_changed_by',
+    'created_at' => 'schedule_change_log_created_at',
+    'updated_at' => 'schedule_change_log_updated_at',
+  ),
+  'hr_separation' => 
+  array (
+    'employee_id' => 'separation_employee_id',
+    'last_working_day' => 'separation_last_working_day',
+    'reason' => 'separation_reason',
+    'remarks' => 'separation_remarks',
+    'eligible_for_rehire' => 'separation_eligible_for_rehire',
+    'processed_by' => 'separation_processed_by',
+    'created_at' => 'separation_created_at',
+    'updated_at' => 'separation_updated_at',
+  ),
+  'hr_shift_templates' => 
+  array (
+    'name' => 'shift_template_name',
+    'code' => 'shift_template_code',
+    'start_time' => 'shift_template_start_time',
+    'end_time' => 'shift_template_end_time',
+    'is_overnight' => 'shift_template_is_overnight',
+    'break_minutes' => 'shift_template_break_minutes',
+    'color' => 'shift_template_color',
+    'description' => 'shift_template_description',
+    'created_at' => 'shift_template_created_at',
+    'updated_at' => 'shift_template_updated_at',
+  ),
+  'hr_statutory_contribution_rules' => 
+  array (
+    'rule_name' => 'statutory_contribution_rule_rule_name',
+    'rule_type' => 'statutory_contribution_rule_rule_type',
+    'rate' => 'statutory_contribution_rule_rate',
+    'min_salary' => 'statutory_contribution_rule_min_salary',
+    'max_salary' => 'statutory_contribution_rule_max_salary',
+    'employee_share' => 'statutory_contribution_rule_employee_share',
+    'employer_share' => 'statutory_contribution_rule_employer_share',
+    'fixed_amount' => 'statutory_contribution_rule_fixed_amount',
+    'bracket_json' => 'statutory_contribution_rule_bracket_json',
+    'effective_date' => 'statutory_contribution_rule_effective_date',
+    'end_date' => 'statutory_contribution_rule_end_date',
+    'is_active' => 'statutory_contribution_rule_is_active',
+    'created_at' => 'statutory_contribution_rule_created_at',
+    'updated_at' => 'statutory_contribution_rule_updated_at',
+  ),
+  'hr_training_enrollments' => 
+  array (
+    'training_program_id' => 'training_enrollment_training_program_id',
+    'employee_id' => 'training_enrollment_employee_id',
+    'enrollment_date' => 'training_enrollment_enrollment_date',
+    'attendance_status' => 'training_enrollment_attendance_status',
+    'completion_status' => 'training_enrollment_completion_status',
+    'score' => 'training_enrollment_score',
+    'certificate_path' => 'training_enrollment_certificate_path',
+    'completion_date' => 'training_enrollment_completion_date',
+    'remarks' => 'training_enrollment_remarks',
+    'created_at' => 'training_enrollment_created_at',
+    'updated_at' => 'training_enrollment_updated_at',
+  ),
+  'hr_training_programs' => 
+  array (
+    'name' => 'training_program_name',
+    'description' => 'training_program_description',
+    'trainer' => 'training_program_trainer',
+    'training_type' => 'training_program_training_type',
+    'location' => 'training_program_location',
+    'start_date' => 'training_program_start_date',
+    'end_date' => 'training_program_end_date',
+    'duration_hours' => 'training_program_duration_hours',
+    'cost' => 'training_program_cost',
+    'status' => 'training_program_status',
+    'created_at' => 'training_program_created_at',
+    'updated_at' => 'training_program_updated_at',
+  ),
+);
+
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::disableForeignKeyConstraints();
+
+        try {
+            foreach ($this->renames as $tableName => $columns) {
+                if (!Schema::hasTable($tableName)) {
+                    continue;
+                }
+
+                foreach ($columns as $oldCol => $newCol) {
+                    if (Schema::hasColumn($tableName, $oldCol) && !Schema::hasColumn($tableName, $newCol)) {
+                        $this->changeColumn($tableName, $oldCol, $newCol);
+                    }
+                }
+            }
+        } finally {
+            Schema::enableForeignKeyConstraints();
+        }
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::disableForeignKeyConstraints();
+
+        try {
+            foreach ($this->renames as $tableName => $columns) {
+                if (!Schema::hasTable($tableName)) {
+                    continue;
+                }
+
+                foreach (array_reverse($columns) as $oldCol => $newCol) {
+                    if (Schema::hasColumn($tableName, $newCol) && !Schema::hasColumn($tableName, $oldCol)) {
+                        $this->changeColumn($tableName, $newCol, $oldCol);
+                    }
+                }
+            }
+        } finally {
+            Schema::enableForeignKeyConstraints();
+        }
+    }
+
+    protected function changeColumn(string $tableName, string $oldCol, string $newCol): void
+    {
+        $colInfo = \Illuminate\Support\Facades\DB::selectOne("
+            SELECT COLUMN_TYPE, IS_NULLABLE, COLUMN_DEFAULT, EXTRA
+            FROM information_schema.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE()
+              AND TABLE_NAME = ?
+              AND COLUMN_NAME = ?
+        ", [$tableName, $oldCol]);
+
+        if (!$colInfo) {
+            return;
+        }
+
+        $type = $colInfo->COLUMN_TYPE;
+        $nullable = $colInfo->IS_NULLABLE === 'YES' ? 'NULL' : 'NOT NULL';
+
+        $default = '';
+        if ($colInfo->COLUMN_DEFAULT !== null && strtoupper($colInfo->COLUMN_DEFAULT) !== 'NULL') {
+            if (strtoupper($colInfo->COLUMN_DEFAULT) === 'CURRENT_TIMESTAMP' || strtoupper($colInfo->COLUMN_DEFAULT) === 'CURRENT_TIMESTAMP()') {
+                $default = ' DEFAULT CURRENT_TIMESTAMP';
+            } elseif (is_numeric($colInfo->COLUMN_DEFAULT)) {
+                $default = " DEFAULT {$colInfo->COLUMN_DEFAULT}";
+            } else {
+                $defVal = trim($colInfo->COLUMN_DEFAULT, "'");
+                $default = " DEFAULT " . \Illuminate\Support\Facades\DB::getPdo()->quote($defVal);
+            }
+        } elseif ($colInfo->IS_NULLABLE === 'YES') {
+            $default = ' DEFAULT NULL';
+        }
+
+        $extra = $colInfo->EXTRA ? ' ' . $colInfo->EXTRA : '';
+
+        \Illuminate\Support\Facades\DB::statement(
+            "ALTER TABLE `{$tableName}` CHANGE COLUMN `{$oldCol}` `{$newCol}` {$type} {$nullable}{$default}{$extra}"
+        );
+    }
+};

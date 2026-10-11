@@ -2,6 +2,8 @@
 
 namespace App\Models\Hr;
 
+use App\Traits\HasEntityPrimaryKey;
+
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -9,6 +11,9 @@ use App\Models\User;
 
 class Holiday extends Model
 {
+    use HasEntityPrimaryKey;
+
+    protected $primaryKey = 'holiday_id';
     use HasFactory;
 
     protected $table = 'hr_holidays';

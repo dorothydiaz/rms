@@ -2,12 +2,17 @@
 
 namespace App\Models\Hr;
 
+use App\Traits\HasEntityPrimaryKey;
+
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PremiumPayRule extends Model
 {
+    use HasEntityPrimaryKey;
+
+    protected $primaryKey = 'premium_pay_rule_id';
     use HasFactory;
 
     protected $table = 'hr_premium_pay_rules';

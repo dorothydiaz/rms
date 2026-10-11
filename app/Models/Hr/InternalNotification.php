@@ -2,12 +2,17 @@
 
 namespace App\Models\Hr;
 
+use App\Traits\HasEntityPrimaryKey;
+
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class InternalNotification extends Model
 {
+    use HasEntityPrimaryKey;
+
+    protected $primaryKey = 'internal_notification_id';
     use HasFactory;
 
     protected $fillable = [

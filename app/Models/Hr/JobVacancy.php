@@ -2,12 +2,17 @@
 
 namespace App\Models\Hr;
 
+use App\Traits\HasEntityPrimaryKey;
+
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class JobVacancy extends Model
 {
+    use HasEntityPrimaryKey;
+
+    protected $primaryKey = 'job_vacancy_id';
     use HasFactory;
 
     protected $table = 'hr_job_vacancies';

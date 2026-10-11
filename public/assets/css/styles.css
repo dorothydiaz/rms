@@ -168,7 +168,7 @@ a {
     box-shadow: var(--glass-shadow);
     transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s ease;
     position: relative;
-    z-index: 50;
+    z-index: 1020;
 }
 
 /* Disable all transitions and animations during initial page load to eliminate tab-switch flickering */
@@ -221,7 +221,8 @@ a {
     border-right: none;
     padding: 16px 0;
     background-color: transparent;
-    z-index: 10;
+    position: relative;
+    z-index: 20;
     overflow: visible;
 }
 
@@ -399,6 +400,7 @@ a {
 
 .rail-item:hover {
     transform: scale(1.1);
+    z-index: 100;
 }
 
 .rail-item.active {
@@ -1883,7 +1885,7 @@ a {
         position: fixed;
         left: 0;
         transform: translateX(-100%);
-        z-index: 1000;
+        z-index: 1020;
     }
 
     .sidebar.open {

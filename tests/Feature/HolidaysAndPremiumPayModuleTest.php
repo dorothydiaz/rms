@@ -113,8 +113,8 @@ class HolidaysAndPremiumPayModuleTest extends TestCase
 
         $response->assertRedirect();
         $this->assertDatabaseHas('hr_holidays', [
-            'name' => $holidayName,
-            'year' => 2026,
+            'holiday_name' => $holidayName,
+            'holiday_year' => 2026,
             'holiday_type' => 'Regular Holiday',
         ]);
 
@@ -133,7 +133,7 @@ class HolidaysAndPremiumPayModuleTest extends TestCase
             'is_active' => '1',
         ]);
         $updateResp->assertRedirect();
-        $this->assertDatabaseHas('hr_holidays', ['id' => $holiday->id, 'name' => $updatedName]);
+        $this->assertDatabaseHas('hr_holidays', ['id' => $holiday->id, 'holiday_name' => $updatedName]);
 
         // Delete
         $delResp = $this->actingAs($this->user)->delete(route('hr.payroll.holidays.destroy', $holiday->id));
@@ -314,7 +314,7 @@ class HolidaysAndPremiumPayModuleTest extends TestCase
         $approveResp->assertRedirect();
         $this->assertDatabaseHas('hr_premium_pay_items', [
             'id' => $item->id,
-            'status' => 'Approved',
+            'premium_pay_item_status' => 'Approved',
         ]);
 
         // Reject item with reason
@@ -324,8 +324,8 @@ class HolidaysAndPremiumPayModuleTest extends TestCase
         $rejectResp->assertRedirect();
         $this->assertDatabaseHas('hr_premium_pay_items', [
             'id' => $item->id,
-            'status' => 'Rejected',
-            'rejection_reason' => 'Schedule shift was unapproved by branch supervisor',
+            'premium_pay_item_status' => 'Rejected',
+            'premium_pay_item_rejection_reason' => 'Schedule shift was unapproved by branch supervisor',
         ]);
     }
 
@@ -363,8 +363,8 @@ class HolidaysAndPremiumPayModuleTest extends TestCase
             'ids' => [$item1->id, $item2->id],
         ]);
         $bulkApproveResp->assertRedirect();
-        $this->assertDatabaseHas('hr_premium_pay_items', ['id' => $item1->id, 'status' => 'Approved']);
-        $this->assertDatabaseHas('hr_premium_pay_items', ['id' => $item2->id, 'status' => 'Approved']);
+        $this->assertDatabaseHas('hr_premium_pay_items', ['id' => $item1->id, 'premium_pay_item_status' => 'Approved']);
+        $this->assertDatabaseHas('hr_premium_pay_items', ['id' => $item2->id, 'premium_pay_item_status' => 'Approved']);
 
         // Bulk Reject
         $bulkRejectResp = $this->actingAs($this->user)->post(route('hr.payroll.premium-pay.bulk-reject'), [
@@ -374,8 +374,8 @@ class HolidaysAndPremiumPayModuleTest extends TestCase
         $bulkRejectResp->assertRedirect();
         $this->assertDatabaseHas('hr_premium_pay_items', [
             'id' => $item1->id,
-            'status' => 'Rejected',
-            'rejection_reason' => 'Batch review: Store closed early',
+            'premium_pay_item_status' => 'Rejected',
+            'premium_pay_item_rejection_reason' => 'Batch review: Store closed early',
         ]);
     }
 
