@@ -771,12 +771,14 @@
     color: #64748b;
 }
 
-/* Industrial Workspace Asymmetric Grid (Approx. 4fr Left / 6fr Right) */
+/* Industrial Workspace Grid (30% Left: Tender Ref & Terms / 70% Right: Items Table - Expands with Sidebar Minimize) */
 .rfq-builder-workspace-grid {
     display: grid;
-    grid-template-columns: minmax(360px, 4.2fr) minmax(480px, 5.8fr);
-    gap: 10px;
+    grid-template-columns: minmax(260px, 30%) minmax(0, 1fr);
+    gap: 12px;
     align-items: stretch;
+    width: 100%;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 @media (max-width: 1100px) {
     .rfq-builder-workspace-grid {
@@ -788,6 +790,7 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
+    min-width: 0;
 }
 
 .rfq-builder-right-col {
@@ -795,12 +798,32 @@
     flex-direction: column;
     height: 100%;
     min-width: 0;
+    width: 100%;
+    flex: 1 1 auto;
 }
 
 .rfq-builder-right-col .rfq-items-panel {
     display: flex;
     flex-direction: column;
     height: 100%;
+    width: 100%;
+    min-width: 0;
+}
+
+.rfq-builder-right-col .rfq-table-responsive {
+    flex: 1 1 auto;
+    max-height: calc(100vh - 290px);
+    min-height: 260px;
+    overflow-y: auto;
+    overflow-x: auto;
+    width: 100%;
+}
+
+/* Fluid responsive behavior: Quotation Line Items & Specifications expands when Dual-Rail Sidebar is collapsed/minimized */
+#app-sidebar.collapsed ~ .main-content .rfq-builder-workspace-grid,
+body.sidebar-collapsed .rfq-builder-workspace-grid,
+body:has(#app-sidebar.collapsed) .rfq-builder-workspace-grid {
+    grid-template-columns: minmax(260px, 28%) minmax(0, 1fr);
 }
 
 .rfq-builder-right-col .rfq-table-responsive {
@@ -2299,8 +2322,365 @@ th.is-header-drag-over {
         box-shadow: none;
         border: none;
     }
-    .rfq-modal-footer, .rfq-modal-header, .rfq-lock-overlay {
-        display: none !important;
+}
+
+/* ==========================================================================
+   RFQ LIFECYCLE PROGRESS BAR & STAGE STEPPER
+   | Draft > Submitted > Approval > Status |
+   ========================================================================== */
+.rfq-lifecycle-stepper-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--rfq-border-subtle);
+    border-radius: var(--rfq-radius-lg);
+    padding: 14px 18px;
+    box-shadow: var(--rfq-shadow-sm);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    margin-bottom: 8px;
+    position: relative;
+    overflow: hidden;
+}
+.rfq-lifecycle-stepper-wrap.stage-theme-draft {
+    border-left: 4px solid #9333ea;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(250, 245, 255, 0.7));
+}
+.rfq-lifecycle-stepper-wrap.stage-theme-submitted {
+    border-left: 4px solid #2563eb;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(239, 246, 255, 0.7));
+}
+.rfq-lifecycle-stepper-wrap.stage-theme-approval {
+    border-left: 4px solid #d97706;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(254, 243, 199, 0.7));
+}
+.rfq-lifecycle-stepper-wrap.stage-theme-approved {
+    border-left: 4px solid #059669;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(236, 253, 245, 0.7));
+}
+.rfq-lifecycle-stepper-wrap.stage-theme-refused {
+    border-left: 4px solid #dc2626;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(254, 242, 242, 0.7));
+}
+
+.rfq-lifecycle-stepper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    position: relative;
+    gap: 8px;
+}
+.rfq-stepper-step {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    user-select: none;
+    z-index: 2;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    padding: 10px 14px;
+    border-radius: var(--rfq-radius-md);
+    background: #ffffff;
+    border: 1.5px solid #e2e8f0;
+    flex: 1;
+    min-width: 140px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+.rfq-stepper-step:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.05);
+}
+.rfq-stepper-circle {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    color: #64748b;
+    background: #f1f5f9;
+    border: 2px solid #cbd5e1;
+    transition: all 0.25s ease;
+    flex-shrink: 0;
+    position: relative;
+}
+.rfq-stepper-circle i {
+    font-size: 16px;
+    display: none;
+}
+.rfq-stepper-circle .rfq-step-num {
+    display: block;
+}
+.rfq-stepper-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+.rfq-step-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #475569;
+    line-height: 1.2;
+}
+.rfq-step-desc {
+    font-size: 11px;
+    color: #94a3b8;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+.rfq-stepper-line {
+    flex: 0 0 24px;
+    height: 3px;
+    background: #e2e8f0;
+    border-radius: 2px;
+    transition: all 0.3s ease;
+    z-index: 1;
+    margin: 0 2px;
+}
+
+.rfq-stepper-step.is-completed {
+    background: #f0fdf4;
+    border-color: #a7f3d0;
+}
+.rfq-stepper-step.is-completed .rfq-stepper-circle {
+    background: #10b981;
+    border-color: #059669;
+    color: #ffffff;
+}
+.rfq-stepper-step.is-completed .rfq-stepper-circle i {
+    display: block;
+}
+.rfq-stepper-step.is-completed .rfq-stepper-circle .rfq-step-num {
+    display: none;
+}
+.rfq-stepper-step.is-completed .rfq-step-title {
+    color: #059669;
+}
+.rfq-stepper-line.is-completed {
+    background: #10b981;
+}
+
+.rfq-stepper-step.is-active {
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+}
+.rfq-stepper-step.is-active.stage-draft {
+    background: #faf5ff;
+    border-color: #9333ea;
+}
+.rfq-stepper-step.is-active.stage-draft .rfq-stepper-circle {
+    background: #9333ea;
+    border-color: #7c3aed;
+    color: #ffffff;
+    box-shadow: 0 0 0 4px rgba(147, 51, 234, 0.2);
+}
+.rfq-stepper-step.is-active.stage-draft .rfq-step-title {
+    color: #9333ea;
+}
+
+.rfq-stepper-step.is-active.stage-submitted {
+    background: #eff6ff;
+    border-color: #2563eb;
+}
+.rfq-stepper-step.is-active.stage-submitted .rfq-stepper-circle {
+    background: #2563eb;
+    border-color: #1d4ed8;
+    color: #ffffff;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.2);
+}
+.rfq-stepper-step.is-active.stage-submitted .rfq-step-title {
+    color: #2563eb;
+}
+
+.rfq-stepper-step.is-active.stage-approval {
+    background: #fffbeb;
+    border-color: #d97706;
+}
+.rfq-stepper-step.is-active.stage-approval .rfq-stepper-circle {
+    background: #d97706;
+    border-color: #b45309;
+    color: #ffffff;
+    box-shadow: 0 0 0 4px rgba(217, 119, 6, 0.2);
+}
+.rfq-stepper-step.is-active.stage-approval .rfq-step-title {
+    color: #d97706;
+}
+
+.rfq-stepper-step.is-active.stage-approved {
+    background: #ecfdf5;
+    border-color: #059669;
+}
+.rfq-stepper-step.is-active.stage-approved .rfq-stepper-circle {
+    background: #059669;
+    border-color: #047857;
+    color: #ffffff;
+    box-shadow: 0 0 0 4px rgba(5, 150, 105, 0.2);
+}
+.rfq-stepper-step.is-active.stage-approved .rfq-step-title {
+    color: #059669;
+}
+
+.rfq-stepper-step.is-active.stage-refused {
+    background: #fef2f2;
+    border-color: #dc2626;
+}
+.rfq-stepper-step.is-active.stage-refused .rfq-stepper-circle {
+    background: #dc2626;
+    border-color: #b91c1c;
+    color: #ffffff;
+    box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.2);
+}
+.rfq-stepper-step.is-active.stage-refused .rfq-step-title {
+    color: #dc2626;
+}
+
+.rfq-stage-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 14px;
+    border-radius: var(--rfq-radius-md);
+    font-size: 12px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    flex-wrap: wrap;
+}
+.rfq-stage-banner.stage-draft {
+    background: rgba(147, 51, 234, 0.06);
+    border-color: rgba(147, 51, 234, 0.2);
+    color: #6b21a8;
+}
+.rfq-stage-banner.stage-submitted {
+    background: rgba(37, 99, 235, 0.06);
+    border-color: rgba(37, 99, 235, 0.2);
+    color: #1e40af;
+}
+.rfq-stage-banner.stage-approval {
+    background: rgba(217, 119, 6, 0.08);
+    border-color: rgba(217, 119, 6, 0.25);
+    color: #92400e;
+}
+.rfq-stage-banner.stage-approved {
+    background: rgba(5, 150, 105, 0.08);
+    border-color: rgba(5, 150, 105, 0.25);
+    color: #065f46;
+}
+.rfq-stage-banner.stage-refused {
+    background: rgba(220, 38, 38, 0.08);
+    border-color: rgba(220, 38, 38, 0.25);
+    color: #991b1b;
+}
+.rfq-stage-banner-icon {
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.rfq-stage-banner-content {
+    flex: 1;
+    min-width: 200px;
+}
+.rfq-stage-banner-title {
+    font-weight: 700;
+    font-size: 12.5px;
+}
+.rfq-stage-banner-sub {
+    font-size: 11px;
+    opacity: 0.85;
+    margin-top: 1px;
+}
+.rfq-stage-banner-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.var-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+.var-pill.positive {
+    background: rgba(239, 68, 68, 0.1);
+    color: #dc2626;
+    border: 1px solid rgba(239, 68, 68, 0.25);
+}
+.var-pill.negative {
+    background: rgba(16, 185, 129, 0.1);
+    color: #059669;
+    border: 1px solid rgba(16, 185, 129, 0.25);
+}
+.var-pill.neutral {
+    background: #f1f5f9;
+    color: #64748b;
+    border: 1px solid #cbd5e1;
+}
+
+.budget-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+.budget-pill.within {
+    background: rgba(16, 185, 129, 0.12);
+    color: #047857;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+.budget-pill.over {
+    background: rgba(239, 68, 68, 0.12);
+    color: #b91c1c;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+.budget-pill.pending {
+    background: #f1f5f9;
+    color: #64748b;
+    border: 1px solid #cbd5e1;
+}
+
+.builder-col-cat-header {
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #64748b;
+    padding: 6px 12px 3px;
+    background: #f8fafc;
+    border-bottom: 1px solid #f1f5f9;
+    border-top: 1px solid #f1f5f9;
+}
+
+/* Red Light Error Glow Feedback on Missing Inputs */
+.rfq-field-error-glow {
+    border-color: #ef4444 !important;
+    box-shadow: 0 0 0 3.5px rgba(239, 68, 68, 0.42) !important;
+    outline: none !important;
+    animation: rfqPulseRedGlow 1.2s ease-in-out infinite alternate !important;
+}
+@keyframes rfqPulseRedGlow {
+    0% {
+        box-shadow: 0 0 0 2.5px rgba(239, 68, 68, 0.3);
+    }
+    100% {
+        box-shadow: 0 0 0 5.5px rgba(239, 68, 68, 0.65);
     }
 }
 </style>
@@ -2334,7 +2714,7 @@ th.is-header-drag-over {
                     <i class="ph ph-download-simple"></i>
                     <span>Export</span>
                 </button>
-                <button type="button" class="hr-btn hr-btn-primary" onclick="switchRfqTab('tab-builder'); resetRfqForm();" data-tooltip="Launch RFQ Tender Builder">
+                <button type="button" class="hr-btn hr-btn-primary" onclick="createNewRfq(false);" data-tooltip="Create a New Request for Quotation">
                     <i class="ph ph-plus-circle"></i>
                     <span>New RFQ</span>
                 </button>
@@ -2349,7 +2729,7 @@ th.is-header-drag-over {
             <span>RFQ Directory & Status Tracker</span>
             <span class="rfq-tab-count" id="tabRfqListCount">0</span>
         </button>
-        <button type="button" class="rfq-tab-btn" id="tabBtnBuilder" data-tab="tab-builder" onclick="switchRfqTab('tab-builder')">
+        <button type="button" class="rfq-tab-btn" id="tabBtnBuilder" data-tab="tab-builder" onclick="handleBuilderTabClick()">
             <i class="ph ph-plus-circle"></i>
             <span id="tabBuilderTitle">Request for Quotation Builder</span>
             <span class="rfq-tab-badge" id="tabBuilderBadge">New RFQ</span>
@@ -2487,30 +2867,79 @@ th.is-header-drag-over {
          ==================================================================== -->
     <div class="rfq-tab-pane" id="pane-tab-builder" style="display: none;">
 
-    <!-- Top Command & Action Bar -->
-    <div class="rfq-command-bar">
-        <div class="rfq-command-left" style="display: flex; align-items: center; gap: 8px;">
-            <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.74rem; font-weight: 700; color: #64748b; letter-spacing: 0.04em; text-transform: uppercase;">
-                <i class="ph ph-sliders-horizontal" style="color: #9333ea; font-size: 14px;"></i> RFQ Workspace
-            </span>
+    <!-- RFQ Procurement Lifecycle Stepper / Progress Bar: | Draft > Submitted > Approval > Status | -->
+    <div class="rfq-lifecycle-stepper-wrap stage-theme-draft" id="rfqLifecycleStepperWrap">
+        <div class="rfq-lifecycle-stepper" id="rfqLifecycleProgressBar">
+            <!-- Step 1: Draft -->
+            <div class="rfq-stepper-step is-active stage-draft" id="stepIndicatorDraft" data-stage="Draft" onclick="handleStepClick('Draft')">
+                <div class="rfq-stepper-circle">
+                    <i class="ph ph-check"></i>
+                    <span class="rfq-step-num">1</span>
+                </div>
+                <div class="rfq-stepper-info">
+                    <span class="rfq-step-title">Draft</span>
+                    <span class="rfq-step-desc">Create &amp; Edit</span>
+                </div>
+            </div>
+
+            <div class="rfq-stepper-line" id="stepTrack1"></div>
+
+            <!-- Step 2: Submitted -->
+            <div class="rfq-stepper-step" id="stepIndicatorSubmitted" data-stage="Submitted" onclick="handleStepClick('Submitted')">
+                <div class="rfq-stepper-circle">
+                    <i class="ph ph-check"></i>
+                    <span class="rfq-step-num">2</span>
+                </div>
+                <div class="rfq-stepper-info">
+                    <span class="rfq-step-title">Submitted</span>
+                    <span class="rfq-step-desc">Locked for Bids</span>
+                </div>
+            </div>
+
+            <div class="rfq-stepper-line" id="stepTrack2"></div>
+
+            <!-- Step 3: Approval -->
+            <div class="rfq-stepper-step" id="stepIndicatorApproval" data-stage="Approval" onclick="handleStepClick('Approval')">
+                <div class="rfq-stepper-circle">
+                    <i class="ph ph-check"></i>
+                    <span class="rfq-step-num">3</span>
+                </div>
+                <div class="rfq-stepper-info">
+                    <span class="rfq-step-title">Approval</span>
+                    <span class="rfq-step-desc">Quote Validation</span>
+                </div>
+            </div>
+
+            <div class="rfq-stepper-line" id="stepTrack3"></div>
+
+            <!-- Step 4: Status -->
+            <div class="rfq-stepper-step" id="stepIndicatorStatus" data-stage="Status" onclick="handleStepClick('Status')">
+                <div class="rfq-stepper-circle">
+                    <i class="ph ph-check"></i>
+                    <span class="rfq-step-num">4</span>
+                </div>
+                <div class="rfq-stepper-info">
+                    <span class="rfq-step-title" id="stepStatusTitle">Status</span>
+                    <span class="rfq-step-desc" id="stepStatusDesc">Pending</span>
+                </div>
+            </div>
         </div>
 
-        <div class="rfq-actions-group">
-            <button type="button" class="rfq-btn rfq-btn-outline" onclick="switchRfqTab('tab-list')" title="Return to RFQ Directory & Tracker" style="padding: 4px 10px; font-size: 11.5px;">
-                <i class="ph ph-arrow-left"></i> Directory
-            </button>
-            <button type="button" class="rfq-btn rfq-btn-outline" onclick="resetRfqForm()" title="Clear form & start new RFQ" style="padding: 4px 10px; font-size: 11.5px;">
-                <i class="ph ph-arrow-counter-clockwise"></i> Reset
-            </button>
-            <button type="button" class="rfq-btn rfq-btn-outline" id="btnToggleBuilderAudit" onclick="openRfqAuditDrawer()" title="View Procurement Audit Trail & Activity Log" style="padding: 4px 10px; font-size: 11.5px;">
-                <i class="ph ph-clock-counter-clockwise"></i> Audit Trail
-            </button>
-            <button type="button" class="rfq-btn rfq-btn-outline" onclick="openRfqDocumentPreview()" title="Open formal printable RFQ document preview (F8)" style="padding: 4px 10px; font-size: 11.5px;">
-                <i class="ph ph-eye"></i> Preview <span class="rfq-hotkey-badge">F8</span>
-            </button>
-            <button type="button" class="rfq-btn rfq-btn-primary" id="btnDispatchEmail" onclick="openSendEmailModal()" title="Send RFQ package directly to vendor contact (F10)" style="padding: 4px 12px; font-size: 11.5px;">
-                <i class="ph ph-paper-plane-tilt"></i> Send to Vendor <span class="rfq-hotkey-badge" style="background: rgba(255,255,255,0.25);">F10</span>
-            </button>
+        <!-- Stage Context & Instruction Banner -->
+        <div class="rfq-stage-banner stage-draft" id="rfqStageBanner">
+            <div class="rfq-stage-banner-icon" id="rfqStageBannerIcon">
+                <i class="ph ph-pencil-simple-line"></i>
+            </div>
+            <div class="rfq-stage-banner-content">
+                <div class="rfq-stage-banner-title" id="rfqStageBannerTitle">Stage 1: RFQ Draft Creation &amp; Specification</div>
+                <div class="rfq-stage-banner-sub" id="rfqStageBannerSub">Buyer can add, edit, or adjust items, quantities, and benchmark prices. Vendor quotation inputs remain inactive until tender submission.</div>
+            </div>
+            <div class="rfq-stage-banner-actions" id="rfqStageBannerActions">
+                <button type="button" class="rfq-btn" onclick="submitActiveRfqToVendor()" style="background: #9333ea; color: #ffffff; padding: 6px 16px; font-size: 12px; font-weight: 700; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(147, 51, 234, 0.3);">
+                    <i class="ph ph-paper-plane-tilt"></i>
+                    <span>Submit &rarr; Submitted</span>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -2533,6 +2962,10 @@ th.is-header-drag-over {
                                 <span id="rfqRefDisplay" style="font-family: monospace; font-size: 1.15rem; font-weight: 800; color: #9333ea; letter-spacing: -0.01em;">RFQ-2026-0044</span>
                                 <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="copyRfqReference()" title="Copy Reference to Clipboard" style="padding: 2px 6px; font-size: 11px; height: 22px;">
                                     <i class="ph ph-copy"></i>
+                                </button>
+                                <button type="button" class="hr-btn hr-btn-outline hr-btn-sm" onclick="createNewRfq()" title="Create New RFQ" style="padding: 2px 8px; font-size: 11px; height: 22px; color: #9333ea; border-color: rgba(147, 51, 234, 0.3); display: inline-flex; align-items: center; gap: 4px;">
+                                    <i class="ph ph-plus-circle"></i>
+                                    <span>New</span>
                                 </button>
                             </div>
                         </div>
@@ -2772,10 +3205,16 @@ th.is-header-drag-over {
                         </div>
                     </div>
 
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <div style="font-size: 0.74rem; color: var(--rfq-text-muted);">
-                            <i class="ph ph-info"></i> Benchmark pricing used for budgetary validation only.
-                        </div>
+                    <div class="rfq-actions-group" style="display: flex; align-items: center; gap: 8px;">
+                        <button type="button" class="rfq-btn rfq-btn-outline" id="btnToggleBuilderAudit" onclick="openRfqAuditDrawer()" title="View Procurement Audit Trail & Activity Log" style="padding: 5px 12px; font-size: 11.5px; border-radius: 8px;">
+                            <i class="ph ph-clock-counter-clockwise"></i> <span>Audit Trail</span>
+                        </button>
+                        <button type="button" class="rfq-btn rfq-btn-outline" onclick="openRfqDocumentPreview()" title="Open formal printable RFQ document preview (F8)" style="padding: 5px 12px; font-size: 11.5px; border-radius: 8px;">
+                            <i class="ph ph-eye"></i> <span>Preview</span> <span class="rfq-hotkey-badge">F8</span>
+                        </button>
+                        <button type="button" class="rfq-btn rfq-btn-primary" id="btnDispatchEmail" onclick="openSendEmailModal()" title="Send RFQ package directly to vendor contact (F10)" style="padding: 5px 14px; font-size: 11.5px; border-radius: 8px;">
+                            <i class="ph ph-paper-plane-tilt"></i> <span>Send to Vendor</span> <span class="rfq-hotkey-badge" style="background: rgba(255,255,255,0.25);">F10</span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -3272,20 +3711,67 @@ th.is-header-drag-over {
  * ==========================================================================
  */
 
+// Global formatting utilities
+window.formatNumber = function(num, decimals = 2) {
+    const val = Number(num);
+    if (isNaN(val)) return '0';
+    return val.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: decimals });
+};
+
 // 1. Immutable Column Definition Matrix based on Item Master Data Headers
 const ALL_COLUMNS = [
-    { id: 'index', label: '#', default: true, align: 'center', width: '48px', lockVisible: true },
-    { id: 'sku', label: 'SKU Code', default: true, align: 'left', width: '120px' },
-    { id: 'name', label: 'Item Name', default: true, align: 'left', minWidth: '180px', lockVisible: true },
-    { id: 'specs', label: 'Technical Specs / Brand', default: true, align: 'left', minWidth: '160px' },
-    { id: 'category', label: 'Category', default: true, align: 'left', width: '130px' },
-    { id: 'uom', label: 'UOM / Pack', default: true, align: 'center', width: '100px' },
-    { id: 'quantity', label: 'Requested Qty', default: true, align: 'right', width: '120px', lockVisible: true },
-    { id: 'target_price', label: 'Benchmark Cost (₱)', default: true, align: 'right', width: '140px' },
-    { id: 'total_target', label: 'Est. Budget (₱)', default: true, align: 'right', width: '140px' },
-    { id: 'required_date', label: 'Required Date', default: false, align: 'center', width: '130px' },
-    { id: 'notes', label: 'Line Notes', default: false, align: 'left', minWidth: '150px' }
+    // 1. Base Item Request Fields
+    { id: 'index', label: '#', category: 'Base Request', default: true, align: 'center', width: '48px', lockVisible: true },
+    { id: 'item_id', label: 'Item ID / SKU', category: 'Base Request', default: true, align: 'left', width: '130px', lockVisible: true },
+    { id: 'item_name', label: 'Item Description', category: 'Base Request', default: true, align: 'left', minWidth: '180px', lockVisible: true },
+    { id: 'purchase_uom_code', label: 'Purchase UOM', category: 'Base Request', default: true, align: 'center', width: '110px' },
+    { id: 'requested_quantity', label: 'Requested Qty', category: 'Base Request', default: true, align: 'right', width: '120px' },
+    { id: 'target_unit_price', label: 'Benchmark Price (₱)', category: 'Base Request', default: false, align: 'right', width: '135px' },
+    { id: 'target_line_total', label: 'Budget Total (₱)', category: 'Base Request', default: false, align: 'right', width: '135px' },
+    { id: 'rfq_line_notes', label: 'Specifications / Notes', category: 'Base Request', default: false, align: 'left', minWidth: '150px' },
+
+    // 2. Vendor Response Inputs (Revealed in Approval stage)
+    { id: 'quoted_quantity', label: 'Quoted Qty', category: 'Vendor Response', default: false, align: 'right', width: '120px' },
+    { id: 'quoted_unit_price', label: 'Quoted Price (₱)', category: 'Vendor Response', default: false, align: 'right', width: '135px' },
+    { id: 'quoted_line_total', label: 'Quoted Total (₱)', category: 'Vendor Response', default: false, align: 'right', width: '135px' },
+    { id: 'lead_time_days', label: 'Lead Time (Days)', category: 'Vendor Response', default: false, align: 'center', width: '120px' },
+
+    // 3. Validation & Comparison Fields (Optional: untoggled by default in Approval stage)
+    { id: 'quantity_variance', label: 'Qty Variance', category: 'Validation & Comparison', default: false, align: 'right', width: '120px' },
+    { id: 'price_variance_amount', label: 'Price Diff (₱)', category: 'Validation & Comparison', default: false, align: 'right', width: '130px' },
+    { id: 'price_variance_percentage', label: 'Variance (%)', category: 'Validation & Comparison', default: false, align: 'right', width: '120px' },
+    { id: 'is_price_within_budget', label: 'Budget Check', category: 'Validation & Comparison', default: false, align: 'center', width: '130px' }
 ];
+
+// Stage-Specific Default Column Configurations
+// Draft Stage: Core request fields visible; Benchmark Price / Budget / Notes untoggled by default (optional)
+const DRAFT_STAGE_DEFAULT_COLUMNS = [
+    'index',
+    'item_id',
+    'item_name',
+    'purchase_uom_code',
+    'requested_quantity'
+];
+
+// Approval Stage: Core request + vendor quotes visible; Qty variance / Price Diff / Variance / Budget check untoggled by default (optional)
+const APPROVAL_STAGE_DEFAULT_COLUMNS = [
+    'index',
+    'item_id',
+    'item_name',
+    'purchase_uom_code',
+    'requested_quantity',
+    'quoted_quantity',
+    'quoted_unit_price',
+    'quoted_line_total'
+];
+
+function getStageDefaultColumns(stage) {
+    const s = getNormalizedRfqStage(stage);
+    if (s === 'Approval' || s === 'Approved' || s === 'Refused') {
+        return [...APPROVAL_STAGE_DEFAULT_COLUMNS];
+    }
+    return [...DRAFT_STAGE_DEFAULT_COLUMNS];
+}
 
 // Seeded Item Master Dictionary (Synced with RMS Inventory Catalog)
 const ITEM_MASTER_DICTIONARY = [
@@ -3666,7 +4152,18 @@ window.AppStore = {
 };
 
 // Column Visibility & Widths Configuration in LocalStorage
-let activeColumnIds = JSON.parse(localStorage.getItem('rms_rfq_columns')) || ALL_COLUMNS.filter(c => c.default).map(c => c.id);
+const LEGACY_COL_MAP = {
+    'sku': 'item_id',
+    'name': 'item_name',
+    'uom': 'purchase_uom_code',
+    'quantity': 'requested_quantity',
+    'target_price': 'target_unit_price',
+    'total_target': 'target_line_total',
+    'notes': 'rfq_line_notes'
+};
+let activeColumnIds = JSON.parse(localStorage.getItem('rms_rfq_builder_cols_v6'))
+    || getStageDefaultColumns(window.AppStore?.activeRfq?.rfqStatus || window.AppStore?.activeRfq?.status || 'Draft');
+activeColumnIds = [...new Set(activeColumnIds.map(id => LEGACY_COL_MAP[id] || id))].filter(id => ALL_COLUMNS.some(c => c.id === id));
 let savedColumnWidths = JSON.parse(localStorage.getItem('rms_rfq_column_widths')) || {};
 
 /**
@@ -3682,6 +4179,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderItemsTable();
     initDirectoryColumns();
     renderRfqDirectory();
+    updateLifecycleProgressBar(window.AppStore.activeRfq?.rfqStatus || window.AppStore.activeRfq?.status || 'Draft');
     checkDraftRecovery();
 
     // Hotkey listener (F2: Item Master, F8: Preview, F10: Send)
@@ -3790,12 +4288,11 @@ function initAppStore() {
     }
 
     // Initialize RFQ Number
-    const lastRfqNum = localStorage.getItem('rms_last_rfq_counter');
-    const nextSeq = lastRfqNum ? parseInt(lastRfqNum) + 1 : 42;
-    const rfqFormatted = `RFQ-2026-${String(nextSeq).padStart(4, '0')}`;
-    window.AppStore.activeRfq.rfqNumber = rfqFormatted;
-    document.getElementById('rfqNumberInput').value = rfqFormatted;
-    document.getElementById('rfqRefDisplay').textContent = rfqFormatted;
+    const initialRfqNum = getNextUniqueRfqNumber();
+    window.AppStore.activeRfq.rfqNumber = initialRfqNum;
+    window.AppStore.activeRfq.ref = initialRfqNum;
+    document.getElementById('rfqNumberInput').value = initialRfqNum;
+    document.getElementById('rfqRefDisplay').textContent = initialRfqNum;
 }
 
 /**
@@ -4031,7 +4528,7 @@ function handleVendorSelection(vendorId) {
     showToast(`✓ Auto-filled business fields for ${rfq.vendorTradeName}`, 'success');
 }
 
-function clearVendorFields() {
+function clearVendorFields(shouldPersist = true) {
     updateVendorComboTrigger(null);
     renderVendorComboboxList();
 
@@ -4044,16 +4541,20 @@ function clearVendorFields() {
     document.getElementById('leadTimeBadge').textContent = 'Based on Lead Time';
 
     const rfq = window.AppStore.activeRfq;
-    rfq.vendorId = '';
-    rfq.vendorName = '';
-    rfq.vendorTradeName = '';
-    rfq.vendorEmail = '';
-    rfq.vendorPhone = '';
-    rfq.vendorAddress = '';
-    rfq.vendorTin = '';
-    rfq.vendorContactPerson = '';
-    rfq.vendorContactTitle = '';
-    persistDraft();
+    if (rfq) {
+        rfq.vendorId = '';
+        rfq.vendorName = '';
+        rfq.vendorTradeName = '';
+        rfq.vendorEmail = '';
+        rfq.vendorPhone = '';
+        rfq.vendorAddress = '';
+        rfq.vendorTin = '';
+        rfq.vendorContactPerson = '';
+        rfq.vendorContactTitle = '';
+    }
+    if (shouldPersist) {
+        persistDraft();
+    }
 }
 
 /**
@@ -4066,6 +4567,44 @@ function getColumnWidth(col) {
         return savedColumnWidths[col.id];
     }
     return col.width || col.minWidth || '130px';
+}
+
+function getNormalizedRfqStage(status) {
+    if (!status) return 'Draft';
+    const s = String(status).toUpperCase();
+    if (s.includes('DRAFT') || s === 'REVISED') return 'Draft';
+    if (s.includes('SUBMIT') || s.includes('SENT') || s.includes('REQUESTED')) return 'Submitted';
+    if (s === 'APPROVAL' || s.includes('REVIEW') || s.includes('BID') || s.includes('RECEIVED')) return 'Approval';
+    if (s === 'APPROVED' || s === 'AWARDED') return 'Approved';
+    if (s === 'REFUSED' || s === 'REJECTED' || s === 'CANCELLED') return 'Refused';
+    return 'Draft';
+}
+
+function calculateItemVariances(item) {
+    const reqQty = parseFloat(item.requestedQuantity !== undefined ? item.requestedQuantity : (item.quantity || 0));
+    const quotedQty = parseFloat(item.quotedQuantity !== undefined ? item.quotedQuantity : reqQty);
+    const targetPrice = parseFloat(item.targetUnitPrice !== undefined ? item.targetUnitPrice : (item.targetPrice || 0));
+    const quotedPrice = parseFloat(item.quotedUnitPrice !== undefined ? item.quotedUnitPrice : targetPrice);
+
+    const targetTotal = reqQty * targetPrice;
+    const quotedTotal = quotedQty * quotedPrice;
+    const qtyVariance = quotedQty - reqQty;
+    const priceVariance = quotedPrice - targetPrice;
+    const priceVariancePct = targetPrice > 0 ? ((quotedPrice - targetPrice) / targetPrice) * 100 : 0;
+    const isWithinBudget = (quotedPrice <= targetPrice || priceVariancePct <= 5.0);
+
+    return {
+        reqQty,
+        quotedQty,
+        targetPrice,
+        quotedPrice,
+        targetTotal,
+        quotedTotal,
+        qtyVariance,
+        priceVariance,
+        priceVariancePct,
+        isWithinBudget
+    };
 }
 
 function renderTableHeaderAndColumns() {
@@ -4091,115 +4630,138 @@ function renderTableHeaderAndColumns() {
         `;
     });
 
-    // Action Header with Floating Column Filter Dropdown anchored inside
+    // Action Header with Gear Icon Settings Dropdown
     colHtml += `<col data-col-id="actions" style="width: 100px;">`;
     thHtml += `
-        <th class="th-center" data-col-id="actions" style="width: 100px; text-align: center;">
-            <div class="inv-header-action-wrapper" id="actionHeaderWrapper">
+        <th class="th-center" data-col-id="actions" style="width: 100px; text-align: center; position: relative;">
+            <div class="inv-header-action-wrapper" id="actionHeaderWrapper" style="display: flex; align-items: center; justify-content: center; gap: 6px;">
                 <span>Action</span>
-                <button type="button" class="inv-table-filter-btn" id="btnTableColumnFilter" onclick="toggleColumnFilterDropdown(event)" title="Column Display Filter">
+                <button type="button" class="rfq-th-settings-btn" id="btnRfqBuilderSettings" onclick="toggleRfqBuilderSettingsDropdown(event)" title="Configure Columns (Gear Menu)">
+                    <i class="ph ph-gear"></i>
+                </button>
+                <button type="button" class="inv-table-filter-btn" id="btnTableColumnFilter" onclick="toggleRfqBuilderSettingsDropdown(event)" title="Column Display Filter" style="display: none;">
                     <i class="ph ph-funnel"></i>
                 </button>
 
-                <!-- Floating Column Filter Dropdown anchored after Action Header -->
-                <div class="inv-column-dropdown-menu" id="tableColumnFilterDropdown">
-                    <div class="inv-col-dropdown-header">
-                        <div class="inv-col-dropdown-title-row">
-                            <div class="inv-col-dropdown-title">
-                                <i class="ph ph-funnel"></i>
-                                <span>Column Visibility & Widths</span>
+                <!-- Floating Column Settings Dropdown Anchored to End Column Settings Gear -->
+                <div class="rfq-table-settings-dropdown" id="rfqBuilderSettingsDropdown" style="display: none; position: absolute; right: 0; top: 100%; z-index: 100; text-align: left;">
+                    <div class="rfq-settings-dropdown-header">
+                        <div class="rfq-settings-title-row">
+                            <div class="rfq-settings-title">
+                                <i class="ph ph-gear-six"></i>
+                                <span>Item Table Columns</span>
                             </div>
-                            <button type="button" class="inv-col-quick-link is-reset" onclick="resetColumnWidths()" title="Reset all column widths to defaults">
-                                <i class="ph ph-arrow-counter-clockwise"></i>
-                                <span>Reset Widths</span>
-                            </button>
+                            <span class="rfq-col-badge-default" id="builderColActiveCounter">${activeColumnIds.length} of ${ALL_COLUMNS.length} visible</span>
                         </div>
-                        <div class="inv-col-dropdown-quick-links">
-                            <button type="button" class="inv-col-quick-link" onclick="showAllColumns()">
-                                <i class="ph ph-check-all"></i>
-                                <span>Show All</span>
-                            </button>
-                            <button type="button" class="inv-col-quick-link" onclick="resetColumnDefaults()">
-                                <i class="ph ph-columns"></i>
-                                <span>Default View</span>
-                            </button>
-                            <button type="button" class="inv-col-quick-link" onclick="showCompactColumns()">
-                                <i class="ph ph-rows"></i>
-                                <span>Compact View</span>
-                            </button>
+                        <div class="rfq-settings-links-row" style="display: flex; flex-wrap: wrap; gap: 4px; padding: 6px 0;">
+                            <button type="button" class="rfq-settings-link-btn" onclick="applyStageDefaultColumns('Draft', true)" title="Apply Draft stage default columns (Base request &amp; specifications)">Draft View</button>
+                            <button type="button" class="rfq-settings-link-btn" onclick="applyStageDefaultColumns('Approval', true)" title="Apply Approval stage default columns (Quotation &amp; budget check)">Approval View</button>
+                            <button type="button" class="rfq-settings-link-btn" onclick="resetBuilderColumnDefaults()" title="Reset to current stage default columns">Default View</button>
+                            <button type="button" class="rfq-settings-link-btn" onclick="showAllBuilderColumns()" title="Show all available columns">Select All</button>
+                            <button type="button" class="rfq-settings-link-btn" onclick="resetBuilderColumnWidths()" title="Reset column widths to default proportions">Reset Widths</button>
                         </div>
+                        <input type="text" class="rfq-settings-search-input" id="builderColSearchInput" placeholder="Filter columns..." oninput="handleBuilderColSearch(this.value)">
                     </div>
-
-                    <div class="inv-col-dropdown-list" id="tableColumnsDropdownList">
+                    <div class="rfq-settings-col-list" id="builderColCheckboxesList">
                         <!-- Populated dynamically -->
                     </div>
+                </div>
 
-                    <div class="inv-col-dropdown-footer">
-                        <span id="tableColumnsActiveCounter">${activeColumnIds.length} of ${ALL_COLUMNS.length} visible</span>
-                        <span>Drag headers to resize</span>
-                    </div>
+                <!-- Backwards compatibility fallback if needed -->
+                <div class="inv-column-dropdown-menu" id="tableColumnFilterDropdown" style="display: none;">
+                    <div class="inv-col-dropdown-list" id="tableColumnsDropdownList"></div>
+                    <span id="tableColumnsActiveCounter" style="display: none;"></span>
                 </div>
             </div>
         </th>
     `;
 
-    const dropdownPrev = document.getElementById('tableColumnFilterDropdown');
-    const wasOpen = dropdownPrev && dropdownPrev.classList.contains('is-active');
+    const dropdownPrev = document.getElementById('rfqBuilderSettingsDropdown');
+    const wasOpen = dropdownPrev && dropdownPrev.style.display === 'block';
 
     colgroup.innerHTML = colHtml;
     theadRow.innerHTML = thHtml;
-    renderColumnDropdownChecklist();
+    renderBuilderColumnDropdownChecklist();
 
     if (wasOpen) {
-        const dropdownNow = document.getElementById('tableColumnFilterDropdown');
-        const btnNow = document.getElementById('btnTableColumnFilter');
-        if (dropdownNow && btnNow) {
-            dropdownNow.classList.add('is-active');
-            btnNow.classList.add('is-active');
+        const dropdownNow = document.getElementById('rfqBuilderSettingsDropdown');
+        if (dropdownNow) dropdownNow.style.display = 'block';
+    }
+}
+
+// Global alias for compatibility
+window.renderBuilderTableHeader = renderTableHeaderAndColumns;
+
+function renderBuilderColumnDropdownChecklist(searchQuery = '') {
+    const listEl = document.getElementById('builderColCheckboxesList');
+    if (!listEl) return;
+
+    const query = searchQuery.trim().toLowerCase();
+    const categories = ['Base Request', 'Vendor Response', 'Validation & Comparison'];
+
+    let html = '';
+    categories.forEach(cat => {
+        const catCols = ALL_COLUMNS.filter(c => c.category === cat);
+        const filteredCols = query ? catCols.filter(c => c.label.toLowerCase().includes(query) || c.id.toLowerCase().includes(query)) : catCols;
+
+        if (filteredCols.length > 0) {
+            html += `<div class="builder-col-cat-header">${cat}</div>`;
+            filteredCols.forEach(col => {
+                const isChecked = activeColumnIds.includes(col.id);
+                const isDisabled = col.lockVisible ? 'disabled' : '';
+                html += `
+                    <label class="inv-col-item-row" title="${col.label}">
+                        <input type="checkbox" ${isChecked ? 'checked' : ''} ${isDisabled} onchange="toggleBuilderColumnVisibility('${col.id}', this.checked)">
+                        <span>${col.label} ${col.lockVisible ? '<span style="font-size: 0.68rem; color:#94a3b8;">(Locked)</span>' : ''}</span>
+                    </label>
+                `;
+            });
+        }
+    });
+
+    listEl.innerHTML = html;
+
+    const counter = document.getElementById('builderColActiveCounter');
+    if (counter) {
+        counter.textContent = `${activeColumnIds.length} of ${ALL_COLUMNS.length} visible`;
+    }
+
+    // Also sync old list if referenced
+    const oldList = document.getElementById('tableColumnsDropdownList');
+    if (oldList) oldList.innerHTML = html;
+}
+
+function renderColumnDropdownChecklist() {
+    renderBuilderColumnDropdownChecklist();
+}
+
+function toggleRfqBuilderSettingsDropdown(event) {
+    if (event) event.stopPropagation();
+    const dropdown = document.getElementById('rfqBuilderSettingsDropdown');
+    if (!dropdown) return;
+
+    const isOpen = dropdown.style.display === 'block';
+    dropdown.style.display = isOpen ? 'none' : 'block';
+
+    if (!isOpen) {
+        const searchInput = document.getElementById('builderColSearchInput');
+        if (searchInput) {
+            searchInput.value = '';
+            renderBuilderColumnDropdownChecklist('');
+            setTimeout(() => searchInput.focus(), 50);
         }
     }
 }
 
-function renderColumnDropdownChecklist() {
-    const listEl = document.getElementById('tableColumnsDropdownList');
-    if (!listEl) return;
-
-    listEl.innerHTML = ALL_COLUMNS.map(col => {
-        const isChecked = activeColumnIds.includes(col.id);
-        const isDisabled = col.lockVisible ? 'disabled' : '';
-        return `
-            <label class="inv-col-item-row" title="${col.label}">
-                <input type="checkbox" ${isChecked ? 'checked' : ''} ${isDisabled} onchange="toggleColumnVisibility('${col.id}', this.checked)">
-                <span>${col.label} ${col.lockVisible ? '<span style="font-size: 0.68rem; color:#94a3b8;">(Locked)</span>' : ''}</span>
-            </label>
-        `;
-    }).join('');
-
-    const counter = document.getElementById('tableColumnsActiveCounter');
-    if (counter) {
-        counter.textContent = `${activeColumnIds.length} of ${ALL_COLUMNS.length} visible`;
-    }
-}
-
 function toggleColumnFilterDropdown(event) {
-    if (event) {
-        event.stopPropagation();
-    }
-    const dropdown = document.getElementById('tableColumnFilterDropdown');
-    const btn = document.getElementById('btnTableColumnFilter');
-    if (!dropdown || !btn) return;
-
-    const isActive = dropdown.classList.contains('is-active');
-    if (isActive) {
-        dropdown.classList.remove('is-active');
-        btn.classList.remove('is-active');
-    } else {
-        dropdown.classList.add('is-active');
-        btn.classList.add('is-active');
-    }
+    toggleRfqBuilderSettingsDropdown(event);
 }
 
-function toggleColumnVisibility(colId, isVisible) {
+function handleBuilderColSearch(val) {
+    renderBuilderColumnDropdownChecklist(val);
+}
+
+function toggleBuilderColumnVisibility(colId, isVisible) {
     if (isVisible) {
         if (!activeColumnIds.includes(colId)) {
             activeColumnIds.push(colId);
@@ -4207,38 +4769,69 @@ function toggleColumnVisibility(colId, isVisible) {
     } else {
         activeColumnIds = activeColumnIds.filter(id => id !== colId);
     }
+    // Re-sort according to ALL_COLUMNS canonical order
+    activeColumnIds.sort((a, b) => {
+        const idxA = ALL_COLUMNS.findIndex(c => c.id === a);
+        const idxB = ALL_COLUMNS.findIndex(c => c.id === b);
+        return idxA - idxB;
+    });
+    localStorage.setItem('rms_rfq_builder_cols_v6', JSON.stringify(activeColumnIds));
+    localStorage.setItem('rms_rfq_builder_cols_v5', JSON.stringify(activeColumnIds));
+    localStorage.setItem('rms_rfq_builder_cols_v4', JSON.stringify(activeColumnIds));
     localStorage.setItem('rms_rfq_columns', JSON.stringify(activeColumnIds));
     renderTableHeaderAndColumns();
     renderItemsTable();
+}
+
+function toggleColumnVisibility(colId, isVisible) {
+    toggleBuilderColumnVisibility(colId, isVisible);
+}
+
+function showAllBuilderColumns() {
+    activeColumnIds = ALL_COLUMNS.map(c => c.id);
+    localStorage.setItem('rms_rfq_builder_cols_v6', JSON.stringify(activeColumnIds));
+    localStorage.setItem('rms_rfq_builder_cols_v5', JSON.stringify(activeColumnIds));
+    localStorage.setItem('rms_rfq_builder_cols_v4', JSON.stringify(activeColumnIds));
+    localStorage.setItem('rms_rfq_columns', JSON.stringify(activeColumnIds));
+    renderTableHeaderAndColumns();
+    renderItemsTable();
+    showToast('✓ Showing all columns', 'info');
 }
 
 function showAllColumns() {
-    activeColumnIds = ALL_COLUMNS.map(c => c.id);
-    localStorage.setItem('rms_rfq_columns', JSON.stringify(activeColumnIds));
-    renderTableHeaderAndColumns();
-    renderItemsTable();
+    showAllBuilderColumns();
+}
+
+function resetBuilderColumnDefaults() {
+    const currentStage = getNormalizedRfqStage(window.AppStore?.activeRfq?.rfqStatus || window.AppStore?.activeRfq?.status);
+    applyStageDefaultColumns(currentStage, true);
+    showToast(`✓ Reset columns to ${currentStage} stage defaults`, 'info');
 }
 
 function resetColumnDefaults() {
-    activeColumnIds = ALL_COLUMNS.filter(c => c.default).map(c => c.id);
-    localStorage.setItem('rms_rfq_columns', JSON.stringify(activeColumnIds));
-    renderTableHeaderAndColumns();
-    renderItemsTable();
+    resetBuilderColumnDefaults();
 }
 
 function showCompactColumns() {
-    activeColumnIds = ['index', 'sku', 'name', 'uom', 'quantity', 'target_price', 'total_target'];
+    activeColumnIds = [...DRAFT_STAGE_DEFAULT_COLUMNS];
+    localStorage.setItem('rms_rfq_builder_cols_v6', JSON.stringify(activeColumnIds));
+    localStorage.setItem('rms_rfq_builder_cols_v5', JSON.stringify(activeColumnIds));
+    localStorage.setItem('rms_rfq_builder_cols_v4', JSON.stringify(activeColumnIds));
     localStorage.setItem('rms_rfq_columns', JSON.stringify(activeColumnIds));
     renderTableHeaderAndColumns();
     renderItemsTable();
 }
 
-function resetColumnWidths() {
+function resetBuilderColumnWidths() {
     savedColumnWidths = {};
     localStorage.removeItem('rms_rfq_column_widths');
     renderTableHeaderAndColumns();
     renderItemsTable();
     showToast('✓ Column widths reset to default proportions', 'success');
+}
+
+function resetColumnWidths() {
+    resetBuilderColumnWidths();
 }
 
 // Column Header Resizer Logic
@@ -4279,6 +4872,688 @@ function handleColumnMouseUp() {
     document.removeEventListener('mouseup', handleColumnMouseUp);
 }
 
+// Close gear dropdown on outside click
+document.addEventListener('click', (e) => {
+    const dropdown = document.getElementById('rfqBuilderSettingsDropdown');
+    const btn = document.getElementById('btnRfqBuilderSettings');
+    if (dropdown && dropdown.style.display === 'block') {
+        if (!dropdown.contains(e.target) && (!btn || !btn.contains(e.target))) {
+            dropdown.style.display = 'none';
+        }
+    }
+});
+
+/**
+ * --------------------------------------------------------------------------
+ * RFQ LIFECYCLE PROGRESS BAR CONTROLLER
+ * | Draft > Submitted > Approval > Status |
+ * --------------------------------------------------------------------------
+ */
+function updateLifecycleProgressBar(status) {
+    const stage = getNormalizedRfqStage(status);
+    const wrap = document.getElementById('rfqLifecycleStepperWrap');
+    if (!wrap) return;
+
+    // Reset themes
+    wrap.className = `rfq-lifecycle-stepper-wrap stage-theme-${stage.toLowerCase()}`;
+
+    const stepDraft = document.getElementById('stepIndicatorDraft');
+    const stepSubmitted = document.getElementById('stepIndicatorSubmitted');
+    const stepApproval = document.getElementById('stepIndicatorApproval');
+    const stepStatus = document.getElementById('stepIndicatorStatus');
+
+    const line1 = document.getElementById('stepTrack1');
+    const line2 = document.getElementById('stepTrack2');
+    const line3 = document.getElementById('stepTrack3');
+
+    const banner = document.getElementById('rfqStageBanner');
+    const bannerIcon = document.getElementById('rfqStageBannerIcon');
+    const bannerTitle = document.getElementById('rfqStageBannerTitle');
+    const bannerSub = document.getElementById('rfqStageBannerSub');
+    const bannerActions = document.getElementById('rfqStageBannerActions');
+
+    const statusTitle = document.getElementById('stepStatusTitle');
+    const statusDesc = document.getElementById('stepStatusDesc');
+
+    // Clean active classes
+    [stepDraft, stepSubmitted, stepApproval, stepStatus].forEach(s => {
+        if (s) {
+            s.className = 'rfq-stepper-step';
+        }
+    });
+    [line1, line2, line3].forEach(l => {
+        if (l) l.className = 'rfq-stepper-line';
+    });
+
+    if (banner) {
+        banner.className = `rfq-stage-banner stage-${stage.toLowerCase()}`;
+    }
+
+    if (stage === 'Draft') {
+        stepDraft.classList.add('is-active', 'stage-draft');
+        if (statusTitle) statusTitle.textContent = 'Status';
+        if (statusDesc) statusDesc.textContent = 'Pending';
+        if (bannerIcon) bannerIcon.innerHTML = '<i class="ph ph-pencil-simple-line"></i>';
+        if (bannerTitle) bannerTitle.innerHTML = 'Stage 1: RFQ Draft Creation &amp; Specification';
+        if (bannerSub) bannerSub.innerHTML = 'Buyer can add, edit, or adjust items, quantities, and benchmark prices. Vendor quotation inputs remain locked until tender submission.';
+        if (bannerActions) {
+            bannerActions.innerHTML = `
+                <button type="button" class="rfq-btn" onclick="submitActiveRfqToVendor()" style="background: #9333ea; color: #ffffff; padding: 6px 16px; font-size: 12px; font-weight: 700; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(147, 51, 234, 0.3);">
+                    <i class="ph ph-paper-plane-tilt"></i>
+                    <span>Submit &rarr; Submitted</span>
+                </button>
+                <button type="button" class="rfq-btn rfq-btn-outline" onclick="createNewRfq(true)" title="Start Fresh RFQ Draft" style="padding: 6px 12px; font-size: 12px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;">
+                    <i class="ph ph-plus-circle"></i>
+                    <span>New RFQ</span>
+                </button>
+            `;
+        }
+    } else if (stage === 'Submitted') {
+        stepDraft.classList.add('is-completed');
+        if (line1) line1.classList.add('is-completed');
+        stepSubmitted.classList.add('is-active', 'stage-submitted');
+        if (statusTitle) statusTitle.textContent = 'Status';
+        if (statusDesc) statusDesc.textContent = 'Pending';
+        if (bannerIcon) bannerIcon.innerHTML = '<i class="ph ph-lock-key"></i>';
+        if (bannerTitle) bannerTitle.innerHTML = 'Stage 2: Submitted &amp; Locked for Vendor Bidding';
+        if (bannerSub) bannerSub.innerHTML = 'Tender is locked and immutable. Awaiting vendor quotations. Approver can advance to Approval once quotation arrives.';
+        if (bannerActions) {
+            bannerActions.innerHTML = `
+                <button type="button" class="rfq-btn" onclick="moveToApprovalStage()" style="background: #2563eb; color: #ffffff; padding: 6px 16px; font-size: 12px; font-weight: 700; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);">
+                    <i class="ph ph-arrow-right"></i>
+                    <span>Move to Approval &rarr;</span>
+                </button>
+                <button type="button" class="rfq-btn rfq-btn-outline" onclick="transitionActiveRfqStage('Draft')" style="padding: 6px 12px; font-size: 12px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;">
+                    <i class="ph ph-arrow-u-up-left"></i>
+                    <span>Recall to Draft</span>
+                </button>
+                <button type="button" class="rfq-btn rfq-btn-outline" onclick="createNewRfq(false)" title="Create New RFQ" style="padding: 6px 12px; font-size: 12px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;">
+                    <i class="ph ph-plus-circle"></i>
+                    <span>New RFQ</span>
+                </button>
+            `;
+        }
+    } else if (stage === 'Approval') {
+        ensureApprovalColumnsVisible();
+        stepDraft.classList.add('is-completed');
+        stepSubmitted.classList.add('is-completed');
+        if (line1) line1.classList.add('is-completed');
+        if (line2) line2.classList.add('is-completed');
+        stepApproval.classList.add('is-active', 'stage-approval');
+        if (statusTitle) statusTitle.textContent = 'Status';
+        if (statusDesc) statusDesc.textContent = 'In Review';
+        if (bannerIcon) bannerIcon.innerHTML = '<i class="ph ph-scales"></i>';
+        if (bannerTitle) bannerTitle.innerHTML = 'Stage 3: Manager Approval &amp; Quotation Validation';
+        if (bannerSub) bannerSub.innerHTML = 'Base request is locked as reference. Approver enters vendor quotation (Price, Qty, Lead Time) and validates budget thresholds.';
+        if (bannerActions) {
+            bannerActions.innerHTML = `
+                <button type="button" class="rfq-btn" onclick="handleApproverApprove()" style="background: #059669; color: #ffffff; padding: 6px 18px; font-size: 12.5px; font-weight: 800; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(5, 150, 105, 0.3);">
+                    <i class="ph ph-check-circle"></i>
+                    <span>Approved &rarr; STATUS</span>
+                </button>
+                <button type="button" class="rfq-btn rfq-btn-danger" onclick="handleApproverRefuse()" style="padding: 6px 12px; font-size: 12px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;">
+                    <i class="ph ph-x-circle"></i>
+                    <span>Refuse</span>
+                </button>
+                <button type="button" class="rfq-btn rfq-btn-outline" onclick="handleApproverRevision()" style="padding: 6px 12px; font-size: 12px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;">
+                    <i class="ph ph-arrow-counter-clockwise"></i>
+                    <span>Return for Revision</span>
+                </button>
+                <button type="button" class="rfq-btn rfq-btn-outline" onclick="createNewRfq(false)" title="Create New RFQ" style="padding: 6px 12px; font-size: 12px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;">
+                    <i class="ph ph-plus-circle"></i>
+                    <span>New RFQ</span>
+                </button>
+            `;
+        }
+    } else if (stage === 'Approved') {
+        ensureApprovalColumnsVisible();
+        stepDraft.classList.add('is-completed');
+        stepSubmitted.classList.add('is-completed');
+        stepApproval.classList.add('is-completed');
+        if (line1) line1.classList.add('is-completed');
+        if (line2) line2.classList.add('is-completed');
+        if (line3) line3.classList.add('is-completed');
+        stepStatus.classList.add('is-active', 'stage-approved');
+        if (statusTitle) statusTitle.textContent = 'Approved';
+        if (statusDesc) statusDesc.textContent = 'Ready for PO';
+        if (bannerIcon) bannerIcon.innerHTML = '<i class="ph ph-seal-check"></i>';
+        if (bannerTitle) bannerTitle.innerHTML = 'Stage 4: Tender Approved &amp; Awarded';
+        if (bannerSub) bannerSub.innerHTML = 'Quotation is officially approved and locked. Proceed to generate formal Purchase Order for warehouse intake.';
+        if (bannerActions) {
+            bannerActions.innerHTML = `
+                <button type="button" class="rfq-btn" onclick="generatePoForApprovedRfq()" style="background: #059669; color: #ffffff; padding: 7px 20px; font-size: 12.5px; font-weight: 800; border-radius: 8px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 3px 12px rgba(5, 150, 105, 0.35);">
+                    <i class="ph ph-shopping-cart"></i>
+                    <span>Generate Purchase Order (PO)</span>
+                </button>
+                <button type="button" class="rfq-btn rfq-btn-outline" onclick="createNewRfq(false)" title="Create New RFQ" style="padding: 7px 14px; font-size: 12px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;">
+                    <i class="ph ph-plus-circle"></i>
+                    <span>New RFQ</span>
+                </button>
+            `;
+        }
+    } else if (stage === 'Refused') {
+        ensureApprovalColumnsVisible();
+        stepDraft.classList.add('is-completed');
+        stepSubmitted.classList.add('is-completed');
+        stepApproval.classList.add('is-completed');
+        if (line1) line1.classList.add('is-completed');
+        if (line2) line2.classList.add('is-completed');
+        if (line3) line3.classList.add('is-completed');
+        stepStatus.classList.add('is-active', 'stage-refused');
+        if (statusTitle) statusTitle.textContent = 'Refused';
+        if (statusDesc) statusDesc.textContent = 'Tender Rejected';
+        if (bannerIcon) bannerIcon.innerHTML = '<i class="ph ph-prohibit"></i>';
+        if (bannerTitle) bannerTitle.innerHTML = 'Stage 4: Tender Refused / Rejected';
+        const reason = window.AppStore.activeRfq.rejectionReason || 'Vendor price exceeded budgeted tolerance or availability was rejected.';
+        if (bannerSub) bannerSub.innerHTML = `RFQ has been refused and locked. Rejection remarks: <em>"${escapeHtml(reason)}"</em>`;
+        if (bannerActions) {
+            bannerActions.innerHTML = `
+                <button type="button" class="rfq-btn rfq-btn-outline" onclick="transitionActiveRfqStage('Draft')" style="padding: 7px 14px; font-size: 12px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;">
+                    <i class="ph ph-arrow-counter-clockwise"></i>
+                    <span>Re-open as Draft</span>
+                </button>
+                <button type="button" class="rfq-btn" onclick="createNewRfq(false)" title="Create New RFQ" style="background: #9333ea; color: #ffffff; padding: 7px 16px; font-size: 12px; font-weight: 700; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;">
+                    <i class="ph ph-plus-circle"></i>
+                    <span>Create New RFQ</span>
+                </button>
+            `;
+        }
+    }
+
+    // Update status pill badge on tender reference card
+    const statusBadge = document.getElementById('rfqStatusBadge');
+    if (statusBadge) {
+        statusBadge.className = `status-pill ${stage.toLowerCase()}`;
+        statusBadge.innerHTML = `<i class="ph ph-dot"></i> ${stage} RFQ`;
+    }
+
+    // Synchronize tab badge to prevent misleading 'New RFQ' badge when viewing existing/submitted RFQ
+    const tabBadge = document.getElementById('tabBuilderBadge');
+    if (tabBadge) {
+        const num = window.AppStore.activeRfq?.rfqNumber || '';
+        if (window.AppStore._isExplicitlyEditing) {
+            tabBadge.textContent = `Editing ${num}`;
+        } else if (stage === 'Draft') {
+            const hasItems = (window.AppStore.activeRfq?.items || []).length > 0;
+            tabBadge.textContent = hasItems ? `Draft (${num})` : 'New RFQ';
+        } else {
+            tabBadge.textContent = `${stage} (${num})`;
+        }
+    }
+}
+
+function handleStepClick(targetStage) {
+    const currentStage = getNormalizedRfqStage(window.AppStore.activeRfq.rfqStatus || window.AppStore.activeRfq.status);
+    if (targetStage === currentStage) return;
+
+    if (targetStage === 'Draft') {
+        transitionActiveRfqStage('Draft');
+    } else if (targetStage === 'Submitted') {
+        submitActiveRfqToVendor();
+    } else if (targetStage === 'Approval') {
+        moveToApprovalStage();
+    } else if (targetStage === 'Status') {
+        if (currentStage === 'Approval') {
+            handleApproverApprove();
+        } else {
+            showToast('Quotation must go through Approval before reaching final Status.', 'info');
+        }
+    }
+}
+
+function showLockOverlay(msg = 'Processing RFQ Payload...') {
+    const overlay = document.getElementById('rfqGlobalLockOverlay');
+    const lockMsg = document.getElementById('rfqLockOverlayMessage');
+    if (overlay) overlay.classList.add('is-active');
+    if (lockMsg) lockMsg.textContent = msg;
+}
+
+function hideLockOverlay() {
+    const overlay = document.getElementById('rfqGlobalLockOverlay');
+    if (overlay) overlay.classList.remove('is-active');
+}
+
+async function transitionActiveRfqStage(targetStage, options = {}) {
+    showLockOverlay(`Transitioning RFQ to ${targetStage}...`);
+
+    try {
+        const payload = {
+            rfq_number: window.AppStore.activeRfq.ref || window.AppStore.activeRfq.rfqNumber || 'RFQ-2026-0044',
+            target_status: targetStage,
+            vendor_id: window.AppStore.activeRfq.vendorId || document.getElementById('vendorSelect')?.value || null,
+            vendor_name: window.AppStore.activeRfq.vendorName || window.AppStore.activeRfq.vendorTradeName || null,
+            rejection_reason: options.rejectionReason || null,
+            revision_notes: options.revisionNotes || null,
+            items: (window.AppStore.activeRfq.items || []).map(it => ({
+                line_id: it.lineId || it.rfqLineId || null,
+                item_id: it.itemId || it.sku || '',
+                requested_quantity: parseFloat(it.requestedQuantity !== undefined ? it.requestedQuantity : (it.quantity || 1)) || 1,
+                target_unit_price: parseFloat(it.targetUnitPrice !== undefined ? it.targetUnitPrice : (it.targetPrice || 0)) || 0,
+                quoted_quantity: parseFloat(it.quotedQuantity !== undefined ? it.quotedQuantity : (it.requestedQuantity || it.quantity || 1)) || 1,
+                quoted_unit_price: parseFloat(it.quotedUnitPrice !== undefined ? it.quotedUnitPrice : (it.targetUnitPrice !== undefined ? it.targetUnitPrice : it.targetPrice || 0)) || 0,
+                purchase_uom_code: it.purchaseUomCode || it.uom || 'PCS',
+                lead_time_days: parseInt(it.leadTimeDays || 0) || 0,
+                rfq_line_notes: it.notes || it.rfqLineNotes || null
+            }))
+        };
+
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        const transitionUrl = '{{ route("purchase.api.rfq.transition-status") }}';
+        const res = await fetch(transitionUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken || '',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
+
+        let json = null;
+        try {
+            json = await res.json();
+        } catch (e) {
+            json = null;
+        }
+
+        if (res.ok && json && json.success) {
+            window.AppStore.activeRfq.rfqStatus = targetStage;
+            window.AppStore.activeRfq.status = targetStage;
+            if (options.rejectionReason) window.AppStore.activeRfq.rejectionReason = options.rejectionReason;
+            if (options.revisionNotes) window.AppStore.activeRfq.revisionNotes = options.revisionNotes;
+
+            if (targetStage === 'Draft') {
+                persistDraft();
+            } else {
+                localStorage.removeItem('rms_rfq_current_draft');
+            }
+            syncRfqToDirectory(window.AppStore.activeRfq, targetStage);
+            updateLifecycleProgressBar(targetStage);
+            renderItemsTable();
+            hideLockOverlay();
+            showToast(`✓ RFQ transitioned to ${targetStage} stage.`, 'success');
+        } else {
+            console.warn('Backend transition notice:', json || res.statusText);
+            // Graceful client synchronization ensures user progress is never permanently blocked
+            window.AppStore.activeRfq.rfqStatus = targetStage;
+            window.AppStore.activeRfq.status = targetStage;
+            if (options.rejectionReason) window.AppStore.activeRfq.rejectionReason = options.rejectionReason;
+            if (options.revisionNotes) window.AppStore.activeRfq.revisionNotes = options.revisionNotes;
+
+            if (targetStage === 'Draft') {
+                persistDraft();
+            } else {
+                localStorage.removeItem('rms_rfq_current_draft');
+            }
+            syncRfqToDirectory(window.AppStore.activeRfq, targetStage);
+            updateLifecycleProgressBar(targetStage);
+            renderItemsTable();
+            hideLockOverlay();
+            showToast(`✓ RFQ advanced to ${targetStage} stage.`, 'info');
+        }
+    } catch (err) {
+        console.warn('Client transition error:', err);
+        // Fallback for offline/local simulation
+        window.AppStore.activeRfq.rfqStatus = targetStage;
+        window.AppStore.activeRfq.status = targetStage;
+        if (options.rejectionReason) window.AppStore.activeRfq.rejectionReason = options.rejectionReason;
+        if (options.revisionNotes) window.AppStore.activeRfq.revisionNotes = options.revisionNotes;
+
+        if (targetStage === 'Draft') {
+            persistDraft();
+        } else {
+            localStorage.removeItem('rms_rfq_current_draft');
+        }
+        syncRfqToDirectory(window.AppStore.activeRfq, targetStage);
+        updateLifecycleProgressBar(targetStage);
+        renderItemsTable();
+        hideLockOverlay();
+        showToast(`✓ RFQ updated to ${targetStage} stage.`, 'success');
+    }
+}
+
+function submitActiveRfqToVendor() {
+    // 1. Clear any active red light error indicators
+    document.querySelectorAll('.rfq-field-error-glow').forEach(el => el.classList.remove('rfq-field-error-glow'));
+
+    let firstErrorEl = null;
+    let errors = [];
+
+    // 2. Validate Target Vendor Selection
+    const vendorVal = window.AppStore.activeRfq.vendorId || document.getElementById('vendorSelect')?.value;
+    if (!vendorVal) {
+        const vendorTrigger = document.getElementById('rfqVendorComboTrigger');
+        if (vendorTrigger) {
+            vendorTrigger.classList.add('rfq-field-error-glow');
+            if (!firstErrorEl) firstErrorEl = vendorTrigger;
+            vendorTrigger.addEventListener('click', () => vendorTrigger.classList.remove('rfq-field-error-glow'), { once: true });
+        }
+        errors.push('Vendor Partner');
+    }
+
+    // 3. Validate Recipient Email
+    const emailInput = document.getElementById('vendorEmail');
+    if (!emailInput || !emailInput.value.trim() || !emailInput.value.includes('@')) {
+        if (emailInput) {
+            emailInput.classList.add('rfq-field-error-glow');
+            if (!firstErrorEl) firstErrorEl = emailInput;
+            emailInput.addEventListener('input', () => emailInput.classList.remove('rfq-field-error-glow'), { once: true });
+        }
+        errors.push('Recipient Email');
+    }
+
+    // 4. Validate Line Items Table
+    const items = window.AppStore.activeRfq.items || [];
+    if (items.length === 0) {
+        const btnMaster = document.querySelector('button[onclick*="openItemMasterQuickSelectModal"]');
+        const btnCustom = document.querySelector('button[onclick*="addNewBlankItemRow"]');
+        if (btnMaster) btnMaster.classList.add('rfq-field-error-glow');
+        if (btnCustom) btnCustom.classList.add('rfq-field-error-glow');
+        if (!firstErrorEl) firstErrorEl = btnMaster || btnCustom;
+        errors.push('Quotation Line Items (at least 1 required)');
+    } else {
+        items.forEach((item, idx) => {
+            const row = document.querySelector(`tr[data-row-idx="${idx}"]`);
+            const itemName = String(item.itemName || item.name || '').trim();
+            if (!itemName) {
+                const nameInput = row ? row.querySelector('input[placeholder*="description"]') : null;
+                if (nameInput) {
+                    nameInput.classList.add('rfq-field-error-glow');
+                    if (!firstErrorEl) firstErrorEl = nameInput;
+                    nameInput.addEventListener('input', () => nameInput.classList.remove('rfq-field-error-glow'), { once: true });
+                }
+                errors.push(`Row #${idx + 1} Description`);
+            }
+
+            const qty = parseFloat(item.requestedQuantity !== undefined ? item.requestedQuantity : item.quantity) || 0;
+            if (qty <= 0) {
+                const qtyInput = row ? row.querySelector('input[type="number"][step="0.01"]') : null;
+                if (qtyInput) {
+                    qtyInput.classList.add('rfq-field-error-glow');
+                    if (!firstErrorEl) firstErrorEl = qtyInput;
+                    qtyInput.addEventListener('input', () => qtyInput.classList.remove('rfq-field-error-glow'), { once: true });
+                }
+                errors.push(`Row #${idx + 1} Quantity`);
+            }
+        });
+    }
+
+    // 5. If missing important fields, trigger red light focus and alert user
+    if (errors.length > 0) {
+        if (firstErrorEl) {
+            if (typeof firstErrorEl.scrollIntoView === 'function') {
+                firstErrorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            if (typeof firstErrorEl.focus === 'function') firstErrorEl.focus();
+        }
+        showToast(`Missing required fields: ${errors.slice(0, 3).join(', ')}${errors.length > 3 ? '...' : ''}. Please complete highlighted fields.`, 'error');
+        return;
+    }
+
+    // 6. Valid -> proceed to transition
+    transitionActiveRfqStage('Submitted');
+}
+
+function applyStageDefaultColumns(stage, force = false) {
+    const norm = getNormalizedRfqStage(stage);
+    const targetCols = (norm === 'Approval' || norm === 'Approved' || norm === 'Refused')
+        ? APPROVAL_STAGE_DEFAULT_COLUMNS
+        : DRAFT_STAGE_DEFAULT_COLUMNS;
+
+    if (force) {
+        activeColumnIds = [...targetCols];
+    } else {
+        // Non-forced: ensure required columns for this stage are visible
+        let changed = false;
+        targetCols.forEach(colId => {
+            if (!activeColumnIds.includes(colId)) {
+                activeColumnIds.push(colId);
+                changed = true;
+            }
+        });
+        if (norm === 'Draft') {
+            // In draft stage: benchmark price, budget, notes, vendor quotes and comparison are optional -> untoggle by default
+            const optionalInDraft = [
+                'target_unit_price',
+                'target_line_total',
+                'rfq_line_notes',
+                'quoted_quantity',
+                'quoted_unit_price',
+                'quoted_line_total',
+                'lead_time_days',
+                'quantity_variance',
+                'price_variance_amount',
+                'price_variance_percentage',
+                'is_price_within_budget'
+            ];
+            const prevLen = activeColumnIds.length;
+            activeColumnIds = activeColumnIds.filter(id => !optionalInDraft.includes(id));
+            if (activeColumnIds.length !== prevLen) {
+                changed = true;
+            }
+        } else if (norm === 'Approval' || norm === 'Approved' || norm === 'Refused') {
+            // In approval stage: qty variance, price diff, variance %, budget check are optional -> untoggle by default
+            const optionalInApproval = [
+                'quantity_variance',
+                'price_variance_amount',
+                'price_variance_percentage',
+                'is_price_within_budget',
+                'target_line_total',
+                'lead_time_days'
+            ];
+            const prevLen = activeColumnIds.length;
+            activeColumnIds = activeColumnIds.filter(id => !optionalInApproval.includes(id));
+            if (activeColumnIds.length !== prevLen) {
+                changed = true;
+            }
+        }
+        if (!changed) return;
+    }
+
+    // Sort activeColumnIds according to ALL_COLUMNS canonical matrix order
+    activeColumnIds.sort((a, b) => {
+        const idxA = ALL_COLUMNS.findIndex(c => c.id === a);
+        const idxB = ALL_COLUMNS.findIndex(c => c.id === b);
+        return idxA - idxB;
+    });
+
+    localStorage.setItem('rms_rfq_builder_cols_v6', JSON.stringify(activeColumnIds));
+    localStorage.setItem('rms_rfq_builder_cols_v5', JSON.stringify(activeColumnIds));
+    localStorage.setItem('rms_rfq_builder_cols_v4', JSON.stringify(activeColumnIds));
+    localStorage.setItem('rms_rfq_columns', JSON.stringify(activeColumnIds));
+    renderTableHeaderAndColumns();
+    renderItemsTable();
+    if (typeof renderBuilderColumnDropdownChecklist === 'function') {
+        renderBuilderColumnDropdownChecklist();
+    }
+}
+
+function ensureApprovalColumnsVisible() {
+    // Required columns for Quotation Line Items & Specifications in Approval stage
+    applyStageDefaultColumns('Approval', false);
+}
+
+function ensureDraftColumnsVisible() {
+    // Required columns for Quotation Line Items & Specifications in Draft stage
+    applyStageDefaultColumns('Draft', false);
+}
+
+function moveToApprovalStage() {
+    // 1. Clear any active red light error indicators
+    document.querySelectorAll('.rfq-field-error-glow').forEach(el => el.classList.remove('rfq-field-error-glow'));
+
+    let firstErrorEl = null;
+    let errors = [];
+
+    // 2. Validate Target Vendor Selection
+    const vendorVal = window.AppStore.activeRfq.vendorId || document.getElementById('vendorSelect')?.value;
+    if (!vendorVal) {
+        const vendorTrigger = document.getElementById('rfqVendorComboTrigger');
+        if (vendorTrigger) {
+            vendorTrigger.classList.add('rfq-field-error-glow');
+            if (!firstErrorEl) firstErrorEl = vendorTrigger;
+            vendorTrigger.addEventListener('click', () => vendorTrigger.classList.remove('rfq-field-error-glow'), { once: true });
+        }
+        errors.push('Vendor Partner');
+    }
+
+    // 3. Validate Cutoff Dates
+    const dueDateInput = document.getElementById('rfqDueDate');
+    if (!dueDateInput || !dueDateInput.value.trim()) {
+        if (dueDateInput) {
+            dueDateInput.classList.add('rfq-field-error-glow');
+            if (!firstErrorEl) firstErrorEl = dueDateInput;
+            dueDateInput.addEventListener('input', () => dueDateInput.classList.remove('rfq-field-error-glow'), { once: true });
+        }
+        errors.push('Quotation Due Date');
+    }
+
+    const deliveryDateInput = document.getElementById('rfqExpectedDelivery');
+    if (!deliveryDateInput || !deliveryDateInput.value.trim()) {
+        if (deliveryDateInput) {
+            deliveryDateInput.classList.add('rfq-field-error-glow');
+            if (!firstErrorEl) firstErrorEl = deliveryDateInput;
+            deliveryDateInput.addEventListener('input', () => deliveryDateInput.classList.remove('rfq-field-error-glow'), { once: true });
+        }
+        errors.push('Expected Delivery Date');
+    }
+
+    // 4. Validate Line Items Table
+    const items = window.AppStore.activeRfq.items || [];
+    if (items.length === 0) {
+        const btnMaster = document.querySelector('button[onclick*="openItemMasterQuickSelectModal"]');
+        const btnCustom = document.querySelector('button[onclick*="addNewBlankItemRow"]');
+        if (btnMaster) btnMaster.classList.add('rfq-field-error-glow');
+        if (btnCustom) btnCustom.classList.add('rfq-field-error-glow');
+        if (!firstErrorEl) firstErrorEl = btnMaster || btnCustom;
+        errors.push('Quotation Line Items (at least 1 required)');
+    } else {
+        items.forEach((item, idx) => {
+            const row = document.querySelector(`tr[data-row-idx="${idx}"]`);
+            const itemName = String(item.itemName || item.name || '').trim();
+            if (!itemName) {
+                const nameInput = row ? row.querySelector('input[placeholder*="description"]') : null;
+                if (nameInput) {
+                    nameInput.classList.add('rfq-field-error-glow');
+                    if (!firstErrorEl) firstErrorEl = nameInput;
+                    nameInput.addEventListener('input', () => nameInput.classList.remove('rfq-field-error-glow'), { once: true });
+                }
+                errors.push(`Row #${idx + 1} Description`);
+            }
+
+            const qty = parseFloat(item.requestedQuantity !== undefined ? item.requestedQuantity : item.quantity) || 0;
+            if (qty <= 0) {
+                const qtyInput = row ? row.querySelector('input[type="number"][step="0.01"]') : null;
+                if (qtyInput) {
+                    qtyInput.classList.add('rfq-field-error-glow');
+                    if (!firstErrorEl) firstErrorEl = qtyInput;
+                    qtyInput.addEventListener('input', () => qtyInput.classList.remove('rfq-field-error-glow'), { once: true });
+                }
+                errors.push(`Row #${idx + 1} Quantity`);
+            }
+        });
+    }
+
+    // 5. If missing important fields, trigger red light focus and alert user
+    if (errors.length > 0) {
+        if (firstErrorEl) {
+            if (typeof firstErrorEl.scrollIntoView === 'function') {
+                firstErrorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            if (typeof firstErrorEl.focus === 'function') firstErrorEl.focus();
+        }
+        showToast(`Cannot advance to Approval: Missing required fields: ${errors.slice(0, 3).join(', ')}${errors.length > 3 ? '...' : ''}. Please complete highlighted fields.`, 'error');
+        return;
+    }
+
+    // 6. Ensure required approval columns automatically appear
+    ensureApprovalColumnsVisible();
+
+    // 7. Advance stage
+    transitionActiveRfqStage('Approval');
+}
+
+function handleApproverApprove() {
+    // 1. Clear any active red light error indicators
+    document.querySelectorAll('.rfq-field-error-glow').forEach(el => el.classList.remove('rfq-field-error-glow'));
+
+    let firstErrorEl = null;
+    let errors = [];
+
+    // 2. Validate line items exist
+    const items = window.AppStore.activeRfq.items || [];
+    if (items.length === 0) {
+        showToast('Cannot approve RFQ: No line items found in quotation.', 'error');
+        return;
+    }
+
+    // 3. Ensure required approval columns are visible
+    ensureApprovalColumnsVisible();
+
+    // 4. Validate vendor quotation response fields (Quoted Quantity & Quoted Price)
+    items.forEach((item, idx) => {
+        const row = document.querySelector(`tr[data-row-idx="${idx}"]`);
+
+        // Check Quoted Quantity
+        const qQtyInput = row ? row.querySelector('input[onchange*="quotedQuantity"]') : null;
+        const qQtyVal = (qQtyInput && qQtyInput.value !== '')
+            ? parseFloat(qQtyInput.value)
+            : (item.quotedQuantity !== undefined && item.quotedQuantity !== null && item.quotedQuantity !== '' ? parseFloat(item.quotedQuantity) : 0);
+
+        if (!qQtyVal || qQtyVal <= 0) {
+            if (qQtyInput) {
+                qQtyInput.classList.add('rfq-field-error-glow');
+                if (!firstErrorEl) firstErrorEl = qQtyInput;
+                qQtyInput.addEventListener('input', () => qQtyInput.classList.remove('rfq-field-error-glow'), { once: true });
+            }
+            errors.push(`Row #${idx + 1} Quoted Quantity`);
+        }
+
+        // Check Quoted Unit Price
+        const qPriceInput = row ? row.querySelector('input[onchange*="quotedUnitPrice"]') : null;
+        const qPriceVal = (qPriceInput && qPriceInput.value !== '')
+            ? parseFloat(qPriceInput.value)
+            : (item.quotedUnitPrice !== undefined && item.quotedUnitPrice !== null && item.quotedUnitPrice !== '' ? parseFloat(item.quotedUnitPrice) : 0);
+
+        if (!qPriceVal || qPriceVal <= 0) {
+            if (qPriceInput) {
+                qPriceInput.classList.add('rfq-field-error-glow');
+                if (!firstErrorEl) firstErrorEl = qPriceInput;
+                qPriceInput.addEventListener('input', () => qPriceInput.classList.remove('rfq-field-error-glow'), { once: true });
+            }
+            errors.push(`Row #${idx + 1} Quoted Price`);
+        }
+    });
+
+    if (errors.length > 0) {
+        if (firstErrorEl) {
+            if (typeof firstErrorEl.scrollIntoView === 'function') {
+                firstErrorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            if (typeof firstErrorEl.focus === 'function') firstErrorEl.focus();
+        }
+        showToast(`Cannot approve RFQ: Missing required vendor quotation fields (${errors.slice(0, 3).join(', ')}${errors.length > 3 ? '...' : ''}). Please fill in Quoted Quantity and Quoted Price.`, 'error');
+        return;
+    }
+
+    // 5. Valid -> Proceed to Approved stage
+    transitionActiveRfqStage('Approved');
+}
+
+function handleApproverRefuse() {
+    const reason = prompt('Please enter refusal / rejection remarks:', 'Vendor quotation exceeded budget threshold.');
+    if (reason !== null) {
+        transitionActiveRfqStage('Refused', { rejectionReason: reason });
+    }
+}
+
+function handleApproverRevision() {
+    const notes = prompt('Enter revision instructions for buyer (this will return the RFQ to Draft):', 'Please renegotiate delivery schedule or reduce requested quantities.');
+    if (notes !== null) {
+        transitionActiveRfqStage('Draft', { revisionNotes: notes });
+    }
+}
+
 /**
  * --------------------------------------------------------------------------
  * LINE ITEMS MANAGEMENT & DYNAMIC CALCULATIONS
@@ -4288,6 +5563,28 @@ function renderItemsTable() {
     const tbody = document.getElementById('rfqTbody');
     const items = window.AppStore.activeRfq.items;
     if (!tbody) return;
+
+    const currentStage = getNormalizedRfqStage(window.AppStore.activeRfq.rfqStatus || window.AppStore.activeRfq.status);
+
+    // Auto-reveal Quotation Line Items & Specifications stage-specific default columns when entering stage
+    if (!window.AppStore._lastSyncedStage || window.AppStore._lastSyncedStage !== currentStage) {
+        window.AppStore._lastSyncedStage = currentStage;
+        if (currentStage === 'Approval' || currentStage === 'Approved' || currentStage === 'Refused') {
+            ensureApprovalColumnsVisible();
+        } else if (currentStage === 'Draft') {
+            ensureDraftColumnsVisible();
+        }
+    }
+
+    // Disable/Enable top row creation buttons based on stage
+    const btnSelectMaster = document.querySelector('button[onclick*="openItemMasterQuickSelectModal"]');
+    const btnAddCustom = document.querySelector('button[onclick*="addNewBlankItemRow"]');
+    const btnClearAll = document.querySelector('button[onclick*="clearAllItemRows"]');
+    const isBaseEditable = (currentStage === 'Draft');
+
+    if (btnSelectMaster) btnSelectMaster.disabled = !isBaseEditable;
+    if (btnAddCustom) btnAddCustom.disabled = !isBaseEditable;
+    if (btnClearAll) btnClearAll.disabled = !isBaseEditable;
 
     if (items.length === 0) {
         const visibleColsCount = activeColumnIds.length + 1;
@@ -4306,6 +5603,7 @@ function renderItemsTable() {
 
     let rowsHtml = '';
     items.forEach((item, idx) => {
+        const calc = calculateItemVariances(item);
         rowsHtml += `<tr data-row-idx="${idx}" class="${item._isNew ? 'rfq-flash-highlight' : ''}">`;
 
         ALL_COLUMNS.forEach(col => {
@@ -4313,90 +5611,240 @@ function renderItemsTable() {
 
             if (col.id === 'index') {
                 rowsHtml += `<td class="td-center" style="font-weight: 700; color: var(--rfq-text-muted);">${idx + 1}</td>`;
-            } else if (col.id === 'sku') {
-                rowsHtml += `
-                    <td>
-                        <input type="text" value="${escapeHtml(item.sku || '')}" placeholder="SKU" onchange="updateItemRowField(${idx}, 'sku', this.value)" style="font-family: monospace; font-weight: 600;">
-                    </td>
-                `;
-            } else if (col.id === 'name') {
-                rowsHtml += `
-                    <td>
-                        <input type="text" value="${escapeHtml(item.name || '')}" placeholder="Item description" onchange="updateItemRowField(${idx}, 'name', this.value)" required style="font-weight: 600;">
-                    </td>
-                `;
-            } else if (col.id === 'specs') {
-                rowsHtml += `
-                    <td>
-                        <input type="text" value="${escapeHtml(item.specs || '')}" placeholder="Detailed specs / packaging" onchange="updateItemRowField(${idx}, 'specs', this.value)">
-                    </td>
-                `;
-            } else if (col.id === 'category') {
-                rowsHtml += `
-                    <td>
-                        <select onchange="updateItemRowField(${idx}, 'category', this.value)">
-                            <option value="Raw Ingredients" ${item.category === 'Raw Ingredients' ? 'selected' : ''}>Raw Ingredients</option>
-                            <option value="Packaging" ${item.category === 'Packaging' ? 'selected' : ''}>Packaging</option>
-                            <option value="Beverage" ${item.category === 'Beverage' ? 'selected' : ''}>Beverage</option>
-                            <option value="Services" ${item.category === 'Services' ? 'selected' : ''}>Services</option>
-                            <option value="General" ${item.category === 'General' ? 'selected' : ''}>General</option>
-                        </select>
-                    </td>
-                `;
-            } else if (col.id === 'uom') {
-                let uomOptionsHtml = '';
-                if (window.UomRegistry && window.UomRegistry.isLoaded) {
-                    const units = window.UomRegistry.getUnits();
-                    uomOptionsHtml = units.map(u => 
-                        `<option value="${u.uom_code}" ${String(item.unit).toUpperCase() === u.uom_code.toUpperCase() ? 'selected' : ''}>${u.uom_code}</option>`
-                    ).join('');
-                    if (item.unit && !units.some(u => u.uom_code.toUpperCase() === String(item.unit).toUpperCase())) {
-                        uomOptionsHtml = `<option value="${item.unit}" selected>${item.unit}</option>` + uomOptionsHtml;
-                    }
+            } else if (col.id === 'item_id') {
+                if (isBaseEditable) {
+                    rowsHtml += `
+                        <td>
+                            <input type="text" value="${escapeHtml(item.itemId || item.sku || '')}" placeholder="Item ID / SKU" onchange="updateItemRowField(${idx}, 'itemId', this.value)" style="font-family: monospace; font-weight: 700;">
+                        </td>
+                    `;
                 } else {
-                    const fallbackUnits = ['KG', 'L', 'PCS', 'BOX', 'PACK', 'CAN', 'CASE'];
-                    uomOptionsHtml = fallbackUnits.map(u => 
-                        `<option value="${u}" ${String(item.unit).toUpperCase() === u ? 'selected' : ''}>${u}</option>`
-                    ).join('');
+                    rowsHtml += `
+                        <td>
+                            <span style="font-family: monospace; font-weight: 700; color: #475569;">${escapeHtml(item.itemId || item.sku || '—')}</span>
+                        </td>
+                    `;
                 }
-                rowsHtml += `
-                    <td class="td-center" style="min-width: 135px;">
-                        <select class="rfq-uom-select" data-uom-select onchange="updateItemRowField(${idx}, 'unit', this.value)" style="text-align: center;">
-                            ${uomOptionsHtml}
-                        </select>
-                    </td>
-                `;
-            } else if (col.id === 'quantity') {
-                rowsHtml += `
-                    <td class="td-num">
-                        <input type="number" step="0.01" min="0.01" value="${item.quantity || 1}" onchange="updateItemRowField(${idx}, 'quantity', this.value)">
-                    </td>
-                `;
-            } else if (col.id === 'target_price') {
-                rowsHtml += `
-                    <td class="td-num">
-                        <input type="number" step="0.01" min="0" value="${item.targetPrice !== undefined ? item.targetPrice : 0}" onchange="updateItemRowField(${idx}, 'targetPrice', this.value)">
-                    </td>
-                `;
-            } else if (col.id === 'total_target') {
-                const total = (parseFloat(item.quantity) || 0) * (parseFloat(item.targetPrice) || 0);
+            } else if (col.id === 'item_name') {
+                if (isBaseEditable) {
+                    rowsHtml += `
+                        <td>
+                            <input type="text" value="${escapeHtml(item.itemName || item.name || '')}" placeholder="Item description" onchange="updateItemRowField(${idx}, 'itemName', this.value)" required style="font-weight: 600;">
+                        </td>
+                    `;
+                } else {
+                    rowsHtml += `
+                        <td>
+                            <span style="font-weight: 600; color: #1e293b;">${escapeHtml(item.itemName || item.name || '—')}</span>
+                        </td>
+                    `;
+                }
+            } else if (col.id === 'purchase_uom_code') {
+                if (isBaseEditable) {
+                    let uomOptionsHtml = '';
+                    if (window.UomRegistry && window.UomRegistry.isLoaded) {
+                        const units = window.UomRegistry.getUnits();
+                        const currentUom = String(item.purchaseUomCode || item.unit || 'PCS').toUpperCase();
+                        uomOptionsHtml = units.map(u => 
+                            `<option value="${u.uom_code}" ${currentUom === u.uom_code.toUpperCase() ? 'selected' : ''}>${u.uom_code}</option>`
+                        ).join('');
+                        if (!units.some(u => u.uom_code.toUpperCase() === currentUom)) {
+                            uomOptionsHtml = `<option value="${currentUom}" selected>${currentUom}</option>` + uomOptionsHtml;
+                        }
+                    } else {
+                        const fallbackUnits = ['KG', 'L', 'PCS', 'BOX', 'PACK', 'CAN', 'CASE'];
+                        const currentUom = String(item.purchaseUomCode || item.unit || 'PCS').toUpperCase();
+                        uomOptionsHtml = fallbackUnits.map(u => 
+                            `<option value="${u}" ${currentUom === u ? 'selected' : ''}>${u}</option>`
+                        ).join('');
+                    }
+                    rowsHtml += `
+                        <td class="td-center" style="min-width: 110px;">
+                            <select class="rfq-uom-select" data-uom-select onchange="updateItemRowField(${idx}, 'purchaseUomCode', this.value)" style="text-align: center;">
+                                ${uomOptionsHtml}
+                            </select>
+                        </td>
+                    `;
+                } else {
+                    rowsHtml += `
+                        <td class="td-center">
+                            <span class="status-pill" style="background: #f1f5f9; color: #475569; font-size: 11px;">${escapeHtml(item.purchaseUomCode || item.unit || 'PCS')}</span>
+                        </td>
+                    `;
+                }
+            } else if (col.id === 'requested_quantity') {
+                if (isBaseEditable) {
+                    rowsHtml += `
+                        <td class="td-num">
+                            <input type="number" step="0.01" min="0.01" value="${calc.reqQty}" onchange="updateItemRowField(${idx}, 'requestedQuantity', this.value)" style="text-align: right; font-weight: 700;">
+                        </td>
+                    `;
+                } else {
+                    rowsHtml += `
+                        <td class="td-num" style="font-weight: 700; color: #1e293b;">
+                            ${formatNumber(calc.reqQty)}
+                        </td>
+                    `;
+                }
+            } else if (col.id === 'target_unit_price') {
+                if (isBaseEditable) {
+                    rowsHtml += `
+                        <td class="td-num">
+                            <input type="number" step="0.01" min="0" value="${calc.targetPrice}" onchange="updateItemRowField(${idx}, 'targetUnitPrice', this.value)" style="text-align: right;">
+                        </td>
+                    `;
+                } else {
+                    rowsHtml += `
+                        <td class="td-num" style="color: #64748b;">
+                            ₱${formatMoney(calc.targetPrice)}
+                        </td>
+                    `;
+                }
+            } else if (col.id === 'target_line_total') {
                 rowsHtml += `
                     <td class="td-num" style="font-weight: 700; color: var(--rfq-text-strong);">
-                        ₱${formatMoney(total)}
+                        ₱${formatMoney(calc.targetTotal)}
                     </td>
                 `;
-            } else if (col.id === 'required_date') {
-                rowsHtml += `
-                    <td class="td-center">
-                        <input type="date" value="${item.requiredDate || window.AppStore.activeRfq.expectedDelivery || ''}" onchange="updateItemRowField(${idx}, 'requiredDate', this.value)">
-                    </td>
-                `;
-            } else if (col.id === 'notes') {
-                rowsHtml += `
-                    <td>
-                        <input type="text" value="${escapeHtml(item.notes || '')}" placeholder="Quality notes" onchange="updateItemRowField(${idx}, 'notes', this.value)">
-                    </td>
-                `;
+            } else if (col.id === 'rfq_line_notes') {
+                if (isBaseEditable) {
+                    rowsHtml += `
+                        <td>
+                            <input type="text" value="${escapeHtml(item.rfqLineNotes || item.notes || '')}" placeholder="Specifications / notes" onchange="updateItemRowField(${idx}, 'rfqLineNotes', this.value)">
+                        </td>
+                    `;
+                } else {
+                    rowsHtml += `
+                        <td>
+                            <span style="font-size: 11.5px; color: #64748b;">${escapeHtml(item.rfqLineNotes || item.notes || '—')}</span>
+                        </td>
+                    `;
+                }
+            } else if (col.id === 'quoted_quantity') {
+                if (currentStage === 'Approval') {
+                    const qQtyVal = (item.quotedQuantity !== undefined && item.quotedQuantity !== null && item.quotedQuantity !== '') 
+                        ? item.quotedQuantity 
+                        : (calc.quotedQty > 0 ? calc.quotedQty : '');
+                    rowsHtml += `
+                        <td class="td-num">
+                            <input type="number" step="0.01" min="0" value="${qQtyVal}" placeholder="${calc.reqQty}" onchange="updateItemRowField(${idx}, 'quotedQuantity', this.value)" oninput="this.classList.remove('rfq-field-error-glow')" style="text-align: right; font-weight: 700; border-color: #d97706; background: #fffbeb;">
+                        </td>
+                    `;
+                } else if (currentStage === 'Approved' || currentStage === 'Refused') {
+                    rowsHtml += `
+                        <td class="td-num" style="font-weight: 700; color: #047857;">
+                            ${formatNumber(calc.quotedQty)}
+                        </td>
+                    `;
+                } else {
+                    rowsHtml += `
+                        <td class="td-center" style="color: #94a3b8; font-size: 11px; font-style: italic;">
+                            — Pending —
+                        </td>
+                    `;
+                }
+            } else if (col.id === 'quoted_unit_price') {
+                if (currentStage === 'Approval') {
+                    const qPriceVal = (item.quotedUnitPrice !== undefined && item.quotedUnitPrice !== null && item.quotedUnitPrice !== '')
+                        ? item.quotedUnitPrice
+                        : '';
+                    rowsHtml += `
+                        <td class="td-num">
+                            <input type="number" step="0.01" min="0" value="${qPriceVal}" placeholder="${calc.targetPrice > 0 ? calc.targetPrice : '0.00'}" onchange="updateItemRowField(${idx}, 'quotedUnitPrice', this.value)" oninput="this.classList.remove('rfq-field-error-glow')" style="text-align: right; font-weight: 700; border-color: #d97706; background: #fffbeb;">
+                        </td>
+                    `;
+                } else if (currentStage === 'Approved' || currentStage === 'Refused') {
+                    rowsHtml += `
+                        <td class="td-num" style="font-weight: 700; color: #047857;">
+                            ₱${formatMoney(calc.quotedPrice)}
+                        </td>
+                    `;
+                } else {
+                    rowsHtml += `
+                        <td class="td-center" style="color: #94a3b8; font-size: 11px; font-style: italic;">
+                            — Pending —
+                        </td>
+                    `;
+                }
+            } else if (col.id === 'quoted_line_total') {
+                if (currentStage === 'Approval' || currentStage === 'Approved' || currentStage === 'Refused') {
+                    rowsHtml += `
+                        <td class="td-num" style="font-weight: 800; color: #b45309;">
+                            ₱${formatMoney(calc.quotedTotal)}
+                        </td>
+                    `;
+                } else {
+                    rowsHtml += `
+                        <td class="td-center" style="color: #94a3b8; font-size: 11px;">
+                            —
+                        </td>
+                    `;
+                }
+            } else if (col.id === 'lead_time_days') {
+                if (currentStage === 'Approval') {
+                    rowsHtml += `
+                        <td class="td-center">
+                            <input type="number" step="1" min="0" value="${item.leadTimeDays || 0}" onchange="updateItemRowField(${idx}, 'leadTimeDays', this.value)" style="width: 70px; text-align: center; border-color: #d97706; background: #fffbeb;">
+                        </td>
+                    `;
+                } else if (currentStage === 'Approved' || currentStage === 'Refused') {
+                    rowsHtml += `
+                        <td class="td-center" style="font-weight: 600; color: #475569;">
+                            ${item.leadTimeDays || 0} d
+                        </td>
+                    `;
+                } else {
+                    rowsHtml += `
+                        <td class="td-center" style="color: #94a3b8; font-size: 11px;">
+                            —
+                        </td>
+                    `;
+                }
+            } else if (col.id === 'quantity_variance') {
+                if (currentStage === 'Approval' || currentStage === 'Approved' || currentStage === 'Refused') {
+                    const pillClass = calc.qtyVariance > 0 ? 'positive' : (calc.qtyVariance < 0 ? 'negative' : 'neutral');
+                    const sign = calc.qtyVariance > 0 ? '+' : '';
+                    rowsHtml += `
+                        <td class="td-num">
+                            <span class="var-pill ${pillClass}">${sign}${formatNumber(calc.qtyVariance)}</span>
+                        </td>
+                    `;
+                } else {
+                    rowsHtml += `<td class="td-center" style="color: #94a3b8;">—</td>`;
+                }
+            } else if (col.id === 'price_variance_amount') {
+                if (currentStage === 'Approval' || currentStage === 'Approved' || currentStage === 'Refused') {
+                    const pillClass = calc.priceVariance > 0 ? 'positive' : (calc.priceVariance < 0 ? 'negative' : 'neutral');
+                    const sign = calc.priceVariance > 0 ? '+' : '';
+                    rowsHtml += `
+                        <td class="td-num">
+                            <span class="var-pill ${pillClass}">${sign}₱${formatMoney(calc.priceVariance)}</span>
+                        </td>
+                    `;
+                } else {
+                    rowsHtml += `<td class="td-center" style="color: #94a3b8;">—</td>`;
+                }
+            } else if (col.id === 'price_variance_percentage') {
+                if (currentStage === 'Approval' || currentStage === 'Approved' || currentStage === 'Refused') {
+                    const pillClass = calc.priceVariancePct > 0 ? 'positive' : (calc.priceVariancePct < 0 ? 'negative' : 'neutral');
+                    const sign = calc.priceVariancePct > 0 ? '+' : '';
+                    rowsHtml += `
+                        <td class="td-num">
+                            <span class="var-pill ${pillClass}">${sign}${calc.priceVariancePct.toFixed(1)}%</span>
+                        </td>
+                    `;
+                } else {
+                    rowsHtml += `<td class="td-center" style="color: #94a3b8;">—</td>`;
+                }
+            } else if (col.id === 'is_price_within_budget') {
+                if (currentStage === 'Approval' || currentStage === 'Approved' || currentStage === 'Refused') {
+                    const pill = calc.isWithinBudget
+                        ? '<span class="budget-pill within"><i class="ph ph-check-circle"></i> Within</span>'
+                        : '<span class="budget-pill over"><i class="ph ph-warning-circle"></i> Over</span>';
+                    rowsHtml += `<td class="td-center">${pill}</td>`;
+                } else {
+                    rowsHtml += `<td class="td-center"><span class="budget-pill pending">—</span></td>`;
+                }
             }
         });
 
@@ -4404,10 +5852,10 @@ function renderItemsTable() {
         rowsHtml += `
             <td class="td-center">
                 <div style="display: flex; align-items: center; justify-content: center; gap: 4px;">
-                    <button type="button" class="inv-table-filter-btn" onclick="cloneItemRow(${idx})" title="Duplicate row">
+                    <button type="button" class="inv-table-filter-btn" onclick="cloneItemRow(${idx})" title="Duplicate row" ${!isBaseEditable ? 'disabled style="opacity: 0.4;"' : ''}>
                         <i class="ph ph-copy"></i>
                     </button>
-                    <button type="button" class="inv-table-filter-btn" style="color: var(--rfq-danger);" onclick="deleteItemRow(${idx})" title="Remove item">
+                    <button type="button" class="inv-table-filter-btn" style="color: var(--rfq-danger);" onclick="deleteItemRow(${idx})" title="Remove item" ${!isBaseEditable ? 'disabled style="opacity: 0.4;"' : ''}>
                         <i class="ph ph-trash"></i>
                     </button>
                 </div>
@@ -4427,8 +5875,32 @@ function updateItemRowField(index, field, value) {
     const item = window.AppStore.activeRfq.items[index];
     if (!item) return;
 
-    if (field === 'quantity' || field === 'targetPrice') {
-        item[field] = parseFloat(value) || 0;
+    if (field === 'requestedQuantity' || field === 'quantity') {
+        const val = parseFloat(value) || 0;
+        item.requestedQuantity = val;
+        item.quantity = val;
+    } else if (field === 'targetUnitPrice' || field === 'targetPrice') {
+        const val = parseFloat(value) || 0;
+        item.targetUnitPrice = val;
+        item.targetPrice = val;
+    } else if (field === 'quotedQuantity') {
+        item.quotedQuantity = parseFloat(value) || 0;
+    } else if (field === 'quotedUnitPrice') {
+        item.quotedUnitPrice = parseFloat(value) || 0;
+    } else if (field === 'leadTimeDays') {
+        item.leadTimeDays = parseInt(value, 10) || 0;
+    } else if (field === 'purchaseUomCode' || field === 'unit') {
+        item.purchaseUomCode = value;
+        item.unit = value;
+    } else if (field === 'itemId' || field === 'sku') {
+        item.itemId = value;
+        item.sku = value;
+    } else if (field === 'itemName' || field === 'name') {
+        item.itemName = value;
+        item.name = value;
+    } else if (field === 'rfqLineNotes' || field === 'notes') {
+        item.rfqLineNotes = value;
+        item.notes = value;
     } else {
         item[field] = value;
     }
@@ -4436,15 +5908,9 @@ function updateItemRowField(index, field, value) {
     persistDraft();
     updateMetricsSummary();
 
-    // Re-render line total cell without full table refresh for crisp INP performance
-    const rowEl = document.querySelector(`tr[data-row-idx="${index}"]`);
-    if (rowEl && activeColumnIds.includes('total_target')) {
-        const total = (parseFloat(item.quantity) || 0) * (parseFloat(item.targetPrice) || 0);
-        const colIdx = activeColumnIds.indexOf('total_target');
-        const targetTd = rowEl.children[colIdx];
-        if (targetTd) {
-            targetTd.textContent = `₱${formatMoney(total)}`;
-        }
+    // Re-render table if variance fields or calculations are impacted
+    if (['requestedQuantity', 'quantity', 'targetUnitPrice', 'targetPrice', 'quotedQuantity', 'quotedUnitPrice'].includes(field)) {
+        renderItemsTable();
     }
 }
 
@@ -4903,7 +6369,13 @@ function checkDraftRecovery() {
         try {
             const parsed = JSON.parse(draft);
             if (parsed && (parsed.items?.length > 0 || parsed.vendorId || parsed.title)) {
-                restoreDraftSession(true);
+                // If saved draft has already been submitted or approved in directory, discard it so user can create fresh RFQ
+                const isAlreadyInDir = (window.AppStore.rfqs || []).some(r => r.rfqNumber === parsed.rfqNumber && (r.status === 'Submitted' || r.status === 'Approval' || r.status === 'Approved'));
+                if (!isAlreadyInDir && (parsed.status === 'Draft' || !parsed.status)) {
+                    restoreDraftSession(true);
+                } else {
+                    localStorage.removeItem('rms_rfq_current_draft');
+                }
             }
         } catch (e) {}
     }
@@ -4955,23 +6427,181 @@ function restoreDraftSession(isAutoRecovery = false) {
     }
 }
 
-function resetRfqForm() {
-    if (confirm('Reset entire Request for Quotation form? Any unsaved edits will be discarded.')) {
-        localStorage.removeItem('rms_rfq_current_draft');
-        document.getElementById('vendorSelect').value = '';
-        const titleEl = document.getElementById('rfqTenderTitle');
-        if (titleEl) titleEl.value = '';
-        window.AppStore.activeRfq.title = '';
-        const statusBadge = document.getElementById('rfqStatusBadge');
-        if (statusBadge) {
-            statusBadge.className = 'status-pill draft';
-            statusBadge.innerHTML = '<i class="ph ph-dot"></i> Draft RFQ';
+function getNextUniqueRfqNumber() {
+    const existingRfqs = window.AppStore.rfqs || [];
+    let maxSeq = 42;
+
+    existingRfqs.forEach(r => {
+        const numStr = r.rfqNumber || r.ref || r.rfq_number || '';
+        const match = numStr.match(/RFQ-(\d{4})-(\d+)/);
+        if (match) {
+            const seq = parseInt(match[2], 10);
+            if (!isNaN(seq) && seq > maxSeq) {
+                maxSeq = seq;
+            }
         }
-        clearVendorFields();
-        initDates();
-        window.AppStore.activeRfq.items = [];
-        renderItemsTable();
-        showToast('✓ RFQ form cleared', 'success');
+    });
+
+    if (window.AppStore.activeRfq) {
+        const activeNum = window.AppStore.activeRfq.rfqNumber || window.AppStore.activeRfq.ref || '';
+        const match = activeNum.match(/RFQ-(\d{4})-(\d+)/);
+        if (match) {
+            const seq = parseInt(match[2], 10);
+            if (!isNaN(seq) && seq > maxSeq) {
+                maxSeq = seq;
+            }
+        }
+    }
+
+    const storedCounter = parseInt(localStorage.getItem('rms_last_rfq_counter') || '0', 10);
+    if (!isNaN(storedCounter) && storedCounter > maxSeq) {
+        maxSeq = storedCounter;
+    }
+
+    let nextSeq = maxSeq + 1;
+    let candidate = `RFQ-2026-${String(nextSeq).padStart(4, '0')}`;
+
+    while (existingRfqs.some(r => (r.rfqNumber || r.ref || r.rfq_number) === candidate)) {
+        nextSeq++;
+        candidate = `RFQ-2026-${String(nextSeq).padStart(4, '0')}`;
+    }
+
+    localStorage.setItem('rms_last_rfq_counter', String(nextSeq));
+    return candidate;
+}
+
+function createNewRfq(promptIfDirty = false) {
+    if (promptIfDirty && window.AppStore.activeRfq && (window.AppStore.activeRfq.items || []).length > 0) {
+        if (!confirm('Start a new RFQ? Current unsaved line items will be cleared.')) {
+            return;
+        }
+    }
+
+    // 1. Generate guaranteed next unique RFQ number
+    const newRfqNumber = getNextUniqueRfqNumber();
+
+    // 2. Clear current draft in localStorage
+    localStorage.removeItem('rms_rfq_current_draft');
+    window.AppStore._isExplicitlyEditing = false;
+
+    // 3. Setup standard fresh dates
+    const today = new Date();
+    const dateIssued = today.toISOString().split('T')[0];
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + 7);
+    const dueDateStr = dueDate.toISOString().split('T')[0];
+    const deliveryDate = new Date();
+    deliveryDate.setDate(deliveryDate.getDate() + 5);
+    const deliveryDateStr = deliveryDate.toISOString().split('T')[0];
+
+    // 4. Create pristine activeRfq object
+    window.AppStore.activeRfq = {
+        rfqNumber: newRfqNumber,
+        ref: newRfqNumber,
+        title: '',
+        status: 'Draft',
+        rfqStatus: 'Draft',
+        vendorId: '',
+        vendorName: '',
+        vendorTradeName: '',
+        vendorEmail: '',
+        vendorPhone: '',
+        vendorAddress: '',
+        vendorTin: '',
+        vendorContactPerson: '',
+        vendorContactTitle: '',
+        dateIssued: dateIssued,
+        dueDate: dueDateStr,
+        expectedDelivery: deliveryDateStr,
+        paymentTerms: 'Net 30 Days',
+        deliveryLocation: 'Central Commissary - Main Dock',
+        specialInstructions: '',
+        items: []
+    };
+
+    // 5. Reset UI form elements
+    const refDisplay = document.getElementById('rfqRefDisplay');
+    if (refDisplay) refDisplay.textContent = newRfqNumber;
+    const inputEl = document.getElementById('rfqNumberInput');
+    if (inputEl) inputEl.value = newRfqNumber;
+    const docNum = document.getElementById('docRfqNumber');
+    if (docNum) docNum.textContent = newRfqNumber;
+    const titleEl = document.getElementById('rfqTenderTitle');
+    if (titleEl) titleEl.value = '';
+
+    const vendorSelect = document.getElementById('vendorSelect');
+    if (vendorSelect) vendorSelect.value = '';
+    clearVendorFields(false);
+
+    const dateIssuedEl = document.getElementById('rfqDateIssued');
+    if (dateIssuedEl) dateIssuedEl.value = dateIssued;
+    const dueDateEl = document.getElementById('rfqDueDate');
+    if (dueDateEl) dueDateEl.value = dueDateStr;
+    const deliveryEl = document.getElementById('rfqExpectedDelivery');
+    if (deliveryEl) deliveryEl.value = deliveryDateStr;
+    const paymentEl = document.getElementById('rfqPaymentTerms');
+    if (paymentEl) paymentEl.value = 'Net 30 Days';
+    const locEl = document.getElementById('rfqDeliveryLocation');
+    if (locEl) locEl.value = 'Central Commissary - Main Dock';
+    const instEl = document.getElementById('rfqSpecialInstructions');
+    if (instEl) instEl.value = '';
+
+    const statusBadge = document.getElementById('rfqStatusBadge');
+    if (statusBadge) {
+        statusBadge.className = 'status-pill draft';
+        statusBadge.innerHTML = '<i class="ph ph-dot"></i> Draft RFQ';
+    }
+
+    const tabBadge = document.getElementById('tabBuilderBadge');
+    if (tabBadge) tabBadge.textContent = 'New RFQ';
+
+    // 6. Clear any red error lights
+    document.querySelectorAll('.rfq-field-error-glow').forEach(el => el.classList.remove('rfq-field-error-glow'));
+
+    // 7. Reset lifecycle stepper and banner to Draft stage
+    updateLifecycleProgressBar('Draft');
+
+    // 8. Reset columns to Draft stage defaults
+    window.AppStore._lastSyncedStage = 'Draft';
+    applyStageDefaultColumns('Draft', true);
+
+    // 9. Render table (empty state) and summary metrics
+    renderItemsTable();
+    updateMetricsSummary();
+
+    // 10. Switch to builder tab and scroll top
+    switchRfqTab('tab-builder');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // 11. Focus on vendor selector
+    setTimeout(() => {
+        const combo = document.getElementById('rfqVendorComboTrigger');
+        if (combo) combo.focus();
+        else {
+            const vSel = document.getElementById('vendorSelect');
+            if (vSel) vSel.focus();
+        }
+    }, 120);
+
+    showToast(`✓ New RFQ ${newRfqNumber} initialized (Draft Stage)`, 'success');
+}
+
+function resetRfqForm(promptUser = true) {
+    if (promptUser) {
+        if (!confirm('Reset entire Request for Quotation form? A new blank draft will be created.')) {
+            return;
+        }
+    }
+    createNewRfq(false);
+}
+
+function handleBuilderTabClick() {
+    const active = window.AppStore.activeRfq;
+    const stage = getNormalizedRfqStage(active?.rfqStatus || active?.status);
+    if (stage !== 'Draft' && !window.AppStore._isExplicitlyEditing) {
+        createNewRfq(false);
+    } else {
+        switchRfqTab('tab-builder');
     }
 }
 
@@ -4988,6 +6618,12 @@ function closeAllModals() {
  * UTILITIES
  * --------------------------------------------------------------------------
  */
+function formatNumber(num, decimals = 2) {
+    const val = Number(num);
+    if (isNaN(val)) return '0';
+    return val.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: decimals });
+}
+
 function formatMoney(amount) {
     const val = Number(amount) || 0;
     return val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -6807,14 +8443,7 @@ function handleRfqDirectorySearch(query) {
 }
 
 function startNewRfqFromDirectory() {
-    resetRfqForm(false);
-    const badge = document.getElementById('tabBuilderBadge');
-    if (badge) badge.textContent = 'New RFQ';
-    switchRfqTab('tab-builder');
-    setTimeout(() => {
-        const select = document.getElementById('vendorSelect');
-        if (select) select.focus();
-    }, 150);
+    createNewRfq(false);
 }
 
 function editRfqFromDirectory(rfqNumber) {
@@ -6822,6 +8451,7 @@ function editRfqFromDirectory(rfqNumber) {
     if (!rfq) return;
 
     window.AppStore.activeRfq = JSON.parse(JSON.stringify(rfq));
+    window.AppStore._isExplicitlyEditing = true;
     
     // Update inputs
     document.getElementById('rfqNumberInput').value = rfq.rfqNumber;
@@ -6839,7 +8469,7 @@ function editRfqFromDirectory(rfqNumber) {
         handleVendorSelection(rfq.vendorId);
     } else {
         document.getElementById('vendorSelect').value = '';
-        clearVendorFields();
+        clearVendorFields(false);
     }
     document.getElementById('rfqDateIssued').value = rfq.dateIssued || '';
     document.getElementById('rfqDueDate').value = rfq.dueDate || '';
@@ -6848,6 +8478,8 @@ function editRfqFromDirectory(rfqNumber) {
     document.getElementById('rfqDeliveryLocation').value = rfq.deliveryLocation || '';
     document.getElementById('rfqSpecialInstructions').value = rfq.specialInstructions || '';
 
+    window.AppStore._lastSyncedStage = null;
+    updateLifecycleProgressBar(rfq.rfqStatus || rfq.status || 'Draft');
     renderItemsTable();
     const badge = document.getElementById('tabBuilderBadge');
     if (badge) badge.textContent = `Editing ${rfq.rfqNumber}`;

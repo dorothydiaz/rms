@@ -6,9 +6,12 @@ use App\Models\Inventory\InventoryItem;
 use App\Models\Purchase\ProcurementVendor;
 use App\Models\Purchase\PurchaseOrder;
 use App\Models\Purchase\PurchaseOrderItem;
+use App\Models\Purchase\RfqHeader;
+use App\Models\Purchase\RfqLine;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class PurchaseController extends Controller
@@ -221,6 +224,397 @@ class PurchaseController extends Controller
                 'data' => [
                     'po_number' => $po->po_number,
                     'gross_total' => $po->gross_total,
+                ],
+            ]);
+        });
+    }
+
+    /**
+     * API: Get all RFQs with lines
+     */
+    public function apiGetRfqs(): JsonResponse
+    {
+        $rfqs = RfqHeader::with(['lines', 'vendor'])->orderByDesc('rfq_created_at')->get();
+        return response()->json([
+            'success' => true,
+            'data' => $rfqs,
+        ]);
+    }
+
+    /**
+     * API: Save or update RFQ Draft (Enforces Draft-only edits)
+     */
+    public function apiSaveRfqDraft(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'rfq_number' => 'required|string|max:50',
+            'rfq_date' => 'nullable|date',
+            'vendor_id' => 'nullable|string',
+            'vendor_name' => 'nullable|string|max:255',
+            'vendor_contact_id' => 'nullable|string',
+            'submission_deadline' => 'nullable|date',
+            'quote_valid_until_date' => 'nullable|date',
+            'rfq_requested_delivery_date' => 'nullable|date',
+            'rfq_currency_code' => 'nullable|string|max:3',
+            'rfq_payment_terms_code' => 'nullable|string|max:30',
+            'rfq_incoterms_code' => 'nullable|string|max:10',
+            'rfq_notes' => 'nullable|string',
+            'items' => 'required|array|min:1',
+            'items.*.item_id' => 'required|string',
+            'items.*.item_name' => 'nullable|string',
+            'items.*.purchase_uom_code' => 'nullable|string',
+            'items.*.requested_quantity' => 'required|numeric|min:0.01',
+            'items.*.target_unit_price' => 'nullable|numeric|min:0',
+            'items.*.rfq_line_notes' => 'nullable|string',
+        ]);
+
+        return DB::transaction(function () use ($validated) {
+            $rfq = RfqHeader::where('rfq_number', $validated['rfq_number'])->first();
+
+            if ($rfq && in_array(strtoupper($rfq->rfq_status), ['SUBMITTED', 'APPROVED', 'AWARDED', 'REFUSED'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "RFQ {$rfq->rfq_number} is locked in {$rfq->rfq_status} status and cannot be edited.",
+                ], 422);
+            }
+
+            if (!$rfq) {
+                $rfq = new RfqHeader();
+                $rfq->rfq_id = (string) Str::uuid();
+                $rfq->rfq_number = $validated['rfq_number'];
+                $rfq->rfq_status = 'DRAFT';
+                $rfq->rfq_approval_status = 'PENDING';
+            }
+
+            $rfq->rfq_date = $validated['rfq_date'] ?? now()->toDateString();
+            $rfq->vendor_id = $validated['vendor_id'] ?? $rfq->vendor_id;
+            $rfq->vendor_contact_id = $validated['vendor_contact_id'] ?? $rfq->vendor_contact_id;
+            $rfq->submission_deadline = $validated['submission_deadline'] ?? null;
+            $rfq->quote_valid_until_date = $validated['quote_valid_until_date'] ?? null;
+            $rfq->rfq_requested_delivery_date = $validated['rfq_requested_delivery_date'] ?? null;
+            $rfq->rfq_currency_code = $validated['rfq_currency_code'] ?? 'PHP';
+            $rfq->rfq_payment_terms_code = $validated['rfq_payment_terms_code'] ?? 'NET30';
+            $rfq->rfq_incoterms_code = $validated['rfq_incoterms_code'] ?? 'FOB';
+            $rfq->rfq_notes = $validated['rfq_notes'] ?? null;
+
+            $estTotal = 0.0;
+            foreach ($validated['items'] as $itemData) {
+                $qty = (float) $itemData['requested_quantity'];
+                $price = (float) ($itemData['target_unit_price'] ?? 0.0);
+                $estTotal += ($qty * $price);
+            }
+            $rfq->rfq_estimated_total_amount = $estTotal;
+            $rfq->save();
+
+            // Recreate lines
+            RfqLine::where('rfq_id', $rfq->rfq_id)->delete();
+            $lineIdx = 1;
+            foreach ($validated['items'] as $itemData) {
+                $qty = (float) $itemData['requested_quantity'];
+                $price = (float) ($itemData['target_unit_price'] ?? 0.0);
+                RfqLine::create([
+                    'rfq_line_id' => (string) Str::uuid(),
+                    'rfq_id' => $rfq->rfq_id,
+                    'line_number' => $lineIdx++,
+                    'item_id' => $itemData['item_id'],
+                    'requested_quantity' => $qty,
+                    'quoted_quantity' => $itemData['quoted_quantity'] ?? null,
+                    'purchase_uom_code' => $itemData['purchase_uom_code'] ?? 'PCS',
+                    'target_unit_price' => $price,
+                    'quoted_unit_price' => $itemData['quoted_unit_price'] ?? 0.0,
+                    'quoted_line_total' => isset($itemData['quoted_quantity'], $itemData['quoted_unit_price'])
+                        ? ((float)$itemData['quoted_quantity'] * (float)$itemData['quoted_unit_price'])
+                        : 0.0,
+                    'lead_time_days' => $itemData['lead_time_days'] ?? 0,
+                    'is_awarded' => false,
+                    'rfq_line_notes' => $itemData['rfq_line_notes'] ?? null,
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => "RFQ {$rfq->rfq_number} draft successfully saved.",
+                'data' => $rfq->load('lines'),
+            ]);
+        });
+    }
+
+    /**
+     * API: Transition RFQ Status along FSM:
+     * DRAFT -> SUBMITTED -> APPROVAL -> APPROVED / REFUSED / REVISED
+     */
+    public function apiTransitionRfqStatus(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'rfq_number' => 'required|string',
+            'target_status' => 'required|string',
+            'vendor_id' => 'nullable|string',
+            'vendor_name' => 'nullable|string',
+            'rejection_reason' => 'nullable|string',
+            'revision_notes' => 'nullable|string',
+            'items' => 'nullable|array',
+            'items.*.line_id' => 'nullable|string',
+            'items.*.item_id' => 'nullable|string',
+            'items.*.requested_quantity' => 'nullable|numeric|min:0',
+            'items.*.target_unit_price' => 'nullable|numeric|min:0',
+            'items.*.purchase_uom_code' => 'nullable|string',
+            'items.*.quoted_quantity' => 'nullable|numeric|min:0',
+            'items.*.quoted_unit_price' => 'nullable|numeric|min:0',
+            'items.*.lead_time_days' => 'nullable|integer|min:0',
+            'items.*.rfq_line_notes' => 'nullable|string',
+        ]);
+
+        $rfq = RfqHeader::where('rfq_number', $validated['rfq_number'])->first();
+        $targetStatus = strtoupper($validated['target_status']);
+
+        if (!$rfq) {
+            // Auto-create newly submitted or transitioning RFQ record if not previously persisted
+            $initialStatus = in_array($targetStatus, ['SUBMITTED', 'DRAFT'])
+                ? 'DRAFT'
+                : ($targetStatus === 'APPROVAL' ? 'SUBMITTED' : 'APPROVAL');
+
+            $rfq = new RfqHeader();
+            $rfq->rfq_id = (string) Str::uuid();
+            $rfq->rfq_number = $validated['rfq_number'];
+            $rfq->rfq_status = $initialStatus;
+            $rfq->rfq_approval_status = 'PENDING';
+            $rfq->vendor_id = $validated['vendor_id'] ?? null;
+            $rfq->rfq_date = now()->toDateString();
+            $rfq->rfq_currency_code = 'PHP';
+            $rfq->rfq_payment_terms_code = 'NET30';
+            $rfq->save();
+
+            if (!empty($validated['items'])) {
+                $lIdx = 1;
+                $estTotal = 0;
+                foreach ($validated['items'] as $it) {
+                    $qty = (float)($it['requested_quantity'] ?? $it['quantity'] ?? 1);
+                    $targetPrice = (float)($it['target_unit_price'] ?? 0);
+                    $quotedPrice = (float)($it['quoted_unit_price'] ?? 0);
+                    $quotedQty = isset($it['quoted_quantity']) ? (float)$it['quoted_quantity'] : $qty;
+                    $estTotal += ($qty * $targetPrice);
+                    RfqLine::create([
+                        'rfq_line_id' => (string) Str::uuid(),
+                        'rfq_id' => $rfq->rfq_id,
+                        'line_number' => $lIdx++,
+                        'item_id' => $it['item_id'] ?? ('ITEM-' . $lIdx),
+                        'requested_quantity' => $qty,
+                        'quoted_quantity' => $quotedQty,
+                        'purchase_uom_code' => $it['purchase_uom_code'] ?? 'PCS',
+                        'target_unit_price' => $targetPrice,
+                        'quoted_unit_price' => $quotedPrice,
+                        'quoted_line_total' => $quotedQty * $quotedPrice,
+                        'lead_time_days' => (int)($it['lead_time_days'] ?? 0),
+                        'is_awarded' => ($targetStatus === 'APPROVED'),
+                        'rfq_line_notes' => $it['rfq_line_notes'] ?? null,
+                    ]);
+                }
+                $rfq->rfq_estimated_total_amount = $estTotal;
+                $rfq->save();
+            }
+        }
+
+        $currentStatus = strtoupper($rfq->rfq_status);
+
+        // FSM rule 1: Direct jump from SUBMITTED to APPROVED without APPROVAL validation is forbidden
+        if ($currentStatus === 'SUBMITTED' && $targetStatus === 'APPROVED') {
+            return response()->json([
+                'success' => false,
+                'message' => "Direct transition from SUBMITTED to APPROVED is prohibited. Must go through APPROVAL validation.",
+            ], 422);
+        }
+
+        // FSM rule 2: Check allowed transitions (including idempotent re-confirmations)
+        $allowedTransitions = [
+            'DRAFT' => ['SUBMITTED', 'DRAFT'],
+            'SUBMITTED' => ['APPROVAL', 'DRAFT', 'SUBMITTED'],
+            'APPROVAL' => ['APPROVED', 'REFUSED', 'DRAFT', 'REVISED', 'APPROVAL'],
+            'APPROVED' => ['AWARDED', 'APPROVED'],
+            'REFUSED' => ['DRAFT', 'REFUSED'],
+            'AWARDED' => ['AWARDED'],
+        ];
+
+        if (!isset($allowedTransitions[$currentStatus]) || !in_array($targetStatus, $allowedTransitions[$currentStatus])) {
+            return response()->json([
+                'success' => false,
+                'message' => "Cannot transition RFQ from {$currentStatus} to {$targetStatus}.",
+            ], 422);
+        }
+
+        return DB::transaction(function () use ($rfq, $validated, $targetStatus) {
+            if (!empty($validated['vendor_id'])) {
+                $rfq->vendor_id = $validated['vendor_id'];
+            }
+
+            if ($targetStatus === 'REVISED') {
+                $rfq->rfq_status = 'DRAFT';
+                $rfq->revision_notes = $validated['revision_notes'] ?? null;
+            } elseif ($targetStatus === 'REFUSED') {
+                $rfq->rfq_status = 'REFUSED';
+                $rfq->rejection_reason = $validated['rejection_reason'] ?? 'Refused by Approver';
+            } elseif ($targetStatus === 'APPROVED') {
+                $rfq->rfq_status = 'APPROVED';
+                $rfq->rfq_approval_status = 'APPROVED';
+            } else {
+                $rfq->rfq_status = $targetStatus;
+            }
+
+            // Update vendor quotation inputs if provided
+            if (!empty($validated['items'])) {
+                $quotedTotal = 0.0;
+                foreach ($validated['items'] as $itemQuote) {
+                    $lineQuery = RfqLine::where('rfq_id', $rfq->rfq_id);
+                    if (!empty($itemQuote['line_id'])) {
+                        $lineQuery->where('rfq_line_id', $itemQuote['line_id']);
+                    } elseif (!empty($itemQuote['item_id'])) {
+                        $lineQuery->where('item_id', $itemQuote['item_id']);
+                    }
+                    $line = $lineQuery->first();
+                    if ($line) {
+                        $qQty = isset($itemQuote['quoted_quantity']) ? (float)$itemQuote['quoted_quantity'] : (float)$line->requested_quantity;
+                        $qPrice = isset($itemQuote['quoted_unit_price']) ? (float)$itemQuote['quoted_unit_price'] : (float)$line->target_unit_price;
+                        $lineTotal = $qQty * $qPrice;
+
+                        $line->quoted_quantity = $qQty;
+                        $line->quoted_unit_price = $qPrice;
+                        $line->quoted_line_total = $lineTotal;
+                        if (isset($itemQuote['lead_time_days'])) {
+                            $line->lead_time_days = (int)$itemQuote['lead_time_days'];
+                        }
+                        if ($targetStatus === 'APPROVED') {
+                            $line->is_awarded = true;
+                        }
+                        $line->save();
+                        $quotedTotal += $lineTotal;
+                    } else {
+                        $qQty = isset($itemQuote['quoted_quantity']) ? (float)$itemQuote['quoted_quantity'] : (float)($itemQuote['requested_quantity'] ?? 1);
+                        $qPrice = isset($itemQuote['quoted_unit_price']) ? (float)$itemQuote['quoted_unit_price'] : (float)($itemQuote['target_unit_price'] ?? 0);
+                        $lineTotal = $qQty * $qPrice;
+                        RfqLine::create([
+                            'rfq_line_id' => (string) Str::uuid(),
+                            'rfq_id' => $rfq->rfq_id,
+                            'line_number' => RfqLine::where('rfq_id', $rfq->rfq_id)->count() + 1,
+                            'item_id' => $itemQuote['item_id'] ?? 'ITEM-NEW',
+                            'requested_quantity' => $qQty,
+                            'quoted_quantity' => $qQty,
+                            'purchase_uom_code' => $itemQuote['purchase_uom_code'] ?? 'PCS',
+                            'target_unit_price' => (float)($itemQuote['target_unit_price'] ?? 0),
+                            'quoted_unit_price' => $qPrice,
+                            'quoted_line_total' => $lineTotal,
+                            'lead_time_days' => (int)($itemQuote['lead_time_days'] ?? 0),
+                            'is_awarded' => ($targetStatus === 'APPROVED'),
+                        ]);
+                        $quotedTotal += $lineTotal;
+                    }
+                }
+                if ($quotedTotal > 0) {
+                    $rfq->rfq_quoted_total_amount = $quotedTotal;
+                }
+            }
+
+            $rfq->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => "RFQ {$rfq->rfq_number} status updated to {$rfq->rfq_status}.",
+                'data' => $rfq->fresh()->load('lines'),
+            ]);
+        });
+    }
+
+    /**
+     * API: Convert Approved RFQ to Purchase Order (Atomic Transaction)
+     */
+    public function apiConvertRfqToPo(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'rfq_number' => 'required|string',
+            'vendor_name' => 'nullable|string|max:255',
+            'delivery_location' => 'nullable|string|max:255',
+            'approved_by' => 'nullable|string|max:255',
+        ]);
+
+        $rfq = RfqHeader::with(['lines', 'vendor'])->where('rfq_number', $validated['rfq_number'])->first();
+        if (!$rfq) {
+            return response()->json([
+                'success' => false,
+                'message' => "RFQ {$validated['rfq_number']} not found.",
+            ], 404);
+        }
+
+        if ($rfq->rfq_status !== 'APPROVED') {
+            return response()->json([
+                'success' => false,
+                'message' => "Only APPROVED RFQs can be converted to Purchase Orders.",
+            ], 422);
+        }
+
+        return DB::transaction(function () use ($rfq, $validated) {
+            $year = date('Y');
+            $count = PurchaseOrder::whereYear('created_at', $year)->count() + 1;
+            $poNum = sprintf('PO-%s-%04d', $year, $count);
+
+            $grossTotal = 0.0;
+            foreach ($rfq->lines as $line) {
+                $qty = (float) ($line->quoted_quantity ?: $line->requested_quantity);
+                $price = (float) ($line->quoted_unit_price ?: $line->target_unit_price);
+                $grossTotal += ($qty * $price);
+            }
+
+            $vendorName = $validated['vendor_name']
+                ?? ($rfq->vendor ? ($rfq->vendor->trade_name ?? $rfq->vendor->legal_name) : 'Approved Vendor');
+
+            $po = PurchaseOrder::create([
+                'po_number' => $poNum,
+                'po_type' => 'vendor',
+                'rfq_reference' => $rfq->rfq_number,
+                'vendor_id' => $rfq->vendor_id,
+                'vendor_name' => $vendorName,
+                'order_date' => now()->toDateString(),
+                'expected_delivery' => $rfq->rfq_requested_delivery_date ?: now()->addDays(3)->toDateString(),
+                'delivery_location' => $validated['delivery_location'] ?? 'Central Commissary - Receiving Dock 1',
+                'payment_terms' => $rfq->rfq_payment_terms_code ?: 'Net 30 Days',
+                'payment_status' => 'Unpaid / Credit',
+                'payment_method' => 'Trade Credit (Net 30/15)',
+                'amount_paid' => 0.00,
+                'balance_due' => $grossTotal,
+                'approved_by' => $validated['approved_by'] ?? 'Procurement Officer',
+                'status' => 'Approved / Issued',
+                'subtotal' => $grossTotal,
+                'tax_amount' => 0.00,
+                'gross_total' => $grossTotal,
+                'created_by_user' => auth()->user()->name ?? 'Procurement Specialist',
+            ]);
+
+            foreach ($rfq->lines as $line) {
+                $qty = (float) ($line->quoted_quantity ?: $line->requested_quantity);
+                $price = (float) ($line->quoted_unit_price ?: $line->target_unit_price);
+                PurchaseOrderItem::create([
+                    'purchase_order_id' => $po->id,
+                    'sku' => $line->item_id,
+                    'item_name' => $line->item ? $line->item->name : $line->item_id,
+                    'category' => 'Raw Ingredients',
+                    'uom' => $line->purchase_uom_code ?: 'PCS',
+                    'quantity' => $qty,
+                    'unit_price' => $price,
+                    'total_amount' => $qty * $price,
+                    'received_quantity' => 0.00,
+                    'status' => 'PENDING',
+                ]);
+            }
+
+            // Update RFQ status to AWARDED and link PO
+            $rfq->rfq_status = 'AWARDED';
+            $rfq->purchase_order_id = $po->id;
+            $rfq->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => "Purchase Order {$po->po_number} successfully generated from RFQ {$rfq->rfq_number}.",
+                'data' => [
+                    'po_number' => $po->po_number,
+                    'gross_total' => $po->gross_total,
+                    'rfq_number' => $rfq->rfq_number,
                 ],
             ]);
         });

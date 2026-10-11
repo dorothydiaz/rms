@@ -410,7 +410,17 @@ Route::middleware('auth')->group(function () {
         Route::get('/api/orders', [PurchaseController::class, 'apiGetPurchaseOrders'])->name('api.orders');
         Route::post('/api/orders', [PurchaseController::class, 'apiCreatePurchaseOrder'])->name('api.orders.create');
         Route::get('/api/orders/{poNumber}/items', [PurchaseController::class, 'apiGetPoItems'])->name('api.orders.items');
+
+        // RFQ Lifecycle API Bridges
+        Route::get('/api/rfq', [PurchaseController::class, 'apiGetRfqs'])->name('api.rfq.index');
+        Route::post('/api/rfq/save-draft', [PurchaseController::class, 'apiSaveRfqDraft'])->name('api.rfq.save-draft');
+        Route::post('/api/rfq/transition-status', [PurchaseController::class, 'apiTransitionRfqStatus'])->name('api.rfq.transition-status');
+        Route::post('/api/rfq/convert-po', [PurchaseController::class, 'apiConvertRfqToPo'])->name('api.rfq.convert-po');
     });
+
+    // Alias for root API callers
+    Route::post('/api/rfq/transition-status', [PurchaseController::class, 'apiTransitionRfqStatus']);
+
 
     // Settings (Business Configuration)
     Route::prefix('config')->name('config.')->group(function () {
