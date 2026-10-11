@@ -339,7 +339,7 @@ class HrReportController extends Controller
                     foreach ($empNames as $name) {
                         $sub->orWhere('first_name', 'like', "%{$name}%")
                             ->orWhere('last_name', 'like', "%{$name}%")
-                            ->orWhere(DB::raw("CONCAT(first_name, ' ', last_name)"), 'like', "%{$name}%");
+                            ->orWhere(DB::raw("CONCAT(employee_first_name, ' ', employee_last_name)"), 'like', "%{$name}%");
                     }
                 });
             };
@@ -425,7 +425,7 @@ class HrReportController extends Controller
                         $q->where('first_name', 'like', "%{$search}%")
                           ->orWhere('last_name', 'like', "%{$search}%")
                           ->orWhere('employee_id', 'like', "%{$search}%")
-                          ->orWhere(DB::raw("CONCAT(first_name, ' ', last_name)"), 'like', "%{$search}%")
+                          ->orWhere(DB::raw("CONCAT(employee_first_name, ' ', employee_last_name)"), 'like', "%{$search}%")
                           ->orWhereHas('position', fn($pq) => $pq->where('name', 'like', "%{$search}%"))
                           ->orWhereHas('department', fn($dq) => $dq->where('name', 'like', "%{$search}%"))
                           ->orWhereHas('branch', fn($bq) => $bq->where('name', 'like', "%{$search}%"));
@@ -435,7 +435,7 @@ class HrReportController extends Controller
                         $q->where('first_name', 'like', "%{$search}%")
                           ->orWhere('last_name', 'like', "%{$search}%")
                           ->orWhere('employee_id', 'like', "%{$search}%")
-                          ->orWhere(DB::raw("CONCAT(first_name, ' ', last_name)"), 'like', "%{$search}%")
+                          ->orWhere(DB::raw("CONCAT(employee_first_name, ' ', employee_last_name)"), 'like', "%{$search}%")
                           ->orWhereHas('position', fn($pq) => $pq->where('name', 'like', "%{$search}%"))
                           ->orWhereHas('department', fn($dq) => $dq->where('name', 'like', "%{$search}%"))
                           ->orWhereHas('branch', fn($bq) => $bq->where('name', 'like', "%{$search}%"));
@@ -1305,12 +1305,12 @@ class HrReportController extends Controller
         // Summary ranking by employee
         $rankingQuery = clone $query;
         $tardySummary = $rankingQuery->select(
-            'employee_id',
+            'attendance_record_employee_id as employee_id',
             DB::raw('count(*) as occurrence_count'),
-            DB::raw('sum(late_minutes) as total_late_minutes'),
-            DB::raw('avg(late_minutes) as avg_late_minutes')
+            DB::raw('sum(attendance_record_late_minutes) as total_late_minutes'),
+            DB::raw('avg(attendance_record_late_minutes) as avg_late_minutes')
         )
-        ->groupBy('employee_id')
+        ->groupBy('attendance_record_employee_id')
         ->orderByDesc('total_late_minutes')
         ->with('employee.branch', 'employee.position', 'employee.company')
         ->get();
@@ -1381,18 +1381,18 @@ class HrReportController extends Controller
         $this->applyEmployeeFilters($query, $request, false);
 
         $summary = $query->select(
-            'employee_id',
+            'attendance_record_employee_id',
             DB::raw('count(*) as logged_days'),
-            DB::raw('sum(CASE WHEN status = "Present" OR regular_hours > 0 THEN 1 ELSE 0 END) as present_days'),
-            DB::raw('sum(CASE WHEN is_rest_day = 1 THEN 1 ELSE 0 END) as rest_days'),
-            DB::raw('sum(CASE WHEN late_minutes > 0 THEN 1 ELSE 0 END) as late_occurrences'),
-            DB::raw('sum(late_minutes) as total_late_minutes'),
-            DB::raw('sum(undertime_minutes) as total_undertime_minutes'),
-            DB::raw('sum(overtime_hours) as total_overtime_hours'),
-            DB::raw('sum(absence_days) as total_absences'),
-            DB::raw('sum(total_hours) as total_hours')
+            DB::raw('sum(CASE WHEN attendance_record_status = "Present" OR attendance_record_regular_hours > 0 THEN 1 ELSE 0 END) as present_days'),
+            DB::raw('sum(CASE WHEN attendance_record_is_rest_day = 1 THEN 1 ELSE 0 END) as rest_days'),
+            DB::raw('sum(CASE WHEN attendance_record_late_minutes > 0 THEN 1 ELSE 0 END) as late_occurrences'),
+            DB::raw('sum(attendance_record_late_minutes) as total_late_minutes'),
+            DB::raw('sum(attendance_record_undertime_minutes) as total_undertime_minutes'),
+            DB::raw('sum(attendance_record_overtime_hours) as total_overtime_hours'),
+            DB::raw('sum(attendance_record_absence_days) as total_absences'),
+            DB::raw('sum(attendance_record_total_hours) as total_hours')
         )
-        ->groupBy('employee_id')
+        ->groupBy('attendance_record_employee_id')
         ->with('employee.branch', 'employee.department', 'employee.position', 'employee.company')
         ->paginate(20)
         ->withQueryString();
@@ -1416,18 +1416,18 @@ class HrReportController extends Controller
         $this->applyEmployeeFilters($query, $request, false);
 
         $summary = $query->select(
-            'employee_id',
+            'attendance_record_employee_id',
             DB::raw('count(*) as logged_days'),
-            DB::raw('sum(CASE WHEN status = "Present" OR regular_hours > 0 THEN 1 ELSE 0 END) as present_days'),
-            DB::raw('sum(CASE WHEN is_rest_day = 1 THEN 1 ELSE 0 END) as rest_days'),
-            DB::raw('sum(CASE WHEN late_minutes > 0 THEN 1 ELSE 0 END) as late_occurrences'),
-            DB::raw('sum(late_minutes) as total_late_minutes'),
-            DB::raw('sum(undertime_minutes) as total_undertime_minutes'),
-            DB::raw('sum(overtime_hours) as total_overtime_hours'),
-            DB::raw('sum(absence_days) as total_absences'),
-            DB::raw('sum(total_hours) as total_hours')
+            DB::raw('sum(CASE WHEN attendance_record_status = "Present" OR attendance_record_regular_hours > 0 THEN 1 ELSE 0 END) as present_days'),
+            DB::raw('sum(CASE WHEN attendance_record_is_rest_day = 1 THEN 1 ELSE 0 END) as rest_days'),
+            DB::raw('sum(CASE WHEN attendance_record_late_minutes > 0 THEN 1 ELSE 0 END) as late_occurrences'),
+            DB::raw('sum(attendance_record_late_minutes) as total_late_minutes'),
+            DB::raw('sum(attendance_record_undertime_minutes) as total_undertime_minutes'),
+            DB::raw('sum(attendance_record_overtime_hours) as total_overtime_hours'),
+            DB::raw('sum(attendance_record_absence_days) as total_absences'),
+            DB::raw('sum(attendance_record_total_hours) as total_hours')
         )
-        ->groupBy('employee_id')
+        ->groupBy('attendance_record_employee_id')
         ->with('employee.branch', 'employee.department', 'employee.position', 'employee.company')
         ->get();
 

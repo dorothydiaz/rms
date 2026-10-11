@@ -2,6 +2,8 @@
 
 namespace App\Models\Hr;
 
+use App\Traits\HasEntityPrimaryKey;
+
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -9,6 +11,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class EmployeeDocument extends Model
 {
+    use HasEntityPrimaryKey;
+
+    protected $primaryKey = 'employee_document_id';
     use HasFactory;
 
     protected $table = 'hr_employee_documents';

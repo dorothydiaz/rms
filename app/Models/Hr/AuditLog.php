@@ -2,12 +2,17 @@
 
 namespace App\Models\Hr;
 
+use App\Traits\HasEntityPrimaryKey;
+
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class AuditLog extends Model
 {
+    use HasEntityPrimaryKey;
+
+    protected $primaryKey = 'audit_log_id';
     use HasFactory;
 
     public $timestamps = false;

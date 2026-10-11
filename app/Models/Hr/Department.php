@@ -2,6 +2,8 @@
 
 namespace App\Models\Hr;
 
+use App\Traits\HasEntityPrimaryKey;
+
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,6 +11,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Department extends Model
 {
+    use HasEntityPrimaryKey;
+
+    protected $primaryKey = 'department_id';
     use HasFactory;
 
     protected $table = 'hr_departments';
@@ -35,11 +40,11 @@ class Department extends Model
 
     public function positions(): HasMany
     {
-        return $this->hasMany(Position::class);
+        return $this->hasMany(Position::class, 'department_id');
     }
 
     public function employees(): HasMany
     {
-        return $this->hasMany(Employee::class);
+        return $this->hasMany(Employee::class, 'department_id');
     }
 }

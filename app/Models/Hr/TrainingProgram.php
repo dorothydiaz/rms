@@ -2,11 +2,16 @@
 
 namespace App\Models\Hr;
 
+use App\Traits\HasEntityPrimaryKey;
+
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class TrainingProgram extends Model
 {
+    use HasEntityPrimaryKey;
+
+    protected $primaryKey = 'training_program_id';
     use HasFactory;
 
     protected $table = 'hr_training_programs';

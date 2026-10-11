@@ -2,6 +2,8 @@
 
 namespace App\Models\Hr;
 
+use App\Traits\HasEntityPrimaryKey;
+
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -10,6 +12,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Branch extends Model
 {
+    use HasEntityPrimaryKey;
+
+    protected $primaryKey = 'branch_id';
     use HasFactory;
 
     protected $table = 'hr_branches';
@@ -30,6 +35,8 @@ class Branch extends Model
             'is_active' => 'boolean',
         ];
     }
+
+
 
     public function company(): BelongsTo
     {

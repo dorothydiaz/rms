@@ -2,11 +2,16 @@
 
 namespace App\Models\Hr;
 
+use App\Traits\HasEntityPrimaryKey;
+
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class PayrollRecord extends Model
 {
+    use HasEntityPrimaryKey;
+
+    protected $primaryKey = 'payroll_record_id';
     use HasFactory;
 
     protected $table = 'hr_payroll_records';

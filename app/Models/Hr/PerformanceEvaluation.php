@@ -2,12 +2,17 @@
 
 namespace App\Models\Hr;
 
+use App\Traits\HasEntityPrimaryKey;
+
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class PerformanceEvaluation extends Model
 {
+    use HasEntityPrimaryKey;
+
+    protected $primaryKey = 'performance_evaluation_id';
     use HasFactory;
 
     protected $table = 'hr_performance_evaluations';

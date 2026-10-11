@@ -2,11 +2,16 @@
 
 namespace App\Models\Hr;
 
+use App\Traits\HasEntityPrimaryKey;
+
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class StatutoryContributionRule extends Model
 {
+    use HasEntityPrimaryKey;
+
+    protected $primaryKey = 'statutory_contribution_rule_id';
     use HasFactory;
 
     protected $table = 'hr_statutory_contribution_rules';
