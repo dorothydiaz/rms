@@ -3418,15 +3418,20 @@ function renderPoItemsTable() {
                 <td>
                     <input type="text" value="${escapeHtml(it.name || '')}" placeholder="Item Description / Cut / Brand" onchange="updatePoItemField(${idx}, 'name', this.value)" required style="font-weight: 600;">
                 </td>
-                <td class="td-center">
-                    <select onchange="updatePoItemField(${idx}, 'unit', this.value)" style="text-align: center;">
-                        <option value="Kg" ${it.unit === 'Kg' ? 'selected' : ''}>Kg</option>
-                        <option value="Liter" ${it.unit === 'Liter' ? 'selected' : ''}>Liter</option>
-                        <option value="Pc" ${it.unit === 'Pc' ? 'selected' : ''}>Pc</option>
-                        <option value="Tray" ${it.unit === 'Tray' ? 'selected' : ''}>Tray</option>
-                        <option value="Box" ${it.unit === 'Box' ? 'selected' : ''}>Box</option>
-                        <option value="Pack" ${it.unit === 'Pack' ? 'selected' : ''}>Pack</option>
-                        <option value="Sack" ${it.unit === 'Sack' ? 'selected' : ''}>Sack</option>
+                <td class="td-center" style="min-width: 135px;">
+                    <select data-uom-select onchange="updatePoItemField(${idx}, 'unit', this.value)" style="text-align: center;">
+                        ${(() => {
+                            if (window.UomRegistry && window.UomRegistry.isLoaded) {
+                                const units = window.UomRegistry.getUnits();
+                                let opts = units.map(u => `<option value="${u.uom_code}" ${String(it.unit).toUpperCase() === u.uom_code.toUpperCase() ? 'selected' : ''}>${u.uom_code}</option>`).join('');
+                                if (it.unit && !units.some(u => u.uom_code.toUpperCase() === String(it.unit).toUpperCase())) {
+                                    opts = `<option value="${it.unit}" selected>${it.unit}</option>` + opts;
+                                }
+                                return opts;
+                            }
+                            const fallbackUnits = ['KG', 'L', 'PCS', 'BOX', 'PACK', 'TRAY', 'SACK'];
+                            return fallbackUnits.map(u => `<option value="${u}" ${String(it.unit).toUpperCase() === u ? 'selected' : ''}>${u}</option>`).join('');
+                        })()}
                     </select>
                 </td>
                 <td class="td-num">
@@ -3448,6 +3453,7 @@ function renderPoItemsTable() {
     }).join('');
 
     updatePoTotals();
+    window.UomRegistry?.autoHydrate();
 }
 
 function updatePoItemField(idx, field, val) {

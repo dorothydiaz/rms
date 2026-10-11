@@ -204,6 +204,14 @@
                         ['title' => 'Item Master', 'url' => route('inventory.product-categories'), 'icon' => 'ph-folder-simple', 'route' => 'inventory.product-categories'],
                         ['title' => 'Bill of Materials (BOM)', 'url' => route('inventory.recipe-management'), 'icon' => 'ph-book-open', 'route' => 'inventory.recipe-management']
                     ]
+                ],
+                'configuration' => [
+                    'title' => 'Configuration',
+                    'url' => route('inventory.uom'),
+                    'icon' => 'ph-gear-six',
+                    'items' => [
+                        ['title' => 'Unit Of Measurement (Uom)', 'url' => route('inventory.uom'), 'icon' => 'ph-scales', 'route' => 'inventory.uom']
+                    ]
                 ]
             ]
         ],

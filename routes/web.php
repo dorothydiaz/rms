@@ -366,6 +366,15 @@ Route::middleware('auth')->group(function () {
         Route::get('/product-categories', [InventoryController::class, 'productCategories'])->name('product-categories');
         Route::get('/recipe-management', [InventoryController::class, 'recipeManagement'])->name('recipe-management');
 
+        // Configuration Submodule: Unit of Measure (UOM)
+        Route::get('/configuration/uom', [InventoryController::class, 'uomConfiguration'])->name('uom');
+        Route::get('/api/uoms', [InventoryController::class, 'apiGetUoms'])->name('api.uoms');
+        Route::post('/api/uoms/store', [InventoryController::class, 'apiSaveUom'])->name('api.uoms.store');
+        Route::put('/api/uoms/{id}', [InventoryController::class, 'apiUpdateUom'])->name('api.uoms.update');
+        Route::post('/api/uoms/{id}/toggle-active', [InventoryController::class, 'apiToggleUomActive'])->name('api.uoms.toggle-active');
+        Route::post('/api/uom-categories/store', [InventoryController::class, 'apiSaveUomCategory'])->name('api.uom-categories.store');
+        Route::post('/api/uom-categories/{id}/toggle-active', [InventoryController::class, 'apiToggleUomCategoryActive'])->name('api.uom-categories.toggle-active');
+
         // Inventory JSON API Bridges
         Route::get('/api/stock-in-data', [InventoryController::class, 'apiGetStockInData'])->name('api.stock-in-data');
         Route::get('/api/stock-out-data', [InventoryController::class, 'apiGetStockOutData'])->name('api.stock-out-data');

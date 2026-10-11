@@ -18,6 +18,8 @@ use App\Models\Inventory\StockOutOrder;
 use App\Models\Inventory\StockOutOrderItem;
 use App\Models\Inventory\WasteRecord;
 use App\Models\Inventory\WasteRecordItem;
+use App\Models\Inventory\UomCategory;
+use App\Models\Inventory\UnitOfMeasure;
 use App\Models\Purchase\ProcurementVendor;
 use App\Models\Purchase\PurchaseOrder;
 use App\Models\Purchase\PurchaseOrderItem;
@@ -1257,6 +1259,242 @@ class InventoryController extends Controller
         return view('inventory.recipe-management', [
             'initialBoms' => $boms,
             'initialProducts' => $products,
+        ]);
+    }
+
+    /**
+     * Configuration: Unit of Measure (UOM) Directory & Management
+     */
+    public function uomConfiguration(): View
+    {
+        $categories = UomCategory::orderBy('category_name')->get();
+        $units = UnitOfMeasure::orderBy('uom_category')->orderBy('uom_code')->get();
+
+        return view('inventory.uom-configuration', [
+            'initialCategories' => $categories,
+            'initialUnits' => $units,
+        ]);
+    }
+
+    /**
+     * JSON API: Get all active UOMs and Categories for cross-app hydration
+     */
+    public function apiGetUoms(Request $request): JsonResponse
+    {
+        $includeInactive = $request->boolean('include_inactive') || $request->boolean('all');
+
+        $categoriesQuery = UomCategory::query()->orderBy('category_name');
+        if (!$includeInactive) {
+            $categoriesQuery->where('category_is_active', true);
+        }
+        $categories = $categoriesQuery->get();
+
+        $unitsQuery = UnitOfMeasure::query()->orderBy('uom_category')->orderBy('base_ratio');
+        if (!$includeInactive) {
+            $activeCategoryCodes = $categories->pluck('category_code')->toArray();
+            $unitsQuery->where('uom_is_active', true)
+                       ->whereIn('uom_category', $activeCategoryCodes);
+        }
+        $units = $unitsQuery->get();
+
+        return response()->json([
+            'success' => true,
+            'categories' => $categories,
+            'units' => $units,
+        ])->header('Cache-Control', 'no-cache, no-store, must-revalidate')
+          ->header('Pragma', 'no-cache')
+          ->header('Expires', '0');
+    }
+
+    /**
+     * JSON API: Store new Unit of Measure
+     */
+    public function apiSaveUom(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'uom_code' => 'required|string|max:20|unique:units_of_measure,uom_code',
+            'uom_name' => 'required|string|max:100',
+            'uom_category' => 'required|string|max:50',
+            'uom_type' => 'nullable|string|in:REFERENCE,GREATER,SMALLER',
+            'base_ratio' => 'required|numeric|min:0.000001',
+            'is_base_unit' => 'nullable|boolean',
+            'rounding_precision' => 'nullable|numeric|min:0.0001',
+        ]);
+
+        $isBase = !empty($validated['is_base_unit']);
+
+        // If marked as base unit, update any existing base unit in this category to false
+        if ($isBase) {
+            UnitOfMeasure::where('uom_category', $validated['uom_category'])
+                ->where('is_base_unit', true)
+                ->update(['is_base_unit' => false, 'uom_type' => 'GREATER']);
+            
+            UomCategory::where('category_code', $validated['uom_category'])
+                ->update(['base_uom_code' => strtoupper($validated['uom_code'])]);
+        }
+
+        $userId = auth()->id() ?? null;
+
+        $uom = UnitOfMeasure::create([
+            'uom_id' => (string) Str::uuid(),
+            'uom_code' => strtoupper(trim($validated['uom_code'])),
+            'uom_name' => trim($validated['uom_name']),
+            'uom_category' => strtoupper(trim($validated['uom_category'])),
+            'uom_type' => $isBase ? 'REFERENCE' : ($validated['uom_type'] ?? 'GREATER'),
+            'base_ratio' => $isBase ? 1.000000 : $validated['base_ratio'],
+            'is_base_unit' => $isBase,
+            'rounding_precision' => $validated['rounding_precision'] ?? 0.0100,
+            'uom_is_active' => true,
+            'uom_created_by' => $userId,
+            'uom_updated_by' => $userId,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => "Unit of measure '{$uom->uom_code}' successfully created.",
+            'uom' => $uom,
+        ]);
+    }
+
+    /**
+     * JSON API: Update existing Unit of Measure
+     */
+    public function apiUpdateUom(Request $request, string $id): JsonResponse
+    {
+        $uom = UnitOfMeasure::findOrFail($id);
+
+        $validated = $request->validate([
+            'uom_code' => 'required|string|max:20|unique:units_of_measure,uom_code,' . $id . ',uom_id',
+            'uom_name' => 'required|string|max:100',
+            'uom_category' => 'required|string|max:50',
+            'uom_type' => 'nullable|string|in:REFERENCE,GREATER,SMALLER',
+            'base_ratio' => 'required|numeric|min:0.000001',
+            'is_base_unit' => 'nullable|boolean',
+            'rounding_precision' => 'nullable|numeric|min:0.0001',
+            'uom_is_active' => 'nullable|boolean',
+        ]);
+
+        $isBase = !empty($validated['is_base_unit']);
+
+        if ($isBase && !$uom->is_base_unit) {
+            UnitOfMeasure::where('uom_category', $validated['uom_category'])
+                ->where('is_base_unit', true)
+                ->where('uom_id', '!=', $id)
+                ->update(['is_base_unit' => false, 'uom_type' => 'GREATER']);
+
+            UomCategory::where('category_code', $validated['uom_category'])
+                ->update(['base_uom_code' => strtoupper($validated['uom_code'])]);
+        }
+
+        $userId = auth()->id() ?? null;
+
+        $uom->update([
+            'uom_code' => strtoupper(trim($validated['uom_code'])),
+            'uom_name' => trim($validated['uom_name']),
+            'uom_category' => strtoupper(trim($validated['uom_category'])),
+            'uom_type' => $isBase ? 'REFERENCE' : ($validated['uom_type'] ?? $uom->uom_type),
+            'base_ratio' => $isBase ? 1.000000 : $validated['base_ratio'],
+            'is_base_unit' => $isBase,
+            'rounding_precision' => $validated['rounding_precision'] ?? $uom->rounding_precision,
+            'uom_is_active' => isset($validated['uom_is_active']) ? (bool) $validated['uom_is_active'] : $uom->uom_is_active,
+            'uom_updated_by' => $userId,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => "Unit of measure '{$uom->uom_code}' successfully updated.",
+            'uom' => $uom,
+        ]);
+    }
+
+    /**
+     * JSON API: Toggle UOM active status
+     */
+    public function apiToggleUomActive(Request $request, string $id): JsonResponse
+    {
+        $uom = UnitOfMeasure::findOrFail($id);
+        $uom->uom_is_active = !$uom->uom_is_active;
+        $uom->uom_updated_by = auth()->id() ?? null;
+        $uom->save();
+
+        $statusStr = $uom->uom_is_active ? 'activated' : 'deactivated';
+
+        return response()->json([
+            'success' => true,
+            'message' => "Unit '{$uom->uom_code}' has been {$statusStr}.",
+            'is_active' => $uom->uom_is_active,
+            'uom' => $uom,
+        ]);
+    }
+
+    /**
+     * JSON API: Create New UOM Category
+     */
+    public function apiSaveUomCategory(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'category_code' => 'required|string|max:50|unique:uom_categories,category_code',
+            'category_name' => 'required|string|max:100',
+            'category_description' => 'nullable|string|max:500',
+            'base_uom_code' => 'nullable|string|max:20',
+        ]);
+
+        $userId = auth()->id() ?? null;
+
+        $category = UomCategory::create([
+            'category_id' => (string) Str::uuid(),
+            'category_code' => strtoupper(trim($validated['category_code'])),
+            'category_name' => trim($validated['category_name']),
+            'category_description' => $validated['category_description'] ?? null,
+            'base_uom_code' => !empty($validated['base_uom_code']) ? strtoupper(trim($validated['base_uom_code'])) : null,
+            'category_is_active' => true,
+            'category_created_by' => $userId,
+            'category_updated_by' => $userId,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => "Category '{$category->category_name}' successfully created.",
+            'category' => $category,
+        ]);
+    }
+
+    /**
+     * JSON API: Toggle UOM Category active status and cascade deactivation to child units
+     */
+    public function apiToggleUomCategoryActive(Request $request, string $id): JsonResponse
+    {
+        $category = UomCategory::where('category_id', $id)
+            ->orWhere('category_code', $id)
+            ->firstOrFail();
+
+        $category->category_is_active = !$category->category_is_active;
+        $category->category_updated_by = auth()->id() ?? null;
+        $category->save();
+
+        $affectedCount = 0;
+        // If category is deactivated, cascade deactivation to all child UOMs
+        if (!$category->category_is_active) {
+            $affectedCount = UnitOfMeasure::where('uom_category', $category->category_code)
+                ->where('uom_is_active', true)
+                ->update([
+                    'uom_is_active' => false,
+                    'uom_updated_by' => auth()->id() ?? null,
+                    'uom_updated_at' => now(),
+                ]);
+        }
+
+        $statusStr = $category->category_is_active ? 'activated' : 'deactivated';
+        $message = $category->category_is_active
+            ? "Category '{$category->category_name}' has been activated."
+            : "Category '{$category->category_name}' has been deactivated and {$affectedCount} unit(s) archived.";
+
+        return response()->json([
+            'success' => true,
+            'message' => $message,
+            'is_active' => $category->category_is_active,
+            'category' => $category,
+            'affected_units_count' => $affectedCount,
         ]);
     }
 

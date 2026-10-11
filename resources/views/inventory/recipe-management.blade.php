@@ -1317,7 +1317,7 @@
                 <div class="bom-form-row-2">
                     <div class="bom-form-group">
                         <label for="newProdUom">Unit of Measure (UOM) *</label>
-                        <select id="newProdUom" class="bom-form-select">
+                        <select id="newProdUom" class="bom-form-select" data-uom-select>
                             <option value="Cup">Cup</option>
                             <option value="Plate">Plate</option>
                             <option value="Slice">Slice</option>

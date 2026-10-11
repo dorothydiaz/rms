@@ -4344,16 +4344,25 @@ function renderItemsTable() {
                     </td>
                 `;
             } else if (col.id === 'uom') {
+                let uomOptionsHtml = '';
+                if (window.UomRegistry && window.UomRegistry.isLoaded) {
+                    const units = window.UomRegistry.getUnits();
+                    uomOptionsHtml = units.map(u => 
+                        `<option value="${u.uom_code}" ${String(item.unit).toUpperCase() === u.uom_code.toUpperCase() ? 'selected' : ''}>${u.uom_code}</option>`
+                    ).join('');
+                    if (item.unit && !units.some(u => u.uom_code.toUpperCase() === String(item.unit).toUpperCase())) {
+                        uomOptionsHtml = `<option value="${item.unit}" selected>${item.unit}</option>` + uomOptionsHtml;
+                    }
+                } else {
+                    const fallbackUnits = ['KG', 'L', 'PCS', 'BOX', 'PACK', 'CAN', 'CASE'];
+                    uomOptionsHtml = fallbackUnits.map(u => 
+                        `<option value="${u}" ${String(item.unit).toUpperCase() === u ? 'selected' : ''}>${u}</option>`
+                    ).join('');
+                }
                 rowsHtml += `
-                    <td class="td-center">
-                        <select onchange="updateItemRowField(${idx}, 'unit', this.value)" style="text-align: center;">
-                            <option value="Kg" ${item.unit === 'Kg' ? 'selected' : ''}>Kg</option>
-                            <option value="Liter" ${item.unit === 'Liter' ? 'selected' : ''}>Liter</option>
-                            <option value="Pc" ${item.unit === 'Pc' ? 'selected' : ''}>Pc</option>
-                            <option value="Box" ${item.unit === 'Box' ? 'selected' : ''}>Box</option>
-                            <option value="Pack" ${item.unit === 'Pack' ? 'selected' : ''}>Pack</option>
-                            <option value="Can" ${item.unit === 'Can' ? 'selected' : ''}>Can</option>
-                            <option value="Case" ${item.unit === 'Case' ? 'selected' : ''}>Case</option>
+                    <td class="td-center" style="min-width: 135px;">
+                        <select class="rfq-uom-select" data-uom-select onchange="updateItemRowField(${idx}, 'unit', this.value)" style="text-align: center;">
+                            ${uomOptionsHtml}
                         </select>
                     </td>
                 `;
@@ -4411,6 +4420,7 @@ function renderItemsTable() {
 
     tbody.innerHTML = rowsHtml;
     updateMetricsSummary();
+    window.UomRegistry?.autoHydrate();
 }
 
 function updateItemRowField(index, field, value) {

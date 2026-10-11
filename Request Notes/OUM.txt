@@ -1,0 +1,90 @@
+Detailed Measurement Catalog by Category
+1. Category: COUNT (Packaging, Multi-packs, Discrete Units)
+Base Unit: PCS or EA
+uom_code	uom_name	Primary Industry	Purpose / Typical Application
+EA / PCS	Each / Piece	Retail / Mfg / Restaurant	Single atomic unit of sale or count
+PR	Pair	Retail / Apparel / Safety	Gloves, shoes, brackets
+DZN	Dozen	Restaurant / Retail	Eggs, bakery items, small components
+SET	Set	Mfg / Retail	Assembly kits, dining sets, tool sets
+PK / PAC	Pack	Retail / F&B	Single retail packs (e.g., pack of straws, napkins)
+CS	Case	Restaurant / Retail / Mfg	Bulk purchase box (e.g., Case of soda, Case of screws)
+BOX	Box	Retail / Logistics	Inner box packaging
+CTN	Carton	Mfg / Logistics	Master carton containing inner boxes
+TRAY	Tray	Restaurant / Bakery	Egg trays, meat trays, bakery racks
+BLST	Blister Pack	Retail / Pharma	Medicine cards, hardware accessories
+PAL	Pallet	Mfg / Logistics / Warehouse	Full pallet loading / receiving
+BDL	Bundle	Mfg / Construction	Tied lumber, rebars, conduit pipes
+2. Category: WEIGHT (Mass & Dry Goods)
+Base Unit: KG (or G for precision F&B/Jewelry/Pharma)
+uom_code	uom_name	Primary Industry	Purpose / Typical Application
+MG	Milligram	Pharma / Chemical Mfg	Precision active ingredients, chemical additives
+G	Gram	Restaurant / Pharma	Recipe BOM (spices, salt, yeast, baking powder)
+KG	Kilogram	All (Base Unit)	Bulk ingredients, flour, metals, raw meat
+MT	Metric Ton (Tonne)	Mfg / Agriculture	Grains, steel coils, bulk aggregate, cement
+OZ	Ounce (Weight)	Restaurant / Retail	Steaks, burger patties (e.g., 8 oz patty), cheese
+LB	Pound	Restaurant / Retail	Bulk imports, meat, produce
+BAG / SCK	Sack / Bag	Restaurant / Mfg	25kg or 50kg flour/sugar/cement sacks
+3. Category: VOLUME (Liquids & Recipes)
+Base Unit: L (or ML for micro-brewing/perfumery/kitchens)
+uom_code	uom_name	Primary Industry	Purpose / Typical Application
+ML	Milliliter	Restaurant / Chemical	Cocktail specs, extracts, flavorings, sauces
+CL	Centiliter	Restaurant (Bar)	Spirits, wine measures (European standard: 2cl, 4cl)
+L	Liter	All (Base Unit)	Milk, oils, syrups, cleaning detergents
+FLOZ	Fluid Ounce	Restaurant (Bar/Café)	Coffee cup sizes (8oz, 12oz, 16oz), cocktail pours
+TSP	Teaspoon (5 ml)	Restaurant	Kitchen prep recipe ingredients
+TBSP	Tablespoon (15 ml)	Restaurant	Kitchen prep recipe ingredients
+CUP	Cup (~240-250 ml)	Restaurant	Recipe formulations, kitchen measuring cups
+PINT	Pint (Imperial/US)	Bar / Brewery	Beer draft pours
+GAL	Gallon (US/Imp)	Mfg / Restaurant / Retail	Bulk oils, milk jugs, industrial paint/solvents
+BTL	Bottle	Restaurant / Retail	Wine, liquor, sauces, consumer liquids
+CAN	Can	Restaurant / Retail	Canned sodas, puree, beer cans
+KEG	Keg	Restaurant / Bar	Draft beer kegs (e.g., 20L, 30L, 50L)
+DRM	Drum / Barrel (200L)	Mfg / Industrial	Bulk chemicals, motor oils, industrial resins
+4. Category: PORTION / RECIPE (Restaurant-Specific Count Units)
+Base Unit: PORT or EA
+uom_code	uom_name	Primary Industry	Purpose / Typical Application
+SRV	Serving	Restaurant / Catering	Buffet setups, banquet catering yield
+PORT	Portion	Restaurant	Prepped raw goods (e.g., 1 portion = 150g prepped beef)
+PLT	Plate	Restaurant	Final assembled POS menu item
+GLS	Glass	Restaurant / Bar	By-the-glass wine, draft cocktails
+SHT	Shot / Jigger	Bar	30ml / 45ml liquor pour
+PNCH	Pinch	Restaurant	Trace garnish / spices in preparation
+SLI	Slice	Restaurant / Bakery	Sliced cakes, deli meats, cheese singles
+5. Category: LENGTH (Linear Measurements)
+Base Unit: M (Meter)
+uom_code	uom_name	Primary Industry	Purpose / Typical Application
+MM	Millimeter	Mfg / Engineering	Precision machining, screws, tolerances
+CM	Centimeter	Retail / Mfg	Garments, product packaging dimensions
+M	Meter	Mfg / Construction	Cables, textiles, metal tubing, pipes
+IN	Inch	Mfg / Hardware	Pipe diameters, screen sizes, bolts
+FT	Foot	Construction / Retail	Timber, structural framing, wiring
+YD	Yard	Textile / Retail	Fabric cuts, turf, carpeting
+ROLL	Roll	Mfg / Retail / Kitchen	Plastic wrap, foil, label paper, electrical tape
+SPL	Spool	Mfg	3D printer filament, soldering wire, threading
+6. Category: AREA (Surface & Sheet Goods)
+Base Unit: SQM
+uom_code	uom_name	Primary Industry	Purpose / Typical Application
+SQM	Square Meter	Mfg / Interior / Retail	Flooring tiles, granite slabs, sheet metal
+SQFT	Square Foot	Retail / Real Estate	Commercial leasing, vinyl wrapping, glass panels
+SHT	Sheet	Mfg / Printing	Plywood, acrylic sheets, paper reams (A4/A3)
+7. Category: TIME & LABOR (Manufacturing Work Orders & Services)
+Base Unit: HR (Hour)
+uom_code	uom_name	Primary Industry	Purpose / Typical Application
+SEC	Second	Mfg (Takt Time)	Machine cycle time, automated assembly cycle
+MIN	Minute	Restaurant / Services	Prep time, machine setup/changeover time
+HR	Hour	Overhead / Mfg	Direct labor cost allocation, billable professional labor
+MHR	Man-Hour	Mfg / Construction	Production capacity planning, job costing
+MDAY	Man-Day	Services / Logistics	Contract labor, daily consulting/shift work
+SHFT	Shift	Mfg / Security Overhead	8-hour or 12-hour factory shift costs
+8. Category: OVERHEAD / UTILITY (Cost Allocations & Logistics)
+Base Unit: Depends on sub-type (KWH for electricity, KM for distance)
+uom_code	uom_name	Category / Subtype	Purpose / Typical Application
+KWH	Kilowatt-Hour	UTILITY	Electricity consumption per batch / factory run
+MWH	Megawatt-Hour	UTILITY	Heavy industrial energy consumption
+CBM / M3	Cubic Meter	UTILITY / VOLUME	Municipal water usage, natural gas consumption
+KM	Kilometer	LOGISTICS	Fleet mileage, local delivery route surcharge
+MI	Mile	LOGISTICS	Long-haul freight transportation
+TRP	Trip	LOGISTICS	Flat-rate freight/delivery per trip
+CONT	Container (TEU/FEU)	LOGISTICS	20ft / 40ft ocean freight containers
+MO	Month	FACILITY_RENT	Warehouse stall lease, equipment rental overhead
+USER	Per User / Seat	SOFTWARE_OVERHEAD	SaaS licenses allocated per staff/workstation

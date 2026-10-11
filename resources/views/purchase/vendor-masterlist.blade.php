@@ -2526,7 +2526,18 @@
                 <div class="vendor-info-grid-2">
                     <div class="vendor-form-group">
                         <label>Vendor UOM (Purchased Packaging) *</label>
-                        <input type="text" id="catUom" class="vendor-form-input" required placeholder="e.g. Case (12 Tetra)" oninput="updateConversionPreview()">
+                        <select id="catUom" class="vendor-form-select" data-uom-select required onchange="updateConversionPreview()">
+                            <option value="CS">Case (CS)</option>
+                            <option value="BOX">Box (BOX)</option>
+                            <option value="PACK">Pack (PACK)</option>
+                            <option value="TRAY">Tray (TRAY)</option>
+                            <option value="SCK">Sack (SCK)</option>
+                            <option value="BTL">Bottle (BTL)</option>
+                            <option value="CAN">Can (CAN)</option>
+                            <option value="KG">Kilogram (KG)</option>
+                            <option value="L">Liter (L)</option>
+                            <option value="PCS">Piece (PCS)</option>
+                        </select>
                     </div>
                     <div class="vendor-form-group">
                         <label>Negotiated Cost per UOM (₱) *</label>
@@ -5344,7 +5355,11 @@ function openAddCatalogModal() {
     document.getElementById('catItemMasterSelect').value = '';
     document.getElementById('catSku').value = '';
     document.getElementById('catName').value = '';
-    document.getElementById('catUom').value = 'Case (12 Tetra)';
+    const catUomEl = document.getElementById('catUom');
+    if (catUomEl) {
+        catUomEl.value = 'CS';
+        catUomEl.dispatchEvent(new Event('change'));
+    }
     document.getElementById('catCost').value = '1020.00';
     document.getElementById('catRatioQty').value = '12';
     document.getElementById('catRatioUnit').value = 'Liter';
@@ -5362,7 +5377,11 @@ function openEditCatalogModal(index) {
     document.getElementById('catItemMasterSelect').value = item.itemMasterSku || '';
     document.getElementById('catSku').value = item.sku;
     document.getElementById('catName').value = item.name;
-    document.getElementById('catUom').value = item.uomPurchased;
+    const catUomEl = document.getElementById('catUom');
+    if (catUomEl) {
+        catUomEl.value = item.uomPurchased || 'CS';
+        catUomEl.dispatchEvent(new Event('change'));
+    }
     document.getElementById('catCost').value = item.cost;
     document.getElementById('catRatioQty').value = item.ratioQty;
     document.getElementById('catRatioUnit').value = item.ratioUnit;

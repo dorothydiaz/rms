@@ -1,0 +1,648 @@
+/**
+ * ==========================================================================
+ * RMS UNIVERSAL CUSTOM UOM DROPDOWN COMPONENT STYLES
+ * ==========================================================================
+ * Enterprise-grade, accessible, searchable custom dropdown for Units of Measure.
+ * Supports acronym badges, full descriptive labels, category grouping,
+ * quick category filter pills, and fuzzy search highlight.
+ */
+
+:root {
+    --uom-dd-primary: #7c3aed;
+    --uom-dd-primary-subtle: #f5f3ff;
+    --uom-dd-primary-border: #c4b5fd;
+    --uom-dd-border: #cbd5e1;
+    --uom-dd-border-hover: #94a3b8;
+    --uom-dd-bg: #ffffff;
+    --uom-dd-text: #0f172a;
+    --uom-dd-text-muted: #64748b;
+    --uom-dd-text-subtle: #94a3b8;
+    --uom-dd-radius: 8px;
+    --uom-dd-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.12), 0 8px 10px -6px rgba(15, 23, 42, 0.06);
+}
+
+/* Base Component Wrapper */
+.uom-dropdown-wrapper {
+    position: relative;
+    width: 100%;
+    font-family: inherit;
+    box-sizing: border-box;
+}
+
+/* Hidden Native Select or Hidden Input (Accessible fallback) */
+.uom-dropdown-wrapper select.uom-native-select,
+.uom-dropdown-wrapper input[type="hidden"].uom-native-input {
+    display: none !important;
+}
+
+/* Trigger Button / Display Field */
+.uom-dropdown-trigger {
+    width: 100%;
+    min-height: 38px;
+    padding: 5px 10px;
+    background: var(--uom-dd-bg);
+    border: 1.5px solid var(--uom-dd-border);
+    border-radius: var(--uom-dd-radius);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+    outline: none;
+    text-align: left;
+    box-sizing: border-box;
+}
+
+.uom-dropdown-trigger:hover {
+    border-color: var(--uom-dd-border-hover);
+    background: #fcfcfd;
+}
+
+.uom-dropdown-trigger:focus,
+.uom-dropdown-wrapper.is-open .uom-dropdown-trigger {
+    border-color: var(--uom-dd-primary);
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
+    background: #ffffff;
+}
+
+.uom-dropdown-trigger.is-disabled {
+    background: #f1f5f9;
+    border-color: #e2e8f0;
+    cursor: not-allowed;
+    opacity: 0.65;
+}
+
+/* Compact trigger inside data tables (RFQ, PO, Line Items) */
+td .uom-dropdown-trigger {
+    min-height: 29px;
+    padding: 2px 7px;
+    font-size: 0.77rem;
+    border-radius: 6px;
+    gap: 4px;
+}
+td .uom-dropdown-trigger .uom-trigger-content {
+    gap: 4px;
+    min-width: 0;
+    overflow: hidden;
+}
+td .uom-dropdown-trigger .uom-code-pill {
+    padding: 2px 7px;
+    font-size: 0.73rem;
+    flex-shrink: 0;
+}
+td .uom-dropdown-trigger .uom-name-text,
+td .uom-dropdown-trigger .uom-trigger-hint {
+    display: none !important; /* Hide descriptive name & category hint inside compact table cells so code pill has full breathing room */
+}
+td .uom-dropdown-trigger .uom-trigger-arrow {
+    margin-left: auto;
+    font-size: 11px;
+    flex-shrink: 0;
+}
+
+/* Selected Value Representation */
+.uom-trigger-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.uom-trigger-placeholder {
+    color: var(--uom-dd-text-muted);
+    font-size: 0.82rem;
+    font-weight: 500;
+}
+
+/* Acronym Pill Badge */
+.uom-code-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    font-size: 0.73rem;
+    font-weight: 800;
+    padding: 2px 7px;
+    border-radius: 5px;
+    letter-spacing: 0.03em;
+    flex-shrink: 0;
+    background: #e2e8f0;
+    color: #1e293b;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    line-height: 1.2;
+}
+
+/* Category-specific color accents on code pill */
+.uom-code-pill.cat-COUNT { background: #dbeafe; color: #1e40af; border-color: #bfdbfe; }
+.uom-code-pill.cat-WEIGHT { background: #d1fae5; color: #065f46; border-color: #a7f3d0; }
+.uom-code-pill.cat-VOLUME { background: #e0f2fe; color: #075985; border-color: #bae6fd; }
+.uom-code-pill.cat-PORTION { background: #ffedd5; color: #9a3412; border-color: #fed7aa; }
+.uom-code-pill.cat-LENGTH { background: #ede9fe; color: #5b21b6; border-color: #ddd6fe; }
+.uom-code-pill.cat-AREA { background: #ccfbf1; color: #115e59; border-color: #99f6e4; }
+.uom-code-pill.cat-TIME { background: #f1f5f9; color: #334155; border-color: #cbd5e1; }
+.uom-code-pill.cat-OVERHEAD { background: #fae8ff; color: #86198f; border-color: #f5d0fe; }
+
+/* Actual Name / Description */
+.uom-name-text {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--uom-dd-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Category or Hint Indicator in Trigger */
+.uom-trigger-hint {
+    font-size: 0.70rem;
+    font-weight: 600;
+    color: var(--uom-dd-text-muted);
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: #f1f5f9;
+    flex-shrink: 0;
+}
+
+/* Caret Icon */
+.uom-trigger-arrow {
+    font-size: 13px;
+    color: var(--uom-dd-text-muted);
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    flex-shrink: 0;
+}
+
+.uom-dropdown-wrapper.is-open .uom-trigger-arrow {
+    transform: rotate(180deg);
+    color: var(--uom-dd-primary);
+}
+
+
+
+/* ==========================================================================
+   DROPDOWN PANEL (FLOATING MENU)
+   ========================================================================== */
+.uom-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    width: 100%;
+    min-width: 320px;
+    max-width: 440px;
+    background: #ffffff;
+    border: 1px solid var(--uom-dd-border);
+    border-radius: 10px;
+    box-shadow: var(--uom-dd-shadow);
+    z-index: 9999;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    animation: uomDropdownSlide 0.16s cubic-bezier(0, 0, 0.2, 1) forwards;
+}
+
+@keyframes uomDropdownSlide {
+    from {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.uom-dropdown-wrapper.is-open .uom-dropdown-menu {
+    display: flex;
+}
+
+/* Upward Flip if close to screen bottom */
+.uom-dropdown-wrapper.flip-up .uom-dropdown-menu {
+    top: auto;
+    bottom: calc(100% + 4px);
+    animation: uomDropdownSlideUp 0.16s cubic-bezier(0, 0, 0.2, 1) forwards;
+}
+
+@keyframes uomDropdownSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Sticky Header in Panel */
+.uom-menu-header {
+    padding: 8px 10px;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+/* Search Bar */
+.uom-search-bar {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.uom-search-icon {
+    position: absolute;
+    left: 9px;
+    color: #94a3b8;
+    font-size: 14px;
+    pointer-events: none;
+}
+
+.uom-search-input {
+    width: 100%;
+    padding: 6px 26px 6px 30px;
+    font-size: 0.78rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    background: #ffffff;
+    color: #0f172a;
+    outline: none;
+    transition: all 0.15s ease;
+    box-sizing: border-box;
+}
+
+.uom-search-input:focus {
+    border-color: var(--uom-dd-primary);
+    box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.12);
+}
+
+.uom-search-clear {
+    position: absolute;
+    right: 7px;
+    border: none;
+    background: transparent;
+    color: #94a3b8;
+    font-size: 13px;
+    cursor: pointer;
+    display: none;
+    padding: 0;
+}
+.uom-search-clear.is-visible {
+    display: inline-flex;
+}
+
+/* Category Filter Chips Bar */
+.uom-category-chips {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: thin;
+}
+
+.uom-category-chip {
+    padding: 2px 7px;
+    font-size: 0.67rem;
+    font-weight: 700;
+    border-radius: 4px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    color: #64748b;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.12s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.uom-category-chip:hover {
+    border-color: var(--uom-dd-primary-border);
+    color: var(--uom-dd-primary);
+    background: var(--uom-dd-primary-subtle);
+}
+
+.uom-category-chip.is-active {
+    background: var(--uom-dd-primary);
+    border-color: var(--uom-dd-primary);
+    color: #ffffff;
+}
+
+/* Options Scroll Area */
+.uom-options-list {
+    max-height: 270px;
+    overflow-y: auto;
+    padding: 4px;
+    overscroll-behavior: contain;
+    background: #ffffff;
+}
+
+/* Category Group Section Header - 100% SOLID OPAQUE (NOT TRANSPARENT) */
+.uom-section-header {
+    padding: 7px 10px;
+    font-size: 0.69rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: -4px;
+    z-index: 25;
+    margin: 4px 0 2px 0;
+    border-radius: 6px;
+    background-color: #f1f5f9 !important; /* 100% Solid Opaque Light Background */
+    opacity: 1 !important;
+    border: 1px solid #e2e8f0;
+    border-left: 4px solid #64748b !important;
+    color: #334155;
+    box-shadow: 0 2px 6px -1px rgba(0, 0, 0, 0.08);
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    transition: background-color 0.15s ease;
+}
+
+/* Distinct Solid Light Pastel Color Themes for Section Headers (No Transparency) */
+.uom-section-header.cat-COUNT {
+    background-color: #eff6ff !important;
+    color: #1e40af !important;
+    border-left: 4px solid #3b82f6 !important;
+    border-bottom: 1px solid #bfdbfe !important;
+    border-top: 1px solid #dbeafe !important;
+    border-right: 1px solid #dbeafe !important;
+}
+.uom-section-header.cat-WEIGHT {
+    background-color: #ecfdf5 !important;
+    color: #065f46 !important;
+    border-left: 4px solid #10b981 !important;
+    border-bottom: 1px solid #a7f3d0 !important;
+    border-top: 1px solid #d1fae5 !important;
+    border-right: 1px solid #d1fae5 !important;
+}
+.uom-section-header.cat-VOLUME {
+    background-color: #f0f9ff !important;
+    color: #075985 !important;
+    border-left: 4px solid #0ea5e9 !important;
+    border-bottom: 1px solid #bae6fd !important;
+    border-top: 1px solid #e0f2fe !important;
+    border-right: 1px solid #e0f2fe !important;
+}
+.uom-section-header.cat-PORTION {
+    background-color: #fff7ed !important;
+    color: #9a3412 !important;
+    border-left: 4px solid #f97316 !important;
+    border-bottom: 1px solid #fed7aa !important;
+    border-top: 1px solid #ffedd5 !important;
+    border-right: 1px solid #ffedd5 !important;
+}
+.uom-section-header.cat-LENGTH {
+    background-color: #f5f3ff !important;
+    color: #5b21b6 !important;
+    border-left: 4px solid #8b5cf6 !important;
+    border-bottom: 1px solid #ddd6fe !important;
+    border-top: 1px solid #ede9fe !important;
+    border-right: 1px solid #ede9fe !important;
+}
+.uom-section-header.cat-AREA {
+    background-color: #f0fdfa !important;
+    color: #115e59 !important;
+    border-left: 4px solid #14b8a6 !important;
+    border-bottom: 1px solid #99f6e4 !important;
+    border-top: 1px solid #ccfbf1 !important;
+    border-right: 1px solid #ccfbf1 !important;
+}
+.uom-section-header.cat-TIME {
+    background-color: #f8fafc !important;
+    color: #334155 !important;
+    border-left: 4px solid #64748b !important;
+    border-bottom: 1px solid #cbd5e1 !important;
+    border-top: 1px solid #e2e8f0 !important;
+    border-right: 1px solid #e2e8f0 !important;
+}
+.uom-section-header.cat-OVERHEAD {
+    background-color: #fdf4ff !important;
+    color: #86198f !important;
+    border-left: 4px solid #d946ef !important;
+    border-bottom: 1px solid #f5d0fe !important;
+    border-top: 1px solid #fae8ff !important;
+    border-right: 1px solid #fae8ff !important;
+}
+.uom-section-header.cat-CUSTOM,
+.uom-section-header.cat-OTHER {
+    background-color: #eef2ff !important;
+    color: #3730a3 !important;
+    border-left: 4px solid #6366f1 !important;
+    border-bottom: 1px solid #c7d2fe !important;
+    border-top: 1px solid #e0e7ff !important;
+    border-right: 1px solid #e0e7ff !important;
+}
+
+.uom-section-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.69rem;
+}
+
+.uom-section-count {
+    font-size: 0.64rem;
+    font-weight: 700;
+    color: inherit;
+    opacity: 0.85;
+    background: rgba(255, 255, 255, 0.7);
+    padding: 1px 6px;
+    border-radius: 10px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+/* Individual Unit Option Item */
+.uom-option-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.12s ease, border-color 0.12s ease;
+    user-select: none;
+    border: 1px solid transparent;
+    width: 100%;
+    box-sizing: border-box;
+    position: relative;
+}
+
+.uom-option-item:hover,
+.uom-option-item.is-focused {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+}
+
+.uom-option-item.is-selected {
+    background: var(--uom-dd-primary-subtle);
+    border-color: var(--uom-dd-primary-border);
+}
+
+/* Code Column: strictly 30% width */
+.uom-option-code-col {
+    flex: 0 0 30%;
+    max-width: 30%;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+}
+
+.uom-option-code-col .uom-code-pill {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+    box-sizing: border-box;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 3px 6px;
+}
+
+/* Name Column: strictly 70% width with word wrapping */
+.uom-option-name-col {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+}
+
+.uom-option-name {
+    font-size: 0.79rem;
+    font-weight: 600;
+    color: var(--uom-dd-text);
+    white-space: normal; /* WRAP THIS! */
+    word-break: break-word;
+    line-height: 1.28;
+}
+
+.uom-option-highlight {
+    background: #fef08a;
+    color: #854d0e;
+    border-radius: 2px;
+    padding: 0 1px;
+}
+
+/* Action icons: '?' conversion popover & checkmark */
+.uom-option-actions {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-shrink: 0;
+    margin-left: auto;
+}
+
+/* '?' Conversion Info Popover / Tooltip Button */
+.uom-convert-info-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+    font-size: 11px;
+    font-weight: 800;
+    font-family: inherit;
+    cursor: help;
+    padding: 0;
+    position: relative;
+    transition: all 0.15s ease;
+    line-height: 1;
+    outline: none;
+}
+
+.uom-convert-info-btn:hover,
+.uom-convert-info-btn:focus {
+    background: var(--uom-dd-primary);
+    color: #ffffff;
+    border-color: var(--uom-dd-primary);
+    transform: scale(1.1);
+    box-shadow: 0 2px 5px rgba(124, 58, 237, 0.25);
+}
+
+/* Elegant CSS Popover Tooltip for '?' */
+.uom-convert-info-btn .uom-tooltip-box {
+    visibility: hidden;
+    opacity: 0;
+    position: absolute;
+    bottom: calc(100% + 7px);
+    right: -8px;
+    background: #0f172a;
+    color: #f8fafc;
+    padding: 5px 9px;
+    border-radius: 6px;
+    font-size: 0.70rem;
+    font-weight: 600;
+    white-space: nowrap;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    z-index: 10001;
+    pointer-events: none;
+    transition: opacity 0.15s ease, transform 0.15s ease;
+    transform: translateY(4px);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.uom-convert-info-btn .uom-tooltip-box::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    right: 12px;
+    border-width: 4px;
+    border-style: solid;
+    border-color: #0f172a transparent transparent transparent;
+}
+
+.uom-convert-info-btn:hover .uom-tooltip-box,
+.uom-convert-info-btn:focus .uom-tooltip-box {
+    visibility: visible;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.uom-check-icon {
+    font-size: 14px;
+    color: var(--uom-dd-primary);
+    opacity: 0;
+    flex-shrink: 0;
+}
+
+.uom-option-item.is-selected .uom-check-icon {
+    opacity: 1;
+}
+
+/* Empty State / No Match */
+.uom-empty-state {
+    padding: 24px 16px;
+    text-align: center;
+    color: var(--uom-dd-text-muted);
+    font-size: 0.78rem;
+}
+
+.uom-empty-state i {
+    font-size: 24px;
+    color: #94a3b8;
+    margin-bottom: 6px;
+    display: block;
+}
+
+/* Footer Help Hint */
+.uom-menu-footer {
+    padding: 5px 10px;
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.67rem;
+    color: #94a3b8;
+}

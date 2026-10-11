@@ -11,6 +11,8 @@
 
     <!-- Custom RMS Stylesheet (Cached with filemtime to prevent FOUC on page refresh) -->
     <link rel="stylesheet" href="{{ asset('assets/css/styles.css') }}?v={{ file_exists(public_path('assets/css/styles.css')) ? filemtime(public_path('assets/css/styles.css')) : '1.0' }}">
+    <!-- Custom UoM Dropdown Component Stylesheet -->
+    <link rel="stylesheet" href="{{ asset('assets/css/uom-dropdown.css') }}?v={{ file_exists(public_path('assets/css/uom-dropdown.css')) ? filemtime(public_path('assets/css/uom-dropdown.css')) : '1.0' }}">
 
     <!-- Phosphor Icons -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
@@ -73,6 +75,8 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Client Interactive JS -->
     <script src="{{ asset('assets/js/script.js') }}?v={{ time() }}"></script>
+    <!-- Universal UOM Registry & Cross-Module Hydration Engine -->
+    <script src="{{ asset('assets/js/uom-registry.js') }}?v={{ file_exists(public_path('assets/js/uom-registry.js')) ? filemtime(public_path('assets/js/uom-registry.js')) : '1.0' }}"></script>
     @stack('scripts')
 </body>
 </html>

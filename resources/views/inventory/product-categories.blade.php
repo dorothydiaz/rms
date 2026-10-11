@@ -2479,8 +2479,8 @@ body.is-column-resizing * {
                         </div>
                         <div class="inv-form-group">
                             <label for="formUnit">Unit of Measure (UOM) *</label>
-                            <select id="formUnit" class="inv-form-select" required>
-                                <option value="Cup">Cup</option>
+                            <select id="formUnit" class="inv-form-select" data-uom-select required>
+                                <option value="Piece">Piece (PCS)</option>
                                 <option value="Plate">Plate</option>
                                 <option value="Slice">Slice</option>
                                 <option value="Piece">Piece</option>
@@ -4539,7 +4539,12 @@ body.is-column-resizing * {
                 formSubcategory.value = 'Standard';
             }
 
-            formUnit.value = 'Piece';
+            if (window.UomRegistry && window.UomRegistry.isLoaded) {
+                window.UomRegistry.populateSelect(formUnit, 'PCS');
+            } else {
+                formUnit.value = 'Piece';
+            }
+            formUnit.dispatchEvent(new Event('change'));
             formPackSize.value = '1';
             formDescription.value = '';
             formAllergens.value = '';
@@ -4595,7 +4600,12 @@ body.is-column-resizing * {
                 }
             }
 
-            formUnit.value = product.unit;
+            if (window.UomRegistry && window.UomRegistry.isLoaded) {
+                window.UomRegistry.populateSelect(formUnit, product.unit);
+            } else {
+                formUnit.value = product.unit;
+            }
+            formUnit.dispatchEvent(new Event('change'));
             // Extract numeric value from pack size if string had units
             const numericPackSize = parseFloat(String(product.packSize || '1').replace(/[^0-9.]/g, '')) || 1;
             formPackSize.value = numericPackSize;
