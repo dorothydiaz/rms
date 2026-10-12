@@ -27,6 +27,8 @@ class User extends Authenticatable
         'role',
         'status',
         'branch_id',
+        'default_company_id',
+        'default_branch_id',
     ];
 
     protected $hidden = [
@@ -50,7 +52,35 @@ class User extends Authenticatable
 
     public function branch(): BelongsTo
     {
-        return $this->belongsTo(Branch::class);
+        return $this->belongsTo(Branch::class, 'branch_id', 'branch_id');
+    }
+
+    public function defaultCompany(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\Company::class, 'default_company_id', 'company_id');
+    }
+
+    public function defaultBranch(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\Branch::class, 'default_branch_id', 'branch_id');
+    }
+
+    public function companies(): BelongsToMany
+    {
+        return $this->belongsToMany(\App\Models\Company::class, 'user_companies', 'user_id', 'company_id');
+    }
+
+    public function branches(): BelongsToMany
+    {
+        return $this->belongsToMany(\App\Models\Branch::class, 'user_branches', 'user_id', 'branch_id');
+    }
+
+    public function canAccessCompany($companyId): bool
+    {
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+        return $this->companies()->where('companies.company_id', $companyId)->exists();
     }
 
     public function employee(): HasOne
@@ -164,11 +194,19 @@ class User extends Authenticatable
             return true;
         }
 
-        if ($this->isManager()) {
-            return $branchId === null || (int)$this->branch_id === (int)$branchId;
+        if ($branchId === null) {
+            return true;
         }
 
-        return false;
+        if ($this->branches()->where('branches.branch_id', $branchId)->exists()) {
+            return true;
+        }
+
+        if ($this->isManager()) {
+            return (int)$this->branch_id === (int)$branchId;
+        }
+
+        return (int)$this->branch_id === (int)$branchId;
     }
 
     /**

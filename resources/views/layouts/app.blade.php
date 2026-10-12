@@ -40,6 +40,13 @@
                         <i class="ph ph-calendar-blank"></i>
                         <span id="currentHeaderDate">{{ now()->format('D, M d, Y') }}</span>
                     </div>
+
+                    <!-- Entity Hierarchy & Context Switcher -->
+                    <x-context-switcher />
+
+                    <!-- User Profile Dropdown -->
+                    <x-header-user-profile />
+
                     <button class="icon-btn notification-btn" title="Notifications" aria-label="Notifications">
                         <i class="ph ph-bell"></i>
                     </button>

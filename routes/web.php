@@ -424,8 +424,22 @@ Route::middleware('auth')->group(function () {
 
     // Settings (Business Configuration)
     Route::prefix('config')->name('config.')->group(function () {
-        Route::get('/business-settings', [ConfigController::class, 'businessSettings'])->name('business-settings');
+        Route::get('/business-settings', [\App\Http\Controllers\BusinessSettingsController::class, 'index'])->name('business-settings');
+        Route::post('/business-settings/general', [\App\Http\Controllers\BusinessSettingsController::class, 'updateGeneral'])->name('business-settings.general');
+        Route::post('/business-settings/legal', [\App\Http\Controllers\BusinessSettingsController::class, 'updateLegalHub'])->name('business-settings.legal');
+        Route::post('/business-settings/hierarchy', [\App\Http\Controllers\BusinessSettingsController::class, 'updateHierarchy'])->name('business-settings.hierarchy');
+        Route::post('/business-settings/documents', [\App\Http\Controllers\BusinessSettingsController::class, 'storeDocument'])->name('business-settings.documents.store');
+        Route::delete('/business-settings/documents/{id}', [\App\Http\Controllers\BusinessSettingsController::class, 'destroyDocument'])->name('business-settings.documents.destroy');
+        Route::post('/business-settings/branches', [\App\Http\Controllers\BusinessSettingsController::class, 'storeBranch'])->name('business-settings.branches.store');
+        Route::put('/business-settings/branches/{id}', [\App\Http\Controllers\BusinessSettingsController::class, 'updateBranch'])->name('business-settings.branches.update');
+        Route::post('/business-settings/branches/{id}/toggle-status', [\App\Http\Controllers\BusinessSettingsController::class, 'toggleBranchStatus'])->name('business-settings.branches.toggle');
     });
+    Route::get('/business-settings', fn() => redirect()->route('config.business-settings'))->name('business-settings');
+
+    // Context Switcher & Default Landing Location
+    Route::post('/context/switch', [\App\Http\Controllers\ContextSwitcherController::class, 'switch'])->name('context.switch');
+    Route::post('/context/scope', [\App\Http\Controllers\ContextSwitcherController::class, 'updateScope'])->name('context.scope');
+    Route::post('/context/default-landing', [\App\Http\Controllers\ContextSwitcherController::class, 'setDefaultLanding'])->name('context.default-landing');
 
     // User Account Settings
     Route::get('/account-settings', [ConfigController::class, 'accountSettings'])->name('account-settings');
