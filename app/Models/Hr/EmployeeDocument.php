@@ -74,7 +74,7 @@ class EmployeeDocument extends Model
 
     public function setTitleAttribute($value): void
     {
-        $this->attributes['document_name'] = $value;
+        $this->attributes['employee_document_document_name'] = $value;
     }
 
     public function getFileNameAttribute(): string

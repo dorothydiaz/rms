@@ -12,6 +12,7 @@ return new class extends Migration
     protected array $renames = array (
   'hr_applicants' => 
   array (
+    'id' => 'applicant_id',
     'job_vacancy_id' => 'applicant_job_vacancy_id',
     'first_name' => 'applicant_first_name',
     'middle_name' => 'applicant_middle_name',
@@ -63,6 +64,7 @@ return new class extends Migration
   ),
   'hr_assessments' => 
   array (
+    'id' => 'assessment_id',
     'applicant_id' => 'assessment_applicant_id',
     'title' => 'assessment_title',
     'score' => 'assessment_score',
@@ -77,6 +79,7 @@ return new class extends Migration
   ),
   'hr_attendance_action_logs' => 
   array (
+    'id' => 'attendance_action_log_id',
     'attendance_record_id' => 'attendance_action_log_attendance_record_id',
     'employee_id' => 'attendance_action_log_employee_id',
     'action_type' => 'attendance_action_log_action_type',
@@ -88,6 +91,7 @@ return new class extends Migration
   ),
   'hr_attendance_corrections' => 
   array (
+    'id' => 'attendance_correction_id',
     'attendance_record_id' => 'attendance_correction_attendance_record_id',
     'employee_id' => 'attendance_correction_employee_id',
     'requested_by' => 'attendance_correction_requested_by',
@@ -106,6 +110,7 @@ return new class extends Migration
   ),
   'hr_attendance_records' => 
   array (
+    'id' => 'attendance_record_id',
     'employee_id' => 'attendance_record_employee_id',
     'schedule_id' => 'attendance_record_schedule_id',
     'branch_id' => 'attendance_record_branch_id',
@@ -148,19 +153,37 @@ return new class extends Migration
   ),
   'hr_branches' => 
   array (
+    'id' => 'branch_id',
     'company_id' => 'branch_company_id',
+    'name' => 'branch_name',
+    'code' => 'branch_code',
     'address' => 'branch_address',
+    'phone' => 'branch_phone_number',
+    'email' => 'branch_email_address',
+    'is_active' => 'branch_is_active',
+    'created_at' => 'branch_created_at',
+    'updated_at' => 'branch_updated_at',
   ),
   'hr_companies' => 
   array (
+    'id' => 'company_id',
+    'name' => 'company_legal_name',
     'type' => 'company_type',
+    'code' => 'company_code',
+    'tin' => 'company_tax_id',
     'contact_person' => 'company_contact_person',
+    'email' => 'company_email_address',
+    'phone' => 'company_phone_number',
     'address' => 'company_address',
     'logo' => 'company_logo',
+    'is_active' => 'company_is_active',
     'notes' => 'company_notes',
+    'created_at' => 'company_created_at',
+    'updated_at' => 'company_updated_at',
   ),
   'hr_departments' => 
   array (
+    'id' => 'department_id',
     'branch_id' => 'department_branch_id',
     'name' => 'department_name',
     'code' => 'department_code',
@@ -171,6 +194,7 @@ return new class extends Migration
   ),
   'hr_dtr_absence_codes' => 
   array (
+    'id' => 'dtr_absence_code_id',
     'code' => 'dtr_absence_code_code',
     'name' => 'dtr_absence_code_name',
     'description' => 'dtr_absence_code_description',
@@ -181,6 +205,7 @@ return new class extends Migration
   ),
   'hr_emergency_contacts' => 
   array (
+    'id' => 'emergency_contact_id',
     'employee_id' => 'emergency_contact_employee_id',
     'contact_name' => 'emergency_contact_contact_name',
     'relationship' => 'emergency_contact_relationship',
@@ -194,6 +219,7 @@ return new class extends Migration
   ),
   'hr_employee_clearance' => 
   array (
+    'id' => 'employee_clearance_id',
     'employee_id' => 'employee_clearance_employee_id',
     'separation_id' => 'employee_clearance_separation_id',
     'department' => 'employee_clearance_department',
@@ -207,6 +233,7 @@ return new class extends Migration
   ),
   'hr_employee_disciplinary' => 
   array (
+    'id' => 'employee_disciplinary_id',
     'employee_id' => 'employee_disciplinary_employee_id',
     'incident_date' => 'employee_disciplinary_incident_date',
     'case_type' => 'employee_disciplinary_case_type',
@@ -221,6 +248,7 @@ return new class extends Migration
   ),
   'hr_employee_documents' => 
   array (
+    'id' => 'employee_document_id',
     'employee_id' => 'employee_document_employee_id',
     'document_type' => 'employee_document_document_type',
     'document_name' => 'employee_document_document_name',
@@ -240,6 +268,7 @@ return new class extends Migration
   ),
   'hr_employee_education' => 
   array (
+    'id' => 'employee_education_id',
     'employee_id' => 'employee_education_employee_id',
     'education_level' => 'employee_education_education_level',
     'school_name' => 'employee_education_school_name',
@@ -257,6 +286,7 @@ return new class extends Migration
   ),
   'hr_employee_family' => 
   array (
+    'id' => 'employee_family_id',
     'employee_id' => 'employee_family_employee_id',
     'name' => 'employee_family_name',
     'relationship' => 'employee_family_relationship',
@@ -281,6 +311,7 @@ return new class extends Migration
   ),
   'hr_employee_schedules' => 
   array (
+    'id' => 'employee_schedule_id',
     'employee_id' => 'employee_schedule_employee_id',
     'branch_id' => 'employee_schedule_branch_id',
     'shift_template_id' => 'employee_schedule_shift_template_id',
@@ -294,6 +325,8 @@ return new class extends Migration
   ),
   'hr_employees' => 
   array (
+    'employee_id' => 'employee_code',
+    'id' => 'employee_id',
     'user_id' => 'employee_user_id',
     'first_name' => 'employee_first_name',
     'middle_name' => 'employee_middle_name',
@@ -369,6 +402,7 @@ return new class extends Migration
   ),
   'hr_employment_histories' => 
   array (
+    'id' => 'employment_history_id',
     'employee_id' => 'employment_history_employee_id',
     'action_type' => 'employment_history_action_type',
     'previous_value' => 'employment_history_previous_value',
@@ -381,6 +415,7 @@ return new class extends Migration
   ),
   'hr_holiday_locations' => 
   array (
+    'id' => 'holiday_location_id',
     'holiday_id' => 'holiday_location_holiday_id',
     'branch_id' => 'holiday_location_branch_id',
     'region' => 'holiday_location_region',
@@ -391,6 +426,7 @@ return new class extends Migration
   ),
   'hr_holiday_pay_rules' => 
   array (
+    'id' => 'holiday_pay_rule_id',
     'holiday_type' => 'holiday_pay_rule_holiday_type',
     'year' => 'holiday_pay_rule_year',
     'effective_from' => 'holiday_pay_rule_effective_from',
@@ -407,6 +443,7 @@ return new class extends Migration
   ),
   'hr_holidays' => 
   array (
+    'id' => 'holiday_id',
     'name' => 'holiday_name',
     'date' => 'holiday_date',
     'year' => 'holiday_year',
@@ -427,6 +464,7 @@ return new class extends Migration
   ),
   'hr_interviews' => 
   array (
+    'id' => 'interview_id',
     'applicant_id' => 'interview_applicant_id',
     'interviewer_id' => 'interview_interviewer_id',
     'interviewer_name' => 'interview_interviewer_name',
@@ -442,6 +480,7 @@ return new class extends Migration
   ),
   'hr_job_levels' => 
   array (
+    'id' => 'job_level_id',
     'name' => 'job_level_name',
     'level' => 'job_level_level',
     'description' => 'job_level_description',
@@ -450,6 +489,7 @@ return new class extends Migration
   ),
   'hr_job_vacancies' => 
   array (
+    'id' => 'job_vacancy_id',
     'title' => 'job_vacancy_title',
     'position_id' => 'job_vacancy_position_id',
     'department_id' => 'job_vacancy_department_id',
@@ -479,6 +519,7 @@ return new class extends Migration
   ),
   'hr_leave_balances' => 
   array (
+    'id' => 'leave_balance_id',
     'employee_id' => 'leave_balance_employee_id',
     'leave_type_id' => 'leave_balance_leave_type_id',
     'year' => 'leave_balance_year',
@@ -492,6 +533,7 @@ return new class extends Migration
   ),
   'hr_leave_requests' => 
   array (
+    'id' => 'leave_request_id',
     'employee_id' => 'leave_request_employee_id',
     'leave_type_id' => 'leave_request_leave_type_id',
     'start_date' => 'leave_request_start_date',
@@ -508,6 +550,7 @@ return new class extends Migration
   ),
   'hr_leave_types' => 
   array (
+    'id' => 'leave_type_id',
     'name' => 'leave_type_name',
     'code' => 'leave_type_code',
     'description' => 'leave_type_description',
@@ -519,6 +562,7 @@ return new class extends Migration
   ),
   'hr_payroll_adjustments' => 
   array (
+    'id' => 'payroll_adjustment_id',
     'payroll_record_id' => 'payroll_adjustment_payroll_record_id',
     'adjustment_type' => 'payroll_adjustment_adjustment_type',
     'name' => 'payroll_adjustment_name',
@@ -530,6 +574,7 @@ return new class extends Migration
   ),
   'hr_payroll_periods' => 
   array (
+    'id' => 'payroll_period_id',
     'name' => 'payroll_period_name',
     'start_date' => 'payroll_period_start_date',
     'end_date' => 'payroll_period_end_date',
@@ -544,6 +589,7 @@ return new class extends Migration
   ),
   'hr_payroll_records' => 
   array (
+    'id' => 'payroll_record_id',
     'payroll_period_id' => 'payroll_record_payroll_period_id',
     'employee_id' => 'payroll_record_employee_id',
     'basic_pay' => 'payroll_record_basic_pay',
@@ -583,6 +629,7 @@ return new class extends Migration
   ),
   'hr_performance_criteria' => 
   array (
+    'id' => 'performance_criteria_id',
     'name' => 'performance_criteria_name',
     'description' => 'performance_criteria_description',
     'weight_percentage' => 'performance_criteria_weight_percentage',
@@ -592,6 +639,7 @@ return new class extends Migration
   ),
   'hr_performance_evaluations' => 
   array (
+    'id' => 'performance_evaluation_id',
     'performance_period_id' => 'performance_evaluation_performance_period_id',
     'employee_id' => 'performance_evaluation_employee_id',
     'evaluator_id' => 'performance_evaluation_evaluator_id',
@@ -605,6 +653,7 @@ return new class extends Migration
   ),
   'hr_performance_periods' => 
   array (
+    'id' => 'performance_period_id',
     'name' => 'performance_period_name',
     'start_date' => 'performance_period_start_date',
     'end_date' => 'performance_period_end_date',
@@ -614,6 +663,7 @@ return new class extends Migration
   ),
   'hr_performance_ratings' => 
   array (
+    'id' => 'performance_rating_id',
     'evaluation_id' => 'performance_rating_evaluation_id',
     'criterion_id' => 'performance_rating_criterion_id',
     'rating' => 'performance_rating_rating',
@@ -623,6 +673,7 @@ return new class extends Migration
   ),
   'hr_positions' => 
   array (
+    'id' => 'position_id',
     'department_id' => 'position_department_id',
     'name' => 'position_name',
     'code' => 'position_code',
@@ -632,6 +683,7 @@ return new class extends Migration
   ),
   'hr_premium_pay_items' => 
   array (
+    'id' => 'premium_pay_item_id',
     'payroll_period_id' => 'premium_pay_item_payroll_period_id',
     'payroll_record_id' => 'premium_pay_item_payroll_record_id',
     'employee_id' => 'premium_pay_item_employee_id',
@@ -665,6 +717,7 @@ return new class extends Migration
   ),
   'hr_premium_pay_rule_versions' => 
   array (
+    'id' => 'premium_pay_rule_version_id',
     'premium_pay_rule_id' => 'premium_pay_rule_version_premium_pay_rule_id',
     'version_number' => 'premium_pay_rule_version_version_number',
     'version_code' => 'premium_pay_rule_version_version_code',
@@ -677,6 +730,7 @@ return new class extends Migration
   ),
   'hr_premium_pay_rules' => 
   array (
+    'id' => 'premium_pay_rule_id',
     'rule_code' => 'premium_pay_rule_rule_code',
     'name' => 'premium_pay_rule_name',
     'category' => 'premium_pay_rule_category',
@@ -695,6 +749,7 @@ return new class extends Migration
   ),
   'hr_salary_history' => 
   array (
+    'id' => 'salary_history_id',
     'employee_id' => 'salary_history_employee_id',
     'effective_date' => 'salary_history_effective_date',
     'basic_salary' => 'salary_history_basic_salary',
@@ -708,6 +763,7 @@ return new class extends Migration
   ),
   'hr_schedule_change_logs' => 
   array (
+    'id' => 'schedule_change_log_id',
     'employee_id' => 'schedule_change_log_employee_id',
     'schedule_date' => 'schedule_change_log_schedule_date',
     'previous_shift_template_id' => 'schedule_change_log_previous_shift_template_id',
@@ -721,6 +777,7 @@ return new class extends Migration
   ),
   'hr_separation' => 
   array (
+    'id' => 'separation_id',
     'employee_id' => 'separation_employee_id',
     'last_working_day' => 'separation_last_working_day',
     'reason' => 'separation_reason',
@@ -732,6 +789,7 @@ return new class extends Migration
   ),
   'hr_shift_templates' => 
   array (
+    'id' => 'shift_template_id',
     'name' => 'shift_template_name',
     'code' => 'shift_template_code',
     'start_time' => 'shift_template_start_time',
@@ -745,6 +803,7 @@ return new class extends Migration
   ),
   'hr_statutory_contribution_rules' => 
   array (
+    'id' => 'statutory_contribution_rule_id',
     'rule_name' => 'statutory_contribution_rule_rule_name',
     'rule_type' => 'statutory_contribution_rule_rule_type',
     'rate' => 'statutory_contribution_rule_rate',
@@ -762,6 +821,7 @@ return new class extends Migration
   ),
   'hr_training_enrollments' => 
   array (
+    'id' => 'training_enrollment_id',
     'training_program_id' => 'training_enrollment_training_program_id',
     'employee_id' => 'training_enrollment_employee_id',
     'enrollment_date' => 'training_enrollment_enrollment_date',
@@ -776,6 +836,7 @@ return new class extends Migration
   ),
   'hr_training_programs' => 
   array (
+    'id' => 'training_program_id',
     'name' => 'training_program_name',
     'description' => 'training_program_description',
     'trainer' => 'training_program_trainer',
@@ -841,6 +902,13 @@ return new class extends Migration
 
     protected function changeColumn(string $tableName, string $oldCol, string $newCol): void
     {
+        if (\Illuminate\Support\Facades\DB::getDriverName() !== 'mysql') {
+            Schema::table($tableName, function (Blueprint $table) use ($oldCol, $newCol) {
+                $table->renameColumn($oldCol, $newCol);
+            });
+            return;
+        }
+
         $colInfo = \Illuminate\Support\Facades\DB::selectOne("
             SELECT COLUMN_TYPE, IS_NULLABLE, COLUMN_DEFAULT, EXTRA
             FROM information_schema.COLUMNS

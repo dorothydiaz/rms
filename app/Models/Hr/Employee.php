@@ -219,24 +219,24 @@ class Employee extends Model
         if (!empty($value) && in_array($value, ['Daily', 'Monthly'])) {
             return $value;
         }
-        $raw = $this->attributes['payroll_type'] ?? $this->attributes['salary_type'] ?? 'Monthly';
+        $raw = $this->attributes['employee_payroll_type'] ?? $this->attributes['employee_salary_type'] ?? $this->attributes['payroll_type'] ?? $this->attributes['salary_type'] ?? 'Monthly';
         return ($raw === 'Daily') ? 'Daily' : 'Monthly';
     }
 
     public function setPayrollTypeAttribute(?string $value): void
     {
         $normalized = ($value === 'Daily') ? 'Daily' : 'Monthly';
-        $this->attributes['payroll_type'] = $normalized;
-        $this->attributes['salary_type'] = $normalized;
+        $this->attributes['employee_payroll_type'] = $normalized;
+        $this->attributes['employee_salary_type'] = $normalized;
     }
 
     public function setSalaryTypeAttribute(?string $value): void
     {
-        $this->attributes['salary_type'] = $value;
+        $this->attributes['employee_salary_type'] = $value;
         if ($value === 'Daily') {
-            $this->attributes['payroll_type'] = 'Daily';
-        } elseif ($value === 'Monthly' || empty($this->attributes['payroll_type'])) {
-            $this->attributes['payroll_type'] = 'Monthly';
+            $this->attributes['employee_payroll_type'] = 'Daily';
+        } elseif ($value === 'Monthly' || empty($this->attributes['employee_payroll_type'])) {
+            $this->attributes['employee_payroll_type'] = 'Monthly';
         }
     }
 

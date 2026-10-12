@@ -10,9 +10,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Permission extends Model
 {
-    use HasEntityPrimaryKey;
-
-    protected $primaryKey = 'permission_id';
     use HasFactory;
 
     protected $table = 'permissions';

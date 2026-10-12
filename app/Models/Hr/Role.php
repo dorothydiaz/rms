@@ -11,9 +11,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Role extends Model
 {
-    use HasEntityPrimaryKey;
-
-    protected $primaryKey = 'role_id';
     use HasFactory;
 
     protected $table = 'roles';

@@ -12,6 +12,20 @@ trait HasEntityPrimaryKey
             if ($model->getKeyName() !== 'id' && array_key_exists('id', $model->attributes)) {
                 unset($model->attributes['id']);
             }
+
+            $prefix = $model->getEntityPrefix();
+            if (!empty($prefix)) {
+                foreach ($model->attributes as $key => $val) {
+                    if ($key === $model->getKeyName() || str_starts_with($key, $prefix . '_')) {
+                        continue;
+                    }
+                    $prefixed = $prefix . '_' . $key;
+                    if (!array_key_exists($prefixed, $model->attributes)) {
+                        $model->attributes[$prefixed] = $val;
+                    }
+                    unset($model->attributes[$key]);
+                }
+            }
         });
     }
 
@@ -202,6 +216,11 @@ trait HasEntityPrimaryKey
         $prefix = $this->getEntityPrefix();
         if (empty($prefix)) {
             return parent::setAttribute($key, $value);
+        }
+
+        if ($this->hasSetMutator($key)) {
+            $method = 'set' . \Illuminate\Support\Str::studly($key) . 'Attribute';
+            return $this->{$method}($value);
         }
 
         if ($key === 'created_at') {

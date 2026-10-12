@@ -39,7 +39,7 @@ class EmployeeSchedule extends Model
 
     public function setScheduleDateAttribute($value): void
     {
-        $this->attributes['schedule_date'] = $value ? \Carbon\Carbon::parse($value)->toDateString() : null;
+        $this->attributes['employee_schedule_schedule_date'] = $value ? \Carbon\Carbon::parse($value)->toDateString() : null;
     }
 
     public function employee(): BelongsTo
