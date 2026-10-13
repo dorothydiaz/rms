@@ -20,9 +20,9 @@ class BusinessSettingsModuleTest extends TestCase
     {
         parent::setUp();
 
-        $this->company = Company::where('company_code', 'TEST-CORP')->first();
-        if (!$this->company) {
-            $this->company = Company::create([
+        $company = Company::where('company_code', 'TEST-CORP')->first();
+        if (!$company) {
+            $company = Company::create([
                 'company_code' => 'TEST-CORP',
                 'company_legal_name' => 'Test Corporation Inc.',
                 'company_trade_name' => 'Test Cafe & Diner',
@@ -36,7 +36,7 @@ class BusinessSettingsModuleTest extends TestCase
                 'company_is_active' => true,
             ]);
         } else {
-            $this->company->update([
+            $company->update([
                 'company_legal_name' => 'Test Corporation Inc.',
                 'company_trade_name' => 'Test Cafe & Diner',
                 'company_tax_id' => '999-888-777-000',
@@ -45,6 +45,7 @@ class BusinessSettingsModuleTest extends TestCase
                 'company_is_active' => true,
             ]);
         }
+        $this->company = $company;
 
         $this->branch = Branch::firstOrCreate(
             ['branch_code' => 'TEST-B1'],

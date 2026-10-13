@@ -391,6 +391,18 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Toggle System Administration Accordion inside User Profile Pop-up
+    window.togglePopupAdminGroup = function(e) {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        const group = document.getElementById('popupAdminGroup');
+        if (group) {
+            group.classList.toggle('open');
+        }
+    };
+
     // Sync current header date badge with user local date
     const headerDateSpan = document.getElementById('currentHeaderDate');
     if (headerDateSpan) {

@@ -8,10 +8,40 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class Branch extends Model
 {
     use HasFactory;
+
+    protected static function booted(): void
+    {
+        static::saved(function (Branch $branch) {
+            if (Schema::hasTable('hr_branches')) {
+                DB::table('hr_branches')->updateOrInsert(
+                    ['branch_id' => $branch->branch_id],
+                    [
+                        'branch_company_id' => $branch->company_id,
+                        'branch_name' => $branch->branch_name,
+                        'branch_code' => $branch->branch_code,
+                        'branch_address' => $branch->branch_address_line_1,
+                        'branch_phone_number' => $branch->branch_phone_number,
+                        'branch_email_address' => $branch->branch_email_address,
+                        'branch_is_active' => $branch->branch_is_active ? 1 : 0,
+                        'branch_created_at' => $branch->branch_created_at ?? now(),
+                        'branch_updated_at' => $branch->branch_updated_at ?? now(),
+                    ]
+                );
+            }
+        });
+
+        static::deleted(function (Branch $branch) {
+            if (Schema::hasTable('hr_branches')) {
+                DB::table('hr_branches')->where('branch_id', $branch->branch_id)->delete();
+            }
+        });
+    }
 
     protected $table = 'branches';
     protected $primaryKey = 'branch_id';

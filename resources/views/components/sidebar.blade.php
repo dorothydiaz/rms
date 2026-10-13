@@ -1,9 +1,8 @@
 @php
     $isHome = request()->routeIs('dashboard');
-    $isAccountSettings = request()->routeIs('account-settings*');
+    $isAccountSettings = request()->routeIs('account-settings*', 'config.*', 'hr.admin.*', 'hr.users-auth');
     $activeModule = '';
-    if (request()->routeIs('hr.admin.*', 'hr.users-auth', 'config.*')) $activeModule = 'config';
-    elseif (request()->routeIs('hr.*')) $activeModule = 'hr';
+    if (request()->routeIs('hr.*') && !request()->routeIs('hr.admin.*', 'hr.users-auth')) $activeModule = 'hr';
     elseif (request()->routeIs('sales.*')) $activeModule = 'sales';
     elseif (request()->routeIs('inventory.*')) $activeModule = 'inventory';
     elseif (request()->routeIs('purchase.*')) $activeModule = 'purchase';
@@ -56,7 +55,6 @@
         
         <div class="rail-footer">
             <a href="#" class="rail-item{{ $activeModule === 'credits' ? ' active' : '' }}" data-tooltip="Credits" data-title="Credits" data-target="submenu-credits" data-tooltip-pos="right"><i class="ph ph-info"></i></a>
-            <a href="#" class="rail-item{{ $activeModule === 'config' ? ' active' : '' }}" data-tooltip="Settings" data-title="Settings" data-target="submenu-config" data-tooltip-pos="right"><i class="ph ph-gear"></i></a>
         </div>
     </div>
 
@@ -327,34 +325,6 @@
             </div>
         </div>
 
-        <!-- Settings (Business Configuration & System Administration) -->
-        <div id="submenu-config" class="panel-content submenu{{ $activeModule === 'config' ? ' active' : '' }}">
-            <div class="submenu-header">
-                <span class="submenu-title">Settings</span>
-            </div>
-            <div class="nav-section">
-                <a href="{{ route('config.business-settings') }}" class="nav-item{{ request()->routeIs('config.business-settings') ? ' active' : '' }}">
-                    <i class="ph ph-storefront"></i>
-                    <span>Business Settings</span>
-                </a>
-            </div>
-            <div class="nav-section">
-                @php $adminActive = request()->routeIs('hr.admin.*', 'hr.users-auth'); @endphp
-                <div class="nav-item-group" data-group-id="config-admin">
-                    <a href="#" class="nav-item">
-                        <i class="ph ph-shield-check"></i>
-                        <span>System Administration</span>
-                    </a>
-                    <button type="button" class="add-btn"><i class="ph {{ $adminActive ? 'ph-minus' : 'ph-plus' }}"></i></button>
-                </div>
-                <div class="sub-nav{{ $adminActive ? ' expanded' : '' }}">
-                    <a href="{{ route('hr.admin.users') }}" class="sub-nav-item{{ request()->routeIs('hr.admin.users*', 'hr.users-auth') ? ' active' : '' }}" title="User accounts, role assignments, security permissions, and audit logs"><span>User Management</span></a>
-                    <a href="{{ route('hr.admin.roles') }}" class="sub-nav-item{{ request()->routeIs('hr.admin.roles*') ? ' active' : '' }}" title="Role and permission assignments"><span>Role & Permission</span></a>
-                    <a href="{{ route('hr.admin.settings') }}" class="sub-nav-item{{ request()->routeIs('hr.admin.settings*') ? ' active' : '' }}" title="Company entity settings"><span>System Settings</span></a>
-                    <a href="{{ route('hr.admin.audit-logs') }}" class="sub-nav-item{{ request()->routeIs('hr.admin.audit-logs*', 'hr.admin.audit_logs*') ? ' active' : '' }}" title="Security and activity audit logs"><span>Audit Logs</span></a>
-                </div>
-            </div>
-        </div>
 
         <div class="panel-footer">
             <!-- User Profile Pop-up Menu -->
@@ -375,15 +345,71 @@
                 <div class="popup-menu-items">
                     <a href="{{ route('account-settings') }}" class="popup-menu-item{{ request()->routeIs('account-settings*') ? ' active' : '' }}" role="menuitem">
                         <div class="popup-item-icon">
-                            <i class="ph ph-user-gear"></i>
+                            <i class="ph ph-user-circle"></i>
                         </div>
                         <div class="popup-item-text">
-                            <span class="popup-item-title">Account Settings</span>
-                            <span class="popup-item-desc">Profile, password & security</span>
+                            <span class="popup-item-title">My Profile & Security</span>
+                            <span class="popup-item-desc">Personal info, passwords, login logs</span>
                         </div>
-                        <i class="ph ph-caret-right popup-item-arrow"></i>
                     </a>
+
+                    <button type="button" class="popup-menu-item" role="menuitem" onclick="RMSUserProfile.openDefaultLandingModal()">
+                        <div class="popup-item-icon">
+                            <i class="ph ph-compass"></i>
+                        </div>
+                        <div class="popup-item-text">
+                            <span class="popup-item-title">Default Landing Location</span>
+                            <span class="popup-item-desc">Choose company & branch for automatic login</span>
+                        </div>
+                    </button>
+
                     <div class="popup-menu-divider"></div>
+                    <div class="popup-section-label">Settings & Administration</div>
+
+                    <a href="{{ route('config.business-settings') }}" class="popup-menu-item{{ request()->routeIs('config.business-settings*') ? ' active' : '' }}" role="menuitem">
+                        <div class="popup-item-icon">
+                            <i class="ph ph-sliders"></i>
+                        </div>
+                        <div class="popup-item-text">
+                            <span class="popup-item-title">Business Settings</span>
+                            <span class="popup-item-desc">Company profiles, legal hub, branches</span>
+                        </div>
+                    </a>
+
+                    @php $adminActive = request()->routeIs('hr.admin.*', 'hr.users-auth'); @endphp
+                    <div class="popup-collapsible-group{{ $adminActive ? ' open' : '' }}" id="popupAdminGroup">
+                        <button type="button" class="popup-menu-item group-toggle-item{{ $adminActive ? ' active' : '' }}" role="menuitem" onclick="togglePopupAdminGroup(event)">
+                            <div class="popup-item-icon">
+                                <i class="ph ph-shield-check"></i>
+                            </div>
+                            <div class="popup-item-text">
+                                <span class="popup-item-title">System Administration</span>
+                                <span class="popup-item-desc">Users, roles, system settings, audit</span>
+                            </div>
+                            <i class="ph ph-caret-down popup-item-arrow popup-group-arrow"></i>
+                        </button>
+                        <div class="popup-sub-items">
+                            <a href="{{ route('hr.admin.users') }}" class="popup-sub-item{{ request()->routeIs('hr.admin.users*', 'hr.users-auth') ? ' active' : '' }}" role="menuitem" title="User accounts, role assignments, security permissions, and audit logs">
+                                <i class="ph ph-users"></i>
+                                <span>User Management</span>
+                            </a>
+                            <a href="{{ route('hr.admin.roles') }}" class="popup-sub-item{{ request()->routeIs('hr.admin.roles*') ? ' active' : '' }}" role="menuitem" title="Role and permission assignments">
+                                <i class="ph ph-user-switch"></i>
+                                <span>Role & Permission</span>
+                            </a>
+                            <a href="{{ route('hr.admin.settings') }}" class="popup-sub-item{{ request()->routeIs('hr.admin.settings*') ? ' active' : '' }}" role="menuitem" title="Company entity settings">
+                                <i class="ph ph-gear-six"></i>
+                                <span>System Settings</span>
+                            </a>
+                            <a href="{{ route('hr.admin.audit-logs') }}" class="popup-sub-item{{ request()->routeIs('hr.admin.audit-logs*', 'hr.admin.audit_logs*') ? ' active' : '' }}" role="menuitem" title="Security and activity audit logs">
+                                <i class="ph ph-clock-counter-clockwise"></i>
+                                <span>Audit Logs</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="popup-menu-divider"></div>
+
                     <form method="POST" action="{{ route('logout') }}" id="popupLogoutForm">
                         @csrf
                         <button type="submit" class="popup-menu-item logout-item" role="menuitem">
@@ -399,7 +425,7 @@
             </div>
 
             <!-- Clickable User Profile Card -->
-            <div class="user-profile{{ request()->routeIs('account-settings*') ? ' active' : '' }}" id="userProfileToggle" role="button" tabindex="0" aria-haspopup="true" aria-expanded="false" title="Click to view account options">
+            <div class="user-profile{{ request()->routeIs('account-settings*', 'config.*', 'hr.admin.*', 'hr.users-auth') ? ' active' : '' }}" id="userProfileToggle" role="button" tabindex="0" aria-haspopup="true" aria-expanded="false" title="Click to view account options">
                 <div class="user-avatar-icon">
                     <i class="ph ph-user"></i>
                 </div>

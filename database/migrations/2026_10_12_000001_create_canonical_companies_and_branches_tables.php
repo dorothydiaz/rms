@@ -216,11 +216,17 @@ return new class extends Migration
                 ]);
 
                 // Insert into user_companies & user_branches
-                DB::statement('INSERT OR IGNORE INTO user_companies (user_id, company_id, created_at, updated_at) VALUES (?, ?, ?, ?)', [
-                    $u->id, $firstCompany->company_id, now(), now()
+                DB::table('user_companies')->insertOrIgnore([
+                    'user_id' => $u->id,
+                    'company_id' => $firstCompany->company_id,
+                    'created_at' => now(),
+                    'updated_at' => now(),
                 ]);
-                DB::statement('INSERT OR IGNORE INTO user_branches (user_id, branch_id, created_at, updated_at) VALUES (?, ?, ?, ?)', [
-                    $u->id, $u->branch_id ?? $firstBranch->branch_id, now(), now()
+                DB::table('user_branches')->insertOrIgnore([
+                    'user_id' => $u->id,
+                    'branch_id' => $u->branch_id ?? $firstBranch->branch_id,
+                    'created_at' => now(),
+                    'updated_at' => now(),
                 ]);
             }
         }

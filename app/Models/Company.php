@@ -9,10 +9,44 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class Company extends Model
 {
     use HasFactory;
+
+    protected static function booted(): void
+    {
+        static::saved(function (Company $company) {
+            if (Schema::hasTable('hr_companies')) {
+                DB::table('hr_companies')->updateOrInsert(
+                    ['company_id' => $company->company_id],
+                    [
+                        'company_legal_name' => $company->company_legal_name,
+                        'company_code' => $company->company_code,
+                        'company_tax_id' => $company->company_tax_id,
+                        'company_email_address' => $company->company_email_address,
+                        'company_phone_number' => $company->company_phone_number,
+                        'company_address' => $company->company_address_line_1,
+                        'company_logo' => $company->company_logo,
+                        'company_created_at' => $company->company_created_at ?? now(),
+                        'company_updated_at' => $company->company_updated_at ?? now(),
+                        'company_type' => $company->company_type ?? 'Company',
+                        'company_contact_person' => $company->company_contact_person,
+                        'company_is_active' => $company->company_is_active ? 1 : 0,
+                        'company_notes' => $company->company_notes,
+                    ]
+                );
+            }
+        });
+
+        static::deleted(function (Company $company) {
+            if (Schema::hasTable('hr_companies')) {
+                DB::table('hr_companies')->where('company_id', $company->company_id)->delete();
+            }
+        });
+    }
 
     protected $table = 'companies';
     protected $primaryKey = 'company_id';

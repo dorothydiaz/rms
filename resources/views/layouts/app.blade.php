@@ -44,9 +44,6 @@
                     <!-- Entity Hierarchy & Context Switcher -->
                     <x-context-switcher />
 
-                    <!-- User Profile Dropdown -->
-                    <x-header-user-profile />
-
                     <button class="icon-btn notification-btn" title="Notifications" aria-label="Notifications">
                         <i class="ph ph-bell"></i>
                     </button>
@@ -75,6 +72,9 @@
             </div>
         </main>
     </div>
+
+    <!-- Default Landing Location Modal -->
+    <x-default-landing-modal />
 
     <!-- SweetAlert2 (Rich Interactive Alerts & Confirmation Modals) -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
