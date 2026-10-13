@@ -425,6 +425,12 @@ Route::middleware('auth')->group(function () {
     // Settings (Business Configuration)
     Route::prefix('config')->name('config.')->group(function () {
         Route::get('/business-settings', [\App\Http\Controllers\BusinessSettingsController::class, 'index'])->name('business-settings');
+        Route::get('/companies-branches', [\App\Http\Controllers\BusinessSettingsController::class, 'companiesBranchesIndex'])->name('companies-branches.index');
+        Route::post('/companies-branches', [\App\Http\Controllers\BusinessSettingsController::class, 'storeCompany'])->name('companies-branches.store');
+        Route::get('/companies-branches/{id}', [\App\Http\Controllers\BusinessSettingsController::class, 'showCompany'])->name('companies-branches.show');
+        Route::put('/companies-branches/{id}', [\App\Http\Controllers\BusinessSettingsController::class, 'updateCompany'])->name('companies-branches.update');
+        Route::delete('/companies-branches/{id}', [\App\Http\Controllers\BusinessSettingsController::class, 'destroyCompany'])->name('companies-branches.destroy');
+        Route::post('/companies-branches/{id}/toggle-status', [\App\Http\Controllers\BusinessSettingsController::class, 'toggleCompanyStatus'])->name('companies-branches.toggle');
         Route::post('/business-settings/general', [\App\Http\Controllers\BusinessSettingsController::class, 'updateGeneral'])->name('business-settings.general');
         Route::post('/business-settings/legal', [\App\Http\Controllers\BusinessSettingsController::class, 'updateLegalHub'])->name('business-settings.legal');
         Route::post('/business-settings/hierarchy', [\App\Http\Controllers\BusinessSettingsController::class, 'updateHierarchy'])->name('business-settings.hierarchy');
@@ -432,6 +438,8 @@ Route::middleware('auth')->group(function () {
         Route::delete('/business-settings/documents/{id}', [\App\Http\Controllers\BusinessSettingsController::class, 'destroyDocument'])->name('business-settings.documents.destroy');
         Route::post('/business-settings/branches', [\App\Http\Controllers\BusinessSettingsController::class, 'storeBranch'])->name('business-settings.branches.store');
         Route::put('/business-settings/branches/{id}', [\App\Http\Controllers\BusinessSettingsController::class, 'updateBranch'])->name('business-settings.branches.update');
+        Route::delete('/business-settings/branches/{id}', [\App\Http\Controllers\BusinessSettingsController::class, 'destroyBranch'])->name('business-settings.branches.destroy');
+        Route::delete('/companies-branches/branches/{id}', [\App\Http\Controllers\BusinessSettingsController::class, 'destroyBranch'])->name('companies-branches.branches.destroy');
         Route::post('/business-settings/branches/{id}/toggle-status', [\App\Http\Controllers\BusinessSettingsController::class, 'toggleBranchStatus'])->name('business-settings.branches.toggle');
     });
     Route::get('/business-settings', fn() => redirect()->route('config.business-settings'))->name('business-settings');

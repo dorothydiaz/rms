@@ -1,0 +1,53 @@
+#!/usr/bin/env node
+// Render scripts/og-card.html -> docs/og-image.png at 1200x630 (DPR 2 for crispness).
+import { spawn } from 'node:child_process';
+import { mkdtempSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+// Args: [srcHtml] [outPng] [width] [height] [dpr] — default to the 1200x630 landscape OG card.
+const SRC = 'file://' + join(process.cwd(), process.argv[2] || 'scripts/og-card.html');
+const OUT = join(process.cwd(), process.argv[3] || 'docs/og-image.png');
+const W = parseInt(process.argv[4] || '1200', 10), H = parseInt(process.argv[5] || '630', 10);
+// Optional 6th arg: device pixel ratio (default 2). Pass 1 for an image at exactly W x H.
+const DPR = parseFloat(process.argv[6] || '2');
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const CHROME = ['/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+  '/Applications/Chromium.app/Contents/MacOS/Chromium'].find((p) => existsSync(p));
+if (!CHROME) { console.log('no chrome'); process.exit(2); }
+
+const udd = mkdtempSync(join(tmpdir(), 'ogcap-'));
+const chrome = spawn(CHROME, ['--headless=new', '--disable-gpu', '--no-sandbox',
+  '--remote-debugging-port=0', '--user-data-dir=' + udd, '--no-first-run',
+  '--no-default-browser-check', '--hide-scrollbars', '--force-color-profile=srgb', 'about:blank'], { stdio: 'ignore' });
+async function readPort() {
+  const f = join(udd, 'DevToolsActivePort');
+  for (let i = 0; i < 120; i++) { if (existsSync(f)) { const p = readFileSync(f, 'utf8').split('\n')[0].trim(); if (p) return p; } await sleep(100); }
+  throw new Error('no port');
+}
+function makeCdp(wsUrl) {
+  const ws = new WebSocket(wsUrl); let id = 0; const waiters = new Map(); const evq = [];
+  const ready = new Promise((res, rej) => { ws.onopen = () => res(); ws.onerror = () => rej(new Error('ws')); });
+  ws.onmessage = (m) => { const d = JSON.parse(m.data);
+    if (d.id && waiters.has(d.id)) { waiters.get(d.id)(d.result || {}); waiters.delete(d.id); }
+    else if (d.method) { for (let i = evq.length - 1; i >= 0; i--) if (evq[i].m === d.method) { evq[i].res(d); evq.splice(i, 1); } } };
+  const send = (method, params = {}, sessionId) => new Promise((res) => { const mid = ++id; waiters.set(mid, res); ws.send(JSON.stringify({ id: mid, method, params, sessionId })); });
+  const wait = (m, t = 12000) => new Promise((res) => { const w = { m, res }; evq.push(w); setTimeout(() => { const i = evq.indexOf(w); if (i >= 0) { evq.splice(i, 1); res(null); } }, t); });
+  return { ready, send, wait };
+}
+(async () => {
+  const port = await readPort();
+  const verUrl = (await (await fetch('http://127.0.0.1:' + port + '/json/version')).json()).webSocketDebuggerUrl;
+  const cdp = makeCdp(verUrl); await cdp.ready;
+  const { targetId } = await cdp.send('Target.createTarget', { url: 'about:blank' });
+  const { sessionId: sid } = await cdp.send('Target.attachToTarget', { targetId, flatten: true });
+  await cdp.send('Page.enable', {}, sid);
+  await cdp.send('Emulation.setDeviceMetricsOverride', { width: W, height: H, deviceScaleFactor: DPR, mobile: false }, sid);
+  await cdp.send('Page.navigate', { url: SRC }, sid);
+  await cdp.wait('Page.loadEventFired'); await sleep(2600); // fonts + glow settle
+  // deviceScaleFactor:2 already gives 2x (2400x1260); clip scale:1 avoids compounding past Twitter's 4096 cap.
+  const { data } = await cdp.send('Page.captureScreenshot', { format: 'png', clip: { x: 0, y: 0, width: W, height: H, scale: 1 } }, sid);
+  writeFileSync(OUT, Buffer.from(data, 'base64'));
+  console.log('wrote', OUT, '(' + Math.round(Buffer.from(data, 'base64').length / 1024) + ' KB)');
+  chrome.kill(); process.exit(0);
+})().catch((e) => { console.log('crash', e.message); try { chrome.kill(); } catch {} process.exit(2); });

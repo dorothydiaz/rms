@@ -254,9 +254,10 @@
             'sections' => [
                 'business' => [
                     'title' => 'Business Settings',
-                    'url' => route('config.business-settings'),
+                    'url' => route('config.companies-branches.index'),
                     'items' => [
-                        ['title' => 'Business Settings', 'url' => route('config.business-settings'), 'icon' => 'ph-storefront', 'route' => 'config.business-settings']
+                        ['title' => 'Companies & Branches', 'url' => route('config.companies-branches.index'), 'icon' => 'ph-buildings', 'route' => 'config.companies-branches.*'],
+                        ['title' => 'Business Settings', 'url' => route('config.business-settings'), 'icon' => 'ph-storefront', 'route' => 'config.business-settings'],
                     ]
                 ],
                 'admin' => [

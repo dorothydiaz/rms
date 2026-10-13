@@ -63,6 +63,21 @@
         $activeTab = request()->get('tab', 'general');
     @endphp
 
+    <!-- Enterprise Navigation Shortcut to New Modular Directory -->
+    <div style="background: linear-gradient(135deg, #eff6ff, #f8fafc); border: 1px solid #bfdbfe; border-radius: 12px; padding: 12px 18px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <i class="ph ph-buildings" style="font-size: 24px; color: #2563eb;"></i>
+            <div>
+                <strong style="color: #1e3a8a; font-size: 13px;">Multi-Entity Companies &amp; Branches Directory</strong>
+                <p style="margin: 0; font-size: 11.5px; color: #475569;">Access the new Modular Table console with reorderable columns, branch pills, and company profiles.</p>
+            </div>
+        </div>
+        <a href="{{ route('config.companies-branches.index') }}" style="background: #2563eb; color: #ffffff; padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(37,99,235,0.2);">
+            <span>Open Companies &amp; Branches</span>
+            <i class="ph ph-arrow-right"></i>
+        </a>
+    </div>
+
     <!-- Universal Functional Navigation Tabs (Zero Layout Shift) -->
     <div class="biz-tabs-bar">
         <a href="{{ route('config.business-settings', ['tab' => 'general']) }}" class="biz-tab-btn {{ $activeTab === 'general' ? 'active' : '' }}">
