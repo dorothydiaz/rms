@@ -77,21 +77,21 @@
     </div>
 </div>
 
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 24px;">
+<div class="account-settings-grid">
     <!-- 1. Personal Information Card -->
-    <div class="hr-card" style="margin-bottom: 0;">
-        <div style="border-bottom: 1px solid rgba(168, 85, 247, 0.12); padding-bottom: 14px; margin-bottom: 18px;">
-            <h3 style="font-size: 16px; font-weight: 700; color: #0f172a; margin: 0 0 4px 0; display: flex; align-items: center; gap: 8px;">
-                <i class="ph ph-user-circle" style="color: #a855f7; font-size: 20px;"></i>
+    <div class="hr-card account-card">
+        <div class="account-card-header">
+            <h3 class="account-card-title">
+                <i class="ph ph-user-circle" style="color: #a855f7; font-size: 19px;"></i>
                 Personal Profile Information
             </h3>
-            <p style="font-size: 12.5px; color: #64748b; margin: 0;">Update your basic personal and contact details</p>
+            <p class="account-card-desc">Update your basic personal and contact details</p>
         </div>
 
-        <form method="POST" action="{{ route('account-settings.profile') }}">
+        <form method="POST" action="{{ route('account-settings.profile') }}" class="account-card-form">
             @csrf
 
-            <div class="hr-form-group" style="margin-bottom: 16px;">
+            <div class="hr-form-group" style="margin-bottom: 14px;">
                 <label class="hr-form-label">Full Name *</label>
                 <div style="position: relative;">
                     <input type="text" name="full_name" class="hr-input" required value="{{ old('full_name', $user->full_name ?? $displayName) }}" style="padding-left: 38px;">
@@ -99,7 +99,7 @@
                 </div>
             </div>
 
-            <div class="hr-form-group" style="margin-bottom: 16px;">
+            <div class="hr-form-group" style="margin-bottom: 14px;">
                 <label class="hr-form-label">Username *</label>
                 <div style="position: relative;">
                     <input type="text" name="username" class="hr-input" required value="{{ old('username', $user->username ?? $displayUsername) }}" style="padding-left: 38px;">
@@ -108,7 +108,7 @@
                 <small style="font-size: 11px; color: #64748b;">Used for authentication and internal logs.</small>
             </div>
 
-            <div class="hr-form-group" style="margin-bottom: 16px;">
+            <div class="hr-form-group" style="margin-bottom: 14px;">
                 <label class="hr-form-label">Email Address *</label>
                 <div style="position: relative;">
                     <input type="email" name="email" class="hr-input" required value="{{ old('email', $user->email ?? $displayEmail) }}" style="padding-left: 38px;">
@@ -116,18 +116,18 @@
                 </div>
             </div>
 
-            <div class="hr-form-grid" style="margin-bottom: 20px;">
+            <div class="account-role-grid" style="margin-bottom: 16px;">
                 <div class="hr-form-group">
                     <label class="hr-form-label">Assigned Role</label>
-                    <input type="text" class="hr-input" value="{{ $displayRole }}" readonly disabled style="background: rgba(241, 245, 249, 0.8); cursor: not-allowed;">
+                    <input type="text" class="hr-input" value="{{ $displayRole }}" readonly disabled title="{{ $displayRole }}" style="background: rgba(241, 245, 249, 0.8); cursor: not-allowed; text-overflow: ellipsis; font-size: 12px; padding: 8px 10px;">
                 </div>
                 <div class="hr-form-group">
                     <label class="hr-form-label">Branch Access</label>
-                    <input type="text" class="hr-input" value="{{ $displayBranch }}" readonly disabled style="background: rgba(241, 245, 249, 0.8); cursor: not-allowed;">
+                    <input type="text" class="hr-input" value="{{ $displayBranch }}" readonly disabled title="{{ $displayBranch }}" style="background: rgba(241, 245, 249, 0.8); cursor: not-allowed; text-overflow: ellipsis; font-size: 12px; padding: 8px 10px;">
                 </div>
             </div>
 
-            <div style="display: flex; justify-content: flex-end; pt-2;">
+            <div class="account-card-actions">
                 <button type="submit" class="hr-btn hr-btn-primary">
                     <i class="ph ph-floppy-disk"></i>
                     <span>Save Profile Changes</span>
@@ -137,19 +137,19 @@
     </div>
 
     <!-- 2. Security & Password Card -->
-    <div class="hr-card" style="margin-bottom: 0;">
-        <div style="border-bottom: 1px solid rgba(168, 85, 247, 0.12); padding-bottom: 14px; margin-bottom: 18px;">
-            <h3 style="font-size: 16px; font-weight: 700; color: #0f172a; margin: 0 0 4px 0; display: flex; align-items: center; gap: 8px;">
-                <i class="ph ph-lock-key" style="color: #ec4899; font-size: 20px;"></i>
+    <div class="hr-card account-card">
+        <div class="account-card-header">
+            <h3 class="account-card-title">
+                <i class="ph ph-lock-key" style="color: #ec4899; font-size: 19px;"></i>
                 Security & Password
             </h3>
-            <p style="font-size: 12.5px; color: #64748b; margin: 0;">Ensure your account is protected with a strong password</p>
+            <p class="account-card-desc">Ensure your account is protected with a strong password</p>
         </div>
 
-        <form method="POST" action="{{ route('account-settings.password') }}">
+        <form method="POST" action="{{ route('account-settings.password') }}" class="account-card-form">
             @csrf
 
-            <div class="hr-form-group" style="margin-bottom: 16px;">
+            <div class="hr-form-group" style="margin-bottom: 14px;">
                 <label class="hr-form-label">Current Password *</label>
                 <div style="position: relative;">
                     <input type="password" name="current_password" id="current_password" class="hr-input" required placeholder="Enter existing password" style="padding-left: 38px; padding-right: 38px;">
@@ -160,7 +160,7 @@
                 </div>
             </div>
 
-            <div class="hr-form-group" style="margin-bottom: 16px;">
+            <div class="hr-form-group" style="margin-bottom: 14px;">
                 <label class="hr-form-label">New Password *</label>
                 <div style="position: relative;">
                     <input type="password" name="password" id="new_password" class="hr-input" required placeholder="Minimum 8 characters" style="padding-left: 38px; padding-right: 38px;">
@@ -169,10 +169,10 @@
                         <i class="ph ph-eye"></i>
                     </button>
                 </div>
-                <small style="font-size: 11px; color: #64748b;">Must contain at least 8 characters with a mix of letters and numbers.</small>
+                <small style="font-size: 11px; color: #64748b;">Must contain at least 8 characters with letters and numbers.</small>
             </div>
 
-            <div class="hr-form-group" style="margin-bottom: 20px;">
+            <div class="hr-form-group" style="margin-bottom: 16px;">
                 <label class="hr-form-label">Confirm New Password *</label>
                 <div style="position: relative;">
                     <input type="password" name="password_confirmation" id="password_confirmation" class="hr-input" required placeholder="Repeat new password" style="padding-left: 38px; padding-right: 38px;">
@@ -183,7 +183,7 @@
                 </div>
             </div>
 
-            <div style="display: flex; justify-content: flex-end;">
+            <div class="account-card-actions">
                 <button type="submit" class="hr-btn hr-btn-primary">
                     <i class="ph ph-shield-check"></i>
                     <span>Update Password</span>
@@ -191,72 +191,180 @@
             </div>
         </form>
     </div>
-</div>
 
-<!-- Account Activity & Security Overview -->
-<div class="hr-card" style="margin-top: 24px;">
-    <div style="border-bottom: 1px solid rgba(168, 85, 247, 0.12); padding-bottom: 14px; margin-bottom: 18px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
-        <div>
-            <h3 style="font-size: 16px; font-weight: 700; color: #0f172a; margin: 0 0 4px 0; display: flex; align-items: center; gap: 8px;">
-                <i class="ph ph-shield-warning" style="color: #6366f1; font-size: 20px;"></i>
-                Account Security & Recent Sign-In Activity
-            </h3>
-            <p style="font-size: 12.5px; color: #64748b; margin: 0;">Review your recent sign-ins and safety measures</p>
-        </div>
-        <div style="display: flex; align-items: center; gap: 10px;">
-            <span class="hr-badge hr-badge-info">
+    <!-- 3. Account Activity & Security Overview Card -->
+    <div class="hr-card account-card account-card-table">
+        <div class="account-card-header" style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
+            <div>
+                <h3 class="account-card-title">
+                    <i class="ph ph-shield-check" style="color: #6366f1; font-size: 19px;"></i>
+                    Recent Sign-In Activity
+                </h3>
+                <p class="account-card-desc">Review your recent sign-ins & security status</p>
+            </div>
+            <span class="hr-badge hr-badge-info" style="font-size: 11px; padding: 4px 10px; white-space: nowrap;">
                 <i class="ph ph-shield"></i> Rate-Limit Guard Active
             </span>
         </div>
-    </div>
 
-    @if(isset($recentLogins) && $recentLogins->isNotEmpty())
-        <div class="hr-table-wrapper">
-            <table class="hr-table">
-                <thead>
-                    <tr>
-                        <th>Date & Time</th>
-                        <th>IP Address</th>
-                        <th>Identity Used</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($recentLogins as $login)
+        @if(isset($recentLogins) && $recentLogins->isNotEmpty())
+            <div class="hr-table-wrapper" style="flex: 1; min-height: 220px;">
+                <table class="hr-table" style="font-size: 12.5px; width: 100%;">
+                    <thead>
                         <tr>
-                            <td>
-                                <i class="ph ph-clock" style="color: #94a3b8; margin-right: 4px;"></i>
-                                {{ $login->attempted_at ? \Carbon\Carbon::parse($login->attempted_at)->format('M d, Y h:i A') : 'N/A' }}
-                            </td>
-                            <td>
-                                <code>{{ $login->ip_address }}</code>
-                            </td>
-                            <td>{{ $login->identity }}</td>
-                            <td>
-                                @if($login->is_successful)
-                                    <span class="hr-badge hr-badge-success">
-                                        <i class="ph ph-check"></i> Successful
-                                    </span>
-                                @else
-                                    <span class="hr-badge hr-badge-danger">
-                                        <i class="ph ph-x"></i> Failed Attempt
-                                    </span>
-                                @endif
-                            </td>
+                            <th style="padding: 10px 14px; white-space: nowrap;">Date & Time</th>
+                            <th style="padding: 10px 14px; white-space: nowrap;">IP Address</th>
+                            <th style="padding: 10px 14px;">Identity</th>
+                            <th style="padding: 10px 14px; white-space: nowrap;">Status</th>
                         </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-    @else
-        <div style="display: flex; align-items: center; gap: 14px; padding: 14px 18px; background: rgba(241, 245, 249, 0.7); border-radius: 12px; border: 1px solid rgba(226, 232, 240, 0.8);">
-            <i class="ph ph-info" style="font-size: 22px; color: #64748b;"></i>
-            <span style="font-size: 13px; color: #475569;">No previous suspicious login attempts recorded. Your session is active and secure.</span>
-        </div>
-    @endif
+                    </thead>
+                    <tbody>
+                        @foreach($recentLogins as $login)
+                            <tr>
+                                <td style="padding: 10px 14px; white-space: nowrap;">
+                                    <div style="display: inline-flex; align-items: center; gap: 6px;">
+                                        <i class="ph ph-clock" style="color: #94a3b8;"></i>
+                                        <span>{{ $login->attempted_at ? \Carbon\Carbon::parse($login->attempted_at)->format('M d, Y h:i A') : 'N/A' }}</span>
+                                    </div>
+                                </td>
+                                <td style="padding: 10px 14px; white-space: nowrap;">
+                                    <code style="font-size: 11.5px; background: rgba(241, 245, 249, 0.9); padding: 3px 7px; border-radius: 5px; border: 1px solid rgba(226, 232, 240, 0.85);">{{ $login->ip_address }}</code>
+                                </td>
+                                <td style="padding: 10px 14px; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ $login->identity }}">
+                                    {{ $login->identity }}
+                                </td>
+                                <td style="padding: 10px 14px; white-space: nowrap;">
+                                    @if($login->is_successful)
+                                        <span class="hr-badge hr-badge-success" style="font-size: 11px; padding: 3px 8px;">
+                                            <i class="ph ph-check"></i> Successful
+                                        </span>
+                                    @else
+                                        <span class="hr-badge hr-badge-danger" style="font-size: 11px; padding: 3px 8px;">
+                                            <i class="ph ph-x"></i> Failed Attempt
+                                        </span>
+                                    @endif
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @else
+            <div class="account-empty-state">
+                <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(99, 102, 241, 0.1); color: #6366f1; display: flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 12px;">
+                    <i class="ph ph-shield-check"></i>
+                </div>
+                <div style="font-size: 13.5px; font-weight: 600; color: #334155; margin-bottom: 4px;">Active & Protected</div>
+                <span style="font-size: 12px; color: #64748b; line-height: 1.5; max-width: 320px;">No previous suspicious attempts recorded. Your session is active and protected by rate-limiting guards.</span>
+            </div>
+        @endif
+    </div>
 </div>
 
 @push('styles')
+<style>
+.account-settings-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 2fr);
+    gap: 20px;
+    align-items: stretch;
+}
+
+.account-settings-grid > .account-card {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 0 !important;
+    padding: 18px 20px;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.account-card.account-card-table {
+    /* Covers 50% of the row in 3-column desktop layout (2fr of 4fr total) */
+}
+
+.account-card-header {
+    border-bottom: 1px solid rgba(168, 85, 247, 0.12);
+    padding-bottom: 12px;
+    margin-bottom: 14px;
+}
+
+.account-card-title {
+    font-size: 15.5px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0 0 3px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.account-card-desc {
+    font-size: 12px;
+    color: #64748b;
+    margin: 0;
+}
+
+.account-card-form {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.account-role-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+}
+
+.account-card-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: auto;
+    padding-top: 8px;
+}
+
+.account-empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 28px 16px;
+    background: rgba(241, 245, 249, 0.5);
+    border-radius: 12px;
+    border: 1px dashed rgba(203, 213, 225, 0.8);
+    min-height: 200px;
+}
+
+@media (max-width: 1120px) {
+    .account-settings-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .account-card.account-card-table {
+        grid-column: span 2;
+    }
+    .account-role-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    .account-settings-grid {
+        grid-template-columns: 1fr;
+    }
+    .account-card.account-card-table {
+        grid-column: span 1;
+    }
+    .account-role-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+@endpush
+
+@push('scripts')
 <script>
 function togglePassVisibility(inputId, btn) {
     const input = document.getElementById(inputId);
