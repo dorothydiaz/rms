@@ -5,40 +5,29 @@
 @endphp
 
 <div class="entity-context-switcher" id="entityContextSwitcher">
-    <!-- Trigger Button in Header (Glassmorphic Pill) -->
+    <!-- Trigger Button in Header (Matches Header Date Badge Exactly) -->
     <button type="button" class="entity-switcher-btn {{ $isConsolidatedView ? 'is-consolidated' : '' }}" id="entitySwitcherBtn" aria-haspopup="true" aria-expanded="false" title="Click to open Entity Selector & View Scope">
-        <div class="entity-btn-icon">
-            @if($currentCompany && $currentCompany->company_logo)
-                <img src="{{ asset('storage/' . $currentCompany->company_logo) }}" alt="Logo" class="entity-logo-mini">
-            @else
-                <i class="ph {{ $isConsolidatedView ? 'ph-stack' : 'ph-buildings' }}"></i>
-            @endif
-        </div>
-        <div class="entity-btn-content">
-            <div class="entity-btn-company">
-                <span class="company-name" title="{{ $currentCompany?->company_trade_name ?: $currentCompany?->company_legal_name }}">
-                    {{ $currentCompany ? ($currentCompany->company_trade_name ?: $currentCompany->company_legal_name) : 'Select Company' }}
-                </span>
-                @if($isConsolidatedView)
-                    <span class="badge-mode consolidated">Consolidated</span>
-                @elseif($totalCheckedCount > 1)
-                    <span class="badge-mode scope" title="Multi-entity aggregated view active">{{ $totalCheckedCount }} in Scope</span>
-                @endif
-            </div>
-            @if(!$isConsolidatedView && $currentBranch)
-                <div class="entity-btn-branch">
-                    <i class="ph ph-caret-right entity-sep"></i>
-                    <span class="branch-name" title="{{ $currentBranch->branch_name }}">{{ $currentBranch->branch_name }}</span>
-                    @if($currentBranch->branch_type === 'Central Commissary' || str_contains(strtolower($currentBranch->branch_name), 'commissary'))
-                        <span class="badge-branch-type commissary">HQ / Commissary</span>
-                    @elseif($currentBranch->branch_type === 'Warehouse')
-                        <span class="badge-branch-type warehouse">Warehouse</span>
-                    @else
-                        <span class="badge-branch-type store">Store</span>
-                    @endif
-                </div>
-            @endif
-        </div>
+        @if($currentCompany && $currentCompany->company_logo)
+            <img src="{{ asset('storage/' . $currentCompany->company_logo) }}" alt="Logo" class="entity-logo-mini">
+        @else
+            <i class="ph {{ $isConsolidatedView ? 'ph-stack' : 'ph-buildings' }}"></i>
+        @endif
+        
+        <span class="company-name" title="{{ $currentCompany?->company_trade_name ?: $currentCompany?->company_legal_name }}">
+            {{ $currentCompany ? ($currentCompany->company_trade_name ?: $currentCompany->company_legal_name) : 'Select Company' }}
+        </span>
+
+        @if(!$isConsolidatedView && $currentBranch)
+            <span class="entity-sep">•</span>
+            <span class="branch-name" title="{{ $currentBranch->branch_name }}">{{ $currentBranch->branch_name }}</span>
+        @endif
+
+        @if($isConsolidatedView)
+            <span class="badge-mode consolidated">Consolidated</span>
+        @elseif($totalCheckedCount > 1)
+            <span class="badge-mode scope" title="Multi-entity aggregated view active">{{ $totalCheckedCount }} in Scope</span>
+        @endif
+
         <i class="ph ph-caret-down entity-chevron"></i>
     </button>
 
@@ -246,133 +235,108 @@
     z-index: 100;
 }
 
-/* Header Trigger Button (Matches Ambient Pill Styling) */
+/* Header Trigger Button (Matches .header-date-badge Exactly) */
 .entity-switcher-btn {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 10px;
-    padding: 5px 14px 5px 8px;
-    background: rgba(255, 255, 255, 0.78);
+    gap: 8px;
+    padding: 6px 14px;
+    background: rgba(255, 255, 255, 0.72);
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
     border: 1px solid rgba(226, 232, 240, 0.95);
     border-radius: 9999px;
     cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #334155;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
-    color: #0f172a;
+    letter-spacing: 0.01em;
+    user-select: none;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     font-family: inherit;
+    line-height: normal;
 }
 
 .entity-switcher-btn:hover {
-    background: rgba(255, 255, 255, 0.98);
-    border-color: rgba(168, 85, 247, 0.35);
-    box-shadow: 0 4px 14px rgba(168, 85, 247, 0.08);
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(168, 85, 247, 0.3);
+    box-shadow: 0 4px 12px rgba(168, 85, 247, 0.08);
 }
 
 .entity-switcher-btn.is-consolidated {
-    border-color: rgba(129, 140, 248, 0.5);
+    border-color: rgba(129, 140, 248, 0.4);
     background: rgba(245, 243, 255, 0.85);
 }
 
-.entity-btn-icon {
-    width: 30px;
-    height: 30px;
+.entity-switcher-btn > i:first-child {
+    font-size: 16px;
+    color: #4f46e5;
     display: flex;
     align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, rgba(236, 72, 153, 0.14) 0%, rgba(168, 85, 247, 0.20) 100%);
-    color: #9333ea;
-    border: 1px solid rgba(168, 85, 247, 0.2);
-    border-radius: 9999px;
-    font-size: 14px;
     flex-shrink: 0;
 }
 
 .entity-logo-mini {
-    width: 28px;
-    height: 28px;
+    width: 18px;
+    height: 18px;
     object-fit: contain;
-    border-radius: 9999px;
-}
-
-.entity-btn-content {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    text-align: left;
-    max-width: 260px;
-}
-
-.entity-btn-company {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    line-height: 1.2;
+    border-radius: 4px;
+    flex-shrink: 0;
 }
 
 .company-name {
     font-size: 12.5px;
     font-weight: 600;
-    color: #0f172a;
-    max-width: 170px;
+    color: #334155;
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.entity-sep {
+    color: #cbd5e1;
+    font-size: 10px;
+    margin: 0 1px;
+    display: inline-flex;
+    align-items: center;
+    user-select: none;
+}
+
+.branch-name {
+    font-size: 12px;
+    font-weight: 500;
+    color: #64748b;
+    max-width: 150px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
 .badge-mode.consolidated {
-    font-size: 9.5px;
+    font-size: 10px;
     font-weight: 600;
-    padding: 1.5px 6px;
+    padding: 1.5px 7px;
     border-radius: 9999px;
     background: #ede9fe;
     color: #6366f1;
+    white-space: nowrap;
+    line-height: 1.2;
+    margin-left: 2px;
 }
 
 .badge-mode.scope {
-    font-size: 9.5px;
+    font-size: 10px;
     font-weight: 600;
-    padding: 1.5px 6px;
+    padding: 1.5px 7px;
     border-radius: 9999px;
     background: rgba(16, 185, 129, 0.12);
     color: #047857;
-    border: 1px solid rgba(16, 185, 129, 0.2);
-}
-
-.entity-btn-branch {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 11px;
-    color: #64748b;
-    line-height: 1.2;
-    margin-top: 1px;
-}
-
-.entity-sep {
-    font-size: 10px;
-    color: #94a3b8;
-}
-
-.branch-name {
-    max-width: 140px;
-    overflow: hidden;
-    text-overflow: ellipsis;
     white-space: nowrap;
-    font-weight: 500;
+    line-height: 1.2;
+    margin-left: 2px;
 }
-
-.badge-branch-type {
-    font-size: 9.5px;
-    padding: 1px 5px;
-    border-radius: 4px;
-    font-weight: 600;
-}
-
-.badge-branch-type.commissary { background: #e0f2fe; color: #0284c7; }
-.badge-branch-type.warehouse { background: #fef3c7; color: #b45309; }
-.badge-branch-type.store { background: #f1f5f9; color: #475569; }
 
 .entity-chevron {
     font-size: 12px;
@@ -380,6 +344,8 @@
     transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     flex-shrink: 0;
     margin-left: 2px;
+    display: flex;
+    align-items: center;
 }
 
 .entity-context-switcher.is-open .entity-chevron {
