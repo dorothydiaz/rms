@@ -1,0 +1,132 @@
+# Responsive & mobile-first
+
+The single most common shipped defect is a layout that looks right at 1440px and falls
+apart at 360px. Mobile is not a smaller desktop -- it is the primary canvas. Design the
+360px view first; desktop is the enhancement. A layout that has not been seen at 360px
+is not finished.
+
+## Principles
+
+1. **Mobile-first.** Author the 360-390px layout first, then add complexity upward with
+   `@media (min-width: ...)`. Never design wide and "make it responsive" after.
+2. **Zero horizontal scroll, ever.** On a phone, the page never scrolls sideways. This is
+   non-negotiable, not a nice-to-have. It is the first thing to verify and the most common
+   thing to get wrong.
+3. **Every element has a defined behavior at every width.** Nothing is left to the
+   browser's default reflow. You decide what each block does as it narrows -- you do not
+   discover it.
+4. **Content reflows; it does not shrink.** Text wraps and stacks; columns become rows. Text
+   never scales down to illegibility, and nothing is clipped or cut off to "make it fit."
+5. **Touch targets >= 44x44px.** Fingers are not cursors. Links, buttons, and form controls
+   need real hit area and spacing on mobile.
+6. **Reflow by DESIGN, never break by ACCIDENT** (the distinction that matters most).
+   Intentional reflow is good: a row of claims collapsing to one compact centered line (or
+   showing fewer), a 2-column section becoming 1 column with the image on top. Accidental break
+   is the failure: a brand
+   wordmark splitting mid-name, nav items wrapping into ragged multiple rows, a label
+   clipping, content overflowing its card. Same mechanism ("it wrapped") -- opposite
+   outcomes. **The test:** does the narrow state look composed and intended, or does it look
+   like it fell apart? Engineer the intended narrow state; never let the browser improvise it.
+7. **Sticky chrome budget.** Fixed/sticky top chrome on mobile must stay minimal -- ideally a
+   single `~64px` bar, hard ceiling `~96px`. A tall sticky header is a failure: it crushes the
+   viewport and reads as broken. Only what MUST persist sticks (the primary nav + its CTA);
+   decorative/utility bars (ratings, announcements) are NOT sticky -- they scroll away. Note
+   that "reflow by design" is not a license to grow: stacking a claims row into four centered
+   lines is composed but it bloats the header -- keep secondary bars to one compact line and
+   out of the sticky container.
+
+## The horizontal-scroll killers (memorize these -- they cause ~all of it)
+
+| Cause | Fix |
+|---|---|
+| `width: 100vw` (includes the scrollbar's width -> overflows) | `width: 100%` |
+| Fixed px widths wider than the viewport | `max-width: Npx; width: 100%` |
+| Unconstrained media (`img`/`video`/`iframe`) | `max-width: 100%; height: auto; display: block` |
+| Long unbroken strings (URLs, tokens, emails) | `overflow-wrap: anywhere` |
+| `white-space: nowrap` on real prose | only for short labels/pills, never sentences |
+| Flex/grid child that won't shrink | `min-width: 0` on the child (the #1 hidden cause inside flex) |
+| Absolutely-positioned content escaping its box | contain it; `position: relative` parent + `overflow: clip` |
+| Wide tables | wrap in `overflow-x: auto` container, or collapse to cards |
+| Fixed column counts in a grid | `grid-template-columns: repeat(auto-fit, minmax(min(100%, Npx), 1fr))` |
+
+## Breakpoints
+
+- **Think in content, not devices.** Add a breakpoint where the layout *starts to strain*,
+  not at "an iPhone is 390px." If a 3-card row gets cramped at 900px, break at 900px.
+- Sane defaults when you have no better signal: `<=640` phone (1 column), `641-1024` tablet,
+  `>=1024` desktop. These are starting points, not law.
+- Mobile-first queries: the base styles ARE the mobile layout; `min-width` queries add columns
+  and scale upward. Avoid `max-width` queries that try to undo desktop on mobile.
+
+## Fluid type & space
+
+- Use `clamp(min, preferred, max)` for display type so it scales across the range without a
+  dozen breakpoints: `font-size: clamp(1.9rem, 6vw, 3.5rem)`. A 56px headline must clamp down
+  to ~30-34px on a phone -- never ship desktop display sizes to 360px.
+- Section padding should also breathe down: generous on desktop, tighter on mobile (clamp or
+  a smaller mobile value), so a hero isn't 160px of dead space on a phone.
+
+## Viewport units (the traps)
+
+- `100vw` overflows by the scrollbar width on desktop -> use `100%` for widths.
+- `100vh` is wrong on mobile (it ignores the browser chrome, causing jump/cutoff) -> use
+  `100svh` or `100dvh` for full-height sections.
+
+## Verify -- this is mandatory, and it must be REAL
+
+A gate that cannot render has NOT verified. The recurring failure was a check that reported
+"green" on a page that horizontally scrolled on a real phone -- a false green is worse than
+no gate. So verification renders the page for real and is honest when it can't.
+
+**Run the real verifier** (headless Chrome, true mobile viewports, measured -- not guessed):
+```bash
+node scripts/verify-responsive.mjs <file-or-url> 360,390 <out-dir>
+```
+It sets a TRUE device viewport (via the DevTools Emulation domain, self-calibrated so a lying
+viewport is caught), measures `document.documentElement.scrollWidth` vs the device width,
+sums the sticky-chrome height, and **writes a screenshot per width so the output can be SEEN**.
+
+Honesty contract (the whole point):
+- **exit 0** = VERIFIED clean.
+- **exit 1** = VERIFIED and FAILED -- a real defect: the page renders wider than the device
+  (horizontal scroll; usual cause a fixed min-width wider than the device, sometimes a bad
+  `<meta name="viewport">`), or the sticky chrome exceeds `~96px`. Fix the named cause.
+- **exit 2** = DEGRADED / UNVERIFIED -- no Chrome, or the viewport could not be trusted. You
+  have NOT verified. Eyeball on a real device; **never claim passed.**
+
+What the verifier cannot judge: WRAP of a short label/wordmark (a wrapped nav reads
+`scrollWidth == innerWidth`) and the *feel* of the page. So also: open the screenshots it
+wrote and LOOK, and deploy + eyeball on a real phone. An un-seen mobile layout is unverified
+-- treat "I think it's fine" as "it is broken until seen." A green from a verifier that
+DEGRADED is not a green.
+
+## Do / Don't
+
+- **Do** build and test the 360px layout first; **don't** retrofit responsiveness onto a
+  desktop comp.
+- **Do** give every multi-column block an explicit single-column mobile state; **don't** rely
+  on the default flex/grid wrap to "handle it."
+- **Do** clamp display type and section padding; **don't** ship desktop sizes to phones.
+- **Do** constrain every image with `max-width: 100%`; **don't** ever use `width: 100vw`.
+- **Do** make the reflowed state look intentional; **don't** accept a layout that merely
+  "doesn't crash" on mobile.
+- **Do** keep mobile sticky chrome to one ~64px bar (ceiling ~96px) -- only the nav + CTA
+  persist; **don't** pin a tall header or leave a decorative/utility bar in the sticky container.
+
+## Patterns
+
+### Stacking hero
+```css
+.hero { display: grid; grid-template-columns: 1fr; gap: 2rem; }
+@media (min-width: 900px) { .hero { grid-template-columns: 1.1fr 0.9fr; } }
+.hero h1 { font-size: clamp(2rem, 6vw, 3.5rem); }
+.hero img { max-width: 100%; height: auto; display: block; }
+```
+
+### Column-count-free card grid (never a fixed N that overflows)
+```css
+.cards { display: grid; gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); }
+```
+At 360px each card is full-width automatically; no media query needed, and it can never
+force horizontal scroll.

@@ -333,10 +333,20 @@
                 <span class="submenu-title">Settings</span>
             </div>
             <div class="nav-section">
-                <a href="{{ route('config.business-settings') }}" class="nav-item{{ request()->routeIs('config.business-settings') ? ' active' : '' }}">
-                    <i class="ph ph-storefront"></i>
-                    <span>Business Settings</span>
-                </a>
+                @php $bizActive = request()->routeIs('config.companies-branches.*', 'config.business-settings*'); @endphp
+                <div class="nav-item-group" data-group-id="config-biz">
+                    <a href="{{ route('config.companies-branches.index') }}" class="nav-item{{ $bizActive ? ' active' : '' }}">
+                        <i class="ph ph-storefront"></i>
+                        <span>Business Settings</span>
+                    </a>
+                    <button type="button" class="add-btn"><i class="ph {{ $bizActive ? 'ph-minus' : 'ph-plus' }}"></i></button>
+                </div>
+                <div class="sub-nav{{ $bizActive ? ' expanded' : '' }}">
+                    <a href="{{ route('config.companies-branches.index') }}" class="sub-nav-item{{ request()->routeIs('config.companies-branches.*', 'config.business-settings*') ? ' active' : '' }}" title="Enterprise multi-entity company profile, branch directory, and legal registrations">
+                        <i class="ph ph-buildings" style="margin-right: 6px; font-size: 13px;"></i>
+                        <span>Companies & Branches</span>
+                    </a>
+                </div>
             </div>
             <div class="nav-section">
                 @php $adminActive = request()->routeIs('hr.admin.*', 'hr.users-auth'); @endphp

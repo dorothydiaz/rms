@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="en">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-Z371T0DBW5"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-Z371T0DBW5');
+</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Why AI design defaults to rounded-2xl and soft shadows</title>
+<meta name="description" content="Big border radius, soft drop shadows on every card, a faint gradient border. AI-generated UI has a texture, and it is the same texture every time. Why the models reach for it, and how to set radius and elevation with intent.">
+<link rel="canonical" href="https://uxskill.laithjunaidy.com/blog/ai-design-rounded-corners-shadows.html">
+<meta property="og:title" content="Why AI design has the same surface texture every time">
+<meta property="og:description" content="Big corner radius, a soft diffuse shadow on every card, a 1px translucent border. The shadcn-default texture is an AI tell. The mechanism, and the fix.">
+<meta property="og:image" content="https://uxskill.laithjunaidy.com/og/home.png">
+<meta property="og:url" content="https://uxskill.laithjunaidy.com/blog/ai-design-rounded-corners-shadows.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Why AI design has the same surface texture every time">
+<meta name="twitter:description" content="Big radius plus a soft drop shadow on every card is an AI fingerprint. Here is why the models reach for it, and how to set radius and elevation with intent.">
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","headline":"Why AI design defaults to rounded-2xl and soft shadows","datePublished":"2026-05-29","author":{"@type":"Person","name":"Laith Aljunaidy"},"publisher":{"@type":"Organization","name":"ux-skill"},"image":"https://uxskill.laithjunaidy.com/og/home.png","mainEntityOfPage":"https://uxskill.laithjunaidy.com/blog/ai-design-rounded-corners-shadows.html","inLanguage":"en"}
+</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://uxskill.laithjunaidy.com/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://uxskill.laithjunaidy.com/blog/"},{"@type":"ListItem","position":3,"name":"Why AI design defaults to rounded-2xl and soft shadows","item":"https://uxskill.laithjunaidy.com/blog/ai-design-rounded-corners-shadows.html"}]}
+</script>
+
+<style>
+  :root {
+    --canvas: #07080a; --surface: #0e1014; --ink: #f6f7f9; --body: #c0c3c9;
+    --muted: #8a8f96; --accent: #f59e0b; --hairline: rgba(255,255,255,0.08);
+    --display: 'Bricolage Grotesque', system-ui, sans-serif;
+    --sans: 'Inter', system-ui, sans-serif;
+    --mono: 'JetBrains Mono', ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--canvas); color: var(--body); font-family: var(--sans); line-height: 1.65; overflow-x: clip; }
+  a { color: var(--accent); }
+  .wrap { max-width: 720px; margin: 0 auto; padding: clamp(20px, 4vw, 56px); }
+  header.post { margin-bottom: 48px; padding-bottom: 24px; border-bottom: 1px solid var(--hairline); }
+  .eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+  h1 { font-family: var(--display); font-size: clamp(32px, 5vw, 52px); line-height: 1.05; letter-spacing: -0.02em; color: var(--ink); margin-bottom: 18px; font-weight: 600; }
+  h1 em { font-style: italic; color: var(--accent); }
+  .lede { font-size: 19px; line-height: 1.55; color: var(--body); max-width: 60ch; }
+  h2 { font-family: var(--display); font-size: 28px; letter-spacing: -0.02em; color: var(--ink); margin: 56px 0 18px; }
+  h3 { font-family: var(--display); font-size: 21px; color: var(--ink); margin: 32px 0 12px; }
+  p { margin-bottom: 18px; font-size: 16.5px; max-width: 60ch; }
+  ul, ol { margin: 0 0 18px 22px; }
+  li { margin-bottom: 8px; max-width: 60ch; }
+  code { font-family: var(--mono); font-size: 14px; background: rgba(255,255,255,0.06); padding: 1px 6px; border-radius: 4px; color: var(--ink); }
+  pre { background: var(--surface); border: 1px solid var(--hairline); border-radius: 10px; padding: 18px 22px; overflow-x: auto; margin: 18px 0; }
+  pre code { background: transparent; padding: 0; font-size: 13.5px; line-height: 1.6; color: var(--body); }
+  blockquote { border-left: 2px solid var(--accent); padding-left: 18px; margin: 28px 0; color: var(--ink); font-style: italic; }
+  table { width: 100%; border-collapse: collapse; margin: 18px 0; font-size: 14.5px; }
+  th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--hairline); }
+  th { color: var(--ink); font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
+  .nav { padding: 18px 0; border-bottom: 1px solid var(--hairline); }
+  .nav__row { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; max-width: 1100px; margin: 0 auto; padding: 0 clamp(20px, 4vw, 48px); }
+  .nav__brand { font-family: var(--display); font-weight: 700; font-size: 17px; color: var(--ink); }
+  .nav__link { font-family: var(--mono); font-size: 11px; letter-spacing: 0.10em; text-transform: uppercase; color: var(--muted); }
+  footer { margin-top: 64px; padding-top: 28px; border-top: 1px solid var(--hairline); color: var(--muted); font-family: var(--mono); font-size: 11.5px; text-align: center; }
+  footer p { margin-inline: auto; }
+</style>
+<style id="usknav-css">  .sr-only,.skip-link:not(:focus){position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+  .skip-link:focus{position:fixed;top:8px;inset-inline-start:8px;width:auto;height:auto;clip:auto;padding:8px 14px;background:#f59e0b;color:#07080a;border-radius:6px;z-index:200;font-family:'Inter',system-ui,sans-serif;font-size:13px}
+  .usknav{position:sticky;top:0;z-index:100;display:flex;align-items:center;gap:18px;
+    padding:0 clamp(16px,4vw,48px);block-size:56px;background:rgba(7,8,10,0.86);
+    backdrop-filter:saturate(150%) blur(14px);-webkit-backdrop-filter:saturate(150%) blur(14px);
+    border-block-end:1px solid rgba(255,255,255,0.08);font-family:'Inter',system-ui,sans-serif}
+  .usknav__brand{font-family:'Bricolage Grotesque','Inter',sans-serif;font-weight:700;font-size:17px;
+    color:#f6f7f9;text-decoration:none;letter-spacing:-0.01em;margin-inline-end:auto;padding:6px 2px}
+  .usknav__links{display:flex;align-items:center;gap:clamp(9px,1.1vw,17px)}
+  .usknav__link{font-family:ui-monospace,'JetBrains Mono',monospace;font-size:11.5px;letter-spacing:0.08em;
+    text-transform:uppercase;color:#8a8f96;text-decoration:none;white-space:nowrap;
+    padding-block:8px;transition:color 140ms ease;}
+  .usknav__link:hover,.usknav__link[aria-current="page"]{color:#f6f7f9}
+  .usknav__langs{position:relative}
+  .usknav__langs>summary{list-style:none;cursor:pointer;display:inline-flex;align-items:center;gap:5px;
+    color:#8a8f96;padding:8px 6px;transition:color 140ms ease;min-block-size:24px}
+  .usknav__langs>summary::-webkit-details-marker{display:none}
+  .usknav__langs>summary:hover{color:#f6f7f9}
+  .usknav__langs-menu{position:absolute;top:calc(100% + 8px);inset-inline-end:0;min-inline-size:184px;
+    max-block-size:60vh;overflow-y:auto;background:#0e1014;border:1px solid rgba(255,255,255,0.1);
+    border-radius:10px;padding:6px;display:grid;gap:1px;box-shadow:0 20px 40px -20px rgba(0,0,0,0.6);z-index:130}
+  .usknav__langs-menu a{font-family:'Inter',sans-serif;font-size:12.5px;color:#c0c3c9;text-decoration:none;padding:7px 10px;border-radius:6px}
+  .usknav__langs-menu a:hover{background:rgba(255,255,255,0.06);color:#f6f7f9}
+  .usknav__star{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;
+    font-family:ui-monospace,'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.06em;text-transform:uppercase;
+    color:#f59e0b;text-decoration:none;border:1px solid #f59e0b;border-radius:999px;padding:7px 13px;transition:background-color 140ms ease;}
+  .usknav__star:hover{background:rgba(245,158,11,0.12)}
+  .usknav__burger{display:none;align-items:center;background:none;border:0;cursor:pointer;padding:7px;color:#f6f7f9;min-block-size:24px;min-inline-size:24px}
+  .usknav__burger svg{display:block}
+  .usknav__drawer{position:fixed;inset:0;z-index:120;background:#050608;display:none;flex-direction:column;
+    padding:20px clamp(16px,5vw,40px) 40px;transform:translateX(100%);
+    transition:transform 240ms cubic-bezier(0.16,1,0.3,1);overflow-y:auto;visibility:hidden}
+  .usknav__drawer.is-open{display:flex;transform:translateX(0);visibility:visible}
+  .usknav__drawer-top{display:flex;justify-content:space-between;align-items:center;block-size:56px;
+    border-block-end:1px solid rgba(255,255,255,0.1);margin-block-end:18px}
+  .usknav__drawer-close{background:none;border:0;cursor:pointer;color:#f6f7f9;padding:7px;min-block-size:24px;min-inline-size:24px}
+  .usknav__drawer-links{display:flex;flex-direction:column}
+  .usknav__drawer-links a{font-family:'Bricolage Grotesque','Inter',sans-serif;font-size:clamp(22px,5.5vw,32px);
+    color:#f6f7f9;text-decoration:none;padding:8px 0;border-block-end:1px solid rgba(255,255,255,0.06)}
+  .usknav__drawer-links a:hover{color:#f59e0b}
+  .usknav__drawer-star{margin-block-start:20px;align-self:flex-start}
+  .usknav__drawer-langlabel{font-family:ui-monospace,'JetBrains Mono',monospace;font-size:11px;
+    letter-spacing:0.1em;text-transform:uppercase;color:#8a8f96;margin:24px 0 10px}
+  .usknav__drawer-langs{display:flex;flex-wrap:wrap;gap:10px 18px}
+  .usknav__drawer-langs a{font-family:'Inter',sans-serif;font-size:13px;color:#8a8f96;text-decoration:none;padding:4px 0}
+  .usknav__drawer-langs a:hover{color:#f6f7f9}
+  /* Focus-visible: amber ring on every control (WCAG 2.4.7, >=3:1 on dark). */
+  .usknav__brand:focus-visible,.usknav__link:focus-visible,.usknav__langs>summary:focus-visible,
+  .usknav__star:focus-visible,.usknav__burger:focus-visible,.usknav__drawer-close:focus-visible,
+  .usknav__langs-menu a:focus-visible,.usknav__drawer-links a:focus-visible,.usknav__drawer-langs a:focus-visible{
+    outline:2px solid #f59e0b;outline-offset:3px;border-radius:4px}
+  @media (max-width:1100px){.usknav__links,.usknav__langs,.usknav__star{display:none}.usknav__burger{display:inline-flex}}
+  @media (prefers-reduced-motion:reduce){.usknav__drawer{transition:none;}}</style>
+<style>.docfig{margin:32px 0;border:1px solid rgba(255,255,255,0.10);border-radius:14px;overflow:hidden;background:#0b0d12}.docfig img{display:block;width:100%;height:auto}.docfig figcaption{margin:0;padding:12px 16px;font-size:13px;line-height:1.5;color:#8a8f96;border-top:1px solid rgba(255,255,255,0.08)}.docfig--narrow{max-width:720px}</style>
+</head>
+<body>
+
+
+
+
+<header class="usknav" aria-label="Site navigation">
+  <a class="usknav__brand" href="/">uxskill</a>
+  <nav class="usknav__links" aria-label="Primary">
+    <a class="usknav__link" href="/brands.html">Brands</a>
+    <a class="usknav__link" href="/anti-patterns.html">Anti-patterns</a>
+    <a class="usknav__link" href="/commands.html">Commands</a>
+    <a class="usknav__link" href="/mcp.html">MCP</a>
+    <a class="usknav__link" href="/compare.html">Compare</a>
+    <a class="usknav__link" href="/showcase.html">Showcase</a>
+    <a class="usknav__link" href="/blog/">Blog</a>
+    <a class="usknav__link" href="/about.html">About</a>
+    <a class="usknav__link" href="/faq.html">FAQ</a>
+    <a class="usknav__link" href="/roadmap.html">Roadmap</a>
+  </nav>
+  <details class="usknav__langs">
+    <summary aria-label="Choose language"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></summary>
+    <div class="usknav__langs-menu">
+      <a href="/" lang="en">English</a>
+      <a href="/zh-CN/" lang="zh-CN">简体中文</a>
+      <a href="/zh-TW/" lang="zh-TW">繁體中文</a>
+      <a href="/ja/" lang="ja">日本語</a>
+      <a href="/ko/" lang="ko">한국어</a>
+      <a href="/hi/" lang="hi">हिन्दी</a>
+      <a href="/id/" lang="id">Bahasa Indonesia</a>
+      <a href="/vi/" lang="vi">Tiếng Việt</a>
+      <a href="/th/" lang="th">ไทย</a>
+      <a href="/ar/" lang="ar" dir="rtl">العربية</a>
+      <a href="/es/" lang="es">Español</a>
+      <a href="/fr/" lang="fr">Français</a>
+      <a href="/de/" lang="de">Deutsch</a>
+      <a href="/pt-BR/" lang="pt-BR">Português</a>
+      <a href="/ru/" lang="ru">Русский</a>
+      <a href="/tr/" lang="tr">Türkçe</a>
+      <a href="/it/" lang="it">Italiano</a>
+    </div>
+  </details>
+  <a class="usknav__star" href="https://github.com/Laith0003/ux-skill" rel="noopener">Star on GitHub</a>
+  <button class="usknav__burger" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="usknav-drawer"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+</header>
+<div class="usknav__drawer" id="usknav-drawer" role="dialog" aria-modal="true" aria-label="Site menu">
+  <div class="usknav__drawer-top">
+    <a class="usknav__brand" href="/">uxskill</a>
+    <button class="usknav__drawer-close" type="button" aria-label="Close menu"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+  </div>
+  <nav class="usknav__drawer-links" aria-label="All pages">
+    <a href="/brands.html">Brands</a>
+      <a href="/anti-patterns.html">Anti-patterns</a>
+      <a href="/commands.html">Commands</a>
+      <a href="/mcp.html">MCP</a>
+      <a href="/compare.html">Compare</a>
+      <a href="/showcase.html">Showcase</a>
+      <a href="/blog/">Blog</a>
+      <a href="/about.html">About</a>
+      <a href="/faq.html">FAQ</a>
+      <a href="/roadmap.html">Roadmap</a>
+  </nav>
+  <a class="usknav__star usknav__drawer-star" href="https://github.com/Laith0003/ux-skill" rel="noopener">Star on GitHub</a>
+  <div class="usknav__drawer-langlabel">Language</div>
+  <div class="usknav__drawer-langs">
+      <a href="/" lang="en">English</a>
+      <a href="/zh-CN/" lang="zh-CN">简体中文</a>
+      <a href="/zh-TW/" lang="zh-TW">繁體中文</a>
+      <a href="/ja/" lang="ja">日本語</a>
+      <a href="/ko/" lang="ko">한국어</a>
+      <a href="/hi/" lang="hi">हिन्दी</a>
+      <a href="/id/" lang="id">Bahasa Indonesia</a>
+      <a href="/vi/" lang="vi">Tiếng Việt</a>
+      <a href="/th/" lang="th">ไทย</a>
+      <a href="/ar/" lang="ar" dir="rtl">العربية</a>
+      <a href="/es/" lang="es">Español</a>
+      <a href="/fr/" lang="fr">Français</a>
+      <a href="/de/" lang="de">Deutsch</a>
+      <a href="/pt-BR/" lang="pt-BR">Português</a>
+      <a href="/ru/" lang="ru">Русский</a>
+      <a href="/tr/" lang="tr">Türkçe</a>
+      <a href="/it/" lang="it">Italiano</a>
+  </div>
+</div>
+<div class="wrap">
+<header class="post">
+<p class="eyebrow">FIELD NOTES · 2026-05-29</p>
+<h1>Why AI design has <em>the same surface texture</em> every time.</h1>
+<p class="lede">Look at a screen an unsupervised model produced and you can feel it before you can name it: every card has a big corner radius, a soft diffuse shadow underneath, a 1px translucent border, and now and then a faint gradient along the edge. It is a texture, and it is the same texture every time. The surface is not wrong, exactly. It is generic: soft and weightless, the look of a thing that was averaged rather than designed.</p>
+</header>
+<figure class="docfig">
+  <img src="/screenshots/terminal-ux-lint.webp" width="1600" height="1000" alt="A terminal running ux lint on a docs folder: two high-severity findings, a purple-to-blue gradient and leftover placeholder text, each shown with its file, line and fix, then exit code 1." loading="lazy" decoding="async">
+  <figcaption>Surface-texture defaults are regex-detectable, so the linter can flag them before they ship.</figcaption>
+</figure>
+
+<h2>The texture is a fingerprint</h2>
+<p>Three traits show up together so reliably that spotting one lets you predict the rest:</p>
+<ul>
+<li>A large corner radius on everything: buttons, inputs, cards, modals, the whole surface rounded to the same generous curve.</li>
+<li>A soft, diffuse drop shadow under every card, low opacity and a wide blur, applied whether or not the element is meant to float.</li>
+<li>A 1px translucent border, often paired with a faint gradient stroke, sitting on top of the shadow as a second depth cue doing the same job.</li>
+</ul>
+<p>None of these is a crime on its own. Stacked on every element at once, they read as a single material: pillowy, frosted, and indistinguishable from the last ten interfaces a model generated. The texture is the tell, the way the violet gradient is a tell.</p>
+
+<h2>Where the texture comes from</h2>
+<p>It is the same mechanism behind every slop signature: the model regresses to the centroid of its training data, and for component surfaces that centroid is sharply defined.</p>
+<p><strong>The framework defaults set the curve.</strong> shadcn/ui and the Tailwind ecosystem ship a card with a rounded corner and a soft shadow as the out-of-the-box look. When a model is asked for "a card" with no spec, the path of least resistance is the default the docs themselves render. The default becomes the answer, and the answer becomes a habit.</p>
+<p><strong>The popular-shot aesthetic reinforces it.</strong> The glassmorphism wave on Dribbble (frosted panels, soft glows, gentle rounding) photographs beautifully in a thumbnail. The model learned that this surface correlates with "polished," so when it plays it safe, it reaches for the soft, rounded, shadowed card.</p>
+<blockquote>The soft card is safe precisely because it is average. Nothing about it is a decision: radius, elevation, and border were all inherited from the default, so the surface belongs to no brand and no density.</blockquote>
+
+<h2>Why soft and weightless reads as generic</h2>
+<p>Radius and elevation are not cosmetic. They carry meaning, and the default throws that meaning away.</p>
+<p>Corner radius sits on a spectrum. A sharp radius reads precise, editorial, instrument-like: the surface of a tool you trust with real work. A large radius reads friendly, approachable, consumer: the surface of an app you hand to anyone. The default picks the friendly end for everything, so a fintech ledger and a kids' game wear the same soft corners, and neither says anything specific.</p>
+<p>Elevation is worse. A drop shadow is supposed to mean one thing: this layer is above that layer. A menu floats over the page; a dialog floats over the menu. When every card carries the same shadow, depth stops being information and becomes decoration: the surface looks busy and floaty while telling you nothing about what is actually on top.</p>
+
+<h2>Radius and elevation as decisions</h2>
+<p>The fix is to treat both as tokens tied to brand and density, not as inherited defaults. ux-skill encodes them in the style and components manifests, where each style carries its own radius scale and shadow set rather than one global softness.</p>
+<table>
+<thead><tr><th>style</th><th>radius</th><th>elevation intent</th></tr></thead>
+<tbody>
+<tr><td>Editorial / instrument</td><td>2-4px</td><td>Hairline borders, no shadow; depth from layout, not glow</td></tr>
+<tr><td>Standard app</td><td>8-12px</td><td>One quiet shadow reserved for true overlays (menu, dialog)</td></tr>
+<tr><td>Consumer / friendly</td><td>16-20px</td><td>Soft shadow on cards that genuinely lift; flat surfaces stay flat</td></tr>
+</tbody>
+</table>
+<p>The density axis drives the radius directly. Push density high for a data-dense surface and the synthesizer pulls the radius down toward the sharp, instrument end: soft 20px corners waste pixels and blur the grid a cockpit needs. Pull density low for an airy marketing page and the radius can open up, because the surface has room to feel friendly. Radius is not a constant you pick once; it falls out of how dense the surface is meant to be.</p>
+<p>Elevation gets the same treatment: shadows map to real z-layering. A token exists for the overlay tier and is spent only there. A flat card stays flat. A border and a shadow never stack to do the same job twice, because that is two depth cues for one layer: the redundancy that makes the default surface feel padded.</p>
+
+<h2>What the linter flags</h2>
+<p>The discipline is encoded, not left to a taste reminder. The anti-slop linter ships rules aimed at exactly this texture.</p>
+<p>One rule matches the big-radius default in its utility-class form and its raw-value form, and flags it as the generic-card tell: radius applied as a default instead of chosen. Another catches shadow-only depth: a multi-layer stacked drop shadow doing decorative work, the soft glow under every card. A third catches the colored card glow, and the glassmorphism rule fires when frosted blur is layered across the whole surface with no real depth behind it. Run <code>uxskill lint</code> and the inherited texture gets caught before it ships, the same way the purple gradient does.</p>
+
+<h2>A card brief, compiled</h2>
+<p>You ask for: <code>surface=card, industry=fintech, tone=["serious", "precise"]</code>.</p>
+<ol>
+<li>Density resolves high (the "precise" tone plus a fintech seed) &rarr; the radius scale drops to a sharp <code>4px</code>, not the inherited soft corner.</li>
+<li>Elevation resolves to borders: a single hairline separates the card from the canvas, and the shadow token is held back for overlays only.</li>
+<li>The faint gradient stroke is dropped: one border does the separation, so a second decorative edge is redundant.</li>
+<li>A consumer brief, run instead, opens the radius to <code>16px</code> and allows one soft shadow on cards that actually lift, while flat regions stay flat.</li>
+</ol>
+<p>Same request, run again next week, on a different machine: identical output. Deterministic, offline, no LLM in the engine.</p>
+
+<h2>The point</h2>
+<p>AI surfaces share a texture because radius and elevation were inherited from the framework default instead of chosen. Set them with intent (radius tied to brand and density, elevation mapped to real z-layering) and the surface stops reading as the average of every card a model has seen. Sharp can mean precise. Large can mean friendly. A shadow can mean above. The default means none of those, which is why it means generic.</p>
+<pre><code>pip install uxskill
+# then, in your AI coding tool:
+# /ux-recommend  : radius and elevation set by brand + density, not defaults</code></pre>
+
+<h2>Related</h2>
+<ul>
+<li><a href="/blog/why-ai-uses-purple-gradients.html">The purple-gradient tell</a></li>
+<li><a href="/blog/why-ai-uses-inter-font.html">The Inter tell</a></li>
+<li><a href="/blog/ai-design-fingerprints-list.html">The full list of AI design tells</a></li>
+<li><a href="/anti-patterns.html">The anti-pattern catalogue</a></li>
+</ul>
+
+<footer>
+ux-skill v3.0 · THE BRAIN · MIT · no telemetry · no LLM · <a href="/">home</a> · <a href="https://github.com/Laith0003/ux-skill" rel="noopener">github</a>
+<p class="made-by">Made by <a href="https://laithjunaidy.com">Laith Aljunaidy</a>.</p></footer>
+
+</div>
+<script id="usknav-js">(function(){var d=document.getElementById('usknav-drawer');var b=document.querySelector('.usknav__burger');if(!d||!b)return;var c=d.querySelector('.usknav__drawer-close');function F(){return d.querySelectorAll('a[href],button:not([disabled])');}function set(v){d.classList.toggle('is-open',v);b.setAttribute('aria-expanded',v?'true':'false');document.body.style.overflow=v?'hidden':'';if(v){var f=c||F()[0];if(f)f.focus();}else{b.focus();}}b.addEventListener('click',function(){set(true);});if(c)c.addEventListener('click',function(){set(false);});d.addEventListener('click',function(e){if(e.target.tagName==='A')set(false);});document.addEventListener('keydown',function(e){if(e.key==='Escape'&&d.classList.contains('is-open'))set(false);if(e.key==='Tab'&&d.classList.contains('is-open')){var f=F();if(!f.length)return;var a=f[0],z=f[f.length-1];if(e.shiftKey&&document.activeElement===a){e.preventDefault();z.focus();}else if(!e.shiftKey&&document.activeElement===z){e.preventDefault();a.focus();}}});var L=document.querySelector('.usknav__langs');if(L){document.addEventListener('click',function(e){if(L.open&&!L.contains(e.target))L.open=false;});L.addEventListener('keydown',function(e){if(e.key==='Escape')L.open=false;});}})();</script>
+</body>
+</html>

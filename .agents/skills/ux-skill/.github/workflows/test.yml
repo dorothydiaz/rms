@@ -1,0 +1,103 @@
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Least privilege: every job here only checks out and runs tests.
+permissions:
+  contents: read
+
+jobs:
+  python-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v7
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+      - name: Run pytest
+        run: pytest -v --tb=short
+      - name: Engine stats sanity
+        run: python -m engine.cli.main stats || true
+
+  data-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Validate every JSON in data/
+        run: |
+          python - <<'PY'
+          import json, sys
+          from pathlib import Path
+          errors = 0
+          for path in Path("data").rglob("*.json"):
+              try:
+                  with path.open() as f:
+                      json.load(f)
+              except json.JSONDecodeError as e:
+                  print(f"::error file={path}::Invalid JSON: {e}")
+                  errors += 1
+          sys.exit(1 if errors else 0)
+          PY
+
+  ga-tag-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Every docs/*.html must carry the GA4 tag
+        # Static site, no server-side includes: the analytics tag is inline per
+        # page. This fails the build if any page ships without it (the homepage
+        # itself was once missing it, silently undercounting GA). To fix locally:
+        #   python scripts/ensure-ga.py
+        run: python scripts/ensure-ga.py --check
+
+  emoji-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Scan plugin source for forbidden emoji
+        run: |
+          # SCAN: commands/, agents/, engine/, tests/, bin/, root .md files
+          # SKIP: references/brands/* (documents brands' own emoji usage),
+          #       data/anti-patterns.json (regex literals for detecting slop),
+          #       docs/launch/* (marketing copy),
+          #       landing/*.html docs/*.html (demo code blocks contain U+2713)
+          # WHITELIST: U+2713 (check mark dingbat) and U+2318 (command key)
+          #            -- both allowed per project rules
+          set +e
+          FOUND=0
+          for dir in commands agents engine tests bin; do
+            if [ -d "$dir" ]; then
+              if grep -rP '[\x{1F300}-\x{1F9FF}\x{2600}-\x{2712}\x{2714}-\x{27BF}]' \
+                --include='*.py' --include='*.json' --include='*.md' \
+                --include='*.html' --include='*.css' --include='*.ts' \
+                --include='*.js' --include='*.tsx' --include='*.jsx' \
+                "$dir"; then
+                FOUND=1
+              fi
+            fi
+          done
+          for f in README.md CHANGELOG.md PRIVACY.md CONTRIBUTING.md CODE_OF_CONDUCT.md; do
+            if [ -f "$f" ]; then
+              if grep -P '[\x{1F300}-\x{1F9FF}\x{2600}-\x{2712}\x{2714}-\x{27BF}]' "$f"; then
+                FOUND=1
+              fi
+            fi
+          done
+          if [ "$FOUND" -eq 1 ]; then
+            echo "::error::Forbidden emoji detected in plugin source"
+            exit 1
+          fi
+          echo "Scan clean"

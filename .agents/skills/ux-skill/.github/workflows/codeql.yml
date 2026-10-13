@@ -1,0 +1,55 @@
+name: codeql
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Weekly, Monday 05:23 UTC — catches newly-published CodeQL queries.
+    - cron: "23 5 * * 1"
+
+# Least privilege: CodeQL needs to write alerts and read the repo. Nothing else.
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    name: analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+      actions: read
+    strategy:
+      fail-fast: false
+      matrix:
+        # Interpreted languages only — Python engine + the Node CLI wrapper.
+        # No compiled code, so build-mode is "none" (no autobuild step).
+        language: [python, javascript-typescript]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: none
+          # security-focused: the security tab surfaces security issues, not
+          # code-quality lint (the repo has its own linter + test suite for that).
+          # paths-ignore scopes the scan to shipped product code (engine/, bin/).
+          # scripts/ are local, dev-only build helpers that drive a headless
+          # Chrome over the loopback debug port; CodeQL's js/file-access-to-http
+          # flags the Chrome-written port file flowing into a 127.0.0.1 fetch,
+          # a false positive for local-only tooling, not an attack surface.
+          config: |
+            queries:
+              - uses: security-extended
+            paths-ignore:
+              - scripts
+
+      - name: Analyze
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: "/language:${{ matrix.language }}"

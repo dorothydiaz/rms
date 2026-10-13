@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="en">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-Z371T0DBW5"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-Z371T0DBW5');
+</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A deterministic design engine that learns offline · how ux-skill v3.0 avoids the LLM trap</title>
+<meta name="description" content="ux-skill v3.0 is a generative design system that runs without ever calling an LLM. Same brief → same output. Reproducible across machines. Learns from its own decisions log offline. Here's how the math holds.">
+<link rel="canonical" href="https://uxskill.laithjunaidy.com/blog/deterministic-design-engine-no-llm.html">
+<meta property="og:title" content="A deterministic design engine that learns offline · ux-skill v3.0">
+<meta property="og:description" content="No LLM in the loop. Same brief → same output. Reproducible. Yet it learns from its own decisions ledger. Here's the math.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://uxskill.laithjunaidy.com/blog/deterministic-design-engine-no-llm.html">
+<meta property="og:image" content="https://uxskill.laithjunaidy.com/og/home.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="ux-skill v3.0: a deterministic, offline-learning design engine">
+<meta name="twitter:description" content="No LLM in the loop. Same brief → same output. Yet it learns over time from local decisions log.">
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","headline":"A deterministic design engine that learns offline · how ux-skill v3.0 avoids the LLM trap","datePublished":"2026-05-28","author":{"@type":"Person","name":"Laith Aljunaidy"},"publisher":{"@type":"Organization","name":"ux-skill"},"image":"https://uxskill.laithjunaidy.com/og/home.png","mainEntityOfPage":"https://uxskill.laithjunaidy.com/blog/deterministic-design-engine-no-llm.html","inLanguage":"en"}
+</script>
+<script type="application/ld+json">
+{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Home", "item": "https://uxskill.laithjunaidy.com/"}, {"@type": "ListItem", "position": 2, "name": "Blog", "item": "https://uxskill.laithjunaidy.com/blog/"}, {"@type": "ListItem", "position": 3, "name": "A deterministic design engine that learns offline · how ux-skill v3.0 avoids the LLM trap", "item": "https://uxskill.laithjunaidy.com/blog/deterministic-design-engine-no-llm.html"}]}
+</script>
+
+<style>
+  :root {
+    --canvas: #07080a;
+    --surface: #0e1014;
+    --ink: #f6f7f9;
+    --body: #c0c3c9;
+    --muted: #8a8f96;
+    --accent: #06b6d4;
+    --hairline: rgba(255,255,255,0.08);
+    --display: 'Bricolage Grotesque', system-ui, sans-serif;
+    --sans: 'Inter', system-ui, sans-serif;
+    --mono: 'JetBrains Mono', ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--canvas); color: var(--body); font-family: var(--sans); line-height: 1.65; overflow-x: clip; }
+  a { color: var(--accent); }
+  .wrap { max-width: 720px; margin: 0 auto; padding: clamp(20px, 4vw, 56px); }
+  header { margin-bottom: 48px; padding-bottom: 24px; border-bottom: 1px solid var(--hairline); }
+  .eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+  h1 { font-family: var(--display); font-size: clamp(32px, 5vw, 52px); line-height: 1.04; letter-spacing: -0.02em; color: var(--ink); margin-bottom: 18px; font-weight: 600; }
+  h1 em { font-style: italic; color: var(--accent); }
+  .lede { font-size: 19px; line-height: 1.55; color: var(--body); max-width: 60ch; }
+  h2 { font-family: var(--display); font-size: 28px; letter-spacing: -0.02em; color: var(--ink); margin: 56px 0 18px; }
+  h3 { font-family: var(--display); font-size: 21px; color: var(--ink); margin: 32px 0 12px; }
+  p { margin-bottom: 18px; font-size: 16.5px; max-width: 60ch; }
+  ul { margin: 0 0 18px 22px; }
+  li { margin-bottom: 8px; max-width: 60ch; }
+  code { font-family: var(--mono); font-size: 14px; background: rgba(255,255,255,0.06); padding: 1px 6px; border-radius: 4px; color: var(--ink); }
+  pre { background: var(--surface); border: 1px solid var(--hairline); border-radius: 10px; padding: 18px 22px; overflow-x: auto; margin: 18px 0; }
+  pre code { background: transparent; padding: 0; font-size: 13.5px; line-height: 1.6; color: var(--body); }
+  blockquote { border-left: 2px solid var(--accent); padding-left: 18px; margin: 28px 0; color: var(--ink); font-style: italic; }
+  .nav { padding: 18px 0; border-bottom: 1px solid var(--hairline); }
+  .nav__row { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; max-width: 1100px; margin: 0 auto; padding: 0 clamp(20px, 4vw, 48px); }
+  .nav__brand { font-family: var(--display); font-weight: 700; font-size: 17px; color: var(--ink); }
+  .nav__link { font-family: var(--mono); font-size: 11px; letter-spacing: 0.10em; text-transform: uppercase; color: var(--muted); }
+  footer { margin-top: 64px; padding-top: 28px; border-top: 1px solid var(--hairline); color: var(--muted); font-family: var(--mono); font-size: 11.5px; text-align: center; }
+  footer p { margin-inline: auto; }
+</style>
+<style id="usknav-css">  .sr-only,.skip-link:not(:focus){position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+  .skip-link:focus{position:fixed;top:8px;inset-inline-start:8px;width:auto;height:auto;clip:auto;padding:8px 14px;background:#f59e0b;color:#07080a;border-radius:6px;z-index:200;font-family:'Inter',system-ui,sans-serif;font-size:13px}
+  .usknav{position:sticky;top:0;z-index:100;display:flex;align-items:center;gap:18px;
+    padding:0 clamp(16px,4vw,48px);block-size:56px;background:rgba(7,8,10,0.86);
+    backdrop-filter:saturate(150%) blur(14px);-webkit-backdrop-filter:saturate(150%) blur(14px);
+    border-block-end:1px solid rgba(255,255,255,0.08);font-family:'Inter',system-ui,sans-serif}
+  .usknav__brand{font-family:'Bricolage Grotesque','Inter',sans-serif;font-weight:700;font-size:17px;
+    color:#f6f7f9;text-decoration:none;letter-spacing:-0.01em;margin-inline-end:auto;padding:6px 2px}
+  .usknav__links{display:flex;align-items:center;gap:clamp(9px,1.1vw,17px)}
+  .usknav__link{font-family:ui-monospace,'JetBrains Mono',monospace;font-size:11.5px;letter-spacing:0.08em;
+    text-transform:uppercase;color:#8a8f96;text-decoration:none;white-space:nowrap;
+    padding-block:8px;transition:color 140ms ease;}
+  .usknav__link:hover,.usknav__link[aria-current="page"]{color:#f6f7f9}
+  .usknav__langs{position:relative}
+  .usknav__langs>summary{list-style:none;cursor:pointer;display:inline-flex;align-items:center;gap:5px;
+    color:#8a8f96;padding:8px 6px;transition:color 140ms ease;min-block-size:24px}
+  .usknav__langs>summary::-webkit-details-marker{display:none}
+  .usknav__langs>summary:hover{color:#f6f7f9}
+  .usknav__langs-menu{position:absolute;top:calc(100% + 8px);inset-inline-end:0;min-inline-size:184px;
+    max-block-size:60vh;overflow-y:auto;background:#0e1014;border:1px solid rgba(255,255,255,0.1);
+    border-radius:10px;padding:6px;display:grid;gap:1px;box-shadow:0 20px 40px -20px rgba(0,0,0,0.6);z-index:130}
+  .usknav__langs-menu a{font-family:'Inter',sans-serif;font-size:12.5px;color:#c0c3c9;text-decoration:none;padding:7px 10px;border-radius:6px}
+  .usknav__langs-menu a:hover{background:rgba(255,255,255,0.06);color:#f6f7f9}
+  .usknav__star{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;
+    font-family:ui-monospace,'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.06em;text-transform:uppercase;
+    color:#f59e0b;text-decoration:none;border:1px solid #f59e0b;border-radius:999px;padding:7px 13px;transition:background-color 140ms ease;}
+  .usknav__star:hover{background:rgba(245,158,11,0.12)}
+  .usknav__burger{display:none;align-items:center;background:none;border:0;cursor:pointer;padding:7px;color:#f6f7f9;min-block-size:24px;min-inline-size:24px}
+  .usknav__burger svg{display:block}
+  .usknav__drawer{position:fixed;inset:0;z-index:120;background:#050608;display:none;flex-direction:column;
+    padding:20px clamp(16px,5vw,40px) 40px;transform:translateX(100%);
+    transition:transform 240ms cubic-bezier(0.16,1,0.3,1);overflow-y:auto;visibility:hidden}
+  .usknav__drawer.is-open{display:flex;transform:translateX(0);visibility:visible}
+  .usknav__drawer-top{display:flex;justify-content:space-between;align-items:center;block-size:56px;
+    border-block-end:1px solid rgba(255,255,255,0.1);margin-block-end:18px}
+  .usknav__drawer-close{background:none;border:0;cursor:pointer;color:#f6f7f9;padding:7px;min-block-size:24px;min-inline-size:24px}
+  .usknav__drawer-links{display:flex;flex-direction:column}
+  .usknav__drawer-links a{font-family:'Bricolage Grotesque','Inter',sans-serif;font-size:clamp(22px,5.5vw,32px);
+    color:#f6f7f9;text-decoration:none;padding:8px 0;border-block-end:1px solid rgba(255,255,255,0.06)}
+  .usknav__drawer-links a:hover{color:#f59e0b}
+  .usknav__drawer-star{margin-block-start:20px;align-self:flex-start}
+  .usknav__drawer-langlabel{font-family:ui-monospace,'JetBrains Mono',monospace;font-size:11px;
+    letter-spacing:0.1em;text-transform:uppercase;color:#8a8f96;margin:24px 0 10px}
+  .usknav__drawer-langs{display:flex;flex-wrap:wrap;gap:10px 18px}
+  .usknav__drawer-langs a{font-family:'Inter',sans-serif;font-size:13px;color:#8a8f96;text-decoration:none;padding:4px 0}
+  .usknav__drawer-langs a:hover{color:#f6f7f9}
+  /* Focus-visible: amber ring on every control (WCAG 2.4.7, >=3:1 on dark). */
+  .usknav__brand:focus-visible,.usknav__link:focus-visible,.usknav__langs>summary:focus-visible,
+  .usknav__star:focus-visible,.usknav__burger:focus-visible,.usknav__drawer-close:focus-visible,
+  .usknav__langs-menu a:focus-visible,.usknav__drawer-links a:focus-visible,.usknav__drawer-langs a:focus-visible{
+    outline:2px solid #f59e0b;outline-offset:3px;border-radius:4px}
+  @media (max-width:1100px){.usknav__links,.usknav__langs,.usknav__star{display:none}.usknav__burger{display:inline-flex}}
+  @media (prefers-reduced-motion:reduce){.usknav__drawer{transition:none;}}</style>
+<style>.docfig{margin:32px 0;border:1px solid rgba(255,255,255,0.10);border-radius:14px;overflow:hidden;background:#0b0d12}.docfig img{display:block;width:100%;height:auto}.docfig figcaption{margin:0;padding:12px 16px;font-size:13px;line-height:1.5;color:#8a8f96;border-top:1px solid rgba(255,255,255,0.08)}.docfig--narrow{max-width:720px}</style>
+</head>
+<body>
+
+
+
+
+<header class="usknav" aria-label="Site navigation">
+  <a class="usknav__brand" href="/">uxskill</a>
+  <nav class="usknav__links" aria-label="Primary">
+    <a class="usknav__link" href="/brands.html">Brands</a>
+    <a class="usknav__link" href="/anti-patterns.html">Anti-patterns</a>
+    <a class="usknav__link" href="/commands.html">Commands</a>
+    <a class="usknav__link" href="/mcp.html">MCP</a>
+    <a class="usknav__link" href="/compare.html">Compare</a>
+    <a class="usknav__link" href="/showcase.html">Showcase</a>
+    <a class="usknav__link" href="/blog/">Blog</a>
+    <a class="usknav__link" href="/about.html">About</a>
+    <a class="usknav__link" href="/faq.html">FAQ</a>
+    <a class="usknav__link" href="/roadmap.html">Roadmap</a>
+  </nav>
+  <details class="usknav__langs">
+    <summary aria-label="Choose language"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></summary>
+    <div class="usknav__langs-menu">
+      <a href="/" lang="en">English</a>
+      <a href="/zh-CN/" lang="zh-CN">简体中文</a>
+      <a href="/zh-TW/" lang="zh-TW">繁體中文</a>
+      <a href="/ja/" lang="ja">日本語</a>
+      <a href="/ko/" lang="ko">한국어</a>
+      <a href="/hi/" lang="hi">हिन्दी</a>
+      <a href="/id/" lang="id">Bahasa Indonesia</a>
+      <a href="/vi/" lang="vi">Tiếng Việt</a>
+      <a href="/th/" lang="th">ไทย</a>
+      <a href="/ar/" lang="ar" dir="rtl">العربية</a>
+      <a href="/es/" lang="es">Español</a>
+      <a href="/fr/" lang="fr">Français</a>
+      <a href="/de/" lang="de">Deutsch</a>
+      <a href="/pt-BR/" lang="pt-BR">Português</a>
+      <a href="/ru/" lang="ru">Русский</a>
+      <a href="/tr/" lang="tr">Türkçe</a>
+      <a href="/it/" lang="it">Italiano</a>
+    </div>
+  </details>
+  <a class="usknav__star" href="https://github.com/Laith0003/ux-skill" rel="noopener">Star on GitHub</a>
+  <button class="usknav__burger" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="usknav-drawer"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+</header>
+<div class="usknav__drawer" id="usknav-drawer" role="dialog" aria-modal="true" aria-label="Site menu">
+  <div class="usknav__drawer-top">
+    <a class="usknav__brand" href="/">uxskill</a>
+    <button class="usknav__drawer-close" type="button" aria-label="Close menu"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+  </div>
+  <nav class="usknav__drawer-links" aria-label="All pages">
+    <a href="/brands.html">Brands</a>
+      <a href="/anti-patterns.html">Anti-patterns</a>
+      <a href="/commands.html">Commands</a>
+      <a href="/mcp.html">MCP</a>
+      <a href="/compare.html">Compare</a>
+      <a href="/showcase.html">Showcase</a>
+      <a href="/blog/">Blog</a>
+      <a href="/about.html">About</a>
+      <a href="/faq.html">FAQ</a>
+      <a href="/roadmap.html">Roadmap</a>
+  </nav>
+  <a class="usknav__star usknav__drawer-star" href="https://github.com/Laith0003/ux-skill" rel="noopener">Star on GitHub</a>
+  <div class="usknav__drawer-langlabel">Language</div>
+  <div class="usknav__drawer-langs">
+      <a href="/" lang="en">English</a>
+      <a href="/zh-CN/" lang="zh-CN">简体中文</a>
+      <a href="/zh-TW/" lang="zh-TW">繁體中文</a>
+      <a href="/ja/" lang="ja">日本語</a>
+      <a href="/ko/" lang="ko">한국어</a>
+      <a href="/hi/" lang="hi">हिन्दी</a>
+      <a href="/id/" lang="id">Bahasa Indonesia</a>
+      <a href="/vi/" lang="vi">Tiếng Việt</a>
+      <a href="/th/" lang="th">ไทย</a>
+      <a href="/ar/" lang="ar" dir="rtl">العربية</a>
+      <a href="/es/" lang="es">Español</a>
+      <a href="/fr/" lang="fr">Français</a>
+      <a href="/de/" lang="de">Deutsch</a>
+      <a href="/pt-BR/" lang="pt-BR">Português</a>
+      <a href="/ru/" lang="ru">Русский</a>
+      <a href="/tr/" lang="tr">Türkçe</a>
+      <a href="/it/" lang="it">Italiano</a>
+  </div>
+</div>
+<div class="wrap">
+<header>
+<p class="eyebrow">v3.0 · THE BRAIN · 2026-05-28</p>
+<h1>A design engine that <em>learns offline</em>,<br>and never calls an LLM.</h1>
+<p class="lede">Every other "generative design" tool reaches for an API. ux-skill v3.0 doesn't. Same brief always produces the same output. Reproducible across machines. Yet the system genuinely learns from its own decisions log over time. Here's how the math holds.</p>
+</header>
+<figure class="docfig">
+  <img src="/screenshots/terminal-ux-recommend.webp" width="1600" height="1000" alt="A terminal running ux recommend on a landing-page brief: five lanes (industry, style, palette, type, motion) each resolve with a confidence score and merge into one recommendation file." loading="lazy" decoding="async">
+  <figcaption>31 ms and no API call: the same brief returns the same recommendation on every machine.</figcaption>
+</figure>
+
+<h2>Why no LLM in the loop</h2>
+<p>An LLM in the generation path means:</p>
+<ul>
+<li><strong>Non-determinism</strong>: same prompt, slightly different output today vs. yesterday</li>
+<li><strong>Cost</strong>: every <code>uxskill synthesize</code> call costs money</li>
+<li><strong>Latency</strong>: network roundtrip, ~1-3 seconds per call</li>
+<li><strong>Rate limits</strong>: your CI breaks when you hit the cap</li>
+<li><strong>Vendor lock-in</strong>: your "design engine" is actually OpenAI's or Anthropic's</li>
+<li><strong>Privacy</strong>: your brief content goes to a third party</li>
+</ul>
+<p>v3.0 has none of this. <code>uxskill synthesize</code> finishes in single-digit milliseconds. No network. No API key required. Works offline on a plane.</p>
+
+<h2>How a "generative" engine works without an LLM</h2>
+<p>The trick is in the layers:</p>
+
+<h3>Layer 1: Brief to axes (pure math)</h3>
+<p>Industry has a 7-axis seed dictionary. Tone tags push axes by ±0.10 to ±0.30. Forbidden tags clamp axes. All deterministic dict lookups + float adds. ~50 microseconds.</p>
+<pre><code>brief = Brief(industry="fintech-payments", tone=["bold", "serious"])
+axes = compute_axes(brief)
+# AxisValues(warmth=0.35, contrast=0.80, density=0.6,
+#            geometry=0.4, formality=0.95, motion=0.55,
+#            type_personality=0.4)</code></pre>
+
+<h3>Layer 2: Axes to exemplars (sorting)</h3>
+<p>Compute 7-D Euclidean distance from the brief's axes to each brand's category-seed axes. Sort by distance. Tie-break by brand id alphabetically (deterministic). Top 8 win.</p>
+<pre><code>exemplars = pick_exemplars_by_axes(axes, n=8)
+# [{"id": "stripe", ...}, {"id": "linear", ...}, {"id": "datadog", ...}, ...]</code></pre>
+
+<h3>Layer 3: Exemplars to vocabulary (extraction)</h3>
+<p>For each chosen exemplar, pull palette anchors, type stack, radius signal, spacing signal. Combine into a Vocabulary. Pure dict access. No NLP.</p>
+
+<h3>Layer 4: Vocabulary + axes to tokens (math)</h3>
+<p>Weighted RGB mixing of palette anchors + warmth-shift = canvas / ink / primary hex codes. Modular scale at ratio 1.2/1.25/1.333 = size ladder. Spacing base picked from <code>interactions.spacing_base_for(axes)</code> (the documented conflict-resolution matrix). All deterministic.</p>
+
+<h2>Where determinism could leak (and why it doesn't)</h2>
+<p>If <code>load_brands()</code> returned brands in filesystem-order, two brands with identical axes would tie-break by inode. Different on different machines. v3.0 fixed this:</p>
+
+<pre><code>scored.sort(key=lambda t: (t[0], t[1]))  # (distance, brand_id_alphabetical)</code></pre>
+
+<p>If <code>compute_axes()</code> hashed differently across Python versions, the axis values would drift. We use plain dict adds, no hashing.</p>
+
+<p>If two brands had identical 7-D distance AND identical id (impossible: ids are unique), we'd still be deterministic because of the unique id constraint.</p>
+
+<h2>How does it "learn" then?</h2>
+<p>The decisions ledger. Every call appends one JSONL line to <code>.ux/decisions.jsonl</code>:</p>
+
+<pre><code>{"_v": 1, "ts": 1727380123.4, "command": "design",
+ "industry": "fintech-payments", "ui_type": "dashboard",
+ "picked_brand": "stripe", "picked_style": "swiss-grid",
+ "lint_score": 92, "user_accepted": true, ...}</code></pre>
+
+<p>The recommender, on the next call, reads this log filtered by <code>(industry, ui_type)</code> bucket. For each candidate, it counts how often that candidate's id appears in lines where <code>lint_score >= 80</code> AND <code>user_accepted = true</code>. Each match adds +5 to the candidate's score before sorting.</p>
+
+<p>Cold-start safe: fewer than 3 priors in a bucket = no-op. Behaves exactly like v2.0. Above the threshold, history bumps winning combinations to the top.</p>
+
+<p>This isn't "ML" in the formal sense. There's no gradient descent. No labeled training data. No model checkpoint. But it IS learning, in the precise sense of "the system's output changes over time in response to feedback."</p>
+
+<h2>What the system can't do (be honest)</h2>
+<ul>
+<li><strong>Generate copy.</strong> You write the words. The engine ships the tokens that frame them.</li>
+<li><strong>Source imagery.</strong> Picsum URLs in dev, you replace before ship.</li>
+<li><strong>Judge "modern aesthetic" subjectively.</strong> We replaced T's proposed LLM-judged axes with deterministic heuristics. The system measures what's measurable.</li>
+<li><strong>Predict viral.</strong> Every other tool that claims this is lying.</li>
+</ul>
+
+<h2>What the system CAN do</h2>
+<ul>
+<li>Synthesize a complete design language (palette + type + spacing + radius + motion + 12+ token names) in &lt;10ms per call.</li>
+<li>Score outputs 0-100 on 7 axes deterministically.</li>
+<li>Auto-iterate polish until score ≥ 90 or 5 rounds.</li>
+<li>Refuse to ship below quality gate (65). Force with <code>--force</code>.</li>
+<li>Compose responsive-by-construction layouts (auto-fit minmax, container queries, zero media queries needed).</li>
+<li>Learn over time which token combinations work for your specific industry + UI type.</li>
+<li>Run offline on a plane, in a CI sandbox, in an air-gapped network.</li>
+</ul>
+
+<h2>Try it</h2>
+<pre><code>pip install uxskill
+uxskill stats --decisions     # what your install has logged
+uxskill stats --html          # local dashboard at .ux/stats.html
+uxskill lint . --score-only   # just the int
+uxskill evolve out.html       # auto-loop to score 90+</code></pre>
+
+<h2>Related</h2>
+<ul>
+<li><a href="/blog/v3-the-brain-launch.html">The full v3.0 launch · The Brain</a></li>
+<li><a href="/blog/brand-specs-training-data-not-templates.html">Brand specs are training data, not templates</a></li>
+<li><a href="/blog/regex-linter-for-ai-coding.html">A 145-rule deterministic linter that catches AI design slop</a></li>
+<li><a href="/anti-patterns.html">All 145 linter rules</a></li>
+</ul>
+
+<footer>
+ux-skill v3.0 · THE BRAIN · MIT · no telemetry · no LLM in the engine · <a href="/">home</a> · <a href="https://github.com/Laith0003/ux-skill" rel="noopener">github</a>
+<p class="made-by">Made by <a href="https://laithjunaidy.com">Laith Aljunaidy</a>.</p></footer>
+
+</div>
+<script id="usknav-js">(function(){var d=document.getElementById('usknav-drawer');var b=document.querySelector('.usknav__burger');if(!d||!b)return;var c=d.querySelector('.usknav__drawer-close');function F(){return d.querySelectorAll('a[href],button:not([disabled])');}function set(v){d.classList.toggle('is-open',v);b.setAttribute('aria-expanded',v?'true':'false');document.body.style.overflow=v?'hidden':'';if(v){var f=c||F()[0];if(f)f.focus();}else{b.focus();}}b.addEventListener('click',function(){set(true);});if(c)c.addEventListener('click',function(){set(false);});d.addEventListener('click',function(e){if(e.target.tagName==='A')set(false);});document.addEventListener('keydown',function(e){if(e.key==='Escape'&&d.classList.contains('is-open'))set(false);if(e.key==='Tab'&&d.classList.contains('is-open')){var f=F();if(!f.length)return;var a=f[0],z=f[f.length-1];if(e.shiftKey&&document.activeElement===a){e.preventDefault();z.focus();}else if(!e.shiftKey&&document.activeElement===z){e.preventDefault();a.focus();}}});var L=document.querySelector('.usknav__langs');if(L){document.addEventListener('click',function(e){if(L.open&&!L.contains(e.target))L.open=false;});L.addEventListener('keydown',function(e){if(e.key==='Escape')L.open=false;});}})();</script>
+</body>
+</html>

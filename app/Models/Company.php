@@ -52,6 +52,11 @@ class Company extends Model
         'share_product_catalog',
         'company_type',
         'company_notes',
+        'company_branch_code',
+        'company_email_domain',
+        'company_brand_color',
+        'company_external_code',
+        'company_is_vat_registered',
         'company_is_active',
         'company_created_by',
         'company_updated_by',
@@ -59,6 +64,7 @@ class Company extends Model
 
     protected $casts = [
         'company_is_active' => 'boolean',
+        'company_is_vat_registered' => 'boolean',
         'share_chart_of_accounts' => 'boolean',
         'share_customer_vendor_directory' => 'boolean',
         'share_product_catalog' => 'boolean',
@@ -70,6 +76,7 @@ class Company extends Model
         'trade_name',
         'full_address',
         'is_holding_group',
+        'tax_id_full',
     ];
 
     public function branches(): HasMany
@@ -129,6 +136,14 @@ class Company extends Model
     public function getLogoUrlAttribute(): ?string
     {
         return $this->company_logo ? asset('storage/' . $this->company_logo) : null;
+    }
+
+    public function getTaxIdFullAttribute(): string
+    {
+        $tin = $this->company_tax_id ?: '';
+        if (!$tin) return '';
+        $branchCode = $this->company_branch_code ?: '00000';
+        return str_contains($tin, '-') && strlen($tin) > 11 ? $tin : "{$tin}-{$branchCode}";
     }
 
     public function scopeActive(Builder $query): Builder

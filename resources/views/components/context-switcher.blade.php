@@ -9,7 +9,7 @@
     <button type="button" class="entity-switcher-btn {{ $isConsolidatedView ? 'is-consolidated' : '' }}" id="entitySwitcherBtn" aria-haspopup="true" aria-expanded="false" title="Click to open Entity Selector & View Scope">
         <div class="entity-btn-icon">
             @if($currentCompany && $currentCompany->company_logo)
-                <img src="{{ asset('storage/' . $currentCompany->company_logo) }}" alt="Logo" class="entity-logo-mini">
+                <img src="{{ asset('storage/' . $currentCompany->company_logo) }}" width="28" height="28" alt="Company Logo" class="entity-logo-mini">
             @else
                 <i class="ph {{ $isConsolidatedView ? 'ph-stack' : 'ph-buildings' }}"></i>
             @endif
@@ -42,7 +42,7 @@
         <i class="ph ph-caret-down entity-chevron"></i>
     </button>
 
-    <!-- Context Switcher Dropdown Panel (Fixed 420px Width) -->
+    <!-- Context Switcher Dropdown Panel -->
     <div class="entity-switcher-dropdown" id="entitySwitcherDropdown">
         <!-- Pinned Header -->
         <div class="entity-dropdown-header">
@@ -51,55 +51,55 @@
                     <i class="ph ph-tree-structure" style="color: #4f46e5;"></i>
                     <span>Entity Hierarchy & Scope</span>
                 </div>
-                <button type="button" class="btn-consolidated-toggle {{ $isConsolidatedView ? 'active' : '' }}" id="btnToggleConsolidated" title="Toggle cross-branch consolidated view mode" onclick="RMSContextSwitcher.toggleConsolidated()">
+                <button type="button" class="btn-consolidated-toggle {{ $isConsolidatedView ? 'active' : '' }}" id="btnToggleConsolidated" title="Toggle cross-branch consolidated view mode">
                     <i class="ph {{ $isConsolidatedView ? 'ph-check-circle' : 'ph-stack' }}"></i>
                     <span>{{ $isConsolidatedView ? 'Consolidated Active' : 'Consolidate View' }}</span>
                 </button>
             </div>
             
             <div class="entity-scope-instruction">
-                <span><i class="ph ph-check-square"></i> Checkboxes = <strong>View Scope</strong> (Multi-select)</span>
-                <span><i class="ph ph-radio-button"></i> Click Row = <strong>Active Write</strong> Entity</span>
+                <span><i class="ph ph-check-square"></i> Checkbox = <strong>View Scope</strong></span>
+                <span><i class="ph ph-cursor-click"></i> Click Row = <strong>Active Entity</strong></span>
             </div>
 
             <div class="entity-search-box">
                 <i class="ph ph-magnifying-glass"></i>
-                <input type="text" id="entitySearchInput" placeholder="Filter company, branch, or code..." autocomplete="off">
-                <button type="button" class="search-clear-btn" id="entitySearchClear" style="display: none;">&times;</button>
+                <input type="text" id="entitySearchInput" placeholder="Filter company, branch, or code..." autocomplete="off" aria-label="Filter company, branch, or code">
+                <button type="button" class="search-clear-btn is-hidden" id="entitySearchClear" aria-label="Clear filter search">&times;</button>
             </div>
 
-            <!-- Table Header Legend for Rigid Columns -->
+            <!-- Table Header: Strict Align-Left (No Active Status Column) -->
             <div class="entity-grid-head">
                 <div class="col-head col-cb" title="Tick to include in view scope">View</div>
-                <div class="col-head col-id">Entity & Name</div>
+                <div class="col-head col-id">Entity & Branch</div>
                 <div class="col-head col-type">Type</div>
-                <div class="col-head col-action">Active</div>
             </div>
         </div>
 
-        <!-- Scrollable Entity Grid (Fixed Columns, max-h 360px) -->
+        <!-- Scrollable Entity Grid -->
         <div class="entity-dropdown-body" id="entityTreeList">
             @forelse($navCompaniesTree as $comp)
                 @php
                     $isCompActive = $currentCompany && $currentCompany->company_id === $comp->company_id;
                     $compBranches = $comp->branches;
                     $isCompChecked = in_array((int)$comp->company_id, $checkedCompanyIds, true);
+                    $isCompanyWriteActive = $isCompActive && (!$currentBranch || $isConsolidatedView);
                 @endphp
                 <div class="entity-company-node {{ $isCompActive ? 'is-active-company' : '' }}" data-company-id="{{ $comp->company_id }}" data-search-text="{{ strtolower($comp->company_legal_name . ' ' . $comp->company_trade_name . ' ' . $comp->company_code) }}">
-                    <!-- Company Row (Grid Row) -->
-                    <div class="entity-grid-row company-row {{ $isCompActive && !$currentBranch ? 'row-active-write' : '' }}" onclick="RMSContextSwitcher.selectActiveEntity({{ $comp->company_id }}, null)">
-                        <!-- Col 1: Checkbox (w-8 / 32px) -->
-                        <div class="col-grid col-cb" onclick="event.stopPropagation()">
-                            <label class="custom-chk-label">
-                                <input type="checkbox" class="scope-chk comp-scope-chk" data-type="company" data-id="{{ $comp->company_id }}" {{ $isCompChecked ? 'checked' : '' }} onchange="RMSContextSwitcher.onScopeChange()">
+                    <!-- Company Row -->
+                    <div class="entity-grid-row company-row {{ $isCompanyWriteActive ? 'row-active-write' : '' }}" data-company-id="{{ $comp->company_id }}" role="button" tabindex="0">
+                        <!-- Col 1: Checkbox (Left-aligned) -->
+                        <div class="col-grid col-cb">
+                            <label class="custom-chk-label" aria-label="Toggle view scope for {{ $comp->company_trade_name ?: $comp->company_legal_name }}">
+                                <input type="checkbox" class="scope-chk comp-scope-chk" data-type="company" data-id="{{ $comp->company_id }}" {{ $isCompChecked ? 'checked' : '' }}>
                                 <span class="chk-box"></span>
                             </label>
                         </div>
 
-                        <!-- Col 2: Identity (200-240px truncate) -->
+                        <!-- Col 2: Identity & Name (Left-aligned, flexible width) -->
                         <div class="col-grid col-id">
                             @if($compBranches->isNotEmpty())
-                                <button type="button" class="caret-box" onclick="event.stopPropagation(); RMSContextSwitcher.toggleAccordion(this)" title="Toggle branches">
+                                <button type="button" class="caret-box" title="Toggle branches" aria-label="Toggle branches">
                                     <i class="ph ph-caret-down"></i>
                                 </button>
                             @else
@@ -108,7 +108,7 @@
 
                             <div class="entity-avatar-box">
                                 @if($comp->company_logo)
-                                    <img src="{{ asset('storage/' . $comp->company_logo) }}" alt="Logo" class="avatar-img">
+                                    <img src="{{ asset('storage/' . $comp->company_logo) }}" width="24" height="24" alt="Company Logo" class="avatar-img">
                                 @else
                                     <i class="ph ph-buildings"></i>
                                 @endif
@@ -119,27 +119,21 @@
                                     {{ $comp->company_trade_name ?: $comp->company_legal_name }}
                                 </span>
                                 <span class="entity-code-chip">{{ $comp->company_code }}</span>
+                                @if($isCompanyWriteActive)
+                                    <span class="active-entity-pill" title="Currently Active Entity">
+                                        <i class="ph-bold ph-check"></i> Active
+                                    </span>
+                                @endif
                             </div>
                         </div>
 
-                        <!-- Col 3: Type Badge (w-24 / 96px) -->
+                        <!-- Col 3: Type Badge (Left-aligned) -->
                         <div class="col-grid col-type">
                             <span class="entity-type-badge comp-type">Company</span>
                         </div>
-
-                        <!-- Col 4: Action / Active Indicator (w-16 / 64px) -->
-                        <div class="col-grid col-action">
-                            @if($isCompActive && (!$currentBranch || $isConsolidatedView))
-                                <span class="badge-active-pill" title="Currently Active Entity">
-                                    <i class="ph ph-check"></i> Active
-                                </span>
-                            @else
-                                <span class="radio-target" title="Click row to set Active Write Entity"></span>
-                            @endif
-                        </div>
                     </div>
 
-                    <!-- Nested Branches (Uniform pl-6 / 24px step) -->
+                    <!-- Nested Branches (Left-aligned hierarchy) -->
                     @if($compBranches->isNotEmpty())
                         <div class="company-branches-tree">
                             @foreach($compBranches as $br)
@@ -147,16 +141,16 @@
                                     $isBrActive = $isCompActive && !$isConsolidatedView && $currentBranch && $currentBranch->branch_id === $br->branch_id;
                                     $isBrChecked = in_array((int)$br->branch_id, $checkedBranchIds, true);
                                 @endphp
-                                <div class="entity-grid-row branch-row {{ $isBrActive ? 'row-active-write' : '' }}" data-branch-id="{{ $br->branch_id }}" data-search-text="{{ strtolower($br->branch_name . ' ' . $br->branch_code . ' ' . $br->branch_type) }}" onclick="RMSContextSwitcher.selectActiveEntity({{ $comp->company_id }}, {{ $br->branch_id }})">
-                                    <!-- Col 1: Checkbox (w-8 / 32px) -->
-                                    <div class="col-grid col-cb" onclick="event.stopPropagation()">
-                                        <label class="custom-chk-label">
-                                            <input type="checkbox" class="scope-chk branch-scope-chk" data-type="branch" data-id="{{ $br->branch_id }}" {{ $isBrChecked ? 'checked' : '' }} onchange="RMSContextSwitcher.onScopeChange()">
+                                <div class="entity-grid-row branch-row {{ $isBrActive ? 'row-active-write' : '' }}" data-company-id="{{ $comp->company_id }}" data-branch-id="{{ $br->branch_id }}" data-search-text="{{ strtolower($br->branch_name . ' ' . $br->branch_code . ' ' . $br->branch_type) }}" role="button" tabindex="0">
+                                    <!-- Col 1: Checkbox (Left-aligned) -->
+                                    <div class="col-grid col-cb">
+                                        <label class="custom-chk-label" aria-label="Toggle view scope for {{ $br->branch_name }}">
+                                            <input type="checkbox" class="scope-chk branch-scope-chk" data-type="branch" data-id="{{ $br->branch_id }}" {{ $isBrChecked ? 'checked' : '' }}>
                                             <span class="chk-box"></span>
                                         </label>
                                     </div>
 
-                                    <!-- Col 2: Identity (200-240px truncate, nested indent) -->
+                                    <!-- Col 2: Identity & Name (Left-aligned, nested indent) -->
                                     <div class="col-grid col-id nested-branch-col">
                                         <div class="tree-branch-line"></div>
                                         <div class="entity-avatar-box branch-avatar">
@@ -165,25 +159,19 @@
                                         <div class="entity-text-box">
                                             <span class="entity-main-title" title="{{ $br->branch_name }}">{{ $br->branch_name }}</span>
                                             <span class="entity-code-chip">{{ $br->branch_code }}</span>
+                                            @if($isBrActive)
+                                                <span class="active-entity-pill" title="Currently Active Branch">
+                                                    <i class="ph-bold ph-check"></i> Active
+                                                </span>
+                                            @endif
                                         </div>
                                     </div>
 
-                                    <!-- Col 3: Type Badge (w-24 / 96px) -->
+                                    <!-- Col 3: Type Badge (Left-aligned) -->
                                     <div class="col-grid col-type">
                                         <span class="entity-type-badge branch-type" title="{{ $br->branch_type }}">
-                                            {{ $br->branch_type === 'Central Commissary' ? 'Commissary' : ($br->branch_type === 'Warehouse' ? 'Warehouse' : 'Branch') }}
+                                            {{ $br->branch_type === 'Central Commissary' ? 'Commissary' : ($br->branch_type === 'Warehouse' ? 'Warehouse' : 'Store') }}
                                         </span>
-                                    </div>
-
-                                    <!-- Col 4: Action / Active Indicator (w-16 / 64px) -->
-                                    <div class="col-grid col-action">
-                                        @if($isBrActive)
-                                            <span class="badge-active-pill" title="Currently Active Branch">
-                                                <i class="ph ph-check"></i> Active
-                                            </span>
-                                        @else
-                                            <span class="radio-target" title="Click row to set Active Write Entity"></span>
-                                        @endif
                                     </div>
                                 </div>
                             @endforeach
@@ -199,11 +187,7 @@
         </div>
 
         <!-- Dropdown Footer -->
-        <div class="entity-dropdown-footer">
-            <a href="{{ route('config.business-settings') }}" class="btn-manage-entities">
-                <i class="ph ph-gear"></i>
-                <span>Business Settings & Hub</span>
-            </a>
+        <div class="entity-dropdown-footer" style="justify-content: flex-end;">
             <div class="scope-status-pill" id="scopeStatusIndicator">
                 <span id="scopeSelectedCount">{{ $totalCheckedCount }} In Scope</span>
             </div>
@@ -221,8 +205,8 @@
 
 <style>
 /* -------------------------------------------------------------------------
-   HR CORPORATE THEME - ENTITY CONTEXT SWITCHER
-   Rigid 420px Dropdown, Standardized Column Widths, Zero Layout Jitter
+   HR CORPORATE THEME - ENTITY CONTEXT SWITCHER (REDESIGNED)
+   Left-Aligned Grid, High Scannability, Removed Redundant Active Column
    ------------------------------------------------------------------------- */
 .entity-context-switcher {
     position: relative;
@@ -240,7 +224,7 @@
     border: 1px solid #e2e8f0;
     border-radius: 10px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
     box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.05);
     color: #0f172a;
     font-family: inherit;
@@ -282,7 +266,7 @@
     flex-direction: column;
     align-items: flex-start;
     text-align: left;
-    max-width: 220px;
+    max-width: 240px;
 }
 
 .entity-btn-company {
@@ -295,28 +279,30 @@
     font-size: 13px;
     font-weight: 700;
     color: #0f172a;
-    max-width: 140px;
+    max-width: 150px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
 .badge-mode.consolidated {
-    font-size: 9px;
+    font-size: 9.5px;
     font-weight: 700;
-    padding: 1px 5px;
+    padding: 1.5px 6px;
     border-radius: 4px;
     background: #ede9fe;
     color: #6366f1;
+    border: 1px solid #c7d2fe;
 }
 
 .badge-mode.scope {
-    font-size: 9px;
+    font-size: 9.5px;
     font-weight: 700;
-    padding: 1px 5px;
+    padding: 1.5px 6px;
     border-radius: 4px;
     background: #ccfbf1;
     color: #0d9488;
+    border: 1px solid #99f6e4;
 }
 
 .entity-btn-branch {
@@ -333,7 +319,7 @@
 }
 
 .branch-name {
-    max-width: 110px;
+    max-width: 120px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -342,7 +328,7 @@
 
 .badge-branch-type {
     font-size: 9px;
-    padding: 1px 4px;
+    padding: 1px 5px;
     border-radius: 3px;
     font-weight: 600;
 }
@@ -354,7 +340,7 @@
 .entity-chevron {
     font-size: 12px;
     color: #94a3b8;
-    transition: transform 0.2s ease;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     flex-shrink: 0;
 }
 
@@ -363,7 +349,7 @@
 }
 
 /* -------------------------------------------------------------------------
-   DROPDOWN PANEL: FIXED 420px WIDTH & RIGID COLUMNS
+   DROPDOWN PANEL: FIXED 420px WIDTH & RIGID LEFT-ALIGNED COLUMNS
    ------------------------------------------------------------------------- */
 .entity-switcher-dropdown {
     position: absolute;
@@ -371,11 +357,11 @@
     right: 0;
     width: 420px;
     min-width: 420px;
-    max-width: 420px;
+    max-width: min(420px, calc(100vw - 32px));
     background: #ffffff;
     border: 1px solid #e2e8f0;
     border-radius: 12px;
-    box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.05);
+    box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.12), 0 8px 10px -6px rgba(15, 23, 42, 0.06);
     display: none;
     flex-direction: column;
     overflow: hidden;
@@ -403,7 +389,7 @@
 .dropdown-title {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 7px;
     font-size: 13px;
     font-weight: 700;
     color: #0f172a;
@@ -413,7 +399,7 @@
     display: flex;
     align-items: center;
     gap: 5px;
-    padding: 3px 8px;
+    padding: 3px 9px;
     background: #ffffff;
     border: 1px solid #cbd5e1;
     border-radius: 6px;
@@ -421,7 +407,7 @@
     font-weight: 600;
     color: #475569;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
 .btn-consolidated-toggle:hover {
@@ -440,11 +426,16 @@
     align-items: center;
     justify-content: space-between;
     background: #f1f5f9;
-    padding: 4px 8px;
+    padding: 5px 9px;
     border-radius: 6px;
-    font-size: 10px;
+    font-size: 10.5px;
     color: #475569;
     margin-bottom: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+.entity-scope-instruction i {
+    color: #4f46e5;
 }
 
 .entity-search-box {
@@ -470,13 +461,13 @@
     font-size: 12px;
     color: #0f172a;
     outline: none;
-    transition: border-color 0.15s ease;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
     box-sizing: border-box;
 }
 
 .entity-search-box input:focus {
     border-color: #4f46e5;
-    box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1);
+    box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.12);
 }
 
 .search-clear-btn {
@@ -491,16 +482,20 @@
     cursor: pointer;
 }
 
+.search-clear-btn.is-hidden {
+    display: none !important;
+}
+
 /* -------------------------------------------------------------------------
-   RIGID COLUMN GRID (ZERO LAYOUT JITTER)
-   Checkbox: 32px | Identity: 216px (flex) | Type: 80px | Action: 64px
-   Total row width: 392px
+   REDESIGNED 3-COLUMN RIGID GRID (ALL STRICTLY ALIGN LEFT)
+   Checkbox: 40px | Identity & Branch: Flex | Type: 82px
+   No "Active" column - active state rendered on row + inline badge
    ------------------------------------------------------------------------- */
 .entity-grid-head {
     display: flex;
     align-items: center;
-    padding: 4px 6px;
-    font-size: 10px;
+    padding: 5px 8px;
+    font-size: 10.5px;
     font-weight: 700;
     color: #64748b;
     text-transform: uppercase;
@@ -509,10 +504,25 @@
     margin-top: 4px;
 }
 
-.col-head.col-cb { width: 32px; min-width: 32px; text-align: center; }
-.col-head.col-id { flex: 1; padding-left: 6px; }
-.col-head.col-type { width: 80px; min-width: 80px; text-align: center; }
-.col-head.col-action { width: 64px; min-width: 64px; text-align: center; }
+.col-head.col-cb {
+    width: 40px;
+    min-width: 40px;
+    text-align: left;
+    padding-left: 6px;
+}
+
+.col-head.col-id {
+    flex: 1;
+    text-align: left;
+    padding-left: 6px;
+}
+
+.col-head.col-type {
+    width: 82px;
+    min-width: 82px;
+    text-align: left;
+    padding-left: 6px;
+}
 
 /* Scrollable Body */
 .entity-dropdown-body {
@@ -534,11 +544,12 @@
 .entity-grid-row {
     display: flex;
     align-items: center;
-    padding: 6px 6px;
-    border-radius: 6px;
+    padding: 7px 8px;
+    border-radius: 7px;
     cursor: pointer;
-    transition: background 0.15s ease;
+    transition: background 0.15s ease, border-color 0.15s ease;
     margin-bottom: 2px;
+    border-left: 3px solid transparent;
 }
 
 .entity-grid-row:hover {
@@ -547,14 +558,17 @@
 
 .entity-grid-row.row-active-write {
     background: #eef2ff;
+    border-left-color: #4f46e5;
 }
 
+/* Col 1: Checkbox (Left-aligned) */
 .col-grid.col-cb {
-    width: 32px;
-    min-width: 32px;
+    width: 40px;
+    min-width: 40px;
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
+    padding-left: 6px;
 }
 
 /* Custom Checkbox */
@@ -578,7 +592,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.15s ease;
+    transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .custom-chk-label input[type="checkbox"]:checked + .chk-box {
@@ -596,15 +610,15 @@
     margin-bottom: 2px;
 }
 
-/* Col 2: Identity */
+/* Col 2: Identity & Name (Left-aligned, flexible width) */
 .col-grid.col-id {
     flex: 1;
-    min-width: 190px;
-    max-width: 220px;
+    min-width: 0;
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding-left: 2px;
+    gap: 7px;
+    padding-left: 6px;
+    text-align: left;
 }
 
 .caret-box {
@@ -620,7 +634,7 @@
     font-size: 13px;
     cursor: pointer;
     border-radius: 4px;
-    transition: transform 0.2s ease, background 0.15s ease;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background 0.15s ease;
 }
 
 .caret-box:hover {
@@ -648,6 +662,7 @@
     align-items: center;
     justify-content: center;
     font-size: 13px;
+    flex-shrink: 0;
 }
 
 .entity-avatar-box.branch-avatar {
@@ -668,6 +683,8 @@
     align-items: center;
     gap: 6px;
     overflow: hidden;
+    min-width: 0;
+    text-align: left;
 }
 
 .entity-main-title {
@@ -689,9 +706,29 @@
     flex-shrink: 0;
 }
 
-/* Nested Branch Alignment */
+/* Inline Active Badge inside Name Column */
+.active-entity-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 1.5px 6px;
+    border-radius: 9999px;
+    background: #dcfce7;
+    color: #15803d;
+    border: 1px solid #bbf7d0;
+    flex-shrink: 0;
+    letter-spacing: 0.02em;
+}
+
+.active-entity-pill i {
+    font-size: 9px;
+}
+
+/* Nested Branch Alignment (Strict Left-Aligned Step) */
 .nested-branch-col {
-    padding-left: 20px !important;
+    padding-left: 22px !important;
     position: relative;
 }
 
@@ -708,67 +745,37 @@
     display: none;
 }
 
-/* Col 3: Type Badge */
+/* Col 3: Type Badge (Strict Left-Aligned) */
 .col-grid.col-type {
-    width: 80px;
-    min-width: 80px;
-    text-align: center;
+    width: 82px;
+    min-width: 82px;
     display: flex;
-    justify-content: center;
+    align-items: center;
+    justify-content: flex-start;
+    padding-left: 6px;
+    text-align: left;
 }
 
 .entity-type-badge {
     font-size: 10px;
     font-weight: 600;
-    padding: 2px 6px;
+    padding: 2px 7px;
     border-radius: 4px;
     display: inline-block;
+    text-align: left;
+    white-space: nowrap;
 }
 
 .entity-type-badge.comp-type {
     background: #e0e7ff;
     color: #4338ca;
+    border: 1px solid #c7d2fe;
 }
 
 .entity-type-badge.branch-type {
-    background: #ccfbf1;
-    color: #0f766e;
-}
-
-/* Col 4: Action / Active Indicator */
-.col-grid.col-action {
-    width: 64px;
-    min-width: 64px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.badge-active-pill {
-    font-size: 10px;
-    font-weight: 700;
-    padding: 2px 7px;
-    border-radius: 9999px;
-    background: #dcfce7;
-    color: #15803d;
-    display: flex;
-    align-items: center;
-    gap: 3px;
-    box-shadow: 0 1px 2px rgba(21, 128, 61, 0.15);
-}
-
-.radio-target {
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    border: 1.5px solid #cbd5e1;
-    display: inline-block;
-    transition: all 0.15s ease;
-}
-
-.entity-grid-row:hover .radio-target {
-    border-color: #4f46e5;
-    background: #eef2ff;
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
 }
 
 /* Dropdown Footer */
@@ -782,7 +789,7 @@
     font-size: 11.5px;
 }
 
-.btn-manage-entities {
+.link-manage-entities {
     display: flex;
     align-items: center;
     gap: 6px;
@@ -792,7 +799,7 @@
     transition: color 0.15s ease;
 }
 
-.btn-manage-entities:hover {
+.link-manage-entities:hover {
     color: #3730a3;
 }
 
@@ -803,6 +810,7 @@
     background: #ccfbf1;
     padding: 2px 8px;
     border-radius: 9999px;
+    border: 1px solid #99f6e4;
 }
 
 .entity-empty-state {
@@ -819,17 +827,20 @@ window.RMSContextSwitcher = {
         const switcher = document.getElementById('entityContextSwitcher');
         const trigger = document.getElementById('entitySwitcherBtn');
         const dropdown = document.getElementById('entitySwitcherDropdown');
+        const treeList = document.getElementById('entityTreeList');
         const searchInput = document.getElementById('entitySearchInput');
         const clearBtn = document.getElementById('entitySearchClear');
+        const consolidatedBtn = document.getElementById('btnToggleConsolidated');
 
         if (!trigger || !dropdown) return;
 
         // Toggle open/close
         trigger.addEventListener('click', (e) => {
             e.stopPropagation();
-            switcher.classList.toggle('is-open');
-            if (switcher.classList.contains('is-open')) {
-                if (searchInput) searchInput.focus();
+            const isOpen = switcher.classList.toggle('is-open');
+            trigger.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            if (isOpen && searchInput) {
+                searchInput.focus();
             }
         });
 
@@ -837,28 +848,96 @@ window.RMSContextSwitcher = {
         document.addEventListener('click', (e) => {
             if (!switcher.contains(e.target)) {
                 switcher.classList.remove('is-open');
+                trigger.setAttribute('aria-expanded', 'false');
             }
         });
 
         // Close on Escape
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
+            if (e.key === 'Escape' && switcher.classList.contains('is-open')) {
                 switcher.classList.remove('is-open');
+                trigger.setAttribute('aria-expanded', 'false');
+                trigger.focus();
             }
         });
+
+        // Consolidated Mode Toggle Button
+        if (consolidatedBtn) {
+            consolidatedBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.toggleConsolidated();
+            });
+        }
+
+        // Event Delegation for Tree List (Handles row selection, accordion toggle, checkbox view scope)
+        if (treeList) {
+            treeList.addEventListener('click', (e) => {
+                // 1. Checkbox toggle
+                const chk = e.target.closest('.scope-chk');
+                if (chk) {
+                    this.onScopeChange();
+                    return;
+                }
+
+                // 2. Accordion Caret toggle
+                const caret = e.target.closest('.caret-box');
+                if (caret) {
+                    e.stopPropagation();
+                    this.toggleAccordion(caret);
+                    return;
+                }
+
+                // 3. Row selection (Active Entity Switch)
+                const row = e.target.closest('.entity-grid-row');
+                if (row) {
+                    const compId = row.getAttribute('data-company-id');
+                    const brId = row.getAttribute('data-branch-id') || null;
+                    if (compId) {
+                        this.selectActiveEntity(compId, brId);
+                    }
+                }
+            });
+
+            // Keyboard navigation (Enter / Space on row)
+            treeList.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    const row = e.target.closest('.entity-grid-row');
+                    if (row && !e.target.closest('.scope-chk') && !e.target.closest('.caret-box')) {
+                        e.preventDefault();
+                        const compId = row.getAttribute('data-company-id');
+                        const brId = row.getAttribute('data-branch-id') || null;
+                        if (compId) {
+                            this.selectActiveEntity(compId, brId);
+                        }
+                    }
+                }
+            });
+        }
 
         // Filter search
         if (searchInput) {
             searchInput.addEventListener('input', (e) => {
                 const query = e.target.value.toLowerCase().trim();
-                if (clearBtn) clearBtn.style.display = query ? 'block' : 'none';
+                if (clearBtn) {
+                    if (query) {
+                        clearBtn.classList.remove('is-hidden');
+                        clearBtn.removeAttribute('aria-hidden');
+                        clearBtn.removeAttribute('tabindex');
+                    } else {
+                        clearBtn.classList.add('is-hidden');
+                        clearBtn.setAttribute('aria-hidden', 'true');
+                        clearBtn.setAttribute('tabindex', '-1');
+                    }
+                }
                 this.filterEntities(query);
             });
 
             if (clearBtn) {
                 clearBtn.addEventListener('click', () => {
                     searchInput.value = '';
-                    clearBtn.style.display = 'none';
+                    clearBtn.classList.add('is-hidden');
+                    clearBtn.setAttribute('aria-hidden', 'true');
+                    clearBtn.setAttribute('tabindex', '-1');
                     this.filterEntities('');
                     searchInput.focus();
                 });
@@ -951,7 +1030,6 @@ window.RMSContextSwitcher = {
             });
 
             if (res.ok) {
-                // Subtle non-intrusive feedback
                 const indicator = document.getElementById('scopeStatusIndicator');
                 if (indicator) {
                     indicator.style.background = '#a7f3d0';

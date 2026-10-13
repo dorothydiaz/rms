@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-Z371T0DBW5"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-Z371T0DBW5');
+</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Why v0, Bolt, and Lovable all ship the same look</title>
+<meta name="description" content="Prompt-to-app builders like v0, Bolt, and Lovable generate fast, and converge on the same gradient hero, three-card row, and violet accent. The mechanism behind the sameness, and how to get a custom design out of them.">
+<link rel="canonical" href="https://uxskill.laithjunaidy.com/blog/ai-app-builders-generic-design.html">
+<meta property="og:title" content="Why v0, Bolt, and Lovable all ship the same look">
+<meta property="og:description" content="Prompt-to-app builders converge on one centroid: a gradient hero, three equal cards, a violet accent. The mechanism, and how a structured brief breaks it.">
+<meta property="og:image" content="https://uxskill.laithjunaidy.com/og/home.png">
+<meta property="og:url" content="https://uxskill.laithjunaidy.com/blog/ai-app-builders-generic-design.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Why v0, Bolt, and Lovable all ship the same look">
+<meta name="twitter:description" content="Why prompt-to-app builders converge, and how to feed them structure instead of adjectives.">
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","headline":"Why v0, Bolt, and Lovable all ship the same look","datePublished":"2026-05-29","author":{"@type":"Person","name":"Laith Aljunaidy"},"publisher":{"@type":"Organization","name":"ux-skill"},"image":"https://uxskill.laithjunaidy.com/og/home.png","mainEntityOfPage":"https://uxskill.laithjunaidy.com/blog/ai-app-builders-generic-design.html","inLanguage":"en"}
+</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://uxskill.laithjunaidy.com/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://uxskill.laithjunaidy.com/blog/"},{"@type":"ListItem","position":3,"name":"Why v0, Bolt, and Lovable all ship the same look","item":"https://uxskill.laithjunaidy.com/blog/ai-app-builders-generic-design.html"}]}
+</script>
+
+<style>
+  :root {
+    --canvas: #07080a; --surface: #0e1014; --ink: #f6f7f9; --body: #c0c3c9;
+    --muted: #8a8f96; --accent: #f59e0b; --hairline: rgba(255,255,255,0.08);
+    --display: 'Bricolage Grotesque', system-ui, sans-serif;
+    --sans: 'Inter', system-ui, sans-serif;
+    --mono: 'JetBrains Mono', ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--canvas); color: var(--body); font-family: var(--sans); line-height: 1.65; overflow-x: clip; }
+  a { color: var(--accent); }
+  .wrap { max-width: 720px; margin: 0 auto; padding: clamp(20px, 4vw, 56px); }
+  header.post { margin-bottom: 48px; padding-bottom: 24px; border-bottom: 1px solid var(--hairline); }
+  .eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+  h1 { font-family: var(--display); font-size: clamp(32px, 5vw, 52px); line-height: 1.05; letter-spacing: -0.02em; color: var(--ink); margin-bottom: 18px; font-weight: 600; }
+  h1 em { font-style: italic; color: var(--accent); }
+  .lede { font-size: 19px; line-height: 1.55; color: var(--body); max-width: 60ch; }
+  h2 { font-family: var(--display); font-size: 28px; letter-spacing: -0.02em; color: var(--ink); margin: 56px 0 18px; }
+  h3 { font-family: var(--display); font-size: 21px; color: var(--ink); margin: 32px 0 12px; }
+  p { margin-bottom: 18px; font-size: 16.5px; max-width: 60ch; }
+  ul, ol { margin: 0 0 18px 22px; }
+  li { margin-bottom: 8px; max-width: 60ch; }
+  code { font-family: var(--mono); font-size: 14px; background: rgba(255,255,255,0.06); padding: 1px 6px; border-radius: 4px; color: var(--ink); }
+  pre { background: var(--surface); border: 1px solid var(--hairline); border-radius: 10px; padding: 18px 22px; overflow-x: auto; margin: 18px 0; }
+  pre code { background: transparent; padding: 0; font-size: 13.5px; line-height: 1.6; color: var(--body); }
+  blockquote { border-left: 2px solid var(--accent); padding-left: 18px; margin: 28px 0; color: var(--ink); font-style: italic; }
+  table { width: 100%; border-collapse: collapse; margin: 18px 0; font-size: 14.5px; }
+  th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--hairline); }
+  th { color: var(--ink); font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
+  .nav { padding: 18px 0; border-bottom: 1px solid var(--hairline); }
+  .nav__row { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; max-width: 1100px; margin: 0 auto; padding: 0 clamp(20px, 4vw, 48px); }
+  .nav__brand { font-family: var(--display); font-weight: 700; font-size: 17px; color: var(--ink); }
+  .nav__link { font-family: var(--mono); font-size: 11px; letter-spacing: 0.10em; text-transform: uppercase; color: var(--muted); }
+  footer { margin-top: 64px; padding-top: 28px; border-top: 1px solid var(--hairline); color: var(--muted); font-family: var(--mono); font-size: 11.5px; text-align: center; }
+  footer p { margin-inline: auto; }
+</style>
+<style id="usknav-css">  .sr-only,.skip-link:not(:focus){position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+  .skip-link:focus{position:fixed;top:8px;inset-inline-start:8px;width:auto;height:auto;clip:auto;padding:8px 14px;background:#f59e0b;color:#07080a;border-radius:6px;z-index:200;font-family:'Inter',system-ui,sans-serif;font-size:13px}
+  .usknav{position:sticky;top:0;z-index:100;display:flex;align-items:center;gap:18px;
+    padding:0 clamp(16px,4vw,48px);block-size:56px;background:rgba(7,8,10,0.86);
+    backdrop-filter:saturate(150%) blur(14px);-webkit-backdrop-filter:saturate(150%) blur(14px);
+    border-block-end:1px solid rgba(255,255,255,0.08);font-family:'Inter',system-ui,sans-serif}
+  .usknav__brand{font-family:'Bricolage Grotesque','Inter',sans-serif;font-weight:700;font-size:17px;
+    color:#f6f7f9;text-decoration:none;letter-spacing:-0.01em;margin-inline-end:auto;padding:6px 2px}
+  .usknav__links{display:flex;align-items:center;gap:clamp(9px,1.1vw,17px)}
+  .usknav__link{font-family:ui-monospace,'JetBrains Mono',monospace;font-size:11.5px;letter-spacing:0.08em;
+    text-transform:uppercase;color:#8a8f96;text-decoration:none;white-space:nowrap;
+    padding-block:8px;transition:color 140ms ease;}
+  .usknav__link:hover,.usknav__link[aria-current="page"]{color:#f6f7f9}
+  .usknav__langs{position:relative}
+  .usknav__langs>summary{list-style:none;cursor:pointer;display:inline-flex;align-items:center;gap:5px;
+    color:#8a8f96;padding:8px 6px;transition:color 140ms ease;min-block-size:24px}
+  .usknav__langs>summary::-webkit-details-marker{display:none}
+  .usknav__langs>summary:hover{color:#f6f7f9}
+  .usknav__langs-menu{position:absolute;top:calc(100% + 8px);inset-inline-end:0;min-inline-size:184px;
+    max-block-size:60vh;overflow-y:auto;background:#0e1014;border:1px solid rgba(255,255,255,0.1);
+    border-radius:10px;padding:6px;display:grid;gap:1px;box-shadow:0 20px 40px -20px rgba(0,0,0,0.6);z-index:130}
+  .usknav__langs-menu a{font-family:'Inter',sans-serif;font-size:12.5px;color:#c0c3c9;text-decoration:none;padding:7px 10px;border-radius:6px}
+  .usknav__langs-menu a:hover{background:rgba(255,255,255,0.06);color:#f6f7f9}
+  .usknav__star{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;
+    font-family:ui-monospace,'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.06em;text-transform:uppercase;
+    color:#f59e0b;text-decoration:none;border:1px solid #f59e0b;border-radius:999px;padding:7px 13px;transition:background-color 140ms ease;}
+  .usknav__star:hover{background:rgba(245,158,11,0.12)}
+  .usknav__burger{display:none;align-items:center;background:none;border:0;cursor:pointer;padding:7px;color:#f6f7f9;min-block-size:24px;min-inline-size:24px}
+  .usknav__burger svg{display:block}
+  .usknav__drawer{position:fixed;inset:0;z-index:120;background:#050608;display:none;flex-direction:column;
+    padding:20px clamp(16px,5vw,40px) 40px;transform:translateX(100%);
+    transition:transform 240ms cubic-bezier(0.16,1,0.3,1);overflow-y:auto;visibility:hidden}
+  .usknav__drawer.is-open{display:flex;transform:translateX(0);visibility:visible}
+  .usknav__drawer-top{display:flex;justify-content:space-between;align-items:center;block-size:56px;
+    border-block-end:1px solid rgba(255,255,255,0.1);margin-block-end:18px}
+  .usknav__drawer-close{background:none;border:0;cursor:pointer;color:#f6f7f9;padding:7px;min-block-size:24px;min-inline-size:24px}
+  .usknav__drawer-links{display:flex;flex-direction:column}
+  .usknav__drawer-links a{font-family:'Bricolage Grotesque','Inter',sans-serif;font-size:clamp(22px,5.5vw,32px);
+    color:#f6f7f9;text-decoration:none;padding:8px 0;border-block-end:1px solid rgba(255,255,255,0.06)}
+  .usknav__drawer-links a:hover{color:#f59e0b}
+  .usknav__drawer-star{margin-block-start:20px;align-self:flex-start}
+  .usknav__drawer-langlabel{font-family:ui-monospace,'JetBrains Mono',monospace;font-size:11px;
+    letter-spacing:0.1em;text-transform:uppercase;color:#8a8f96;margin:24px 0 10px}
+  .usknav__drawer-langs{display:flex;flex-wrap:wrap;gap:10px 18px}
+  .usknav__drawer-langs a{font-family:'Inter',sans-serif;font-size:13px;color:#8a8f96;text-decoration:none;padding:4px 0}
+  .usknav__drawer-langs a:hover{color:#f6f7f9}
+  /* Focus-visible: amber ring on every control (WCAG 2.4.7, >=3:1 on dark). */
+  .usknav__brand:focus-visible,.usknav__link:focus-visible,.usknav__langs>summary:focus-visible,
+  .usknav__star:focus-visible,.usknav__burger:focus-visible,.usknav__drawer-close:focus-visible,
+  .usknav__langs-menu a:focus-visible,.usknav__drawer-links a:focus-visible,.usknav__drawer-langs a:focus-visible{
+    outline:2px solid #f59e0b;outline-offset:3px;border-radius:4px}
+  @media (max-width:1100px){.usknav__links,.usknav__langs,.usknav__star{display:none}.usknav__burger{display:inline-flex}}
+  @media (prefers-reduced-motion:reduce){.usknav__drawer{transition:none;}}</style>
+<style>.docfig{margin:32px 0;border:1px solid rgba(255,255,255,0.10);border-radius:14px;overflow:hidden;background:#0b0d12}.docfig img{display:block;width:100%;height:auto}.docfig figcaption{margin:0;padding:12px 16px;font-size:13px;line-height:1.5;color:#8a8f96;border-top:1px solid rgba(255,255,255,0.08)}.docfig--narrow{max-width:720px}</style>
+</head>
+<body>
+
+
+
+
+<header class="usknav" aria-label="Site navigation">
+  <a class="usknav__brand" href="/">uxskill</a>
+  <nav class="usknav__links" aria-label="Primary">
+    <a class="usknav__link" href="/brands.html">Brands</a>
+    <a class="usknav__link" href="/anti-patterns.html">Anti-patterns</a>
+    <a class="usknav__link" href="/commands.html">Commands</a>
+    <a class="usknav__link" href="/mcp.html">MCP</a>
+    <a class="usknav__link" href="/compare.html">Compare</a>
+    <a class="usknav__link" href="/showcase.html">Showcase</a>
+    <a class="usknav__link" href="/blog/">Blog</a>
+    <a class="usknav__link" href="/about.html">About</a>
+    <a class="usknav__link" href="/faq.html">FAQ</a>
+    <a class="usknav__link" href="/roadmap.html">Roadmap</a>
+  </nav>
+  <details class="usknav__langs">
+    <summary aria-label="Choose language"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></summary>
+    <div class="usknav__langs-menu">
+      <a href="/" lang="en">English</a>
+      <a href="/zh-CN/" lang="zh-CN">简体中文</a>
+      <a href="/zh-TW/" lang="zh-TW">繁體中文</a>
+      <a href="/ja/" lang="ja">日本語</a>
+      <a href="/ko/" lang="ko">한국어</a>
+      <a href="/hi/" lang="hi">हिन्दी</a>
+      <a href="/id/" lang="id">Bahasa Indonesia</a>
+      <a href="/vi/" lang="vi">Tiếng Việt</a>
+      <a href="/th/" lang="th">ไทย</a>
+      <a href="/ar/" lang="ar" dir="rtl">العربية</a>
+      <a href="/es/" lang="es">Español</a>
+      <a href="/fr/" lang="fr">Français</a>
+      <a href="/de/" lang="de">Deutsch</a>
+      <a href="/pt-BR/" lang="pt-BR">Português</a>
+      <a href="/ru/" lang="ru">Русский</a>
+      <a href="/tr/" lang="tr">Türkçe</a>
+      <a href="/it/" lang="it">Italiano</a>
+    </div>
+  </details>
+  <a class="usknav__star" href="https://github.com/Laith0003/ux-skill" rel="noopener">Star on GitHub</a>
+  <button class="usknav__burger" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="usknav-drawer"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+</header>
+<div class="usknav__drawer" id="usknav-drawer" role="dialog" aria-modal="true" aria-label="Site menu">
+  <div class="usknav__drawer-top">
+    <a class="usknav__brand" href="/">uxskill</a>
+    <button class="usknav__drawer-close" type="button" aria-label="Close menu"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+  </div>
+  <nav class="usknav__drawer-links" aria-label="All pages">
+    <a href="/brands.html">Brands</a>
+      <a href="/anti-patterns.html">Anti-patterns</a>
+      <a href="/commands.html">Commands</a>
+      <a href="/mcp.html">MCP</a>
+      <a href="/compare.html">Compare</a>
+      <a href="/showcase.html">Showcase</a>
+      <a href="/blog/">Blog</a>
+      <a href="/about.html">About</a>
+      <a href="/faq.html">FAQ</a>
+      <a href="/roadmap.html">Roadmap</a>
+  </nav>
+  <a class="usknav__star usknav__drawer-star" href="https://github.com/Laith0003/ux-skill" rel="noopener">Star on GitHub</a>
+  <div class="usknav__drawer-langlabel">Language</div>
+  <div class="usknav__drawer-langs">
+      <a href="/" lang="en">English</a>
+      <a href="/zh-CN/" lang="zh-CN">简体中文</a>
+      <a href="/zh-TW/" lang="zh-TW">繁體中文</a>
+      <a href="/ja/" lang="ja">日本語</a>
+      <a href="/ko/" lang="ko">한국어</a>
+      <a href="/hi/" lang="hi">हिन्दी</a>
+      <a href="/id/" lang="id">Bahasa Indonesia</a>
+      <a href="/vi/" lang="vi">Tiếng Việt</a>
+      <a href="/th/" lang="th">ไทย</a>
+      <a href="/ar/" lang="ar" dir="rtl">العربية</a>
+      <a href="/es/" lang="es">Español</a>
+      <a href="/fr/" lang="fr">Français</a>
+      <a href="/de/" lang="de">Deutsch</a>
+      <a href="/pt-BR/" lang="pt-BR">Português</a>
+      <a href="/ru/" lang="ru">Русский</a>
+      <a href="/tr/" lang="tr">Türkçe</a>
+      <a href="/it/" lang="it">Italiano</a>
+  </div>
+</div>
+<div class="wrap">
+<header class="post">
+<p class="eyebrow">FIELD NOTES · 2026-05-29</p>
+<h1>Why v0, Bolt, and Lovable <em>all ship the same look</em>.</h1>
+<p class="lede">Prompt-to-app builders are genuinely fast. Describe an app and v0, Bolt, or Lovable hands you a running screen in seconds. Then you notice every screen rhymes: a centered hero over a soft gradient, three equal feature cards, a violet primary, Inter, the same airy spacing on a marketing page and a settings panel. The speed is real. So is the sameness, and re-prompting your way out of it rarely works.</p>
+</header>
+<figure class="docfig">
+  <img src="/screenshots/brand-mosaic.webp" width="1600" height="1000" alt="A grid of twelve brand tiles, each set in its own typeface and accent color, showing how far real brand systems diverge from one another." loading="lazy" decoding="async">
+  <figcaption>The opposite of the builder look: twelve real brands, twelve different type and color decisions.</figcaption>
+</figure>
+
+<h2>The same screen, every time</h2>
+<p>The convergence is specific enough to list. A fresh generation tends to land on the same vocabulary:</p>
+<ul>
+<li>A centered hero with a headline, a one-line subhead, and a soft gradient washing the background.</li>
+<li>Three equal cards in a row for features, each with a small icon, a short title, and two lines of body.</li>
+<li>A violet or indigo primary, the same one you have seen on a hundred other generated apps.</li>
+<li>Inter for everything, set at the same large display sizes the demos use.</li>
+<li>Generous, uniform spacing: the same padding on a hero and on a dense table, because nothing told the model they differ.</li>
+</ul>
+<p>It looks plausible, which is exactly the trap. Plausible is the target the builder is optimizing for, and plausible has a single most-likely shape.</p>
+
+<h2>Why plausible means identical</h2>
+<p>A prompt-to-app builder is graded, implicitly, on two things: the code runs, and the result looks like a real app. Both pressures point at the center of the training distribution. The most defensible output for an underspecified request is the most common one: the average of every hero, card row, and palette the model has seen. That average is the centroid, and regression to it is what optimizing for "looks right" does when the brief is a sentence. Tailwind and shadcn defaults sharpen it further: a known set of utilities and a known palette is the path of least resistance, so the convergence is baked into the materials too.</p>
+<blockquote>An empty brief has a most-likely answer, and every builder returns it. Sameness is not a failure of imagination. It is the correct response to a request that carries no constraints.</blockquote>
+
+<h2>Why "make it more unique" does not work</h2>
+<p>The reflex is to argue with the output: make it more beautiful, more premium, more unique, less generic. This mostly fails, and for a concrete reason. An adjective is not a constraint the model can satisfy deterministically. It is a vibe with its own centroid. "More unique" resolves to a slightly different draw from the same distribution: swap the violet for a teal, bump a radius, add a blur behind the hero. The vocabulary is unchanged because nothing pinned it down. You are re-rolling the dice, not loading them.</p>
+<table>
+<thead><tr><th>you say</th><th>what the model does</th><th>result</th></tr></thead>
+<tbody>
+<tr><td>"make it more beautiful"</td><td>redraws from the same distribution</td><td>same hero, softer shadow</td></tr>
+<tr><td>"make it more unique"</td><td>swaps one token for a neighbor</td><td>teal instead of violet, still centered</td></tr>
+<tr><td>"make it premium"</td><td>adds decoration, not structure</td><td>more gradient, more blur</td></tr>
+<tr><td>"use a 4px spacing base, mono display, sharp radius"</td><td>obeys named tokens</td><td>a different system, repeatably</td></tr>
+</tbody>
+</table>
+<p>The fix is not a better adjective. It is structure: concrete tokens the generated code has to use, supplied before the first generation instead of negotiated after it.</p>
+
+<h2>Feed it tokens, not adjectives</h2>
+<p>A brief beats a vibe when it resolves to specifics: a named palette, a type pair, a density target, a radius, motion presets, and component choices. Those are values the model can apply without guessing. ux-skill produces exactly that brief: you run a short discovery intake and the engine returns a complete system drawn from its data manifests, which you paste into v0, Bolt, or Lovable as the constraint. The builder fills it in instead of inventing it.</p>
+<p>The engine is deterministic and offline, with no model inside it: the same brief maps to the same system every time, on any machine, because the recommendation is a lookup over fixed data, not a generation. That is the property the builders lack: a stable source of constraints they can be made to obey.</p>
+<p>Density is the token that most exposes the gap. Builder output defaults to landing-page spacing everywhere, because marketing screens dominate the training data and nothing in the prompt says a settings table is not a hero, so app surfaces feel under-dense, holding a fraction of what the viewport could carry. ux-skill treats density as a first-class dial: set it high and the spacing base tightens, the type scale compresses, and radii sharpen together, so the result reads like a tool rather than a brochure with inputs glued on.</p>
+
+<h2>The linter catches the centroid tells</h2>
+<p>The give-aways are mechanical, so they can be checked mechanically. ux-skill ships a regex linter that flags the exact signatures of a centroid render: a violet-to-blue gradient, a row of three equal feature cards, a default named palette used for primary, marketing filler in headings, the same generic call-to-action text. Run it over what a builder generated and the tells surface as findings with line numbers and fixes, scored to a number you can gate on. Generate with a structured brief, lint the result, fix what it flags, and the output stops looking like every other generated app, because it was never asked to be average.</p>
+
+<h2>The point</h2>
+<p>v0, Bolt, and Lovable converge because an empty brief has one most-likely answer, and adjectives cannot pull them off it. Supply structure instead (a deterministic system of real tokens the generated code must use, plus a linter to catch the drift) and the same fast builders produce something that is actually yours.</p>
+<pre><code>pip install uxskill
+# then, in your AI coding tool:
+# /ux-recommend  : a complete system from a brief, deterministic and offline</code></pre>
+
+<h2>Related</h2>
+<ul>
+<li><a href="/blog/why-ai-generated-apps-look-the-same.html">The centroid problem</a></li>
+<li><a href="/blog/ai-dashboard-design-generic.html">The dashboard density failure</a></li>
+<li><a href="/blog/deterministic-design-engine-no-llm.html">A deterministic engine, no LLM</a></li>
+<li><a href="/anti-patterns.html">The anti-pattern catalogue</a></li>
+</ul>
+
+<footer>
+ux-skill v3.0 · THE BRAIN · MIT · no telemetry · no LLM · <a href="/">home</a> · <a href="https://github.com/Laith0003/ux-skill" rel="noopener">github</a>
+<p class="made-by">Made by <a href="https://laithjunaidy.com">Laith Aljunaidy</a>.</p></footer>
+
+</div>
+<script id="usknav-js">(function(){var d=document.getElementById('usknav-drawer');var b=document.querySelector('.usknav__burger');if(!d||!b)return;var c=d.querySelector('.usknav__drawer-close');function F(){return d.querySelectorAll('a[href],button:not([disabled])');}function set(v){d.classList.toggle('is-open',v);b.setAttribute('aria-expanded',v?'true':'false');document.body.style.overflow=v?'hidden':'';if(v){var f=c||F()[0];if(f)f.focus();}else{b.focus();}}b.addEventListener('click',function(){set(true);});if(c)c.addEventListener('click',function(){set(false);});d.addEventListener('click',function(e){if(e.target.tagName==='A')set(false);});document.addEventListener('keydown',function(e){if(e.key==='Escape'&&d.classList.contains('is-open'))set(false);if(e.key==='Tab'&&d.classList.contains('is-open')){var f=F();if(!f.length)return;var a=f[0],z=f[f.length-1];if(e.shiftKey&&document.activeElement===a){e.preventDefault();z.focus();}else if(!e.shiftKey&&document.activeElement===z){e.preventDefault();a.focus();}}});var L=document.querySelector('.usknav__langs');if(L){document.addEventListener('click',function(e){if(L.open&&!L.contains(e.target))L.open=false;});L.addEventListener('keydown',function(e){if(e.key==='Escape')L.open=false;});}})();</script>
+</body>
+</html>

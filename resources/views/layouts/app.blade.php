@@ -44,9 +44,6 @@
                     <!-- Entity Hierarchy & Context Switcher -->
                     <x-context-switcher />
 
-                    <!-- User Profile Dropdown -->
-                    <x-header-user-profile />
-
                     <button class="icon-btn notification-btn" title="Notifications" aria-label="Notifications">
                         <i class="ph ph-bell"></i>
                     </button>

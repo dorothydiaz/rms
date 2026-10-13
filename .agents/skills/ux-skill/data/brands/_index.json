@@ -1,0 +1,811 @@
+{
+  "_meta": {
+    "version": "2.4.0",
+    "entries": 160,
+    "last_updated": "2026-05-28",
+    "source": "ux-skill v2 — expanded brand catalog (131 -> 160)",
+    "schema_version": "1.0"
+  },
+  "brands": [
+    {
+      "id": "1password",
+      "name": "1Password",
+      "category": "Developer Tools"
+    },
+    {
+      "id": "adidas",
+      "name": "Adidas",
+      "category": "Consumer / Lifestyle / Retail"
+    },
+    {
+      "id": "aesop",
+      "name": "Aesop",
+      "category": "Consumer / Lifestyle / Retail"
+    },
+    {
+      "id": "airbnb",
+      "name": "Airbnb",
+      "category": "Consumer / Lifestyle / Retail"
+    },
+    {
+      "id": "airtable",
+      "name": "Airtable",
+      "category": "Productivity / Collaboration"
+    },
+    {
+      "id": "allbirds",
+      "name": "Allbirds",
+      "category": "Consumer / Lifestyle / Retail"
+    },
+    {
+      "id": "aman-resorts",
+      "name": "Aman Resorts",
+      "category": "Travel / Hospitality"
+    },
+    {
+      "id": "amazon",
+      "name": "Amazon",
+      "category": "Consumer / Lifestyle / Retail"
+    },
+    {
+      "id": "anthropic",
+      "name": "Anthropic",
+      "category": "AI / ML Platform"
+    },
+    {
+      "id": "apple",
+      "name": "Apple",
+      "category": "Consumer / Lifestyle / Retail"
+    },
+    {
+      "id": "apple-music",
+      "name": "Apple Music",
+      "category": "Consumer / Lifestyle / Retail"
+    },
+    {
+      "id": "arc-browser",
+      "name": "Arc Browser",
+      "category": "Developer Tools"
+    },
+    {
+      "id": "asana",
+      "name": "Asana",
+      "category": "Productivity / Collaboration"
+    },
+    {
+      "id": "atlantic",
+      "name": "The Atlantic",
+      "category": "Editorial / Media"
+    },
+    {
+      "id": "audi",
+      "name": "Audi",
+      "category": "Automotive"
+    },
+    {
+      "id": "bentley",
+      "name": "Bentley",
+      "category": "Automotive"
+    },
+    {
+      "id": "binance",
+      "name": "Binance",
+      "category": "Fintech / Crypto"
+    },
+    {
+      "id": "bloomberg",
+      "name": "Bloomberg",
+      "category": "Editorial / Media"
+    },
+    {
+      "id": "bmw",
+      "name": "BMW",
+      "category": "Automotive"
+    },
+    {
+      "id": "bmw-m",
+      "name": "BMW M",
+      "category": "Automotive"
+    },
+    {
+      "id": "booking-com",
+      "name": "Booking.com",
+      "category": "Travel / Hospitality"
+    },
+    {
+      "id": "bose",
+      "name": "Bose",
+      "category": "Consumer / Lifestyle / Retail"
+    },
+    {
+      "id": "brave",
+      "name": "Brave",
+      "category": "Developer Tools"
+    },
+    {
+      "id": "brex",
+      "name": "Brex",
+      "category": "Fintech / Crypto"
+    },
+    {
+      "id": "bugatti",
+      "name": "Bugatti",
+      "category": "Automotive"
+    },
+    {
+      "id": "cal",
+      "name": "Cal.com",
+      "category": "Productivity / Collaboration"
+    },
+    {
+      "id": "claude",
+      "name": "Claude",
+      "category": "AI / ML Platform"
+    },
+    {
+      "id": "clay",
+      "name": "Clay",
+      "category": "Editorial / Media"
+    },
+    {
+      "id": "clickhouse",
+      "name": "ClickHouse",
+      "category": "Developer Tools"
+    },
+    {
+      "id": "cloudflare",
+      "name": "Cloudflare",
+      "category": "Developer Tools"
+    },
+    {
+      "id": "cohere",
+      "name": "Cohere",
+      "category": "AI / ML Platform"
+    },
+    {
+      "id": "coinbase",
+      "name": "Coinbase",
+      "category": "Fintech / Crypto"
+    },
+    {
+      "id": "composio",
+      "name": "Composio",
+      "category": "Developer Tools"
+    },
+    {
+      "id": "cursor",
+      "name": "Cursor",
+      "category": "Developer Tools"
+    },
+    {
+      "id": "datadog",
+      "name": "Datadog",
+      "category": "Developer Tools"
+    },
+    {
+      "id": "dbt",
+      "name": "dbt Labs",
+      "category": "Developer Tools"
+    },
+    {
+      "id": "dezeen",
+      "name": "Dezeen",
+      "category": "Editorial / Media"
+    },
+    {
+      "id": "disney-plus",
+      "name": "Disney+",
+      "category": "Streaming / Media"
+    },
+    {
+      "id": "duckduckgo",
+      "name": "DuckDuckGo",
+      "category": "Developer Tools"
+    },
+    {
+      "id": "ea",
+      "name": "EA",
+      "category": "Consumer / Lifestyle / Retail"
+    },
+    {
+      "id": "economist",
+      "name": "The Economist",
+      "category": "Editorial / Media"
+    },
+    {
+      "id": "elevenlabs",
+      "name": "ElevenLabs",
+      "category": "AI / ML Platform"
+    },
+    {
+      "id": "emirates",
+      "name": "Emirates",
+      "category": "Travel / Hospitality"
+    },
+    {
+      "id": "expo",
+      "name": "Expo",
+      "category": "Developer Tools"
+    },
+    {
+      "id": "fenty-beauty",
+      "name": "Fenty Beauty",
+      "category": "Consumer / Lifestyle / Retail"
+    },
+    {
+      "id": "ferrari",
+      "name": "Ferrari",
+      "category": "Automotive"
+    },
+    {
+      "id": "figma",
+      "name": "Figma",
+      "category": "Productivity / Collaboration"
+    },
+    {
+      "id": "fivetran",
+      "name": "Fivetran",
+      "category": "Developer Tools"
+    },
+    {
+      "id": "fly-io",
+      "name": "Fly.io",
+      "category": "Developer Tools"
+    },
+    {
+      "id": "four-seasons",
+      "name": "Four Seasons",
+      "category": "Travel / Hospitality"
+    },
+    {
+      "id": "framer",
+      "name": "Framer",
+      "category": "Developer Tools"
+    },
+    {
+      "id": "github",
+      "name": "GitHub",
+      "category": "Developer Tools"
+    },
+    {
+      "id": "glossier",
+      "name": "Glossier",
+      "category": "Consumer / Lifestyle / Retail"
+    },
+    {
+      "id": "google",
+      "name": "Google",
+      "category": "Developer Tools"
+    },
+    {
+      "id": "hashicorp",
+      "name": "HashiCorp",
+      "category": "Developer Tools"
+    },
+    {
+      "id": "herman-miller",
+      "name": "Herman Miller",
+      "category": "Consumer / Lifestyle / Retail"
+    },
+    {
+      "id": "hims-hers",
+      "name": "Hims & Hers",
+      "category": "Consumer / Lifestyle / Retail"
+    },
+    {
+      "id": "honeycomb",
+      "name": "Honeycomb",
+      "category": "Developer Tools"
+    },
+    {
+      "id": "hp",
+      "name": "HP",
+      "category": "Consumer / Lifestyle / Retail"
+    },
+    {
+      "id": "huggingface",
+      "name": "Hugging Face",
+      "category": "AI / ML Platform"
+    },
+    {
+      "id": "ibm",
+      "name": "IBM",
+      "category": "Developer Tools"
+    },
+    {
+      "id": "ikea",
+      "name": "IKEA",
+      "category": "Consumer / Lifestyle / Retail"
+    },
+    {
+      "id": "instagram",
+      "name": "Instagram",
+      "category": "Consumer / Lifestyle / Retail"
+    },
+    {
+      "id": "intercom",
+      "name": "Intercom",
+      "category": "Productivity / Collaboration"
+    },
+    {
+      "id": "jbl",
+      "name": "JBL",
+      "category": "Consumer / Lifestyle / Retail"
+    },
+    {
+      "id": "kraken",
+      "name": "Kraken",
+      "category": "Fintech / Crypto"
+    },
+    {
+      "id": "lamborghini",
+      "name": "Lamborghini",
+      "category": "Automotive"
+    },
+    {
+      "id": "levis",
+      "name": "Levi's",
+      "category": "Consumer / Lifestyle / Retail"
+    },
+    {
+      "id": "linear.app",
+      "name": "Linear",
+      "category": "Productivity / Collaboration"
+    },
+    {
+      "id": "linkedin",
+      "name": "LinkedIn",
+      "category": "Consumer / Lifestyle / Retail"
+    },
+    {
+      "id": "loom",
+      "name": "Loom",
+      "category": "Productivity / Collaboration"
+    },
+    {
+      "id": "lovable",
+      "name": "Lovable",
+      "category": "Developer Tools"
+    },
+    {
+      "id": "mailchimp",
+      "name": "Mailchimp",
+      "category": "Productivity / Collaboration"
+    },
+    {
+      "id": "mastercard",
+      "name": "Mastercard",
+      "category": "Fintech / Crypto"
+    },
+    {
+      "id": "mclaren",
+      "name": "McLaren",
+      "category": "Automotive"
+    },
+    {
+      "id": "mercedes-benz",
+      "name": "Mercedes-Benz",
+      "category": "Automotive"
+    },
+    {
+      "id": "mercury",
+      "name": "Mercury",
+      "category": "Fintech / Crypto"
+    },
+    {
+      "id": "meta",
+      "name": "Meta",
+      "category": "Consumer / Lifestyle / Retail"
+    },
+    {
+      "id": "microsoft",
+      "name": "Microsoft",
+      "category": "Developer Tools"
+    },
+    {
+      "id": "minimax",
+      "name": "MiniMax",
+      "category": "AI / ML Platform"
+    },
+    {
+      "id": "mintlify",
+      "name": "Mintlify",
+      "category": "Developer Tools"
+    },
+    {
+      "id": "miro",
+      "name": "Miro",
+      "category": "Productivity / Collaboration"
+    },
+    {
+      "id": "mistral.ai",
+      "name": "Mistral AI",
+      "category": "AI / ML Platform"
+    },
+    {
+      "id": "modal",
+      "name": "Modal",
+      "category": "Developer Tools"
+    },
+    {
+      "id": "mongodb",
+      "name": "MongoDB",
+      "category": "Developer Tools"
+    },
+    {
+      "id": "monzo",
+      "name": "Monzo",
+      "category": "Fintech / Crypto"
+    },
+    {
+      "id": "muji",
+      "name": "MUJI",
+      "category": "Consumer / Lifestyle / Retail"
+    },
+    {
+      "id": "n26",
+      "name": "N26",
+      "category": "Fintech / Crypto"
+    },
+    {
+      "id": "neon",
+      "name": "Neon",
+      "category": "Developer Tools"
+    },
+    {
+      "id": "netflix",
+      "name": "Netflix",
+      "category": "Streaming / Media"
+    },
+    {
+      "id": "nike",
+      "name": "Nike",
+      "category": "Consumer / Lifestyle / Retail"
+    },
+    {
+      "id": "nintendo",
+      "name": "Nintendo",
+      "category": "Consumer / Lifestyle / Retail"
+    },
+    {
+      "id": "notion",
+      "name": "Notion",
+      "category": "Productivity / Collaboration"
+    },
+    {
+      "id": "nvidia",
+      "name": "NVIDIA",
+      "category": "Editorial / Media"
+    },
+    {
+      "id": "nytimes",
+      "name": "The New York Times",
+      "category": "Editorial / Media"
+    },
+    {
+      "id": "obsidian",
+      "name": "Obsidian",
+      "category": "Productivity / Collaboration"
+    },
+    {
+      "id": "ollama",
+      "name": "Ollama",
+      "category": "Developer Tools"
+    },
+    {
+      "id": "openai",
+      "name": "OpenAI",
+      "category": "AI / ML Platform"
+    },
+    {
+      "id": "opencode.ai",
+      "name": "OpenCode",
+      "category": "Developer Tools"
+    },
+    {
+      "id": "oracle",
+      "name": "Oracle",
+      "category": "Developer Tools"
+    },
+    {
+      "id": "patagonia",
+      "name": "Patagonia",
+      "category": "Consumer / Lifestyle / Retail"
+    },
+    {
+      "id": "perplexity",
+      "name": "Perplexity",
+      "category": "AI / ML Platform"
+    },
+    {
+      "id": "pinterest",
+      "name": "Pinterest",
+      "category": "Consumer / Lifestyle / Retail"
+    },
+    {
+      "id": "pitchfork",
+      "name": "Pitchfork",
+      "category": "Editorial / Media"
+    },
+    {
+      "id": "plaid",
+      "name": "Plaid",
+      "category": "Fintech / Crypto"
+    },
+    {
+      "id": "playstation",
+      "name": "PlayStation",
+      "category": "Consumer / Lifestyle / Retail"
+    },
+    {
+      "id": "porsche",
+      "name": "Porsche",
+      "category": "Automotive"
+    },
+    {
+      "id": "posthog",
+      "name": "PostHog",
+      "category": "Developer Tools"
+    },
+    {
+      "id": "puma",
+      "name": "Puma",
+      "category": "Consumer / Lifestyle / Retail"
+    },
+    {
+      "id": "railway",
+      "name": "Railway",
+      "category": "Developer Tools"
+    },
+    {
+      "id": "ramp",
+      "name": "Ramp",
+      "category": "Fintech / Crypto"
+    },
+    {
+      "id": "raycast",
+      "name": "Raycast",
+      "category": "Developer Tools"
+    },
+    {
+      "id": "reddit",
+      "name": "Reddit",
+      "category": "Consumer / Lifestyle / Retail"
+    },
+    {
+      "id": "renault",
+      "name": "Renault",
+      "category": "Automotive"
+    },
+    {
+      "id": "render",
+      "name": "Render",
+      "category": "Developer Tools"
+    },
+    {
+      "id": "replicate",
+      "name": "Replicate",
+      "category": "Developer Tools"
+    },
+    {
+      "id": "resend",
+      "name": "Resend",
+      "category": "Developer Tools"
+    },
+    {
+      "id": "retool",
+      "name": "Retool",
+      "category": "Developer Tools"
+    },
+    {
+      "id": "revolut",
+      "name": "Revolut",
+      "category": "Fintech / Crypto"
+    },
+    {
+      "id": "robinhood",
+      "name": "Robinhood",
+      "category": "Fintech / Crypto"
+    },
+    {
+      "id": "rolls-royce",
+      "name": "Rolls-Royce Motor Cars",
+      "category": "Automotive"
+    },
+    {
+      "id": "runwayml",
+      "name": "Runway",
+      "category": "AI / ML Platform"
+    },
+    {
+      "id": "salesforce",
+      "name": "Salesforce",
+      "category": "Developer Tools"
+    },
+    {
+      "id": "sanity",
+      "name": "Sanity",
+      "category": "Developer Tools"
+    },
+    {
+      "id": "sentry",
+      "name": "Sentry",
+      "category": "Developer Tools"
+    },
+    {
+      "id": "shopify",
+      "name": "Shopify",
+      "category": "Consumer / Lifestyle / Retail"
+    },
+    {
+      "id": "slack",
+      "name": "Slack",
+      "category": "Developer Tools"
+    },
+    {
+      "id": "snap",
+      "name": "Snap",
+      "category": "Consumer / Lifestyle / Retail"
+    },
+    {
+      "id": "snowflake",
+      "name": "Snowflake",
+      "category": "Developer Tools"
+    },
+    {
+      "id": "sonos",
+      "name": "Sonos",
+      "category": "Consumer / Lifestyle / Retail"
+    },
+    {
+      "id": "sourcegraph",
+      "name": "Sourcegraph",
+      "category": "Developer Tools"
+    },
+    {
+      "id": "spacex",
+      "name": "SpaceX",
+      "category": "Automotive"
+    },
+    {
+      "id": "spotify",
+      "name": "Spotify",
+      "category": "Consumer / Lifestyle / Retail"
+    },
+    {
+      "id": "starbucks",
+      "name": "Starbucks",
+      "category": "Consumer / Lifestyle / Retail"
+    },
+    {
+      "id": "stripe",
+      "name": "Stripe",
+      "category": "Fintech / Crypto"
+    },
+    {
+      "id": "substack",
+      "name": "Substack",
+      "category": "Editorial / Media"
+    },
+    {
+      "id": "supabase",
+      "name": "Supabase",
+      "category": "Developer Tools"
+    },
+    {
+      "id": "superhuman",
+      "name": "Superhuman",
+      "category": "Developer Tools"
+    },
+    {
+      "id": "tesla",
+      "name": "Tesla",
+      "category": "Automotive"
+    },
+    {
+      "id": "theverge",
+      "name": "The Verge",
+      "category": "Editorial / Media"
+    },
+    {
+      "id": "tiktok",
+      "name": "TikTok",
+      "category": "Consumer / Lifestyle / Retail"
+    },
+    {
+      "id": "together.ai",
+      "name": "Together AI",
+      "category": "AI / ML Platform"
+    },
+    {
+      "id": "twilio",
+      "name": "Twilio",
+      "category": "Developer Tools"
+    },
+    {
+      "id": "twitch",
+      "name": "Twitch",
+      "category": "Streaming / Media"
+    },
+    {
+      "id": "uber",
+      "name": "Uber",
+      "category": "Consumer / Lifestyle / Retail"
+    },
+    {
+      "id": "ubisoft",
+      "name": "Ubisoft",
+      "category": "Consumer / Lifestyle / Retail"
+    },
+    {
+      "id": "uniqlo",
+      "name": "UNIQLO",
+      "category": "Consumer / Lifestyle / Retail"
+    },
+    {
+      "id": "vercel",
+      "name": "Vercel",
+      "category": "Developer Tools"
+    },
+    {
+      "id": "vodafone",
+      "name": "Vodafone",
+      "category": "Editorial / Media"
+    },
+    {
+      "id": "voltagent",
+      "name": "VoltAgent",
+      "category": "AI / ML Platform"
+    },
+    {
+      "id": "volvo",
+      "name": "Volvo",
+      "category": "Automotive"
+    },
+    {
+      "id": "warp",
+      "name": "Warp",
+      "category": "Developer Tools"
+    },
+    {
+      "id": "webflow",
+      "name": "Webflow",
+      "category": "Developer Tools"
+    },
+    {
+      "id": "wired",
+      "name": "Wired",
+      "category": "Editorial / Media"
+    },
+    {
+      "id": "wise",
+      "name": "Wise",
+      "category": "Fintech / Crypto"
+    },
+    {
+      "id": "wsj",
+      "name": "The Wall Street Journal",
+      "category": "Editorial / Media"
+    },
+    {
+      "id": "x.ai",
+      "name": "xAI",
+      "category": "AI / ML Platform"
+    },
+    {
+      "id": "youtube",
+      "name": "YouTube",
+      "category": "Streaming / Media"
+    },
+    {
+      "id": "zapier",
+      "name": "Zapier",
+      "category": "Productivity / Collaboration"
+    },
+    {
+      "id": "zara",
+      "name": "Zara",
+      "category": "Consumer / Lifestyle / Retail"
+    }
+  ]
+}

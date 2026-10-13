@@ -1,0 +1,51 @@
+{
+  "id": "mistral.ai",
+  "name": "Mistral AI",
+  "category": "AI / ML Platform",
+  "year_observed": 2026,
+  "philosophy": "Mistral AI brands itself with a singular signature — atmospheric sunset gradients (mustard, orange, deep red) layered over photography of mountains, plus a horizontal \"sunset stripe\" bar that closes every page.",
+  "design_language": {
+    "type": {
+      "display": "PP Editorial Old",
+      "body": "Inter",
+      "mono": "JetBrains Mono"
+    },
+    "color_primary": "#fa520f",
+    "color_canvas": "#ffffff",
+    "color_ink": "#1f1f1f",
+    "color_accent_gradient": "linear-gradient(135deg, #ffa110 0%, #ff8a00 60%, #fa520f 100%)",
+    "radius": [
+      4,
+      6,
+      8,
+      12,
+      16,
+      20
+    ],
+    "spacing": "4-based"
+  },
+  "trademark_signals": [
+    "Atmospheric mountain-sunset hero photography (orange-red-yellow gradient sky)",
+    "Horizontal \"sunset stripe\" band ( → → → ) at every page bottom",
+    "Cream-yellow surfaces (, ) for form panels and feature cards",
+    "PP Editorial Old (or similar near-serif) for hero displays; Inter for everything else",
+    "(8px) buttons and (12px) cards — less playful, more editorial geometry"
+  ],
+  "components_observed": [
+    "card-feature-product",
+    "pricing-card-featured",
+    "contact-form-panel",
+    "hero-band-sunset",
+    "sunset-stripe-band",
+    "code-block-header"
+  ],
+  "exemplar_pages": [
+    "mistral.ai"
+  ],
+  "ai_slop_avoided": [
+    "Don't use pill-shaped buttons — Mistral's geometry is sober and editorial, not playful",
+    "Don't introduce additional accent colors beyond the orange/yellow/cream sunset palette",
+    "Don't reduce hero leading below 1.05"
+  ],
+  "source_md": "references/brands/mistral.ai.md"
+}
