@@ -325,47 +325,6 @@
             </div>
         </div>
 
-<<<<<<< HEAD
-=======
-        <!-- Settings (Business Configuration & System Administration) -->
-        <div id="submenu-config" class="panel-content submenu{{ $activeModule === 'config' ? ' active' : '' }}">
-            <div class="submenu-header">
-                <span class="submenu-title">Settings</span>
-            </div>
-            <div class="nav-section">
-                @php $bizActive = request()->routeIs('config.companies-branches.*', 'config.business-settings*'); @endphp
-                <div class="nav-item-group" data-group-id="config-biz">
-                    <a href="{{ route('config.companies-branches.index') }}" class="nav-item{{ $bizActive ? ' active' : '' }}">
-                        <i class="ph ph-storefront"></i>
-                        <span>Business Settings</span>
-                    </a>
-                    <button type="button" class="add-btn"><i class="ph {{ $bizActive ? 'ph-minus' : 'ph-plus' }}"></i></button>
-                </div>
-                <div class="sub-nav{{ $bizActive ? ' expanded' : '' }}">
-                    <a href="{{ route('config.companies-branches.index') }}" class="sub-nav-item{{ request()->routeIs('config.companies-branches.*', 'config.business-settings*') ? ' active' : '' }}" title="Enterprise multi-entity company profile, branch directory, and legal registrations">
-                        <i class="ph ph-buildings" style="margin-right: 6px; font-size: 13px;"></i>
-                        <span>Companies & Branches</span>
-                    </a>
-                </div>
-            </div>
-            <div class="nav-section">
-                @php $adminActive = request()->routeIs('hr.admin.*', 'hr.users-auth'); @endphp
-                <div class="nav-item-group" data-group-id="config-admin">
-                    <a href="#" class="nav-item">
-                        <i class="ph ph-shield-check"></i>
-                        <span>System Administration</span>
-                    </a>
-                    <button type="button" class="add-btn"><i class="ph {{ $adminActive ? 'ph-minus' : 'ph-plus' }}"></i></button>
-                </div>
-                <div class="sub-nav{{ $adminActive ? ' expanded' : '' }}">
-                    <a href="{{ route('hr.admin.users') }}" class="sub-nav-item{{ request()->routeIs('hr.admin.users*', 'hr.users-auth') ? ' active' : '' }}" title="User accounts, role assignments, security permissions, and audit logs"><span>User Management</span></a>
-                    <a href="{{ route('hr.admin.roles') }}" class="sub-nav-item{{ request()->routeIs('hr.admin.roles*') ? ' active' : '' }}" title="Role and permission assignments"><span>Role & Permission</span></a>
-                    <a href="{{ route('hr.admin.settings') }}" class="sub-nav-item{{ request()->routeIs('hr.admin.settings*') ? ' active' : '' }}" title="Company entity settings"><span>System Settings</span></a>
-                    <a href="{{ route('hr.admin.audit-logs') }}" class="sub-nav-item{{ request()->routeIs('hr.admin.audit-logs*', 'hr.admin.audit_logs*') ? ' active' : '' }}" title="Security and activity audit logs"><span>Audit Logs</span></a>
-                </div>
-            </div>
-        </div>
->>>>>>> ec59a560eaaf8976ec57735241e750f32b3e0e37
 
         <div class="panel-footer">
             <!-- User Profile Pop-up Menu -->
