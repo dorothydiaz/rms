@@ -23,7 +23,15 @@ class PurchaseController extends Controller
 
     public function requestQuotations(): View
     {
-        return view('purchase.request-quotations');
+        $rfqs = RfqHeader::with(['lines', 'vendor'])->orderByDesc('rfq_created_at')->get();
+        $vendors = ProcurementVendor::where('is_active', true)->orderBy('legal_name')->get();
+        $items = InventoryItem::where('is_active', true)->orderBy('name')->get();
+
+        return view('purchase.request-quotations', [
+            'initialRfqs' => $rfqs,
+            'initialVendors' => $vendors,
+            'initialItems' => $items,
+        ]);
     }
 
     public function sendQuotationEmail(Request $request): JsonResponse

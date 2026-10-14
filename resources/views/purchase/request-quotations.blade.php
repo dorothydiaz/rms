@@ -566,22 +566,29 @@
     border: 1px solid rgba(168, 85, 247, 0.28);
     box-shadow: 0 1px 4px rgba(168, 85, 247, 0.08);
 }
-.status-pill.sent {
+.status-pill.sent, .status-pill.submitted {
     background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(217, 119, 6, 0.18));
     color: #b45309;
     border: 1px solid rgba(245, 158, 11, 0.32);
 }
-.status-pill.received {
+.status-pill.received, .status-pill.approval {
     background: linear-gradient(135deg, rgba(59, 130, 246, 0.12), rgba(14, 165, 233, 0.18));
     color: #0369a1;
     border: 1px solid rgba(14, 165, 233, 0.32);
 }
-.status-pill.awarded {
-    background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(5, 150, 105, 0.18));
+.status-pill.approved {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.14), rgba(5, 150, 105, 0.22));
     color: #047857;
-    border: 1px solid rgba(16, 185, 129, 0.32);
+    border: 1px solid rgba(16, 185, 129, 0.38);
+    box-shadow: 0 1px 4px rgba(16, 185, 129, 0.12);
 }
-.status-pill.cancelled {
+.status-pill.awarded {
+    background: linear-gradient(135deg, rgba(147, 51, 234, 0.12), rgba(126, 34, 206, 0.20));
+    color: #7e22ce;
+    border: 1px solid rgba(147, 51, 234, 0.35);
+    box-shadow: 0 1px 4px rgba(147, 51, 234, 0.10);
+}
+.status-pill.cancelled, .status-pill.refused {
     background: linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(220, 38, 38, 0.18));
     color: #b91c1c;
     border: 1px solid rgba(239, 68, 68, 0.32);
@@ -808,12 +815,12 @@
     height: 100%;
     width: 100%;
     min-width: 0;
+    overflow: hidden;
 }
 
 .rfq-builder-right-col .rfq-table-responsive {
     flex: 1 1 auto;
-    max-height: calc(100vh - 290px);
-    min-height: 260px;
+    min-height: 220px;
     overflow-y: auto;
     overflow-x: auto;
     width: 100%;
@@ -824,13 +831,6 @@
 body.sidebar-collapsed .rfq-builder-workspace-grid,
 body:has(#app-sidebar.collapsed) .rfq-builder-workspace-grid {
     grid-template-columns: minmax(260px, 28%) minmax(0, 1fr);
-}
-
-.rfq-builder-right-col .rfq-table-responsive {
-    flex: 1 1 auto;
-    max-height: calc(100vh - 290px);
-    min-height: 260px;
-    overflow-y: auto;
 }
 
 .rfq-panel-card {
@@ -1724,12 +1724,14 @@ th.is-header-drag-over {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 16px 20px;
+    padding: 10px 18px;
     background: #f8fafc;
     border-top: 1px solid var(--rfq-border-subtle);
     border-radius: 0 0 var(--rfq-radius-lg) var(--rfq-radius-lg);
     flex-wrap: wrap;
-    gap: 16px;
+    gap: 12px;
+    margin-top: auto;
+    flex-shrink: 0;
 }
 .rfq-metrics-cluster {
     display: flex;
@@ -2758,21 +2760,29 @@ th.is-header-drag-over {
                 <div class="rfq-kpi-val" id="kpiDraftRfqs">0</div>
                 <div class="rfq-kpi-sub">Unsent in-progress tenders</div>
             </div>
-            <div class="rfq-kpi-card" onclick="filterRfqByStatus('Quote Requested')">
+            <div class="rfq-kpi-card" onclick="filterRfqByStatus('Submitted')">
                 <div class="rfq-kpi-header">
-                    <span class="rfq-kpi-label">Quote Requested</span>
-                    <div class="rfq-kpi-icon awaiting"><i class="ph ph-hourglass-medium"></i></div>
+                    <span class="rfq-kpi-label">Submitted / Sent</span>
+                    <div class="rfq-kpi-icon awaiting"><i class="ph ph-paper-plane-tilt"></i></div>
                 </div>
                 <div class="rfq-kpi-val" id="kpiAwaitingRfqs">0</div>
                 <div class="rfq-kpi-sub">Dispatched to vendor contacts</div>
             </div>
-            <div class="rfq-kpi-card" onclick="filterRfqByStatus('Awarded')">
+            <div class="rfq-kpi-card" onclick="filterRfqByStatus('Approval')">
                 <div class="rfq-kpi-header">
-                    <span class="rfq-kpi-label">Awarded / Closed</span>
+                    <span class="rfq-kpi-label">In Review / Quote Rcvd</span>
+                    <div class="rfq-kpi-icon in-review" style="color: #2563eb; background: rgba(37, 99, 235, 0.12);"><i class="ph ph-scales"></i></div>
+                </div>
+                <div class="rfq-kpi-val" id="kpiApprovalRfqs">0</div>
+                <div class="rfq-kpi-sub">Validating quotation inputs</div>
+            </div>
+            <div class="rfq-kpi-card" onclick="filterRfqByStatus('Approved')">
+                <div class="rfq-kpi-header">
+                    <span class="rfq-kpi-label">Approved / Awarded</span>
                     <div class="rfq-kpi-icon awarded"><i class="ph ph-seal-check"></i></div>
                 </div>
                 <div class="rfq-kpi-val" id="kpiAwardedRfqs">0</div>
-                <div class="rfq-kpi-sub">Converted to Purchase Orders</div>
+                <div class="rfq-kpi-sub">Ready / Converted to PO</div>
             </div>
         </div>
 
@@ -3081,7 +3091,7 @@ th.is-header-drag-over {
                         <i class="ph ph-calendar-check"></i>
                         <span>RFQ Terms & Delivery Schedule</span>
                     </div>
-                    <span class="rfq-label-badge">Auto Lead-Time Sync</span>
+                    <span class="rfq-label-badge" id="rfqTermsLockBadge">Auto Lead-Time Sync</span>
                 </div>
                 <div class="rfq-panel-body">
                     <div class="rfq-form-row">
@@ -3104,15 +3114,22 @@ th.is-header-drag-over {
                             <input type="date" class="rfq-input" id="rfqDueDate">
                         </div>
                         <div class="rfq-field">
+                            <label class="rfq-label" for="rfqQuoteValidityDate">
+                                <span>Quote Validity Date</span>
+                                <span class="rfq-label-badge" style="color: #6366f1;">Valid Until</span>
+                            </label>
+                            <input type="date" class="rfq-input" id="rfqQuoteValidityDate">
+                        </div>
+                    </div>
+
+                    <div class="rfq-form-row">
+                        <div class="rfq-field">
                             <label class="rfq-label" for="rfqExpectedDelivery">
                                 <span>Expected Delivery *</span>
                                 <span class="rfq-label-badge" id="leadTimeBadge">Lead Time</span>
                             </label>
                             <input type="date" class="rfq-input" id="rfqExpectedDelivery">
                         </div>
-                    </div>
-
-                    <div class="rfq-form-row">
                         <div class="rfq-field">
                             <label class="rfq-label" for="rfqPaymentTerms">Payment Terms</label>
                             <select class="rfq-select" id="rfqPaymentTerms">
@@ -3124,16 +3141,18 @@ th.is-header-drag-over {
                                 <option value="50% DP, 50% Delivery">50% DP, 50% Upon Delivery</option>
                             </select>
                         </div>
-                        <div class="rfq-field">
-                            <label class="rfq-label" for="rfqDeliveryLocation">Destination Facility</label>
-                            <select class="rfq-select" id="rfqDeliveryLocation">
-                                <option value="Central Commissary - Main Dock">Central Commissary - Dock A</option>
-                                <option value="Branch 1 - Makati Flagship">Branch 1 - Makati Flagship</option>
-                                <option value="Branch 2 - BGC Bistro">Branch 2 - BGC Bistro</option>
-                                <option value="Branch 3 - Ortigas Kitchen">Branch 3 - Ortigas Kitchen</option>
-                                <option value="Central Warehouse - Dry Storage">Central Warehouse - Dry Storage</option>
-                            </select>
-                        </div>
+                    </div>
+
+                    <div class="rfq-field">
+                        <label class="rfq-label" for="rfqDeliveryLocation">Destination Facility</label>
+                        <select class="rfq-select" id="rfqDeliveryLocation">
+                            <option value="Central Commissary - Main Dock">Central Commissary - Dock A</option>
+                            <option value="Central Commissary - Main Cold Dock">Central Commissary - Main Cold Dock</option>
+                            <option value="Central Warehouse - Dry Storage">Central Warehouse - Dry Storage</option>
+                            <option value="Branch 1 - Makati Flagship">Branch 1 - Makati Flagship</option>
+                            <option value="Branch 2 - BGC Bistro">Branch 2 - BGC Bistro</option>
+                            <option value="Branch 3 - Ortigas Kitchen">Branch 3 - Ortigas Kitchen</option>
+                        </select>
                     </div>
 
                     <div class="rfq-field">
@@ -3711,6 +3730,11 @@ th.is-header-drag-over {
  * ==========================================================================
  */
 
+// Server Data Hydration Bridges
+const serverRfqs = window.__SERVER_RFQS__ = @json($initialRfqs ?? []);
+const serverVendors = window.__SERVER_VENDORS__ = @json($initialVendors ?? []);
+const serverItems = window.__SERVER_ITEMS__ = @json($initialItems ?? []);
+
 // Global formatting utilities
 window.formatNumber = function(num, decimals = 2) {
     const val = Number(num);
@@ -4238,53 +4262,97 @@ document.addEventListener('DOMContentLoaded', () => {
  */
 function initAppStore() {
     // 1. Vendors
-    const storedVendors = localStorage.getItem('rms_vendor_database_v6');
-    if (storedVendors) {
-        try {
-            window.AppStore.vendors = JSON.parse(storedVendors);
-        } catch (e) {
+    if (Array.isArray(serverVendors) && serverVendors.length > 0) {
+        window.AppStore.vendors = serverVendors.map(v => ({
+            id: v.vendor_id || v.id,
+            code: v.vendor_code || ('VND-' + v.id),
+            name: v.legal_name || v.trade_name || 'Vendor',
+            tradeName: v.trade_name || v.legal_name || 'Vendor',
+            tin: v.tax_identification_number || '--',
+            category: v.vendor_type || 'Supplies',
+            contactPerson: v.primary_contact_name || 'Procurement Contact',
+            contactTitle: v.primary_contact_title || 'Account Representative',
+            email: v.email_address || '',
+            phone: v.phone_number || '',
+            address: v.business_address || '',
+            paymentTerms: v.payment_terms || 'Net 30 Days'
+        }));
+    } else {
+        const storedVendors = localStorage.getItem('rms_vendor_database_v6');
+        if (storedVendors) {
+            try {
+                window.AppStore.vendors = JSON.parse(storedVendors);
+            } catch (e) {
+                window.AppStore.vendors = SEEDED_VENDORS;
+            }
+        } else {
             window.AppStore.vendors = SEEDED_VENDORS;
         }
-    } else {
-        window.AppStore.vendors = SEEDED_VENDORS;
     }
 
     // 2. Item Master Products
-    const storedProducts = localStorage.getItem('rms_inventory_products');
-    if (storedProducts) {
-        try {
-            const parsed = JSON.parse(storedProducts);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-                window.AppStore.itemMaster = parsed.map(p => ({
-                    sku: p.sku || 'SKU-' + p.id,
-                    name: p.product || p.name || 'Unnamed Product',
-                    specs: p.description || p.specs || '',
-                    unit: p.uom || 'Unit',
-                    defaultCost: parseFloat(p.cost_price || p.cost || 0),
-                    category: p.category || 'Raw Ingredients'
-                }));
-            } else {
+    if (Array.isArray(serverItems) && serverItems.length > 0) {
+        window.AppStore.itemMaster = serverItems.map(p => ({
+            sku: p.sku || 'SKU-' + p.id,
+            name: p.name || 'Unnamed Product',
+            specs: p.description || p.specs || '',
+            unit: p.uom || p.primary_uom || 'Unit',
+            defaultCost: parseFloat(p.cost_price || p.cost || 0),
+            category: p.category || 'Raw Ingredients'
+        }));
+    } else {
+        const storedProducts = localStorage.getItem('rms_inventory_products');
+        if (storedProducts) {
+            try {
+                const parsed = JSON.parse(storedProducts);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    window.AppStore.itemMaster = parsed.map(p => ({
+                        sku: p.sku || 'SKU-' + p.id,
+                        name: p.product || p.name || 'Unnamed Product',
+                        specs: p.description || p.specs || '',
+                        unit: p.uom || 'Unit',
+                        defaultCost: parseFloat(p.cost_price || p.cost || 0),
+                        category: p.category || 'Raw Ingredients'
+                    }));
+                } else {
+                    window.AppStore.itemMaster = ITEM_MASTER_DICTIONARY;
+                }
+            } catch (e) {
                 window.AppStore.itemMaster = ITEM_MASTER_DICTIONARY;
             }
-        } catch (e) {
+        } else {
             window.AppStore.itemMaster = ITEM_MASTER_DICTIONARY;
         }
-    } else {
-        window.AppStore.itemMaster = ITEM_MASTER_DICTIONARY;
     }
 
     // 3. RFQ Directory Tracker
-    const storedRfqs = localStorage.getItem('rms_rfq_directory');
-    if (storedRfqs) {
-        try {
-            const raw = JSON.parse(storedRfqs);
-            window.AppStore.rfqs = (Array.isArray(raw) && raw.length > 0) ? raw.map(normalizeRfqItem) : SEEDED_RFQS.map(normalizeRfqItem);
-        } catch (e) {
-            window.AppStore.rfqs = SEEDED_RFQS.map(normalizeRfqItem);
+    if (Array.isArray(serverRfqs) && serverRfqs.length > 0) {
+        const normalizedServer = serverRfqs.map(normalizeRfqItem).filter(Boolean);
+        const storedRfqs = localStorage.getItem('rms_rfq_directory');
+        let localDrafts = [];
+        if (storedRfqs) {
+            try {
+                const raw = JSON.parse(storedRfqs);
+                if (Array.isArray(raw)) {
+                    localDrafts = raw.map(normalizeRfqItem).filter(r => r && !normalizedServer.some(s => s.rfqNumber === r.rfqNumber));
+                }
+            } catch (e) {}
         }
-    } else {
-        window.AppStore.rfqs = SEEDED_RFQS.map(normalizeRfqItem);
+        window.AppStore.rfqs = [...normalizedServer, ...localDrafts];
         localStorage.setItem('rms_rfq_directory', JSON.stringify(window.AppStore.rfqs));
+    } else {
+        const storedRfqs = localStorage.getItem('rms_rfq_directory');
+        if (storedRfqs) {
+            try {
+                const raw = JSON.parse(storedRfqs);
+                window.AppStore.rfqs = (Array.isArray(raw) && raw.length > 0) ? raw.map(normalizeRfqItem) : SEEDED_RFQS.map(normalizeRfqItem);
+            } catch (e) {
+                window.AppStore.rfqs = SEEDED_RFQS.map(normalizeRfqItem);
+            }
+        } else {
+            window.AppStore.rfqs = SEEDED_RFQS.map(normalizeRfqItem);
+            localStorage.setItem('rms_rfq_directory', JSON.stringify(window.AppStore.rfqs));
+        }
     }
 
     // Initialize RFQ Number
@@ -4296,7 +4364,7 @@ function initAppStore() {
 }
 
 /**
- * Set Standard Dates (Issued Today, Due in 7 Days, Delivery in 5 Days)
+ * Set Standard Dates (Issued Today, Due in 7 Days, Validity in 14 Days, Delivery in 5 Days)
  */
 function initDates() {
     const today = new Date();
@@ -4306,17 +4374,27 @@ function initDates() {
     dueDate.setDate(dueDate.getDate() + 7);
     const dueDateStr = dueDate.toISOString().split('T')[0];
 
+    const validityDate = new Date();
+    validityDate.setDate(validityDate.getDate() + 14);
+    const validityDateStr = validityDate.toISOString().split('T')[0];
+
     const deliveryDate = new Date();
     deliveryDate.setDate(deliveryDate.getDate() + 5);
     const deliveryDateStr = deliveryDate.toISOString().split('T')[0];
 
     document.getElementById('rfqDateIssued').value = dateIssued;
     document.getElementById('rfqDueDate').value = dueDateStr;
+    const quoteValEl = document.getElementById('rfqQuoteValidityDate');
+    if (quoteValEl) quoteValEl.value = validityDateStr;
     document.getElementById('rfqExpectedDelivery').value = deliveryDateStr;
 
     window.AppStore.activeRfq.dateIssued = dateIssued;
+    window.AppStore.activeRfq.rfqDate = dateIssued;
     window.AppStore.activeRfq.dueDate = dueDateStr;
+    window.AppStore.activeRfq.submissionDeadline = dueDateStr;
+    window.AppStore.activeRfq.quoteValidUntilDate = validityDateStr;
     window.AppStore.activeRfq.expectedDelivery = deliveryDateStr;
+    window.AppStore.activeRfq.rfqRequestedDeliveryDate = deliveryDateStr;
 }
 
 /**
@@ -4578,6 +4656,100 @@ function getNormalizedRfqStage(status) {
     if (s === 'APPROVED' || s === 'AWARDED') return 'Approved';
     if (s === 'REFUSED' || s === 'REJECTED' || s === 'CANCELLED') return 'Refused';
     return 'Draft';
+}
+
+function applyStageFormLocks(stage) {
+    const normalizedStage = getNormalizedRfqStage(stage);
+    const isLocked = (normalizedStage === 'Approved' || normalizedStage === 'Awarded');
+
+    // 1. Vendor Selection & Partner Profile Elements
+    const comboTrigger = document.getElementById('rfqVendorComboTrigger');
+    const vendorSelect = document.getElementById('vendorSelect');
+    const vendorEmail = document.getElementById('vendorEmail');
+    const vendorPhone = document.getElementById('vendorPhone');
+    const vendorAddress = document.getElementById('vendorAddress');
+    const vendorContactPerson = document.getElementById('vendorContactPerson');
+    const vendorContactTitle = document.getElementById('vendorContactTitle');
+    const vendorSearchInput = document.getElementById('rfqVendorSearchInput');
+    const vendorDropdown = document.getElementById('rfqVendorComboDropdown');
+
+    if (comboTrigger) {
+        comboTrigger.style.pointerEvents = isLocked ? 'none' : 'auto';
+        comboTrigger.style.background = isLocked ? '#f8fafc' : '#ffffff';
+        comboTrigger.style.opacity = isLocked ? '0.75' : '1';
+        comboTrigger.style.cursor = isLocked ? 'not-allowed' : 'pointer';
+    }
+    if (vendorSelect) vendorSelect.disabled = isLocked;
+    if (vendorSearchInput) vendorSearchInput.disabled = isLocked;
+    if (isLocked && vendorDropdown) vendorDropdown.classList.remove('is-open');
+
+    [vendorEmail, vendorPhone, vendorAddress].forEach(el => {
+        if (el) {
+            el.readOnly = isLocked;
+            el.style.background = isLocked ? '#f8fafc' : '#ffffff';
+            el.style.cursor = isLocked ? 'not-allowed' : '';
+        }
+    });
+
+    [vendorContactPerson, vendorContactTitle].forEach(el => {
+        if (el) {
+            el.style.background = isLocked ? '#f8fafc' : '';
+            el.style.cursor = isLocked ? 'not-allowed' : '';
+        }
+    });
+
+    // 2. RFQ Terms & Delivery Schedule Elements
+    const dateIssued = document.getElementById('rfqDateIssued');
+    const dueDate = document.getElementById('rfqDueDate');
+    const validityDate = document.getElementById('rfqQuoteValidityDate');
+    const deliveryDate = document.getElementById('rfqExpectedDelivery');
+    const paymentTerms = document.getElementById('rfqPaymentTerms');
+    const deliveryLoc = document.getElementById('rfqDeliveryLocation');
+    const instructions = document.getElementById('rfqSpecialInstructions');
+    const tenderTitle = document.getElementById('rfqTenderTitle');
+
+    [dateIssued, dueDate, validityDate, deliveryDate, paymentTerms, deliveryLoc].forEach(el => {
+        if (el) {
+            el.disabled = isLocked;
+            el.style.background = isLocked ? '#f8fafc' : '#ffffff';
+            el.style.cursor = isLocked ? 'not-allowed' : '';
+        }
+    });
+
+    [instructions, tenderTitle].forEach(el => {
+        if (el) {
+            el.readOnly = isLocked;
+            el.style.background = isLocked ? '#f8fafc' : '#ffffff';
+            el.style.cursor = isLocked ? 'not-allowed' : '';
+        }
+    });
+
+    // 3. Header Lock Status Badges
+    const vendorCatalogBadge = document.getElementById('vendorCatalogBadge');
+    if (vendorCatalogBadge) {
+        if (isLocked) {
+            vendorCatalogBadge.innerHTML = '<i class="ph ph-lock-key"></i> Locked (Approved)';
+            vendorCatalogBadge.style.background = 'rgba(5, 150, 105, 0.12)';
+            vendorCatalogBadge.style.color = '#059669';
+        } else {
+            vendorCatalogBadge.textContent = 'Catalog Integrated';
+            vendorCatalogBadge.style.background = '';
+            vendorCatalogBadge.style.color = '';
+        }
+    }
+
+    const termsLockBadge = document.getElementById('rfqTermsLockBadge');
+    if (termsLockBadge) {
+        if (isLocked) {
+            termsLockBadge.innerHTML = '<i class="ph ph-lock-key"></i> Locked in Approved Stage';
+            termsLockBadge.style.background = 'rgba(5, 150, 105, 0.12)';
+            termsLockBadge.style.color = '#059669';
+        } else {
+            termsLockBadge.textContent = 'Auto Lead-Time Sync';
+            termsLockBadge.style.background = '';
+            termsLockBadge.style.color = '';
+        }
+    }
 }
 
 function calculateItemVariances(item) {
@@ -4891,6 +5063,7 @@ document.addEventListener('click', (e) => {
  */
 function updateLifecycleProgressBar(status) {
     const stage = getNormalizedRfqStage(status);
+    applyStageFormLocks(stage);
     const wrap = document.getElementById('rfqLifecycleStepperWrap');
     if (!wrap) return;
 
@@ -6341,17 +6514,73 @@ function closeRecentRfqHistoryModal() {
  */
 function syncFormInputsToState() {
     const rfq = window.AppStore.activeRfq;
+    if (!rfq) return;
+
     const titleEl = document.getElementById('rfqTenderTitle');
     if (titleEl) rfq.title = titleEl.value;
-    rfq.vendorEmail = document.getElementById('vendorEmail').value;
-    rfq.vendorPhone = document.getElementById('vendorPhone').value;
-    rfq.vendorAddress = document.getElementById('vendorAddress').value;
-    rfq.dateIssued = document.getElementById('rfqDateIssued').value;
-    rfq.dueDate = document.getElementById('rfqDueDate').value;
-    rfq.expectedDelivery = document.getElementById('rfqExpectedDelivery').value;
-    rfq.paymentTerms = document.getElementById('rfqPaymentTerms').value;
-    rfq.deliveryLocation = document.getElementById('rfqDeliveryLocation').value;
-    rfq.specialInstructions = document.getElementById('rfqSpecialInstructions').value;
+
+    const emailEl = document.getElementById('vendorEmail');
+    if (emailEl) rfq.vendorEmail = emailEl.value;
+
+    const phoneEl = document.getElementById('vendorPhone');
+    if (phoneEl) rfq.vendorPhone = phoneEl.value;
+
+    const addrEl = document.getElementById('vendorAddress');
+    if (addrEl) rfq.vendorAddress = addrEl.value;
+
+    const contactEl = document.getElementById('vendorContactPerson');
+    if (contactEl && contactEl.value) rfq.vendorContactPerson = contactEl.value;
+
+    const titleContactEl = document.getElementById('vendorContactTitle');
+    if (titleContactEl && titleContactEl.value) rfq.vendorContactTitle = titleContactEl.value;
+
+    const dateIssuedEl = document.getElementById('rfqDateIssued');
+    if (dateIssuedEl) {
+        rfq.dateIssued = dateIssuedEl.value;
+        rfq.rfqDate = dateIssuedEl.value;
+        rfq.rfq_date = dateIssuedEl.value;
+    }
+
+    const dueDateEl = document.getElementById('rfqDueDate');
+    if (dueDateEl) {
+        rfq.dueDate = dueDateEl.value;
+        rfq.submissionDeadline = dueDateEl.value;
+        rfq.submission_deadline = dueDateEl.value;
+    }
+
+    const validityEl = document.getElementById('rfqQuoteValidityDate');
+    if (validityEl) {
+        rfq.quoteValidUntilDate = validityEl.value;
+        rfq.quote_valid_until_date = validityEl.value;
+    }
+
+    const delivEl = document.getElementById('rfqExpectedDelivery');
+    if (delivEl) {
+        rfq.expectedDelivery = delivEl.value;
+        rfq.rfqRequestedDeliveryDate = delivEl.value;
+        rfq.rfq_requested_delivery_date = delivEl.value;
+    }
+
+    const termsEl = document.getElementById('rfqPaymentTerms');
+    if (termsEl) {
+        rfq.paymentTerms = termsEl.value;
+        rfq.rfqPaymentTermsCode = termsEl.value;
+        rfq.rfq_payment_terms_code = termsEl.value;
+    }
+
+    const locEl = document.getElementById('rfqDeliveryLocation');
+    if (locEl) {
+        rfq.deliveryLocation = locEl.value;
+        rfq.shipToWarehouseName = locEl.value;
+        rfq.destination_facility = locEl.value;
+    }
+
+    const notesEl = document.getElementById('rfqSpecialInstructions');
+    if (notesEl) {
+        rfq.specialInstructions = notesEl.value;
+        rfq.rfqNotes = notesEl.value;
+        rfq.rfq_notes = notesEl.value;
+    }
 }
 
 function persistDraft() {
@@ -6396,12 +6625,16 @@ function restoreDraftSession(isAutoRecovery = false) {
         }
 
         const titleEl = document.getElementById('rfqTenderTitle');
-        if (titleEl) titleEl.value = parsed.title || '';
+        if (titleEl) titleEl.value = parsed.title || parsed.rfqNotes || '';
 
         const statusBadge = document.getElementById('rfqStatusBadge');
         if (statusBadge) {
-            const s = parsed.status || 'Draft';
-            statusBadge.className = `status-pill ${s.toLowerCase().replace(/\s+/g, '-')}`;
+            const s = parsed.status || parsed.rfqStatus || 'Draft';
+            const norm = getNormalizedRfqStage(s);
+            let pillCls = norm.toLowerCase();
+            if (norm === 'Submitted') pillCls = 'sent';
+            else if (norm === 'Approval') pillCls = 'received';
+            statusBadge.className = `status-pill ${pillCls}`;
             statusBadge.innerHTML = `<i class="ph ph-dot"></i> ${s}`;
         }
 
@@ -6409,12 +6642,24 @@ function restoreDraftSession(isAutoRecovery = false) {
             document.getElementById('vendorSelect').value = parsed.vendorId;
             handleVendorSelection(parsed.vendorId);
         }
-        document.getElementById('rfqDateIssued').value = parsed.dateIssued || '';
-        document.getElementById('rfqDueDate').value = parsed.dueDate || '';
-        document.getElementById('rfqExpectedDelivery').value = parsed.expectedDelivery || '';
-        document.getElementById('rfqPaymentTerms').value = parsed.paymentTerms || 'Net 30 Days';
-        document.getElementById('rfqDeliveryLocation').value = parsed.deliveryLocation || '';
-        document.getElementById('rfqSpecialInstructions').value = parsed.specialInstructions || '';
+        if (parsed.vendorEmail) document.getElementById('vendorEmail').value = parsed.vendorEmail;
+        if (parsed.vendorPhone) document.getElementById('vendorPhone').value = parsed.vendorPhone;
+        if (parsed.vendorAddress) document.getElementById('vendorAddress').value = parsed.vendorAddress;
+        if (parsed.vendorContactPerson) document.getElementById('vendorContactPerson').value = parsed.vendorContactPerson;
+        if (parsed.vendorContactTitle) document.getElementById('vendorContactTitle').value = parsed.vendorContactTitle;
+
+        document.getElementById('rfqDateIssued').value = parsed.dateIssued || parsed.rfqDate || '';
+        document.getElementById('rfqDueDate').value = parsed.dueDate || parsed.submissionDeadline || '';
+        const quoteValEl = document.getElementById('rfqQuoteValidityDate');
+        if (quoteValEl) quoteValEl.value = parsed.quoteValidUntilDate || parsed.quote_valid_until_date || '';
+        document.getElementById('rfqExpectedDelivery').value = parsed.expectedDelivery || parsed.rfqRequestedDeliveryDate || '';
+        document.getElementById('rfqPaymentTerms').value = parsed.paymentTerms || parsed.rfqPaymentTermsCode || 'Net 30 Days';
+        document.getElementById('rfqDeliveryLocation').value = parsed.deliveryLocation || parsed.shipToWarehouseName || '';
+        document.getElementById('rfqSpecialInstructions').value = parsed.specialInstructions || parsed.rfqNotes || '';
+
+        const stage = getNormalizedRfqStage(parsed.rfqStatus || parsed.status || 'Draft');
+        updateLifecycleProgressBar(stage);
+        applyStageFormLocks(stage);
 
         renderItemsTable();
         if (isAutoRecovery) {
@@ -6493,6 +6738,9 @@ function createNewRfq(promptIfDirty = false) {
     const deliveryDate = new Date();
     deliveryDate.setDate(deliveryDate.getDate() + 5);
     const deliveryDateStr = deliveryDate.toISOString().split('T')[0];
+    const validityDate = new Date();
+    validityDate.setDate(validityDate.getDate() + 14);
+    const validityDateStr = validityDate.toISOString().split('T')[0];
 
     // 4. Create pristine activeRfq object
     window.AppStore.activeRfq = {
@@ -6512,8 +6760,12 @@ function createNewRfq(promptIfDirty = false) {
         vendorContactTitle: '',
         dateIssued: dateIssued,
         dueDate: dueDateStr,
+        quoteValidUntilDate: validityDateStr,
+        quote_valid_until_date: validityDateStr,
         expectedDelivery: deliveryDateStr,
+        rfqRequestedDeliveryDate: deliveryDateStr,
         paymentTerms: 'Net 30 Days',
+        rfqPaymentTermsCode: 'Net 30 Days',
         deliveryLocation: 'Central Commissary - Main Dock',
         specialInstructions: '',
         items: []
@@ -6537,6 +6789,8 @@ function createNewRfq(promptIfDirty = false) {
     if (dateIssuedEl) dateIssuedEl.value = dateIssued;
     const dueDateEl = document.getElementById('rfqDueDate');
     if (dueDateEl) dueDateEl.value = dueDateStr;
+    const quoteValEl = document.getElementById('rfqQuoteValidityDate');
+    if (quoteValEl) quoteValEl.value = validityDateStr;
     const deliveryEl = document.getElementById('rfqExpectedDelivery');
     if (deliveryEl) deliveryEl.value = deliveryDateStr;
     const paymentEl = document.getElementById('rfqPaymentTerms');
@@ -6560,6 +6814,7 @@ function createNewRfq(promptIfDirty = false) {
 
     // 7. Reset lifecycle stepper and banner to Draft stage
     updateLifecycleProgressBar('Draft');
+    applyStageFormLocks('Draft');
 
     // 8. Reset columns to Draft stage defaults
     window.AppStore._lastSyncedStage = 'Draft';
@@ -6569,11 +6824,14 @@ function createNewRfq(promptIfDirty = false) {
     renderItemsTable();
     updateMetricsSummary();
 
-    // 10. Switch to builder tab and scroll top
+    // 10. Synchronize new draft to RFQ Directory
+    syncRfqToDirectory(window.AppStore.activeRfq);
+
+    // 11. Switch to builder tab and scroll top
     switchRfqTab('tab-builder');
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
-    // 11. Focus on vendor selector
+    // 12. Focus on vendor selector
     setTimeout(() => {
         const combo = document.getElementById('rfqVendorComboTrigger');
         if (combo) combo.focus();
@@ -6728,6 +6986,12 @@ function switchRfqTab(tabId) {
     if (tabId === 'tab-list') {
         if (btnList) btnList.classList.add('active');
         if (paneList) paneList.style.display = 'flex';
+        if (typeof syncFormInputsToState === 'function') {
+            syncFormInputsToState();
+        }
+        if (window.AppStore && window.AppStore.activeRfq && window.AppStore.activeRfq.rfqNumber) {
+            syncRfqToDirectory(window.AppStore.activeRfq, null, false);
+        }
         renderRfqDirectory();
     } else if (tabId === 'tab-builder' || tabId === 'tab-audit') {
         if (btnBuilder) btnBuilder.classList.add('active');
@@ -7665,7 +7929,19 @@ function renderRfqDirectory() {
 
     // Filter by status, approval, payment terms & search
     const filtered = rfqs.filter(r => {
-        const matchesStatus = (activeRfqStatusFilter === 'all') || (r.status === activeRfqStatusFilter) || (r.rfqStatus === activeRfqStatusFilter);
+        const rawStatus = r.rfqStatus || r.status || 'Draft';
+        const normStage = getNormalizedRfqStage(rawStatus);
+        let matchesStatus = (activeRfqStatusFilter === 'all') || 
+            (r.status === activeRfqStatusFilter) || 
+            (r.rfqStatus === activeRfqStatusFilter) || 
+            (normStage === activeRfqStatusFilter);
+
+        if (!matchesStatus) {
+            if (activeRfqStatusFilter === 'Submitted' && (rawStatus === 'Quote Requested' || rawStatus === 'Sent')) matchesStatus = true;
+            else if (activeRfqStatusFilter === 'Approval' && (rawStatus === 'Quotation Received' || rawStatus === 'In Review')) matchesStatus = true;
+            else if (activeRfqStatusFilter === 'Approved' && (rawStatus === 'Awarded' || rawStatus === 'Approved')) matchesStatus = true;
+            else if (activeRfqStatusFilter === 'Refused' && (rawStatus === 'Cancelled' || rawStatus === 'Rejected')) matchesStatus = true;
+        }
         
         const isApproved = (r.isApproved === true || r.rfqApprovalStatus === 'APPROVED' || r.status === 'Awarded');
         let matchesApproval = true;
@@ -7691,21 +7967,24 @@ function renderRfqDirectory() {
         return matchesStatus && matchesApproval && matchesTerms && matchesSearch;
     });
 
-    // Update KPI Counts
+    // Update KPI Counts across all 5 stages
     const totalCount = rfqs.length;
-    const draftCount = rfqs.filter(r => r.status === 'Draft' || r.rfqStatus === 'Draft').length;
-    const sentCount = rfqs.filter(r => r.status === 'Quote Requested' || r.rfqStatus === 'Quote Requested').length;
-    const awardedCount = rfqs.filter(r => r.status === 'Awarded' || r.rfqStatus === 'Awarded').length;
+    const draftCount = rfqs.filter(r => getNormalizedRfqStage(r.rfqStatus || r.status) === 'Draft').length;
+    const sentCount = rfqs.filter(r => getNormalizedRfqStage(r.rfqStatus || r.status) === 'Submitted').length;
+    const approvalCount = rfqs.filter(r => getNormalizedRfqStage(r.rfqStatus || r.status) === 'Approval').length;
+    const awardedCount = rfqs.filter(r => getNormalizedRfqStage(r.rfqStatus || r.status) === 'Approved').length;
 
     const elTotal = document.getElementById('kpiTotalRfqs');
     const elDraft = document.getElementById('kpiDraftRfqs');
     const elAwaiting = document.getElementById('kpiAwaitingRfqs');
+    const elApproval = document.getElementById('kpiApprovalRfqs');
     const elAwarded = document.getElementById('kpiAwardedRfqs');
     const elTabCount = document.getElementById('tabRfqListCount');
 
     if (elTotal) elTotal.textContent = totalCount;
     if (elDraft) elDraft.textContent = draftCount;
     if (elAwaiting) elAwaiting.textContent = sentCount;
+    if (elApproval) elApproval.textContent = approvalCount;
     if (elAwarded) elAwarded.textContent = awardedCount;
     if (elTabCount) elTabCount.textContent = totalCount;
 
@@ -7742,11 +8021,12 @@ function renderRfqDirectory() {
         const quotedTotal = r.rfqQuotedTotalAmount || items.reduce((acc, it) => acc + (parseFloat(it.quotedLineTotal) || 0), 0);
         const estTotal = r.rfqEstimatedTotalAmount || items.reduce((acc, it) => acc + ((parseFloat(it.requestedQuantity || it.quantity) || 0) * (parseFloat(it.targetUnitPrice || it.targetPrice) || 0)), 0);
 
-        let pillClass = 'draft';
-        if (r.status === 'Quote Requested' || r.rfqStatus === 'Quote Requested') pillClass = 'sent';
-        else if (r.status === 'Quotation Received' || r.rfqStatus === 'Quotation Received') pillClass = 'received';
-        else if (r.status === 'Awarded' || r.rfqStatus === 'Awarded') pillClass = 'awarded';
-        else if (r.status === 'Cancelled' || r.rfqStatus === 'Cancelled') pillClass = 'cancelled';
+        const stage = getNormalizedRfqStage(r.rfqStatus || r.status);
+        let pillClass = stage.toLowerCase();
+        if (stage === 'Submitted') pillClass += ' sent';
+        else if (stage === 'Approval') pillClass += ' received in-review';
+        else if (stage === 'Approved') pillClass += ' awarded';
+        else if (stage === 'Refused') pillClass += ' cancelled';
 
         let rowCells = '';
         visibleCols.forEach(col => {
@@ -8209,14 +8489,20 @@ function closeRfqHeaderFilter() {
 function buildStatusFilterPopoverHtml() {
     const rfqs = window.AppStore.rfqs || [];
     const totalCount = rfqs.length;
-    const approvedCount = rfqs.filter(r => r.isApproved === true || r.status === 'Awarded' || r.status === 'Approved' || !!r.poReference).length;
+    const approvedCount = rfqs.filter(r => r.isApproved === true || getNormalizedRfqStage(r.rfqStatus || r.status) === 'Approved' || !!r.poReference).length;
     const pendingCount = totalCount - approvedCount;
 
-    const draftCount = rfqs.filter(r => r.status === 'Draft').length;
-    const sentCount = rfqs.filter(r => r.status === 'Quote Requested').length;
-    const receivedCount = rfqs.filter(r => r.status === 'Quotation Received').length;
-    const awardedCount = rfqs.filter(r => r.status === 'Awarded').length;
-    const cancelledCount = rfqs.filter(r => r.status === 'Cancelled').length;
+    const draftCount = rfqs.filter(r => getNormalizedRfqStage(r.rfqStatus || r.status) === 'Draft').length;
+    const sentCount = rfqs.filter(r => getNormalizedRfqStage(r.rfqStatus || r.status) === 'Submitted').length;
+    const receivedCount = rfqs.filter(r => getNormalizedRfqStage(r.rfqStatus || r.status) === 'Approval').length;
+    const awardedCount = rfqs.filter(r => getNormalizedRfqStage(r.rfqStatus || r.status) === 'Approved').length;
+    const cancelledCount = rfqs.filter(r => getNormalizedRfqStage(r.rfqStatus || r.status) === 'Refused').length;
+
+    const isDraftActive = activeRfqStatusFilter === 'Draft';
+    const isSentActive = activeRfqStatusFilter === 'Submitted' || activeRfqStatusFilter === 'Quote Requested';
+    const isReceivedActive = activeRfqStatusFilter === 'Approval' || activeRfqStatusFilter === 'Quotation Received';
+    const isAwardedActive = activeRfqStatusFilter === 'Approved' || activeRfqStatusFilter === 'Awarded';
+    const isCancelledActive = activeRfqStatusFilter === 'Refused' || activeRfqStatusFilter === 'Cancelled';
 
     return `
         <div class="rfq-filter-popover-card">
@@ -8258,20 +8544,20 @@ function buildStatusFilterPopoverHtml() {
                         <button type="button" class="rfq-popover-chip ${activeRfqStatusFilter === 'all' ? 'is-active' : ''}" onclick="setRfqStatusFilter(event, 'all')">
                             All (${totalCount})
                         </button>
-                        <button type="button" class="rfq-popover-chip ${activeRfqStatusFilter === 'Draft' ? 'is-active' : ''}" onclick="setRfqStatusFilter(event, 'Draft')">
+                        <button type="button" class="rfq-popover-chip ${isDraftActive ? 'is-active' : ''}" onclick="setRfqStatusFilter(event, 'Draft')">
                             Draft (${draftCount})
                         </button>
-                        <button type="button" class="rfq-popover-chip ${activeRfqStatusFilter === 'Quote Requested' ? 'is-active' : ''}" onclick="setRfqStatusFilter(event, 'Quote Requested')">
-                            Requested (${sentCount})
+                        <button type="button" class="rfq-popover-chip ${isSentActive ? 'is-active' : ''}" onclick="setRfqStatusFilter(event, 'Submitted')">
+                            Submitted (${sentCount})
                         </button>
-                        <button type="button" class="rfq-popover-chip ${activeRfqStatusFilter === 'Quotation Received' ? 'is-active' : ''}" onclick="setRfqStatusFilter(event, 'Quotation Received')">
-                            Received (${receivedCount})
+                        <button type="button" class="rfq-popover-chip ${isReceivedActive ? 'is-active' : ''}" onclick="setRfqStatusFilter(event, 'Approval')">
+                            In Review (${receivedCount})
                         </button>
-                        <button type="button" class="rfq-popover-chip is-purple ${activeRfqStatusFilter === 'Awarded' ? 'is-active' : ''}" onclick="setRfqStatusFilter(event, 'Awarded')">
-                            Awarded (${awardedCount})
+                        <button type="button" class="rfq-popover-chip is-purple ${isAwardedActive ? 'is-active' : ''}" onclick="setRfqStatusFilter(event, 'Approved')">
+                            Approved (${awardedCount})
                         </button>
-                        <button type="button" class="rfq-popover-chip is-danger ${activeRfqStatusFilter === 'Cancelled' ? 'is-active' : ''}" onclick="setRfqStatusFilter(event, 'Cancelled')">
-                            Cancelled (${cancelledCount})
+                        <button type="button" class="rfq-popover-chip is-danger ${isCancelledActive ? 'is-active' : ''}" onclick="setRfqStatusFilter(event, 'Refused')">
+                            Refused (${cancelledCount})
                         </button>
                     </div>
                 </div>
@@ -8456,14 +8742,19 @@ function editRfqFromDirectory(rfqNumber) {
     // Update inputs
     document.getElementById('rfqNumberInput').value = rfq.rfqNumber;
     document.getElementById('rfqRefDisplay').textContent = rfq.rfqNumber;
+    const docNum = document.getElementById('docRfqNumber');
+    if (docNum) docNum.textContent = rfq.rfqNumber;
+
     const titleEl = document.getElementById('rfqTenderTitle');
     if (titleEl) titleEl.value = rfq.title || '';
+
+    const stage = getNormalizedRfqStage(rfq.rfqStatus || rfq.status || 'Draft');
     const statusBadge = document.getElementById('rfqStatusBadge');
     if (statusBadge) {
-        const s = rfq.status || 'Draft';
-        statusBadge.className = `status-pill ${s.toLowerCase().replace(/\s+/g, '-')}`;
-        statusBadge.innerHTML = `<i class="ph ph-dot"></i> ${s}`;
+        statusBadge.className = `status-pill ${stage.toLowerCase()}`;
+        statusBadge.innerHTML = `<i class="ph ph-dot"></i> ${stage} RFQ`;
     }
+
     if (rfq.vendorId) {
         document.getElementById('vendorSelect').value = rfq.vendorId;
         handleVendorSelection(rfq.vendorId);
@@ -8471,16 +8762,30 @@ function editRfqFromDirectory(rfqNumber) {
         document.getElementById('vendorSelect').value = '';
         clearVendorFields(false);
     }
-    document.getElementById('rfqDateIssued').value = rfq.dateIssued || '';
-    document.getElementById('rfqDueDate').value = rfq.dueDate || '';
-    document.getElementById('rfqExpectedDelivery').value = rfq.expectedDelivery || '';
-    document.getElementById('rfqPaymentTerms').value = rfq.paymentTerms || 'Net 30 Days';
-    document.getElementById('rfqDeliveryLocation').value = rfq.deliveryLocation || '';
-    document.getElementById('rfqSpecialInstructions').value = rfq.specialInstructions || '';
+
+    // Preserve explicitly passed contact information
+    if (rfq.vendorEmail) document.getElementById('vendorEmail').value = rfq.vendorEmail;
+    if (rfq.vendorPhone) document.getElementById('vendorPhone').value = rfq.vendorPhone;
+    if (rfq.vendorAddress) document.getElementById('vendorAddress').value = rfq.vendorAddress;
+    if (rfq.vendorContactPerson) document.getElementById('vendorContactPerson').value = rfq.vendorContactPerson;
+    if (rfq.vendorContactTitle) document.getElementById('vendorContactTitle').value = rfq.vendorContactTitle;
+
+    document.getElementById('rfqDateIssued').value = rfq.dateIssued || rfq.rfqDate || '';
+    document.getElementById('rfqDueDate').value = rfq.dueDate || rfq.submissionDeadline || '';
+    const quoteValEl = document.getElementById('rfqQuoteValidityDate');
+    if (quoteValEl) quoteValEl.value = rfq.quoteValidUntilDate || rfq.quote_valid_until_date || '';
+    document.getElementById('rfqExpectedDelivery').value = rfq.expectedDelivery || rfq.rfqRequestedDeliveryDate || '';
+    document.getElementById('rfqPaymentTerms').value = rfq.paymentTerms || rfq.rfqPaymentTermsCode || 'Net 30 Days';
+    document.getElementById('rfqDeliveryLocation').value = rfq.deliveryLocation || rfq.shipToWarehouseName || '';
+    document.getElementById('rfqSpecialInstructions').value = rfq.specialInstructions || rfq.rfqNotes || '';
 
     window.AppStore._lastSyncedStage = null;
-    updateLifecycleProgressBar(rfq.rfqStatus || rfq.status || 'Draft');
+    updateLifecycleProgressBar(stage);
+    applyStageFormLocks(stage);
+
     renderItemsTable();
+    updateMetricsSummary();
+
     const badge = document.getElementById('tabBuilderBadge');
     if (badge) badge.textContent = `Editing ${rfq.rfqNumber}`;
     switchRfqTab('tab-builder');
@@ -9198,35 +9503,44 @@ function convertRfqToPurchaseOrder(rfqNumber) {
     openManagerApprovalModal(rfqNumber);
 }
 
-function syncRfqToDirectory(rfqData, overrideStatus = null) {
+function syncRfqToDirectory(rfqData, overrideStatus = null, shouldLog = false) {
     if (!rfqData || !rfqData.rfqNumber) return;
     if (!window.AppStore.rfqs) window.AppStore.rfqs = [];
 
     const existingIdx = window.AppStore.rfqs.findIndex(r => r.rfqNumber === rfqData.rfqNumber);
     const entry = JSON.parse(JSON.stringify(rfqData));
-    if (overrideStatus) entry.status = overrideStatus;
-    else if (!entry.status) entry.status = 'Draft';
+    if (overrideStatus) {
+        entry.status = overrideStatus;
+        entry.rfqStatus = overrideStatus;
+    } else if (!entry.status) {
+        entry.status = 'Draft';
+        entry.rfqStatus = 'Draft';
+    }
 
     if (existingIdx >= 0) {
         window.AppStore.rfqs[existingIdx] = entry;
-        logProcurementAudit(
-            'RFQ',
-            entry.rfqNumber,
-            'EDITED',
-            'RFQ Specifications Updated',
-            `Updated line items, quantities, or terms for ${entry.vendorTradeName || entry.vendorName || 'RFQ'}.`,
-            [{ label: 'Line Items', value: `${(entry.items || []).length} items` }]
-        );
+        if (shouldLog && typeof logProcurementAudit === 'function') {
+            logProcurementAudit(
+                'RFQ',
+                entry.rfqNumber,
+                'EDITED',
+                'RFQ Specifications Updated',
+                `Updated line items, quantities, or terms for ${entry.vendorTradeName || entry.vendorName || 'RFQ'}.`,
+                [{ label: 'Line Items', value: `${(entry.items || []).length} items` }]
+            );
+        }
     } else {
         window.AppStore.rfqs.unshift(entry);
-        logProcurementAudit(
-            'RFQ',
-            entry.rfqNumber,
-            'CREATED',
-            'RFQ Created in Builder',
-            `Created Request for Quotations tender for ${entry.vendorTradeName || entry.vendorName || 'Vendor'}.`,
-            [{ label: 'Line Items', value: `${(entry.items || []).length} items` }]
-        );
+        if (shouldLog && typeof logProcurementAudit === 'function') {
+            logProcurementAudit(
+                'RFQ',
+                entry.rfqNumber,
+                'CREATED',
+                'RFQ Created in Builder',
+                `Created Request for Quotations tender for ${entry.vendorTradeName || entry.vendorName || 'Vendor'}.`,
+                [{ label: 'Line Items', value: `${(entry.items || []).length} items` }]
+            );
+        }
     }
     localStorage.setItem('rms_rfq_directory', JSON.stringify(window.AppStore.rfqs));
     renderRfqDirectory();

@@ -61,4 +61,39 @@ class RfqBuilderLifecycleUiTest extends TestCase
         $response->assertSee('handleBuilderTabClick', false);
         $response->assertSee('rms_last_rfq_counter', false);
     }
+
+    public function test_rfq_directory_and_builder_data_matching_and_form_locks()
+    {
+        $user = User::first() ?? User::factory()->create();
+
+        $response = $this->actingAs($user)->get('/purchase/request-quotations');
+        $response->assertStatus(200);
+
+        // 1. Verify Quote Validity Date and Lock Badge in Terms Card
+        $response->assertSee('id="rfqQuoteValidityDate"', false);
+        $response->assertSee('id="rfqTermsLockBadge"', false);
+
+        // 2. Verify 5-card KPI Cluster covering all lifecycle stages
+        $response->assertSee('id="kpiTotalRfqs"', false);
+        $response->assertSee('id="kpiDraftRfqs"', false);
+        $response->assertSee('id="kpiAwaitingRfqs"', false);
+        $response->assertSee('id="kpiApprovalRfqs"', false);
+        $response->assertSee('id="kpiAwardedRfqs"', false);
+
+        // 3. Verify Stage Form Locks and Directory Syncing logic
+        $response->assertSee('applyStageFormLocks', false);
+        $response->assertSee('syncRfqToDirectory', false);
+        $response->assertSee('editRfqFromDirectory', false);
+        $response->assertSee('getNormalizedRfqStage', false);
+
+        // 4. Verify Server-Side bridges for live data synchronization
+        $response->assertSee('window.__SERVER_RFQS__', false);
+        $response->assertSee('window.__SERVER_VENDORS__', false);
+        $response->assertSee('window.__SERVER_ITEMS__', false);
+
+        // 5. Verify status pill CSS rules exist for all lifecycle statuses
+        $response->assertSee('.status-pill.approved', false);
+        $response->assertSee('.status-pill.submitted', false);
+        $response->assertSee('.status-pill.approval', false);
+    }
 }
