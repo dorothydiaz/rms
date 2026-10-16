@@ -2,6 +2,23 @@
 
 @section('title', 'Undertime Records & Authorization - Attendance Management')
 
+@push('styles')
+    @vite('resources/css/modules/hr-undertime.css')
+@endpush
+
+@push('blade-data')
+<script>
+    window.HrUndertimeConfig = Object.freeze({
+        csrfToken: @json(csrf_token()),
+        defaultPaginationHtml: @json("Showing <strong>" . ($records->firstItem() ?? ($records->total() > 0 ? 1 : 0)) . "</strong> to <strong>" . ($records->lastItem() ?? $records->total()) . "</strong> of <strong>" . $records->total() . "</strong> records"),
+    });
+</script>
+@endpush
+
+@push('scripts')
+    @vite('resources/js/modules/hr-undertime.js')
+@endpush
+
 @section('content')
 <x-hr-tabs parent="time-attendance" />
 
@@ -269,90 +286,4 @@
         {{ $records->links() }}
     </div>
 </div>
-
-@push('scripts')
-<script>
-function filterUndertimeTable() {
-    const q = (document.getElementById('utSearchInput')?.value || '').toLowerCase().trim();
-    const rows = document.querySelectorAll('.undertime-row');
-    let visible = 0;
-
-    rows.forEach(r => {
-        const search = r.getAttribute('data-search') || '';
-        const matchQ = !q || search.includes(q);
-
-        if (matchQ) {
-            r.style.display = '';
-            visible++;
-        } else {
-            r.style.display = 'none';
-        }
-    });
-
-    const badge = document.getElementById('utVisibleCount');
-    if (badge) badge.innerText = visible;
-
-    const pagInfo = document.querySelector('#utPaginationBar .hr-pagination-info');
-    if (pagInfo) {
-        if (q) {
-            pagInfo.innerHTML = `Showing <strong>${visible === 0 ? 0 : 1}</strong> to <strong>${visible}</strong> of <strong>${visible}</strong> filtered records`;
-        } else {
-            pagInfo.innerHTML = `Showing <strong>{{ $records->firstItem() ?? ($records->total() > 0 ? 1 : 0) }}</strong> to <strong>{{ $records->lastItem() ?? $records->total() }}</strong> of <strong>{{ $records->total() }}</strong> records`;
-        }
-    }
-
-    const empty = document.getElementById('emptyUtRow');
-    if (empty) {
-        empty.style.display = (visible === 0 && rows.length > 0) ? '' : 'none';
-    }
-}
-
-function applyUtFilter(key, val) {
-    const url = new URL(window.location.href);
-    if (val) {
-        url.searchParams.set(key, val);
-    } else {
-        url.searchParams.delete(key);
-    }
-    url.searchParams.set('page', '1');
-    window.location.href = url.toString();
-}
-
-function toggleSelectAllUt(master) {
-    const checkboxes = document.querySelectorAll('.ut-record-checkbox');
-    checkboxes.forEach(cb => {
-        cb.checked = master.checked;
-    });
-    updateBatchUtState();
-}
-
-function updateBatchUtState() {
-    const checked = document.querySelectorAll('.ut-record-checkbox:checked');
-    const btn = document.getElementById('btnBatchAuthorize');
-    const countSpan = document.getElementById('batchUtCount');
-    if (btn && countSpan) {
-        countSpan.innerText = checked.length;
-        btn.style.display = checked.length > 0 ? 'inline-flex' : 'none';
-    }
-}
-
-function submitBatchAuthorize() {
-    const checked = document.querySelectorAll('.ut-record-checkbox:checked');
-    if (checked.length === 0) return;
-
-    if (!confirm(`Authorize ${checked.length} selected undertime record(s)?`)) return;
-
-    const form = document.getElementById('batchAuthorizeForm');
-    form.innerHTML = '@csrf';
-    checked.forEach(cb => {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = 'record_ids[]';
-        input.value = cb.value;
-        form.appendChild(input);
-    });
-    form.submit();
-}
-</script>
-@endpush
 @endsection

@@ -2,6 +2,14 @@
 
 @section('title', 'Leave Requests - Leave & Absence Management')
 
+@push('styles')
+    @vite(['resources/css/modules/hr-leave.css'])
+@endpush
+
+@push('scripts')
+    @vite(['resources/js/modules/hr-leave.js'])
+@endpush
+
 @section('content')
 <x-hr-tabs parent="leave-absences">
     <x-slot:actions>
@@ -170,17 +178,4 @@
     </div>
 </div>
 
-@push('scripts')
-<script>
-function openModal(id) { document.getElementById(id).classList.add('open'); }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-
-function openReviewModal(reqId, empName, leaveType, days) {
-    document.getElementById('reviewLeaveEmp').innerText = empName;
-    document.getElementById('reviewLeaveDetails').innerText = leaveType + ' - ' + days + ' day(s)';
-    document.getElementById('reviewLeaveForm').action = '/hr/leave/requests/' + reqId + '/review';
-    openModal('reviewLeaveModal');
-}
-</script>
-@endpush
 @endsection

@@ -2,6 +2,14 @@
 
 @section('title', 'Philippine Statutory Rules - Payroll')
 
+@push('styles')
+    @vite(['resources/css/modules/hr-statutory-rules.css'])
+@endpush
+
+@push('scripts')
+    @vite(['resources/js/modules/hr-statutory-rules.js'])
+@endpush
+
 @section('content')
 <x-hr-tabs parent="payroll" />
 
@@ -135,24 +143,4 @@
     </div>
 </div>
 
-@push('scripts')
-<script>
-function openModal(id) { document.getElementById(id).classList.add('open'); }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-
-function openRuleModal(id, name, rate, min, max, ee, er, fixed, eff, active) {
-    document.getElementById('ruleForm').action = '/hr/payroll/statutory-rules/' + id;
-    document.getElementById('ruleName').value = name;
-    document.getElementById('ruleRate').value = rate;
-    document.getElementById('ruleMin').value = min;
-    document.getElementById('ruleMax').value = max;
-    document.getElementById('ruleEe').value = ee;
-    document.getElementById('ruleEr').value = er;
-    document.getElementById('ruleFixed').value = fixed;
-    document.getElementById('ruleEff').value = eff;
-    document.getElementById('ruleActive').checked = active;
-    openModal('ruleModal');
-}
-</script>
-@endpush
 @endsection

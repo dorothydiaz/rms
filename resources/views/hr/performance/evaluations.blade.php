@@ -2,6 +2,14 @@
 
 @section('title', 'Staff Evaluations - Performance Management')
 
+@push('styles')
+    @vite(['resources/css/modules/hr-performance.css'])
+@endpush
+
+@push('scripts')
+    @vite(['resources/js/modules/hr-performance.js'])
+@endpush
+
 @section('content')
 <x-hr-tabs parent="performance-management">
     <x-slot:actions>
@@ -164,10 +172,4 @@
     </div>
 </div>
 
-@push('scripts')
-<script>
-function openModal(id) { document.getElementById(id).classList.add('open'); }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-</script>
-@endpush
 @endsection

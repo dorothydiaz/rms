@@ -2,6 +2,14 @@
 
 @section('title', 'Leave Types - Leave & Absence Management')
 
+@push('styles')
+    @vite(['resources/css/modules/hr-leave.css'])
+@endpush
+
+@push('scripts')
+    @vite(['resources/js/modules/hr-leave.js'])
+@endpush
+
 @section('content')
 <x-hr-tabs parent="leave-absences">
     <x-slot:actions>
@@ -96,10 +104,4 @@
     </div>
 </div>
 
-@push('scripts')
-<script>
-function openModal(id) { document.getElementById(id).classList.add('open'); }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-</script>
-@endpush
 @endsection

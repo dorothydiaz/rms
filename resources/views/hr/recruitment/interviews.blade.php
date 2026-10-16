@@ -2,6 +2,14 @@
 
 @section('title', 'Interviews Schedule - Talent Acquisition')
 
+@push('styles')
+    @vite(['resources/css/modules/hr-interviews.css'])
+@endpush
+
+@push('scripts')
+    @vite(['resources/js/modules/hr-interviews.js'])
+@endpush
+
 @section('content')
 <x-hr-tabs parent="talent-acquisition">
     <x-slot:actions>
@@ -12,28 +20,6 @@
     </x-slot:actions>
 </x-hr-tabs>
 
-<style>
-/* Condensed Layout Margins for Maximum Table Viewport */
-.hr-parent-header {
-    margin-bottom: 4px !important;
-}
-.hr-parent-header .hr-parent-title-row {
-    margin-bottom: 2px !important;
-}
-.hr-parent-header .hr-tabs-wrapper {
-    margin-top: 4px !important;
-    margin-bottom: 6px !important;
-}
-.hr-emp-summary-grid {
-    margin-top: 0 !important;
-    margin-bottom: 8px !important;
-    gap: 8px !important;
-}
-.hr-filter-bar {
-    margin-bottom: 8px !important;
-    padding: 8px 12px !important;
-}
-</style>
 
 <!-- 6 Interview Statistics Cards -->
 <div class="hr-emp-summary-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-bottom: 8px;">
@@ -530,37 +516,5 @@
         </form>
     </div>
 </div>
-
-@push('scripts')
-<script>
-    function openModal(modalId) {
-        const m = document.getElementById(modalId);
-        if (m) m.classList.add('active');
-    }
-
-    function closeModal(modalId) {
-        const m = document.getElementById(modalId);
-        if (m) m.classList.remove('active');
-    }
-
-    function openScorecardModal(interviewId, candidateName) {
-        document.getElementById('scorecardCandidateName').innerText = candidateName;
-        document.getElementById('scorecardForm').action = '/hr/recruitment/interviews/' + interviewId + '/evaluate';
-        openModal('scorecardModal');
-    }
-
-    function openEditInterviewModal(interview) {
-        document.getElementById('editInterviewForm').action = '/hr/recruitment/interviews/' + interview.id;
-        document.getElementById('edit_int_date').value = interview.interview_date ? interview.interview_date.substring(0, 10) : '';
-        document.getElementById('edit_int_time').value = interview.interview_time || '';
-        document.getElementById('edit_int_stage').value = interview.interview_stage || 'HR Interview';
-        document.getElementById('edit_int_type').value = interview.interview_type || 'Face-to-face';
-        document.getElementById('edit_int_status').value = interview.status || 'Scheduled';
-        document.getElementById('edit_int_link').value = interview.location_or_link || '';
-        document.getElementById('edit_int_instructions').value = interview.instructions || '';
-        openModal('editInterviewModal');
-    }
-</script>
-@endpush
 
 @endsection

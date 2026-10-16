@@ -1,0 +1,188 @@
+/* Modern Scrollbar for Table */
+#membersModalTableWrapper::-webkit-scrollbar {
+    width: 7px;
+    height: 7px;
+}
+#membersModalTableWrapper::-webkit-scrollbar-track {
+    background: #f8fafc;
+}
+#membersModalTableWrapper::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+#membersModalTableWrapper::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* Modal Table Row Transitions */
+#membersModalTableBody tr {
+    transition: background-color 0.15s ease, transform 0.15s ease;
+}
+#membersModalTableBody tr:hover {
+    background-color: #faf8ff !important;
+}
+
+/* Action Button */
+.hr-modal-view-profile-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    height: 32px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #6d28d9;
+    background: #f5f3ff;
+    border: 1px solid #ddd6fe;
+    border-radius: 8px;
+    text-decoration: none;
+    white-space: nowrap;
+    box-shadow: 0 1px 2px rgba(109, 40, 217, 0.05);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.hr-modal-view-profile-btn:hover {
+    background: #7c3aed;
+    color: #ffffff;
+    border-color: #7c3aed;
+    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);
+    transform: translateY(-1px);
+}
+.hr-modal-view-profile-btn i {
+    font-size: 13px;
+    transition: transform 0.2s;
+}
+.hr-modal-view-profile-btn:hover i {
+    transform: translate(1px, -1px);
+}
+
+/* Table Header Sorting */
+.modal-sort-th {
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s, color 0.15s;
+}
+.modal-sort-th:hover {
+    background: #f1f5f9 !important;
+    color: #7c3aed !important;
+}
+.modal-sort-th .sort-icon {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 6px;
+    font-size: 12px;
+    color: #94a3b8;
+}
+.modal-sort-th.sorted-asc,
+.modal-sort-th.sorted-desc {
+    color: #7c3aed !important;
+    background: #f5f3ff !important;
+}
+.modal-sort-th.sorted-asc .sort-icon,
+.modal-sort-th.sorted-desc .sort-icon {
+    color: #7c3aed;
+}
+
+/* Modal Pagination Styles */
+.modal-page-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-width: 32px;
+    height: 32px;
+    padding: 0 10px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #334155;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+}
+.modal-page-btn:hover:not(:disabled) {
+    background: #ffffff;
+    color: #7c3aed;
+    border-color: #a855f7;
+    box-shadow: 0 2px 6px rgba(124, 58, 237, 0.12);
+    transform: translateY(-1px);
+}
+.modal-page-btn.active {
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%) !important;
+    color: #ffffff !important;
+    border-color: #7c3aed !important;
+    box-shadow: 0 4px 10px rgba(124, 58, 237, 0.3) !important;
+    transform: translateY(-1px);
+}
+.modal-page-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    background: #f8fafc;
+    border-color: #e2e8f0;
+    color: #94a3b8;
+    box-shadow: none;
+    transform: none;
+}
+
+/* Fixed Docked Layout for Staff Members Roster Modal */
+#membersRosterModal .hr-modal {
+    max-width: min(1040px, 96vw) !important;
+    width: 100% !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+}
+
+#membersRosterModal .hr-modal-body,
+#membersRosterModal #membersModalBody {
+    padding: 0 !important;
+    margin: 0 !important;
+    gap: 0 !important;
+    flex: 1 1 0% !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    background: #ffffff !important;
+}
+
+#membersRosterModal #membersModalContent {
+    flex: 1 1 0% !important;
+    min-height: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+}
+
+#membersRosterModal #membersModalTableWrapper {
+    flex: 1 1 0% !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    overflow-x: auto !important;
+    position: relative !important;
+}
+
+#membersRosterModal #membersModalPaginationBar {
+    flex-shrink: 0 !important;
+    position: relative !important;
+    z-index: 20 !important;
+    background: #ffffff !important;
+    border-top: 1px solid #e2e8f0 !important;
+    box-shadow: 0 -2px 10px rgba(15, 23, 42, 0.04) !important;
+    padding: 10px 26px !important;
+    margin: 0 !important;
+}
+
+#membersRosterModal .hr-modal-footer {
+    flex-shrink: 0 !important;
+    margin-top: 0 !important;
+    background: #f8fafc !important;
+    border-top: 1px solid #e2e8f0 !important;
+    padding: 12px 26px !important;
+    position: relative !important;
+    z-index: 20 !important;
+}

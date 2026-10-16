@@ -1,0 +1,55 @@
+/* Condensed Layout Margins for Higher Table Viewport Space */
+.hr-parent-header {
+    margin-bottom: 6px !important;
+}
+.hr-tabs-wrapper {
+    margin-top: 6px !important;
+    margin-bottom: 8px !important;
+}
+.hr-company-summary-grid {
+    margin-bottom: 8px !important;
+    gap: 8px !important;
+}
+.hr-filter-bar {
+    margin-bottom: 8px !important;
+    padding: 6px 12px !important;
+}
+.hr-filter-bar input,
+.hr-filter-bar select,
+.hr-filter-bar button {
+    height: 31px !important;
+    font-size: 12px !important;
+}
+
+
+
+/* Compact Table Density for Higher Viewport Capacity */
+#companiesTable th {
+    padding: 9px 12px !important;
+    font-size: 11.5px !important;
+}
+#companiesTable td {
+    padding: 8px 12px !important;
+    font-size: 12.5px !important;
+}
+#companiesTableWrapper {
+    max-height: calc(100vh - 280px);
+}
+
+.hr-badge-staff-btn {
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.18s ease;
+    font-family: inherit;
+    font-size: 11.5px;
+    font-weight: 600;
+}
+.hr-badge-staff-btn:hover {
+    background: #7c3aed !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 8px rgba(124, 58, 237, 0.35);
+    transform: translateY(-1px);
+}

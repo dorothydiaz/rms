@@ -2,6 +2,14 @@
 
 @section('title', 'Training Programs - Restaurant Development')
 
+@push('styles')
+    @vite(['resources/css/modules/hr-training.css'])
+@endpush
+
+@push('scripts')
+    @vite(['resources/js/modules/hr-training.js'])
+@endpush
+
 @section('content')
 <x-hr-tabs parent="learning-development">
     <x-slot:actions>
@@ -168,10 +176,4 @@
     </div>
 </div>
 
-@push('scripts')
-<script>
-function openModal(id) { document.getElementById(id).classList.add('open'); }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-</script>
-@endpush
 @endsection

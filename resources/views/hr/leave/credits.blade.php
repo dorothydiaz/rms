@@ -2,6 +2,22 @@
 
 @section('title', 'Leave Credits - Leave & Absence Management')
 
+@push('blade-data')
+<script>
+    window.HrLeaveCreditsConfig = Object.freeze({
+        year: @json($year)
+    });
+</script>
+@endpush
+
+@push('styles')
+    @vite(['resources/css/modules/hr-leave.css'])
+@endpush
+
+@push('scripts')
+    @vite(['resources/js/modules/hr-leave.js'])
+@endpush
+
 @section('content')
 <x-hr-tabs parent="leave-absences">
     <x-slot:actions>
@@ -114,22 +130,4 @@
     </div>
 </div>
 
-@push('scripts')
-<script>
-function openModal(id) { document.getElementById(id).classList.add('open'); }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-
-function openAdjustModal(empId, typeId, empName, typeName, beg, earned, used, encashed) {
-    document.getElementById('adjEmpId').value = empId;
-    document.getElementById('adjTypeId').value = typeId;
-    document.getElementById('adjEmpName').innerText = empName;
-    document.getElementById('adjTypeName').innerText = typeName + ' (Year {{ $year }})';
-    document.getElementById('adjBeg').value = beg;
-    document.getElementById('adjEarned').value = earned;
-    document.getElementById('adjUsed').value = used;
-    document.getElementById('adjEncashed').value = encashed;
-    openModal('adjustModal');
-}
-</script>
-@endpush
 @endsection

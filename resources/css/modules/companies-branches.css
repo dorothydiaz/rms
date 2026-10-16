@@ -1,0 +1,63 @@
+/* Modular Table Panel - Consistent Row Heights & Pill Ergonomics */
+#companiesDirectoryTable {
+    table-layout: auto;
+    border-collapse: collapse;
+    width: 100%;
+}
+#companiesDirectoryTable tbody tr {
+    height: 58px;
+    max-height: 58px;
+    transition: background 0.15s;
+    box-sizing: border-box;
+}
+#companiesDirectoryTable tbody td {
+    height: 58px;
+    max-height: 58px;
+    padding: 6px 12px;
+    vertical-align: middle;
+    box-sizing: border-box;
+}
+.branch-pills-wrap {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+    max-height: 46px;
+    overflow: hidden;
+    line-height: 1.2;
+}
+.branch-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 7px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    background: #f1f5f9;
+    color: #334155;
+    border: 1px solid #e2e8f0;
+    max-width: 125px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    box-sizing: border-box;
+}
+.branch-pill-more {
+    display: inline-flex;
+    align-items: center;
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #2563eb;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    padding: 2px 6px;
+    border-radius: 6px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+}
+.branch-pill-more:hover {
+    background: #dbeafe;
+    border-color: #93c5fd;
+}

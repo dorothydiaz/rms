@@ -2,6 +2,14 @@
 
 @section('title', 'Payroll Periods - Philippine Payroll Engine')
 
+@push('styles')
+    @vite(['resources/css/modules/hr-periods.css'])
+@endpush
+
+@push('scripts')
+    @vite(['resources/js/modules/hr-periods.js'])
+@endpush
+
 @section('content')
 <x-hr-tabs parent="payroll">
     <x-slot:actions>
@@ -130,10 +138,4 @@
     </div>
 </div>
 
-@push('scripts')
-<script>
-function openModal(id) { document.getElementById(id).classList.add('open'); }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-</script>
-@endpush
 @endsection

@@ -1,0 +1,147 @@
+/* Compact Header & Navigation Margin Overrides */
+.hr-parent-header {
+    margin-bottom: 6px !important;
+}
+.hr-parent-header .hr-parent-title-row {
+    margin-bottom: 4px !important;
+}
+.hr-parent-header .hr-parent-title {
+    font-size: 20px !important;
+    gap: 8px !important;
+}
+.hr-parent-header .hr-parent-title i {
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 17px !important;
+    border-radius: 8px !important;
+}
+.hr-parent-header .hr-parent-subtitle {
+    font-size: 12px !important;
+    margin-top: 2px !important;
+}
+.hr-parent-header .hr-tabs-wrapper {
+    margin-top: 6px !important;
+    margin-bottom: 8px !important;
+    padding: 3px 5px !important;
+    gap: 4px !important;
+    border-radius: 10px !important;
+}
+.hr-parent-header .hr-tab-item {
+    padding: 5px 12px !important;
+    font-size: 12.5px !important;
+}
+
+
+
+/* Compact Table Density for Higher Viewport Capacity */
+#employeesDirectoryTable th {
+    padding: 9px 12px !important;
+    font-size: 11.5px !important;
+}
+#employeesDirectoryTable td {
+    padding: 8px 12px !important;
+    font-size: 12.5px !important;
+}
+#employeesTableWrapper {
+    max-height: calc(100vh - 280px);
+}
+.emp-name-link:hover {
+    color: #7c3aed !important;
+    text-decoration: underline !important;
+}
+.hr-action-menu-btn {
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.hr-action-menu-btn:hover {
+    background: #f8fafc;
+    color: #0f172a;
+    border-color: #cbd5e1;
+}
+.hr-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 7px 10px;
+    color: #334155;
+    text-decoration: none;
+    font-size: 12.5px;
+    font-weight: 500;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.12s ease, color 0.12s ease;
+}
+.hr-dropdown-item:hover {
+    background: #f1f5f9;
+    color: #7c3aed;
+}
+.hr-dropdown-item i {
+    font-size: 14px;
+    color: #64748b;
+}
+.hr-dropdown-item:hover i {
+    color: #7c3aed;
+}
+.hr-role-pill-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    background: #ffffff;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 12px;
+    color: #334155;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    user-select: none;
+}
+.hr-role-pill-label:hover {
+    border-color: #a855f7;
+    background: #faf5ff;
+}
+.hr-role-pill-label:has(input:checked) {
+    background: #f5f3ff;
+    border-color: #7c3aed;
+    color: #6b21a8;
+    font-weight: 600;
+    box-shadow: 0 1px 3px rgba(124, 58, 237, 0.12);
+}
+.hr-custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+.hr-custom-scrollbar::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 4px;
+}
+.hr-custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+.hr-custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+.modal-sec-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #7c3aed;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 18px 0 10px 0;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #f1f5f9;
+}

@@ -1,0 +1,12 @@
+/* Enterprise Philippine Payroll - Holidays Management */
+.holiday-row {
+    transition: background-color 0.15s ease;
+}
+
+.holiday-row:hover {
+    background-color: rgba(241, 245, 249, 0.6);
+}
+
+.holiday-drawer {
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}

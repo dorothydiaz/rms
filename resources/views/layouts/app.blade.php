@@ -84,6 +84,7 @@
     <script src="{{ asset('assets/js/script.js') }}?v={{ time() }}"></script>
     <!-- Universal UOM Registry & Cross-Module Hydration Engine -->
     <script src="{{ asset('assets/js/uom-registry.js') }}?v={{ file_exists(public_path('assets/js/uom-registry.js')) ? filemtime(public_path('assets/js/uom-registry.js')) : '1.0' }}"></script>
+    @stack('blade-data')
     @stack('scripts')
 </body>
 </html>

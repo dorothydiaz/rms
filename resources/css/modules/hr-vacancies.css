@@ -1,0 +1,21 @@
+/* Talent Acquisition - Job Vacancies */
+/* Condensed Layout Margins for Maximum Table Viewport */
+.hr-parent-header {
+    margin-bottom: 4px !important;
+}
+.hr-parent-header .hr-parent-title-row {
+    margin-bottom: 2px !important;
+}
+.hr-parent-header .hr-tabs-wrapper {
+    margin-top: 4px !important;
+    margin-bottom: 6px !important;
+}
+.hr-emp-summary-grid {
+    margin-top: 0 !important;
+    margin-bottom: 8px !important;
+    gap: 8px !important;
+}
+.hr-filter-bar {
+    margin-bottom: 8px !important;
+    padding: 8px 12px !important;
+}

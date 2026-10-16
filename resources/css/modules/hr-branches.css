@@ -1,0 +1,17 @@
+.hr-badge-staff-btn {
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.18s ease;
+    font-family: inherit;
+    font-size: 11.5px;
+    font-weight: 600;
+}
+.hr-badge-staff-btn:hover {
+    background: #7c3aed !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 8px rgba(124, 58, 237, 0.35);
+    transform: translateY(-1px);
+}

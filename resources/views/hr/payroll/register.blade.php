@@ -3,106 +3,11 @@
 @section('title', 'Payroll Register - Philippine Payroll Engine')
 
 @push('styles')
-<style>
-/* Responsive Payroll Register Table */
-.hr-payroll-table {
-    width: 100% !important;
-    min-width: 1020px;
-    border-collapse: separate;
-    border-spacing: 0;
-}
+    @vite(['resources/css/modules/hr-register.css'])
+@endpush
 
-.hr-payroll-table th,
-.hr-payroll-table td {
-    padding: 8px 6px !important;
-    font-size: 12px;
-    vertical-align: middle;
-}
-
-.hr-payroll-table th {
-    font-size: 10.5px !important;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: #475569;
-    background: #f8fafc !important;
-    white-space: nowrap;
-    border-bottom: 2px solid #e2e8f0;
-}
-
-/* Sticky Staff Name (Left Column) */
-.hr-payroll-table th.py-col-name,
-.hr-payroll-table td.py-col-name {
-    position: sticky;
-    left: 0;
-    z-index: 5;
-    background: #ffffff;
-    width: 140px;
-    min-width: 130px;
-    max-width: 155px;
-    box-shadow: 3px 0 6px -2px rgba(0, 0, 0, 0.08);
-}
-.hr-payroll-table th.py-col-name {
-    background: #f8fafc !important;
-    z-index: 15;
-}
-
-/* Sticky Actions (Right Column) */
-.hr-payroll-table th.py-col-action,
-.hr-payroll-table td.py-col-action {
-    position: sticky;
-    right: 0;
-    z-index: 5;
-    background: #ffffff;
-    width: 78px;
-    min-width: 78px;
-    text-align: right;
-    box-shadow: -3px 0 6px -2px rgba(0, 0, 0, 0.08);
-}
-.hr-payroll-table th.py-col-action {
-    background: #f8fafc !important;
-    z-index: 15;
-}
-
-.hr-payroll-table tr:hover td.py-col-name,
-.hr-payroll-table tr:hover td.py-col-action {
-    background: #f8fafc !important;
-}
-
-/* Branch Column */
-.hr-payroll-table .py-col-branch {
-    width: 105px;
-    min-width: 95px;
-    max-width: 120px;
-    white-space: nowrap;
-}
-
-/* Numeric / Currency Columns */
-.hr-payroll-table .py-col-num {
-    text-align: right !important;
-    font-variant-numeric: tabular-nums;
-    white-space: nowrap;
-    font-size: 11.5px;
-    padding: 8px 5px !important;
-}
-
-.hr-payroll-table th.py-col-num {
-    text-align: right !important;
-    padding: 8px 5px !important;
-}
-
-.hr-payroll-table .py-col-basic { width: 75px; }
-.hr-payroll-table .py-col-ot { width: 55px; }
-.hr-payroll-table .py-col-nd { width: 55px; }
-.hr-payroll-table .py-col-allow { width: 65px; }
-.hr-payroll-table .py-col-gross { width: 80px; }
-.hr-payroll-table .py-col-att-ded { width: 75px; }
-.hr-payroll-table .py-col-sss { width: 60px; }
-.hr-payroll-table .py-col-phil { width: 62px; }
-.hr-payroll-table .py-col-pagibig { width: 58px; }
-.hr-payroll-table .py-col-tax { width: 58px; }
-.hr-payroll-table .py-col-net { width: 85px; }
-</style>
+@push('scripts')
+    @vite(['resources/js/modules/hr-register.js'])
 @endpush
 
 @section('content')
@@ -287,15 +192,4 @@
     </div>
 </div>
 
-@push('scripts')
-<script>
-function openModal(id) { document.getElementById(id).classList.add('open'); }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-function openAdjModal(recId, name) {
-    document.getElementById('adjRecordId').value = recId;
-    document.getElementById('adjStaffName').innerText = name;
-    openModal('payrollAdjModal');
-}
-</script>
-@endpush
 @endsection

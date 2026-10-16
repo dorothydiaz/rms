@@ -2,6 +2,22 @@
 
 @section('title', 'Holidays Management - Enterprise Philippine Payroll')
 
+@push('blade-data')
+<script>
+    window.HrHolidaysConfig = Object.freeze({
+        baseUrl: @json(url('hr/payroll/holidays'))
+    });
+</script>
+@endpush
+
+@push('styles')
+    @vite(['resources/css/modules/hr-holidays.css'])
+@endpush
+
+@push('scripts')
+    @vite(['resources/js/modules/hr-holidays.js'])
+@endpush
+
 @section('content')
 <x-hr-tabs parent="payroll">
     <x-slot:actions>
@@ -709,153 +725,4 @@
     </div>
 </div>
 
-<script>
-// Filter Holidays client-side without page reload
-function applyHolidayFilters() {
-    const q = (document.getElementById('holidaySearchInput').value || '').toLowerCase().trim();
-    const type = document.getElementById('filterHolidayType').value;
-    const scope = document.getElementById('filterScope').value;
-    const branch = document.getElementById('filterBranch').value;
-    const status = document.getElementById('filterStatus').value;
-
-    const rows = document.querySelectorAll('.holiday-row');
-    let visibleCount = 0;
-
-    rows.forEach(row => {
-        const name = row.getAttribute('data-name');
-        const hType = row.getAttribute('data-type');
-        const hScope = row.getAttribute('data-scope');
-        const hStatus = row.getAttribute('data-status');
-        const branches = JSON.parse(row.getAttribute('data-branches') || '[]');
-
-        let match = true;
-
-        if (q && !name.includes(q)) match = false;
-        if (type && hType !== type) match = false;
-        if (scope && hScope !== scope) match = false;
-        if (status && hStatus !== status) match = false;
-        if (branch && branches.length > 0 && !branches.includes(branch) && !branches.includes(parseInt(branch))) {
-            match = false;
-        }
-
-        row.style.display = match ? '' : 'none';
-        if (match) visibleCount++;
-    });
-
-    const badge = document.getElementById('tableHolidayCountBadge');
-    if (badge) badge.innerText = `${visibleCount} holidays`;
-
-    const emptyRow = document.getElementById('emptyHolidayRow');
-    if (emptyRow) {
-        emptyRow.style.display = (visibleCount === 0 && rows.length > 0) ? '' : 'none';
-    }
-}
-
-function resetHolidayFilters() {
-    document.getElementById('holidaySearchInput').value = '';
-    document.getElementById('filterHolidayType').value = '';
-    document.getElementById('filterScope').value = '';
-    document.getElementById('filterBranch').value = '';
-    document.getElementById('filterStatus').value = '';
-    applyHolidayFilters();
-}
-
-// Open Detail Drawer
-function viewHolidayDetails(id) {
-    const row = document.querySelector(`.holiday-row[data-id="${id}"]`);
-    if (!row) return;
-
-    const data = JSON.parse(row.getAttribute('data-json'));
-
-    document.getElementById('dtlName').innerText = data.name;
-    document.getElementById('dtlDate').innerText = data.date ? new Date(data.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', weekday: 'long' }) : '';
-    document.getElementById('dtlTypeBadge').innerText = data.holiday_type;
-    document.getElementById('dtlScope').innerText = data.scope;
-    document.getElementById('dtlStatus').innerText = data.is_active ? 'Active' : 'Inactive';
-    document.getElementById('dtlReference').innerText = data.official_reference || 'DOLE Statutory Labor Code';
-    document.getElementById('dtlTreatment').innerText = data.payroll_treatment || 'Statutory DOLE Rules Apply';
-    document.getElementById('dtlLocations').innerText = (data.scope === 'Nationwide' || !data.applicable_branches || data.applicable_branches.length === 0) 
-        ? 'All Branches Nationwide' 
-        : `${data.applicable_branches.length} Selected Branches`;
-
-    // Calculation rules display based on type
-    if (data.holiday_type === 'Regular Holiday') {
-        document.getElementById('dtlRuleUnworked').innerText = '100%';
-        document.getElementById('dtlRuleWorked').innerText = '200%';
-        document.getElementById('dtlRuleRestDay').innerText = '+30% (260%)';
-        document.getElementById('dtlRuleOt').innerText = '+30% of day rate';
-    } else if (data.holiday_type === 'Special Non-Working') {
-        document.getElementById('dtlRuleUnworked').innerText = '0% (No work no pay)';
-        document.getElementById('dtlRuleWorked').innerText = '130%';
-        document.getElementById('dtlRuleRestDay').innerText = '+50% (150%)';
-        document.getElementById('dtlRuleOt').innerText = '+30% of day rate';
-    } else if (data.holiday_type === 'Special Working') {
-        document.getElementById('dtlRuleUnworked').innerText = '100%';
-        document.getElementById('dtlRuleWorked').innerText = '100%';
-        document.getElementById('dtlRuleRestDay').innerText = '130%';
-        document.getElementById('dtlRuleOt').innerText = '125%';
-    } else {
-        document.getElementById('dtlRuleUnworked').innerText = 'Per Company Policy';
-        document.getElementById('dtlRuleWorked').innerText = '130%';
-        document.getElementById('dtlRuleRestDay').innerText = '150%';
-        document.getElementById('dtlRuleOt').innerText = '+30%';
-    }
-
-    openModal('holidayDetailDrawer');
-}
-
-// Edit Holiday
-function editHoliday(id) {
-    const row = document.querySelector(`.holiday-row[data-id="${id}"]`);
-    if (!row) return;
-
-    const data = JSON.parse(row.getAttribute('data-json'));
-    const form = document.getElementById('editHolidayForm');
-    form.action = `{{ url('hr/payroll/holidays') }}/${id}`;
-
-    document.getElementById('editHolidayName').value = data.name;
-    document.getElementById('editHolidayYear').value = data.year;
-    document.getElementById('editHolidayDate').value = data.date ? data.date.substring(0, 10) : '';
-    document.getElementById('editHolidayType').value = data.holiday_type;
-    document.getElementById('editHolidayScope').value = data.scope;
-    document.getElementById('editHolidayRef').value = data.official_reference || '';
-
-    // Set Payroll Treatment select dropdown
-    const treatmentSelect = document.getElementById('editPayrollTreatment');
-    if (treatmentSelect) {
-        let found = false;
-        for (let opt of treatmentSelect.options) {
-            if (opt.value === data.payroll_treatment) {
-                treatmentSelect.value = data.payroll_treatment;
-                found = true;
-                break;
-            }
-        }
-        if (!found && data.payroll_treatment) {
-            const customOpt = new Option(data.payroll_treatment, data.payroll_treatment, true, true);
-            treatmentSelect.add(customOpt);
-        }
-    }
-
-    document.getElementById('editHolidayDesc').value = data.description || '';
-    document.getElementById('editIsActive').checked = !!data.is_active;
-
-    openModal('editHolidayModal');
-}
-
-function onHolidayTypeChange(type, prefix) {
-    const treatmentSelect = document.getElementById(`${prefix}PayrollTreatment`);
-    if (!treatmentSelect) return;
-
-    if (type === 'Regular Holiday') {
-        treatmentSelect.value = '100% unworked / 200% worked (+30% rest day)';
-    } else if (type === 'Special Non-Working') {
-        treatmentSelect.value = 'No work no pay / 130% worked (+50% rest day)';
-    } else if (type === 'Special Working') {
-        treatmentSelect.value = '100% standard rate (no premium)';
-    } else {
-        treatmentSelect.value = '130% worked rate';
-    }
-}
-</script>
 @endsection

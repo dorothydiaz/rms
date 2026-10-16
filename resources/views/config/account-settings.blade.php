@@ -2,6 +2,14 @@
 
 @section('title', 'Account Settings - Restaurant Management System')
 
+@push('styles')
+    @vite(['resources/css/modules/account-settings.css'])
+@endpush
+
+@push('scripts')
+    @vite(['resources/js/modules/account-settings.js'])
+@endpush
+
 @section('content')
 @php
     $displayName = $user ? ($user->full_name ?? $user->username) : 'Dorothy Diaz';
@@ -260,130 +268,4 @@
         @endif
     </div>
 </div>
-
-@push('styles')
-<style>
-.account-settings-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 2fr);
-    gap: 20px;
-    align-items: stretch;
-}
-
-.account-settings-grid > .account-card {
-    display: flex;
-    flex-direction: column;
-    margin-bottom: 0 !important;
-    padding: 18px 20px;
-    min-width: 0;
-    box-sizing: border-box;
-}
-
-.account-card.account-card-table {
-    /* Covers 50% of the row in 3-column desktop layout (2fr of 4fr total) */
-}
-
-.account-card-header {
-    border-bottom: 1px solid rgba(168, 85, 247, 0.12);
-    padding-bottom: 12px;
-    margin-bottom: 14px;
-}
-
-.account-card-title {
-    font-size: 15.5px;
-    font-weight: 700;
-    color: #0f172a;
-    margin: 0 0 3px 0;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.account-card-desc {
-    font-size: 12px;
-    color: #64748b;
-    margin: 0;
-}
-
-.account-card-form {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-}
-
-.account-role-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 10px;
-}
-
-.account-card-actions {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: auto;
-    padding-top: 8px;
-}
-
-.account-empty-state {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 28px 16px;
-    background: rgba(241, 245, 249, 0.5);
-    border-radius: 12px;
-    border: 1px dashed rgba(203, 213, 225, 0.8);
-    min-height: 200px;
-}
-
-@media (max-width: 1120px) {
-    .account-settings-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-    .account-card.account-card-table {
-        grid-column: span 2;
-    }
-    .account-role-grid {
-        grid-template-columns: 1fr 1fr;
-    }
-}
-
-@media (max-width: 640px) {
-    .account-settings-grid {
-        grid-template-columns: 1fr;
-    }
-    .account-card.account-card-table {
-        grid-column: span 1;
-    }
-    .account-role-grid {
-        grid-template-columns: 1fr;
-    }
-}
-</style>
-@endpush
-
-@push('scripts')
-<script>
-function togglePassVisibility(inputId, btn) {
-    const input = document.getElementById(inputId);
-    if (!input) return;
-    const icon = btn.querySelector('i');
-    if (input.type === 'password') {
-        input.type = 'text';
-        if (icon) {
-            icon.classList.remove('ph-eye');
-            icon.classList.add('ph-eye-slash');
-        }
-    } else {
-        input.type = 'password';
-        if (icon) {
-            icon.classList.remove('ph-eye-slash');
-            icon.classList.add('ph-eye');
-        }
-    }
-}
-</script>
-@endpush
 @endsection
