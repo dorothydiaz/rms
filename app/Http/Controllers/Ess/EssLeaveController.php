@@ -3,183 +3,124 @@
 namespace App\Http\Controllers\Ess;
 
 use App\Http\Controllers\Controller;
-use App\Models\Hr\EssRequest;
-use App\Models\Hr\EssRequestLog;
-use App\Models\Hr\Holiday;
+use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\View\View;
+use App\Models\Hr\Employee;
+use App\Models\Hr\LeaveType;
 use App\Models\Hr\LeaveBalance;
 use App\Models\Hr\LeaveRequest;
-use App\Models\Hr\LeaveType;
-use App\Services\Hr\DoleComplianceService;
+use App\Services\DoleLaborStandardsService;
 use Carbon\Carbon;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\View\View;
 
 class EssLeaveController extends Controller
 {
-    public function __construct(
-        protected DoleComplianceService $doleService
-    ) {}
+    protected DoleLaborStandardsService $doleService;
+
+    public function __construct(DoleLaborStandardsService $doleService)
+    {
+        $this->doleService = $doleService;
+    }
 
     public function index(Request $request): View
     {
-        $user = Auth::user();
-        $employee = $user->employee;
+        $employee = $request->attributes->get('current_employee');
+        $empIntId = $employee->getRawOriginal('employee_id') ?? $employee->getKey();
 
-        if (!$employee) {
-            return view('ess.no-employee-profile', compact('user'));
-        }
-
-        $balances = LeaveBalance::with('leaveType')
-            ->where(function ($q) use ($employee) {
-                $q->where('employee_id', $employee->employee_id)
-                  ->orWhere('employee_id', $employee->id);
-            })
-            ->get();
-
+        // 1. Fetch configured leave types
         $leaveTypes = LeaveType::all();
 
-        // Evaluate DOLE statutory eligibility for key leaves
-        $statutoryEligibility = [
-            'SIL' => $this->doleService->checkStatutoryLeaveEligibility('SIL', $employee),
-            'MATERNITY' => $this->doleService->checkStatutoryLeaveEligibility('MATERNITY', $employee),
-            'PATERNITY' => $this->doleService->checkStatutoryLeaveEligibility('PATERNITY', $employee),
-            'SOLO_PARENT' => $this->doleService->checkStatutoryLeaveEligibility('SOLO_PARENT', $employee),
-            'VAWC' => $this->doleService->checkStatutoryLeaveEligibility('VAWC', $employee),
-            'MAGNA_CARTA' => $this->doleService->checkStatutoryLeaveEligibility('MAGNA_CARTA', $employee),
-        ];
+        // 2. Fetch or compute balances
+        $balances = LeaveBalance::where('employee_id', $empIntId)->with('leaveType')->get();
 
-        $myRequests = LeaveRequest::with(['leaveType', 'approver'])
-            ->where(function ($q) use ($employee) {
-                $q->where('employee_id', $employee->employee_id)
-                  ->orWhere('employee_id', $employee->id);
-            })
+        // Check SIL statutory tenure eligibility (>= 1 year / 365 days)
+        $dateHired = $employee->date_hired ? Carbon::parse($employee->date_hired) : now()->subYears(2);
+        $tenureDays = (int) $dateHired->diffInDays(now());
+        $isEligibleForSil = $this->doleService->isEligibleForSil($tenureDays);
+        $isEligibleForSoloParent = $this->doleService->isEligibleForSoloParent($tenureDays);
+
+        // 3. Employee's leave request history
+        $requests = LeaveRequest::where('employee_id', $empIntId)
+            ->with(['leaveType', 'approver'])
             ->orderBy('created_at', 'desc')
             ->get();
 
-        $upcomingHolidays = Holiday::whereDate('date', '>=', now())
-            ->orderBy('date', 'asc')
-            ->take(5)
-            ->get();
-
-        return view('ess.leave', compact(
-            'user',
+        return view('ess.leave.index', compact(
             'employee',
-            'balances',
             'leaveTypes',
-            'statutoryEligibility',
-            'myRequests',
-            'upcomingHolidays'
+            'balances',
+            'requests',
+            'isEligibleForSil',
+            'isEligibleForSoloParent',
+            'tenureDays'
         ));
     }
 
-    public function storeLeaveRequest(Request $request): RedirectResponse
+    public function store(Request $request): RedirectResponse
     {
-        $user = Auth::user();
-        $employee = $user->employee;
-
-        if (!$employee) {
-            abort(403, 'No employee record linked.');
-        }
+        $employee = $request->attributes->get('current_employee');
+        $empIntId = $employee->getRawOriginal('employee_id') ?? $employee->getKey();
 
         $validated = $request->validate([
             'leave_type_id' => 'required|exists:hr_leave_types,leave_type_id',
             'start_date' => 'required|date|after_or_equal:today',
             'end_date' => 'required|date|after_or_equal:start_date',
-            'is_half_day' => 'nullable|boolean',
-            'reason' => 'required|string|max:500',
+            'duration_type' => 'required|in:Full Day,Half Day,Half Day - Morning,Half Day - Afternoon',
+            'reason' => 'required|string|max:1000',
+            'attachment' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
         ]);
 
-        $startDate = Carbon::parse($validated['start_date']);
-        $endDate = Carbon::parse($validated['end_date']);
-        $isHalfDay = $request->boolean('is_half_day');
+        $start = Carbon::parse($validated['start_date']);
+        $end = Carbon::parse($validated['end_date']);
 
-        $days = $isHalfDay ? 0.5 : ($startDate->diffInDays($endDate) + 1);
-
-        $leaveType = LeaveType::findOrFail($validated['leave_type_id']);
-
-        // Check statutory eligibility if statutory code applies
-        if (!empty($leaveType->code)) {
-            $eligibility = $this->doleService->checkStatutoryLeaveEligibility($leaveType->code, $employee);
-            if (!$eligibility['eligible'] && !in_array(strtoupper($leaveType->code), ['VL', 'SL', 'EL'])) {
-                return redirect()->back()->with('error', "Ineligible for {$leaveType->name}: {$eligibility['reason']}");
-            }
+        if (str_starts_with($validated['duration_type'], 'Half Day')) {
+            $numDays = 0.5;
+        } else {
+            // Count weekdays (excluding Sundays/rest days by default)
+            $numDays = max(1.0, (float) ($start->diffInDaysFiltered(function (Carbon $date) {
+                return !$date->isSunday();
+            }, $end) + 1));
         }
 
-        // Check leave balance
-        $balance = LeaveBalance::where(function ($q) use ($employee) {
-                $q->where('employee_id', $employee->employee_id)
-                  ->orWhere('employee_id', $employee->id);
-            })
-            ->where('leave_type_id', $leaveType->id)
-            ->first();
-
-        if ($balance && $balance->remaining_days < $days) {
-            return redirect()->back()->with('error', "Insufficient leave balance. Available: {$balance->remaining_days} days, Requested: {$days} days.");
+        $attachmentPath = null;
+        if ($request->hasFile('attachment')) {
+            $attachmentPath = $request->file('attachment')->store('leave_attachments', 'public');
         }
 
-        DB::transaction(function () use ($employee, $user, $validated, $leaveType, $days, $isHalfDay, $startDate, $endDate) {
-            $leaveReq = LeaveRequest::create([
-                'employee_id' => $employee->id,
-                'leave_type_id' => $leaveType->id,
+        DB::transaction(function () use ($empIntId, $validated, $numDays, $attachmentPath) {
+            LeaveRequest::create([
+                'employee_id' => $empIntId,
+                'leave_type_id' => $validated['leave_type_id'],
                 'start_date' => $validated['start_date'],
                 'end_date' => $validated['end_date'],
-                'number_of_days' => $days,
+                'number_of_days' => $numDays,
                 'reason' => $validated['reason'],
+                'attachment' => $attachmentPath,
                 'status' => 'Pending',
-            ]);
-
-            // Sync with universal ESS requests
-            $reqNumber = EssRequest::generateRequestNumber('LV');
-            $essReq = EssRequest::create([
-                'request_number' => $reqNumber,
-                'employee_id' => $employee->employee_id,
-                'request_type' => 'LEAVE',
-                'status' => 'PENDING_APPROVAL',
-                'start_date' => $validated['start_date'],
-                'end_date' => $validated['end_date'],
-                'total_hours' => $days * 8.0,
-                'reason' => $validated['reason'],
-                'metadata' => [
-                    'leave_request_id' => $leaveReq->id,
-                    'leave_type_name' => $leaveType->name,
-                    'days' => $days,
-                ],
-                'current_approver_id' => $employee->supervisor?->user_id,
-            ]);
-
-            EssRequestLog::create([
-                'ess_request_id' => $essReq->id,
-                'action' => 'SUBMITTED',
-                'acted_by' => $user->id,
-                'remarks' => "Filed {$days} day(s) {$leaveType->name}",
             ]);
         });
 
-        return redirect()->back()->with('success', "Leave request submitted successfully for approval.");
+        return redirect()->back()->with('success', "Leave request of {$numDays} day(s) filed successfully for supervisor approval.");
     }
 
-    public function cancelLeaveRequest(int $id): RedirectResponse
+    public function cancel(int $id, Request $request): RedirectResponse
     {
-        $user = Auth::user();
-        $employee = $user->employee;
+        $employee = $request->attributes->get('current_employee');
+        $empIntId = $employee->getRawOriginal('employee_id') ?? $employee->getKey();
 
-        if (!$employee) {
-            abort(403, 'No employee record linked.');
-        }
-
-        $leaveReq = LeaveRequest::where('id', $id)
-            ->where('employee_id', $employee->employee_id)
+        $leaveReq = LeaveRequest::where('leave_request_id', $id)
+            ->where('employee_id', $empIntId)
             ->firstOrFail();
 
         if ($leaveReq->status !== 'Pending') {
-            return redirect()->back()->with('error', "Only Pending leave requests can be cancelled.");
+            return redirect()->back()->with('error', 'Only pending leave requests can be cancelled.');
         }
 
-        $leaveReq->update(['status' => 'Cancelled']);
+        $leaveReq->update([
+            'status' => 'Cancelled',
+        ]);
 
-        return redirect()->back()->with('success', "Leave request cancelled.");
+        return redirect()->back()->with('success', 'Leave request cancelled successfully.');
     }
 }
