@@ -3,150 +3,154 @@
 namespace App\Http\Controllers\Ess;
 
 use App\Http\Controllers\Controller;
-use App\Models\Hr\AttendanceCorrection;
-use App\Models\Hr\AttendanceRecord;
-use App\Models\Hr\EssRequest;
-use App\Models\Hr\EssRequestLog;
-use App\Services\Hr\DoleComplianceService;
-use Carbon\Carbon;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
+use App\Models\Hr\AttendanceRecord;
+use App\Models\Hr\AttendanceCorrection;
+use App\Models\Ess\EssRequest;
+use App\Services\DoleLaborStandardsService;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class EssAttendanceController extends Controller
 {
-    public function __construct(
-        protected DoleComplianceService $doleService
-    ) {}
+    protected DoleLaborStandardsService $doleService;
 
-    public function index(Request $request): View
+    public function __construct(DoleLaborStandardsService $doleService)
     {
-        $user = Auth::user();
-        $employee = $user->employee;
-
-        if (!$employee) {
-            return view('ess.no-employee-profile', compact('user'));
-        }
-
-        $month = $request->input('month', now()->format('Y-m'));
-        $dateObj = Carbon::createFromFormat('Y-m', $month) ?? now();
-        $startDate = $dateObj->copy()->startOfMonth();
-        $endDate = $dateObj->copy()->endOfMonth();
-
-        $records = AttendanceRecord::where('employee_id', $employee->employee_id)
-            ->whereBetween('date', [$startDate, $endDate])
-            ->orderBy('date', 'desc')
-            ->get();
-
-        // Calculate DOLE compliance attributes for each record
-        foreach ($records as $rec) {
-            $rec->night_diff_hours = 0.0;
-            if ($rec->time_in && $rec->time_out) {
-                $rec->night_diff_hours = $this->doleService->calculateNightDiffHours(
-                    $rec->date->format('Y-m-d') . ' ' . $rec->time_in,
-                    $rec->date->format('Y-m-d') . ' ' . $rec->time_out
-                );
-            }
-            $rec->ot_multiplier = $this->doleService->getOvertimeMultiplier(
-                $rec->holiday_type ?: ($rec->is_rest_day ? 'REST_DAY' : 'ORDINARY'),
-                (bool) $rec->is_rest_day
-            );
-        }
-
-        $totalHours = $records->sum('regular_hours');
-        $totalOt = $records->sum('overtime_hours');
-        $totalLate = $records->sum('late_minutes');
-        $totalUndertime = $records->sum('undertime_minutes');
-        $totalNightDiff = $records->sum('night_diff_hours');
-
-        return view('ess.attendance', compact(
-            'user',
-            'employee',
-            'records',
-            'month',
-            'totalHours',
-            'totalOt',
-            'totalLate',
-            'totalUndertime',
-            'totalNightDiff'
-        ));
+        $this->doleService = $doleService;
     }
 
-    public function exportDtrPdf(Request $request)
+    public function dtrIndex(Request $request): View
     {
-        $user = Auth::user();
-        $employee = $user->employee;
+        $employee = $request->attributes->get('current_employee');
+        $empIntId = $employee->getRawOriginal('employee_id') ?? $employee->getKey();
 
-        if (!$employee) {
-            abort(403, 'No employee record linked.');
-        }
-
+        // Period filter (default current month)
         $month = $request->input('month', now()->format('Y-m'));
-        $dateObj = Carbon::createFromFormat('Y-m', $month) ?? now();
-        $startDate = $dateObj->copy()->startOfMonth();
-        $endDate = $dateObj->copy()->endOfMonth();
+        $startDate = Carbon::parse($month . '-01')->startOfMonth();
+        $endDate = $startDate->copy()->endOfMonth();
 
-        $records = AttendanceRecord::where('employee_id', $employee->employee_id)
-            ->whereBetween('date', [$startDate, $endDate])
+        $records = AttendanceRecord::where(function ($q) use ($empIntId, $employee) {
+                $q->where('employee_id', $empIntId)
+                  ->orWhere('employee_id', $employee->employee_id);
+            })
+            ->whereBetween('date', [$startDate->toDateString(), $endDate->toDateString()])
             ->orderBy('date', 'asc')
             ->get();
 
-        return view('ess.dtr-print', compact('user', 'employee', 'records', 'month'));
-    }
+        // Totals
+        $totalRegHours = 0.0;
+        $totalOtHours = 0.0;
+        $totalNightDiffHours = 0.0;
+        $totalLateMinutes = 0;
+        $totalUndertimeMinutes = 0;
 
-    public function storeCorrectionRequest(Request $request): RedirectResponse
-    {
-        $user = Auth::user();
-        $employee = $user->employee;
+        foreach ($records as $r) {
+            $totalRegHours += (float) ($r->regular_hours ?? 0);
+            $totalOtHours += (float) ($r->overtime_hours ?? 0);
+            $totalLateMinutes += (int) ($r->late_minutes ?? 0);
+            $totalUndertimeMinutes += (int) ($r->undertime_minutes ?? 0);
 
-        if (!$employee) {
-            abort(403, 'No employee record linked.');
+            if (!empty($r->time_in) && !empty($r->time_out)) {
+                $nsd = $this->doleService->calculateNightShiftDifferential(
+                    $employee->basic_salary ? ($employee->basic_salary / 22 / 8) : 100.0,
+                    $r->time_in,
+                    $r->time_out
+                );
+                $r->calculated_nsd_hours = $nsd['night_diff_hours'];
+                $totalNightDiffHours += $nsd['night_diff_hours'];
+            }
         }
 
+        return view('ess.attendance.dtr', compact(
+            'employee',
+            'records',
+            'month',
+            'totalRegHours',
+            'totalOtHours',
+            'totalNightDiffHours',
+            'totalLateMinutes',
+            'totalUndertimeMinutes'
+        ));
+    }
+
+    public function submitCorrection(Request $request): RedirectResponse
+    {
+        $employee = $request->attributes->get('current_employee');
+        $empIntId = $employee->getRawOriginal('employee_id') ?? $employee->getKey();
+
         $validated = $request->validate([
-            'date' => 'required|date',
-            'time_in' => 'nullable|date_format:H:i',
-            'time_out' => 'nullable|date_format:H:i',
-            'reason' => 'required|string|max:500',
+            'attendance_record_id' => 'required|exists:hr_attendance_records,attendance_record_id',
+            'corrected_time_in' => 'required',
+            'corrected_time_out' => 'required',
+            'reason_category' => 'required|string',
+            'explanation' => 'required|string',
         ]);
 
-        $reqNumber = EssRequest::generateRequestNumber('CORR');
+        $record = AttendanceRecord::where('attendance_record_id', $validated['attendance_record_id'])
+            ->where(function ($q) use ($empIntId, $employee) {
+                $q->where('employee_id', $empIntId)
+                  ->orWhere('employee_id', $employee->employee_id);
+            })
+            ->firstOrFail();
 
-        $essReq = EssRequest::create([
-            'request_number' => $reqNumber,
-            'employee_id' => $employee->employee_id,
-            'request_type' => 'ATTENDANCE_CORRECTION',
-            'status' => 'PENDING_APPROVAL',
-            'start_date' => $validated['date'],
-            'start_time' => $validated['time_in'] ?? null,
-            'end_time' => $validated['time_out'] ?? null,
-            'reason' => $validated['reason'],
-            'metadata' => [
-                'target_date' => $validated['date'],
-                'requested_time_in' => $validated['time_in'] ?? null,
-                'requested_time_out' => $validated['time_out'] ?? null,
-            ],
-            'current_approver_id' => $employee->supervisor?->user_id,
-        ]);
+        DB::transaction(function () use ($employee, $record, $validated, $empIntId) {
+            $reqNumber = EssRequest::generateRequestNumber('CORR');
 
-        // Also record in hr_attendance_corrections for compatibility with HR admin module
-        AttendanceCorrection::create([
-            'employee_id' => $employee->employee_id,
-            'date' => $validated['date'],
-            'requested_time_in' => $validated['time_in'] ?? null,
-            'requested_time_out' => $validated['time_out'] ?? null,
-            'reason' => $validated['reason'],
-            'status' => 'Pending',
-        ]);
+            // 1. Create ESS Request
+            EssRequest::create([
+                'request_number' => $reqNumber,
+                'employee_id' => $employee->employee_id,
+                'request_type' => 'ATTENDANCE_CORRECTION',
+                'details' => [
+                    'attendance_record_id' => $record->id,
+                    'record_date' => $record->date?->toDateString(),
+                    'original_time_in' => $record->time_in,
+                    'original_time_out' => $record->time_out,
+                    'corrected_time_in' => $validated['corrected_time_in'],
+                    'corrected_time_out' => $validated['corrected_time_out'],
+                    'reason_category' => $validated['reason_category'],
+                ],
+                'reason' => $validated['explanation'],
+                'status' => 'PENDING',
+                'approval_step' => 1,
+            ]);
 
-        EssRequestLog::create([
-            'ess_request_id' => $essReq->id,
-            'action' => 'SUBMITTED',
-            'acted_by' => $user->id,
-            'remarks' => "Submitted attendance correction for {$validated['date']}",
-        ]);
+            // 2. Log in AttendanceCorrection
+            AttendanceCorrection::create([
+                'attendance_record_id' => $record->id,
+                'employee_id' => $empIntId,
+                'requested_by' => auth()->id() ?? 1,
+                'original_time_in' => $record->time_in,
+                'original_time_out' => $record->time_out,
+                'requested_time_in' => $validated['corrected_time_in'],
+                'requested_time_out' => $validated['corrected_time_out'],
+                'reason' => "[{$validated['reason_category']}] " . $validated['explanation'],
+                'status' => 'Pending',
+            ]);
+        });
 
-        return redirect()->back()->with('success', "Attendance correction request #{$reqNumber} submitted.");
+        return redirect()->back()->with('success', 'Attendance correction request submitted for supervisor approval.');
+    }
+
+    public function exportPdf(Request $request): View
+    {
+        $employee = $request->attributes->get('current_employee');
+        $empIntId = $employee->getRawOriginal('employee_id') ?? $employee->getKey();
+        $month = $request->input('month', now()->format('Y-m'));
+        $startDate = Carbon::parse($month . '-01')->startOfMonth();
+        $endDate = $startDate->copy()->endOfMonth();
+
+        $records = AttendanceRecord::where(function ($q) use ($empIntId, $employee) {
+                $q->where('employee_id', $empIntId)
+                  ->orWhere('employee_id', $employee->employee_id);
+            })
+            ->whereBetween('date', [$startDate->toDateString(), $endDate->toDateString()])
+            ->orderBy('date', 'asc')
+            ->get();
+
+        return view('ess.attendance.export_pdf', compact('employee', 'records', 'month'));
     }
 }
