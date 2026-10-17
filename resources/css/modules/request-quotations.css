@@ -1045,7 +1045,127 @@ body:has(#app-sidebar.collapsed) .rfq-builder-workspace-grid {
     font-size: 0.78rem;
 }
 
-/* Compact Active Vendor Info Banner */
+/* Combobox Trigger States & Clear Action */
+.rfq-vendor-trigger-placeholder {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #64748b;
+    font-size: 0.82rem;
+}
+.rfq-vendor-trigger-placeholder i {
+    font-size: 14px;
+    color: #94a3b8;
+}
+
+.rfq-vendor-trigger-selected {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    flex: 1;
+}
+
+.rfq-vendor-code-tag {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.72rem;
+    font-weight: 700;
+    background: #f3e8ff;
+    color: #7e22ce;
+    padding: 1px 6px;
+    border-radius: 4px;
+    border: 1px solid rgba(168, 85, 247, 0.25);
+    white-space: nowrap;
+}
+
+.rfq-vendor-selected-name {
+    font-size: 0.83rem;
+    font-weight: 700;
+    color: #0f172a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.rfq-vendor-trigger-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 8px;
+    flex-shrink: 0;
+}
+
+.rfq-vendor-trigger-change-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #8b5cf6;
+    background: rgba(139, 92, 246, 0.08);
+    padding: 1px 6px;
+    border-radius: 4px;
+    border: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+.rfq-vendor-trigger-clear-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 4px;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    transition: all 0.15s ease;
+}
+
+.rfq-vendor-trigger-clear-btn:hover {
+    background: #fee2e2;
+    color: #ef4444;
+}
+
+/* Streamlined Partner Profile Metadata Ribbon (No duplicated vendor name) */
+.rfq-vendor-meta-strip {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 7px;
+    animation: fadeInDown 0.15s ease-out;
+}
+
+.rfq-meta-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.73rem;
+    color: #475569;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    padding: 2px 7px;
+    border-radius: 5px;
+    line-height: 1.25;
+}
+
+.rfq-meta-chip i {
+    color: #8b5cf6;
+    font-size: 13px;
+}
+
+.rfq-meta-chip-label {
+    color: #64748b;
+    font-weight: 500;
+}
+
+.rfq-meta-chip-val {
+    color: #0f172a;
+    font-weight: 600;
+}
+
+/* Backwards-compatible legacy styles */
 .rfq-vendor-pill-box {
     display: flex;
     align-items: center;
@@ -2700,3 +2820,773 @@ th.is-header-drag-over {
 .rfq-dir-pagination-nav { display: flex; align-items: center; gap: 4px; }
 .rfq-stepper-btn-primary { background: #9333ea; color: #ffffff; padding: 6px 16px; font-size: 12px; font-weight: 700; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(147, 51, 234, 0.3); }
 .rfq-card-highlight-purple { border-left: 4px solid #9333ea; background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(245, 243, 255, 0.65)); padding: 10px 14px; display: flex; flex-direction: column; gap: 8px; }
+
+/* ==========================================================================
+   RFQ ALTERNATIVES & BID TABULATION MATRIX ENGINE STYLES
+   ========================================================================== */
+
+/* 1. Bidding Package Group Bar */
+.rfq-bidding-group-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(135deg, #ffffff 0%, #faf5ff 100%);
+    border: 1px solid rgba(168, 85, 247, 0.28);
+    border-radius: var(--rfq-radius-md, 10px);
+    padding: 10px 16px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 10px rgba(168, 85, 247, 0.08);
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.rfq-group-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 220px;
+}
+
+.rfq-group-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #ec4899, #9333ea);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px;
+    box-shadow: 0 2px 8px rgba(147, 51, 234, 0.25);
+    flex-shrink: 0;
+}
+
+.rfq-group-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #9333ea;
+    letter-spacing: 0.06em;
+}
+
+.rfq-group-title {
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.rfq-group-pills {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    flex: 1;
+}
+
+.rfq-group-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #334155;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    user-select: none;
+}
+
+.rfq-group-pill:hover {
+    border-color: #a855f7;
+    background: #faf5ff;
+    color: #9333ea;
+}
+
+.rfq-group-pill.active {
+    background: linear-gradient(135deg, #9333ea, #7c3aed);
+    color: #ffffff;
+    border-color: #9333ea;
+    box-shadow: 0 2px 8px rgba(147, 51, 234, 0.28);
+}
+
+.rfq-group-pill .pill-tag {
+    font-size: 9.5px;
+    font-weight: 800;
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: #f1f5f9;
+    color: #64748b;
+    text-transform: uppercase;
+}
+
+.rfq-group-pill.active .pill-tag {
+    background: rgba(255, 255, 255, 0.25);
+    color: #ffffff;
+}
+
+.rfq-group-pill .status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #94a3b8;
+}
+
+.rfq-group-pill .status-dot.draft { background: #f59e0b; }
+.rfq-group-pill .status-dot.submitted { background: #3b82f6; }
+.rfq-group-pill .status-dot.quoted { background: #10b981; }
+.rfq-group-pill .status-dot.awarded { background: #059669; }
+
+.rfq-group-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* 2. Create Alternative Modal Elements */
+.rfq-alt-context-banner {
+    background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+    border: 1px solid #e9d5ff;
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 14px;
+}
+
+.rfq-alt-base-info-row {
+    display: flex;
+    gap: 16px;
+    font-size: 0.78rem;
+    color: #475569;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(168, 85, 247, 0.2);
+    flex-wrap: wrap;
+}
+
+.rfq-alt-vendor-list-container {
+    max-height: 320px;
+    overflow-y: auto;
+    border: 1px solid var(--rfq-border-subtle);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px;
+    background: #f8fafc;
+}
+
+.rfq-alt-vendor-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.rfq-alt-vendor-card:hover:not(.disabled) {
+    border-color: #a855f7;
+    background: #fdf4ff;
+}
+
+.rfq-alt-vendor-card.selected {
+    border-color: #9333ea;
+    background: #faf5ff;
+    box-shadow: 0 0 0 1px #9333ea;
+}
+
+.rfq-alt-vendor-card.disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    background: #f1f5f9;
+}
+
+.rfq-alt-vendor-card .vendor-meta-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.rfq-alt-vendor-card .vendor-checkbox {
+    width: 17px;
+    height: 17px;
+    accent-color: #9333ea;
+    cursor: pointer;
+}
+
+.rfq-alt-vendor-card .vendor-name-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.rfq-alt-vendor-card .vendor-sub-text {
+    font-size: 0.75rem;
+    color: #64748b;
+}
+
+.rfq-alt-preview-box {
+    margin-top: 12px;
+    background: #f8fafc;
+    border: 1px dashed #cbd5e1;
+    border-radius: 8px;
+    padding: 10px 14px;
+}
+
+.rfq-alt-preview-pills {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+/* 3. Vendor Quotation Comparison Matrix Modal & Table */
+.rfq-award-mode-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #f1f5f9;
+    padding: 3px 6px;
+    border-radius: 20px;
+    border: 1px solid #e2e8f0;
+}
+
+.rfq-mode-btn {
+    border: none;
+    background: transparent;
+    padding: 4px 10px;
+    border-radius: 16px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.rfq-mode-btn.active {
+    background: #0d9488;
+    color: #ffffff;
+    box-shadow: 0 1px 6px rgba(13, 148, 136, 0.3);
+}
+
+.rfq-matrix-kpi-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.rfq-matrix-kpi-card {
+    background: #f8fafc;
+    border: 1px solid var(--rfq-border-subtle);
+    border-radius: 8px;
+    padding: 10px 14px;
+}
+
+.rfq-matrix-kpi-card .label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--rfq-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.rfq-matrix-kpi-card .val {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #0f172a;
+    font-variant-numeric: tabular-nums;
+    margin-top: 2px;
+}
+
+.rfq-matrix-kpi-card .sub {
+    font-size: 0.73rem;
+    color: #64748b;
+}
+
+.rfq-matrix-kpi-card.highlight-green {
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+}
+.rfq-matrix-kpi-card.highlight-green .val { color: #16a34a; }
+.rfq-matrix-kpi-card.highlight-green .sub { color: #15803d; font-weight: 600; }
+
+.rfq-matrix-kpi-card.highlight-teal {
+    background: #f0fdfa;
+    border-color: #99f6e4;
+}
+.rfq-matrix-kpi-card.highlight-teal .val { color: #0d9488; }
+.rfq-matrix-kpi-card.highlight-teal .sub { color: #0f766e; font-weight: 600; }
+
+/* Matrix Table Layout with Sticky Columns */
+.rfq-matrix-table-wrap {
+    flex: 1;
+    overflow: auto;
+    border: 1px solid var(--rfq-border-subtle);
+    border-radius: 8px;
+    background: #ffffff;
+    position: relative;
+}
+
+.rfq-matrix-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.8rem;
+}
+
+.rfq-matrix-table thead th {
+    position: sticky;
+    top: 0;
+    background: #f8fafc;
+    z-index: 20;
+    border-bottom: 2px solid #cbd5e1;
+    border-right: 1px solid #e2e8f0;
+    padding: 8px 10px;
+    font-weight: 700;
+    text-align: left;
+}
+
+.rfq-matrix-table tbody td {
+    padding: 8px 10px;
+    border-bottom: 1px solid #f1f5f9;
+    border-right: 1px solid #f1f5f9;
+    vertical-align: middle;
+}
+
+.rfq-matrix-table tbody tr:hover td {
+    background: #fafafa;
+}
+
+/* Sticky Left Columns for Line Item Specs */
+.rfq-matrix-sticky-col-1 {
+    position: sticky;
+    left: 0;
+    background: #ffffff !important;
+    z-index: 10;
+    width: 40px;
+    text-align: center;
+}
+
+.rfq-matrix-sticky-col-2 {
+    position: sticky;
+    left: 40px;
+    background: #ffffff !important;
+    z-index: 10;
+    min-width: 220px;
+    max-width: 260px;
+    border-right: 2px solid #cbd5e1 !important;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.03);
+}
+
+.rfq-matrix-table thead th.rfq-matrix-sticky-col-1,
+.rfq-matrix-table thead th.rfq-matrix-sticky-col-2 {
+    background: #f8fafc !important;
+    z-index: 25;
+}
+
+/* Vendor Column Group Header in Matrix */
+.rfq-matrix-vendor-head {
+    background: #f1f5f9 !important;
+    border-bottom: 1px solid #cbd5e1 !important;
+    text-align: center !important;
+    padding: 10px !important;
+}
+
+.rfq-matrix-vendor-head .vendor-title-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.rfq-matrix-vendor-head .vendor-name {
+    font-weight: 800;
+    font-size: 0.88rem;
+    color: #0f172a;
+}
+
+.rfq-matrix-vendor-head .vendor-metrics-summary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    font-size: 0.74rem;
+    color: #475569;
+    margin-top: 4px;
+}
+
+.rfq-matrix-vendor-head .btn-award-all-vendor {
+    background: #ffffff;
+    border: 1px solid #0d9488;
+    color: #0d9488;
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 6px;
+    padding: 3px 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.rfq-matrix-vendor-head .btn-award-all-vendor:hover {
+    background: #0d9488;
+    color: #ffffff;
+}
+
+/* Bid Cell Styling */
+.bid-cell-content {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    font-variant-numeric: tabular-nums;
+}
+
+.bid-cell-row-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+}
+
+.bid-cell-price {
+    font-weight: 800;
+    font-size: 0.88rem;
+    color: #0f172a;
+}
+
+.bid-cell-total {
+    font-size: 0.74rem;
+    color: #64748b;
+}
+
+.bid-cell-lead {
+    font-size: 0.72rem;
+    color: #475569;
+}
+
+.bid-radio-selector {
+    cursor: pointer;
+    width: 16px;
+    height: 16px;
+    accent-color: #0d9488;
+}
+
+/* Visual Badges */
+.bid-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 9.5px;
+    font-weight: 800;
+    padding: 1px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.bid-badge.lowest-price {
+    background: #dcfce7;
+    color: #15803d;
+    border: 1px solid #86efac;
+}
+
+.bid-badge.fastest-lead {
+    background: #e0f2fe;
+    color: #0369a1;
+    border: 1px solid #7dd3fc;
+}
+
+.bid-badge.above-budget {
+    background: #fee2e2;
+    color: #b91c1c;
+    border: 1px solid #fca5a5;
+}
+
+.bid-cell-wrapper.is-selected {
+    background: #f0fdf4 !important;
+    outline: 2px solid #22c55e;
+    border-radius: 4px;
+}
+
+.rfq-btn-teal {
+    background: #0d9488;
+    color: #ffffff;
+    border: none;
+}
+.rfq-btn-teal:hover {
+    background: #0f766e;
+    color: #ffffff;
+}
+
+/* --------------------------------------------------------------------------
+ * RFQ DIRECTORY MULTI-SELECTION & FLOATING BATCH ACTION BAR
+ * -------------------------------------------------------------------------- */
+.rfq-th-select,
+.rfq-td-select {
+    width: 44px !important;
+    min-width: 44px !important;
+    max-width: 44px !important;
+    text-align: center !important;
+    vertical-align: middle !important;
+    padding: 8px 4px !important;
+}
+
+.rfq-th-select input[type="checkbox"],
+.rfq-td-select input[type="checkbox"] {
+    cursor: pointer;
+    width: 16px;
+    height: 16px;
+    margin: 0 auto;
+    display: block;
+    accent-color: #2563eb;
+}
+
+tr.rfq-row-selected {
+    background-color: rgba(37, 99, 235, 0.045) !important;
+}
+
+tr.rfq-row-selected td:first-child {
+    border-left: 3px solid #2563eb !important;
+}
+
+/* Floating & Toolbar Batch Action Bar */
+.rfq-batch-action-bar {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(0);
+    z-index: 1050;
+    transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.15s ease;
+    filter: drop-shadow(0 20px 25px rgba(15, 23, 42, 0.35)) drop-shadow(0 8px 10px rgba(15, 23, 42, 0.2));
+}
+
+.rfq-batch-toolbar-bar {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 2px;
+}
+
+.rfq-batch-bar-container {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    background: #0f172a;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 9999px;
+    padding: 8px 16px;
+    color: #f8fafc;
+    box-sizing: border-box;
+}
+
+/* Light Theme Toolbar Batch Action Bar */
+.rfq-batch-bar-container.light-theme {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 4px 10px;
+    gap: 10px;
+    color: #0f172a;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+.rfq-batch-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.rfq-batch-bar-container.light-theme .rfq-batch-info {
+    gap: 6px;
+    font-size: 12px;
+    color: #334155;
+}
+
+.rfq-batch-badge {
+    background: #2563eb;
+    color: #ffffff;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+}
+
+.rfq-batch-bar-container.light-theme .rfq-batch-badge {
+    background: #2563eb;
+    color: #ffffff;
+    width: 20px;
+    height: 20px;
+    font-size: 11px;
+}
+
+.rfq-batch-counter strong {
+    color: #ffffff;
+    font-weight: 700;
+}
+
+.rfq-batch-bar-container.light-theme .rfq-batch-counter strong {
+    color: #0f172a;
+    font-weight: 700;
+}
+
+.rfq-batch-separator {
+    width: 1px;
+    height: 20px;
+    background: rgba(255, 255, 255, 0.18);
+}
+
+.rfq-batch-bar-container.light-theme .rfq-batch-separator {
+    width: 1px;
+    height: 18px;
+    background: #e2e8f0;
+}
+
+.rfq-batch-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.rfq-batch-bar-container.light-theme .rfq-batch-actions {
+    gap: 6px;
+}
+
+.rfq-batch-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    border: none;
+    transition: all 0.12s ease;
+    outline: none;
+}
+
+.rfq-batch-bar-container.light-theme .rfq-batch-btn {
+    padding: 4px 10px;
+    font-size: 11.5px;
+    border-radius: 6px;
+    font-weight: 600;
+    transition: all 0.15s ease;
+}
+
+.rfq-batch-btn i {
+    font-size: 14px;
+}
+
+.rfq-batch-bar-container.light-theme .rfq-batch-btn i {
+    font-size: 13px;
+}
+
+.rfq-batch-btn-danger {
+    background: #dc2626;
+    color: #ffffff;
+}
+
+.rfq-batch-btn-danger:hover {
+    background: #b91c1c;
+    box-shadow: 0 2px 6px rgba(220, 38, 38, 0.35);
+}
+
+.rfq-batch-bar-container.light-theme .rfq-batch-btn-danger {
+    background: rgba(239, 68, 68, 0.08);
+    color: #dc2626;
+    border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+.rfq-batch-bar-container.light-theme .rfq-batch-btn-danger:hover {
+    background: #dc2626;
+    color: #ffffff;
+    box-shadow: 0 2px 6px rgba(220, 38, 38, 0.25);
+}
+
+.rfq-batch-btn-secondary {
+    background: #334155;
+    color: #f1f5f9;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.rfq-batch-btn-secondary:hover {
+    background: #475569;
+    color: #ffffff;
+}
+
+.rfq-batch-bar-container.light-theme .rfq-batch-btn-secondary {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+}
+
+.rfq-batch-bar-container.light-theme .rfq-batch-btn-secondary:hover {
+    background: #e2e8f0;
+    color: #1e293b;
+    border-color: #94a3b8;
+}
+
+.rfq-batch-btn-primary {
+    background: #2563eb;
+    color: #ffffff;
+}
+
+.rfq-batch-btn-primary:hover {
+    background: #1d4ed8;
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.35);
+}
+
+.rfq-batch-bar-container.light-theme .rfq-batch-btn-primary {
+    background: rgba(37, 99, 235, 0.08);
+    color: #2563eb;
+    border: 1px solid rgba(37, 99, 235, 0.25);
+}
+
+.rfq-batch-bar-container.light-theme .rfq-batch-btn-primary:hover {
+    background: #2563eb;
+    color: #ffffff;
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+}
+
+.rfq-batch-btn-clear {
+    background: transparent;
+    color: #94a3b8;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    transition: color 0.12s ease, background 0.12s ease;
+}
+
+.rfq-batch-btn-clear:hover {
+    color: #f8fafc;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.rfq-batch-bar-container.light-theme .rfq-batch-btn-clear {
+    color: #64748b;
+    padding: 4px 8px;
+    font-size: 11.5px;
+}
+
+.rfq-batch-bar-container.light-theme .rfq-batch-btn-clear:hover {
+    color: #0f172a;
+    background: #f1f5f9;
+}
+

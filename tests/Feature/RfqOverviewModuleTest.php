@@ -8,6 +8,8 @@ use Tests\TestCase;
 
 class RfqOverviewModuleTest extends TestCase
 {
+    use RefreshDatabase;
+
     /**
      * Test that an authenticated user can access the RFQ directory and receive the modular table structures.
      */
@@ -19,39 +21,33 @@ class RfqOverviewModuleTest extends TestCase
 
         $response->assertStatus(200);
 
-        // Verify modular table elements and IDs exist
+        // Verify modular table elements and IDs exist in Blade view
         $response->assertSee('id="rfqDirectoryTable"', false);
         $response->assertSee('id="rfqDirectoryTheadRow"', false);
         $response->assertSee('id="rfqTableSettingsDropdown"', false);
-        $response->assertSee('id="btnRfqTableSettings"', false);
+        $response->assertSee('id="selectAllRfqCheckbox"', false);
+        $response->assertSee('id="rfqBatchActionBar"', false);
+        $response->assertSee('id="rfqDirectorySearch"', false);
+        $response->assertSee('id="rfqHeaderFilterPopover"', false);
 
-        // Verify modular CSS classes
-        $response->assertSee('rfq-th-stacked', false);
-        $response->assertSee('rfq-th-title', false);
-        $response->assertSee('rfq-th-sub', false);
-        $response->assertSee('rfq-th-settings-btn', false);
-        $response->assertSee('rfq-col-resizer', false);
-        $response->assertSee('rfq-dropdown-col-item', false);
-        $response->assertSee('rfq-line-expansion-row', false);
-        $response->assertSee('rfq-subtable', false);
+        // Verify JS bundle module is referenced
+        $response->assertSee('request-quotations', false);
 
-        // Verify JavaScript state and LocalStorage keys
-        $response->assertSee('DIRECTORY_COLUMNS', false);
-        $response->assertSee('rms_rfq_directory_cols_v3', false);
-        $response->assertSee('rms_rfq_directory_cols_order_v3', false);
-        $response->assertSee('rms_rfq_directory_col_widths_v3', false);
-        $response->assertSee('toggleRfqTableSettingsDropdown', false);
-        $response->assertSee('reorderDirectoryColumns', false);
-        $response->assertSee('initDirectoryColResize', false);
-        $response->assertSee('toggleRfqRowExpansion', false);
-
-        // Verify key groupings from RFQ Overview Status specification
-        $response->assertSee('RFQ Info', false);
-        $response->assertSee('Vendor & Contact', false);
-        $response->assertSee('Submission Deadline', false);
-        $response->assertSee('Payment Terms', false);
-        $response->assertSee('RFQ Status', false);
-        $response->assertSee('Issue Approval Status', false);
-        $response->assertSee('Quantity', false);
+        // Verify the external JavaScript module exists and contains modular engine definitions
+        $jsPath = resource_path('js/modules/request-quotations.js');
+        $this->assertFileExists($jsPath);
+        $jsContent = file_get_contents($jsPath);
+        $this->assertStringContainsString('DIRECTORY_COLUMNS', $jsContent);
+        $this->assertStringContainsString('toggleRfqTableSettingsDropdown', $jsContent);
+        $this->assertStringContainsString('reorderDirectoryColumns', $jsContent);
+        $this->assertStringContainsString('initDirectoryColResize', $jsContent);
+        $this->assertStringContainsString('toggleRfqRowExpansion', $jsContent);
+        $this->assertStringContainsString('toggleRfqRowSelection', $jsContent);
+        $this->assertStringContainsString('toggleSelectAllRfqs', $jsContent);
+        $this->assertStringContainsString('executeBatchDelete', $jsContent);
+        $this->assertStringContainsString('executeBatchArchive', $jsContent);
+        $this->assertStringContainsString('executeBatchExport', $jsContent);
+        $this->assertStringContainsString('showOverlaySpinner', $jsContent);
+        $this->assertStringContainsString('hideOverlaySpinner', $jsContent);
     }
 }

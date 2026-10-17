@@ -33,6 +33,8 @@ class RfqLine extends Model
         'quoted_line_total',
         'lead_time_days',
         'is_awarded',
+        'awarded_purchase_order_id',
+        'award_notes',
         'rfq_line_notes',
         'rfq_line_created_by',
         'rfq_line_updated_by',
@@ -67,4 +69,10 @@ class RfqLine extends Model
     {
         return $this->belongsTo(InventoryItem::class, 'item_id', 'id');
     }
+
+    public function awardedPurchaseOrder(): BelongsTo
+    {
+        return $this->belongsTo(PurchaseOrder::class, 'awarded_purchase_order_id', 'id');
+    }
 }
+

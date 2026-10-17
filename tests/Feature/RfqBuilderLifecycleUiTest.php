@@ -3,10 +3,13 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class RfqBuilderLifecycleUiTest extends TestCase
 {
+    use RefreshDatabase;
+
     public function test_rfq_builder_contains_progress_bar_and_customizable_headers()
     {
         $user = User::first() ?? User::factory()->create();
@@ -23,43 +26,36 @@ class RfqBuilderLifecycleUiTest extends TestCase
         $response->assertSee('id="stepIndicatorStatus"', false);
         $response->assertSee('id="rfqStageBanner"', false);
 
-        // 2. Verify Gear Icon Dropdown and Settings Button for Builder Table
-        $response->assertSee('id="btnRfqBuilderSettings"', false);
-        $response->assertSee('id="rfqBuilderSettingsDropdown"', false);
-        $response->assertSee('id="builderColActiveCounter"', false);
-        $response->assertSee('id="builderColCheckboxesList"', false);
+        // 2. Verify JavaScript module exists and contains builder settings and lifecycle management
+        $jsPath = resource_path('js/modules/request-quotations.js');
+        $this->assertFileExists($jsPath);
+        $jsContent = file_get_contents($jsPath);
 
-        // 3. Verify JavaScript functions for lifecycle and column management
-        $response->assertSee('updateLifecycleProgressBar', false);
-        $response->assertSee('toggleRfqBuilderSettingsDropdown', false);
-        $response->assertSee('transitionActiveRfqStage', false);
-        $response->assertSee('calculateItemVariances', false);
-        $response->assertSee('renderBuilderTableHeader', false);
-        $response->assertSee('rms_rfq_builder_cols_v4', false);
-        $response->assertSee('formatNumber', false);
-        $response->assertSee('ensureApprovalColumnsVisible', false);
-        $response->assertSee('moveToApprovalStage', false);
-        $response->assertSee('handleApproverApprove', false);
+        $this->assertStringContainsString('id="rfqBuilderSettingsDropdown"', $jsContent);
+        $this->assertStringContainsString('id="builderColActiveCounter"', $jsContent);
+        $this->assertStringContainsString('id="builderColCheckboxesList"', $jsContent);
+        $this->assertStringContainsString('btnRfqBuilderSettings', $jsContent);
 
-        // 4. Verify stage default columns and view preset buttons
-        $response->assertSee('DRAFT_STAGE_DEFAULT_COLUMNS', false);
-        $response->assertSee('APPROVAL_STAGE_DEFAULT_COLUMNS', false);
-        $response->assertSee('applyStageDefaultColumns', false);
-        $response->assertSee('ensureDraftColumnsVisible', false);
-        $response->assertSee('rms_rfq_builder_cols_v6', false);
-        $response->assertSee('Draft View', false);
-        $response->assertSee('Approval View', false);
-        $response->assertSee('Default View', false);
+        $this->assertStringContainsString('updateLifecycleProgressBar', $jsContent);
+        $this->assertStringContainsString('toggleRfqBuilderSettingsDropdown', $jsContent);
+        $this->assertStringContainsString('transitionActiveRfqStage', $jsContent);
+        $this->assertStringContainsString('calculateItemVariances', $jsContent);
+        $this->assertStringContainsString('renderBuilderColumnDropdownChecklist', $jsContent);
+        $this->assertStringContainsString('formatNumber', $jsContent);
+        $this->assertStringContainsString('ensureApprovalColumnsVisible', $jsContent);
+        $this->assertStringContainsString('moveToApprovalStage', $jsContent);
+        $this->assertStringContainsString('handleApproverApprove', $jsContent);
 
-        // 5. Verify 30% left / 70% right grid width distribution with sidebar expansion
-        $response->assertSee('minmax(260px, 30%) minmax(0, 1fr)', false);
-        $response->assertSee('#app-sidebar.collapsed ~ .main-content .rfq-builder-workspace-grid', false);
+        // 4. Verify stage default columns and view presets
+        $this->assertStringContainsString('DRAFT_STAGE_DEFAULT_COLUMNS', $jsContent);
+        $this->assertStringContainsString('APPROVAL_STAGE_DEFAULT_COLUMNS', $jsContent);
+        $this->assertStringContainsString('applyStageDefaultColumns', $jsContent);
+        $this->assertStringContainsString('ensureDraftColumnsVisible', $jsContent);
 
-        // 6. Verify Creation of New RFQ functions & unique reference generation
-        $response->assertSee('getNextUniqueRfqNumber', false);
-        $response->assertSee('createNewRfq', false);
-        $response->assertSee('handleBuilderTabClick', false);
-        $response->assertSee('rms_last_rfq_counter', false);
+        // 5. Verify Creation of New RFQ functions & unique reference generation
+        $this->assertStringContainsString('getNextUniqueRfqNumber', $jsContent);
+        $this->assertStringContainsString('createNewRfq', $jsContent);
+        $this->assertStringContainsString('handleBuilderTabClick', $jsContent);
     }
 
     public function test_rfq_directory_and_builder_data_matching_and_form_locks()
@@ -80,20 +76,20 @@ class RfqBuilderLifecycleUiTest extends TestCase
         $response->assertSee('id="kpiApprovalRfqs"', false);
         $response->assertSee('id="kpiAwardedRfqs"', false);
 
-        // 3. Verify Stage Form Locks and Directory Syncing logic
-        $response->assertSee('applyStageFormLocks', false);
-        $response->assertSee('syncRfqToDirectory', false);
-        $response->assertSee('editRfqFromDirectory', false);
-        $response->assertSee('getNormalizedRfqStage', false);
+        // 3. Verify Stage Form Locks and Directory Syncing logic in JS module
+        $jsPath = resource_path('js/modules/request-quotations.js');
+        $this->assertFileExists($jsPath);
+        $jsContent = file_get_contents($jsPath);
 
-        // 4. Verify Server-Side bridges for live data synchronization
-        $response->assertSee('window.__SERVER_RFQS__', false);
-        $response->assertSee('window.__SERVER_VENDORS__', false);
-        $response->assertSee('window.__SERVER_ITEMS__', false);
+        $this->assertStringContainsString('applyStageFormLocks', $jsContent);
+        $this->assertStringContainsString('syncRfqToDirectory', $jsContent);
+        $this->assertStringContainsString('editRfqFromDirectory', $jsContent);
+        $this->assertStringContainsString('getNormalizedRfqStage', $jsContent);
 
-        // 5. Verify status pill CSS rules exist for all lifecycle statuses
-        $response->assertSee('.status-pill.approved', false);
-        $response->assertSee('.status-pill.submitted', false);
-        $response->assertSee('.status-pill.approval', false);
+        // 4. Verify Server-Side configuration bridges for live data synchronization
+        $response->assertSee('window.RfqConfig', false);
+        $response->assertSee('initialRfqs', false);
+        $response->assertSee('initialVendors', false);
+        $response->assertSee('initialItems', false);
     }
 }

@@ -419,6 +419,11 @@ Route::middleware('auth')->group(function () {
         Route::post('/api/rfq/save-draft', [PurchaseController::class, 'apiSaveRfqDraft'])->name('api.rfq.save-draft');
         Route::post('/api/rfq/transition-status', [PurchaseController::class, 'apiTransitionRfqStatus'])->name('api.rfq.transition-status');
         Route::post('/api/rfq/convert-po', [PurchaseController::class, 'apiConvertRfqToPo'])->name('api.rfq.convert-po');
+        Route::post('/api/rfq/create-alternatives', [PurchaseController::class, 'apiCreateRfqAlternatives'])->name('api.rfq.create-alternatives');
+        Route::get('/api/rfq/group/{groupId}/bids', [PurchaseController::class, 'apiGetRfqGroupBids'])->name('api.rfq.group-bids');
+        Route::post('/api/rfq/group/award', [PurchaseController::class, 'apiAwardRfqBids'])->name('api.rfq.group-award');
+        Route::post('/api/rfq/batch-delete', [PurchaseController::class, 'apiBatchDeleteRfqs'])->name('api.rfq.batch-delete');
+        Route::post('/api/rfq/batch-archive', [PurchaseController::class, 'apiBatchArchiveRfqs'])->name('api.rfq.batch-archive');
     });
 
     // Alias for root API callers

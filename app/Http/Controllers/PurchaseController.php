@@ -8,6 +8,7 @@ use App\Models\Purchase\PurchaseOrder;
 use App\Models\Purchase\PurchaseOrderItem;
 use App\Models\Purchase\RfqHeader;
 use App\Models\Purchase\RfqLine;
+use App\Services\RfqAlternativeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -16,6 +17,13 @@ use Illuminate\View\View;
 
 class PurchaseController extends Controller
 {
+    protected RfqAlternativeService $rfqAlternativeService;
+
+    public function __construct(RfqAlternativeService $rfqAlternativeService)
+    {
+        $this->rfqAlternativeService = $rfqAlternativeService;
+    }
+
     public function dashboard(): View
     {
         return view('purchase.dashboard');
@@ -637,4 +645,141 @@ class PurchaseController extends Controller
     {
         return view('purchase.vendor-bills');
     }
+
+    /**
+     * API: Create alternative Draft RFQs for selected vendors
+     */
+    public function apiCreateRfqAlternatives(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'base_rfq_number' => 'required|string',
+            'vendor_ids' => 'required|array|min:1',
+            'vendor_ids.*' => 'required',
+        ]);
+
+        try {
+            $created = $this->rfqAlternativeService->createAlternatives(
+                $validated['base_rfq_number'],
+                $validated['vendor_ids'],
+                auth()->user()->name ?? 'Procurement Officer'
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => count($created) . " alternative RFQ(s) successfully generated in Draft status.",
+                'data' => $created,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
+    }
+
+    /**
+     * API: Get side-by-side vendor quotation comparison matrix for an RFQ bidding group
+     */
+    public function apiGetRfqGroupBids(string $groupId): JsonResponse
+    {
+        try {
+            $matrix = $this->rfqAlternativeService->getComparisonMatrix($groupId);
+            return response()->json([
+                'success' => true,
+                'data' => $matrix,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 404);
+        }
+    }
+
+    /**
+     * API: Execute Full or Split Award and generate Purchase Orders
+     */
+    public function apiAwardRfqBids(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'rfq_group_id' => 'required|string',
+            'award_type' => 'required|string|in:FULL,SPLIT',
+            'awards' => 'required|array|min:1',
+            'awards.*.item_id' => 'required|string',
+            'awards.*.rfq_id' => 'required|string',
+            'po_status' => 'nullable|string',
+        ]);
+
+        try {
+            $result = $this->rfqAlternativeService->awardBids(
+                $validated['rfq_group_id'],
+                $validated['award_type'],
+                $validated['awards'],
+                auth()->user()->name ?? 'Procurement Officer',
+                $validated['po_status'] ?? 'Approved / Issued'
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => "Successfully awarded tender package. Generated " . $result['total_awarded_pos'] . " Purchase Order(s).",
+                'data' => $result,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
+    }
+
+    /**
+     * API: Batch Delete RFQs and their associated lines
+     */
+    public function apiBatchDeleteRfqs(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'rfq_numbers' => 'required|array|min:1',
+            'rfq_numbers.*' => 'required|string',
+        ]);
+
+        return DB::transaction(function () use ($validated) {
+            $headers = RfqHeader::whereIn('rfq_number', $validated['rfq_numbers'])->get();
+            $rfqIds = $headers->pluck('rfq_id')->filter()->all();
+
+            if (!empty($rfqIds)) {
+                RfqLine::whereIn('rfq_id', $rfqIds)->delete();
+            }
+
+            $deletedCount = RfqHeader::whereIn('rfq_number', $validated['rfq_numbers'])->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => "Successfully deleted {$deletedCount} Request(s) for Quotation.",
+                'deleted_count' => $deletedCount,
+            ]);
+        });
+    }
+
+    /**
+     * API: Batch Archive RFQs
+     */
+    public function apiBatchArchiveRfqs(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'rfq_numbers' => 'required|array|min:1',
+            'rfq_numbers.*' => 'required|string',
+        ]);
+
+        return DB::transaction(function () use ($validated) {
+            $archivedCount = RfqHeader::whereIn('rfq_number', $validated['rfq_numbers'])
+                ->update(['rfq_status' => 'ARCHIVED']);
+
+            return response()->json([
+                'success' => true,
+                'message' => "Successfully archived {$archivedCount} Request(s) for Quotation.",
+                'archived_count' => $archivedCount,
+            ]);
+        });
+    }
 }
+
