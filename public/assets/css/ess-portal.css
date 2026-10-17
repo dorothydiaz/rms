@@ -1,0 +1,978 @@
+/* ==========================================================================
+   Stellar One ERP - Employee Self-Service (ESS) Portal Stylesheet
+   Harmonized with Stellar One HRIS & Operations Design System
+   Visuals: Glassmorphism, Rounded Bento Cards, Gradient Accents, Phosphor Icons
+   Brand Colors: Magenta/Purple Gradient (#ec4899, #a855f7, #9333ea), Slate (#0f172a)
+   ========================================================================== */
+
+:root {
+    --ess-bg: #f8fafc;
+    --ess-surface: rgba(255, 255, 255, 0.90);
+    --ess-surface-glass: rgba(255, 255, 255, 0.88);
+    --ess-border: #e2e8f0;
+    --ess-border-light: rgba(226, 232, 240, 0.8);
+    
+    /* Stellar One HR Signature Purple-Pink Gradient & Tokens */
+    --ess-primary: #9333ea;
+    --ess-primary-hover: #7c3aed;
+    --ess-primary-dark: #6b21a8;
+    --ess-primary-gradient: linear-gradient(135deg, #ec4899 0%, #a855f7 50%, #9333ea 100%);
+    --ess-primary-gradient-hover: linear-gradient(135deg, #db2777 0%, #9333ea 100%);
+    --ess-primary-subtle: rgba(168, 85, 247, 0.10);
+    --ess-primary-glow: rgba(168, 85, 247, 0.32);
+    
+    --ess-text-main: #0f172a;
+    --ess-text-secondary: #475569;
+    --ess-text-muted: #64748b;
+    --ess-text-hint: #94a3b8;
+    
+    --ess-success: #16a34a;
+    --ess-success-bg: #dcfce7;
+    --ess-warning: #d97706;
+    --ess-warning-bg: #fef3c7;
+    --ess-danger: #dc2626;
+    --ess-danger-bg: #fee2e2;
+    --ess-info: #0284c7;
+    --ess-info-bg: #e0f2fe;
+
+    --ess-radius-sm: 8px;
+    --ess-radius-md: 12px;
+    --ess-radius-lg: 16px;
+    --ess-radius-xl: 20px;
+    --ess-radius-full: 9999px;
+    
+    --ess-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.04);
+    --ess-shadow-md: 0 10px 30px -5px rgba(100, 116, 139, 0.07), 0 4px 10px -2px rgba(100, 116, 139, 0.03);
+    --ess-shadow-lg: 0 14px 34px -4px rgba(100, 116, 139, 0.12), 0 6px 16px -2px rgba(100, 116, 139, 0.06);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+/* Critical Viewport Scrolling Fix for ESS Portal */
+html {
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    height: auto !important;
+}
+
+body.ess-portal-body {
+    background-color: var(--ess-bg) !important;
+    color: var(--ess-text-main) !important;
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    min-height: 100vh !important;
+    height: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    position: static !important;
+}
+
+/* ==========================================================================
+   HR Standard Page Header & Typography
+   ========================================================================== */
+.ess-page-header,
+.hr-page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.ess-page-title,
+.hr-page-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    letter-spacing: -0.02em;
+    margin: 0;
+}
+
+.ess-page-title i,
+.hr-page-title i {
+    width: 38px;
+    height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 11px;
+    background: linear-gradient(135deg, rgba(236, 72, 153, 0.14), rgba(168, 85, 247, 0.20));
+    border: 1px solid rgba(168, 85, 247, 0.32);
+    color: #9333ea;
+    font-size: 20px;
+    box-shadow: 0 4px 14px rgba(168, 85, 247, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.8);
+    flex-shrink: 0;
+}
+
+.ess-page-subtitle,
+.hr-page-subtitle {
+    font-size: 13px;
+    color: #64748b;
+    margin-top: 4px;
+    font-weight: 400;
+    margin-bottom: 0;
+}
+
+.ess-page-actions,
+.hr-page-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* ==========================================================================
+   Header Navigation Bar (HR Aesthetics)
+   ========================================================================== */
+.ess-header {
+    background: var(--ess-surface-glass);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    padding: 0 24px;
+    box-shadow: 0 4px 20px rgba(148, 163, 184, 0.08);
+}
+
+.ess-header-inner {
+    max-width: 1440px;
+    margin: 0 auto;
+    height: 72px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.ess-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    color: inherit;
+    flex-shrink: 0;
+}
+
+.ess-brand img {
+    height: 38px;
+    width: auto;
+}
+
+.ess-brand-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.ess-brand-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 19px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: #0f172a;
+}
+
+.ess-brand-badge {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #9333ea;
+    background: linear-gradient(135deg, rgba(236, 72, 153, 0.12), rgba(168, 85, 247, 0.18));
+    border: 1px solid rgba(168, 85, 247, 0.28);
+    padding: 2px 8px;
+    border-radius: 9999px;
+    width: fit-content;
+}
+
+/* Desktop Navigation Bar (Single Clean Horizontal Row) */
+.ess-nav {
+    display: flex !important;
+    align-items: center !important;
+    flex-wrap: nowrap !important;
+    white-space: nowrap !important;
+    gap: 3px !important;
+    background: rgba(241, 245, 249, 0.85);
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    border-radius: 12px;
+    padding: 3px 5px;
+    margin: 0 12px;
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.9);
+}
+
+.ess-nav-link {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    padding: 6px 11px !important;
+    border-radius: 9px !important;
+    font-size: 12.5px !important;
+    font-weight: 500 !important;
+    color: #64748b !important;
+    text-decoration: none !important;
+    transition: all 0.16s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    white-space: nowrap !important;
+    line-height: 1 !important;
+    border: 1px solid transparent !important;
+    flex-shrink: 0 !important;
+}
+
+.ess-nav-link i {
+    font-size: 16px !important;
+    color: #94a3b8 !important;
+    transition: all 0.16s ease !important;
+}
+
+.ess-nav-link:hover {
+    color: #9333ea !important;
+    background: rgba(168, 85, 247, 0.08) !important;
+}
+
+.ess-nav-link:hover i {
+    color: #9333ea !important;
+    transform: scale(1.1) !important;
+}
+
+.ess-nav-link.active {
+    background: #ffffff !important;
+    color: #9333ea !important;
+    font-weight: 700 !important;
+    border-color: rgba(168, 85, 247, 0.28) !important;
+    box-shadow: 0 2px 8px rgba(168, 85, 247, 0.14), 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+}
+
+.ess-nav-link.active i {
+    background: linear-gradient(135deg, #ec4899, #a855f7) !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+}
+
+/* User Profile & Actions */
+.ess-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+    position: relative;
+}
+
+.ess-user-menu {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 4px 12px 4px 4px;
+    border-radius: var(--ess-radius-full);
+    border: 1px solid var(--ess-border);
+    background: #ffffff;
+    cursor: pointer;
+    user-select: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.ess-user-menu:hover {
+    border-color: rgba(168, 85, 247, 0.4);
+    box-shadow: 0 4px 14px rgba(168, 85, 247, 0.10);
+}
+
+.ess-user-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: var(--ess-radius-full);
+    background: var(--ess-primary-gradient);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 12.5px;
+    overflow: hidden;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(168, 85, 247, 0.25);
+}
+
+.ess-user-info {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+}
+
+.ess-user-name {
+    font-size: 12.5px;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--ess-text-main);
+    max-width: 130px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ess-user-role {
+    font-size: 10.5px;
+    color: var(--ess-text-muted);
+    line-height: 1.2;
+    max-width: 130px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* User Dropdown */
+.ess-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    border-radius: 14px;
+    box-shadow: 0 14px 34px -4px rgba(100, 116, 139, 0.15);
+    padding: 8px;
+    min-width: 250px;
+    z-index: 1050;
+    display: none;
+    animation: essDropdownFade 0.18s ease forwards;
+}
+
+@keyframes essDropdownFade {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.ess-dropdown-header {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--ess-border);
+    margin-bottom: 6px;
+}
+
+.ess-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    color: var(--ess-text-main);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 8px;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.ess-dropdown-item:hover {
+    background: rgba(168, 85, 247, 0.08);
+    color: #9333ea;
+}
+
+.ess-dropdown-divider {
+    height: 1px;
+    background: var(--ess-border);
+    margin: 6px 0;
+}
+
+/* Mobile Toggle Hamburger */
+.ess-mobile-toggle {
+    display: none;
+    background: none;
+    border: 1px solid var(--ess-border);
+    border-radius: 10px;
+    padding: 8px;
+    font-size: 22px;
+    color: var(--ess-text-main);
+    cursor: pointer;
+}
+
+/* Mobile Offcanvas Drawer */
+.ess-mobile-drawer {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(6px);
+}
+
+.ess-drawer-content {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 300px;
+    background: #ffffff;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    box-shadow: var(--ess-shadow-lg);
+}
+
+/* Main Container Canvas */
+.ess-main {
+    flex: 1;
+    max-width: 1440px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 24px;
+    box-sizing: border-box;
+}
+
+/* ==========================================================================
+   Cards & Surfaces (HR Glassmorphic Styling)
+   ========================================================================== */
+.ess-card,
+.hr-card {
+    background: var(--ess-surface);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.95);
+    border-radius: 16px;
+    padding: 22px;
+    box-shadow: 0 10px 30px -5px rgba(100, 116, 139, 0.07), 0 4px 10px -2px rgba(100, 116, 139, 0.03);
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 22px;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s;
+}
+
+.ess-card:hover,
+.hr-card:hover {
+    box-shadow: 0 14px 34px -4px rgba(100, 116, 139, 0.12), 0 6px 16px -2px rgba(100, 116, 139, 0.06);
+    border-color: rgba(168, 85, 247, 0.35);
+}
+
+.ess-card-accent-strip {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3.5px;
+    background: linear-gradient(90deg, #ec4899 0%, #a855f7 50%, #8b5cf6 100%);
+    z-index: 2;
+}
+
+.ess-card-header,
+.hr-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+}
+
+.ess-card-title,
+.hr-card-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--ess-text-main);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* ==========================================================================
+   HR Bento & Metric KPI Cards
+   ========================================================================== */
+.ess-grid-4,
+.hr-bento-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 22px;
+}
+
+.ess-grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 22px;
+}
+
+.ess-grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-bottom: 22px;
+}
+
+.ess-kpi-card,
+.hr-bento-kpi-card,
+.hr-metric-card,
+.ess-stat-card {
+    background: rgba(255, 255, 255, 0.88);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.95);
+    border-radius: 18px;
+    padding: 18px 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    box-shadow: 0 10px 30px -5px rgba(100, 116, 139, 0.07), 0 4px 10px -2px rgba(100, 116, 139, 0.03);
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s;
+    text-decoration: none;
+}
+
+.ess-kpi-card:hover,
+.hr-bento-kpi-card:hover,
+.hr-metric-card:hover,
+.ess-stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 34px -4px rgba(100, 116, 139, 0.12), 0 6px 16px -2px rgba(100, 116, 139, 0.06);
+    border-color: rgba(168, 85, 247, 0.35);
+}
+
+.ess-kpi-icon,
+.hr-bento-icon-box,
+.hr-metric-icon,
+.ess-stat-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.hr-bento-icon-box.purple, .ess-icon-purple { background: #f3e8ff; color: #9333ea; }
+.hr-bento-icon-box.blue,   .ess-icon-blue   { background: #e0f2fe; color: #0284c7; }
+.hr-bento-icon-box.orange, .ess-icon-orange { background: #ffedd5; color: #ea580c; }
+.hr-bento-icon-box.indigo, .ess-icon-indigo { background: #e0e7ff; color: #4f46e5; }
+.hr-bento-icon-box.green,  .ess-icon-green  { background: #dcfce7; color: #16a34a; }
+.hr-bento-icon-box.pink,   .ess-icon-pink   { background: #fce7f3; color: #db2777; }
+
+.ess-kpi-info {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.ess-kpi-label,
+.hr-bento-kpi-title,
+.ess-stat-label {
+    font-size: 11.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--ess-text-muted);
+    margin-bottom: 4px;
+}
+
+.ess-kpi-val,
+.hr-bento-kpi-val,
+.ess-stat-value {
+    font-family: 'Outfit', sans-serif;
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--ess-text-main);
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+}
+
+/* ==========================================================================
+   Badges (HR Standardized Rounded Pills)
+   ========================================================================== */
+.ess-badge,
+.hr-badge,
+.hr-badge-approved {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: var(--ess-radius-full);
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0.02em;
+    width: fit-content;
+}
+
+.ess-badge-success, .hr-badge-approved { background: #dcfce7; color: #16a34a; }
+.ess-badge-warning { background: #fef3c7; color: #d97706; }
+.ess-badge-danger  { background: #fee2e2; color: #dc2626; }
+.ess-badge-info    { background: #e0f2fe; color: #0284c7; }
+.ess-badge-primary { background: #f3e8ff; color: #9333ea; }
+.ess-badge-neutral { background: #f1f5f9; color: #475569; }
+
+/* ==========================================================================
+   Buttons (Harmonized with .hr-btn)
+   ========================================================================== */
+.ess-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 9px 18px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    line-height: 1;
+}
+
+.ess-btn-primary {
+    background: var(--ess-primary-gradient);
+    color: #ffffff;
+    box-shadow: 0 4px 14px rgba(168, 85, 247, 0.32);
+}
+
+.ess-btn-primary:hover {
+    background: var(--ess-primary-gradient-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 22px rgba(168, 85, 247, 0.42);
+    color: #ffffff;
+}
+
+.ess-btn-secondary {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    color: #334155;
+    border: 1px solid #cbd5e1;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+.ess-btn-secondary:hover {
+    background: linear-gradient(135deg, rgba(236, 72, 153, 0.08), rgba(168, 85, 247, 0.14));
+    border-color: rgba(168, 85, 247, 0.3);
+    color: #9333ea;
+    transform: translateY(-1px);
+}
+
+.ess-quick-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: var(--ess-primary-gradient);
+    color: #ffffff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(168, 85, 247, 0.32);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    white-space: nowrap;
+    text-decoration: none;
+}
+
+.ess-quick-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(168, 85, 247, 0.42);
+    color: #ffffff;
+}
+
+/* ==========================================================================
+   Data Tables (HR Formatted)
+   ========================================================================== */
+.ess-table-container,
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    border: 1px solid var(--ess-border);
+    border-radius: var(--ess-radius-md);
+    background: #ffffff;
+}
+
+.ess-table,
+.hr-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: 13px;
+}
+
+.ess-table th,
+.hr-table th {
+    background: #f8fafc;
+    padding: 12px 16px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--ess-text-muted);
+    border-bottom: 1px solid var(--ess-border);
+    white-space: nowrap;
+}
+
+.ess-table td,
+.hr-table td {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--ess-border);
+    color: var(--ess-text-secondary);
+    vertical-align: middle;
+}
+
+.ess-table tr:last-child td,
+.hr-table tr:last-child td {
+    border-bottom: none;
+}
+
+.ess-table tbody tr:hover td,
+.hr-table tbody tr:hover td {
+    background: rgba(248, 250, 252, 0.9);
+}
+
+/* Form Controls */
+.ess-form-control {
+    background: #ffffff;
+    border: 1px solid var(--ess-border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 13px;
+    color: var(--ess-text-main);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.ess-form-control:focus {
+    outline: none;
+    border-color: #a855f7;
+    box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.15);
+}
+
+/* ==========================================================================
+   Mobile Bottom Navigation Bar
+   ========================================================================== */
+.ess-mobile-bottom-bar {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 64px;
+    background: var(--ess-surface-glass);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid var(--ess-border);
+    z-index: 999;
+    align-items: center;
+    justify-content: space-around;
+    padding: 0 8px;
+}
+
+.ess-bottom-link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    text-decoration: none;
+    color: var(--ess-text-muted);
+    font-size: 10px;
+    font-weight: 600;
+    padding: 6px;
+    flex: 1;
+}
+
+.ess-bottom-link i {
+    font-size: 20px;
+}
+
+.ess-bottom-link.active {
+    color: #9333ea;
+}
+
+/* ==========================================================================
+   Stellar One ESS Modal Overlays / Slide-over Drawers
+   ========================================================================== */
+.ess-modal-backdrop,
+.hr-modal-overlay {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    background: rgba(15, 23, 42, 0.45) !important;
+    backdrop-filter: blur(4px) !important;
+    -webkit-backdrop-filter: blur(4px) !important;
+    display: flex !important;
+    align-items: stretch !important;
+    justify-content: flex-end !important;
+    z-index: 1200 !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.ess-modal-backdrop.open,
+.hr-modal-overlay.open {
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+}
+
+.ess-modal,
+.hr-modal {
+    background: #ffffff !important;
+    border-radius: 20px 0 0 20px !important;
+    box-shadow: -12px 0 45px -4px rgba(15, 23, 42, 0.18), -4px 0 16px -2px rgba(15, 23, 42, 0.08) !important;
+    border: none !important;
+    border-left: 1px solid #e2e8f0 !important;
+    width: 100% !important;
+    max-width: min(580px, 94vw) !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    min-height: 100vh !important;
+    margin: 0 0 0 auto !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    transform: translateX(100%) !important;
+    transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.32s ease !important;
+    position: relative !important;
+    z-index: 1210 !important;
+}
+
+.ess-modal-backdrop.open .ess-modal,
+.hr-modal-overlay.open .hr-modal {
+    transform: translateX(0) !important;
+}
+
+.ess-modal > form,
+.hr-modal > form {
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 1 0% !important;
+    min-height: 0 !important;
+    height: 100% !important;
+    overflow: hidden !important;
+    margin: 0 !important;
+}
+
+.ess-modal-header,
+.hr-modal-header {
+    flex-shrink: 0 !important;
+    padding: 22px 28px !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    background: #ffffff !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 20 !important;
+}
+
+.ess-modal-title,
+.hr-modal-title {
+    font-family: var(--font-heading, inherit) !important;
+    font-size: 17px !important;
+    font-weight: 700 !important;
+    color: #0f172a !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    margin: 0 !important;
+}
+
+.ess-modal-title i,
+.hr-modal-title i {
+    color: #7c3aed !important;
+    font-size: 19px !important;
+    width: 36px !important;
+    height: 36px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: #f5f3ff !important;
+    border: 1px solid #ede9fe !important;
+    border-radius: 10px !important;
+    flex-shrink: 0 !important;
+}
+
+.ess-modal-close,
+.hr-modal-header .icon-btn {
+    width: 34px !important;
+    height: 34px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 9px !important;
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #64748b !important;
+    cursor: pointer !important;
+    font-size: 16px !important;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    padding: 0 !important;
+}
+
+.ess-modal-close:hover,
+.hr-modal-header .icon-btn:hover {
+    background: #f1f5f9 !important;
+    border-color: #cbd5e1 !important;
+    color: #0f172a !important;
+    transform: scale(1.05) !important;
+}
+
+.ess-modal-body,
+.hr-modal-body {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding: 24px 28px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px !important;
+    background: #ffffff !important;
+    color: #334155 !important;
+}
+
+.ess-modal-footer,
+.hr-modal-footer {
+    flex-shrink: 0 !important;
+    margin-top: auto !important;
+    padding: 16px 28px !important;
+    border-top: 1.5px solid #e2e8f0 !important;
+    display: flex !important;
+    justify-content: flex-end !important;
+    align-items: center !important;
+    gap: 12px !important;
+    background: #ffffff !important;
+    position: sticky !important;
+    bottom: 0 !important;
+    z-index: 20 !important;
+    box-shadow: 0 -4px 16px rgba(15, 23, 42, 0.04) !important;
+}
+
+/* Responsive Media Queries */
+@media (max-width: 1180px) {
+    .ess-nav { display: none !important; }
+    .ess-mobile-toggle { display: block; }
+    .ess-user-info { display: none; }
+}
+
+@media (max-width: 992px) {
+    .ess-grid-4, .hr-bento-kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .ess-grid-3 { grid-template-columns: 1fr; }
+    .ess-grid-2 { grid-template-columns: 1fr; }
+    .ess-mobile-bottom-bar { display: flex; }
+    .ess-main { padding-bottom: 84px; }
+}
+
+@media (max-width: 600px) {
+    .ess-grid-4, .hr-bento-kpi-grid { grid-template-columns: 1fr; }
+    .ess-header { padding: 0 16px; }
+    .ess-brand-badge { display: none; }
+}

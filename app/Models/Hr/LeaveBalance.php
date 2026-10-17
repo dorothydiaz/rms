@@ -36,6 +36,21 @@ class LeaveBalance extends Model
         'encashed' => 'decimal:2',
     ];
 
+    public function getRemainingDaysAttribute()
+    {
+        return $this->attributes['leave_balance_remaining'] ?? ($this->attributes['remaining'] ?? 0);
+    }
+
+    public function getEntitledDaysAttribute()
+    {
+        return $this->attributes['leave_balance_beginning_balance'] ?? ($this->attributes['beginning_balance'] ?? ($this->attributes['earned'] ?? 0));
+    }
+
+    public function getUsedDaysAttribute()
+    {
+        return $this->attributes['leave_balance_used'] ?? ($this->attributes['used'] ?? 0);
+    }
+
     public function employee()
     {
         return $this->belongsTo(Employee::class);

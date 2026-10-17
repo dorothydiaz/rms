@@ -51,6 +51,7 @@
             <a href="#" class="rail-item{{ $activeModule === 'sales' ? ' active' : '' }}" data-tooltip="Sales Operations" data-title="Sales Operations" data-target="submenu-sales" data-tooltip-pos="right"><i class="ph ph-chart-line-up"></i></a>
             <a href="#" class="rail-item{{ $activeModule === 'inventory' ? ' active' : '' }}" data-tooltip="Inventory Operations" data-title="Inventory Operations" data-target="submenu-inventory" data-tooltip-pos="right"><i class="ph ph-package"></i></a>
             <a href="#" class="rail-item{{ $activeModule === 'purchase' ? ' active' : '' }}" data-tooltip="Purchase Operations" data-title="Purchase Operations" data-target="submenu-purchase" data-tooltip-pos="right"><i class="ph ph-shopping-cart"></i></a>
+            <a href="{{ route('ess.dashboard') }}" target="_blank" class="rail-item" data-tooltip="Employee Self-Service (ESS)" data-title="ESS Portal" data-tooltip-pos="right" style="color: #2563eb;"><i class="ph ph-identification-card"></i></a>
         </nav>
         
         <div class="rail-footer">
