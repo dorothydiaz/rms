@@ -3,171 +3,187 @@
 namespace App\Http\Controllers\Ess;
 
 use App\Http\Controllers\Controller;
-use App\Models\Hr\EssRequest;
-use App\Models\Hr\EssRequestLog;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
+use Illuminate\Http\JsonResponse;
+use App\Models\Ess\EssRequest;
+use App\Models\Hr\Employee;
+use Illuminate\Support\Facades\DB;
 
 class EssRequestController extends Controller
 {
     public function index(Request $request): View
     {
-        $user = Auth::user();
-        $employee = $user->employee;
+        $employee = $request->attributes->get('current_employee');
+        $statusFilter = $request->input('status', 'ALL');
+        $typeFilter = $request->input('type', 'ALL');
 
-        if (!$employee) {
-            return view('ess.no-employee-profile', compact('user'));
-        }
-
-        $typeFilter = $request->input('type');
-        $statusFilter = $request->input('status');
-        $search = $request->input('search');
-
-        $query = EssRequest::with(['currentApprover', 'approver', 'logs.user'])
-            ->forEmployee($employee->employee_id)
+        $query = EssRequest::where('employee_id', $employee->employee_id)
+            ->with(['approver'])
             ->orderBy('created_at', 'desc');
 
-        if ($typeFilter) {
-            $query->where('request_type', $typeFilter);
-        }
-
-        if ($statusFilter) {
+        if ($statusFilter !== 'ALL') {
             $query->where('status', $statusFilter);
         }
 
-        if ($search) {
-            $query->where(function ($q) use ($search) {
-                $q->where('request_number', 'like', "%{$search}%")
-                  ->orWhere('reason', 'like', "%{$search}%");
-            });
+        if ($typeFilter !== 'ALL') {
+            $query->where('request_type', $typeFilter);
         }
 
-        $requests = $query->paginate(15)->withQueryString();
+        $requests = $query->paginate(15);
 
-        $stats = [
-            'total' => EssRequest::forEmployee($employee->employee_id)->count(),
-            'pending' => EssRequest::forEmployee($employee->employee_id)->where('status', 'PENDING_APPROVAL')->count(),
-            'approved' => EssRequest::forEmployee($employee->employee_id)->where('status', 'APPROVED')->count(),
-            'rejected' => EssRequest::forEmployee($employee->employee_id)->where('status', 'REJECTED')->count(),
+        // Counts for tabs
+        $counts = [
+            'ALL' => EssRequest::where('employee_id', $employee->employee_id)->count(),
+            'PENDING' => EssRequest::where('employee_id', $employee->employee_id)->where('status', 'PENDING')->count(),
+            'APPROVED' => EssRequest::where('employee_id', $employee->employee_id)->where('status', 'APPROVED')->count(),
+            'REJECTED' => EssRequest::where('employee_id', $employee->employee_id)->where('status', 'REJECTED')->count(),
         ];
 
-        return view('ess.requests', compact('user', 'employee', 'requests', 'stats', 'typeFilter', 'statusFilter', 'search'));
+        return view('ess.requests.index', compact('employee', 'requests', 'statusFilter', 'typeFilter', 'counts'));
     }
 
     public function storeOvertime(Request $request): RedirectResponse
     {
-        $user = Auth::user();
-        $employee = $user->employee;
-
-        if (!$employee) {
-            abort(403, 'No employee record linked.');
-        }
+        $employee = $request->attributes->get('current_employee');
 
         $validated = $request->validate([
-            'date' => 'required|date',
-            'start_time' => 'required|date_format:H:i',
-            'end_time' => 'required|date_format:H:i',
-            'total_hours' => 'required|numeric|min:0.5|max:16',
-            'reason' => 'required|string|max:500',
+            'ot_date' => 'required|date',
+            'start_time' => 'required',
+            'end_time' => 'required',
+            'hours' => 'required|numeric|min:0.5|max:12',
+            'reason' => 'required|string|max:1000',
         ]);
 
-        $reqNumber = EssRequest::generateRequestNumber('OT');
-
-        $essReq = EssRequest::create([
-            'request_number' => $reqNumber,
+        EssRequest::create([
+            'request_number' => EssRequest::generateRequestNumber('OT'),
             'employee_id' => $employee->employee_id,
             'request_type' => 'OVERTIME',
-            'status' => 'PENDING_APPROVAL',
-            'start_date' => $validated['date'],
-            'start_time' => $validated['start_time'],
-            'end_time' => $validated['end_time'],
-            'total_hours' => $validated['total_hours'],
+            'details' => [
+                'ot_date' => $validated['ot_date'],
+                'start_time' => $validated['start_time'],
+                'end_time' => $validated['end_time'],
+                'hours' => (float) $validated['hours'],
+            ],
             'reason' => $validated['reason'],
-            'current_approver_id' => $employee->supervisor?->user_id,
+            'status' => 'PENDING',
+            'approval_step' => 1,
         ]);
 
-        EssRequestLog::create([
-            'ess_request_id' => $essReq->id,
-            'action' => 'SUBMITTED',
-            'acted_by' => $user->id,
-            'remarks' => "Filed overtime of {$validated['total_hours']} hrs on {$validated['date']}",
-        ]);
-
-        return redirect()->back()->with('success', "Overtime request #{$reqNumber} submitted.");
+        return redirect()->back()->with('success', 'Overtime authorization request submitted successfully.');
     }
 
     public function storeOfficialBusiness(Request $request): RedirectResponse
     {
-        $user = Auth::user();
-        $employee = $user->employee;
-
-        if (!$employee) {
-            abort(403, 'No employee record linked.');
-        }
+        $employee = $request->attributes->get('current_employee');
 
         $validated = $request->validate([
-            'start_date' => 'required|date',
-            'end_date' => 'nullable|date|after_or_equal:start_date',
-            'destination' => 'required|string|max:200',
-            'purpose' => 'required|string|max:500',
+            'ob_date' => 'required|date',
+            'destination' => 'required|string|max:255',
+            'purpose' => 'required|string|max:1000',
+            'start_time' => 'required',
+            'end_time' => 'required',
         ]);
 
-        $reqNumber = EssRequest::generateRequestNumber('OB');
-
-        $essReq = EssRequest::create([
-            'request_number' => $reqNumber,
+        EssRequest::create([
+            'request_number' => EssRequest::generateRequestNumber('OB'),
             'employee_id' => $employee->employee_id,
             'request_type' => 'OFFICIAL_BUSINESS',
-            'status' => 'PENDING_APPROVAL',
-            'start_date' => $validated['start_date'],
-            'end_date' => $validated['end_date'] ?? $validated['start_date'],
-            'reason' => $validated['purpose'],
-            'metadata' => [
+            'details' => [
+                'ob_date' => $validated['ob_date'],
                 'destination' => $validated['destination'],
+                'start_time' => $validated['start_time'],
+                'end_time' => $validated['end_time'],
             ],
-            'current_approver_id' => $employee->supervisor?->user_id,
+            'reason' => $validated['purpose'],
+            'status' => 'PENDING',
+            'approval_step' => 1,
         ]);
 
-        EssRequestLog::create([
-            'ess_request_id' => $essReq->id,
-            'action' => 'SUBMITTED',
-            'acted_by' => $user->id,
-            'remarks' => "Filed official business to {$validated['destination']}",
-        ]);
-
-        return redirect()->back()->with('success', "Official business request #{$reqNumber} submitted.");
+        return redirect()->back()->with('success', 'Official Business (OB) pass submitted successfully.');
     }
 
-    public function cancel(int $id): RedirectResponse
+    public function storeUndertime(Request $request): RedirectResponse
     {
-        $user = Auth::user();
-        $employee = $user->employee;
+        $employee = $request->attributes->get('current_employee');
 
-        $essReq = EssRequest::findOrFail($id);
+        $validated = $request->validate([
+            'ut_date' => 'required|date',
+            'departure_time' => 'required',
+            'reason' => 'required|string|max:1000',
+        ]);
 
-        // IDOR Protection: Employee can strictly only cancel their own request
-        if (!$employee || $essReq->employee_id !== $employee->employee_id) {
-            abort(403, 'Unauthorized to cancel this request.');
-        }
+        EssRequest::create([
+            'request_number' => EssRequest::generateRequestNumber('UT'),
+            'employee_id' => $employee->employee_id,
+            'request_type' => 'UNDERTIME',
+            'details' => [
+                'ut_date' => $validated['ut_date'],
+                'departure_time' => $validated['departure_time'],
+            ],
+            'reason' => $validated['reason'],
+            'status' => 'PENDING',
+            'approval_step' => 1,
+        ]);
 
-        if (!in_array($essReq->status, ['PENDING_APPROVAL', 'DRAFT', 'SUBMITTED'])) {
+        return redirect()->back()->with('success', 'Early departure / undertime notice submitted.');
+    }
+
+    public function cancel(int $id, Request $request): RedirectResponse
+    {
+        $employee = $request->attributes->get('current_employee');
+
+        $req = EssRequest::where('id', $id)
+            ->where('employee_id', $employee->employee_id)
+            ->firstOrFail();
+
+        if ($req->status !== 'PENDING') {
             return redirect()->back()->with('error', 'Only pending requests can be cancelled.');
         }
 
-        $essReq->update([
-            'status' => 'CANCELLED',
-            'cancelled_at' => now(),
-        ]);
+        $req->update(['status' => 'CANCELLED']);
 
-        EssRequestLog::create([
-            'ess_request_id' => $essReq->id,
-            'action' => 'CANCELLED',
-            'acted_by' => $user->id,
-            'remarks' => 'Cancelled by employee',
-        ]);
+        return redirect()->back()->with('success', 'Request # ' . $req->request_number . ' cancelled.');
+    }
 
-        return redirect()->back()->with('success', "Request #{$essReq->request_number} cancelled successfully.");
+    public function timeline(int $id, Request $request): JsonResponse
+    {
+        $employee = $request->attributes->get('current_employee');
+
+        $req = EssRequest::where('id', $id)
+            ->where('employee_id', $employee->employee_id)
+            ->firstOrFail();
+
+        $steps = [
+            [
+                'step' => 1,
+                'role' => 'Immediate Supervisor',
+                'status' => $req->approval_step > 1 || $req->status === 'APPROVED' ? 'Approved' : ($req->status === 'REJECTED' ? 'Rejected' : 'In Review'),
+                'timestamp' => $req->approved_at ? $req->approved_at->format('M d, Y h:i A') : null,
+                'remarks' => $req->status === 'REJECTED' ? $req->rejection_reason : 'Pending managerial review',
+            ],
+            [
+                'step' => 2,
+                'role' => 'Department Head / Branch Manager',
+                'status' => $req->status === 'APPROVED' ? 'Approved' : 'Pending',
+                'timestamp' => null,
+                'remarks' => null,
+            ],
+            [
+                'step' => 3,
+                'role' => 'HR Operations',
+                'status' => $req->status === 'APPROVED' ? 'Finalized' : 'Queued',
+                'timestamp' => null,
+                'remarks' => null,
+            ]
+        ];
+
+        return response()->json([
+            'request_number' => $req->request_number,
+            'type' => $req->request_type,
+            'status' => $req->status,
+            'steps' => $steps,
+        ]);
     }
 }
