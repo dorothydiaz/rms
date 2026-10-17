@@ -1090,9 +1090,208 @@ class PeopleController extends Controller
     // 2. ORGANIZATION (DEPARTMENTS, POSITIONS, BRANCHES, COMPANIES)
     // ==========================================
 
-    public function organizationIndex(): RedirectResponse
+    public function organizationIndex(Request $request): View
     {
-        return redirect()->route('hr.people.departments');
+        $user = Auth::user();
+        $employees = Employee::with(['branch', 'department', 'position', 'supervisor', 'subordinates', 'company'])
+            ->activeWorkforce()
+            ->orderBy('first_name')
+            ->get();
+
+        $departments = Department::with('head')->orderBy('name')->get();
+        $branches = Branch::where('is_active', true)->orderBy('name')->get();
+        $companies = $employees->map(fn($e) => $e->company_or_agency)->filter()->unique()->sort()->values();
+
+        // Calculate Stats
+        $totalEmployees = $employees->count();
+        $topExecutives = $employees->filter(fn($e) => $e->isTopLevelLeader())->count();
+        $departmentHeads = $departments->filter(fn($d) => !empty($d->head_employee_id))->count();
+        $unassignedEmployees = $employees->filter(fn($e) => $e->isUnassigned())->count();
+
+        $stats = [
+            'total' => $totalEmployees,
+            'top_executives' => $topExecutives,
+            'department_heads' => $departmentHeads,
+            'unassigned' => $unassignedEmployees,
+        ];
+
+        return view('hr.people.org-structure', compact('employees', 'departments', 'branches', 'companies', 'stats'));
+    }
+
+    public function orgStructureData(Request $request): JsonResponse
+    {
+        $employees = Employee::with(['branch', 'department', 'position', 'supervisor', 'subordinates'])
+            ->activeWorkforce()
+            ->get();
+
+        $departments = Department::with('head')->get();
+        $branches = Branch::where('is_active', true)->get();
+
+        $deptHeadsMap = [];
+        foreach ($departments as $d) {
+            if ($d->head_employee_id) {
+                $deptHeadsMap[(int)$d->id] = (int)$d->head_employee_id;
+            }
+        }
+
+        // Roots: Employees where isTopLevelLeader() is true
+        $roots = $employees->filter(fn($e) => $e->isTopLevelLeader());
+        
+        // If no root has subordinates yet, fallback to employee ID 1 or first employee
+        if ($roots->isEmpty() && $employees->isNotEmpty()) {
+            $roots = collect([$employees->firstWhere('id', 1) ?: $employees->first()]);
+        }
+
+        $tree = [];
+        foreach ($roots as $root) {
+            $tree[] = $this->formatOrgNode($root, $deptHeadsMap);
+        }
+
+        // Unassigned / Floating employees (supervisor_id is null and not a top leader)
+        $unassigned = $employees->filter(fn($e) => $e->isUnassigned())->map(function ($emp) {
+            return [
+                'id' => (int) $emp->id,
+                'employee_code' => $emp->employee_code ?? "EMP-{$emp->id}",
+                'full_name' => $emp->full_name,
+                'position' => $emp->position?->name ?? 'Staff',
+                'department' => $emp->department?->name ?? 'General',
+                'branch' => $emp->branch?->name ?? 'Main Branch',
+                'company' => $emp->company_or_agency,
+                'initials' => $emp->initials,
+                'photo_url' => $emp->photo_url,
+            ];
+        })->values();
+
+        $stats = [
+            'total' => $employees->count(),
+            'top_executives' => $roots->count(),
+            'department_heads' => count($deptHeadsMap),
+            'unassigned' => $unassigned->count(),
+        ];
+
+        return response()->json([
+            'tree' => $tree,
+            'unassigned' => $unassigned,
+            'departments' => $departments->map(fn($d) => [
+                'id' => $d->id,
+                'name' => $d->name,
+                'code' => $d->code,
+                'head_employee_id' => $d->head_employee_id,
+                'head_name' => $d->head?->full_name,
+            ]),
+            'branches' => $branches->map(fn($b) => [
+                'id' => $b->id,
+                'name' => $b->name,
+            ]),
+            'companies' => $employees->map(fn($e) => $e->company_or_agency)->filter()->unique()->sort()->values(),
+            'stats' => $stats,
+        ]);
+    }
+
+    private function formatOrgNode(Employee $emp, array $deptHeadsMap): array
+    {
+        $children = [];
+        foreach ($emp->subordinates as $sub) {
+            $children[] = $this->formatOrgNode($sub, $deptHeadsMap);
+        }
+
+        $deptId = (int) ($emp->department_id ?? 0);
+        $isDeptHead = isset($deptHeadsMap[$deptId]) && (int)$deptHeadsMap[$deptId] === (int)$emp->id;
+
+        return [
+            'id' => (int) $emp->id,
+            'employee_code' => $emp->employee_code ?? "EMP-{$emp->id}",
+            'full_name' => $emp->full_name,
+            'first_name' => $emp->first_name,
+            'last_name' => $emp->last_name,
+            'position' => $emp->position?->name ?? 'Staff',
+            'position_id' => $emp->position_id,
+            'department' => $emp->department?->name ?? 'General',
+            'department_id' => $emp->department_id,
+            'branch' => $emp->branch?->name ?? 'Main Branch',
+            'branch_id' => $emp->branch_id,
+            'company' => $emp->company_or_agency,
+            'photo_url' => $emp->photo_url,
+            'initials' => $emp->initials,
+            'supervisor_id' => $emp->supervisor_id,
+            'is_top_leader' => $emp->isTopLevelLeader(),
+            'is_dept_head' => $isDeptHead,
+            'reports_count' => count($children),
+            'children' => $children,
+        ];
+    }
+
+    public function assignSupervisor(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'employee_id' => 'required|integer|exists:hr_employees,id',
+            'supervisor_id' => 'nullable|integer|exists:hr_employees,id',
+        ]);
+
+        $employee = Employee::findOrFail($validated['employee_id']);
+        $newSupervisorId = !empty($validated['supervisor_id']) ? (int) $validated['supervisor_id'] : null;
+
+        if ($newSupervisorId) {
+            // Cycle prevention check
+            if (!$employee->canReportTo($newSupervisorId)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid assignment: This would create a circular reporting loop (an employee cannot report to themselves or their subordinate).',
+                ], 422);
+            }
+        }
+
+        $oldSupervisorName = $employee->supervisor?->full_name ?? 'None';
+        $employee->supervisor_id = $newSupervisorId;
+        $employee->save();
+
+        $newSupervisor = $newSupervisorId ? Employee::find($newSupervisorId) : null;
+        $newSupervisorName = $newSupervisor?->full_name ?? 'None (Top of Organization)';
+
+        AuditLogger::log(
+            'Update',
+            'Organization',
+            $employee->id,
+            "Reassigned manager for {$employee->full_name} from [{$oldSupervisorName}] to [{$newSupervisorName}]"
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => "Manager updated: {$employee->full_name} now reports to {$newSupervisorName}.",
+            'employee_id' => $employee->id,
+            'supervisor_id' => $newSupervisorId,
+            'supervisor_name' => $newSupervisorName,
+        ]);
+    }
+
+    public function assignDepartmentHead(Request $request, int $id): JsonResponse
+    {
+        $validated = $request->validate([
+            'head_employee_id' => 'nullable|integer|exists:hr_employees,id',
+        ]);
+
+        $department = Department::findOrFail($id);
+        $headId = !empty($validated['head_employee_id']) ? (int)$validated['head_employee_id'] : null;
+
+        $department->head_employee_id = $headId;
+        $department->save();
+
+        $headName = $headId ? Employee::find($headId)?->full_name : 'Unassigned';
+
+        AuditLogger::log(
+            'Update',
+            'Department',
+            $department->id,
+            "Updated Department Head for {$department->name} to {$headName}"
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => "Department Head for {$department->name} set to {$headName}.",
+            'department_id' => $department->id,
+            'head_employee_id' => $headId,
+            'head_name' => $headName,
+        ]);
     }
 
     public function getMembersModal(Request $request): JsonResponse
@@ -1195,13 +1394,14 @@ class PeopleController extends Controller
 
     public function departmentsIndex(): View
     {
-        $departments = Department::with('branch')->get();
+        $departments = Department::with(['branch', 'head'])->get();
         $allEmps = Employee::select('id', 'department_id', 'assigned_department_ids')->get();
         foreach ($departments as $dept) {
             $dept->employees_count = $allEmps->filter(fn($e) => in_array($dept->id, $e->all_department_ids))->count();
         }
         $branches = Branch::where('is_active', true)->get();
-        return view('hr.people.departments', compact('departments', 'branches'));
+        $employees = Employee::activeWorkforce()->orderBy('first_name')->get();
+        return view('hr.people.departments', compact('departments', 'branches', 'employees'));
     }
 
     public function departmentStore(Request $request): RedirectResponse
@@ -1210,6 +1410,7 @@ class PeopleController extends Controller
             'name' => 'required|string|max:100',
             'code' => 'required|string|max:30|unique:hr_departments,code',
             'branch_id' => 'nullable|exists:hr_branches,id',
+            'head_employee_id' => 'nullable|exists:hr_employees,id',
             'description' => 'nullable|string',
         ]);
 
@@ -1226,6 +1427,7 @@ class PeopleController extends Controller
             'name' => 'required|string|max:100',
             'code' => 'required|string|max:30|unique:hr_departments,code,' . $id,
             'branch_id' => 'nullable|exists:hr_branches,id',
+            'head_employee_id' => 'nullable|exists:hr_employees,id',
             'description' => 'nullable|string',
         ]);
 

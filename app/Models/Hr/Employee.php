@@ -345,12 +345,68 @@ class Employee extends Model
 
     public function supervisor(): BelongsTo
     {
-        return $this->belongsTo(Employee::class, 'supervisor_id');
+        return $this->belongsTo(Employee::class, 'supervisor_id', 'id');
     }
 
     public function subordinates(): HasMany
     {
-        return $this->hasMany(Employee::class, 'supervisor_id');
+        return $this->hasMany(Employee::class, 'supervisor_id', 'id');
+    }
+
+    /**
+     * An employee is a Top-Level Summit Leader ONLY if:
+     * 1) supervisor_id is null AND
+     * 2) they have direct subordinates OR hold a GM/Executive position.
+     * Employees with supervisor_id = null and NO subordinates who are not GM are Unassigned.
+     */
+    public function isTopLevelLeader(): bool
+    {
+        if (!is_null($this->supervisor_id)) {
+            return false;
+        }
+
+        if ($this->subordinates()->count() > 0) {
+            return true;
+        }
+
+        $posName = strtolower($this->position?->name ?? '');
+        return (int)$this->id === 1 || str_contains($posName, 'general manager') || str_contains($posName, 'president') || str_contains($posName, 'director');
+    }
+
+    public function isUnassigned(): bool
+    {
+        return is_null($this->supervisor_id) && !$this->isTopLevelLeader();
+    }
+
+    public function getLineOfReporting(): \Illuminate\Support\Collection
+    {
+        $chain = collect();
+        $curr = $this->supervisor;
+        $visited = [$this->id];
+        while ($curr && !in_array($curr->id, $visited)) {
+            $chain->push($curr);
+            $visited[] = $curr->id;
+            $curr = $curr->supervisor;
+        }
+        return $chain;
+    }
+
+    public function getAllSubordinateIds(): array
+    {
+        $ids = [];
+        foreach ($this->subordinates as $sub) {
+            $ids[] = $sub->id;
+            $ids = array_merge($ids, $sub->getAllSubordinateIds());
+        }
+        return array_unique($ids);
+    }
+
+    public function canReportTo(int $targetSupervisorId): bool
+    {
+        if ((int)$this->id === $targetSupervisorId) {
+            return false;
+        }
+        return !in_array($targetSupervisorId, $this->getAllSubordinateIds());
     }
 
     public function emergencyContacts(): HasMany
