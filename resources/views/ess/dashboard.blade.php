@@ -10,9 +10,9 @@
         <div>
             <h1 class="hr-page-title">
                 <i class="ph ph-squares-four"></i>
-                <span>Employee Self-Service</span>
+                <span>Employee Dashboard</span>
             </h1>
-            <p class="hr-page-subtitle">Welcome back, {{ $employee->first_name }}! Real-time workforce attendance, Philippine statutory benefits, biometric logs, and self-service transactions.</p>
+            <p class="hr-page-subtitle">Real-time attendance tracking, Philippine statutory benefits, biometric logs, and self-service requests</p>
         </div>
         <div class="hr-page-actions">
             <a href="{{ route('ess.requests') }}" class="hr-btn hr-btn-primary">
