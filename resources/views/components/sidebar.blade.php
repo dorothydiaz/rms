@@ -2,8 +2,7 @@
     $isHome = request()->routeIs('dashboard');
     $isAccountSettings = request()->routeIs('account-settings*', 'config.*', 'hr.admin.*', 'hr.users-auth');
     $activeModule = '';
-    if (request()->routeIs('ess.*')) $activeModule = 'ess';
-    elseif (request()->routeIs('hr.*') && !request()->routeIs('hr.admin.*', 'hr.users-auth')) $activeModule = 'hr';
+    if (request()->routeIs('hr.*') && !request()->routeIs('hr.admin.*', 'hr.users-auth')) $activeModule = 'hr';
     elseif (request()->routeIs('sales.*')) $activeModule = 'sales';
     elseif (request()->routeIs('inventory.*')) $activeModule = 'inventory';
     elseif (request()->routeIs('purchase.*')) $activeModule = 'purchase';
@@ -48,11 +47,11 @@
         
         <nav class="rail-nav">
             <a href="{{ route('dashboard') }}" class="rail-item{{ $isHome ? ' active' : '' }}" data-tooltip="Home" data-title="Home" data-tooltip-pos="right"><i class="ph ph-house"></i></a>
-            <a href="#" class="rail-item{{ $activeModule === 'ess' ? ' active' : '' }}" data-tooltip="Employee Self-Service" data-title="Employee Self-Service" data-target="submenu-ess" data-tooltip-pos="right"><i class="ph ph-identification-card"></i></a>
             <a href="#" class="rail-item{{ $activeModule === 'hr' ? ' active' : '' }}" data-tooltip="HR Operations" data-title="HR Operations" data-target="submenu-hr" data-tooltip-pos="right"><i class="ph ph-users-three"></i></a>
             <a href="#" class="rail-item{{ $activeModule === 'sales' ? ' active' : '' }}" data-tooltip="Sales Operations" data-title="Sales Operations" data-target="submenu-sales" data-tooltip-pos="right"><i class="ph ph-chart-line-up"></i></a>
             <a href="#" class="rail-item{{ $activeModule === 'inventory' ? ' active' : '' }}" data-tooltip="Inventory Operations" data-title="Inventory Operations" data-target="submenu-inventory" data-tooltip-pos="right"><i class="ph ph-package"></i></a>
             <a href="#" class="rail-item{{ $activeModule === 'purchase' ? ' active' : '' }}" data-tooltip="Purchase Operations" data-title="Purchase Operations" data-target="submenu-purchase" data-tooltip-pos="right"><i class="ph ph-shopping-cart"></i></a>
+            <a href="{{ route('ess.dashboard') }}" target="_blank" class="rail-item" data-tooltip="Employee Self-Service (ESS)" data-title="ESS Portal" data-tooltip-pos="right" style="color: #2563eb;"><i class="ph ph-identification-card"></i></a>
         </nav>
         
         <div class="rail-footer">
@@ -73,73 +72,19 @@
             </div>
         </div>
 
-        <!-- Employee Self-Service (ESS) Portal -->
-        <div id="submenu-ess" class="panel-content submenu{{ $activeModule === 'ess' ? ' active' : '' }}">
-            <div class="submenu-header">
-                <span class="submenu-title">Employee Self-Service</span>
-            </div>
-
-            <!-- ESS Dashboard -->
-            <div class="nav-section">
-                <a href="{{ route('ess.dashboard') }}" class="nav-item{{ request()->routeIs('ess.dashboard') ? ' active' : '' }}">
-                    <i class="ph ph-squares-four"></i>
-                    <span>My Dashboard</span>
-                </a>
-            </div>
-
-            <!-- Profile & 201 File -->
-            <div class="nav-section">
-                <a href="{{ route('ess.profile') }}" class="nav-item{{ request()->routeIs('ess.profile') ? ' active' : '' }}">
-                    <i class="ph ph-user-circle"></i>
-                    <span>My 201 Profile</span>
-                </a>
-            </div>
-
-            <!-- Attendance & DTR -->
-            <div class="nav-section">
-                <a href="{{ route('ess.attendance') }}" class="nav-item{{ request()->routeIs('ess.attendance') ? ' active' : '' }}">
-                    <i class="ph ph-clock"></i>
-                    <span>Daily Time Record</span>
-                </a>
-            </div>
-
-            <!-- Work Schedule -->
-            <div class="nav-section">
-                <a href="{{ route('ess.schedule') }}" class="nav-item{{ request()->routeIs('ess.schedule') ? ' active' : '' }}">
-                    <i class="ph ph-calendar"></i>
-                    <span>Work Schedule</span>
-                </a>
-            </div>
-
-            <!-- Leave & Statutory Benefits -->
-            <div class="nav-section">
-                <a href="{{ route('ess.leave') }}" class="nav-item{{ request()->routeIs('ess.leave') ? ' active' : '' }}">
-                    <i class="ph ph-calendar-plus"></i>
-                    <span>Leave Management</span>
-                </a>
-            </div>
-
-            <!-- Centralized My Requests -->
-            <div class="nav-section">
-                <a href="{{ route('ess.requests') }}" class="nav-item{{ request()->routeIs('ess.requests') ? ' active' : '' }}">
-                    <i class="ph ph-tray"></i>
-                    <span>My Requests</span>
-                </a>
-            </div>
-
-            <!-- Payslips & Compensation -->
-            <div class="nav-section">
-                <a href="{{ route('ess.payroll') }}" class="nav-item{{ request()->routeIs('ess.payroll*') ? ' active' : '' }}">
-                    <i class="ph ph-receipt"></i>
-                    <span>My Payslips</span>
-                </a>
-            </div>
-        </div>
-
         <!-- HR Operations -->
         <div id="submenu-hr" class="panel-content submenu{{ $activeModule === 'hr' ? ' active' : '' }}">
             <div class="submenu-header">
                 <span class="submenu-title">HR Operations</span>
+            </div>
+
+            <!-- Employee Self-Service (ESS) Launcher -->
+            <div class="nav-section" style="margin-bottom: 0.75rem;">
+                <a href="{{ route('ess.dashboard') }}" target="_blank" class="nav-item" style="background: rgba(37, 99, 235, 0.08); border-left: 3px solid #2563eb; color: #1d4ed8; font-weight: 600;">
+                    <i class="ph ph-identification-card" style="color: #2563eb;"></i>
+                    <span>Open ESS Portal</span>
+                    <i class="ph ph-arrow-square-out" style="margin-left: auto; font-size: 0.85rem; opacity: 0.7;"></i>
+                </a>
             </div>
 
             <!-- HR Dashboard -->

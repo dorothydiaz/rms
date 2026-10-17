@@ -16,8 +16,9 @@ class EssDatabaseSchemaTest extends TestCase
         $employee = Employee::first();
         $this->assertNotNull($employee, 'Seeded employee required');
 
+        $reqNum = 'REQ-' . uniqid();
         $req = EssRequest::create([
-            'request_number' => 'REQ-2026-0001',
+            'request_number' => $reqNum,
             'employee_id' => $employee->employee_id,
             'request_type' => 'OVERTIME',
             'details' => ['ot_date' => '2026-10-18', 'hours' => 2.5, 'type' => 'PostShift'],
@@ -26,7 +27,7 @@ class EssDatabaseSchemaTest extends TestCase
         ]);
 
         $this->assertDatabaseHas('ess_requests', [
-            'request_number' => 'REQ-2026-0001',
+            'request_number' => $reqNum,
             'status' => 'PENDING',
         ]);
 
@@ -38,8 +39,9 @@ class EssDatabaseSchemaTest extends TestCase
         $employee = Employee::first();
         $this->assertNotNull($employee);
 
+        $tktNum = 'TKT-' . uniqid();
         $ticket = EssHelpdeskTicket::create([
-            'ticket_number' => 'TKT-2026-0001',
+            'ticket_number' => $tktNum,
             'employee_id' => $employee->employee_id,
             'category' => 'Payroll & Wages',
             'subject' => 'Tax computation inquiry',
@@ -48,7 +50,7 @@ class EssDatabaseSchemaTest extends TestCase
         ]);
 
         $this->assertDatabaseHas('ess_helpdesk_tickets', [
-            'ticket_number' => 'TKT-2026-0001',
+            'ticket_number' => $tktNum,
             'status' => 'OPEN',
         ]);
 
