@@ -2,7 +2,8 @@
     $isHome = request()->routeIs('dashboard');
     $isAccountSettings = request()->routeIs('account-settings*', 'config.*', 'hr.admin.*', 'hr.users-auth');
     $activeModule = '';
-    if (request()->routeIs('hr.*') && !request()->routeIs('hr.admin.*', 'hr.users-auth')) $activeModule = 'hr';
+    if (request()->routeIs('ess.*')) $activeModule = 'ess';
+    elseif (request()->routeIs('hr.*') && !request()->routeIs('hr.admin.*', 'hr.users-auth')) $activeModule = 'hr';
     elseif (request()->routeIs('sales.*')) $activeModule = 'sales';
     elseif (request()->routeIs('inventory.*')) $activeModule = 'inventory';
     elseif (request()->routeIs('purchase.*')) $activeModule = 'purchase';
@@ -47,6 +48,7 @@
         
         <nav class="rail-nav">
             <a href="{{ route('dashboard') }}" class="rail-item{{ $isHome ? ' active' : '' }}" data-tooltip="Home" data-title="Home" data-tooltip-pos="right"><i class="ph ph-house"></i></a>
+            <a href="#" class="rail-item{{ $activeModule === 'ess' ? ' active' : '' }}" data-tooltip="Employee Self-Service" data-title="Employee Self-Service" data-target="submenu-ess" data-tooltip-pos="right"><i class="ph ph-identification-card"></i></a>
             <a href="#" class="rail-item{{ $activeModule === 'hr' ? ' active' : '' }}" data-tooltip="HR Operations" data-title="HR Operations" data-target="submenu-hr" data-tooltip-pos="right"><i class="ph ph-users-three"></i></a>
             <a href="#" class="rail-item{{ $activeModule === 'sales' ? ' active' : '' }}" data-tooltip="Sales Operations" data-title="Sales Operations" data-target="submenu-sales" data-tooltip-pos="right"><i class="ph ph-chart-line-up"></i></a>
             <a href="#" class="rail-item{{ $activeModule === 'inventory' ? ' active' : '' }}" data-tooltip="Inventory Operations" data-title="Inventory Operations" data-target="submenu-inventory" data-tooltip-pos="right"><i class="ph ph-package"></i></a>
@@ -68,6 +70,69 @@
                 <div class="workspace-info">
                     <span class="workspace-name">Restaurant Name</span>
                 </div>
+            </div>
+        </div>
+
+        <!-- Employee Self-Service (ESS) Portal -->
+        <div id="submenu-ess" class="panel-content submenu{{ $activeModule === 'ess' ? ' active' : '' }}">
+            <div class="submenu-header">
+                <span class="submenu-title">Employee Self-Service</span>
+            </div>
+
+            <!-- ESS Dashboard -->
+            <div class="nav-section">
+                <a href="{{ route('ess.dashboard') }}" class="nav-item{{ request()->routeIs('ess.dashboard') ? ' active' : '' }}">
+                    <i class="ph ph-squares-four"></i>
+                    <span>My Dashboard</span>
+                </a>
+            </div>
+
+            <!-- Profile & 201 File -->
+            <div class="nav-section">
+                <a href="{{ route('ess.profile') }}" class="nav-item{{ request()->routeIs('ess.profile') ? ' active' : '' }}">
+                    <i class="ph ph-user-circle"></i>
+                    <span>My 201 Profile</span>
+                </a>
+            </div>
+
+            <!-- Attendance & DTR -->
+            <div class="nav-section">
+                <a href="{{ route('ess.attendance') }}" class="nav-item{{ request()->routeIs('ess.attendance') ? ' active' : '' }}">
+                    <i class="ph ph-clock"></i>
+                    <span>Daily Time Record</span>
+                </a>
+            </div>
+
+            <!-- Work Schedule -->
+            <div class="nav-section">
+                <a href="{{ route('ess.schedule') }}" class="nav-item{{ request()->routeIs('ess.schedule') ? ' active' : '' }}">
+                    <i class="ph ph-calendar"></i>
+                    <span>Work Schedule</span>
+                </a>
+            </div>
+
+            <!-- Leave & Statutory Benefits -->
+            <div class="nav-section">
+                <a href="{{ route('ess.leave') }}" class="nav-item{{ request()->routeIs('ess.leave') ? ' active' : '' }}">
+                    <i class="ph ph-calendar-plus"></i>
+                    <span>Leave Management</span>
+                </a>
+            </div>
+
+            <!-- Centralized My Requests -->
+            <div class="nav-section">
+                <a href="{{ route('ess.requests') }}" class="nav-item{{ request()->routeIs('ess.requests') ? ' active' : '' }}">
+                    <i class="ph ph-tray"></i>
+                    <span>My Requests</span>
+                </a>
+            </div>
+
+            <!-- Payslips & Compensation -->
+            <div class="nav-section">
+                <a href="{{ route('ess.payroll') }}" class="nav-item{{ request()->routeIs('ess.payroll*') ? ' active' : '' }}">
+                    <i class="ph ph-receipt"></i>
+                    <span>My Payslips</span>
+                </a>
             </div>
         </div>
 
