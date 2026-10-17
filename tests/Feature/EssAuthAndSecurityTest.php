@@ -50,14 +50,25 @@ class EssAuthAndSecurityTest extends TestCase
 
     public function test_login_with_ess_portal_redirects_to_ess_dashboard(): void
     {
-        $employee = Employee::whereNotNull('user_id')->first();
-        $this->assertNotNull($employee);
-
-        // Update password to known string
-        $employee->user->update(['password' => bcrypt('password123')]);
+        $testUser = User::create([
+            'username' => 'test_ess_login_' . uniqid(),
+            'full_name' => 'Test ESS User',
+            'email' => 'test_ess_login_' . uniqid() . '@example.com',
+            'password' => bcrypt('password123'),
+            'role' => 'Staff',
+            'status' => 'Active',
+        ]);
+        Employee::create([
+            'employee_code' => 'EMP-TEST-LOG-' . uniqid(),
+            'first_name' => 'Test',
+            'last_name' => 'Employee',
+            'user_id' => $testUser->id,
+            'employment_status' => 'Active',
+            'date_hired' => now()->toDateString(),
+        ]);
 
         $response = $this->post('/login', [
-            'identity' => $employee->user->username,
+            'identity' => $testUser->username,
             'password' => 'password123',
             'portal' => 'ess',
         ]);
@@ -67,13 +78,17 @@ class EssAuthAndSecurityTest extends TestCase
 
     public function test_login_with_erp_portal_redirects_to_erp_dashboard(): void
     {
-        $employee = Employee::whereNotNull('user_id')->first();
-        $this->assertNotNull($employee);
-
-        $employee->user->update(['password' => bcrypt('password123')]);
+        $testUser = User::create([
+            'username' => 'test_erp_login_' . uniqid(),
+            'full_name' => 'Test ERP User',
+            'email' => 'test_erp_login_' . uniqid() . '@example.com',
+            'password' => bcrypt('password123'),
+            'role' => 'Staff',
+            'status' => 'Active',
+        ]);
 
         $response = $this->post('/login', [
-            'identity' => $employee->user->username,
+            'identity' => $testUser->username,
             'password' => 'password123',
             'portal' => 'erp',
         ]);

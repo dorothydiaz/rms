@@ -122,31 +122,55 @@
         </form>
 
         <!-- Quick Demo Accounts Switcher -->
-        <div class="quick-accounts-section">
-            <div class="quick-accounts-divider">
-                <span>Quick Sign In for Testing</span>
+        <div class="quick-accounts-section" style="margin-top: 1.5rem;">
+            <!-- ERP Quick Accounts -->
+            <div id="erpQuickAccounts" style="{{ ($defaultPortal ?? 'erp') === 'ess' ? 'display:none;' : '' }}">
+                <div class="quick-accounts-divider">
+                    <span>Quick Sign In — Management ERP</span>
+                </div>
+                <div class="quick-accounts-grid">
+                    <button type="button" class="demo-chip" data-user="peter" data-pass="Admin@12345" data-role="Admin" data-portal="erp" title="Sign in as Systems Admin">
+                        <span class="demo-role-badge admin">Admin</span>
+                        <span class="demo-name">peter</span>
+                    </button>
+                    <button type="button" class="demo-chip" data-user="dorothy" data-pass="Manager@12345" data-role="Manager" data-portal="erp" title="Sign in as General Manager">
+                        <span class="demo-role-badge manager">General Mgr</span>
+                        <span class="demo-name">dorothy</span>
+                    </button>
+                    <button type="button" class="demo-chip" data-user="manager_makati" data-pass="Manager@12345" data-role="Manager" data-portal="erp" title="Sign in as Branch Manager">
+                        <span class="demo-role-badge manager">Branch Mgr</span>
+                        <span class="demo-name">carlos</span>
+                    </button>
+                    <button type="button" class="demo-chip" data-user="cashier" data-pass="Cashier@12345" data-role="Cashier" data-portal="erp" title="Sign in as Cashier">
+                        <span class="demo-role-badge cashier">Cashier</span>
+                        <span class="demo-name">cashier</span>
+                    </button>
+                </div>
             </div>
-            <div class="quick-accounts-grid">
-                <button type="button" class="demo-chip" data-user="peter" data-pass="Admin@12345" data-role="Admin">
-                    <span class="demo-role-badge admin">Admin</span>
-                    <span class="demo-name">peter</span>
-                </button>
-                <button type="button" class="demo-chip" data-user="dorothy" data-pass="Manager@12345" data-role="Manager">
-                    <span class="demo-role-badge manager">Manager</span>
-                    <span class="demo-name">dorothy</span>
-                </button>
-                <button type="button" class="demo-chip" data-user="cashier" data-pass="Cashier@12345" data-role="Cashier">
-                    <span class="demo-role-badge cashier">Cashier</span>
-                    <span class="demo-name">cashier</span>
-                </button>
-                <button type="button" class="demo-chip" data-user="staff" data-pass="Staff@12345" data-role="Staff">
-                    <span class="demo-role-badge staff">Staff</span>
-                    <span class="demo-name">staff</span>
-                </button>
-                <button type="button" class="demo-chip" data-user="kitchen" data-pass="Kitchen@12345" data-role="Kitchen">
-                    <span class="demo-role-badge kitchen">Kitchen</span>
-                    <span class="demo-name">kitchen</span>
-                </button>
+
+            <!-- ESS Quick Accounts -->
+            <div id="essQuickAccounts" style="{{ ($defaultPortal ?? 'erp') !== 'ess' ? 'display:none;' : '' }}">
+                <div class="quick-accounts-divider">
+                    <span style="color:#2563eb;font-weight:700;"><i class="ph ph-identification-card"></i> Quick Sign In — Employee Self-Service</span>
+                </div>
+                <div class="quick-accounts-grid">
+                    <button type="button" class="demo-chip ess-chip" data-user="staff" data-pass="Staff@12345" data-role="Staff" data-portal="ess" title="Sarah Staff (Server - EMP-2026-STF)">
+                        <span class="demo-role-badge staff" style="background:rgba(37,99,235,0.12);color:#2563eb;">Server</span>
+                        <span class="demo-name">sarah.staff</span>
+                    </button>
+                    <button type="button" class="demo-chip ess-chip" data-user="cashier" data-pass="Cashier@12345" data-role="Cashier" data-portal="ess" title="John Cashier (Cashier - EMP-2026-CSH)">
+                        <span class="demo-role-badge cashier">Cashier</span>
+                        <span class="demo-name">john.cashier</span>
+                    </button>
+                    <button type="button" class="demo-chip ess-chip" data-user="kitchen" data-pass="Kitchen@12345" data-role="Kitchen" data-portal="ess" title="Marco Rossi (Cook - EMP-2026-KTC)">
+                        <span class="demo-role-badge kitchen">Line Cook</span>
+                        <span class="demo-name">marco.cook</span>
+                    </button>
+                    <button type="button" class="demo-chip ess-chip" data-user="hr_admin" data-pass="HrAdmin@12345" data-role="HR Admin" data-portal="ess" title="Elena Reyes (HR Manager - EMP-2026-HRA)">
+                        <span class="demo-role-badge admin" style="background:rgba(124,58,237,0.12);color:#7c3aed;">HR Lead</span>
+                        <span class="demo-name">elena.reyes</span>
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -169,6 +193,8 @@
             const btnErp = document.getElementById('portalChoiceErp');
             const btnEss = document.getElementById('portalChoiceEss');
             const subtitle = document.querySelector('.login-subtitle');
+            const erpAccounts = document.getElementById('erpQuickAccounts');
+            const essAccounts = document.getElementById('essQuickAccounts');
 
             if (portal === 'ess') {
                 if (btnEss) {
@@ -183,6 +209,8 @@
                     btnErp.style.color = '#64748b';
                     btnErp.style.boxShadow = 'none';
                 }
+                if (erpAccounts) erpAccounts.style.display = 'none';
+                if (essAccounts) essAccounts.style.display = 'block';
                 if (subtitle) {
                     subtitle.textContent = 'Sign in to access your Philippine DOLE DTR, leaves, payslips, and self-service records';
                 }
@@ -199,6 +227,8 @@
                     btnEss.style.color = '#64748b';
                     btnEss.style.boxShadow = 'none';
                 }
+                if (erpAccounts) erpAccounts.style.display = 'block';
+                if (essAccounts) essAccounts.style.display = 'none';
                 if (subtitle) {
                     subtitle.textContent = 'Enter your credentials to access your operations dashboard';
                 }
@@ -207,6 +237,33 @@
 
         document.addEventListener('DOMContentLoaded', function() {
             selectLoginPortal('{{ $defaultPortal ?? 'erp' }}');
+
+            // Wire up demo chips with automatic portal switching and field population
+            document.querySelectorAll('.demo-chip').forEach(chip => {
+                chip.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const portal = chip.getAttribute('data-portal');
+                    if (portal) {
+                        selectLoginPortal(portal);
+                    }
+                    const u = chip.getAttribute('data-user');
+                    const p = chip.getAttribute('data-pass');
+                    const identityInput = document.getElementById('identity');
+                    const passwordInput = document.getElementById('password');
+                    if (identityInput && passwordInput) {
+                        identityInput.value = u;
+                        passwordInput.value = p;
+                        identityInput.classList.add('flash-highlight');
+                        passwordInput.classList.add('flash-highlight');
+                        setTimeout(() => {
+                            identityInput.classList.remove('flash-highlight');
+                            passwordInput.classList.remove('flash-highlight');
+                        }, 500);
+                        const loginBtn = document.getElementById('loginBtn');
+                        if (loginBtn) loginBtn.focus();
+                    }
+                });
+            });
         });
     </script>
 @endpush
