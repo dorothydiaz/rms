@@ -17,7 +17,7 @@ class EssEmployeeMiddleware
         $user = $request->user();
 
         if (!$user) {
-            return redirect()->route('login');
+            return redirect()->route('login', ['portal' => 'ess']);
         }
 
         $employee = $user->employee;

@@ -42,9 +42,22 @@
             </div>
         @endif
 
+        <!-- Portal Destination Switcher Tabs -->
+        <div class="login-portal-selector" style="margin: 1.25rem 0 1.5rem 0; background: #f1f5f9; padding: 4px; border-radius: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; border: 1px solid #e2e8f0;">
+            <button type="button" class="portal-choice-btn {{ ($defaultPortal ?? 'erp') !== 'ess' ? 'active' : '' }}" id="portalChoiceErp" onclick="selectLoginPortal('erp')" style="border: none; border-radius: 8px; padding: 8px 12px; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; transition: all 0.2s ease;">
+                <i class="ph ph-buildings" style="font-size: 16px;"></i>
+                <span>Management ERP</span>
+            </button>
+            <button type="button" class="portal-choice-btn {{ ($defaultPortal ?? 'erp') === 'ess' ? 'active' : '' }}" id="portalChoiceEss" onclick="selectLoginPortal('ess')" style="border: none; border-radius: 8px; padding: 8px 12px; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; transition: all 0.2s ease;">
+                <i class="ph ph-identification-card" style="font-size: 16px;"></i>
+                <span>Employee Portal (ESS)</span>
+            </button>
+        </div>
+
         <!-- Login Form -->
         <form method="POST" action="{{ route('login.attempt') }}" class="login-form" novalidate id="loginForm">
             @csrf
+            <input type="hidden" name="portal" id="portalInput" value="{{ $defaultPortal ?? 'erp' }}">
 
             <!-- Username or Email Field -->
             <div class="form-group">
@@ -148,4 +161,52 @@
 
 @push('scripts')
     @vite(['resources/js/modules/auth-login.js'])
+    <script>
+        function selectLoginPortal(portal) {
+            const input = document.getElementById('portalInput');
+            if (input) input.value = portal;
+
+            const btnErp = document.getElementById('portalChoiceErp');
+            const btnEss = document.getElementById('portalChoiceEss');
+            const subtitle = document.querySelector('.login-subtitle');
+
+            if (portal === 'ess') {
+                if (btnEss) {
+                    btnEss.classList.add('active');
+                    btnEss.style.background = '#2563eb';
+                    btnEss.style.color = '#ffffff';
+                    btnEss.style.boxShadow = '0 4px 12px rgba(37,99,235,0.25)';
+                }
+                if (btnErp) {
+                    btnErp.classList.remove('active');
+                    btnErp.style.background = 'transparent';
+                    btnErp.style.color = '#64748b';
+                    btnErp.style.boxShadow = 'none';
+                }
+                if (subtitle) {
+                    subtitle.textContent = 'Sign in to access your Philippine DOLE DTR, leaves, payslips, and self-service records';
+                }
+            } else {
+                if (btnErp) {
+                    btnErp.classList.add('active');
+                    btnErp.style.background = '#ffffff';
+                    btnErp.style.color = '#0f172a';
+                    btnErp.style.boxShadow = '0 2px 6px rgba(0,0,0,0.08)';
+                }
+                if (btnEss) {
+                    btnEss.classList.remove('active');
+                    btnEss.style.background = 'transparent';
+                    btnEss.style.color = '#64748b';
+                    btnEss.style.boxShadow = 'none';
+                }
+                if (subtitle) {
+                    subtitle.textContent = 'Enter your credentials to access your operations dashboard';
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            selectLoginPortal('{{ $defaultPortal ?? 'erp' }}');
+        });
+    </script>
 @endpush

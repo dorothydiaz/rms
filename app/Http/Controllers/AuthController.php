@@ -15,13 +15,18 @@ class AuthController extends Controller
     protected int $maxAttempts = 5;
     protected int $lockoutMinutes = 15;
 
-    public function showLoginForm(): View|RedirectResponse
+    public function showLoginForm(Request $request): View|RedirectResponse
     {
+        $defaultPortal = $request->query('portal', 'erp');
+
         if (Auth::check()) {
+            if ($defaultPortal === 'ess') {
+                return redirect()->route('ess.dashboard');
+            }
             return redirect()->route('dashboard');
         }
 
-        return view('auth.login');
+        return view('auth.login', compact('defaultPortal'));
     }
 
     public function login(Request $request): RedirectResponse
@@ -94,6 +99,16 @@ class AuthController extends Controller
         if (Auth::attempt($credentials, $remember)) {
             $this->recordAttempt($ip, $identity, true);
             $request->session()->regenerate();
+
+            $portal = $request->input('portal', $request->query('portal', 'erp'));
+            if ($portal === 'ess') {
+                if (!$user->employee) {
+                    Auth::logout();
+                    return back()->withInput($request->only('identity'))
+                        ->with('error', 'Your user account is not linked to an employee profile. Please sign in to the Management ERP or contact HR.');
+                }
+                return redirect()->intended(route('ess.dashboard'));
+            }
 
             return redirect()->intended(route('dashboard'));
         }
