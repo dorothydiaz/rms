@@ -78,15 +78,6 @@
                 <span class="submenu-title">HR Operations</span>
             </div>
 
-            <!-- Employee Self-Service (ESS) Launcher -->
-            <div class="nav-section" style="margin-bottom: 0.75rem;">
-                <a href="{{ route('ess.dashboard') }}" target="_blank" class="nav-item" style="background: rgba(37, 99, 235, 0.08); border-left: 3px solid #2563eb; color: #1d4ed8; font-weight: 600;">
-                    <i class="ph ph-identification-card" style="color: #2563eb;"></i>
-                    <span>Open ESS Portal</span>
-                    <i class="ph ph-arrow-square-out" style="margin-left: auto; font-size: 0.85rem; opacity: 0.7;"></i>
-                </a>
-            </div>
-
             <!-- HR Dashboard -->
             <div class="nav-section">
                 <a href="{{ route('hr.dashboard') }}" class="nav-item{{ request()->routeIs('hr.dashboard') ? ' active' : '' }}">
