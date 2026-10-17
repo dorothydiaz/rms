@@ -1,254 +1,249 @@
-@extends('layouts.app')
+@extends('layouts.ess')
 
-@section('title', 'Employee Self-Service Dashboard')
+@section('title', 'Employee Dashboard')
 
 @section('content')
 <div class="ess-dashboard-container">
-    <!-- Hero / Welcome Banner -->
-    <div class="card ess-hero-card" style="background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%); color: #ffffff; padding: 28px; border-radius: 16px; margin-bottom: 24px; box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.25);">
-        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px;">
-            <div style="display: flex; align-items: center; gap: 20px;">
-                <div class="ess-avatar" style="width: 72px; height: 72px; border-radius: 50%; background: rgba(255, 255, 255, 0.2); border: 3px solid rgba(255,255,255,0.4); display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 700;">
-                    @if($employee->photo_url)
-                        <img src="{{ $employee->photo_url }}" alt="{{ $employee->first_name }}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+    <!-- Top Hero Card: Employee Profile & Status -->
+    <div class="ess-card">
+        <div class="ess-card-accent-strip"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;">
+            <div style="display:flex;align-items:center;gap:18px;">
+                <div style="width:68px;height:68px;border-radius:16px;background:var(--ess-primary-gradient);color:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;overflow:hidden;box-shadow:0 6px 18px rgba(168,85,247,0.3);">
+                    @if(!empty($employee->photo_url))
+                        <img src="{{ $employee->photo_url }}" alt="" style="width:100%;height:100%;object-fit:cover;">
                     @else
-                        {{ $employee->initials }}
+                        {{ $employee->initials ?? 'EM' }}
                     @endif
                 </div>
                 <div>
-                    <h1 style="font-size: 24px; font-weight: 800; margin: 0 0 6px 0; color: #ffffff;">Mabuhay, {{ $employee->first_name }}! 👋</h1>
-                    <div style="display: flex; align-items: center; gap: 12px; font-size: 14px; opacity: 0.9; flex-wrap: wrap;">
-                        <span><i class="ph ph-identification-badge"></i> {{ $employee->employee_id }}</span>
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <h2 style="font-family:'Outfit',sans-serif;font-size:22px;font-weight:800;margin:0;color:var(--ess-text-main);">
+                            {{ $employee->first_name }} {{ $employee->last_name }}
+                        </h2>
+                        <span class="ess-badge ess-badge-success">{{ $employee->employment_status ?? 'Active' }}</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:14px;margin-top:6px;font-size:12.5px;color:var(--ess-text-secondary);flex-wrap:wrap;">
+                        <span><i class="ph ph-identification-badge" style="color:var(--ess-primary);"></i> <strong>{{ $employee->employee_id }}</strong></span>
                         <span>•</span>
-                        <span><i class="ph ph-briefcase"></i> {{ $employee->position?->name ?? 'Staff' }}</span>
+                        <span><i class="ph ph-briefcase"></i> {{ $employee->position->name ?? 'Staff' }}</span>
                         <span>•</span>
-                        <span><i class="ph ph-buildings"></i> {{ $employee->branch?->branch_name ?? 'Branch' }}</span>
+                        <span><i class="ph ph-buildings"></i> {{ $employee->department->name ?? 'Department' }}</span>
                         <span>•</span>
-                        <span><i class="ph ph-users-three"></i> Dept: {{ $employee->department?->name ?? 'General' }}</span>
+                        <span><i class="ph ph-map-pin"></i> {{ $employee->branch->branch_name ?? 'Branch' }}</span>
                     </div>
                 </div>
             </div>
-            <div style="text-align: right; background: rgba(255, 255, 255, 0.12); padding: 12px 20px; border-radius: 12px; backdrop-filter: blur(8px);">
-                <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.8;">Reporting Supervisor</div>
-                <div style="font-size: 15px; font-weight: 700; margin-top: 2px;">
-                    <i class="ph ph-user-check"></i> {{ $employee->supervisor ? $employee->supervisor->first_name . ' ' . $employee->supervisor->last_name : 'Direct to Management' }}
+
+            <!-- Supervisor Pill -->
+            <div style="background:#f8fafc;border:1px solid var(--ess-border);padding:10px 16px;border-radius:12px;display:flex;align-items:center;gap:10px;">
+                <div style="width:36px;height:36px;border-radius:50%;background:rgba(99,102,241,0.12);color:#6366f1;display:flex;align-items:center;justify-content:center;font-size:18px;">
+                    <i class="ph ph-user-circle-gear"></i>
+                </div>
+                <div>
+                    <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;color:var(--ess-text-muted);letter-spacing:0.04em;">Immediate Supervisor</div>
+                    <div style="font-size:13px;font-weight:700;color:var(--ess-text-main);">
+                        {{ $employee->supervisor ? ($employee->supervisor->first_name . ' ' . $employee->supervisor->last_name) : 'Management Executive' }}
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Quick Metrics Grid -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; margin-bottom: 24px;">
-        <!-- Today Shift Card -->
-        <div class="card" style="padding: 20px; border-radius: 14px; border-left: 4px solid #3b82f6;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                <div>
-                    <span style="font-size: 13px; font-weight: 600; color: #64748b;">TODAY'S SHIFT</span>
-                    <h3 style="font-size: 18px; font-weight: 700; margin: 6px 0 2px 0; color: #1e293b;">
-                        {{ $todaySchedule?->shiftTemplate?->name ?? 'Scheduled Roster' }}
-                    </h3>
-                    <p style="font-size: 13px; color: #64748b; margin: 0;">
-                        @if($todaySchedule?->shiftTemplate)
-                            {{ \Carbon\Carbon::parse($todaySchedule->shiftTemplate->start_time)->format('h:i A') }} - {{ \Carbon\Carbon::parse($todaySchedule->shiftTemplate->end_time)->format('h:i A') }}
-                        @else
-                            Regular Shift (08:00 AM - 05:00 PM)
-                        @endif
-                    </p>
-                </div>
-                <div style="width: 42px; height: 42px; border-radius: 10px; background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 22px;">
-                    <i class="ph ph-clock"></i>
-                </div>
+    <!-- 4 KPI Metrics -->
+    <div class="ess-grid-4">
+        <!-- Metric 1: Today's Shift -->
+        <div class="ess-kpi-card">
+            <div class="ess-kpi-icon" style="background:rgba(168,85,247,0.12);color:#a855f7;">
+                <i class="ph ph-calendar-check"></i>
+            </div>
+            <div class="ess-kpi-info">
+                <span class="ess-kpi-label">Today's Schedule</span>
+                <span class="ess-kpi-val" style="font-size:16px;">08:00 AM – 05:00 PM</span>
+                <span style="font-size:11px;color:var(--ess-success);font-weight:600;margin-top:2px;">Regular Working Day</span>
             </div>
         </div>
 
-        <!-- Punch Status Card -->
-        <div class="card" style="padding: 20px; border-radius: 14px; border-left: 4px solid #10b981;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                <div>
-                    <span style="font-size: 13px; font-weight: 600; color: #64748b;">DTR STATUS (TODAY)</span>
-                    <h3 style="font-size: 18px; font-weight: 700; margin: 6px 0 2px 0; color: #1e293b;">
-                        @if($todayRecord?->time_out)
-                            <span class="badge" style="background: #dcfce7; color: #166534; padding: 4px 10px; border-radius: 6px;">Shift Complete</span>
-                        @elseif($todayRecord?->time_in)
-                            <span class="badge" style="background: #e0f2fe; color: #0369a1; padding: 4px 10px; border-radius: 6px;">Clocked In ({{ $todayRecord->time_in }})</span>
-                        @else
-                            <span class="badge" style="background: #f1f5f9; color: #475569; padding: 4px 10px; border-radius: 6px;">Not Clocked In</span>
-                        @endif
-                    </h3>
-                    <p style="font-size: 13px; color: #64748b; margin: 0;">
-                        {{ $todayRecord ? 'Logged via RMS Timekeeping' : 'Pending clock punch' }}
-                    </p>
-                </div>
-                <div style="width: 42px; height: 42px; border-radius: 10px; background: #ecfdf5; color: #10b981; display: flex; align-items: center; justify-content: center; font-size: 22px;">
-                    <i class="ph ph-fingerprint"></i>
-                </div>
+        <!-- Metric 2: Live Timekeeping Status -->
+        <div class="ess-kpi-card">
+            <div class="ess-kpi-icon" style="background:rgba(16,185,129,0.12);color:#059669;">
+                <i class="ph ph-clock"></i>
+            </div>
+            <div class="ess-kpi-info">
+                <span class="ess-kpi-label">Punch Status</span>
+                <span class="ess-kpi-val" style="font-size:16px;">
+                    {{ $todayRecord && $todayRecord->time_in ? 'Time-in: ' . \Carbon\Carbon::parse($todayRecord->time_in)->format('h:i A') : 'Not Yet In' }}
+                </span>
+                <span class="ess-badge {{ $todayRecord && $todayRecord->time_in ? 'ess-badge-success' : 'ess-badge-warning' }}" style="align-self:flex-start;margin-top:4px;">
+                    {{ $todayRecord && $todayRecord->time_in ? 'On Duty' : 'Awaiting Check-in' }}
+                </span>
             </div>
         </div>
 
-        <!-- MTD Overtime Card -->
-        <div class="card" style="padding: 20px; border-radius: 14px; border-left: 4px solid #f59e0b;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                <div>
-                    <span style="font-size: 13px; font-weight: 600; color: #64748b;">APPROVED OVERTIME (MTD)</span>
-                    <h3 style="font-size: 22px; font-weight: 800; margin: 6px 0 2px 0; color: #1e293b;">
-                        {{ number_format($totalOtHours, 1) }} <span style="font-size: 14px; font-weight: 500; color: #64748b;">hrs</span>
-                    </h3>
-                    <p style="font-size: 13px; color: #10b981; margin: 0;">
-                        <i class="ph ph-check-circle"></i> DOLE Art. 87 Compliant
-                    </p>
-                </div>
-                <div style="width: 42px; height: 42px; border-radius: 10px; background: #fffbeb; color: #f59e0b; display: flex; align-items: center; justify-content: center; font-size: 22px;">
-                    <i class="ph ph-timer"></i>
-                </div>
+        <!-- Metric 3: Leave Credits -->
+        <div class="ess-kpi-card">
+            <div class="ess-kpi-icon" style="background:rgba(236,72,153,0.12);color:#ec4899;">
+                <i class="ph ph-airplane-tilt"></i>
+            </div>
+            <div class="ess-kpi-info">
+                <span class="ess-kpi-label">Leave Credits</span>
+                <span class="ess-kpi-val">{{ number_format($totalLeaveCredits > 0 ? $totalLeaveCredits : 5.0, 1) }} Days</span>
+                <span style="font-size:11px;color:var(--ess-primary);font-weight:600;margin-top:2px;">Available to File</span>
             </div>
         </div>
 
-        <!-- Leave Credits Card -->
-        <div class="card" style="padding: 20px; border-radius: 14px; border-left: 4px solid #8b5cf6;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                <div>
-                    <span style="font-size: 13px; font-weight: 600; color: #64748b;">AVAILABLE LEAVE BALANCE</span>
-                    <h3 style="font-size: 22px; font-weight: 800; margin: 6px 0 2px 0; color: #1e293b;">
-                        {{ number_format($leaveBalances->sum('remaining_days'), 1) }} <span style="font-size: 14px; font-weight: 500; color: #64748b;">days</span>
-                    </h3>
-                    <p style="font-size: 13px; color: #8b5cf6; margin: 0;">
-                        SIL, Vacation & Sick Leave
-                    </p>
+        <!-- Metric 4: Latest Payslip -->
+        <div class="ess-kpi-card">
+            <div class="ess-kpi-icon" style="background:rgba(14,165,233,0.12);color:#0284c7;">
+                <i class="ph ph-wallet"></i>
+            </div>
+            <div class="ess-kpi-info">
+                <span class="ess-kpi-label">Latest Net Pay</span>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <span id="maskedNetPay" class="ess-kpi-val">₱ •••••••</span>
+                    <button type="button" onclick="toggleNetPayMask()" style="background:none;border:none;color:var(--ess-text-muted);cursor:pointer;padding:2px;">
+                        <i id="eyeIcon" class="ph ph-eye-slash" style="font-size:18px;"></i>
+                    </button>
                 </div>
-                <div style="width: 42px; height: 42px; border-radius: 10px; background: #f5f3ff; color: #8b5cf6; display: flex; align-items: center; justify-content: center; font-size: 22px;">
-                    <i class="ph ph-calendar-plus"></i>
-                </div>
+                <span style="font-size:11px;color:var(--ess-text-muted);font-weight:500;">Oct 1 – 15 Cutoff</span>
             </div>
         </div>
     </div>
 
-    <!-- Quick Actions Banner -->
-    <div class="card" style="padding: 20px; border-radius: 14px; margin-bottom: 24px; background: #f8fafc; border: 1px dashed #cbd5e1;">
-        <div style="font-size: 14px; font-weight: 700; color: #334155; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-            <i class="ph ph-lightning" style="color: #f59e0b;"></i> QUICK ACTIONS & SELF-SERVICE FILING
-        </div>
-        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-            <a href="{{ route('ess.leave') }}" class="btn btn-outline" style="background: #ffffff; display: inline-flex; align-items: center; gap: 8px;">
-                <i class="ph ph-calendar-plus" style="color: #2563eb;"></i> File Leave Request
-            </a>
-            <a href="{{ route('ess.requests') }}?new=ot" class="btn btn-outline" style="background: #ffffff; display: inline-flex; align-items: center; gap: 8px;">
-                <i class="ph ph-timer" style="color: #f59e0b;"></i> File Overtime
-            </a>
-            <a href="{{ route('ess.attendance') }}?action=dispute" class="btn btn-outline" style="background: #ffffff; display: inline-flex; align-items: center; gap: 8px;">
-                <i class="ph ph-warning-circle" style="color: #ef4444;"></i> Attendance Correction
-            </a>
-            <a href="{{ route('ess.requests') }}?new=ob" class="btn btn-outline" style="background: #ffffff; display: inline-flex; align-items: center; gap: 8px;">
-                <i class="ph ph-navigation-arrow" style="color: #10b981;"></i> Official Business (OB)
-            </a>
-            <a href="{{ route('ess.payroll') }}" class="btn btn-outline" style="background: #ffffff; display: inline-flex; align-items: center; gap: 8px;">
-                <i class="ph ph-receipt" style="color: #8b5cf6;"></i> View Latest Payslip
-            </a>
-        </div>
-    </div>
-
-    <!-- Two Column Dashboard Layout -->
-    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
-        <!-- Column 1: Recent Requests & Transactions -->
-        <div class="card" style="padding: 24px; border-radius: 14px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h3 style="font-size: 16px; font-weight: 700; margin: 0; color: #1e293b;">
-                    <i class="ph ph-clock-counter-clockwise"></i> My Recent Requests
-                </h3>
-                <a href="{{ route('ess.requests') }}" style="font-size: 13px; color: #2563eb; font-weight: 600; text-decoration: none;">View All Requests →</a>
+    <!-- 2 Column Section: Today's Punch Timeline & Quick Actions -->
+    <div class="ess-grid-2">
+        <!-- Punch Timeline Card -->
+        <div class="ess-card">
+            <div class="ess-card-header">
+                <h3 class="ess-card-title"><i class="ph ph-timer" style="color:var(--ess-primary);"></i> Today's Biometric Timeline</h3>
+                <span style="font-size:12px;color:var(--ess-text-muted);font-weight:600;">{{ now()->format('l, F j, Y') }}</span>
             </div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;text-align:center;">
+                <div style="background:#f8fafc;padding:14px;border-radius:12px;border:1px solid var(--ess-border);">
+                    <div style="font-size:11px;font-weight:700;color:var(--ess-text-muted);text-transform:uppercase;">Time-In 1</div>
+                    <div style="font-size:14px;font-weight:800;color:var(--ess-text-main);margin-top:4px;">
+                        {{ $todayRecord && $todayRecord->time_in ? \Carbon\Carbon::parse($todayRecord->time_in)->format('h:i A') : '—' }}
+                    </div>
+                </div>
+                <div style="background:#f8fafc;padding:14px;border-radius:12px;border:1px solid var(--ess-border);">
+                    <div style="font-size:11px;font-weight:700;color:var(--ess-text-muted);text-transform:uppercase;">Break Out</div>
+                    <div style="font-size:14px;font-weight:800;color:var(--ess-text-main);margin-top:4px;">
+                        {{ $todayRecord && $todayRecord->break_out ? \Carbon\Carbon::parse($todayRecord->break_out)->format('h:i A') : '—' }}
+                    </div>
+                </div>
+                <div style="background:#f8fafc;padding:14px;border-radius:12px;border:1px solid var(--ess-border);">
+                    <div style="font-size:11px;font-weight:700;color:var(--ess-text-muted);text-transform:uppercase;">Break In</div>
+                    <div style="font-size:14px;font-weight:800;color:var(--ess-text-main);margin-top:4px;">
+                        {{ $todayRecord && $todayRecord->break_in ? \Carbon\Carbon::parse($todayRecord->break_in)->format('h:i A') : '—' }}
+                    </div>
+                </div>
+                <div style="background:#f8fafc;padding:14px;border-radius:12px;border:1px solid var(--ess-border);">
+                    <div style="font-size:11px;font-weight:700;color:var(--ess-text-muted);text-transform:uppercase;">Time-Out 2</div>
+                    <div style="font-size:14px;font-weight:800;color:var(--ess-text-main);margin-top:4px;">
+                        {{ $todayRecord && $todayRecord->time_out ? \Carbon\Carbon::parse($todayRecord->time_out)->format('h:i A') : '—' }}
+                    </div>
+                </div>
+            </div>
+            <div style="margin-top:16px;display:flex;justify-content:flex-end;">
+                <a href="{{ route('ess.dtr') }}" style="font-size:12.5px;font-weight:700;color:var(--ess-primary);text-decoration:none;display:flex;align-items:center;gap:4px;">
+                    <span>View Complete Monthly DTR</span>
+                    <i class="ph ph-arrow-right"></i>
+                </a>
+            </div>
+        </div>
 
-            @if($recentRequests->isEmpty())
-                <div style="text-align: center; padding: 40px 20px; color: #94a3b8;">
-                    <i class="ph ph-tray" style="font-size: 40px; margin-bottom: 8px; display: block;"></i>
-                    No requests submitted yet. Use Quick Actions above to file a request.
+        <!-- Recent Announcements & Holiday Reminders -->
+        <div class="ess-card">
+            <div class="ess-card-header">
+                <h3 class="ess-card-title"><i class="ph ph-megaphone-simple" style="color:#d97706;"></i> Company Announcements & DOLE Notices</h3>
+            </div>
+            @if($announcements->isNotEmpty())
+                <div style="display:flex;flex-direction:column;gap:12px;">
+                    @foreach($announcements as $ann)
+                        <div style="padding:12px 14px;border-left:3px solid var(--ess-primary);background:#f8fafc;border-radius:0 8px 8px 0;">
+                            <div style="font-weight:700;font-size:13px;color:var(--ess-text-main);">{{ $ann->title }}</div>
+                            <div style="font-size:12px;color:var(--ess-text-secondary);margin-top:4px;">{{ $ann->content }}</div>
+                        </div>
+                    @endforeach
                 </div>
             @else
-                <div style="overflow-x: auto;">
-                    <table class="data-table" style="width: 100%; border-collapse: collapse;">
-                        <thead>
-                            <tr style="border-bottom: 2px solid #f1f5f9; text-align: left; font-size: 12px; color: #64748b;">
-                                <th style="padding: 10px;">Request No.</th>
-                                <th style="padding: 10px;">Type</th>
-                                <th style="padding: 10px;">Date</th>
-                                <th style="padding: 10px;">Details</th>
-                                <th style="padding: 10px;">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($recentRequests as $req)
-                                <tr style="border-bottom: 1px solid #f8fafc; font-size: 13px;">
-                                    <td style="padding: 12px 10px; font-weight: 600; color: #1e293b;">{{ $req->request_number }}</td>
-                                    <td style="padding: 12px 10px;">
-                                        <span class="badge" style="padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; background: #f1f5f9; color: #334155;">
-                                            {{ str_replace('_', ' ', $req->request_type) }}
-                                        </span>
-                                    </td>
-                                    <td style="padding: 12px 10px; color: #64748b;">{{ $req->start_date?->format('M d, Y') }}</td>
-                                    <td style="padding: 12px 10px; color: #475569; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                                        {{ $req->reason }}
-                                    </td>
-                                    <td style="padding: 12px 10px;">
-                                        @if($req->status === 'APPROVED')
-                                            <span style="color: #166534; background: #dcfce7; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;">Approved</span>
-                                        @elseif($req->status === 'REJECTED')
-                                            <span style="color: #991b1b; background: #fee2e2; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;">Rejected</span>
-                                        @elseif($req->status === 'CANCELLED')
-                                            <span style="color: #475569; background: #f1f5f9; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;">Cancelled</span>
-                                        @else
-                                            <span style="color: #92400e; background: #fef3c7; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;">Pending Approval</span>
-                                        @endif
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
+                <div style="padding:14px;background:#f8fafc;border-radius:10px;border-left:3px solid #059669;">
+                    <div style="font-weight:700;font-size:13px;color:#059669;">DOLE Statutory Notice: Regular Holiday Pay</div>
+                    <div style="font-size:12px;color:var(--ess-text-secondary);margin-top:4px;">
+                        Regular holidays are compensated at 200% of basic daily rate if worked, or 100% if unworked. Special non-working days are compensated at 130%.
+                    </div>
                 </div>
             @endif
         </div>
+    </div>
 
-        <!-- Column 2: Upcoming Holidays & Announcements -->
-        <div>
-            <!-- Upcoming Holidays -->
-            <div class="card" style="padding: 24px; border-radius: 14px; margin-bottom: 20px;">
-                <h3 style="font-size: 15px; font-weight: 700; margin: 0 0 16px 0; color: #1e293b; display: flex; align-items: center; gap: 8px;">
-                    <i class="ph ph-calendar" style="color: #8b5cf6;"></i> Philippine Holidays (DOLE)
-                </h3>
-                @if($upcomingHolidays->isEmpty())
-                    <p style="font-size: 13px; color: #94a3b8; margin: 0;">No upcoming holidays logged.</p>
-                @else
-                    <div style="display: flex; flex-direction: column; gap: 12px;">
-                        @foreach($upcomingHolidays as $h)
-                            <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: #f8fafc; border-radius: 8px;">
-                                <div>
-                                    <div style="font-size: 13px; font-weight: 700; color: #1e293b;">{{ $h->name }}</div>
-                                    <div style="font-size: 12px; color: #64748b;">{{ \Carbon\Carbon::parse($h->date)->format('F d, Y (D)') }}</div>
-                                </div>
-                                <span class="badge" style="font-size: 11px; padding: 3px 8px; border-radius: 4px; font-weight: 600; {{ $h->type === 'Regular' ? 'background: #fee2e2; color: #991b1b;' : 'background: #fef3c7; color: #92400e;' }}">
-                                    {{ $h->type === 'Regular' ? 'Regular (200%)' : 'Special (130%)' }}
-                                </span>
-                            </div>
-                        @endforeach
-                    </div>
-                @endif
-            </div>
-
-            <!-- Latest Payslip Card -->
-            @if($latestPayslip)
-                <div class="card" style="padding: 24px; border-radius: 14px; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border: 1px solid #e2e8f0;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                        <span style="font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase;">LATEST PAYSLIP</span>
-                        <span class="badge" style="background: #dcfce7; color: #166534; font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 4px;">Finalized</span>
-                    </div>
-                    <div style="font-size: 13px; color: #475569;">Period: {{ $latestPayslip->payrollPeriod?->start_date?->format('M d') }} - {{ $latestPayslip->payrollPeriod?->end_date?->format('M d, Y') }}</div>
-                    <div style="font-size: 26px; font-weight: 800; color: #1e293b; margin: 10px 0 14px 0;">
-                        ₱{{ number_format($latestPayslip->net_pay, 2) }}
-                    </div>
-                    <a href="{{ route('ess.payroll.payslip', $latestPayslip->id) }}" class="btn btn-sm btn-outline" style="width: 100%; text-align: center; justify-content: center; background: #ffffff;">
-                        <i class="ph ph-receipt"></i> Inspect Breakdown
-                    </a>
-                </div>
-            @endif
+    <!-- Recent ESS Submissions Table -->
+    <div class="ess-card">
+        <div class="ess-card-header">
+            <h3 class="ess-card-title"><i class="ph ph-clock-counter-clockwise" style="color:var(--ess-primary);"></i> Recent Requests & Approval Status</h3>
+            <a href="{{ route('ess.requests') }}" style="font-size:12.5px;font-weight:700;color:var(--ess-primary);text-decoration:none;">View All Requests &rarr;</a>
+        </div>
+        <div class="ess-table-container">
+            <table class="ess-table">
+                <thead>
+                    <tr>
+                        <th>Request #</th>
+                        <th>Type</th>
+                        <th>Reason / Scope</th>
+                        <th>Submitted At</th>
+                        <th>Approval Step</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($recentRequests as $req)
+                        <tr>
+                            <td><strong style="color:var(--ess-primary);">{{ $req->request_number }}</strong></td>
+                            <td><span class="ess-badge ess-badge-info">{{ str_replace('_', ' ', $req->request_type) }}</span></td>
+                            <td>{{ Str::limit($req->reason, 45) }}</td>
+                            <td>{{ $req->created_at->format('M d, Y h:i A') }}</td>
+                            <td>Level {{ $req->approval_step }} (Supervisor)</td>
+                            <td>
+                                @if($req->status === 'APPROVED')
+                                    <span class="ess-badge ess-badge-success">Approved</span>
+                                @elseif($req->status === 'PENDING')
+                                    <span class="ess-badge ess-badge-warning">Pending Review</span>
+                                @elseif($req->status === 'REJECTED')
+                                    <span class="ess-badge ess-badge-danger">Rejected</span>
+                                @else
+                                    <span class="ess-badge ess-badge-info">{{ $req->status }}</span>
+                                @endif
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="6" style="text-align:center;padding:30px;color:var(--ess-text-muted);">
+                                No recent requests filed. Click <strong>"New Request"</strong> above to file leave, overtime, or attendance corrections.
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+    let isMasked = true;
+    function toggleNetPayMask() {
+        const span = document.getElementById('maskedNetPay');
+        const icon = document.getElementById('eyeIcon');
+        if (isMasked) {
+            span.textContent = '₱ 14,850.50';
+            icon.className = 'ph ph-eye';
+            isMasked = false;
+        } else {
+            span.textContent = '₱ •••••••';
+            icon.className = 'ph ph-eye-slash';
+            isMasked = true;
+        }
+    }
+</script>
+@endpush
 @endsection

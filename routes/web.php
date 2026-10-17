@@ -454,50 +454,47 @@ Route::middleware('auth')->group(function () {
     Route::post('/account-settings/profile', [ConfigController::class, 'updateProfile'])->name('account-settings.profile');
     Route::post('/account-settings/password', [ConfigController::class, 'updatePassword'])->name('account-settings.password');
 
-    // ==========================================
-    // Employee Self-Service (ESS) Portal Routes
-    // ==========================================
-    Route::prefix('ess')->name('ess.')->group(function () {
-        // 1. Dashboard
-        Route::get('/dashboard', [\App\Http\Controllers\Ess\EssDashboardController::class, 'index'])->name('dashboard');
-
-        // 2. Profile & 201 File
-        Route::get('/profile', [\App\Http\Controllers\Ess\EssProfileController::class, 'show'])->name('profile');
-        Route::post('/profile/update-contact', [\App\Http\Controllers\Ess\EssProfileController::class, 'updateContact'])->name('profile.update-contact');
-        Route::post('/profile/emergency-contact', [\App\Http\Controllers\Ess\EssProfileController::class, 'storeEmergencyContact'])->name('profile.emergency-contact.store');
-        Route::delete('/profile/emergency-contact/{id}', [\App\Http\Controllers\Ess\EssProfileController::class, 'destroyEmergencyContact'])->name('profile.emergency-contact.destroy');
-        Route::post('/profile/request-coe', [\App\Http\Controllers\Ess\EssProfileController::class, 'requestCoe'])->name('profile.request-coe');
-
-        // 3. Attendance & DTR
-        Route::get('/attendance', [\App\Http\Controllers\Ess\EssAttendanceController::class, 'index'])->name('attendance');
-        Route::get('/attendance/dtr-export', [\App\Http\Controllers\Ess\EssAttendanceController::class, 'exportDtrPdf'])->name('attendance.export-dtr');
-        Route::post('/attendance/correction', [\App\Http\Controllers\Ess\EssAttendanceController::class, 'storeCorrectionRequest'])->name('attendance.correction.store');
-
-        // 4. Work Schedule
-        Route::get('/schedule', [\App\Http\Controllers\Ess\EssScheduleController::class, 'index'])->name('schedule');
-        Route::post('/schedule/adjustment', [\App\Http\Controllers\Ess\EssScheduleController::class, 'storeAdjustmentRequest'])->name('schedule.adjustment.store');
-
-        // 5. Leave Management
-        Route::get('/leave', [\App\Http\Controllers\Ess\EssLeaveController::class, 'index'])->name('leave');
-        Route::post('/leave/request', [\App\Http\Controllers\Ess\EssLeaveController::class, 'storeLeaveRequest'])->name('leave.store');
-        Route::post('/leave/cancel/{id}', [\App\Http\Controllers\Ess\EssLeaveController::class, 'cancelLeaveRequest'])->name('leave.cancel');
-
-        // 6. Centralized My Requests Hub
-        Route::get('/requests', [\App\Http\Controllers\Ess\EssRequestController::class, 'index'])->name('requests');
-        Route::post('/requests/overtime', [\App\Http\Controllers\Ess\EssRequestController::class, 'storeOvertime'])->name('requests.overtime');
-        Route::post('/requests/official-business', [\App\Http\Controllers\Ess\EssRequestController::class, 'storeOfficialBusiness'])->name('requests.official-business');
-        Route::post('/requests/cancel/{id}', [\App\Http\Controllers\Ess\EssRequestController::class, 'cancel'])->name('requests.cancel');
-
-        // 7. Payroll & Payslips
-        Route::get('/payroll', [\App\Http\Controllers\Ess\EssPayrollController::class, 'index'])->name('payroll');
-        Route::get('/payroll/payslip/{id}', [\App\Http\Controllers\Ess\EssPayrollController::class, 'showPayslip'])->name('payroll.payslip');
-        Route::get('/payroll/payslip/{id}/pdf', [\App\Http\Controllers\Ess\EssPayrollController::class, 'downloadPayslipPdf'])->name('payroll.payslip-pdf');
-    });
-
     // Credits & Support
     Route::prefix('credits')->name('credits.')->group(function () {
         Route::get('/tickets', [CreditsController::class, 'tickets'])->name('tickets');
         Route::get('/developers', [CreditsController::class, 'developers'])->name('developers');
     });
-});
 
+    // ==========================================
+    // DOLE-Aligned Employee Self-Service (ESS) Portal
+    // ==========================================
+    Route::prefix('ess')->name('ess.')->middleware('ess.employee')->group(function () {
+        Route::get('/dashboard', [\App\Http\Controllers\Ess\EssDashboardController::class, 'index'])->name('dashboard');
+        Route::get('/dtr', [\App\Http\Controllers\Ess\EssAttendanceController::class, 'dtrIndex'])->name('dtr');
+        Route::post('/dtr/correction', [\App\Http\Controllers\Ess\EssAttendanceController::class, 'submitCorrection'])->name('dtr.correction');
+        Route::get('/dtr/export-pdf', [\App\Http\Controllers\Ess\EssAttendanceController::class, 'exportPdf'])->name('dtr.export-pdf');
+
+        Route::get('/schedule', [\App\Http\Controllers\Ess\EssScheduleController::class, 'index'])->name('schedule');
+        Route::post('/schedule/swap', [\App\Http\Controllers\Ess\EssScheduleController::class, 'submitSwap'])->name('schedule.swap');
+        Route::post('/schedule/adjustment', [\App\Http\Controllers\Ess\EssScheduleController::class, 'submitAdjustment'])->name('schedule.adjustment');
+
+        Route::get('/leave', [\App\Http\Controllers\Ess\EssLeaveController::class, 'index'])->name('leave');
+        Route::post('/leave/store', [\App\Http\Controllers\Ess\EssLeaveController::class, 'store'])->name('leave.store');
+        Route::post('/leave/{id}/cancel', [\App\Http\Controllers\Ess\EssLeaveController::class, 'cancel'])->name('leave.cancel');
+
+        Route::get('/requests', [\App\Http\Controllers\Ess\EssRequestController::class, 'index'])->name('requests');
+        Route::post('/requests/overtime', [\App\Http\Controllers\Ess\EssRequestController::class, 'storeOvertime'])->name('requests.overtime');
+        Route::post('/requests/official-business', [\App\Http\Controllers\Ess\EssRequestController::class, 'storeOfficialBusiness'])->name('requests.official-business');
+        Route::post('/requests/undertime', [\App\Http\Controllers\Ess\EssRequestController::class, 'storeUndertime'])->name('requests.undertime');
+        Route::post('/requests/{id}/cancel', [\App\Http\Controllers\Ess\EssRequestController::class, 'cancel'])->name('requests.cancel');
+        Route::get('/requests/{id}/timeline', [\App\Http\Controllers\Ess\EssRequestController::class, 'timeline'])->name('requests.timeline');
+
+        Route::get('/payroll', [\App\Http\Controllers\Ess\EssPayrollController::class, 'index'])->name('payroll');
+        Route::get('/payroll/{id}/pdf', [\App\Http\Controllers\Ess\EssPayrollController::class, 'exportPdf'])->name('payroll.pdf');
+        Route::post('/payroll/{id}/inquiry', [\App\Http\Controllers\Ess\EssPayrollController::class, 'submitInquiry'])->name('payroll.inquiry');
+
+        Route::get('/profile', [\App\Http\Controllers\Ess\EssProfileController::class, 'index'])->name('profile');
+        Route::post('/profile/update-contact', [\App\Http\Controllers\Ess\EssProfileController::class, 'updateContact'])->name('profile.update-contact');
+        Route::post('/profile/coe-request', [\App\Http\Controllers\Ess\EssProfileController::class, 'coeRequest'])->name('profile.coe-request');
+        Route::post('/profile/upload-document', [\App\Http\Controllers\Ess\EssProfileController::class, 'uploadDocument'])->name('profile.upload-document');
+
+        Route::get('/helpdesk', [\App\Http\Controllers\Ess\EssHelpdeskController::class, 'index'])->name('helpdesk');
+        Route::post('/helpdesk/ticket', [\App\Http\Controllers\Ess\EssHelpdeskController::class, 'storeTicket'])->name('helpdesk.ticket');
+        Route::post('/helpdesk/ticket/{id}/reply', [\App\Http\Controllers\Ess\EssHelpdeskController::class, 'replyTicket'])->name('helpdesk.reply');
+    });
+});
