@@ -3,137 +3,103 @@
 namespace App\Http\Controllers\Ess;
 
 use App\Http\Controllers\Controller;
-use App\Models\Hr\EmergencyContact;
-use App\Models\Hr\EssRequest;
-use App\Models\Hr\EssRequestLog;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\View\View;
+use Illuminate\Support\Str;
+use App\Models\Ess\EssRequest;
+use App\Models\Hr\EmployeeDocument;
 
 class EssProfileController extends Controller
 {
-    public function show(Request $request): View
+    public function index(Request $request)
     {
-        $user = Auth::user();
-        $employee = $user->employee;
+        $employee = $request->user()->employee->load(['company', 'department', 'position']);
+        $empId = $employee->getRawOriginal('employee_id') ?? $employee->getKey();
 
-        if (!$employee) {
-            return view('ess.no-employee-profile', compact('user'));
-        }
+        $documents = EmployeeDocument::where('employee_document_employee_id', $empId)
+            ->orderByDesc('employee_document_id')
+            ->get();
 
-        $employee->load([
-            'department',
-            'branch',
-            'company',
-            'position',
-            'supervisor',
-            'emergencyContacts',
-            'documents',
-            'employmentHistories',
-        ]);
+        $coeRequests = EssRequest::where('employee_id', $empId)
+            ->where('request_type', 'COE_REQUEST')
+            ->orderByDesc('id')
+            ->get();
 
-        return view('ess.profile', compact('user', 'employee'));
+        return view('ess.profile.index', compact('employee', 'documents', 'coeRequests'));
     }
 
-    public function updateContact(Request $request): RedirectResponse
+    public function updateContact(Request $request)
     {
-        $user = Auth::user();
-        $employee = $user->employee;
-
-        if (!$employee) {
-            abort(403, 'No employee record linked.');
-        }
+        $employee = $request->user()->employee;
 
         $validated = $request->validate([
-            'mobile_number' => 'nullable|string|max:30',
-            'telephone_number' => 'nullable|string|max:30',
-            'email' => 'nullable|email|max:100',
-            'address' => 'nullable|string|max:255',
-            'permanent_address' => 'nullable|string|max:255',
+            'phone_number' => 'nullable|string|max:20',
+            'personal_email' => 'nullable|email|max:100',
+            'emergency_contact_name' => 'nullable|string|max:100',
+            'emergency_contact_phone' => 'nullable|string|max:20',
+            'emergency_contact_relationship' => 'nullable|string|max:50',
+            'current_address' => 'nullable|string|max:255',
         ]);
 
         $employee->update($validated);
 
-        return redirect()->back()->with('success', 'Contact information updated successfully.');
+        return redirect()->route('ess.profile')->with('success', 'Your contact and emergency details have been updated successfully.');
     }
 
-    public function storeEmergencyContact(Request $request): RedirectResponse
+    public function coeRequest(Request $request)
     {
-        $user = Auth::user();
-        $employee = $user->employee;
+        $employee = $request->user()->employee;
+        $empId = $employee->getRawOriginal('employee_id') ?? $employee->getKey();
 
-        if (!$employee) {
-            abort(403, 'No employee record linked.');
-        }
-
-        $validated = $request->validate([
-            'name' => 'required|string|max:100',
-            'relationship' => 'required|string|max:50',
-            'phone' => 'required|string|max:30',
-            'address' => 'nullable|string|max:255',
-        ]);
-
-        $validated['employee_id'] = $employee->employee_id;
-        EmergencyContact::create($validated);
-
-        return redirect()->back()->with('success', 'Emergency contact added successfully.');
-    }
-
-    public function destroyEmergencyContact(int $id): RedirectResponse
-    {
-        $user = Auth::user();
-        $employee = $user->employee;
-
-        if (!$employee) {
-            abort(403, 'No employee record linked.');
-        }
-
-        $contact = EmergencyContact::where('id', $id)
-            ->where('employee_id', $employee->employee_id)
-            ->firstOrFail();
-
-        $contact->delete();
-
-        return redirect()->back()->with('success', 'Emergency contact removed.');
-    }
-
-    public function requestCoe(Request $request): RedirectResponse
-    {
-        $user = Auth::user();
-        $employee = $user->employee;
-
-        if (!$employee) {
-            abort(403, 'No employee record linked.');
-        }
-
-        $validated = $request->validate([
+        $request->validate([
             'purpose' => 'required|string|max:255',
-            'with_compensation' => 'nullable|boolean',
+            'addressed_to' => 'nullable|string|max:255',
+            'include_compensation' => 'nullable|in:0,1',
         ]);
 
-        $reqNumber = EssRequest::generateRequestNumber('COE');
-
-        $essReq = EssRequest::create([
-            'request_number' => $reqNumber,
-            'employee_id' => $employee->employee_id,
+        $essRequest = EssRequest::create([
+            'request_number' => 'COE-' . date('Ymd') . '-' . strtoupper(Str::random(5)),
+            'employee_id' => $empId,
             'request_type' => 'COE_REQUEST',
-            'status' => 'PENDING_APPROVAL',
             'start_date' => now()->toDateString(),
-            'reason' => $validated['purpose'],
-            'metadata' => [
-                'with_compensation' => $request->boolean('with_compensation'),
+            'end_date' => now()->toDateString(),
+            'reason' => $request->purpose,
+            'details' => [
+                'purpose' => $request->purpose,
+                'addressed_to' => $request->addressed_to ?? 'To Whom It May Concern',
+                'include_compensation' => (bool)$request->include_compensation,
             ],
-            'current_approver_id' => $employee->supervisor?->user_id,
+            'status' => 'PENDING',
         ]);
 
-        EssRequestLog::create([
-            'ess_request_id' => $essReq->id,
-            'action' => 'SUBMITTED',
-            'acted_by' => $user->id,
-            'remarks' => "Requested Certificate of Employment (Purpose: {$validated['purpose']})",
+        return redirect()->route('ess.profile')->with('success', 'Certificate of Employment (COE) request #' . $essRequest->request_number . ' submitted successfully.');
+    }
+
+    public function uploadDocument(Request $request)
+    {
+        $employee = $request->user()->employee;
+        $empId = $employee->getRawOriginal('employee_id') ?? $employee->getKey();
+
+        $request->validate([
+            'document_type' => 'required|string|max:100',
+            'document_name' => 'required|string|max:255',
+            'document_file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
         ]);
 
-        return redirect()->back()->with('success', "Certificate of Employment request #{$reqNumber} submitted.");
+        $file = $request->file('document_file');
+        $fileName = 'doc_' . $empId . '_' . time() . '.' . $file->getClientOriginalExtension();
+        $path = $file->storeAs('uploads/ess_documents', $fileName, 'public');
+
+        EmployeeDocument::create([
+            'employee_document_employee_id' => $empId,
+            'employee_document_document_type' => $request->document_type,
+            'employee_document_document_name' => $request->document_name,
+            'employee_document_file_path' => $path,
+            'employee_document_category' => '201_FILE',
+            'employee_document_issue_date' => now()->toDateString(),
+            'employee_document_status' => 'Pending Verification',
+            'employee_document_uploaded_by' => $request->user()->id,
+        ]);
+
+        return redirect()->route('ess.profile')->with('success', 'Document uploaded successfully to your 201 Digital File for HR verification.');
     }
 }

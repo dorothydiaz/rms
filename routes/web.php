@@ -497,6 +497,7 @@ Route::middleware('auth')->group(function () {
 
         Route::get('/helpdesk', [\App\Http\Controllers\Ess\EssHelpdeskController::class, 'index'])->name('helpdesk');
         Route::post('/helpdesk/ticket', [\App\Http\Controllers\Ess\EssHelpdeskController::class, 'storeTicket'])->name('helpdesk.ticket');
+        Route::get('/helpdesk/ticket/{id}', [\App\Http\Controllers\Ess\EssHelpdeskController::class, 'showTicket'])->name('helpdesk.ticket.show');
         Route::post('/helpdesk/ticket/{id}/reply', [\App\Http\Controllers\Ess\EssHelpdeskController::class, 'replyTicket'])->name('helpdesk.reply');
     });
 });
