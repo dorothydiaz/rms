@@ -485,7 +485,9 @@ Route::middleware('auth')->group(function () {
         Route::get('/requests/{id}/timeline', [\App\Http\Controllers\Ess\EssRequestController::class, 'timeline'])->name('requests.timeline');
 
         Route::get('/payroll', [\App\Http\Controllers\Ess\EssPayrollController::class, 'index'])->name('payroll');
+        Route::get('/payroll/records/{id}/pdf', [\App\Http\Controllers\Ess\EssPayrollController::class, 'exportPdf'])->name('payroll.record-pdf');
         Route::get('/payroll/{id}/pdf', [\App\Http\Controllers\Ess\EssPayrollController::class, 'exportPdf'])->name('payroll.pdf');
+        Route::post('/payroll/dispute', [\App\Http\Controllers\Ess\EssPayrollController::class, 'submitDispute'])->name('payroll.dispute');
         Route::post('/payroll/{id}/inquiry', [\App\Http\Controllers\Ess\EssPayrollController::class, 'submitInquiry'])->name('payroll.inquiry');
 
         Route::get('/profile', [\App\Http\Controllers\Ess\EssProfileController::class, 'index'])->name('profile');

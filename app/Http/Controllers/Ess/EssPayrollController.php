@@ -3,101 +3,96 @@
 namespace App\Http\Controllers\Ess;
 
 use App\Http\Controllers\Controller;
-use App\Models\Hr\PayrollRecord;
-use App\Services\Hr\DoleComplianceService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\View\View;
+use Illuminate\Support\Str;
+use App\Models\Hr\PayrollRecord;
+use App\Models\Hr\PayrollPeriod;
+use App\Models\Ess\EssRequest;
 
 class EssPayrollController extends Controller
 {
-    public function __construct(
-        protected DoleComplianceService $doleService
-    ) {}
-
-    public function index(Request $request): View
+    public function index(Request $request)
     {
-        $user = Auth::user();
-        $employee = $user->employee;
+        $employee = $request->user()->employee;
+        $empId = $employee->getRawOriginal('employee_id') ?? $employee->getKey();
 
-        if (!$employee) {
-            return view('ess.no-employee-profile', compact('user'));
-        }
-
-        $records = PayrollRecord::with('payrollPeriod')
-            ->where(function ($q) use ($employee) {
-                $q->where('employee_id', $employee->employee_id)
-                  ->orWhere('employee_id', $employee->id);
-            })
-            ->orderBy('id', 'desc')
+        $records = PayrollRecord::with(['payrollPeriod', 'adjustments'])
+            ->where('employee_id', $empId)
+            ->orderByDesc('payroll_record_id')
             ->paginate(12);
 
-        // YTD summary calculations
-        $currentYear = date('Y');
-        $ytdRecords = PayrollRecord::where(function ($q) use ($employee) {
-                $q->where('employee_id', $employee->employee_id)
-                  ->orWhere('employee_id', $employee->id);
-            })
-            ->whereHas('payrollPeriod', function ($q) use ($currentYear) {
-                $q->whereYear('end_date', $currentYear);
-            })
-            ->get();
+        $latestPayslip = $records->first();
 
-        $ytdGross = $ytdRecords->sum('gross_pay');
-        $ytdNet = $ytdRecords->sum('net_pay');
-        $ytdDeductions = $ytdRecords->sum('total_deductions');
-        $ytdTax = $ytdRecords->sum('withholding_tax');
-        $ytdSss = $ytdRecords->sum('sss_employee');
-        $ytdPhilhealth = $ytdRecords->sum('philhealth_employee');
-        $ytdPagibig = $ytdRecords->sum('pagibig_employee');
+        // Calculate Year-to-Date (YTD) Summary for Form 2316 and DOLE Itemization
+        $ytd = PayrollRecord::where('employee_id', $empId)
+            ->whereYear('created_at', now()->year)
+            ->selectRaw('
+                COALESCE(SUM(payroll_record_gross_pay), 0) as total_gross,
+                COALESCE(SUM(payroll_record_net_pay), 0) as total_net,
+                COALESCE(SUM(payroll_record_withholding_tax), 0) as total_tax,
+                COALESCE(SUM(payroll_record_sss_employee + payroll_record_philhealth_employee + payroll_record_pagibig_employee), 0) as total_statutory,
+                COALESCE(SUM(payroll_record_total_deductions), 0) as total_deductions
+            ')->first();
 
-        // DOLE 13th-month pay accrued: Total basic salary earned in the year / 12 (PD 851)
-        $accrued13thMonth = round($ytdRecords->sum('basic_pay') / 12.0, 2);
-
-        return view('ess.payroll', compact(
-            'user',
-            'employee',
-            'records',
-            'ytdGross',
-            'ytdNet',
-            'ytdDeductions',
-            'ytdTax',
-            'ytdSss',
-            'ytdPhilhealth',
-            'ytdPagibig',
-            'accrued13thMonth'
-        ));
+        return view('ess.payroll.index', compact('employee', 'records', 'latestPayslip', 'ytd'));
     }
 
-    public function showPayslip(int $id): View
+    public function exportPdf(Request $request, $id)
     {
-        $user = Auth::user();
-        $employee = $user->employee;
+        $employee = $request->user()->employee;
+        $empId = $employee->getRawOriginal('employee_id') ?? $employee->getKey();
 
-        $record = PayrollRecord::with(['payrollPeriod', 'employee.department', 'employee.branch', 'employee.company'])
-            ->findOrFail($id);
+        $record = PayrollRecord::with(['payrollPeriod', 'employee.company', 'employee.department', 'employee.position', 'adjustments'])
+            ->where('payroll_record_id', $id)
+            ->firstOrFail();
 
-        // IDOR Protection: Employee can strictly only view their own payslip
-        if (!$employee || $record->employee_id !== $employee->employee_id) {
-            abort(403, 'Unauthorized access to confidential payslip record.');
+        // IDOR security check
+        if ((int)$record->employee_id !== (int)$empId) {
+            abort(403, 'Unauthorized access to payslip record.');
         }
 
-        return view('ess.payslip-detail', compact('user', 'employee', 'record'));
+        return view('ess.payroll.payslip_pdf', compact('employee', 'record'));
     }
 
-    public function downloadPayslipPdf(int $id): View
+    public function submitDispute(Request $request)
     {
-        $user = Auth::user();
-        $employee = $user->employee;
+        $request->validate([
+            'payroll_record_id' => 'required|integer|exists:hr_payroll_records,payroll_record_id',
+            'dispute_category' => 'required|string|max:100',
+            'details' => 'required|string|max:2000',
+        ]);
 
-        $record = PayrollRecord::with(['payrollPeriod', 'employee.department', 'employee.branch', 'employee.company'])
-            ->findOrFail($id);
+        $employee = $request->user()->employee;
+        $empId = $employee->getRawOriginal('employee_id') ?? $employee->getKey();
 
-        // IDOR Protection
-        if (!$employee || $record->employee_id !== $employee->employee_id) {
-            abort(403, 'Unauthorized access to confidential payslip record.');
+        $record = PayrollRecord::with('payrollPeriod')->findOrFail($request->payroll_record_id);
+
+        if ((int)$record->employee_id !== (int)$empId) {
+            abort(403, 'Unauthorized payroll dispute submission.');
         }
 
-        return view('ess.payslip-print', compact('user', 'employee', 'record'));
+        $essRequest = EssRequest::create([
+            'request_number' => 'DISP-' . date('Ymd') . '-' . strtoupper(Str::random(5)),
+            'employee_id' => $empId,
+            'request_type' => 'PAYROLL_DISPUTE',
+            'start_date' => now()->toDateString(),
+            'end_date' => now()->toDateString(),
+            'reason' => $request->details,
+            'details' => [
+                'payroll_record_id' => $record->payroll_record_id,
+                'period_name' => $record->payrollPeriod?->name ?? 'Cutoff #' . $record->payroll_period_id,
+                'dispute_category' => $request->dispute_category,
+                'explanation' => $request->details,
+            ],
+            'status' => 'PENDING',
+        ]);
+
+        return redirect()->route('ess.payroll')->with('success', 'Payroll dispute inquiry #' . $essRequest->request_number . ' submitted successfully. Our payroll team will review the calculation.');
+    }
+
+    public function submitInquiry(Request $request, $id)
+    {
+        $request->merge(['payroll_record_id' => $id]);
+        return $this->submitDispute($request);
     }
 }
