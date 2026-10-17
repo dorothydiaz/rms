@@ -4,45 +4,45 @@
 
 @section('content')
 <div class="ess-requests-container">
-    <!-- Header Card -->
-    <div class="ess-card">
-        <div class="ess-card-accent-strip"></div>
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;">
-            <div>
-                <h2 style="font-family:'Outfit',sans-serif;font-size:20px;font-weight:800;margin:0;color:var(--ess-text-main);">
-                    Centralized Request Tracking Hub
-                </h2>
-                <div style="font-size:12.5px;color:var(--ess-text-secondary);margin-top:4px;">
-                    Track approvals for Overtime, Official Business, Undertime, DTR Corrections, and Shift Swaps
-                </div>
-            </div>
+    <!-- Standard HR Page Header -->
+    <div class="hr-page-header" style="margin-bottom: 20px;">
+        <div>
+            <h1 class="hr-page-title">
+                <i class="ph ph-files"></i>
+                <span>Centralized Request Tracking Hub</span>
+            </h1>
+            <p class="hr-page-subtitle">Track approvals for Overtime, Official Business, Undertime, DTR Corrections, and Shift Swaps</p>
+        </div>
 
-            <div style="display:flex;align-items:center;gap:10px;">
-                <button type="button" class="ess-quick-btn" onclick="openFileOvertimeModal()">
-                    <i class="ph ph-clock-afternoon"></i>
-                    <span>File Overtime</span>
-                </button>
-                <button type="button" class="ess-quick-btn" style="background:#0f172a;box-shadow:none;" onclick="openFileObModal()">
-                    <i class="ph ph-briefcase"></i>
-                    <span>File OB Pass</span>
-                </button>
-            </div>
+        <div class="hr-page-actions">
+            <button type="button" class="hr-btn hr-btn-primary" onclick="openFileOvertimeModal()">
+                <i class="ph ph-clock-afternoon"></i>
+                <span>File Overtime</span>
+            </button>
+            <button type="button" class="hr-btn hr-btn-secondary" onclick="openFileObModal()">
+                <i class="ph ph-briefcase"></i>
+                <span>File OB Pass</span>
+            </button>
         </div>
     </div>
 
-    <!-- Filter Tabs -->
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:20px;overflow-x:auto;padding-bottom:4px;">
-        <a href="{{ route('ess.requests', ['status' => 'ALL']) }}" class="ess-badge {{ $statusFilter === 'ALL' ? 'ess-badge-info' : '' }}" style="padding:8px 16px;font-size:12px;text-decoration:none;background:{{ $statusFilter === 'ALL' ? 'var(--ess-primary-gradient)' : '#fff' }};color:{{ $statusFilter === 'ALL' ? '#fff' : 'var(--ess-text-secondary)' }};border:1px solid var(--ess-border);">
-            All Submissions ({{ $counts['ALL'] }})
+    <!-- Filter Tabs (HR Tab Style) -->
+    <div class="hr-tabs-wrapper" style="margin-bottom:20px;border-radius:12px;padding:4px 6px;">
+        <a href="{{ route('ess.requests', ['status' => 'ALL']) }}" class="hr-tab-item {{ $statusFilter === 'ALL' ? 'active' : '' }}">
+            <i class="ph ph-tray"></i>
+            <span>All Submissions ({{ $counts['ALL'] }})</span>
         </a>
-        <a href="{{ route('ess.requests', ['status' => 'PENDING']) }}" class="ess-badge" style="padding:8px 16px;font-size:12px;text-decoration:none;background:{{ $statusFilter === 'PENDING' ? '#d97706' : '#fff' }};color:{{ $statusFilter === 'PENDING' ? '#fff' : '#d97706' }};border:1px solid rgba(217,119,6,0.3);">
-            Pending Approval ({{ $counts['PENDING'] }})
+        <a href="{{ route('ess.requests', ['status' => 'PENDING']) }}" class="hr-tab-item {{ $statusFilter === 'PENDING' ? 'active' : '' }}">
+            <i class="ph ph-hourglass-medium"></i>
+            <span>Pending Review ({{ $counts['PENDING'] }})</span>
         </a>
-        <a href="{{ route('ess.requests', ['status' => 'APPROVED']) }}" class="ess-badge" style="padding:8px 16px;font-size:12px;text-decoration:none;background:{{ $statusFilter === 'APPROVED' ? '#059669' : '#fff' }};color:{{ $statusFilter === 'APPROVED' ? '#fff' : '#059669' }};border:1px solid rgba(5,150,105,0.3);">
-            Approved ({{ $counts['APPROVED'] }})
+        <a href="{{ route('ess.requests', ['status' => 'APPROVED']) }}" class="hr-tab-item {{ $statusFilter === 'APPROVED' ? 'active' : '' }}">
+            <i class="ph ph-check-circle"></i>
+            <span>Approved ({{ $counts['APPROVED'] }})</span>
         </a>
-        <a href="{{ route('ess.requests', ['status' => 'REJECTED']) }}" class="ess-badge" style="padding:8px 16px;font-size:12px;text-decoration:none;background:{{ $statusFilter === 'REJECTED' ? '#dc2626' : '#fff' }};color:{{ $statusFilter === 'REJECTED' ? '#fff' : '#dc2626' }};border:1px solid rgba(220,38,38,0.3);">
-            Rejected ({{ $counts['REJECTED'] }})
+        <a href="{{ route('ess.requests', ['status' => 'REJECTED']) }}" class="hr-tab-item {{ $statusFilter === 'REJECTED' ? 'active' : '' }}">
+            <i class="ph ph-x-circle"></i>
+            <span>Rejected ({{ $counts['REJECTED'] }})</span>
         </a>
     </div>
 

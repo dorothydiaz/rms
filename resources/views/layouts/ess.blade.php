@@ -17,6 +17,9 @@
     <!-- Phosphor Icons -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
+    <!-- Custom RMS Stylesheet (HR Tokens, Bento Layout, Buttons, Badges, Tables) -->
+    <link rel="stylesheet" href="{{ asset('assets/css/styles.css') }}?v={{ file_exists(public_path('assets/css/styles.css')) ? filemtime(public_path('assets/css/styles.css')) : '1.0' }}">
+
     <!-- ESS Portal Dedicated Stylesheet -->
     <link rel="stylesheet" href="{{ asset('assets/css/ess-portal.css') }}?v={{ file_exists(public_path('assets/css/ess-portal.css')) ? filemtime(public_path('assets/css/ess-portal.css')) : time() }}">
 
@@ -46,37 +49,37 @@
                 </a>
             </div>
 
-            <!-- Desktop Navigation Links -->
-            <nav class="ess-nav">
-                <a href="{{ route('ess.dashboard') }}" class="ess-nav-link {{ request()->routeIs('ess.dashboard') ? 'active' : '' }}">
+            <!-- Desktop Navigation Links (HR Tab Style) -->
+            <nav class="ess-nav hr-tabs-wrapper" style="margin:0;box-shadow:none;background:rgba(241,245,249,0.7);padding:4px 6px;">
+                <a href="{{ route('ess.dashboard') }}" class="hr-tab-item {{ request()->routeIs('ess.dashboard') ? 'active' : '' }}">
                     <i class="ph ph-squares-four"></i>
                     <span>Dashboard</span>
                 </a>
-                <a href="{{ route('ess.dtr') }}" class="ess-nav-link {{ request()->routeIs('ess.dtr*') ? 'active' : '' }}">
+                <a href="{{ route('ess.dtr') }}" class="hr-tab-item {{ request()->routeIs('ess.dtr*') ? 'active' : '' }}">
                     <i class="ph ph-clock"></i>
                     <span>My DTR</span>
                 </a>
-                <a href="{{ route('ess.schedule') }}" class="ess-nav-link {{ request()->routeIs('ess.schedule*') ? 'active' : '' }}">
+                <a href="{{ route('ess.schedule') }}" class="hr-tab-item {{ request()->routeIs('ess.schedule*') ? 'active' : '' }}">
                     <i class="ph ph-calendar"></i>
                     <span>Schedule</span>
                 </a>
-                <a href="{{ route('ess.leave') }}" class="ess-nav-link {{ request()->routeIs('ess.leave*') ? 'active' : '' }}">
+                <a href="{{ route('ess.leave') }}" class="hr-tab-item {{ request()->routeIs('ess.leave*') ? 'active' : '' }}">
                     <i class="ph ph-airplane-tilt"></i>
                     <span>Leaves</span>
                 </a>
-                <a href="{{ route('ess.requests') }}" class="ess-nav-link {{ request()->routeIs('ess.requests*') ? 'active' : '' }}">
+                <a href="{{ route('ess.requests') }}" class="hr-tab-item {{ request()->routeIs('ess.requests*') ? 'active' : '' }}">
                     <i class="ph ph-files"></i>
                     <span>Requests</span>
                 </a>
-                <a href="{{ route('ess.payroll') }}" class="ess-nav-link {{ request()->routeIs('ess.payroll*') ? 'active' : '' }}">
+                <a href="{{ route('ess.payroll') }}" class="hr-tab-item {{ request()->routeIs('ess.payroll*') ? 'active' : '' }}">
                     <i class="ph ph-receipt"></i>
                     <span>Payslips</span>
                 </a>
-                <a href="{{ route('ess.profile') }}" class="ess-nav-link {{ request()->routeIs('ess.profile*') ? 'active' : '' }}">
+                <a href="{{ route('ess.profile') }}" class="hr-tab-item {{ request()->routeIs('ess.profile*') ? 'active' : '' }}">
                     <i class="ph ph-identification-badge"></i>
                     <span>201 File</span>
                 </a>
-                <a href="{{ route('ess.helpdesk') }}" class="ess-nav-link {{ request()->routeIs('ess.helpdesk*') ? 'active' : '' }}">
+                <a href="{{ route('ess.helpdesk') }}" class="hr-tab-item {{ request()->routeIs('ess.helpdesk*') ? 'active' : '' }}">
                     <i class="ph ph-chats-circle"></i>
                     <span>Helpdesk</span>
                 </a>
@@ -84,13 +87,13 @@
 
             <!-- Actions & User Profile -->
             <div class="ess-actions">
-                <a href="{{ route('ess.requests') }}" class="ess-quick-btn" title="Submit a new request">
+                <a href="{{ route('ess.requests') }}" class="hr-btn hr-btn-primary" title="Submit a new request" style="padding:7px 14px;font-size:12.5px;">
                     <i class="ph ph-plus-circle" style="font-size:16px;"></i>
                     <span>New Request</span>
                 </a>
 
                 @if(Auth::user()->isSuperAdmin() || Auth::user()->isHrAdmin() || Auth::user()->isManager())
-                <a href="{{ route('dashboard') }}" class="ess-back-erp-btn" title="Return to Management Console">
+                <a href="{{ route('dashboard') }}" class="hr-btn hr-btn-secondary" title="Return to Management Console" style="padding:7px 12px;font-size:12px;">
                     <i class="ph ph-arrows-left-right" style="color:var(--ess-primary);"></i>
                     <span>ERP Console</span>
                 </a>

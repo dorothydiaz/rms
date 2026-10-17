@@ -4,197 +4,197 @@
 
 @section('content')
 <div class="ess-payroll-container">
-    <div class="ess-page-header">
+    <!-- Standard HR Page Header -->
+    <div class="hr-page-header" style="margin-bottom: 20px;">
         <div>
-            <h1 class="ess-page-title">Payroll & Itemized Payslips</h1>
-            <p class="ess-page-subtitle">DOLE Labor Advisory No. 26-20 compliant compensation statements, statutory contributions, and dispute filings.</p>
+            <h1 class="hr-page-title">
+                <i class="ph ph-receipt"></i>
+                <span>Payroll & Itemized Payslips</span>
+            </h1>
+            <p class="hr-page-subtitle">DOLE Labor Advisory No. 26-20 compliant compensation statements, statutory contributions, and dispute filings.</p>
         </div>
-        <div class="ess-page-actions">
+        <div class="hr-page-actions">
             @if($latestPayslip)
-            <a href="{{ route('ess.payroll.pdf', $latestPayslip->payroll_record_id) }}" target="_blank" class="ess-btn ess-btn-secondary">
-                <i class="bi bi-printer"></i> Print Latest Payslip
+            <a href="{{ route('ess.payroll.pdf', $latestPayslip->payroll_record_id) }}" target="_blank" class="hr-btn hr-btn-secondary">
+                <i class="ph ph-printer"></i>
+                <span>Print Latest Payslip</span>
             </a>
             @endif
         </div>
     </div>
 
-    <!-- YTD & Statutory Summary Cards -->
-    <div class="ess-stat-grid" style="margin-bottom: 2rem;">
-        <div class="ess-stat-card">
-            <div class="ess-stat-icon" style="background: rgba(16, 185, 129, 0.12); color: #059669;">
-                <i class="bi bi-cash-stack"></i>
+    <!-- YTD & Statutory Summary Cards (HR Bento Style) -->
+    <div class="ess-grid-4">
+        <div class="ess-kpi-card">
+            <div class="hr-bento-icon-box green">
+                <i class="ph ph-wallet"></i>
             </div>
-            <div>
-                <span class="ess-stat-label">Latest Net Pay</span>
-                <h3 class="ess-stat-value" style="color: #059669;">₱{{ number_format($latestPayslip->net_pay ?? 0, 2) }}</h3>
-                <span style="font-size: 0.75rem; color: #64748b;">
+            <div class="ess-kpi-info">
+                <span class="ess-kpi-label">Latest Net Pay</span>
+                <span class="ess-kpi-val" style="color: #059669;">₱{{ number_format($latestPayslip->net_pay ?? 0, 2) }}</span>
+                <span style="font-size: 11px; color: #64748b; margin-top: 4px;">
                     {{ $latestPayslip->payrollPeriod?->name ?? 'No cutoff finalized' }}
                 </span>
             </div>
         </div>
 
-        <div class="ess-stat-card">
-            <div class="ess-stat-icon" style="background: rgba(37, 99, 235, 0.12); color: #2563eb;">
-                <i class="bi bi-graph-up-arrow"></i>
+        <div class="ess-kpi-card">
+            <div class="hr-bento-icon-box blue">
+                <i class="ph ph-trend-up"></i>
             </div>
-            <div>
-                <span class="ess-stat-label">{{ now()->year }} YTD Gross Income</span>
-                <h3 class="ess-stat-value">₱{{ number_format($ytd->total_gross ?? 0, 2) }}</h3>
-                <span style="font-size: 0.75rem; color: #64748b;">Taxable + Non-taxable earnings</span>
-            </div>
-        </div>
-
-        <div class="ess-stat-card">
-            <div class="ess-stat-icon" style="background: rgba(139, 92, 246, 0.12); color: #7c3aed;">
-                <i class="bi bi-shield-check"></i>
-            </div>
-            <div>
-                <span class="ess-stat-label">YTD Statutory Contributions</span>
-                <h3 class="ess-stat-value">₱{{ number_format($ytd->total_statutory ?? 0, 2) }}</h3>
-                <span style="font-size: 0.75rem; color: #64748b;">SSS + PhilHealth + Pag-IBIG</span>
+            <div class="ess-kpi-info">
+                <span class="ess-kpi-label">{{ now()->year }} YTD Gross Income</span>
+                <span class="ess-kpi-val">₱{{ number_format($ytd->total_gross ?? 0, 2) }}</span>
+                <span style="font-size: 11px; color: #64748b; margin-top: 4px;">Taxable + Non-taxable</span>
             </div>
         </div>
 
-        <div class="ess-stat-card">
-            <div class="ess-stat-icon" style="background: rgba(245, 158, 11, 0.12); color: #d97706;">
-                <i class="bi bi-receipt"></i>
+        <div class="ess-kpi-card">
+            <div class="hr-bento-icon-box purple">
+                <i class="ph ph-shield-check"></i>
             </div>
-            <div>
-                <span class="ess-stat-label">YTD Withholding Tax</span>
-                <h3 class="ess-stat-value">₱{{ number_format($ytd->total_tax ?? 0, 2) }}</h3>
-                <span style="font-size: 0.75rem; color: #64748b;">BIR TRAIN Law Table</span>
+            <div class="ess-kpi-info">
+                <span class="ess-kpi-label">YTD Statutory</span>
+                <span class="ess-kpi-val">₱{{ number_format($ytd->total_statutory ?? 0, 2) }}</span>
+                <span style="font-size: 11px; color: #64748b; margin-top: 4px;">SSS + PhilHealth + Pag-IBIG</span>
+            </div>
+        </div>
+
+        <div class="ess-kpi-card">
+            <div class="hr-bento-icon-box orange">
+                <i class="ph ph-receipt"></i>
+            </div>
+            <div class="ess-kpi-info">
+                <span class="ess-kpi-label">YTD Withholding Tax</span>
+                <span class="ess-kpi-val">₱{{ number_format($ytd->total_tax ?? 0, 2) }}</span>
+                <span style="font-size: 11px; color: #64748b; margin-top: 4px;">BIR TRAIN Law Table</span>
             </div>
         </div>
     </div>
 
     @if($latestPayslip)
     <!-- Latest Payslip DOLE Detailed Itemization Card -->
-    <div class="ess-card" style="margin-bottom: 2rem; border-top: 4px solid #2563eb;">
-        <div class="ess-card-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 1rem;">
+    <div class="ess-card" style="margin-bottom: 22px;">
+        <div class="ess-card-accent-strip"></div>
+        <div class="ess-card-header" style="border-bottom: 1px solid var(--ess-border); padding-bottom: 14px;">
             <div>
-                <h2 style="font-size: 1.15rem; font-weight: 700; color: #1e293b; margin: 0;">
+                <h2 style="font-family:'Outfit',sans-serif;font-size:18px;font-weight:800;color:var(--ess-text-main);margin:0;">
                     Latest Payslip Breakdown: {{ $latestPayslip->payrollPeriod?->name }}
                 </h2>
-                <span style="font-size: 0.825rem; color: #64748b;">
-                    Cutoff: {{ $latestPayslip->payrollPeriod?->start_date?->format('M d, Y') }} - {{ $latestPayslip->payrollPeriod?->end_date?->format('M d, Y') }} &bull; Payout Date: {{ $latestPayslip->payrollPeriod?->payout_date?->format('M d, Y') ?? 'N/A' }}
-                </span>
+                <div style="font-size:12.5px;color:var(--ess-text-muted);margin-top:4px;">
+                    Cutoff: {{ $latestPayslip->payrollPeriod?->start_date?->format('M d, Y') }} – {{ $latestPayslip->payrollPeriod?->end_date?->format('M d, Y') }} &bull; Payout Date: {{ $latestPayslip->payrollPeriod?->payout_date?->format('M d, Y') ?? 'N/A' }}
+                </div>
             </div>
-            <div style="display: flex; gap: 0.5rem;">
-                <button type="button" class="ess-btn ess-btn-secondary" style="font-size: 0.85rem; padding: 0.4rem 0.8rem;" onclick="openDisputeModal({{ $latestPayslip->payroll_record_id }}, '{{ $latestPayslip->payrollPeriod?->name }}')">
-                    <i class="bi bi-question-circle"></i> File Dispute
+            <div style="display:flex;gap:8px;">
+                <button type="button" class="hr-btn hr-btn-secondary" style="font-size:12px;padding:6px 12px;" onclick="openDisputeModal({{ $latestPayslip->payroll_record_id }}, '{{ $latestPayslip->payrollPeriod?->name }}')">
+                    <i class="ph ph-question"></i> File Dispute
                 </button>
-                <a href="{{ route('ess.payroll.pdf', $latestPayslip->payroll_record_id) }}" target="_blank" class="ess-btn ess-btn-primary" style="font-size: 0.85rem; padding: 0.4rem 0.8rem;">
-                    <i class="bi bi-file-earmark-pdf"></i> Download PDF
+                <a href="{{ route('ess.payroll.pdf', $latestPayslip->payroll_record_id) }}" target="_blank" class="hr-btn hr-btn-primary" style="font-size:12px;padding:6px 12px;">
+                    <i class="ph ph-file-pdf"></i> Download PDF
                 </a>
             </div>
         </div>
 
-        <div style="padding-top: 1.25rem;">
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem;">
+        <div style="padding-top: 18px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px;">
                 <!-- Earnings Column -->
-                <div style="background: #f8fafc; border-radius: 10px; padding: 1.25rem; border: 1px solid #e2e8f0;">
-                    <h3 style="font-size: 0.95rem; font-weight: 700; color: #0f172a; margin-bottom: 1rem; display: flex; justify-content: space-between; border-bottom: 1px dashed #cbd5e1; padding-bottom: 0.5rem;">
-                        <span><i class="bi bi-plus-circle text-success me-1"></i> Gross Earnings</span>
-                        <span class="text-success">₱{{ number_format($latestPayslip->gross_pay, 2) }}</span>
-                    </h3>
+                <div style="background: #f8fafc; border-radius: 12px; padding: 18px; border: 1px solid var(--ess-border);">
+                    <div style="font-size: 14px; font-weight: 700; color: #0f172a; margin-bottom: 14px; display: flex; justify-content: space-between; border-bottom: 1px dashed #cbd5e1; padding-bottom: 8px;">
+                        <span><i class="ph ph-plus-circle" style="color:#16a34a;margin-right:6px;"></i> Gross Earnings</span>
+                        <span style="color:#16a34a;font-weight:800;">₱{{ number_format($latestPayslip->gross_pay, 2) }}</span>
+                    </div>
 
-                    <table style="width: 100%; font-size: 0.875rem; border-collapse: collapse;">
-                        <tr style="border-bottom: 1px solid #f1f5f9; height: 2rem;">
-                            <td style="color: #64748b;">Basic Salary ({{ $latestPayslip->total_work_days }} days / {{ $latestPayslip->total_hours }} hrs)</td>
-                            <td style="text-align: right; font-weight: 600; color: #1e293b;">₱{{ number_format($latestPayslip->basic_pay, 2) }}</td>
+                    <table style="width: 100%; font-size: 12.5px; border-collapse: collapse;">
+                        <tr style="border-bottom: 1px solid #f1f5f9;">
+                            <td style="padding: 7px 0; color: #475569;">Basic Monthly Salary</td>
+                            <td style="padding: 7px 0; text-align: right; font-weight: 600;">₱{{ number_format($latestPayslip->basic_salary, 2) }}</td>
                         </tr>
                         @if($latestPayslip->overtime_pay > 0)
-                        <tr style="border-bottom: 1px solid #f1f5f9; height: 2rem;">
-                            <td style="color: #64748b;">Overtime Pay ({{ $latestPayslip->overtime_hours }} hrs)</td>
-                            <td style="text-align: right; font-weight: 600; color: #1e293b;">₱{{ number_format($latestPayslip->overtime_pay, 2) }}</td>
+                        <tr style="border-bottom: 1px solid #f1f5f9;">
+                            <td style="padding: 7px 0; color: #475569;">Overtime Pay</td>
+                            <td style="padding: 7px 0; text-align: right; font-weight: 600; color: #16a34a;">+₱{{ number_format($latestPayslip->overtime_pay, 2) }}</td>
                         </tr>
                         @endif
-                        @if($latestPayslip->night_diff_pay > 0)
-                        <tr style="border-bottom: 1px solid #f1f5f9; height: 2rem;">
-                            <td style="color: #64748b;">Night Shift Diff (+10%, {{ $latestPayslip->night_diff_hours }} hrs)</td>
-                            <td style="text-align: right; font-weight: 600; color: #1e293b;">₱{{ number_format($latestPayslip->night_diff_pay, 2) }}</td>
+                        @if($latestPayslip->night_differential_pay > 0)
+                        <tr style="border-bottom: 1px solid #f1f5f9;">
+                            <td style="padding: 7px 0; color: #475569;">Night Shift Differential (10%)</td>
+                            <td style="padding: 7px 0; text-align: right; font-weight: 600; color: #16a34a;">+₱{{ number_format($latestPayslip->night_differential_pay, 2) }}</td>
                         </tr>
                         @endif
                         @if($latestPayslip->holiday_pay > 0)
-                        <tr style="border-bottom: 1px solid #f1f5f9; height: 2rem;">
-                            <td style="color: #64748b;">Holiday Pay (DOLE Mandated)</td>
-                            <td style="text-align: right; font-weight: 600; color: #1e293b;">₱{{ number_format($latestPayslip->holiday_pay, 2) }}</td>
+                        <tr style="border-bottom: 1px solid #f1f5f9;">
+                            <td style="padding: 7px 0; color: #475569;">Holiday Premium Pay</td>
+                            <td style="padding: 7px 0; text-align: right; font-weight: 600; color: #16a34a;">+₱{{ number_format($latestPayslip->holiday_pay, 2) }}</td>
                         </tr>
                         @endif
                         @if($latestPayslip->rest_day_pay > 0)
-                        <tr style="border-bottom: 1px solid #f1f5f9; height: 2rem;">
-                            <td style="color: #64748b;">Rest Day Premium</td>
-                            <td style="text-align: right; font-weight: 600; color: #1e293b;">₱{{ number_format($latestPayslip->rest_day_pay, 2) }}</td>
+                        <tr style="border-bottom: 1px solid #f1f5f9;">
+                            <td style="padding: 7px 0; color: #475569;">Rest Day Work Pay</td>
+                            <td style="padding: 7px 0; text-align: right; font-weight: 600; color: #16a34a;">+₱{{ number_format($latestPayslip->rest_day_pay, 2) }}</td>
                         </tr>
                         @endif
                         @if($latestPayslip->allowances > 0)
-                        <tr style="border-bottom: 1px solid #f1f5f9; height: 2rem;">
-                            <td style="color: #64748b;">Allowances & De Minimis</td>
-                            <td style="text-align: right; font-weight: 600; color: #1e293b;">₱{{ number_format($latestPayslip->allowances, 2) }}</td>
+                        <tr style="border-bottom: 1px solid #f1f5f9;">
+                            <td style="padding: 7px 0; color: #475569;">Non-Taxable Allowances (De Minimis)</td>
+                            <td style="padding: 7px 0; text-align: right; font-weight: 600; color: #16a34a;">+₱{{ number_format($latestPayslip->allowances, 2) }}</td>
                         </tr>
                         @endif
-                        @if($latestPayslip->other_earnings > 0)
-                        <tr style="border-bottom: 1px solid #f1f5f9; height: 2rem;">
-                            <td style="color: #64748b;">Other Incentives & Adjustments</td>
-                            <td style="text-align: right; font-weight: 600; color: #1e293b;">₱{{ number_format($latestPayslip->other_earnings, 2) }}</td>
+                        @if($latestPayslip->thirteenth_month_pay > 0)
+                        <tr style="border-bottom: 1px solid #f1f5f9;">
+                            <td style="padding: 7px 0; color: #475569;">13th Month Pay Portion</td>
+                            <td style="padding: 7px 0; text-align: right; font-weight: 600; color: #16a34a;">+₱{{ number_format($latestPayslip->thirteenth_month_pay, 2) }}</td>
                         </tr>
                         @endif
                     </table>
                 </div>
 
                 <!-- Deductions Column -->
-                <div style="background: #f8fafc; border-radius: 10px; padding: 1.25rem; border: 1px solid #e2e8f0;">
-                    <h3 style="font-size: 0.95rem; font-weight: 700; color: #0f172a; margin-bottom: 1rem; display: flex; justify-content: space-between; border-bottom: 1px dashed #cbd5e1; padding-bottom: 0.5rem;">
-                        <span><i class="bi bi-dash-circle text-danger me-1"></i> Total Deductions</span>
-                        <span class="text-danger">₱{{ number_format($latestPayslip->total_deductions, 2) }}</span>
-                    </h3>
+                <div style="background: #f8fafc; border-radius: 12px; padding: 18px; border: 1px solid var(--ess-border);">
+                    <div style="font-size: 14px; font-weight: 700; color: #0f172a; margin-bottom: 14px; display: flex; justify-content: space-between; border-bottom: 1px dashed #cbd5e1; padding-bottom: 8px;">
+                        <span><i class="ph ph-minus-circle" style="color:#dc2626;margin-right:6px;"></i> Total Deductions</span>
+                        <span style="color:#dc2626;font-weight:800;">-₱{{ number_format($latestPayslip->total_deductions, 2) }}</span>
+                    </div>
 
-                    <table style="width: 100%; font-size: 0.875rem; border-collapse: collapse;">
-                        <tr style="border-bottom: 1px solid #f1f5f9; height: 2rem;">
-                            <td style="color: #64748b;">SSS Contribution (Employee Share)</td>
-                            <td style="text-align: right; font-weight: 600; color: #1e293b;">₱{{ number_format($latestPayslip->sss_employee, 2) }}</td>
-                        </tr>
-                        <tr style="border-bottom: 1px solid #f1f5f9; height: 2rem;">
-                            <td style="color: #64748b;">PhilHealth Contribution (Employee Share)</td>
-                            <td style="text-align: right; font-weight: 600; color: #1e293b;">₱{{ number_format($latestPayslip->philhealth_employee, 2) }}</td>
-                        </tr>
-                        <tr style="border-bottom: 1px solid #f1f5f9; height: 2rem;">
-                            <td style="color: #64748b;">Pag-IBIG Fund (HDMF Employee Share)</td>
-                            <td style="text-align: right; font-weight: 600; color: #1e293b;">₱{{ number_format($latestPayslip->pagibig_employee, 2) }}</td>
-                        </tr>
-                        <tr style="border-bottom: 1px solid #f1f5f9; height: 2rem;">
-                            <td style="color: #64748b;">Withholding Tax (TRAIN Law)</td>
-                            <td style="text-align: right; font-weight: 600; color: #1e293b;">₱{{ number_format($latestPayslip->withholding_tax, 2) }}</td>
-                        </tr>
-                        @if($latestPayslip->late_deduction > 0 || $latestPayslip->undertime_deduction > 0)
-                        <tr style="border-bottom: 1px solid #f1f5f9; height: 2rem;">
-                            <td style="color: #64748b;">Tardiness / Undertime Deductions</td>
-                            <td style="text-align: right; font-weight: 600; color: #1e293b;">₱{{ number_format($latestPayslip->late_deduction + $latestPayslip->undertime_deduction, 2) }}</td>
+                    <table style="width: 100%; font-size: 12.5px; border-collapse: collapse;">
+                        @if($latestPayslip->tardiness_deduction > 0)
+                        <tr style="border-bottom: 1px solid #f1f5f9;">
+                            <td style="padding: 7px 0; color: #475569;">Tardiness Deduction</td>
+                            <td style="padding: 7px 0; text-align: right; font-weight: 600; color: #dc2626;">-₱{{ number_format($latestPayslip->tardiness_deduction, 2) }}</td>
                         </tr>
                         @endif
-                        @if($latestPayslip->employee_loan > 0 || $latestPayslip->salary_advance > 0)
-                        <tr style="border-bottom: 1px solid #f1f5f9; height: 2rem;">
-                            <td style="color: #64748b;">Company Advances & Amortization</td>
-                            <td style="text-align: right; font-weight: 600; color: #1e293b;">₱{{ number_format($latestPayslip->employee_loan + $latestPayslip->salary_advance, 2) }}</td>
+                        @if($latestPayslip->undertime_deduction > 0)
+                        <tr style="border-bottom: 1px solid #f1f5f9;">
+                            <td style="padding: 7px 0; color: #475569;">Undertime Deduction</td>
+                            <td style="padding: 7px 0; text-align: right; font-weight: 600; color: #dc2626;">-₱{{ number_format($latestPayslip->undertime_deduction, 2) }}</td>
                         </tr>
                         @endif
-                        @if($latestPayslip->other_deductions > 0)
-                        <tr style="border-bottom: 1px solid #f1f5f9; height: 2rem;">
-                            <td style="color: #64748b;">Other Lawful Deductions</td>
-                            <td style="text-align: right; font-weight: 600; color: #1e293b;">₱{{ number_format($latestPayslip->other_deductions, 2) }}</td>
+                        <tr style="border-bottom: 1px solid #f1f5f9;">
+                            <td style="padding: 7px 0; color: #475569;">SSS Contribution (Employee)</td>
+                            <td style="padding: 7px 0; text-align: right; font-weight: 600; color: #dc2626;">-₱{{ number_format($latestPayslip->sss_employee, 2) }}</td>
                         </tr>
-                        @endif
+                        <tr style="border-bottom: 1px solid #f1f5f9;">
+                            <td style="padding: 7px 0; color: #475569;">PhilHealth Contribution (Employee)</td>
+                            <td style="padding: 7px 0; text-align: right; font-weight: 600; color: #dc2626;">-₱{{ number_format($latestPayslip->philhealth_employee, 2) }}</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #f1f5f9;">
+                            <td style="padding: 7px 0; color: #475569;">Pag-IBIG Contribution (Employee)</td>
+                            <td style="padding: 7px 0; text-align: right; font-weight: 600; color: #dc2626;">-₱{{ number_format($latestPayslip->pagibig_employee, 2) }}</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #f1f5f9;">
+                            <td style="padding: 7px 0; color: #475569;">Withholding Tax (BIR)</td>
+                            <td style="padding: 7px 0; text-align: right; font-weight: 600; color: #dc2626;">-₱{{ number_format($latestPayslip->withholding_tax, 2) }}</td>
+                        </tr>
                     </table>
                 </div>
             </div>
 
-            <!-- Net Pay Highlight Banner -->
-            <div style="margin-top: 1.5rem; background: linear-gradient(135deg, #1e293b, #0f172a); border-radius: 10px; padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center; color: white;">
+            <!-- Net Take-Home Pay Banner -->
+            <div style="margin-top: 18px; background: linear-gradient(135deg, rgba(236,72,153,0.06), rgba(168,85,247,0.12)); border: 1px solid rgba(168,85,247,0.25); border-radius: 12px; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
                 <div>
-                    <span style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8;">Net Take-Home Pay</span>
-                    <div style="font-size: 0.8rem; color: #cbd5e1;">Deposited directly to your nominated payroll account.</div>
+                    <span style="font-size: 11.5px; font-weight: 700; color: #9333ea; text-transform: uppercase; letter-spacing: 0.05em;">Net Take-Home Pay</span>
+                    <div style="font-size: 12px; color: #64748b;">Direct credit to employee payroll disbursement account</div>
                 </div>
-                <div style="font-size: 1.75rem; font-weight: 800; color: #34d399;">
+                <div style="font-family:'Outfit',sans-serif;font-size: 26px; font-weight: 800; color: #0f172a;">
                     ₱{{ number_format($latestPayslip->net_pay, 2) }}
                 </div>
             </div>
@@ -205,7 +205,12 @@
     <!-- Payslip History Archive Table -->
     <div class="ess-card">
         <div class="ess-card-header">
-            <h2 class="ess-card-title"><i class="bi bi-clock-history"></i> Historical Payslips Archive</h2>
+            <h2 class="ess-card-title">
+                <div class="hr-bento-icon-box purple" style="width:30px;height:30px;font-size:16px;">
+                    <i class="ph ph-clock-counter-clockwise"></i>
+                </div>
+                <span>Historical Payslips Archive</span>
+            </h2>
         </div>
 
         <div class="ess-table-container">
@@ -226,9 +231,9 @@
                     @forelse($records as $rec)
                     <tr>
                         <td>
-                            <strong style="color: #1e293b;">{{ $rec->payrollPeriod?->name ?? 'Cutoff #' . $rec->payroll_period_id }}</strong>
-                            <div style="font-size: 0.75rem; color: #64748b;">
-                                {{ $rec->payrollPeriod?->start_date?->format('M d') }} - {{ $rec->payrollPeriod?->end_date?->format('M d, Y') }}
+                            <strong style="color: #0f172a;">{{ $rec->payrollPeriod?->name ?? 'Cutoff #' . $rec->payroll_period_id }}</strong>
+                            <div style="font-size: 11.5px; color: #64748b;">
+                                {{ $rec->payrollPeriod?->start_date?->format('M d') }} – {{ $rec->payrollPeriod?->end_date?->format('M d, Y') }}
                             </div>
                         </td>
                         <td>{{ $rec->payrollPeriod?->payout_date?->format('M d, Y') ?? '—' }}</td>
@@ -237,27 +242,27 @@
                             ₱{{ number_format($rec->sss_employee + $rec->philhealth_employee + $rec->pagibig_employee, 2) }}
                         </td>
                         <td style="text-align: right; color: #64748b;">₱{{ number_format($rec->withholding_tax, 2) }}</td>
-                        <td style="text-align: right; font-weight: 700; color: #059669;">₱{{ number_format($rec->net_pay, 2) }}</td>
+                        <td style="text-align: right; font-weight: 700; color: #16a34a;">₱{{ number_format($rec->net_pay, 2) }}</td>
                         <td>
                             <span class="ess-badge {{ $rec->status === 'Finalized' ? 'ess-badge-success' : 'ess-badge-neutral' }}">
                                 {{ $rec->status }}
                             </span>
                         </td>
                         <td style="text-align: center;">
-                            <div style="display: inline-flex; gap: 0.35rem;">
-                                <a href="{{ route('ess.payroll.pdf', $rec->payroll_record_id) }}" target="_blank" class="ess-btn ess-btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;" title="Download PDF Payslip">
-                                    <i class="bi bi-file-earmark-pdf"></i>
+                            <div style="display: inline-flex; gap: 6px;">
+                                <a href="{{ route('ess.payroll.pdf', $rec->payroll_record_id) }}" target="_blank" class="hr-btn hr-btn-secondary" style="padding: 5px 8px; font-size: 12px;" title="Download PDF Payslip">
+                                    <i class="ph ph-file-pdf"></i>
                                 </a>
-                                <button type="button" class="ess-btn ess-btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;" onclick="openDisputeModal({{ $rec->payroll_record_id }}, '{{ $rec->payrollPeriod?->name }}')" title="File Dispute / Inquiry">
-                                    <i class="bi bi-question-circle"></i>
+                                <button type="button" class="hr-btn hr-btn-secondary" style="padding: 5px 8px; font-size: 12px;" onclick="openDisputeModal({{ $rec->payroll_record_id }}, '{{ $rec->payrollPeriod?->name }}')" title="File Dispute / Inquiry">
+                                    <i class="ph ph-question"></i>
                                 </button>
                             </div>
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="8" style="text-align: center; padding: 3rem; color: #94a3b8;">
-                            <i class="bi bi-wallet2" style="font-size: 2.5rem; display: block; margin-bottom: 0.5rem; opacity: 0.5;"></i>
+                        <td colspan="8" style="text-align: center; padding: 48px 16px; color: #94a3b8;">
+                            <i class="ph ph-wallet" style="font-size: 40px; display: block; margin: 0 auto 10px; opacity: 0.5;"></i>
                             No finalized payslip records found for your account.
                         </td>
                     </tr>
@@ -267,7 +272,7 @@
         </div>
 
         @if($records->hasPages())
-        <div style="padding: 1rem;">
+        <div style="padding: 16px;">
             {{ $records->links() }}
         </div>
         @endif
@@ -277,24 +282,24 @@
 <!-- Dispute Modal -->
 <div class="modal fade" id="disputeModal" tabindex="-1" aria-hidden="true" style="display: none; background: rgba(15,23,42,0.6); position: fixed; inset: 0; z-index: 1050; align-items: center; justify-content: center;">
     <div class="modal-dialog modal-dialog-centered" style="max-width: 520px; width: 100%; margin: 1.5rem auto;">
-        <div class="modal-content" style="background: white; border-radius: 12px; border: none; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
+        <div class="modal-content" style="background: white; border-radius: 16px; border: 1px solid var(--ess-border); box-shadow: var(--ess-shadow-lg); overflow: hidden;">
             <form action="{{ route('ess.payroll.dispute') }}" method="POST">
                 @csrf
                 <input type="hidden" name="payroll_record_id" id="disputeRecordId">
-                <div class="modal-header" style="padding: 1.25rem 1.5rem; border-bottom: 1px solid #f1f5f9;">
-                    <h5 class="modal-title" style="font-weight: 700; color: #1e293b; font-size: 1.1rem;">
-                        <i class="bi bi-shield-exclamation text-warning me-1"></i> File Payroll Dispute / Inquiry
+                <div class="modal-header" style="padding: 16px 20px; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between;">
+                    <h5 class="modal-title" style="font-weight: 700; color: #0f172a; font-size: 16px; margin: 0; display: flex; align-items: center; gap: 8px;">
+                        <i class="ph ph-warning-circle" style="color: #d97706; font-size: 20px;"></i> File Payroll Dispute / Inquiry
                     </h5>
-                    <button type="button" class="btn-close" onclick="closeDisputeModal()"></button>
+                    <button type="button" onclick="closeDisputeModal()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #64748b;">&times;</button>
                 </div>
-                <div class="modal-body" style="padding: 1.5rem;">
-                    <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1rem;">
-                        Selected Period: <strong id="disputePeriodName" style="color: #1e293b;"></strong>
+                <div class="modal-body" style="padding: 20px;">
+                    <p style="font-size: 13px; color: #64748b; margin-bottom: 16px;">
+                        Selected Period: <strong id="disputePeriodName" style="color: #0f172a;"></strong>
                     </p>
 
-                    <div class="ess-form-group" style="margin-bottom: 1rem;">
-                        <label class="ess-form-label">Dispute Category <span class="text-danger">*</span></label>
-                        <select name="dispute_category" class="ess-form-control" required>
+                    <div style="margin-bottom: 14px;">
+                        <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px;">Dispute Category <span style="color:#dc2626;">*</span></label>
+                        <select name="dispute_category" class="ess-form-control" style="width:100%;" required>
                             <option value="">Select category...</option>
                             <option value="MISSING_OVERTIME">Missing / Uncredited Overtime Hours</option>
                             <option value="INCORRECT_RATE">Discrepancy in Hourly / Daily Basic Rate</option>
@@ -306,17 +311,17 @@
                         </select>
                     </div>
 
-                    <div class="ess-form-group" style="margin-bottom: 0.5rem;">
-                        <label class="ess-form-label">Detailed Explanation <span class="text-danger">*</span></label>
-                        <textarea name="details" class="ess-form-control" rows="4" placeholder="Specify the exact date, missing hours, expected calculation vs. received amount..." required></textarea>
-                        <small style="font-size: 0.75rem; color: #94a3b8; display: block; margin-top: 0.25rem;">
+                    <div style="margin-bottom: 8px;">
+                        <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px;">Detailed Explanation <span style="color:#dc2626;">*</span></label>
+                        <textarea name="details" class="ess-form-control" style="width:100%;" rows="4" placeholder="Specify the exact date, missing hours, expected calculation vs. received amount..." required></textarea>
+                        <small style="font-size: 11px; color: #94a3b8; display: block; margin-top: 5px;">
                             Your inquiry will be logged under DOLE Labor Compliance standards for immediate HR review.
                         </small>
                     </div>
                 </div>
-                <div class="modal-footer" style="padding: 1rem 1.5rem; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; gap: 0.5rem;">
-                    <button type="button" class="ess-btn ess-btn-secondary" onclick="closeDisputeModal()">Cancel</button>
-                    <button type="submit" class="ess-btn ess-btn-primary">Submit Dispute</button>
+                <div class="modal-footer" style="padding: 14px 20px; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; gap: 8px; background: #f8fafc;">
+                    <button type="button" class="hr-btn hr-btn-secondary" onclick="closeDisputeModal()">Cancel</button>
+                    <button type="submit" class="hr-btn hr-btn-primary">Submit Dispute</button>
                 </div>
             </form>
         </div>

@@ -4,78 +4,84 @@
 
 @section('content')
 <div class="ess-profile-container">
-    <div class="ess-page-header">
+    <!-- Standard HR Page Header -->
+    <div class="hr-page-header" style="margin-bottom: 20px;">
         <div>
-            <h1 class="ess-page-title">Employee Profile & 201 Digital File</h1>
-            <p class="ess-page-subtitle">Personal data, government statutory IDs, digital 201 records, and official Certificate of Employment (COE) requests.</p>
+            <h1 class="hr-page-title">
+                <i class="ph ph-identification-badge"></i>
+                <span>Employee Profile & 201 Digital File</span>
+            </h1>
+            <p class="hr-page-subtitle">Personal data, government statutory IDs, digital 201 records, and official Certificate of Employment (COE) requests.</p>
         </div>
-        <div class="ess-page-actions">
-            <button type="button" class="ess-btn ess-btn-primary" onclick="openCoeModal()">
-                <i class="bi bi-file-earmark-text"></i> Request Certificate of Employment
+        <div class="hr-page-actions">
+            <button type="button" class="hr-btn hr-btn-primary" onclick="openCoeModal()">
+                <i class="ph ph-file-text"></i>
+                <span>Request Certificate of Employment</span>
             </button>
         </div>
     </div>
 
-    <div style="display: grid; grid-template-columns: 340px 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+    <div style="display: grid; grid-template-columns: 340px 1fr; gap: 20px; margin-bottom: 24px;">
         <!-- Left: Employee Identity Card -->
         <div>
-            <div class="ess-card" style="text-align: center; padding: 2rem 1.5rem;">
-                <div style="width: 96px; height: 96px; border-radius: 50%; background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; display: flex; align-items: center; justify-content: center; font-size: 2.25rem; font-weight: 700; margin: 0 auto 1rem auto; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);">
+            <div class="ess-card" style="text-align: center; padding: 24px 20px;">
+                <div class="ess-card-accent-strip"></div>
+                <div style="width: 88px; height: 88px; border-radius: 22px; background: var(--ess-primary-gradient); color: white; display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 800; margin: 0 auto 16px auto; box-shadow: 0 8px 24px rgba(168, 85, 247, 0.32);">
                     {{ strtoupper(substr($employee->first_name, 0, 1) . substr($employee->last_name, 0, 1)) }}
                 </div>
-                <h2 style="font-size: 1.25rem; font-weight: 700; color: #1e293b; margin: 0 0 0.25rem 0;">
+                <h2 style="font-family:'Outfit',sans-serif;font-size: 20px; font-weight: 800; color: #0f172a; margin: 0 0 4px 0;">
                     {{ $employee->first_name }} {{ $employee->last_name }}
                 </h2>
-                <div style="font-size: 0.875rem; color: #2563eb; font-weight: 600; margin-bottom: 0.5rem;">
+                <div style="font-size: 13px; color: #9333ea; font-weight: 700; margin-bottom: 8px;">
                     {{ $employee->position->position_title ?? 'Employee' }}
                 </div>
                 <div>
                     <span class="ess-badge ess-badge-success">{{ $employee->employment_status ?? 'Active Regular' }}</span>
                 </div>
 
-                <div style="margin-top: 1.5rem; text-align: left; font-size: 0.85rem; border-top: 1px solid #f1f5f9; padding-top: 1.25rem;">
-                    <div style="margin-bottom: 0.65rem;">
-                        <span style="color: #64748b; display: block; font-size: 0.75rem; text-transform: uppercase;">Employee Code</span>
-                        <strong style="color: #1e293b;">{{ $employee->employee_code }}</strong>
+                <div style="margin-top: 20px; text-align: left; font-size: 12.5px; border-top: 1px solid #f1f5f9; padding-top: 16px;">
+                    <div style="margin-bottom: 10px;">
+                        <span style="color: #64748b; display: block; font-size: 11px; text-transform: uppercase; font-weight: 700;">Employee Code</span>
+                        <strong style="color: #9333ea; font-family: monospace; font-size: 13px;">{{ $employee->employee_code }}</strong>
                     </div>
-                    <div style="margin-bottom: 0.65rem;">
-                        <span style="color: #64748b; display: block; font-size: 0.75rem; text-transform: uppercase;">Company</span>
-                        <strong style="color: #1e293b;">{{ $employee->company->company_name ?? 'Stellar One' }}</strong>
+                    <div style="margin-bottom: 10px;">
+                        <span style="color: #64748b; display: block; font-size: 11px; text-transform: uppercase; font-weight: 700;">Company</span>
+                        <strong style="color: #0f172a;">{{ $employee->company->company_name ?? 'Stellar One' }}</strong>
                     </div>
-                    <div style="margin-bottom: 0.65rem;">
-                        <span style="color: #64748b; display: block; font-size: 0.75rem; text-transform: uppercase;">Department</span>
-                        <strong style="color: #1e293b;">{{ $employee->department->department_name ?? 'Operations' }}</strong>
+                    <div style="margin-bottom: 10px;">
+                        <span style="color: #64748b; display: block; font-size: 11px; text-transform: uppercase; font-weight: 700;">Department</span>
+                        <strong style="color: #0f172a;">{{ $employee->department->department_name ?? 'Operations' }}</strong>
                     </div>
-                    <div style="margin-bottom: 0.65rem;">
-                        <span style="color: #64748b; display: block; font-size: 0.75rem; text-transform: uppercase;">Date Hired</span>
-                        <strong style="color: #1e293b;">{{ $employee->hire_date ? \Carbon\Carbon::parse($employee->hire_date)->format('M d, Y') : 'N/A' }}</strong>
+                    <div style="margin-bottom: 4px;">
+                        <span style="color: #64748b; display: block; font-size: 11px; text-transform: uppercase; font-weight: 700;">Date Hired</span>
+                        <strong style="color: #0f172a;">{{ $employee->hire_date ? \Carbon\Carbon::parse($employee->hire_date)->format('M d, Y') : 'N/A' }}</strong>
                     </div>
                 </div>
             </div>
 
             <!-- Statutory ID Card -->
-            <div class="ess-card" style="margin-top: 1.5rem;">
-                <div class="ess-card-header" style="border-bottom: 1px solid #f1f5f9; padding-bottom: 0.75rem;">
-                    <h3 class="ess-card-title" style="font-size: 0.95rem;">
-                        <i class="bi bi-shield-lock text-primary me-1"></i> Philippine Statutory IDs
+            <div class="ess-card" style="margin-top: 20px;">
+                <div class="ess-card-header" style="border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
+                    <h3 class="ess-card-title" style="font-size: 14px;">
+                        <i class="ph ph-shield-check" style="color: #9333ea;"></i> Philippine Statutory IDs
                     </h3>
                 </div>
-                <div style="padding-top: 1rem; font-size: 0.85rem;">
-                    <div style="margin-bottom: 0.75rem; display: flex; justify-content: space-between;">
+                <div style="padding-top: 12px; font-size: 12.5px;">
+                    <div style="margin-bottom: 10px; display: flex; justify-content: space-between;">
                         <span style="color: #64748b;">SSS Number:</span>
-                        <strong style="color: #1e293b; font-family: monospace;">{{ $employee->sss_number ?? '00-0000000-0' }}</strong>
+                        <strong style="color: #0f172a; font-family: monospace;">{{ $employee->sss_number ?? '00-0000000-0' }}</strong>
                     </div>
-                    <div style="margin-bottom: 0.75rem; display: flex; justify-content: space-between;">
+                    <div style="margin-bottom: 10px; display: flex; justify-content: space-between;">
                         <span style="color: #64748b;">PhilHealth (PIN):</span>
-                        <strong style="color: #1e293b; font-family: monospace;">{{ $employee->philhealth_number ?? '00-000000000-0' }}</strong>
+                        <strong style="color: #0f172a; font-family: monospace;">{{ $employee->philhealth_number ?? '00-000000000-0' }}</strong>
                     </div>
-                    <div style="margin-bottom: 0.75rem; display: flex; justify-content: space-between;">
+                    <div style="margin-bottom: 10px; display: flex; justify-content: space-between;">
                         <span style="color: #64748b;">Pag-IBIG (MID):</span>
-                        <strong style="color: #1e293b; font-family: monospace;">{{ $employee->pagibig_number ?? '0000-0000-0000' }}</strong>
+                        <strong style="color: #0f172a; font-family: monospace;">{{ $employee->pagibig_number ?? '0000-0000-0000' }}</strong>
                     </div>
                     <div style="display: flex; justify-content: space-between;">
                         <span style="color: #64748b;">BIR TIN:</span>
-                        <strong style="color: #1e293b; font-family: monospace;">{{ $employee->tin ?? '000-000-000-000' }}</strong>
+                        <strong style="color: #0f172a; font-family: monospace;">{{ $employee->tin ?? '000-000-000-000' }}</strong>
                     </div>
                 </div>
             </div>
@@ -84,58 +90,62 @@
         <!-- Right: Contact Update, 201 Files, COE History -->
         <div>
             <!-- Contact & Emergency Form -->
-            <div class="ess-card" style="margin-bottom: 1.5rem;">
+            <div class="ess-card" style="margin-bottom: 20px;">
                 <div class="ess-card-header">
-                    <h2 class="ess-card-title"><i class="bi bi-telephone"></i> Contact & Emergency Information</h2>
+                    <h2 class="ess-card-title">
+                        <i class="ph ph-phone" style="color: #9333ea;"></i> Contact & Emergency Information
+                    </h2>
                 </div>
                 <form action="{{ route('ess.profile.update-contact') }}" method="POST">
                     @csrf
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-                        <div class="ess-form-group">
-                            <label class="ess-form-label">Mobile Number</label>
-                            <input type="text" name="phone_number" class="ess-form-control" value="{{ old('phone_number', $employee->phone_number) }}" placeholder="+63 9XX XXX XXXX">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+                        <div>
+                            <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px;">Mobile Number</label>
+                            <input type="text" name="phone_number" class="ess-form-control" style="width:100%;" value="{{ old('phone_number', $employee->phone_number) }}" placeholder="+63 9XX XXX XXXX">
                         </div>
-                        <div class="ess-form-group">
-                            <label class="ess-form-label">Personal Email</label>
-                            <input type="email" name="personal_email" class="ess-form-control" value="{{ old('personal_email', $employee->personal_email) }}" placeholder="personal@example.com">
+                        <div>
+                            <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px;">Personal Email</label>
+                            <input type="email" name="personal_email" class="ess-form-control" style="width:100%;" value="{{ old('personal_email', $employee->personal_email) }}" placeholder="personal@example.com">
                         </div>
                     </div>
 
-                    <div class="ess-form-group" style="margin-bottom: 1rem;">
-                        <label class="ess-form-label">Current Residential Address</label>
-                        <input type="text" name="current_address" class="ess-form-control" value="{{ old('current_address', $employee->current_address) }}" placeholder="House/Unit, Street, Barangay, City, Metro Manila">
+                    <div style="margin-bottom: 14px;">
+                        <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px;">Current Residential Address</label>
+                        <input type="text" name="current_address" class="ess-form-control" style="width:100%;" value="{{ old('current_address', $employee->current_address) }}" placeholder="House/Unit, Street, Barangay, City, Metro Manila">
                     </div>
 
-                    <h3 style="font-size: 0.95rem; font-weight: 700; color: #1e293b; margin: 1.25rem 0 0.75rem 0; border-top: 1px dashed #e2e8f0; padding-top: 1rem;">
+                    <div style="font-size: 13px; font-weight: 700; color: #0f172a; margin: 18px 0 10px 0; border-top: 1px dashed #e2e8f0; padding-top: 14px;">
                         Emergency Contact Person
-                    </h3>
-                    <div style="display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem;">
-                        <div class="ess-form-group">
-                            <label class="ess-form-label">Contact Name</label>
-                            <input type="text" name="emergency_contact_name" class="ess-form-control" value="{{ old('emergency_contact_name', $employee->emergency_contact_name) }}" placeholder="Full Name">
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 14px; margin-bottom: 18px;">
+                        <div>
+                            <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px;">Contact Name</label>
+                            <input type="text" name="emergency_contact_name" class="ess-form-control" style="width:100%;" value="{{ old('emergency_contact_name', $employee->emergency_contact_name) }}" placeholder="Full Name">
                         </div>
-                        <div class="ess-form-group">
-                            <label class="ess-form-label">Contact Phone</label>
-                            <input type="text" name="emergency_contact_phone" class="ess-form-control" value="{{ old('emergency_contact_phone', $employee->emergency_contact_phone) }}" placeholder="+63 9XX XXX XXXX">
+                        <div>
+                            <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px;">Contact Phone</label>
+                            <input type="text" name="emergency_contact_phone" class="ess-form-control" style="width:100%;" value="{{ old('emergency_contact_phone', $employee->emergency_contact_phone) }}" placeholder="+63 9XX XXX XXXX">
                         </div>
-                        <div class="ess-form-group">
-                            <label class="ess-form-label">Relationship</label>
-                            <input type="text" name="emergency_contact_relationship" class="ess-form-control" value="{{ old('emergency_contact_relationship', $employee->emergency_contact_relationship) }}" placeholder="Spouse, Parent, Sibling">
+                        <div>
+                            <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px;">Relationship</label>
+                            <input type="text" name="emergency_contact_relationship" class="ess-form-control" style="width:100%;" value="{{ old('emergency_contact_relationship', $employee->emergency_contact_relationship) }}" placeholder="Spouse, Parent, Sibling">
                         </div>
                     </div>
 
                     <div style="display: flex; justify-content: flex-end;">
-                        <button type="submit" class="ess-btn ess-btn-primary">Save Contact Changes</button>
+                        <button type="submit" class="hr-btn hr-btn-primary">Save Contact Changes</button>
                     </div>
                 </form>
             </div>
 
             <!-- 201 Digital File Documents -->
-            <div class="ess-card" style="margin-bottom: 1.5rem;">
-                <div class="ess-card-header" style="display: flex; justify-content: space-between; align-items: center;">
-                    <h2 class="ess-card-title"><i class="bi bi-folder2-open"></i> 201 Digital File Repository</h2>
-                    <button type="button" class="ess-btn ess-btn-secondary" style="font-size: 0.85rem; padding: 0.35rem 0.75rem;" onclick="openDocModal()">
-                        <i class="bi bi-cloud-arrow-up"></i> Upload Document
+            <div class="ess-card" style="margin-bottom: 20px;">
+                <div class="ess-card-header">
+                    <h2 class="ess-card-title">
+                        <i class="ph ph-folder-open" style="color: #9333ea;"></i> 201 Digital File Repository
+                    </h2>
+                    <button type="button" class="hr-btn hr-btn-secondary" style="font-size: 12px; padding: 6px 12px;" onclick="openDocModal()">
+                        <i class="ph ph-upload-simple"></i> Upload Document
                     </button>
                 </div>
 
@@ -154,7 +164,7 @@
                             @forelse($documents as $doc)
                             <tr>
                                 <td>
-                                    <strong style="color: #1e293b;">{{ $doc->employee_document_document_name }}</strong>
+                                    <strong style="color: #0f172a;">{{ $doc->employee_document_document_name }}</strong>
                                 </td>
                                 <td><span class="ess-badge ess-badge-neutral">{{ $doc->employee_document_document_type }}</span></td>
                                 <td>{{ $doc->employee_document_issue_date ?? $doc->created_at?->format('M d, Y') }}</td>
@@ -165,15 +175,15 @@
                                 </td>
                                 <td style="text-align: right;">
                                     @if($doc->employee_document_file_path)
-                                    <a href="{{ asset('storage/' . $doc->employee_document_file_path) }}" target="_blank" class="ess-btn ess-btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">
-                                        <i class="bi bi-eye"></i> View
+                                    <a href="{{ asset('storage/' . $doc->employee_document_file_path) }}" target="_blank" class="hr-btn hr-btn-secondary" style="padding: 4px 8px; font-size: 11.5px;">
+                                        <i class="ph ph-eye"></i> View
                                     </a>
                                     @endif
                                 </td>
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="5" style="text-align: center; padding: 2rem; color: #94a3b8;">
+                                <td colspan="5" style="text-align: center; padding: 32px 16px; color: #94a3b8;">
                                     No documents uploaded to your digital 201 folder yet.
                                 </td>
                             </tr>
@@ -186,7 +196,9 @@
             <!-- COE Requests History -->
             <div class="ess-card">
                 <div class="ess-card-header">
-                    <h2 class="ess-card-title"><i class="bi bi-award"></i> Certificate of Employment (COE) Requests</h2>
+                    <h2 class="ess-card-title">
+                        <i class="ph ph-certificate" style="color: #9333ea;"></i> Certificate of Employment (COE) Requests
+                    </h2>
                 </div>
                 <div class="ess-table-container">
                     <table class="ess-table">
@@ -202,7 +214,7 @@
                         <tbody>
                             @forelse($coeRequests as $coe)
                             <tr>
-                                <td><strong style="font-family: monospace; color: #1e293b;">{{ $coe->request_number }}</strong></td>
+                                <td><strong style="font-family: monospace; color: #9333ea;">{{ $coe->request_number }}</strong></td>
                                 <td>
                                     <div>{{ $coe->details['purpose'] ?? $coe->reason }}</div>
                                     <small style="color: #64748b;">To: {{ $coe->details['addressed_to'] ?? 'To Whom It May Concern' }}</small>
@@ -221,7 +233,7 @@
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="5" style="text-align: center; padding: 2rem; color: #94a3b8;">
+                                <td colspan="5" style="text-align: center; padding: 32px 16px; color: #94a3b8;">
                                     No Certificate of Employment requests filed yet.
                                 </td>
                             </tr>
@@ -237,19 +249,19 @@
 <!-- Request COE Modal -->
 <div class="modal fade" id="coeModal" tabindex="-1" style="display: none; background: rgba(15,23,42,0.6); position: fixed; inset: 0; z-index: 1050; align-items: center; justify-content: center;">
     <div class="modal-dialog modal-dialog-centered" style="max-width: 520px; width: 100%; margin: 1.5rem auto;">
-        <div class="modal-content" style="background: white; border-radius: 12px; border: none; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
+        <div class="modal-content" style="background: white; border-radius: 16px; border: 1px solid var(--ess-border); box-shadow: var(--ess-shadow-lg); overflow: hidden;">
             <form action="{{ route('ess.profile.coe-request') }}" method="POST">
                 @csrf
-                <div class="modal-header" style="padding: 1.25rem 1.5rem; border-bottom: 1px solid #f1f5f9;">
-                    <h5 class="modal-title" style="font-weight: 700; color: #1e293b; font-size: 1.1rem;">
-                        <i class="bi bi-file-earmark-text text-primary me-1"></i> Request Certificate of Employment (COE)
+                <div class="modal-header" style="padding: 16px 20px; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between;">
+                    <h5 class="modal-title" style="font-weight: 700; color: #0f172a; font-size: 16px; margin: 0; display: flex; align-items: center; gap: 8px;">
+                        <i class="ph ph-file-text" style="color: #9333ea; font-size: 20px;"></i> Request Certificate of Employment (COE)
                     </h5>
-                    <button type="button" class="btn-close" onclick="closeCoeModal()"></button>
+                    <button type="button" onclick="closeCoeModal()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #64748b;">&times;</button>
                 </div>
-                <div class="modal-body" style="padding: 1.5rem;">
-                    <div class="ess-form-group" style="margin-bottom: 1rem;">
-                        <label class="ess-form-label">Purpose of Request <span class="text-danger">*</span></label>
-                        <select name="purpose" class="ess-form-control" required>
+                <div class="modal-body" style="padding: 20px;">
+                    <div style="margin-bottom: 14px;">
+                        <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px;">Purpose of Request <span style="color:#dc2626;">*</span></label>
+                        <select name="purpose" class="ess-form-control" style="width:100%;" required>
                             <option value="">Select purpose...</option>
                             <option value="Bank Loan / Mortgage Application">Bank Loan / Mortgage Application</option>
                             <option value="Credit Card Application">Credit Card Application</option>
@@ -260,27 +272,27 @@
                         </select>
                     </div>
 
-                    <div class="ess-form-group" style="margin-bottom: 1rem;">
-                        <label class="ess-form-label">Addressed To (Optional)</label>
-                        <input type="text" name="addressed_to" class="ess-form-control" placeholder="e.g., The Visa Officer, Embassy of Japan / BDO Unibank">
-                        <small style="color: #64748b; font-size: 0.75rem;">Leave blank for default: "To Whom It May Concern"</small>
+                    <div style="margin-bottom: 14px;">
+                        <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px;">Addressed To (Optional)</label>
+                        <input type="text" name="addressed_to" class="ess-form-control" style="width:100%;" placeholder="e.g., The Visa Officer, Embassy of Japan / BDO Unibank">
+                        <small style="color: #94a3b8; font-size: 11px; margin-top: 4px; display: block;">Leave blank for default: "To Whom It May Concern"</small>
                     </div>
 
-                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; margin-top: 1rem;">
-                        <label style="display: flex; align-items: flex-start; gap: 0.5rem; cursor: pointer; margin: 0;">
-                            <input type="checkbox" name="include_compensation" value="1" style="margin-top: 0.25rem;">
+                    <div style="background: #f8fafc; border: 1px solid var(--ess-border); border-radius: 10px; padding: 14px; margin-top: 14px;">
+                        <label style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer; margin: 0;">
+                            <input type="checkbox" name="include_compensation" value="1" style="margin-top: 3px;">
                             <div>
-                                <strong style="font-size: 0.875rem; color: #1e293b;">Include Detailed Compensation Breakdown</strong>
-                                <p style="font-size: 0.75rem; color: #64748b; margin: 0.15rem 0 0 0;">
+                                <strong style="font-size: 13px; color: #0f172a;">Include Detailed Compensation Breakdown</strong>
+                                <p style="font-size: 11.5px; color: #64748b; margin: 3px 0 0 0;">
                                     Pursuant to the Data Privacy Act of 2012, your monthly basic salary and allowances will only be reflected upon your explicit consent.
                                 </p>
                             </div>
                         </label>
                     </div>
                 </div>
-                <div class="modal-footer" style="padding: 1rem 1.5rem; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; gap: 0.5rem;">
-                    <button type="button" class="ess-btn ess-btn-secondary" onclick="closeCoeModal()">Cancel</button>
-                    <button type="submit" class="ess-btn ess-btn-primary">Submit COE Request</button>
+                <div class="modal-footer" style="padding: 14px 20px; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; gap: 8px; background: #f8fafc;">
+                    <button type="button" class="hr-btn hr-btn-secondary" onclick="closeCoeModal()">Cancel</button>
+                    <button type="submit" class="hr-btn hr-btn-primary">Submit COE Request</button>
                 </div>
             </form>
         </div>
@@ -290,19 +302,19 @@
 <!-- Upload Document Modal -->
 <div class="modal fade" id="docModal" tabindex="-1" style="display: none; background: rgba(15,23,42,0.6); position: fixed; inset: 0; z-index: 1050; align-items: center; justify-content: center;">
     <div class="modal-dialog modal-dialog-centered" style="max-width: 500px; width: 100%; margin: 1.5rem auto;">
-        <div class="modal-content" style="background: white; border-radius: 12px; border: none; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
+        <div class="modal-content" style="background: white; border-radius: 16px; border: 1px solid var(--ess-border); box-shadow: var(--ess-shadow-lg); overflow: hidden;">
             <form action="{{ route('ess.profile.upload-document') }}" method="POST" enctype="multipart/form-data">
                 @csrf
-                <div class="modal-header" style="padding: 1.25rem 1.5rem; border-bottom: 1px solid #f1f5f9;">
-                    <h5 class="modal-title" style="font-weight: 700; color: #1e293b; font-size: 1.1rem;">
-                        <i class="bi bi-cloud-arrow-up text-primary me-1"></i> Upload 201 File Document
+                <div class="modal-header" style="padding: 16px 20px; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between;">
+                    <h5 class="modal-title" style="font-weight: 700; color: #0f172a; font-size: 16px; margin: 0; display: flex; align-items: center; gap: 8px;">
+                        <i class="ph ph-upload-simple" style="color: #9333ea; font-size: 20px;"></i> Upload 201 File Document
                     </h5>
-                    <button type="button" class="btn-close" onclick="closeDocModal()"></button>
+                    <button type="button" onclick="closeDocModal()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #64748b;">&times;</button>
                 </div>
-                <div class="modal-body" style="padding: 1.5rem;">
-                    <div class="ess-form-group" style="margin-bottom: 1rem;">
-                        <label class="ess-form-label">Document Type <span class="text-danger">*</span></label>
-                        <select name="document_type" class="ess-form-control" required>
+                <div class="modal-body" style="padding: 20px;">
+                    <div style="margin-bottom: 14px;">
+                        <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px;">Document Type <span style="color:#dc2626;">*</span></label>
+                        <select name="document_type" class="ess-form-control" style="width:100%;" required>
                             <option value="">Select type...</option>
                             <option value="Valid Government ID">Valid Government ID (Passport/UMID/Driver's License)</option>
                             <option value="Medical Certificate / Fit to Work">Medical Certificate / Fit to Work</option>
@@ -313,19 +325,19 @@
                         </select>
                     </div>
 
-                    <div class="ess-form-group" style="margin-bottom: 1rem;">
-                        <label class="ess-form-label">Document Description / Label <span class="text-danger">*</span></label>
-                        <input type="text" name="document_name" class="ess-form-control" placeholder="e.g. Passport Bio Page 2026" required>
+                    <div style="margin-bottom: 14px;">
+                        <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px;">Document Description / Label <span style="color:#dc2626;">*</span></label>
+                        <input type="text" name="document_name" class="ess-form-control" style="width:100%;" placeholder="e.g. Passport Bio Page 2026" required>
                     </div>
 
-                    <div class="ess-form-group">
-                        <label class="ess-form-label">Select File (PDF, PNG, JPG, max 5MB) <span class="text-danger">*</span></label>
-                        <input type="file" name="document_file" class="ess-form-control" required>
+                    <div>
+                        <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px;">Select File (PDF, PNG, JPG, max 5MB) <span style="color:#dc2626;">*</span></label>
+                        <input type="file" name="document_file" class="ess-form-control" style="width:100%;" required>
                     </div>
                 </div>
-                <div class="modal-footer" style="padding: 1rem 1.5rem; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; gap: 0.5rem;">
-                    <button type="button" class="ess-btn ess-btn-secondary" onclick="closeDocModal()">Cancel</button>
-                    <button type="submit" class="ess-btn ess-btn-primary">Upload Document</button>
+                <div class="modal-footer" style="padding: 14px 20px; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; gap: 8px; background: #f8fafc;">
+                    <button type="button" class="hr-btn hr-btn-secondary" onclick="closeDocModal()">Cancel</button>
+                    <button type="submit" class="hr-btn hr-btn-primary">Upload Document</button>
                 </div>
             </form>
         </div>

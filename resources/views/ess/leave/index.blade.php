@@ -4,20 +4,20 @@
 
 @section('content')
 <div class="ess-leave-container">
-    <!-- Header Card -->
-    <div class="ess-card">
-        <div class="ess-card-accent-strip"></div>
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;">
-            <div>
-                <h2 style="font-family:'Outfit',sans-serif;font-size:20px;font-weight:800;margin:0;color:var(--ess-text-main);">
-                    Leave Management & DOLE Statutory Entitlements
-                </h2>
-                <div style="font-size:12.5px;color:var(--ess-text-secondary);margin-top:4px;">
-                    Compliant with Philippine Labor Code (Art. 95 SIL), RA 11210 (Maternity), RA 8187 (Paternity), and RA 8972 (Solo Parent)
-                </div>
-            </div>
+    <!-- Standard HR Page Header -->
+    <div class="hr-page-header" style="margin-bottom: 20px;">
+        <div>
+            <h1 class="hr-page-title">
+                <i class="ph ph-airplane-tilt"></i>
+                <span>Leave Management & DOLE Statutory Entitlements</span>
+            </h1>
+            <p class="hr-page-subtitle">
+                Compliant with Philippine Labor Code (Art. 95 SIL), RA 11210 (Maternity), RA 8187 (Paternity), and RA 8972 (Solo Parent)
+            </p>
+        </div>
 
-            <button type="button" class="ess-quick-btn" onclick="openFileLeaveModal()">
+        <div class="hr-page-actions">
+            <button type="button" class="hr-btn hr-btn-primary" onclick="openFileLeaveModal()">
                 <i class="ph ph-plus-circle"></i>
                 <span>File New Leave</span>
             </button>

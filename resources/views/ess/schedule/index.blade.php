@@ -4,29 +4,27 @@
 
 @section('content')
 <div class="ess-schedule-container">
-    <!-- Header Card -->
-    <div class="ess-card">
-        <div class="ess-card-accent-strip"></div>
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;">
-            <div>
-                <h2 style="font-family:'Outfit',sans-serif;font-size:20px;font-weight:800;margin:0;color:var(--ess-text-main);">
-                    Assigned Work Schedule & Shift Calendar
-                </h2>
-                <div style="font-size:12.5px;color:var(--ess-text-secondary);margin-top:4px;">
-                    Branch: <strong>{{ $employee->branch->branch_name ?? 'Branch' }}</strong> • Department: <strong>{{ $employee->department->name ?? 'Dept' }}</strong>
-                </div>
-            </div>
+    <!-- Standard HR Page Header -->
+    <div class="hr-page-header" style="margin-bottom: 20px;">
+        <div>
+            <h1 class="hr-page-title">
+                <i class="ph ph-calendar"></i>
+                <span>Work Schedule & Shift Calendar</span>
+            </h1>
+            <p class="hr-page-subtitle">
+                Branch: <strong>{{ $employee->branch->branch_name ?? 'Branch' }}</strong> &bull; Department: <strong>{{ $employee->department->name ?? 'Dept' }}</strong> &bull; Monthly duty assignments and rest day scheduling
+            </p>
+        </div>
 
-            <div style="display:flex;align-items:center;gap:10px;">
-                <form method="GET" action="{{ route('ess.schedule') }}" style="margin:0;">
-                    <input type="month" name="month" value="{{ $month }}" class="ess-form-control" style="width:auto;padding:8px 12px;font-weight:600;" onchange="this.form.submit()">
-                </form>
+        <div class="hr-page-actions">
+            <form method="GET" action="{{ route('ess.schedule') }}" style="margin:0;">
+                <input type="month" name="month" value="{{ $month }}" class="ess-form-control" style="width:auto;padding:8px 12px;font-weight:600;" onchange="this.form.submit()">
+            </form>
 
-                <button type="button" class="ess-quick-btn" onclick="openSwapModal()">
-                    <i class="ph ph-arrows-clockwise"></i>
-                    <span>Request Shift Swap</span>
-                </button>
-            </div>
+            <button type="button" class="hr-btn hr-btn-primary" onclick="openSwapModal()">
+                <i class="ph ph-arrows-clockwise"></i>
+                <span>Request Shift Swap</span>
+            </button>
         </div>
     </div>
 

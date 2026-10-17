@@ -4,37 +4,36 @@
 
 @section('content')
 <div class="ess-dtr-container">
-    <!-- Header with Cutoff Selector and Action Tools -->
-    <div class="ess-card">
-        <div class="ess-card-accent-strip"></div>
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;">
-            <div>
-                <h2 style="font-family:'Outfit',sans-serif;font-size:20px;font-weight:800;margin:0;color:var(--ess-text-main);">
-                    Daily Time Record (DTR) & Biometrics
-                </h2>
-                <div style="font-size:12.5px;color:var(--ess-text-secondary);margin-top:4px;">
-                    Official biometric punch log and attendance calculation verified under DOLE Labor Standards
-                </div>
-            </div>
+    <!-- Standard HR Page Header -->
+    <div class="hr-page-header" style="margin-bottom: 20px;">
+        <div>
+            <h1 class="hr-page-title">
+                <i class="ph ph-clock"></i>
+                <span>Daily Time Record (DTR) & Biometrics</span>
+            </h1>
+            <p class="hr-page-subtitle">Official biometric punch log and attendance calculation verified under DOLE Labor Standards</p>
+        </div>
 
-            <!-- Month Filter & Export Form -->
-            <div style="display:flex;align-items:center;gap:10px;">
-                <form method="GET" action="{{ route('ess.dtr') }}" style="display:flex;align-items:center;gap:8px;margin:0;">
-                    <input type="month" name="month" value="{{ $month }}" class="ess-form-control" style="width:auto;padding:8px 12px;font-weight:600;" onchange="this.form.submit()">
-                </form>
+        <div class="hr-page-actions">
+            <form method="GET" action="{{ route('ess.dtr') }}" style="display:flex;align-items:center;gap:8px;margin:0;">
+                <input type="month" name="month" value="{{ $month }}" class="ess-form-control" style="width:auto;padding:8px 12px;font-weight:600;" onchange="this.form.submit()">
+            </form>
 
-                <a href="{{ route('ess.dtr.export-pdf', ['month' => $month]) }}" target="_blank" class="ess-quick-btn" style="background:#0f172a;box-shadow:none;">
-                    <i class="ph ph-printer"></i>
-                    <span>Print DTR</span>
-                </a>
-            </div>
+            <a href="{{ route('ess.dtr.export-pdf', ['month' => $month]) }}" target="_blank" class="hr-btn hr-btn-secondary" title="Print official DTR PDF">
+                <i class="ph ph-printer"></i>
+                <span>Print DTR</span>
+            </a>
+            <a href="{{ route('ess.requests') }}" class="hr-btn hr-btn-primary">
+                <i class="ph ph-clock-counter-clockwise"></i>
+                <span>File Correction</span>
+            </a>
         </div>
     </div>
 
     <!-- Summary KPI Stat Cards -->
     <div class="ess-grid-4">
         <div class="ess-kpi-card">
-            <div class="ess-kpi-icon" style="background:rgba(16,185,129,0.12);color:#059669;">
+            <div class="hr-bento-icon-box green">
                 <i class="ph ph-briefcase"></i>
             </div>
             <div class="ess-kpi-info">
@@ -44,7 +43,7 @@
         </div>
 
         <div class="ess-kpi-card">
-            <div class="ess-kpi-icon" style="background:rgba(168,85,247,0.12);color:#a855f7;">
+            <div class="hr-bento-icon-box purple">
                 <i class="ph ph-clock-afternoon"></i>
             </div>
             <div class="ess-kpi-info">
@@ -54,7 +53,7 @@
         </div>
 
         <div class="ess-kpi-card">
-            <div class="ess-kpi-icon" style="background:rgba(99,102,241,0.12);color:#6366f1;">
+            <div class="hr-bento-icon-box indigo">
                 <i class="ph ph-moon"></i>
             </div>
             <div class="ess-kpi-info">
@@ -64,12 +63,12 @@
         </div>
 
         <div class="ess-kpi-card">
-            <div class="ess-kpi-icon" style="background:rgba(239,68,68,0.12);color:#dc2626;">
+            <div class="hr-bento-icon-box orange">
                 <i class="ph ph-warning"></i>
             </div>
             <div class="ess-kpi-info">
                 <span class="ess-kpi-label">Tardiness / Undertime</span>
-                <span class="ess-kpi-val">{{ $totalLateMinutes + $totalUndertimeMinutes }} mins</span>
+                <span class="ess-kpi-val" style="color:#ea580c;">{{ $totalLateMinutes + $totalUndertimeMinutes }} mins</span>
             </div>
         </div>
     </div>
