@@ -58,6 +58,8 @@ export default defineConfig({
                 'resources/js/modules/hr-branches.js',
                 'resources/css/modules/hr-departments.css',
                 'resources/js/modules/hr-departments.js',
+                'resources/css/modules/hr-org-structure.css',
+                'resources/js/modules/hr-org-structure.js',
                 'resources/css/modules/hr-positions.css',
                 'resources/js/modules/hr-positions.js',
                 'resources/css/modules/hr-wage-distortion.css',

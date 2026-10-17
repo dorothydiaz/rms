@@ -27,14 +27,15 @@
                 ['name' => 'Employee Management', 'route' => 'hr.people.employees', 'icon' => 'ph-users', 'active' => ['hr.people.employees*', 'hr.employee']],
                 [
                     'name' => 'Organization',
-                    'route' => 'hr.people.departments',
+                    'route' => 'hr.people.organization',
                     'icon' => 'ph-tree-structure',
                     'active' => ['hr.people.departments*', 'hr.people.positions*', 'hr.people.branches*', 'hr.people.companies*', 'hr.people.organization*'],
                     'subtabs' => [
-                        ['name' => 'Departments', 'route' => 'hr.people.departments', 'icon' => 'ph-tree-structure', 'active' => ['hr.people.departments*']],
+                        ['name' => 'Org Structure', 'route' => 'hr.people.organization', 'icon' => 'ph-tree-structure', 'active' => ['hr.people.organization*']],
+                        ['name' => 'Departments', 'route' => 'hr.people.departments', 'icon' => 'ph-buildings', 'active' => ['hr.people.departments*']],
                         ['name' => 'Positions', 'route' => 'hr.people.positions', 'icon' => 'ph-identification-card', 'active' => ['hr.people.positions*']],
                         ['name' => 'Branches', 'route' => 'hr.people.branches', 'icon' => 'ph-storefront', 'active' => ['hr.people.branches*']],
-                        ['name' => 'Company / Agency', 'route' => 'hr.people.companies', 'icon' => 'ph-buildings', 'active' => ['hr.people.companies*']],
+                        ['name' => 'Company / Agency', 'route' => 'hr.people.companies', 'icon' => 'ph-briefcase', 'active' => ['hr.people.companies*']],
                     ],
                 ],
             ],

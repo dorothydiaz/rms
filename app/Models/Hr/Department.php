@@ -20,6 +20,7 @@ class Department extends Model
 
     protected $fillable = [
         'branch_id',
+        'head_employee_id',
         'name',
         'code',
         'description',
@@ -31,6 +32,11 @@ class Department extends Model
         return [
             'is_active' => 'boolean',
         ];
+    }
+
+    public function head(): BelongsTo
+    {
+        return $this->belongsTo(Employee::class, 'head_employee_id', 'id');
     }
 
     public function branch(): BelongsTo

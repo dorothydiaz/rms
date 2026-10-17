@@ -68,6 +68,9 @@ Route::middleware('auth')->group(function () {
             Route::get('/employees/{id}/print-201', [\App\Http\Controllers\Hr\PeopleController::class, 'print201File'])->name('employees.print-201');
 
             Route::get('/organization', [\App\Http\Controllers\Hr\PeopleController::class, 'organizationIndex'])->name('organization');
+            Route::get('/org-structure/data', [\App\Http\Controllers\Hr\PeopleController::class, 'orgStructureData'])->name('organization.data');
+            Route::post('/org-structure/assign-supervisor', [\App\Http\Controllers\Hr\PeopleController::class, 'assignSupervisor'])->name('organization.assign-supervisor');
+            Route::post('/departments/{id}/assign-head', [\App\Http\Controllers\Hr\PeopleController::class, 'assignDepartmentHead'])->name('departments.assign-head');
             Route::get('/members-modal', [\App\Http\Controllers\Hr\PeopleController::class, 'getMembersModal'])->name('members-modal');
 
             Route::get('/departments', [\App\Http\Controllers\Hr\PeopleController::class, 'departmentsIndex'])->name('departments');

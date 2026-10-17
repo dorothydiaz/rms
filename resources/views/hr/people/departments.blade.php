@@ -27,6 +27,7 @@
                 <tr>
                     <th>Code</th>
                     <th>Department Name</th>
+                    <th>Department Head</th>
                     <th>Branch</th>
                     <th>Description</th>
                     <th>Total Staff</th>
@@ -41,6 +42,15 @@
                         data-branch="{{ strtolower($dept->branch?->name ?? '') }}">
                         <td><strong style="color: #9333ea; font-family: monospace;">{{ $dept->code }}</strong></td>
                         <td><strong>{{ $dept->name }}</strong></td>
+                        <td>
+                            @if($dept->head)
+                                <span class="hr-badge hr-badge-green" style="font-weight: 600;">
+                                    <i class="ph ph-user-check"></i> {{ $dept->head->full_name }}
+                                </span>
+                            @else
+                                <span style="color: #94a3b8; font-style: italic; font-size: 11.5px;">Unassigned</span>
+                            @endif
+                        </td>
                         <td>{{ $dept->branch?->name ?? 'All Branches' }}</td>
                         <td>{{ $dept->description ?? 'No description' }}</td>
                         <td>
@@ -58,7 +68,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="6" style="text-align: center; color: #94a3b8; padding: 30px;">No departments found.</td></tr>
+                    <tr><td colspan="7" style="text-align: center; color: #94a3b8; padding: 30px;">No departments found.</td></tr>
                 @endforelse
             </tbody>
         </table>
@@ -107,6 +117,15 @@
                         <option value="">Multi-branch (All)</option>
                         @foreach($branches as $b)
                             <option value="{{ $b->id }}">{{ $b->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="hr-form-group">
+                    <label class="hr-form-label">Department Head (Optional)</label>
+                    <select name="head_employee_id" class="hr-select">
+                        <option value="">-- No Department Head --</option>
+                        @foreach($employees ?? [] as $emp)
+                            <option value="{{ $emp->id }}">{{ $emp->full_name }} — {{ $emp->position?->name ?? 'Staff' }}</option>
                         @endforeach
                     </select>
                 </div>

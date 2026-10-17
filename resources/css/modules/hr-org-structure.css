@@ -1,0 +1,666 @@
+/* ==========================================================================
+   HR Org Structure - Industrial ERP Organizational Chart Styling
+   ========================================================================== */
+
+:root {
+    --org-canvas-bg: #f8fafc;
+    --org-card-bg: #ffffff;
+    --org-border: #e2e8f0;
+    --org-border-hover: #cbd5e1;
+    --org-line: #cbd5e1;
+    --org-line-active: #7c3aed;
+    --org-text-main: #0f172a;
+    --org-text-sub: #64748b;
+    --org-summit-ring: #8b5cf6;
+    --org-summit-bg: #f5f3ff;
+    --org-dept-head-bg: #f0fdf4;
+    --org-dept-head-ring: #10b981;
+}
+
+/* Stat & KPI Cards Header */
+.org-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.org-kpi-card {
+    background: #ffffff;
+    border: 1px solid var(--org-border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.org-kpi-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.06);
+}
+
+.org-kpi-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+}
+
+.org-kpi-icon.purple { background: #f3e8ff; color: #7c3aed; }
+.org-kpi-icon.blue { background: #e0f2fe; color: #0284c7; }
+.org-kpi-icon.green { background: #dcfce7; color: #16a34a; }
+.org-kpi-icon.amber { background: #fef3c7; color: #d97706; }
+
+.org-kpi-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.org-kpi-val {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--org-text-main);
+    line-height: 1.2;
+}
+
+.org-kpi-label {
+    font-size: 11.5px;
+    font-weight: 500;
+    color: var(--org-text-sub);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+/* Org Structure Action Toolbar */
+.org-toolbar-card {
+    background: #ffffff;
+    border: 1px solid var(--org-border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-bottom: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.org-toolbar-left,
+.org-toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.org-search-box {
+    position: relative;
+    width: 260px;
+}
+
+.org-search-box i {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    font-size: 14px;
+}
+
+.org-search-input {
+    width: 100%;
+    height: 34px;
+    padding: 6px 12px 6px 32px;
+    border: 1px solid var(--org-border);
+    border-radius: 8px;
+    font-size: 12.5px;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    background: #ffffff;
+}
+
+.org-search-input:focus {
+    border-color: #8b5cf6;
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+}
+
+.org-select-filter {
+    height: 34px;
+    padding: 0 28px 0 10px;
+    border: 1px solid var(--org-border);
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #334155;
+    background: #ffffff url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e") no-repeat right 8px center/12px auto;
+    appearance: none;
+    cursor: pointer;
+    outline: none;
+}
+
+.org-select-filter:focus {
+    border-color: #8b5cf6;
+}
+
+/* View Mode Switcher Button Group */
+.org-view-toggle {
+    display: inline-flex;
+    background: #f1f5f9;
+    padding: 3px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+.org-view-btn {
+    border: none;
+    background: transparent;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.org-view-btn.active {
+    background: #ffffff;
+    color: #0f172a;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* Zoom Controls */
+.org-zoom-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    background: #f8fafc;
+    border: 1px solid var(--org-border);
+    border-radius: 8px;
+    padding: 2px;
+}
+
+.org-zoom-btn {
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #475569;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background 0.15s;
+}
+
+.org-zoom-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+}
+
+.org-zoom-level {
+    font-size: 11px;
+    font-weight: 600;
+    color: #64748b;
+    padding: 0 6px;
+    min-width: 42px;
+    text-align: center;
+}
+
+/* Canvas Viewport */
+.org-canvas-viewport {
+    position: relative;
+    width: 100%;
+    height: calc(100vh - 290px);
+    min-height: 520px;
+    background-color: var(--org-canvas-bg);
+    background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+    background-size: 20px 20px;
+    border: 1px solid var(--org-border);
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: grab;
+    user-select: none;
+}
+
+.org-canvas-viewport.is-dragging {
+    cursor: grabbing;
+}
+
+.org-canvas-content {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform-origin: 0 0;
+    will-change: transform;
+    transition: transform 0.05s linear;
+    padding: 30px;
+}
+
+/* Visual Tree Structure */
+.org-tree,
+.org-tree ul {
+    list-style: none;
+    padding-top: 20px;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    margin: 0;
+    padding-left: 0;
+}
+
+.org-tree li {
+    float: left;
+    text-align: center;
+    list-style-type: none;
+    position: relative;
+    padding: 20px 14px 0 14px;
+}
+
+/* Connecting Lines */
+.org-tree li::before,
+.org-tree li::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 50%;
+    border-top: 2px solid var(--org-line);
+    width: 50%;
+    height: 20px;
+}
+
+.org-tree li::after {
+    right: auto;
+    left: 50%;
+    border-left: 2px solid var(--org-line);
+}
+
+.org-tree li:only-child::after,
+.org-tree li:only-child::before {
+    display: none;
+}
+
+.org-tree li:only-child {
+    padding-top: 0;
+}
+
+.org-tree li:first-child::before,
+.org-tree li:last-child::after {
+    border: none;
+}
+
+.org-tree li:last-child::before {
+    border-right: 2px solid var(--org-line);
+    border-radius: 0 8px 0 0;
+}
+
+.org-tree li:first-child::after {
+    border-radius: 8px 0 0 0;
+}
+
+.org-tree ul::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    border-left: 2px solid var(--org-line);
+    width: 0;
+    height: 20px;
+}
+
+/* Org Card Node */
+.org-node-card {
+    background: var(--org-card-bg);
+    border: 1px solid var(--org-border);
+    border-radius: 12px;
+    padding: 12px 14px;
+    width: 250px;
+    display: inline-block;
+    text-align: left;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+    position: relative;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s;
+    cursor: default;
+}
+
+.org-node-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px -2px rgba(0, 0, 0, 0.08);
+    border-color: #cbd5e1;
+}
+
+.org-node-card.is-summit {
+    border: 2px solid #9333ea;
+    background: linear-gradient(to bottom, #faf5ff, #ffffff);
+}
+
+.org-node-card.is-dept-head {
+    border-left: 4px solid #10b981;
+}
+
+.org-node-card.highlighted {
+    border-color: #f59e0b !important;
+    box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.25) !important;
+}
+
+/* Card Header */
+.org-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.org-badge-role {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.org-badge-role.summit {
+    background: #f3e8ff;
+    color: #7e22ce;
+}
+
+.org-badge-role.head {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.org-card-actions {
+    position: relative;
+}
+
+.org-card-menu-btn {
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: transparent;
+    color: #94a3b8;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.org-card-menu-btn:hover {
+    background: #f1f5f9;
+    color: #334155;
+}
+
+/* Card Profile Row */
+.org-card-profile {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.org-card-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #e2e8f0;
+    flex-shrink: 0;
+}
+
+.org-card-initials {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: #f1f5f9;
+    color: #475569;
+    font-weight: 700;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #e2e8f0;
+    flex-shrink: 0;
+}
+
+.org-card-name-group {
+    overflow: hidden;
+}
+
+.org-card-name {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--org-text-main);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.3;
+}
+
+.org-card-title {
+    font-size: 11.5px;
+    color: var(--org-text-sub);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Card Meta Tags */
+.org-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #f1f5f9;
+}
+
+.org-pill {
+    font-size: 10.5px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.org-pill.dept-mgmt { background: #f3e8ff; color: #7e22ce; }
+.org-pill.dept-foh { background: #e0f2fe; color: #0369a1; }
+.org-pill.dept-boh { background: #ffedd5; color: #c2410c; }
+.org-pill.dept-fin { background: #dcfce7; color: #15803d; }
+.org-pill.dept-other { background: #f1f5f9; color: #475569; }
+
+.org-pill.branch {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    color: #64748b;
+}
+
+.org-pill.company {
+    background: #fdf4ff;
+    border: 1px solid #f0abfc;
+    color: #a21caf;
+}
+
+.org-node-card.dimmed {
+    opacity: 0.25 !important;
+    filter: grayscale(80%) !important;
+    transition: opacity 0.2s, filter 0.2s;
+}
+
+/* Reports Counter / Collapse Toggle */
+.org-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 8px;
+    font-size: 11px;
+    color: #64748b;
+}
+
+.org-collapse-btn {
+    border: 1px solid var(--org-border);
+    background: #ffffff;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #475569;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+}
+
+.org-collapse-btn:hover {
+    background: #7c3aed;
+    color: #ffffff;
+    border-color: #7c3aed;
+}
+
+/* Unassigned Drawer */
+.org-unassigned-drawer {
+    position: absolute;
+    right: 16px;
+    bottom: 16px;
+    background: #ffffff;
+    border: 1px solid #f59e0b;
+    border-radius: 10px;
+    padding: 10px 14px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    max-width: 320px;
+    z-index: 10;
+}
+
+.org-unassigned-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #b45309;
+    margin-bottom: 6px;
+}
+
+/* Department Matrix Grid View */
+.org-grid-view {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+    padding: 16px;
+}
+
+.org-grid-dept-box {
+    background: #ffffff;
+    border: 1px solid var(--org-border);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.org-grid-dept-header {
+    padding: 12px 16px;
+    background: #f8fafc;
+    border-bottom: 1px solid var(--org-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.org-grid-dept-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--org-text-main);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.org-grid-dept-body {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 480px;
+    overflow-y: auto;
+}
+
+.org-grid-staff-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 10px;
+    background: #f8fafc;
+    border: 1px solid var(--org-border);
+    border-radius: 8px;
+    transition: background 0.15s;
+}
+
+.org-grid-staff-item:hover {
+    background: #f1f5f9;
+}
+
+/* Hierarchical Directory Table View */
+.org-table-view {
+    background: #ffffff;
+    border: 1px solid var(--org-border);
+    border-radius: 12px;
+    overflow-x: auto;
+}
+
+.org-dir-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.org-dir-table th {
+    background: #f8fafc;
+    padding: 10px 14px;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    text-align: left;
+    border-bottom: 1px solid var(--org-border);
+}
+
+.org-dir-table td {
+    padding: 10px 14px;
+    font-size: 12.5px;
+    color: #1e293b;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.org-dir-table tr:hover td {
+    background: #f8fafc;
+}
+
+.org-table-name-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.org-table-level-indent {
+    display: inline-block;
+    width: 18px;
+    height: 1px;
+}
