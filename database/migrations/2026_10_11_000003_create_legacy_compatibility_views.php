@@ -35,10 +35,13 @@ return new class extends Migration
      */
     public function up(): void
     {
+        $grammar = DB::getQueryGrammar();
         foreach ($this->views as $old => $new) {
             if (!Schema::hasTable($old) && Schema::hasTable($new)) {
-                DB::statement("DROP VIEW IF EXISTS \"$old\"");
-                DB::statement("CREATE VIEW \"$old\" AS SELECT * FROM \"$new\"");
+                $wrappedOld = $grammar->wrapTable($old);
+                $wrappedNew = $grammar->wrapTable($new);
+                DB::statement("DROP VIEW IF EXISTS {$wrappedOld}");
+                DB::statement("CREATE VIEW {$wrappedOld} AS SELECT * FROM {$wrappedNew}");
             }
         }
     }
@@ -48,8 +51,10 @@ return new class extends Migration
      */
     public function down(): void
     {
+        $grammar = DB::getQueryGrammar();
         foreach (array_keys($this->views) as $old) {
-            DB::statement("DROP VIEW IF EXISTS \"$old\"");
+            $wrappedOld = $grammar->wrapTable($old);
+            DB::statement("DROP VIEW IF EXISTS {$wrappedOld}");
         }
     }
 };

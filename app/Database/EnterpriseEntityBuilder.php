@@ -30,15 +30,26 @@ class EnterpriseEntityBuilder extends Builder
             return $this->model->getKeyName();
         }
 
+        $aliases = method_exists($this->model, 'getColumnAliases') ? $this->model->getColumnAliases() : [];
+
         if (str_contains($column, '.')) {
             [$t, $c] = explode('.', $column, 2);
-            if ($t === $table && !str_starts_with($c, $prefix . '_') && $c !== '*') {
+            if ($t === $table && $c !== '*') {
                 if ($c === 'id') {
                     return $table . '.' . $this->model->getKeyName();
                 }
-                return $table . '.' . $prefix . '_' . $c;
+                if (isset($aliases[$c])) {
+                    return $table . '.' . $aliases[$c];
+                }
+                if (!str_starts_with($c, $prefix . '_')) {
+                    return $table . '.' . $prefix . '_' . $c;
+                }
             }
             return $column;
+        }
+
+        if (isset($aliases[$column])) {
+            return $aliases[$column];
         }
 
         if (!str_starts_with($column, $prefix . '_')) {

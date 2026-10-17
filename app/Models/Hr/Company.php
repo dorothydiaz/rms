@@ -41,6 +41,16 @@ class Company extends Model
         return $this->hasMany(Branch::class);
     }
 
+    public function getColumnAliases(): array
+    {
+        return [
+            'name' => 'company_legal_name',
+            'tin' => 'company_tax_id',
+            'email' => 'company_email_address',
+            'phone' => 'company_phone_number',
+        ];
+    }
+
     public function getNameAttribute() { return $this->attributes['company_legal_name'] ?? null; }
     public function setNameAttribute($v) { $this->attributes['company_legal_name'] = $v; }
     public function getCodeAttribute() { return $this->attributes['company_code'] ?? null; }

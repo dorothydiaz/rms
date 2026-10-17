@@ -38,6 +38,18 @@ class Branch extends Model
 
 
 
+    public function getColumnAliases(): array
+    {
+        return [
+            'company_id' => 'branch_company_id',
+            'name' => 'branch_name',
+            'code' => 'branch_code',
+            'address' => 'branch_address',
+            'email' => 'branch_email_address',
+            'phone' => 'branch_phone_number',
+        ];
+    }
+
     public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class);

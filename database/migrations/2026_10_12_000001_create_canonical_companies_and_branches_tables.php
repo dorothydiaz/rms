@@ -102,13 +102,14 @@ return new class extends Migration
         if (Schema::hasTable('hr_companies') && DB::table('companies')->count() === 0) {
             $hrCompanies = DB::table('hr_companies')->get();
             foreach ($hrCompanies as $hc) {
+                $cId = $hc->company_id ?? ($hc->id ?? 1);
                 DB::table('companies')->insert([
-                    'company_id' => $hc->company_id ?? $hc->id,
-                    'company_code' => $hc->company_code ?? ('COMP-' . $hc->id),
+                    'company_id' => $cId,
+                    'company_code' => $hc->company_code ?? ('COMP-' . $cId),
                     'parent_company_id' => null,
-                    'company_legal_name' => $hc->company_legal_name ?? 'Company ' . $hc->id,
-                    'company_trade_name' => $hc->company_legal_name ?? 'Company ' . $hc->id,
-                    'company_registration_no' => 'SEC-2024-' . str_pad($hc->id, 5, '0', STR_PAD_LEFT),
+                    'company_legal_name' => $hc->company_legal_name ?? 'Company ' . $cId,
+                    'company_trade_name' => $hc->company_legal_name ?? 'Company ' . $cId,
+                    'company_registration_no' => 'SEC-2024-' . str_pad((string)$cId, 5, '0', STR_PAD_LEFT),
                     'company_tax_id' => $hc->company_tax_id ?? '000-000-000-000',
                     'company_tax_type' => 'VAT Registered',
                     'company_rdo_code' => '047',
@@ -132,12 +133,13 @@ return new class extends Migration
         if (Schema::hasTable('hr_branches') && DB::table('branches')->count() === 0) {
             $hrBranches = DB::table('hr_branches')->get();
             foreach ($hrBranches as $hb) {
+                $bId = $hb->branch_id ?? ($hb->id ?? 1);
                 DB::table('branches')->insert([
-                    'branch_id' => $hb->branch_id ?? $hb->id,
+                    'branch_id' => $bId,
                     'company_id' => $hb->branch_company_id ?? 3,
-                    'branch_code' => $hb->branch_code ?? ('BR-' . $hb->id),
-                    'branch_name' => $hb->branch_name ?? 'Branch ' . $hb->id,
-                    'branch_tax_code' => '0000' . $hb->id,
+                    'branch_code' => $hb->branch_code ?? ('BR-' . $bId),
+                    'branch_name' => $hb->branch_name ?? 'Branch ' . $bId,
+                    'branch_tax_code' => '0000' . $bId,
                     'branch_type' => str_contains(strtolower($hb->branch_name ?? ''), 'commissary') ? 'Central Commissary' : 'Store / Dine-In',
                     'branch_address_line_1' => $hb->branch_address ?? 'Metro Manila',
                     'branch_phone_number' => $hb->branch_phone_number ?? null,
@@ -235,30 +237,52 @@ return new class extends Migration
         // In SQLite, foreign keys cannot reference VIEWs, so hr_companies and hr_branches remain physical tables
         // synchronized bidirectionally with canonical companies and branches via database triggers.
         if (self::isView('hr_companies')) {
-            DB::statement('DROP VIEW IF EXISTS "hr_companies"');
+            $tbl = DB::getQueryGrammar()->wrapTable('hr_companies');
+            DB::statement("DROP VIEW IF EXISTS {$tbl}");
         }
         if (self::isView('hr_branches')) {
-            DB::statement('DROP VIEW IF EXISTS "hr_branches"');
+            $tbl = DB::getQueryGrammar()->wrapTable('hr_branches');
+            DB::statement("DROP VIEW IF EXISTS {$tbl}");
         }
 
         if (!Schema::hasTable('hr_companies')) {
-            DB::statement('CREATE TABLE "hr_companies" (
-                "company_id" integer primary key autoincrement not null,
-                "company_legal_name" varchar not null,
-                "company_code" varchar not null,
-                "company_tax_id" varchar,
-                "company_email_address" varchar,
-                "company_phone_number" varchar,
-                "company_address" text,
-                "company_logo" varchar,
-                "company_created_at" datetime,
-                "company_updated_at" datetime,
-                "company_type" varchar not null default (\'Company\'),
-                "company_contact_person" varchar,
-                "company_is_active" tinyint(1) not null default (1),
-                "company_notes" text,
-                "id" INTEGER GENERATED ALWAYS AS (company_id) VIRTUAL
-            )');
+            if (DB::getDriverName() === 'sqlite') {
+                DB::statement('CREATE TABLE "hr_companies" (
+                    "company_id" integer primary key autoincrement not null,
+                    "company_legal_name" varchar not null,
+                    "company_code" varchar not null,
+                    "company_tax_id" varchar,
+                    "company_email_address" varchar,
+                    "company_phone_number" varchar,
+                    "company_address" text,
+                    "company_logo" varchar,
+                    "company_created_at" datetime,
+                    "company_updated_at" datetime,
+                    "company_type" varchar not null default (\'Company\'),
+                    "company_contact_person" varchar,
+                    "company_is_active" tinyint(1) not null default (1),
+                    "company_notes" text,
+                    "id" INTEGER GENERATED ALWAYS AS (company_id) VIRTUAL
+                )');
+            } else {
+                DB::statement('CREATE TABLE `hr_companies` (
+                    `company_id` bigint unsigned primary key auto_increment not null,
+                    `company_legal_name` varchar(255) not null,
+                    `company_code` varchar(50) not null,
+                    `company_tax_id` varchar(50),
+                    `company_email_address` varchar(255),
+                    `company_phone_number` varchar(30),
+                    `company_address` text,
+                    `company_logo` varchar(255),
+                    `company_created_at` datetime,
+                    `company_updated_at` datetime,
+                    `company_type` varchar(50) not null default "Company",
+                    `company_contact_person` varchar(100),
+                    `company_is_active` tinyint(1) not null default 1,
+                    `company_notes` text,
+                    `id` bigint unsigned GENERATED ALWAYS AS (`company_id`) VIRTUAL
+                )');
+            }
 
             DB::statement('INSERT INTO hr_companies SELECT 
                 company_id, company_legal_name, company_code, company_tax_id, company_email_address, company_phone_number,
@@ -268,19 +292,35 @@ return new class extends Migration
         }
 
         if (!Schema::hasTable('hr_branches')) {
-            DB::statement('CREATE TABLE "hr_branches" (
-                "branch_id" integer primary key autoincrement not null,
-                "branch_company_id" integer not null default (1),
-                "branch_name" varchar not null,
-                "branch_code" varchar not null,
-                "branch_address" text,
-                "branch_phone_number" varchar,
-                "branch_email_address" varchar,
-                "branch_is_active" tinyint(1) not null default (1),
-                "branch_created_at" datetime,
-                "branch_updated_at" datetime,
-                "id" INTEGER GENERATED ALWAYS AS (branch_id) VIRTUAL
-            )');
+            if (DB::getDriverName() === 'sqlite') {
+                DB::statement('CREATE TABLE "hr_branches" (
+                    "branch_id" integer primary key autoincrement not null,
+                    "branch_company_id" integer not null default (1),
+                    "branch_name" varchar not null,
+                    "branch_code" varchar not null,
+                    "branch_address" text,
+                    "branch_phone_number" varchar,
+                    "branch_email_address" varchar,
+                    "branch_is_active" tinyint(1) not null default (1),
+                    "branch_created_at" datetime,
+                    "branch_updated_at" datetime,
+                    "id" INTEGER GENERATED ALWAYS AS (branch_id) VIRTUAL
+                )');
+            } else {
+                DB::statement('CREATE TABLE `hr_branches` (
+                    `branch_id` bigint unsigned primary key auto_increment not null,
+                    `branch_company_id` bigint unsigned not null default 1,
+                    `branch_name` varchar(150) not null,
+                    `branch_code` varchar(50) not null,
+                    `branch_address` text,
+                    `branch_phone_number` varchar(30),
+                    `branch_email_address` varchar(255),
+                    `branch_is_active` tinyint(1) not null default 1,
+                    `branch_created_at` datetime,
+                    `branch_updated_at` datetime,
+                    `id` bigint unsigned GENERATED ALWAYS AS (`branch_id`) VIRTUAL
+                )');
+            }
 
             DB::statement('INSERT INTO hr_branches SELECT 
                 branch_id, company_id, branch_name, branch_code, branch_address_line_1, branch_phone_number, branch_email_address,
@@ -341,10 +381,12 @@ return new class extends Migration
         Schema::disableForeignKeyConstraints();
 
         if (self::isView('hr_companies')) {
-            DB::statement('DROP VIEW IF EXISTS "hr_companies"');
+            $tbl = DB::getQueryGrammar()->wrapTable('hr_companies');
+            DB::statement("DROP VIEW IF EXISTS {$tbl}");
         }
         if (self::isView('hr_branches')) {
-            DB::statement('DROP VIEW IF EXISTS "hr_branches"');
+            $tbl = DB::getQueryGrammar()->wrapTable('hr_branches');
+            DB::statement("DROP VIEW IF EXISTS {$tbl}");
         }
 
         Schema::dropIfExists('user_branches');

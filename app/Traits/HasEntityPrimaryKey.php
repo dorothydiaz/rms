@@ -15,11 +15,12 @@ trait HasEntityPrimaryKey
 
             $prefix = $model->getEntityPrefix();
             if (!empty($prefix)) {
+                $aliases = method_exists($model, 'getColumnAliases') ? $model->getColumnAliases() : [];
                 foreach ($model->attributes as $key => $val) {
                     if ($key === $model->getKeyName() || str_starts_with($key, $prefix . '_')) {
                         continue;
                     }
-                    $prefixed = $prefix . '_' . $key;
+                    $prefixed = $aliases[$key] ?? ($prefix . '_' . $key);
                     if (!array_key_exists($prefixed, $model->attributes)) {
                         $model->attributes[$prefixed] = $val;
                     }
@@ -91,6 +92,10 @@ trait HasEntityPrimaryKey
         if ($column === 'id') {
             return $this->getKeyName();
         }
+        $aliases = method_exists($this, 'getColumnAliases') ? $this->getColumnAliases() : [];
+        if (isset($aliases[$column])) {
+            return $aliases[$column];
+        }
         if (!str_starts_with($column, $prefix . '_')) {
             return $prefix . '_' . $column;
         }
@@ -107,12 +112,23 @@ trait HasEntityPrimaryKey
             return parent::qualifyColumn($column);
         }
 
+        $aliases = method_exists($this, 'getColumnAliases') ? $this->getColumnAliases() : [];
+
         if (str_contains($column, '.')) {
             [$table, $col] = explode('.', $column, 2);
-            if ($table === $this->getTable() && !str_starts_with($col, $prefix . '_') && $col !== '*') {
-                return $table . '.' . $prefix . '_' . $col;
+            if ($table === $this->getTable() && $col !== '*') {
+                if (isset($aliases[$col])) {
+                    return $table . '.' . $aliases[$col];
+                }
+                if (!str_starts_with($col, $prefix . '_')) {
+                    return $table . '.' . $prefix . '_' . $col;
+                }
             }
             return $column;
+        }
+
+        if (isset($aliases[$column])) {
+            return $this->getTable() . '.' . $aliases[$column];
         }
 
         if (!str_starts_with($column, $prefix . '_') && $column !== '*') {
@@ -181,6 +197,14 @@ trait HasEntityPrimaryKey
             return parent::getAttribute($key);
         }
 
+        $aliases = method_exists($this, 'getColumnAliases') ? $this->getColumnAliases() : [];
+        if (isset($aliases[$key])) {
+            $mappedKey = $aliases[$key];
+            if (array_key_exists($mappedKey, $this->attributes)) {
+                return $this->getAttributeValue($mappedKey);
+            }
+        }
+
         $prefixedKey = $prefix . '_' . $key;
         if (array_key_exists($prefixedKey, $this->attributes)) {
             return $this->getAttributeValue($prefixedKey);
@@ -192,6 +216,11 @@ trait HasEntityPrimaryKey
     public function isFillable($key)
     {
         if (parent::isFillable($key)) {
+            return true;
+        }
+
+        $aliases = method_exists($this, 'getColumnAliases') ? $this->getColumnAliases() : [];
+        if (in_array($key, $aliases)) {
             return true;
         }
 
@@ -231,7 +260,10 @@ trait HasEntityPrimaryKey
             return parent::setAttribute($this->getUpdatedAtColumn(), $value);
         }
 
-        if (!str_starts_with($key, $prefix . '_')) {
+        $aliases = method_exists($this, 'getColumnAliases') ? $this->getColumnAliases() : [];
+        if (isset($aliases[$key])) {
+            $key = $aliases[$key];
+        } elseif (!str_starts_with($key, $prefix . '_')) {
             $key = $prefix . '_' . $key;
         }
 
@@ -249,7 +281,8 @@ trait HasEntityPrimaryKey
             return parent::__isset($key);
         }
 
-        $prefixedKey = $prefix . '_' . $key;
+        $aliases = method_exists($this, 'getColumnAliases') ? $this->getColumnAliases() : [];
+        $prefixedKey = $aliases[$key] ?? ($prefix . '_' . $key);
         if (array_key_exists($prefixedKey, $this->attributes)) {
             return parent::__isset($prefixedKey);
         }
