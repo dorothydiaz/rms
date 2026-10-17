@@ -116,15 +116,15 @@
 </div>
 
 <!-- Shift Swap Modal -->
-<div id="shiftSwapModal" class="ess-modal-backdrop">
-    <div class="ess-modal">
+<div id="shiftSwapModal" class="hr-modal-overlay">
+    <div class="hr-modal">
+        <div class="hr-modal-header">
+            <span class="hr-modal-title"><i class="ph ph-arrows-left-right"></i> Request Shift Swap</span>
+            <button type="button" class="icon-btn" onclick="closeModal('shiftSwapModal')" aria-label="Close"><i class="ph ph-x"></i></button>
+        </div>
         <form method="POST" action="{{ route('ess.schedule.swap') }}">
             @csrf
-            <div class="ess-modal-header">
-                <h3 class="ess-modal-title">Request Shift Swap</h3>
-                <button type="button" class="ess-modal-close" onclick="closeSwapModal()">&times;</button>
-            </div>
-            <div class="ess-modal-body">
+            <div class="hr-modal-body">
                 <div class="ess-form-group">
                     <label class="ess-form-label">Swap with Colleague (Same Branch) *</label>
                     <select name="swap_with_employee_id" class="ess-form-control" required>
@@ -150,12 +150,12 @@
 
                 <div class="ess-form-group">
                     <label class="ess-form-label">Reason for Shift Swap *</label>
-                    <textarea name="reason" class="ess-form-control" rows="3" placeholder="Explain the mutual agreement and reason..." required></textarea>
+                    <textarea name="reason" class="ess-form-control" rows="4" placeholder="Explain the mutual agreement and reason..." required></textarea>
                 </div>
             </div>
-            <div class="ess-modal-footer">
-                <button type="button" class="ess-form-control" style="width:auto;cursor:pointer;" onclick="closeSwapModal()">Cancel</button>
-                <button type="submit" class="ess-quick-btn">Submit Swap Request</button>
+            <div class="hr-modal-footer">
+                <button type="button" class="hr-btn hr-btn-secondary" onclick="closeModal('shiftSwapModal')">Cancel</button>
+                <button type="submit" class="hr-btn hr-btn-primary">Submit Swap Request</button>
             </div>
         </form>
     </div>
@@ -164,10 +164,10 @@
 @push('scripts')
 <script>
     function openSwapModal() {
-        document.getElementById('shiftSwapModal').classList.add('open');
+        openModal('shiftSwapModal');
     }
     function closeSwapModal() {
-        document.getElementById('shiftSwapModal').classList.remove('open');
+        closeModal('shiftSwapModal');
     }
 </script>
 @endpush

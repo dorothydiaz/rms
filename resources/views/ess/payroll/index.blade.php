@@ -280,51 +280,47 @@
 </div>
 
 <!-- Dispute Modal -->
-<div class="modal fade" id="disputeModal" tabindex="-1" aria-hidden="true" style="display: none; background: rgba(15,23,42,0.6); position: fixed; inset: 0; z-index: 1050; align-items: center; justify-content: center;">
-    <div class="modal-dialog modal-dialog-centered" style="max-width: 520px; width: 100%; margin: 1.5rem auto;">
-        <div class="modal-content" style="background: white; border-radius: 16px; border: 1px solid var(--ess-border); box-shadow: var(--ess-shadow-lg); overflow: hidden;">
-            <form action="{{ route('ess.payroll.dispute') }}" method="POST">
-                @csrf
-                <input type="hidden" name="payroll_record_id" id="disputeRecordId">
-                <div class="modal-header" style="padding: 16px 20px; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between;">
-                    <h5 class="modal-title" style="font-weight: 700; color: #0f172a; font-size: 16px; margin: 0; display: flex; align-items: center; gap: 8px;">
-                        <i class="ph ph-warning-circle" style="color: #d97706; font-size: 20px;"></i> File Payroll Dispute / Inquiry
-                    </h5>
-                    <button type="button" onclick="closeDisputeModal()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #64748b;">&times;</button>
-                </div>
-                <div class="modal-body" style="padding: 20px;">
-                    <p style="font-size: 13px; color: #64748b; margin-bottom: 16px;">
-                        Selected Period: <strong id="disputePeriodName" style="color: #0f172a;"></strong>
-                    </p>
-
-                    <div style="margin-bottom: 14px;">
-                        <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px;">Dispute Category <span style="color:#dc2626;">*</span></label>
-                        <select name="dispute_category" class="ess-form-control" style="width:100%;" required>
-                            <option value="">Select category...</option>
-                            <option value="MISSING_OVERTIME">Missing / Uncredited Overtime Hours</option>
-                            <option value="INCORRECT_RATE">Discrepancy in Hourly / Daily Basic Rate</option>
-                            <option value="NIGHT_DIFF_ERROR">Night Shift Differential (NSD) Discrepancy</option>
-                            <option value="HOLIDAY_PREMIUM">Uncredited Holiday / Rest Day Premium Pay</option>
-                            <option value="STATUTORY_VARIANCE">SSS / PhilHealth / Pag-IBIG Deduction Variance</option>
-                            <option value="TAX_WITHHOLDING">BIR Withholding Tax Recomputation Request</option>
-                            <option value="OTHER">Other Discrepancy</option>
-                        </select>
-                    </div>
-
-                    <div style="margin-bottom: 8px;">
-                        <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px;">Detailed Explanation <span style="color:#dc2626;">*</span></label>
-                        <textarea name="details" class="ess-form-control" style="width:100%;" rows="4" placeholder="Specify the exact date, missing hours, expected calculation vs. received amount..." required></textarea>
-                        <small style="font-size: 11px; color: #94a3b8; display: block; margin-top: 5px;">
-                            Your inquiry will be logged under DOLE Labor Compliance standards for immediate HR review.
-                        </small>
-                    </div>
-                </div>
-                <div class="modal-footer" style="padding: 14px 20px; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; gap: 8px; background: #f8fafc;">
-                    <button type="button" class="hr-btn hr-btn-secondary" onclick="closeDisputeModal()">Cancel</button>
-                    <button type="submit" class="hr-btn hr-btn-primary">Submit Dispute</button>
-                </div>
-            </form>
+<div id="disputeModal" class="hr-modal-overlay">
+    <div class="hr-modal" style="max-width: 540px;">
+        <div class="hr-modal-header">
+            <span class="hr-modal-title"><i class="ph ph-warning-circle"></i> File Payroll Dispute / Inquiry</span>
+            <button type="button" class="icon-btn" onclick="closeModal('disputeModal')" aria-label="Close"><i class="ph ph-x"></i></button>
         </div>
+        <form action="{{ route('ess.payroll.dispute') }}" method="POST">
+            @csrf
+            <input type="hidden" name="payroll_record_id" id="disputeRecordId">
+            <div class="hr-modal-body">
+                <p style="font-size: 13px; color: #64748b; margin-bottom: 8px;">
+                    Selected Period: <strong id="disputePeriodName" style="color: #0f172a;"></strong>
+                </p>
+
+                <div class="ess-form-group">
+                    <label class="ess-form-label">Dispute Category *</label>
+                    <select name="dispute_category" class="ess-form-control" style="width:100%;" required>
+                        <option value="">Select category...</option>
+                        <option value="MISSING_OVERTIME">Missing / Uncredited Overtime Hours</option>
+                        <option value="INCORRECT_RATE">Discrepancy in Hourly / Daily Basic Rate</option>
+                        <option value="NIGHT_DIFF_ERROR">Night Shift Differential (NSD) Discrepancy</option>
+                        <option value="HOLIDAY_PREMIUM">Uncredited Holiday / Rest Day Premium Pay</option>
+                        <option value="STATUTORY_VARIANCE">SSS / PhilHealth / Pag-IBIG Deduction Variance</option>
+                        <option value="TAX_WITHHOLDING">BIR Withholding Tax Recomputation Request</option>
+                        <option value="OTHER">Other Discrepancy</option>
+                    </select>
+                </div>
+
+                <div class="ess-form-group">
+                    <label class="ess-form-label">Detailed Explanation *</label>
+                    <textarea name="details" class="ess-form-control" style="width:100%;" rows="4" placeholder="Specify the exact date, missing hours, expected calculation vs. received amount..." required></textarea>
+                    <small style="font-size: 11px; color: #94a3b8; display: block; margin-top: 5px;">
+                        Your inquiry will be logged under DOLE Labor Compliance standards for immediate HR review.
+                    </small>
+                </div>
+            </div>
+            <div class="hr-modal-footer">
+                <button type="button" class="hr-btn hr-btn-secondary" onclick="closeModal('disputeModal')">Cancel</button>
+                <button type="submit" class="hr-btn hr-btn-primary">Submit Dispute</button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -332,18 +328,10 @@
 function openDisputeModal(recordId, periodName) {
     document.getElementById('disputeRecordId').value = recordId;
     document.getElementById('disputePeriodName').innerText = periodName;
-    const modal = document.getElementById('disputeModal');
-    modal.style.display = 'flex';
+    openModal('disputeModal');
 }
 function closeDisputeModal() {
-    const modal = document.getElementById('disputeModal');
-    modal.style.display = 'none';
+    closeModal('disputeModal');
 }
-window.addEventListener('click', function(e) {
-    const modal = document.getElementById('disputeModal');
-    if (e.target === modal) {
-        modal.style.display = 'none';
-    }
-});
 </script>
 @endsection

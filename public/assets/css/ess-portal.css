@@ -789,32 +789,171 @@ body.ess-portal-body {
     color: #9333ea;
 }
 
-/* Modals */
-.modal-backdrop-custom {
-    position: fixed;
-    inset: 0;
-    background: rgba(15, 23, 42, 0.6);
-    backdrop-filter: blur(4px);
-    z-index: 1100;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    padding: 16px;
+/* ==========================================================================
+   Stellar One ESS Modal Overlays / Slide-over Drawers
+   ========================================================================== */
+.ess-modal-backdrop,
+.hr-modal-overlay {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    background: rgba(15, 23, 42, 0.45) !important;
+    backdrop-filter: blur(4px) !important;
+    -webkit-backdrop-filter: blur(4px) !important;
+    display: flex !important;
+    align-items: stretch !important;
+    justify-content: flex-end !important;
+    z-index: 1200 !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
-.ess-modal-box {
-    background: #ffffff;
-    border-radius: var(--ess-radius-lg);
-    box-shadow: var(--ess-shadow-lg);
-    width: 100%;
-    max-width: 540px;
-    overflow: hidden;
-    animation: essModalZoom 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+.ess-modal-backdrop.open,
+.hr-modal-overlay.open {
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
 }
 
-@keyframes essModalZoom {
-    from { opacity: 0; transform: scale(0.96); }
-    to { opacity: 1; transform: scale(1); }
+.ess-modal,
+.hr-modal {
+    background: #ffffff !important;
+    border-radius: 20px 0 0 20px !important;
+    box-shadow: -12px 0 45px -4px rgba(15, 23, 42, 0.18), -4px 0 16px -2px rgba(15, 23, 42, 0.08) !important;
+    border: none !important;
+    border-left: 1px solid #e2e8f0 !important;
+    width: 100% !important;
+    max-width: min(580px, 94vw) !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    min-height: 100vh !important;
+    margin: 0 0 0 auto !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    transform: translateX(100%) !important;
+    transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.32s ease !important;
+    position: relative !important;
+    z-index: 1210 !important;
+}
+
+.ess-modal-backdrop.open .ess-modal,
+.hr-modal-overlay.open .hr-modal {
+    transform: translateX(0) !important;
+}
+
+.ess-modal > form,
+.hr-modal > form {
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 1 0% !important;
+    min-height: 0 !important;
+    height: 100% !important;
+    overflow: hidden !important;
+    margin: 0 !important;
+}
+
+.ess-modal-header,
+.hr-modal-header {
+    flex-shrink: 0 !important;
+    padding: 22px 28px !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    background: #ffffff !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 20 !important;
+}
+
+.ess-modal-title,
+.hr-modal-title {
+    font-family: var(--font-heading, inherit) !important;
+    font-size: 17px !important;
+    font-weight: 700 !important;
+    color: #0f172a !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    margin: 0 !important;
+}
+
+.ess-modal-title i,
+.hr-modal-title i {
+    color: #7c3aed !important;
+    font-size: 19px !important;
+    width: 36px !important;
+    height: 36px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: #f5f3ff !important;
+    border: 1px solid #ede9fe !important;
+    border-radius: 10px !important;
+    flex-shrink: 0 !important;
+}
+
+.ess-modal-close,
+.hr-modal-header .icon-btn {
+    width: 34px !important;
+    height: 34px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 9px !important;
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #64748b !important;
+    cursor: pointer !important;
+    font-size: 16px !important;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    padding: 0 !important;
+}
+
+.ess-modal-close:hover,
+.hr-modal-header .icon-btn:hover {
+    background: #f1f5f9 !important;
+    border-color: #cbd5e1 !important;
+    color: #0f172a !important;
+    transform: scale(1.05) !important;
+}
+
+.ess-modal-body,
+.hr-modal-body {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding: 24px 28px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px !important;
+    background: #ffffff !important;
+    color: #334155 !important;
+}
+
+.ess-modal-footer,
+.hr-modal-footer {
+    flex-shrink: 0 !important;
+    margin-top: auto !important;
+    padding: 16px 28px !important;
+    border-top: 1.5px solid #e2e8f0 !important;
+    display: flex !important;
+    justify-content: flex-end !important;
+    align-items: center !important;
+    gap: 12px !important;
+    background: #ffffff !important;
+    position: sticky !important;
+    bottom: 0 !important;
+    z-index: 20 !important;
+    box-shadow: 0 -4px 16px rgba(15, 23, 42, 0.04) !important;
 }
 
 /* Responsive Media Queries */

@@ -247,120 +247,107 @@
 </div>
 
 <!-- Request COE Modal -->
-<div class="modal fade" id="coeModal" tabindex="-1" style="display: none; background: rgba(15,23,42,0.6); position: fixed; inset: 0; z-index: 1050; align-items: center; justify-content: center;">
-    <div class="modal-dialog modal-dialog-centered" style="max-width: 520px; width: 100%; margin: 1.5rem auto;">
-        <div class="modal-content" style="background: white; border-radius: 16px; border: 1px solid var(--ess-border); box-shadow: var(--ess-shadow-lg); overflow: hidden;">
-            <form action="{{ route('ess.profile.coe-request') }}" method="POST">
-                @csrf
-                <div class="modal-header" style="padding: 16px 20px; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between;">
-                    <h5 class="modal-title" style="font-weight: 700; color: #0f172a; font-size: 16px; margin: 0; display: flex; align-items: center; gap: 8px;">
-                        <i class="ph ph-file-text" style="color: #9333ea; font-size: 20px;"></i> Request Certificate of Employment (COE)
-                    </h5>
-                    <button type="button" onclick="closeCoeModal()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #64748b;">&times;</button>
-                </div>
-                <div class="modal-body" style="padding: 20px;">
-                    <div style="margin-bottom: 14px;">
-                        <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px;">Purpose of Request <span style="color:#dc2626;">*</span></label>
-                        <select name="purpose" class="ess-form-control" style="width:100%;" required>
-                            <option value="">Select purpose...</option>
-                            <option value="Bank Loan / Mortgage Application">Bank Loan / Mortgage Application</option>
-                            <option value="Credit Card Application">Credit Card Application</option>
-                            <option value="Embassy Visa Application">Embassy Visa Application</option>
-                            <option value="Pag-IBIG / SSS Housing Loan">Pag-IBIG / SSS Housing Loan</option>
-                            <option value="General Employment Verification">General Employment Verification</option>
-                            <option value="Personal Reference">Personal Reference</option>
-                        </select>
-                    </div>
-
-                    <div style="margin-bottom: 14px;">
-                        <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px;">Addressed To (Optional)</label>
-                        <input type="text" name="addressed_to" class="ess-form-control" style="width:100%;" placeholder="e.g., The Visa Officer, Embassy of Japan / BDO Unibank">
-                        <small style="color: #94a3b8; font-size: 11px; margin-top: 4px; display: block;">Leave blank for default: "To Whom It May Concern"</small>
-                    </div>
-
-                    <div style="background: #f8fafc; border: 1px solid var(--ess-border); border-radius: 10px; padding: 14px; margin-top: 14px;">
-                        <label style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer; margin: 0;">
-                            <input type="checkbox" name="include_compensation" value="1" style="margin-top: 3px;">
-                            <div>
-                                <strong style="font-size: 13px; color: #0f172a;">Include Detailed Compensation Breakdown</strong>
-                                <p style="font-size: 11.5px; color: #64748b; margin: 3px 0 0 0;">
-                                    Pursuant to the Data Privacy Act of 2012, your monthly basic salary and allowances will only be reflected upon your explicit consent.
-                                </p>
-                            </div>
-                        </label>
-                    </div>
-                </div>
-                <div class="modal-footer" style="padding: 14px 20px; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; gap: 8px; background: #f8fafc;">
-                    <button type="button" class="hr-btn hr-btn-secondary" onclick="closeCoeModal()">Cancel</button>
-                    <button type="submit" class="hr-btn hr-btn-primary">Submit COE Request</button>
-                </div>
-            </form>
+<div id="coeModal" class="hr-modal-overlay">
+    <div class="hr-modal" style="max-width: 540px;">
+        <div class="hr-modal-header">
+            <span class="hr-modal-title"><i class="ph ph-file-text"></i> Request Certificate of Employment</span>
+            <button type="button" class="icon-btn" onclick="closeModal('coeModal')" aria-label="Close"><i class="ph ph-x"></i></button>
         </div>
+        <form action="{{ route('ess.profile.coe-request') }}" method="POST">
+            @csrf
+            <div class="hr-modal-body">
+                <div class="ess-form-group">
+                    <label class="ess-form-label">Purpose of Request <span style="color:#dc2626;">*</span></label>
+                    <select name="purpose" class="ess-form-control" style="width:100%;" required>
+                        <option value="">Select purpose...</option>
+                        <option value="Bank Loan / Mortgage Application">Bank Loan / Mortgage Application</option>
+                        <option value="Credit Card Application">Credit Card Application</option>
+                        <option value="Embassy Visa Application">Embassy Visa Application</option>
+                        <option value="Pag-IBIG / SSS Housing Loan">Pag-IBIG / SSS Housing Loan</option>
+                        <option value="General Employment Verification">General Employment Verification</option>
+                        <option value="Personal Reference">Personal Reference</option>
+                    </select>
+                </div>
+
+                <div class="ess-form-group">
+                    <label class="ess-form-label">Addressed To (Optional)</label>
+                    <input type="text" name="addressed_to" class="ess-form-control" style="width:100%;" placeholder="e.g., The Visa Officer, Embassy of Japan / BDO Unibank">
+                    <small style="color: #94a3b8; font-size: 11px; margin-top: 4px; display: block;">Leave blank for default: "To Whom It May Concern"</small>
+                </div>
+
+                <div style="background: #f8fafc; border: 1px solid var(--ess-border); border-radius: 10px; padding: 14px; margin-top: 6px;">
+                    <label style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer; margin: 0;">
+                        <input type="checkbox" name="include_compensation" value="1" style="margin-top: 3px;">
+                        <div>
+                            <strong style="font-size: 13px; color: #0f172a;">Include Detailed Compensation Breakdown</strong>
+                            <p style="font-size: 11.5px; color: #64748b; margin: 3px 0 0 0;">
+                                Pursuant to the Data Privacy Act of 2012, your monthly basic salary and allowances will only be reflected upon your explicit consent.
+                            </p>
+                        </div>
+                    </label>
+                </div>
+            </div>
+            <div class="hr-modal-footer">
+                <button type="button" class="hr-btn hr-btn-secondary" onclick="closeModal('coeModal')">Cancel</button>
+                <button type="submit" class="hr-btn hr-btn-primary">Submit COE Request</button>
+            </div>
+        </form>
     </div>
 </div>
 
 <!-- Upload Document Modal -->
-<div class="modal fade" id="docModal" tabindex="-1" style="display: none; background: rgba(15,23,42,0.6); position: fixed; inset: 0; z-index: 1050; align-items: center; justify-content: center;">
-    <div class="modal-dialog modal-dialog-centered" style="max-width: 500px; width: 100%; margin: 1.5rem auto;">
-        <div class="modal-content" style="background: white; border-radius: 16px; border: 1px solid var(--ess-border); box-shadow: var(--ess-shadow-lg); overflow: hidden;">
-            <form action="{{ route('ess.profile.upload-document') }}" method="POST" enctype="multipart/form-data">
-                @csrf
-                <div class="modal-header" style="padding: 16px 20px; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between;">
-                    <h5 class="modal-title" style="font-weight: 700; color: #0f172a; font-size: 16px; margin: 0; display: flex; align-items: center; gap: 8px;">
-                        <i class="ph ph-upload-simple" style="color: #9333ea; font-size: 20px;"></i> Upload 201 File Document
-                    </h5>
-                    <button type="button" onclick="closeDocModal()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #64748b;">&times;</button>
-                </div>
-                <div class="modal-body" style="padding: 20px;">
-                    <div style="margin-bottom: 14px;">
-                        <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px;">Document Type <span style="color:#dc2626;">*</span></label>
-                        <select name="document_type" class="ess-form-control" style="width:100%;" required>
-                            <option value="">Select type...</option>
-                            <option value="Valid Government ID">Valid Government ID (Passport/UMID/Driver's License)</option>
-                            <option value="Medical Certificate / Fit to Work">Medical Certificate / Fit to Work</option>
-                            <option value="NBI / Police Clearance">NBI / Police Clearance</option>
-                            <option value="Proof of Address / Billing">Proof of Address / Billing</option>
-                            <option value="Diploma / TOR / Certificate">Diploma / TOR / Professional Certificate</option>
-                            <option value="Other Document">Other Document</option>
-                        </select>
-                    </div>
-
-                    <div style="margin-bottom: 14px;">
-                        <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px;">Document Description / Label <span style="color:#dc2626;">*</span></label>
-                        <input type="text" name="document_name" class="ess-form-control" style="width:100%;" placeholder="e.g. Passport Bio Page 2026" required>
-                    </div>
-
-                    <div>
-                        <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px;">Select File (PDF, PNG, JPG, max 5MB) <span style="color:#dc2626;">*</span></label>
-                        <input type="file" name="document_file" class="ess-form-control" style="width:100%;" required>
-                    </div>
-                </div>
-                <div class="modal-footer" style="padding: 14px 20px; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; gap: 8px; background: #f8fafc;">
-                    <button type="button" class="hr-btn hr-btn-secondary" onclick="closeDocModal()">Cancel</button>
-                    <button type="submit" class="hr-btn hr-btn-primary">Upload Document</button>
-                </div>
-            </form>
+<div id="docModal" class="hr-modal-overlay">
+    <div class="hr-modal" style="max-width: 540px;">
+        <div class="hr-modal-header">
+            <span class="hr-modal-title"><i class="ph ph-upload-simple"></i> Upload 201 File Document</span>
+            <button type="button" class="icon-btn" onclick="closeModal('docModal')" aria-label="Close"><i class="ph ph-x"></i></button>
         </div>
+        <form action="{{ route('ess.profile.upload-document') }}" method="POST" enctype="multipart/form-data">
+            @csrf
+            <div class="hr-modal-body">
+                <div class="ess-form-group">
+                    <label class="ess-form-label">Document Type <span style="color:#dc2626;">*</span></label>
+                    <select name="document_type" class="ess-form-control" style="width:100%;" required>
+                        <option value="">Select type...</option>
+                        <option value="Valid Government ID">Valid Government ID (Passport/UMID/Driver's License)</option>
+                        <option value="Medical Certificate / Fit to Work">Medical Certificate / Fit to Work</option>
+                        <option value="NBI / Police Clearance">NBI / Police Clearance</option>
+                        <option value="Proof of Address / Billing">Proof of Address / Billing</option>
+                        <option value="Diploma / TOR / Certificate">Diploma / TOR / Professional Certificate</option>
+                        <option value="Other Document">Other Document</option>
+                    </select>
+                </div>
+
+                <div class="ess-form-group">
+                    <label class="ess-form-label">Document Description / Label <span style="color:#dc2626;">*</span></label>
+                    <input type="text" name="document_name" class="ess-form-control" style="width:100%;" placeholder="e.g. Passport Bio Page 2026" required>
+                </div>
+
+                <div class="ess-form-group">
+                    <label class="ess-form-label">Select File (PDF, PNG, JPG, max 5MB) <span style="color:#dc2626;">*</span></label>
+                    <input type="file" name="document_file" class="ess-form-control" style="width:100%;" required>
+                </div>
+            </div>
+            <div class="hr-modal-footer">
+                <button type="button" class="hr-btn hr-btn-secondary" onclick="closeModal('docModal')">Cancel</button>
+                <button type="submit" class="hr-btn hr-btn-primary">Upload Document</button>
+            </div>
+        </form>
     </div>
 </div>
 
 <script>
 function openCoeModal() {
-    document.getElementById('coeModal').style.display = 'flex';
+    openModal('coeModal');
 }
 function closeCoeModal() {
-    document.getElementById('coeModal').style.display = 'none';
+    closeModal('coeModal');
 }
 function openDocModal() {
-    document.getElementById('docModal').style.display = 'flex';
+    openModal('docModal');
 }
 function closeDocModal() {
-    document.getElementById('docModal').style.display = 'none';
+    closeModal('docModal');
 }
-window.addEventListener('click', function(e) {
-    if (e.target.classList.contains('modal')) {
-        e.target.style.display = 'none';
-    }
-});
 </script>
 @endsection

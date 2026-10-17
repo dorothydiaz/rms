@@ -273,11 +273,44 @@
             }
         }
 
+        // Global Stellar One HR Modal Controls (Slide-over Drawers)
+        function openModal(id) {
+            const el = document.getElementById(id);
+            if (el) {
+                el.classList.add('open');
+                document.body.style.overflow = 'hidden';
+            }
+        }
+
+        function closeModal(id) {
+            const el = document.getElementById(id);
+            if (el) {
+                el.classList.remove('open');
+                document.body.style.overflow = '';
+            }
+        }
+
+        // Dismiss modal when clicking backdrop outside the drawer
         window.addEventListener('click', function(e) {
             const dropdown = document.getElementById('essUserDropdown');
             const menuBtn = document.getElementById('userMenuBtn');
             if (dropdown && !dropdown.contains(e.target) && (!menuBtn || !menuBtn.contains(e.target))) {
                 dropdown.style.display = 'none';
+            }
+
+            if (e.target.classList.contains('hr-modal-overlay') || e.target.classList.contains('ess-modal-backdrop')) {
+                e.target.classList.remove('open');
+                document.body.style.overflow = '';
+            }
+        });
+
+        // Close on Escape key
+        window.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.hr-modal-overlay.open, .ess-modal-backdrop.open').forEach(modal => {
+                    modal.classList.remove('open');
+                });
+                document.body.style.overflow = '';
             }
         });
     </script>

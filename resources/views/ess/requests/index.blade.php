@@ -140,15 +140,15 @@
 </div>
 
 <!-- Modal: File Overtime -->
-<div id="fileOtModal" class="ess-modal-backdrop">
-    <div class="ess-modal">
+<div id="fileOtModal" class="hr-modal-overlay">
+    <div class="hr-modal">
+        <div class="hr-modal-header">
+            <span class="hr-modal-title"><i class="ph ph-clock-countdown"></i> File Overtime Authorization</span>
+            <button type="button" class="icon-btn" onclick="closeModal('fileOtModal')" aria-label="Close"><i class="ph ph-x"></i></button>
+        </div>
         <form method="POST" action="{{ route('ess.requests.overtime') }}">
             @csrf
-            <div class="ess-modal-header">
-                <h3 class="ess-modal-title">File Overtime Authorization Request</h3>
-                <button type="button" class="ess-modal-close" onclick="closeFileOtModal()">&times;</button>
-            </div>
-            <div class="ess-modal-body">
+            <div class="hr-modal-body">
                 <div class="ess-form-group">
                     <label class="ess-form-label">Overtime Date *</label>
                     <input type="date" name="ot_date" class="ess-form-control" value="{{ now()->toDateString() }}" required>
@@ -172,27 +172,27 @@
 
                 <div class="ess-form-group">
                     <label class="ess-form-label">Business Justification *</label>
-                    <textarea name="reason" class="ess-form-control" rows="3" placeholder="Provide task details justifying required overtime..." required></textarea>
+                    <textarea name="reason" class="ess-form-control" rows="4" placeholder="Provide task details justifying required overtime..." required></textarea>
                 </div>
             </div>
-            <div class="ess-modal-footer">
-                <button type="button" class="ess-form-control" style="width:auto;cursor:pointer;" onclick="closeFileOtModal()">Cancel</button>
-                <button type="submit" class="ess-quick-btn">Submit Overtime Request</button>
+            <div class="hr-modal-footer">
+                <button type="button" class="hr-btn hr-btn-secondary" onclick="closeModal('fileOtModal')">Cancel</button>
+                <button type="submit" class="hr-btn hr-btn-primary">Submit Overtime Request</button>
             </div>
         </form>
     </div>
 </div>
 
 <!-- Modal: File Official Business -->
-<div id="fileObModal" class="ess-modal-backdrop">
-    <div class="ess-modal">
+<div id="fileObModal" class="hr-modal-overlay">
+    <div class="hr-modal">
+        <div class="hr-modal-header">
+            <span class="hr-modal-title"><i class="ph ph-briefcase"></i> File Official Business (OB) Pass</span>
+            <button type="button" class="icon-btn" onclick="closeModal('fileObModal')" aria-label="Close"><i class="ph ph-x"></i></button>
+        </div>
         <form method="POST" action="{{ route('ess.requests.official-business') }}">
             @csrf
-            <div class="ess-modal-header">
-                <h3 class="ess-modal-title">File Official Business (OB) Pass</h3>
-                <button type="button" class="ess-modal-close" onclick="closeFileObModal()">&times;</button>
-            </div>
-            <div class="ess-modal-body">
+            <div class="hr-modal-body">
                 <div class="ess-form-group">
                     <label class="ess-form-label">Date of OB *</label>
                     <input type="date" name="ob_date" class="ess-form-control" value="{{ now()->toDateString() }}" required>
@@ -216,40 +216,43 @@
 
                 <div class="ess-form-group">
                     <label class="ess-form-label">Purpose of Travel *</label>
-                    <textarea name="purpose" class="ess-form-control" rows="3" placeholder="Specific business purpose..." required></textarea>
+                    <textarea name="purpose" class="ess-form-control" rows="4" placeholder="Specific business purpose..." required></textarea>
                 </div>
             </div>
-            <div class="ess-modal-footer">
-                <button type="button" class="ess-form-control" style="width:auto;cursor:pointer;" onclick="closeFileObModal()">Cancel</button>
-                <button type="submit" class="ess-quick-btn">Submit OB Pass</button>
+            <div class="hr-modal-footer">
+                <button type="button" class="hr-btn hr-btn-secondary" onclick="closeModal('fileObModal')">Cancel</button>
+                <button type="submit" class="hr-btn hr-btn-primary">Submit OB Pass</button>
             </div>
         </form>
     </div>
 </div>
 
 <!-- Modal: Live Approval Chain Visualizer -->
-<div id="timelineModal" class="ess-modal-backdrop">
-    <div class="ess-modal">
-        <div class="ess-modal-header">
-            <h3 class="ess-modal-title" id="timelineReqNum">Approval Chain Progress</h3>
-            <button type="button" class="ess-modal-close" onclick="closeTimelineModal()">&times;</button>
+<div id="timelineModal" class="hr-modal-overlay">
+    <div class="hr-modal">
+        <div class="hr-modal-header">
+            <span class="hr-modal-title"><i class="ph ph-git-fork"></i> <span id="timelineReqNum">Approval Chain Progress</span></span>
+            <button type="button" class="icon-btn" onclick="closeModal('timelineModal')" aria-label="Close"><i class="ph ph-x"></i></button>
         </div>
-        <div class="ess-modal-body" id="timelineContent">
+        <div class="hr-modal-body" id="timelineContent">
             Loading approval steps...
+        </div>
+        <div class="hr-modal-footer">
+            <button type="button" class="hr-btn hr-btn-secondary" onclick="closeModal('timelineModal')">Close</button>
         </div>
     </div>
 </div>
 
 @push('scripts')
 <script>
-    function openFileOtModal() { document.getElementById('fileOtModal').classList.add('open'); }
-    function closeFileOtModal() { document.getElementById('fileOtModal').classList.remove('open'); }
-    function openFileObModal() { document.getElementById('fileObModal').classList.add('open'); }
-    function closeFileObModal() { document.getElementById('fileObModal').classList.remove('open'); }
-    function closeTimelineModal() { document.getElementById('timelineModal').classList.remove('open'); }
+    function openFileOtModal() { openModal('fileOtModal'); }
+    function closeFileOtModal() { closeModal('fileOtModal'); }
+    function openFileObModal() { openModal('fileObModal'); }
+    function closeFileObModal() { closeModal('fileObModal'); }
+    function closeTimelineModal() { closeModal('timelineModal'); }
 
     function viewTimeline(id) {
-        document.getElementById('timelineModal').classList.add('open');
+        openModal('timelineModal');
         fetch(`/ess/requests/${id}/timeline`)
             .then(res => res.json())
             .then(data => {

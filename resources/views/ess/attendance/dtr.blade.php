@@ -153,15 +153,15 @@
 </div>
 
 <!-- Attendance Correction Modal -->
-<div id="dtrCorrectionModal" class="ess-modal-backdrop">
-    <div class="ess-modal">
+<div id="dtrCorrectionModal" class="hr-modal-overlay">
+    <div class="hr-modal">
+        <div class="hr-modal-header">
+            <span class="hr-modal-title"><i class="ph ph-clock-counter-clockwise"></i> File Attendance Correction</span>
+            <button type="button" class="icon-btn" onclick="closeModal('dtrCorrectionModal')" aria-label="Close"><i class="ph ph-x"></i></button>
+        </div>
         <form method="POST" action="{{ route('ess.dtr.correction') }}">
             @csrf
-            <div class="ess-modal-header">
-                <h3 class="ess-modal-title">File Attendance Correction</h3>
-                <button type="button" class="ess-modal-close" onclick="closeCorrectionModal()">&times;</button>
-            </div>
-            <div class="ess-modal-body">
+            <div class="hr-modal-body">
                 <input type="hidden" name="attendance_record_id" id="modalRecordId">
 
                 <div class="ess-form-group">
@@ -193,12 +193,12 @@
 
                 <div class="ess-form-group">
                     <label class="ess-form-label">Detailed Explanation *</label>
-                    <textarea name="explanation" class="ess-form-control" rows="3" placeholder="State circumstances for missing or inaccurate punch..." required></textarea>
+                    <textarea name="explanation" class="ess-form-control" rows="4" placeholder="State circumstances for missing or inaccurate punch..." required></textarea>
                 </div>
             </div>
-            <div class="ess-modal-footer">
-                <button type="button" class="ess-form-control" style="width:auto;cursor:pointer;" onclick="closeCorrectionModal()">Cancel</button>
-                <button type="submit" class="ess-quick-btn">Submit Request</button>
+            <div class="hr-modal-footer">
+                <button type="button" class="hr-btn hr-btn-secondary" onclick="closeModal('dtrCorrectionModal')">Cancel</button>
+                <button type="submit" class="hr-btn hr-btn-primary">Submit Correction</button>
             </div>
         </form>
     </div>
@@ -211,10 +211,10 @@
         document.getElementById('modalRecordDate').value = date;
         document.getElementById('modalTimeIn').value = inTime ? inTime.substring(0, 5) : '08:00';
         document.getElementById('modalTimeOut').value = outTime ? outTime.substring(0, 5) : '17:00';
-        document.getElementById('dtrCorrectionModal').classList.add('open');
+        openModal('dtrCorrectionModal');
     }
     function closeCorrectionModal() {
-        document.getElementById('dtrCorrectionModal').classList.remove('open');
+        closeModal('dtrCorrectionModal');
     }
 </script>
 @endpush

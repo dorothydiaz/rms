@@ -113,112 +113,106 @@
 </div>
 
 <!-- New Ticket Modal -->
-<div class="modal fade" id="newTicketModal" tabindex="-1" style="display: none; background: rgba(15,23,42,0.6); position: fixed; inset: 0; z-index: 1050; align-items: center; justify-content: center;">
-    <div class="modal-dialog modal-dialog-centered" style="max-width: 560px; width: 100%; margin: 1.5rem auto;">
-        <div class="modal-content" style="background: white; border-radius: 16px; border: 1px solid var(--ess-border); box-shadow: var(--ess-shadow-lg); overflow: hidden;">
-            <form action="{{ route('ess.helpdesk.ticket') }}" method="POST">
-                @csrf
-                <div class="modal-header" style="padding: 16px 20px; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between;">
-                    <h5 class="modal-title" style="font-weight: 700; color: #0f172a; font-size: 16px; margin: 0; display: flex; align-items: center; gap: 8px;">
-                        <i class="ph ph-chat-circle-dots" style="color: #9333ea; font-size: 20px;"></i> Submit HR Support Ticket
-                    </h5>
-                    <button type="button" onclick="closeNewTicketModal()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #64748b;">&times;</button>
-                </div>
-                <div class="modal-body" style="padding: 20px;">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
-                        <div>
-                            <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px;">Inquiry Category <span style="color:#dc2626;">*</span></label>
-                            <select name="category" class="ess-form-control" style="width:100%;" required>
-                                <option value="">Select category...</option>
-                                <option value="PAYROLL_COMPENSATION">Payroll & Compensation</option>
-                                <option value="ATTENDANCE_TIMEKEEPING">Attendance & Biometrics</option>
-                                <option value="BENEFITS_STATUTORY">Benefits & Statutory (SSS/PhilHealth/Pag-IBIG)</option>
-                                <option value="LEAVE_CREDITS">Leave Administration</option>
-                                <option value="WORKPLACE_SAFETY">Workplace Safety & Health (OSH)</option>
-                                <option value="GRIEVANCE_DISCIPLINE">Formal Grievance / Workplace Ethics</option>
-                                <option value="GENERAL_HR">General HR Inquiry</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px;">Priority <span style="color:#dc2626;">*</span></label>
-                            <select name="priority" class="ess-form-control" style="width:100%;" required>
-                                <option value="LOW">Low (General Inquiry)</option>
-                                <option value="MEDIUM" selected>Medium (Standard Response)</option>
-                                <option value="HIGH">High (Urgent Resolution)</option>
-                                <option value="URGENT">Urgent (Immediate Safety/Payroll Block)</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div style="margin-bottom: 14px;">
-                        <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px;">Subject / Topic <span style="color:#dc2626;">*</span></label>
-                        <input type="text" name="subject" class="ess-form-control" style="width:100%;" placeholder="Brief summary of your question or concern" required>
-                    </div>
-
-                    <div style="margin-bottom: 8px;">
-                        <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px;">Detailed Description <span style="color:#dc2626;">*</span></label>
-                        <textarea name="description" class="ess-form-control" style="width:100%;" rows="5" placeholder="Provide full details, relevant dates, or specific questions..." required></textarea>
-                        <small style="color: #94a3b8; font-size: 11px; display: block; margin-top: 5px;">
-                            All inquiries are treated with strict confidentiality under Stellar One HR Governance.
-                        </small>
-                    </div>
-                </div>
-                <div class="modal-footer" style="padding: 14px 20px; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; gap: 8px; background: #f8fafc;">
-                    <button type="button" class="hr-btn hr-btn-secondary" onclick="closeNewTicketModal()">Cancel</button>
-                    <button type="submit" class="hr-btn hr-btn-primary">Submit Ticket</button>
-                </div>
-            </form>
+<div id="newTicketModal" class="hr-modal-overlay">
+    <div class="hr-modal" style="max-width: 580px;">
+        <div class="hr-modal-header">
+            <span class="hr-modal-title"><i class="ph ph-chat-circle-dots"></i> Submit HR Support Ticket</span>
+            <button type="button" class="icon-btn" onclick="closeModal('newTicketModal')" aria-label="Close"><i class="ph ph-x"></i></button>
         </div>
+        <form action="{{ route('ess.helpdesk.ticket') }}" method="POST">
+            @csrf
+            <div class="hr-modal-body">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+                    <div>
+                        <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px;">Inquiry Category <span style="color:#dc2626;">*</span></label>
+                        <select name="category" class="ess-form-control" style="width:100%;" required>
+                            <option value="">Select category...</option>
+                            <option value="PAYROLL_COMPENSATION">Payroll & Compensation</option>
+                            <option value="ATTENDANCE_TIMEKEEPING">Attendance & Biometrics</option>
+                            <option value="BENEFITS_STATUTORY">Benefits & Statutory (SSS/PhilHealth/Pag-IBIG)</option>
+                            <option value="LEAVE_CREDITS">Leave Administration</option>
+                            <option value="WORKPLACE_SAFETY">Workplace Safety & Health (OSH)</option>
+                            <option value="GRIEVANCE_DISCIPLINE">Formal Grievance / Workplace Ethics</option>
+                            <option value="GENERAL_HR">General HR Inquiry</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px;">Priority <span style="color:#dc2626;">*</span></label>
+                        <select name="priority" class="ess-form-control" style="width:100%;" required>
+                            <option value="LOW">Low (General Inquiry)</option>
+                            <option value="MEDIUM" selected>Medium (Standard Response)</option>
+                            <option value="HIGH">High (Urgent Resolution)</option>
+                            <option value="URGENT">Urgent (Immediate Safety/Payroll Block)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 14px;">
+                    <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px;">Subject / Topic <span style="color:#dc2626;">*</span></label>
+                    <input type="text" name="subject" class="ess-form-control" style="width:100%;" placeholder="Brief summary of your question or concern" required>
+                </div>
+
+                <div style="margin-bottom: 8px;">
+                    <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px;">Detailed Description <span style="color:#dc2626;">*</span></label>
+                    <textarea name="description" class="ess-form-control" style="width:100%;" rows="5" placeholder="Provide full details, relevant dates, or specific questions..." required></textarea>
+                    <small style="color: #94a3b8; font-size: 11px; display: block; margin-top: 5px;">
+                        All inquiries are treated with strict confidentiality under Stellar One HR Governance.
+                    </small>
+                </div>
+            </div>
+            <div class="hr-modal-footer">
+                <button type="button" class="hr-btn hr-btn-secondary" onclick="closeModal('newTicketModal')">Cancel</button>
+                <button type="submit" class="hr-btn hr-btn-primary">Submit Ticket</button>
+            </div>
+        </form>
     </div>
 </div>
 
 <!-- Conversation / Thread Modal -->
-<div class="modal fade" id="conversationModal" tabindex="-1" style="display: none; background: rgba(15,23,42,0.6); position: fixed; inset: 0; z-index: 1050; align-items: center; justify-content: center;">
-    <div class="modal-dialog modal-dialog-centered" style="max-width: 650px; width: 100%; margin: 1.5rem auto;">
-        <div class="modal-content" style="background: white; border-radius: 16px; border: 1px solid var(--ess-border); box-shadow: var(--ess-shadow-lg); overflow: hidden;">
-            <div class="modal-header" style="padding: 16px 20px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <h5 class="modal-title" style="font-weight: 700; color: #0f172a; font-size: 16px; margin: 0;" id="modalTicketTitle"></h5>
-                    <div style="font-size: 12px; color: #64748b;" id="modalTicketNumber"></div>
-                </div>
-                <button type="button" onclick="closeConversationModal()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #64748b;">&times;</button>
+<div id="conversationModal" class="hr-modal-overlay">
+    <div class="hr-modal" style="max-width: 680px;">
+        <div class="hr-modal-header">
+            <div>
+                <span class="hr-modal-title" id="modalTicketTitle" style="display:flex;align-items:center;gap:8px;"><i class="ph ph-chat-teardrop-text"></i> Ticket Discussion</span>
+                <div style="font-size: 12px; color: #64748b; margin-top: 3px;" id="modalTicketNumber"></div>
             </div>
-            <div class="modal-body" style="padding: 20px; max-height: 400px; overflow-y: auto;" id="conversationStream">
-                <div style="text-align: center; color: #94a3b8; padding: 2rem;">Loading conversation...</div>
-            </div>
-            <form id="replyForm" method="POST" enctype="multipart/form-data">
-                @csrf
-                <div class="modal-footer" style="padding: 14px 20px; border-top: 1px solid #f1f5f9; display: block; background: #f8fafc;">
-                    <div style="display: flex; gap: 8px;">
-                        <input type="text" name="message" class="ess-form-control" style="flex: 1;" placeholder="Write a reply or follow-up message..." required autocomplete="off">
-                        <button type="submit" class="hr-btn hr-btn-primary">
-                            <i class="ph ph-paper-plane-tilt"></i> Send
-                        </button>
-                    </div>
-                </div>
-            </form>
+            <button type="button" class="icon-btn" onclick="closeModal('conversationModal')" aria-label="Close"><i class="ph ph-x"></i></button>
         </div>
+        <div class="hr-modal-body" style="padding: 20px; overflow-y: auto; flex: 1 1 auto;" id="conversationStream">
+            <div style="text-align: center; color: #94a3b8; padding: 2rem;">Loading conversation...</div>
+        </div>
+        <form id="replyForm" method="POST" enctype="multipart/form-data" style="flex: 0 0 auto !important; height: auto !important; margin: 0;">
+            @csrf
+            <div class="hr-modal-footer" style="padding: 16px 24px; display: block; border-top: 1.5px solid #e2e8f0;">
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" name="message" class="ess-form-control" style="flex: 1;" placeholder="Write a reply or follow-up message..." required autocomplete="off">
+                    <button type="submit" class="hr-btn hr-btn-primary" style="white-space:nowrap;">
+                        <i class="ph ph-paper-plane-tilt"></i> Send
+                    </button>
+                </div>
+            </div>
+        </form>
     </div>
 </div>
 
 <script>
 function openNewTicketModal() {
-    document.getElementById('newTicketModal').style.display = 'flex';
+    openModal('newTicketModal');
 }
 function closeNewTicketModal() {
-    document.getElementById('newTicketModal').style.display = 'none';
+    closeModal('newTicketModal');
 }
 function closeConversationModal() {
-    document.getElementById('conversationModal').style.display = 'none';
+    closeModal('conversationModal');
 }
 
 function viewConversation(ticketId, ticketNumber, subject, status) {
-    document.getElementById('modalTicketTitle').innerText = subject;
+    document.getElementById('modalTicketTitle').innerHTML = '<i class="ph ph-chat-teardrop-text"></i> ' + subject;
     document.getElementById('modalTicketNumber').innerText = ticketNumber + ' (' + status + ')';
     document.getElementById('replyForm').action = '/ess/helpdesk/ticket/' + ticketId + '/reply';
     const stream = document.getElementById('conversationStream');
     stream.innerHTML = '<div style="text-align:center; padding: 2rem; color: #94a3b8;">Loading conversation...</div>';
-    document.getElementById('conversationModal').style.display = 'flex';
+    openModal('conversationModal');
 
     fetch('/ess/helpdesk/ticket/' + ticketId)
         .then(res => res.json())
@@ -245,11 +239,5 @@ function viewConversation(ticketId, ticketNumber, subject, status) {
             stream.scrollTop = stream.scrollHeight;
         });
 }
-
-window.addEventListener('click', function(e) {
-    if (e.target.classList.contains('modal')) {
-        e.target.style.display = 'none';
-    }
-});
 </script>
 @endsection

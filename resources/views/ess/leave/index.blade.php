@@ -163,15 +163,15 @@
 </div>
 
 <!-- File Leave Modal -->
-<div id="fileLeaveModal" class="ess-modal-backdrop">
-    <div class="ess-modal">
+<div id="fileLeaveModal" class="hr-modal-overlay">
+    <div class="hr-modal">
+        <div class="hr-modal-header">
+            <span class="hr-modal-title"><i class="ph ph-calendar-plus"></i> File Leave Request</span>
+            <button type="button" class="icon-btn" onclick="closeModal('fileLeaveModal')" aria-label="Close"><i class="ph ph-x"></i></button>
+        </div>
         <form method="POST" action="{{ route('ess.leave.store') }}" enctype="multipart/form-data">
             @csrf
-            <div class="ess-modal-header">
-                <h3 class="ess-modal-title">File Leave Request</h3>
-                <button type="button" class="ess-modal-close" onclick="closeFileLeaveModal()">&times;</button>
-            </div>
-            <div class="ess-modal-body">
+            <div class="hr-modal-body">
                 <div class="ess-form-group">
                     <label class="ess-form-label">Leave Type *</label>
                     <select name="leave_type_id" class="ess-form-control" required>
@@ -205,7 +205,7 @@
 
                 <div class="ess-form-group">
                     <label class="ess-form-label">Reason *</label>
-                    <textarea name="reason" class="ess-form-control" rows="3" placeholder="Provide clear reason for leave..." required></textarea>
+                    <textarea name="reason" class="ess-form-control" rows="4" placeholder="Provide clear reason for leave..." required></textarea>
                 </div>
 
                 <div class="ess-form-group">
@@ -214,9 +214,9 @@
                     <small style="font-size:11px;color:var(--ess-text-muted);">Mandatory for Sick Leave exceeding 2 consecutive days.</small>
                 </div>
             </div>
-            <div class="ess-modal-footer">
-                <button type="button" class="ess-form-control" style="width:auto;cursor:pointer;" onclick="closeFileLeaveModal()">Cancel</button>
-                <button type="submit" class="ess-quick-btn">Submit Leave Request</button>
+            <div class="hr-modal-footer">
+                <button type="button" class="hr-btn hr-btn-secondary" onclick="closeModal('fileLeaveModal')">Cancel</button>
+                <button type="submit" class="hr-btn hr-btn-primary">Submit Leave Request</button>
             </div>
         </form>
     </div>
@@ -225,10 +225,10 @@
 @push('scripts')
 <script>
     function openFileLeaveModal() {
-        document.getElementById('fileLeaveModal').classList.add('open');
+        openModal('fileLeaveModal');
     }
     function closeFileLeaveModal() {
-        document.getElementById('fileLeaveModal').classList.remove('open');
+        closeModal('fileLeaveModal');
     }
 
     // Auto open if URL has action=new
