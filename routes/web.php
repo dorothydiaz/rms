@@ -454,9 +454,50 @@ Route::middleware('auth')->group(function () {
     Route::post('/account-settings/profile', [ConfigController::class, 'updateProfile'])->name('account-settings.profile');
     Route::post('/account-settings/password', [ConfigController::class, 'updatePassword'])->name('account-settings.password');
 
+    // ==========================================
+    // Employee Self-Service (ESS) Portal Routes
+    // ==========================================
+    Route::prefix('ess')->name('ess.')->group(function () {
+        // 1. Dashboard
+        Route::get('/dashboard', [\App\Http\Controllers\Ess\EssDashboardController::class, 'index'])->name('dashboard');
+
+        // 2. Profile & 201 File
+        Route::get('/profile', [\App\Http\Controllers\Ess\EssProfileController::class, 'show'])->name('profile');
+        Route::post('/profile/update-contact', [\App\Http\Controllers\Ess\EssProfileController::class, 'updateContact'])->name('profile.update-contact');
+        Route::post('/profile/emergency-contact', [\App\Http\Controllers\Ess\EssProfileController::class, 'storeEmergencyContact'])->name('profile.emergency-contact.store');
+        Route::delete('/profile/emergency-contact/{id}', [\App\Http\Controllers\Ess\EssProfileController::class, 'destroyEmergencyContact'])->name('profile.emergency-contact.destroy');
+        Route::post('/profile/request-coe', [\App\Http\Controllers\Ess\EssProfileController::class, 'requestCoe'])->name('profile.request-coe');
+
+        // 3. Attendance & DTR
+        Route::get('/attendance', [\App\Http\Controllers\Ess\EssAttendanceController::class, 'index'])->name('attendance');
+        Route::get('/attendance/dtr-export', [\App\Http\Controllers\Ess\EssAttendanceController::class, 'exportDtrPdf'])->name('attendance.export-dtr');
+        Route::post('/attendance/correction', [\App\Http\Controllers\Ess\EssAttendanceController::class, 'storeCorrectionRequest'])->name('attendance.correction.store');
+
+        // 4. Work Schedule
+        Route::get('/schedule', [\App\Http\Controllers\Ess\EssScheduleController::class, 'index'])->name('schedule');
+        Route::post('/schedule/adjustment', [\App\Http\Controllers\Ess\EssScheduleController::class, 'storeAdjustmentRequest'])->name('schedule.adjustment.store');
+
+        // 5. Leave Management
+        Route::get('/leave', [\App\Http\Controllers\Ess\EssLeaveController::class, 'index'])->name('leave');
+        Route::post('/leave/request', [\App\Http\Controllers\Ess\EssLeaveController::class, 'storeLeaveRequest'])->name('leave.store');
+        Route::post('/leave/cancel/{id}', [\App\Http\Controllers\Ess\EssLeaveController::class, 'cancelLeaveRequest'])->name('leave.cancel');
+
+        // 6. Centralized My Requests Hub
+        Route::get('/requests', [\App\Http\Controllers\Ess\EssRequestController::class, 'index'])->name('requests');
+        Route::post('/requests/overtime', [\App\Http\Controllers\Ess\EssRequestController::class, 'storeOvertime'])->name('requests.overtime');
+        Route::post('/requests/official-business', [\App\Http\Controllers\Ess\EssRequestController::class, 'storeOfficialBusiness'])->name('requests.official-business');
+        Route::post('/requests/cancel/{id}', [\App\Http\Controllers\Ess\EssRequestController::class, 'cancel'])->name('requests.cancel');
+
+        // 7. Payroll & Payslips
+        Route::get('/payroll', [\App\Http\Controllers\Ess\EssPayrollController::class, 'index'])->name('payroll');
+        Route::get('/payroll/payslip/{id}', [\App\Http\Controllers\Ess\EssPayrollController::class, 'showPayslip'])->name('payroll.payslip');
+        Route::get('/payroll/payslip/{id}/pdf', [\App\Http\Controllers\Ess\EssPayrollController::class, 'downloadPayslipPdf'])->name('payroll.payslip-pdf');
+    });
+
     // Credits & Support
     Route::prefix('credits')->name('credits.')->group(function () {
         Route::get('/tickets', [CreditsController::class, 'tickets'])->name('tickets');
         Route::get('/developers', [CreditsController::class, 'developers'])->name('developers');
     });
 });
+
