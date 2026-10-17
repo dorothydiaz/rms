@@ -29,8 +29,9 @@ class EssRequestMigrationTest extends TestCase
 
         $user = User::first();
 
+        $reqNum = 'REQ-TEST-' . uniqid();
         $req = EssRequest::create([
-            'request_number' => 'REQ-TEST-0001',
+            'request_number' => $reqNum,
             'employee_id' => $emp->employee_id,
             'request_type' => 'OVERTIME',
             'status' => 'PENDING_APPROVAL',
@@ -41,7 +42,7 @@ class EssRequestMigrationTest extends TestCase
         ]);
 
         $this->assertDatabaseHas('ess_requests', [
-            'request_number' => 'REQ-TEST-0001',
+            'request_number' => $reqNum,
             'request_type' => 'OVERTIME',
         ]);
 

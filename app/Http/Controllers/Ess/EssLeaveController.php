@@ -33,7 +33,10 @@ class EssLeaveController extends Controller
         }
 
         $balances = LeaveBalance::with('leaveType')
-            ->where('employee_id', $employee->employee_id)
+            ->where(function ($q) use ($employee) {
+                $q->where('employee_id', $employee->employee_id)
+                  ->orWhere('employee_id', $employee->id);
+            })
             ->get();
 
         $leaveTypes = LeaveType::all();
@@ -49,7 +52,10 @@ class EssLeaveController extends Controller
         ];
 
         $myRequests = LeaveRequest::with(['leaveType', 'approver'])
-            ->where('employee_id', $employee->employee_id)
+            ->where(function ($q) use ($employee) {
+                $q->where('employee_id', $employee->employee_id)
+                  ->orWhere('employee_id', $employee->id);
+            })
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -79,7 +85,7 @@ class EssLeaveController extends Controller
         }
 
         $validated = $request->validate([
-            'leave_type_id' => 'required|exists:hr_leave_types,id',
+            'leave_type_id' => 'required|exists:hr_leave_types,leave_type_id',
             'start_date' => 'required|date|after_or_equal:today',
             'end_date' => 'required|date|after_or_equal:start_date',
             'is_half_day' => 'nullable|boolean',
@@ -103,7 +109,10 @@ class EssLeaveController extends Controller
         }
 
         // Check leave balance
-        $balance = LeaveBalance::where('employee_id', $employee->employee_id)
+        $balance = LeaveBalance::where(function ($q) use ($employee) {
+                $q->where('employee_id', $employee->employee_id)
+                  ->orWhere('employee_id', $employee->id);
+            })
             ->where('leave_type_id', $leaveType->id)
             ->first();
 
@@ -113,12 +122,11 @@ class EssLeaveController extends Controller
 
         DB::transaction(function () use ($employee, $user, $validated, $leaveType, $days, $isHalfDay, $startDate, $endDate) {
             $leaveReq = LeaveRequest::create([
-                'employee_id' => $employee->employee_id,
+                'employee_id' => $employee->id,
                 'leave_type_id' => $leaveType->id,
                 'start_date' => $validated['start_date'],
                 'end_date' => $validated['end_date'],
                 'number_of_days' => $days,
-                'is_half_day' => $isHalfDay,
                 'reason' => $validated['reason'],
                 'status' => 'Pending',
             ]);

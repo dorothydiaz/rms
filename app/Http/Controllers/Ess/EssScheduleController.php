@@ -54,7 +54,7 @@ class EssScheduleController extends Controller
             'date' => 'required|date',
             'request_type' => 'required|in:SHIFT_SWAP,SCHEDULE_ADJUSTMENT',
             'reason' => 'required|string|max:500',
-            'target_shift_id' => 'nullable|exists:hr_shift_templates,id',
+            'target_shift_id' => 'nullable|exists:hr_shift_templates,shift_template_id',
             'swap_with_employee_id' => 'nullable|string|max:50',
         ]);
 
