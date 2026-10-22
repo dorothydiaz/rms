@@ -25,6 +25,7 @@
     'showCompany' => false,
     'showDepartment' => false,
     'showSource' => false,
+    'formats' => null,
 ])
 
 @php
@@ -180,11 +181,6 @@
         <!-- Dynamically managed individual inputs for backend compatibility -->
         <div id="{{ $hiddenContainerId }}" class="hr-hidden-inputs-container" style="display: none;"></div>
 
-        {{-- Optional Extra Controls (e.g. Pay Period select) --}}
-        @if(isset($extraControls) && $extraControls)
-            {{ $extraControls }}
-        @endif
-
         @if($layout === 'card')
             {{-- Card / Stacked Layout --}}
             <div class="hr-filter-controls-row">
@@ -215,6 +211,12 @@
                                    title="End Date"
                                    aria-label="End Date">
                         </div>
+                    </div>
+                @endif
+
+                @if(isset($extraControls) && $extraControls)
+                    <div class="hr-card-extra-controls" style="margin-bottom: 6px;">
+                        {{ $extraControls }}
                     </div>
                 @endif
 
@@ -275,11 +277,27 @@
                     @endif
                 </div>
 
-                <!-- Submit / Download Button -->
-                <button type="submit" class="hr-sketch-generate-btn" title="{{ $buttonText }}">
-                    <i class="ph {{ $buttonIcon }}"></i>
-                    <span>{{ $buttonText }}</span>
-                </button>
+                @if(!empty($formats) && in_array('excel', $formats))
+                    <!-- Dual Download Action (Formatted Excel + Companion CSV) -->
+                    <div class="hr-filter-button-group">
+                        <button type="submit" name="format" value="excel" class="hr-sketch-generate-btn hr-btn-excel" title="Download Formatted Excel Spreadsheet (.xlsx / .xls)">
+                            <i class="ph ph-file-xls"></i>
+                            <span>{{ $buttonText ?? 'Download Excel' }}</span>
+                        </button>
+                        @if(in_array('csv', $formats))
+                            <button type="submit" name="format" value="csv" class="hr-btn-secondary-csv" title="Download CSV File">
+                                <i class="ph ph-file-csv"></i>
+                                <span>CSV</span>
+                            </button>
+                        @endif
+                    </div>
+                @else
+                    <!-- Submit / Download Button -->
+                    <button type="submit" class="hr-sketch-generate-btn" title="{{ $buttonText }}">
+                        <i class="ph {{ $buttonIcon }}"></i>
+                        <span>{{ $buttonText }}</span>
+                    </button>
+                @endif
             </div>
 
         @else
@@ -321,11 +339,27 @@
                     <div id="{{ $suggestionsId }}" class="hr-filter-suggestions-list" style="display: none;"></div>
                 </div>
 
-                <!-- Generate Button -->
-                <button type="submit" class="hr-sketch-generate-btn" title="Generate report with active criteria">
-                    <i class="ph {{ $buttonIcon }}"></i>
-                    <span>{{ $buttonText }}</span>
-                </button>
+                @if(!empty($formats) && in_array('excel', $formats))
+                    <!-- Dual Download Action (Formatted Excel + Companion CSV) -->
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <button type="submit" name="format" value="excel" class="hr-sketch-generate-btn hr-btn-excel" title="Download Formatted Excel Spreadsheet (.xlsx / .xls)">
+                            <i class="ph ph-file-xls"></i>
+                            <span>{{ $buttonText ?? 'Download Excel' }}</span>
+                        </button>
+                        @if(in_array('csv', $formats))
+                            <button type="submit" name="format" value="csv" class="hr-btn-secondary-csv" title="Download CSV File">
+                                <i class="ph ph-file-csv"></i>
+                                <span>CSV</span>
+                            </button>
+                        @endif
+                    </div>
+                @else
+                    <!-- Generate Button -->
+                    <button type="submit" class="hr-sketch-generate-btn" title="Generate report with active criteria">
+                        <i class="ph {{ $buttonIcon }}"></i>
+                        <span>{{ $buttonText }}</span>
+                    </button>
+                @endif
             </div>
 
             <!-- Quick Presets Row & Removable Tags / Chips Row -->
@@ -1093,3 +1127,55 @@
     }
 })();
 </script>
+
+<style>
+.hr-filter-button-group {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    width: 100%;
+    margin-top: auto;
+}
+.hr-filter-button-group .hr-sketch-generate-btn {
+    flex: 1 1 auto;
+    margin-top: 0 !important;
+}
+.hr-btn-excel {
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%) !important;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35), inset 0 1px 1.5px rgba(255, 255, 255, 0.4) !important;
+}
+.hr-btn-excel:hover {
+    background: linear-gradient(135deg, #047857 0%, #059669 100%) !important;
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.45) !important;
+}
+.hr-btn-secondary-csv {
+    height: 35px;
+    min-height: 35px;
+    padding: 0 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #475569;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    text-decoration: none;
+    white-space: nowrap;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+.hr-btn-secondary-csv:hover {
+    background: #ffffff;
+    color: #0f172a;
+    border-color: #94a3b8;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+    transform: translateY(-1px);
+}
+.hr-btn-secondary-csv:active {
+    transform: translateY(0);
+}
+</style>

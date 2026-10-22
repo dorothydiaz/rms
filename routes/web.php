@@ -275,8 +275,11 @@ Route::middleware('auth')->group(function () {
         Route::prefix('reports')->name('reports.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Hr\HrReportController::class, 'index'])->name('index');
             Route::get('/export/employees', [\App\Http\Controllers\Hr\HrReportController::class, 'exportEmployees'])->name('export.employees');
+            Route::get('/export/employees/excel', [\App\Http\Controllers\Hr\HrReportController::class, 'exportEmployeesExcel'])->name('export.employees.excel');
             Route::get('/export/attendance', [\App\Http\Controllers\Hr\HrReportController::class, 'exportAttendance'])->name('export.attendance');
+            Route::get('/export/attendance/excel', [\App\Http\Controllers\Hr\HrReportController::class, 'exportAttendanceExcel'])->name('export.attendance.excel');
             Route::get('/export/payroll', [\App\Http\Controllers\Hr\HrReportController::class, 'exportPayroll'])->name('export.payroll');
+            Route::get('/export/payroll/excel', [\App\Http\Controllers\Hr\HrReportController::class, 'exportPayrollExcel'])->name('export.payroll.excel');
 
             // Audit & History Reports
             Route::get('/change-of-schedule', [\App\Http\Controllers\Hr\HrReportController::class, 'changeOfScheduleReport'])->name('change-of-schedule');

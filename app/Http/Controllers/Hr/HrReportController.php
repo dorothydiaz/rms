@@ -476,10 +476,14 @@ class HrReportController extends Controller
     }
 
     /**
-     * Export Employee Masterlist to CSV
+     * Export Employee Masterlist to CSV or Formatted Excel
      */
     public function exportEmployees(Request $request): StreamedResponse
     {
+        if ($request->get('format') === 'excel' || $request->get('format') === 'xls') {
+            return $this->exportEmployeesExcel($request);
+        }
+
         $query = Employee::with(['branch', 'department', 'position', 'company']);
         $this->applyEmployeeFilters($query, $request, true);
         $employees = $query->get();
@@ -499,8 +503,12 @@ class HrReportController extends Controller
             ]);
 
             foreach ($employees as $e) {
+                $empCode = $e->employee_code ?: ('EMP-' . str_pad($e->employee_id, 4, '0', STR_PAD_LEFT));
+                $dateHired = $e->date_hired ? \Carbon\Carbon::parse($e->date_hired)->format('Y-m-d') : '';
+                $salary = is_numeric($e->basic_salary) ? number_format((float)$e->basic_salary, 2, '.', '') : '0.00';
+
                 fputcsv($handle, [
-                    $e->employee_id,
+                    $empCode,
                     $e->full_name,
                     $e->company_or_agency,
                     $e->branch?->name,
@@ -509,8 +517,8 @@ class HrReportController extends Controller
                     $e->employment_status,
                     $e->employment_type,
                     $e->employment_source,
-                    $e->date_hired,
-                    $e->basic_salary,
+                    $dateHired,
+                    $salary,
                     $e->pay_frequency,
                     $e->sss_number,
                     $e->philhealth_number,
@@ -525,10 +533,162 @@ class HrReportController extends Controller
     }
 
     /**
-     * Export DTR to CSV
+     * Export Employee Masterlist to Formatted Excel (.xls / SpreadsheetML)
+     */
+    public function exportEmployeesExcel(Request $request): StreamedResponse
+    {
+        $query = Employee::with(['branch', 'department', 'position', 'company']);
+        $this->applyEmployeeFilters($query, $request, true);
+        $employees = $query->get();
+
+        $filename = 'employee_masterlist_' . date('Ymd_His') . '.xls';
+
+        $headers = [
+            'Content-Type' => 'application/vnd.ms-excel; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Cache-Control' => 'max-age=0, no-cache, must-revalidate, proxy-revalidate',
+        ];
+
+        return response()->stream(function () use ($employees) {
+            $handle = fopen('php://output', 'w');
+            $escape = fn($val) => htmlspecialchars((string)($val ?? ''), ENT_XML1 | ENT_COMPAT, 'UTF-8');
+
+            fwrite($handle, '<?xml version="1.0" encoding="UTF-8"?>' . "\n");
+            fwrite($handle, '<?mso-application progid="Excel.Sheet"?>' . "\n");
+            fwrite($handle, '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"' . "\n");
+            fwrite($handle, ' xmlns:o="urn:schemas-microsoft-com:office:office"' . "\n");
+            fwrite($handle, ' xmlns:x="urn:schemas-microsoft-com:office:excel"' . "\n");
+            fwrite($handle, ' xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"' . "\n");
+            fwrite($handle, ' xmlns:html="http://www.w3.org/TR/REC-html40">' . "\n");
+
+            // Document Properties
+            fwrite($handle, ' <DocumentProperties xmlns="urn:schemas-microsoft-com:office:office">' . "\n");
+            fwrite($handle, '  <Title>Employee Directory &amp; Masterlist</Title>' . "\n");
+            fwrite($handle, '  <Subject>RMS Human Resources Management</Subject>' . "\n");
+            fwrite($handle, '  <Author>RMS HR System</Author>' . "\n");
+            fwrite($handle, '  <Created>' . date('Y-m-d\TH:i:s\Z') . '</Created>' . "\n");
+            fwrite($handle, '  <Company>RMS</Company>' . "\n");
+            fwrite($handle, ' </DocumentProperties>' . "\n");
+
+            // Styles
+            fwrite($handle, ' <Styles>' . "\n");
+            fwrite($handle, '  <Style ss:ID="Default" ss:Name="Normal"><Alignment ss:Vertical="Center"/><Font ss:FontName="Segoe UI" x:Family="Swiss" ss:Size="10" ss:Color="#1E293B"/></Style>' . "\n");
+            fwrite($handle, '  <Style ss:ID="Header"><Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="2" ss:Color="#0F172A"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#334155"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#334155"/><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#0F172A"/></Borders><Font ss:FontName="Segoe UI" x:Family="Swiss" ss:Size="10" ss:Color="#FFFFFF" ss:Bold="1"/><Interior ss:Color="#0F172A" ss:Pattern="Solid"/></Style>' . "\n");
+
+            fwrite($handle, '  <Style ss:ID="DataCell"><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/></Borders><Alignment ss:Vertical="Center"/></Style>' . "\n");
+            fwrite($handle, '  <Style ss:ID="DataCellZebra"><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/></Borders><Alignment ss:Vertical="Center"/><Interior ss:Color="#F8FAFC" ss:Pattern="Solid"/></Style>' . "\n");
+
+            fwrite($handle, '  <Style ss:ID="CenterCell"><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/></Borders><Alignment ss:Horizontal="Center" ss:Vertical="Center"/></Style>' . "\n");
+            fwrite($handle, '  <Style ss:ID="CenterCellZebra"><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/></Borders><Alignment ss:Horizontal="Center" ss:Vertical="Center"/><Interior ss:Color="#F8FAFC" ss:Pattern="Solid"/></Style>' . "\n");
+
+            fwrite($handle, '  <Style ss:ID="DateCell"><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/></Borders><Alignment ss:Horizontal="Center" ss:Vertical="Center"/><NumberFormat ss:Format="yyyy-mm-dd"/></Style>' . "\n");
+            fwrite($handle, '  <Style ss:ID="DateCellZebra"><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/></Borders><Alignment ss:Horizontal="Center" ss:Vertical="Center"/><NumberFormat ss:Format="yyyy-mm-dd"/><Interior ss:Color="#F8FAFC" ss:Pattern="Solid"/></Style>' . "\n");
+
+            fwrite($handle, '  <Style ss:ID="TextCell"><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/></Borders><Alignment ss:Horizontal="Center" ss:Vertical="Center"/><NumberFormat ss:Format="@"/></Style>' . "\n");
+            fwrite($handle, '  <Style ss:ID="TextCellZebra"><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/></Borders><Alignment ss:Horizontal="Center" ss:Vertical="Center"/><NumberFormat ss:Format="@"/><Interior ss:Color="#F8FAFC" ss:Pattern="Solid"/></Style>' . "\n");
+
+            fwrite($handle, '  <Style ss:ID="CurrencyCell"><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/></Borders><Alignment ss:Horizontal="Right" ss:Vertical="Center"/><NumberFormat ss:Format="&quot;PHP &quot;#,##0.00;[Red]\(&quot;PHP &quot;#,##0.00\);&quot;PHP &quot;0.00"/></Style>' . "\n");
+            fwrite($handle, '  <Style ss:ID="CurrencyCellZebra"><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/></Borders><Alignment ss:Horizontal="Right" ss:Vertical="Center"/><NumberFormat ss:Format="&quot;PHP &quot;#,##0.00;[Red]\(&quot;PHP &quot;#,##0.00\);&quot;PHP &quot;0.00"/><Interior ss:Color="#F8FAFC" ss:Pattern="Solid"/></Style>' . "\n");
+            fwrite($handle, ' </Styles>' . "\n");
+
+            // Worksheet
+            fwrite($handle, ' <Worksheet ss:Name="Employee Masterlist">' . "\n");
+            fwrite($handle, '  <Table ss:DefaultRowHeight="20">' . "\n");
+
+            // Defined column widths
+            fwrite($handle, '   <Column ss:Width="110"/>' . "\n"); // Employee ID
+            fwrite($handle, '   <Column ss:Width="175"/>' . "\n"); // Full Name
+            fwrite($handle, '   <Column ss:Width="140"/>' . "\n"); // Company / Agency
+            fwrite($handle, '   <Column ss:Width="130"/>' . "\n"); // Branch
+            fwrite($handle, '   <Column ss:Width="130"/>' . "\n"); // Department
+            fwrite($handle, '   <Column ss:Width="140"/>' . "\n"); // Position
+            fwrite($handle, '   <Column ss:Width="90"/>' . "\n");  // Status
+            fwrite($handle, '   <Column ss:Width="95"/>' . "\n");  // Type
+            fwrite($handle, '   <Column ss:Width="90"/>' . "\n");  // Source
+            fwrite($handle, '   <Column ss:Width="95"/>' . "\n");  // Date Hired
+            fwrite($handle, '   <Column ss:Width="120"/>' . "\n"); // Basic Salary
+            fwrite($handle, '   <Column ss:Width="100"/>' . "\n"); // Pay Frequency
+            fwrite($handle, '   <Column ss:Width="110"/>' . "\n"); // SSS
+            fwrite($handle, '   <Column ss:Width="110"/>' . "\n"); // PhilHealth
+            fwrite($handle, '   <Column ss:Width="110"/>' . "\n"); // Pag-IBIG
+            fwrite($handle, '   <Column ss:Width="110"/>' . "\n"); // TIN
+            fwrite($handle, '   <Column ss:Width="110"/>' . "\n"); // Mobile
+            fwrite($handle, '   <Column ss:Width="180"/>' . "\n"); // Email
+
+            // Header row
+            fwrite($handle, '   <Row ss:Height="26" ss:StyleID="Header">' . "\n");
+            $headerColumns = [
+                'Employee ID', 'Full Name', 'Company / Agency', 'Branch', 'Department', 'Position',
+                'Status', 'Type', 'Source', 'Date Hired', 'Basic Salary', 'Pay Frequency',
+                'SSS', 'PhilHealth', 'Pag-IBIG', 'TIN', 'Mobile', 'Email'
+            ];
+            foreach ($headerColumns as $h) {
+                fwrite($handle, '    <Cell><Data ss:Type="String">' . $escape($h) . '</Data></Cell>' . "\n");
+            }
+            fwrite($handle, '   </Row>' . "\n");
+
+            // Data rows
+            $rowIndex = 0;
+            foreach ($employees as $e) {
+                $isZebra = ($rowIndex % 2 === 1);
+                $dStyle = $isZebra ? 'DataCellZebra' : 'DataCell';
+                $cStyle = $isZebra ? 'CenterCellZebra' : 'CenterCell';
+                $dateStyle = $isZebra ? 'DateCellZebra' : 'DateCell';
+                $textStyle = $isZebra ? 'TextCellZebra' : 'TextCell';
+                $currStyle = $isZebra ? 'CurrencyCellZebra' : 'CurrencyCell';
+
+                $empCode = $e->employee_code ?: ('EMP-' . str_pad($e->employee_id, 4, '0', STR_PAD_LEFT));
+                $dateHired = $e->date_hired ? \Carbon\Carbon::parse($e->date_hired)->format('Y-m-d') : '';
+                $salary = is_numeric($e->basic_salary) ? (float)$e->basic_salary : 0.00;
+
+                fwrite($handle, '   <Row ss:Height="20">' . "\n");
+                fwrite($handle, '    <Cell ss:StyleID="' . $textStyle . '"><Data ss:Type="String">' . $escape($empCode) . '</Data></Cell>' . "\n");
+                fwrite($handle, '    <Cell ss:StyleID="' . $dStyle . '"><Data ss:Type="String">' . $escape($e->full_name) . '</Data></Cell>' . "\n");
+                fwrite($handle, '    <Cell ss:StyleID="' . $dStyle . '"><Data ss:Type="String">' . $escape($e->company_or_agency) . '</Data></Cell>' . "\n");
+                fwrite($handle, '    <Cell ss:StyleID="' . $dStyle . '"><Data ss:Type="String">' . $escape($e->branch?->name) . '</Data></Cell>' . "\n");
+                fwrite($handle, '    <Cell ss:StyleID="' . $dStyle . '"><Data ss:Type="String">' . $escape($e->department?->name) . '</Data></Cell>' . "\n");
+                fwrite($handle, '    <Cell ss:StyleID="' . $dStyle . '"><Data ss:Type="String">' . $escape($e->position?->name) . '</Data></Cell>' . "\n");
+                fwrite($handle, '    <Cell ss:StyleID="' . $cStyle . '"><Data ss:Type="String">' . $escape($e->employment_status) . '</Data></Cell>' . "\n");
+                fwrite($handle, '    <Cell ss:StyleID="' . $cStyle . '"><Data ss:Type="String">' . $escape($e->employment_type) . '</Data></Cell>' . "\n");
+                fwrite($handle, '    <Cell ss:StyleID="' . $cStyle . '"><Data ss:Type="String">' . $escape($e->employment_source) . '</Data></Cell>' . "\n");
+                fwrite($handle, '    <Cell ss:StyleID="' . $dateStyle . '"><Data ss:Type="String">' . $escape($dateHired) . '</Data></Cell>' . "\n");
+                fwrite($handle, '    <Cell ss:StyleID="' . $currStyle . '"><Data ss:Type="Number">' . $salary . '</Data></Cell>' . "\n");
+                fwrite($handle, '    <Cell ss:StyleID="' . $cStyle . '"><Data ss:Type="String">' . $escape($e->pay_frequency) . '</Data></Cell>' . "\n");
+                fwrite($handle, '    <Cell ss:StyleID="' . $textStyle . '"><Data ss:Type="String">' . $escape($e->sss_number) . '</Data></Cell>' . "\n");
+                fwrite($handle, '    <Cell ss:StyleID="' . $textStyle . '"><Data ss:Type="String">' . $escape($e->philhealth_number) . '</Data></Cell>' . "\n");
+                fwrite($handle, '    <Cell ss:StyleID="' . $textStyle . '"><Data ss:Type="String">' . $escape($e->pagibig_number) . '</Data></Cell>' . "\n");
+                fwrite($handle, '    <Cell ss:StyleID="' . $textStyle . '"><Data ss:Type="String">' . $escape($e->tin) . '</Data></Cell>' . "\n");
+                fwrite($handle, '    <Cell ss:StyleID="' . $textStyle . '"><Data ss:Type="String">' . $escape($e->mobile_number) . '</Data></Cell>' . "\n");
+                fwrite($handle, '    <Cell ss:StyleID="' . $dStyle . '"><Data ss:Type="String">' . $escape($e->email) . '</Data></Cell>' . "\n");
+                fwrite($handle, '   </Row>' . "\n");
+
+                $rowIndex++;
+            }
+
+            fwrite($handle, '  </Table>' . "\n");
+            fwrite($handle, '  <WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel">' . "\n");
+            fwrite($handle, '   <FreezePanes/>' . "\n");
+            fwrite($handle, '   <FrozenNoSplit/>' . "\n");
+            fwrite($handle, '   <SplitHorizontal>1</SplitHorizontal>' . "\n");
+            fwrite($handle, '   <TopRowBottomPane>1</TopRowBottomPane>' . "\n");
+            fwrite($handle, '   <ActivePane>2</ActivePane>' . "\n");
+            fwrite($handle, '  </WorksheetOptions>' . "\n");
+            fwrite($handle, ' </Worksheet>' . "\n");
+            fwrite($handle, '</Workbook>' . "\n");
+
+            fclose($handle);
+        }, 200, $headers);
+    }
+
+    /**
+     * Export DTR to CSV or Formatted Excel
      */
     public function exportAttendance(Request $request): StreamedResponse
     {
+        if ($request->get('format') === 'excel' || $request->get('format') === 'xls') {
+            return $this->exportAttendanceExcel($request);
+        }
+
         $startDate = $request->get('start_date', $request->get('date_from', Carbon::now()->startOfMonth()->toDateString()));
         $endDate = $request->get('end_date', $request->get('date_to', Carbon::now()->toDateString()));
 
@@ -553,14 +713,19 @@ class HrReportController extends Controller
             ]);
 
             foreach ($records as $r) {
+                $empCode = $r->employee?->employee_code ?: ('EMP-' . str_pad($r->employee?->employee_id ?? 0, 4, '0', STR_PAD_LEFT));
+                $date = $r->date ? \Carbon\Carbon::parse($r->date)->format('Y-m-d') : '';
+                $timeIn = $r->time_in ? date('h:i A', strtotime($r->time_in)) : '';
+                $timeOut = $r->time_out ? date('h:i A', strtotime($r->time_out)) : '';
+
                 fputcsv($handle, [
-                    $r->date,
-                    $r->employee?->employee_id,
+                    $date,
+                    $empCode,
                     $r->employee?->full_name,
                     $r->employee?->company_or_agency,
                     $r->employee?->branch?->name,
-                    $r->time_in,
-                    $r->time_out,
+                    $timeIn,
+                    $timeOut,
                     $r->total_hours,
                     $r->late_minutes,
                     $r->undertime_minutes,
@@ -574,10 +739,162 @@ class HrReportController extends Controller
     }
 
     /**
-     * Export Payroll Register to CSV
+     * Export Attendance / DTR to Formatted Excel (.xls / SpreadsheetML)
+     */
+    public function exportAttendanceExcel(Request $request): StreamedResponse
+    {
+        $startDate = $request->get('start_date', $request->get('date_from', Carbon::now()->startOfMonth()->toDateString()));
+        $endDate = $request->get('end_date', $request->get('date_to', Carbon::now()->toDateString()));
+
+        $query = AttendanceRecord::with(['employee.branch', 'employee.department', 'employee.company'])
+            ->whereBetween('date', [$startDate, $endDate]);
+
+        $this->applyEmployeeFilters($query, $request, false);
+
+        $records = $query->orderBy('date', 'asc')->get();
+
+        $filename = 'attendance_dtr_' . date('Ymd_His') . '.xls';
+
+        $headers = [
+            'Content-Type' => 'application/vnd.ms-excel; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Cache-Control' => 'max-age=0, no-cache, must-revalidate, proxy-revalidate',
+        ];
+
+        return response()->stream(function () use ($records) {
+            $handle = fopen('php://output', 'w');
+            $escape = fn($val) => htmlspecialchars((string)($val ?? ''), ENT_XML1 | ENT_COMPAT, 'UTF-8');
+
+            fwrite($handle, '<?xml version="1.0" encoding="UTF-8"?>' . "\n");
+            fwrite($handle, '<?mso-application progid="Excel.Sheet"?>' . "\n");
+            fwrite($handle, '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"' . "\n");
+            fwrite($handle, ' xmlns:o="urn:schemas-microsoft-com:office:office"' . "\n");
+            fwrite($handle, ' xmlns:x="urn:schemas-microsoft-com:office:excel"' . "\n");
+            fwrite($handle, ' xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"' . "\n");
+            fwrite($handle, ' xmlns:html="http://www.w3.org/TR/REC-html40">' . "\n");
+
+            // Document Properties
+            fwrite($handle, ' <DocumentProperties xmlns="urn:schemas-microsoft-com:office:office">' . "\n");
+            fwrite($handle, '  <Title>Attendance &amp; DTR Time Log</Title>' . "\n");
+            fwrite($handle, '  <Subject>RMS Timekeeping &amp; Attendance</Subject>' . "\n");
+            fwrite($handle, '  <Author>RMS HR System</Author>' . "\n");
+            fwrite($handle, '  <Created>' . date('Y-m-d\TH:i:s\Z') . '</Created>' . "\n");
+            fwrite($handle, '  <Company>RMS</Company>' . "\n");
+            fwrite($handle, ' </DocumentProperties>' . "\n");
+
+            // Styles
+            fwrite($handle, ' <Styles>' . "\n");
+            fwrite($handle, '  <Style ss:ID="Default" ss:Name="Normal"><Alignment ss:Vertical="Center"/><Font ss:FontName="Segoe UI" x:Family="Swiss" ss:Size="10" ss:Color="#1E293B"/></Style>' . "\n");
+            fwrite($handle, '  <Style ss:ID="Header"><Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="2" ss:Color="#0F172A"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#334155"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#334155"/><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#0F172A"/></Borders><Font ss:FontName="Segoe UI" x:Family="Swiss" ss:Size="10" ss:Color="#FFFFFF" ss:Bold="1"/><Interior ss:Color="#0F172A" ss:Pattern="Solid"/></Style>' . "\n");
+
+            fwrite($handle, '  <Style ss:ID="DataCell"><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/></Borders><Alignment ss:Vertical="Center"/></Style>' . "\n");
+            fwrite($handle, '  <Style ss:ID="DataCellZebra"><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/></Borders><Alignment ss:Vertical="Center"/><Interior ss:Color="#F8FAFC" ss:Pattern="Solid"/></Style>' . "\n");
+
+            fwrite($handle, '  <Style ss:ID="CenterCell"><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/></Borders><Alignment ss:Horizontal="Center" ss:Vertical="Center"/></Style>' . "\n");
+            fwrite($handle, '  <Style ss:ID="CenterCellZebra"><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/></Borders><Alignment ss:Horizontal="Center" ss:Vertical="Center"/><Interior ss:Color="#F8FAFC" ss:Pattern="Solid"/></Style>' . "\n");
+
+            fwrite($handle, '  <Style ss:ID="DateCell"><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/></Borders><Alignment ss:Horizontal="Center" ss:Vertical="Center"/><NumberFormat ss:Format="yyyy-mm-dd"/></Style>' . "\n");
+            fwrite($handle, '  <Style ss:ID="DateCellZebra"><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/></Borders><Alignment ss:Horizontal="Center" ss:Vertical="Center"/><NumberFormat ss:Format="yyyy-mm-dd"/><Interior ss:Color="#F8FAFC" ss:Pattern="Solid"/></Style>' . "\n");
+
+            fwrite($handle, '  <Style ss:ID="TextCell"><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/></Borders><Alignment ss:Horizontal="Center" ss:Vertical="Center"/><NumberFormat ss:Format="@"/></Style>' . "\n");
+            fwrite($handle, '  <Style ss:ID="TextCellZebra"><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/></Borders><Alignment ss:Horizontal="Center" ss:Vertical="Center"/><NumberFormat ss:Format="@"/><Interior ss:Color="#F8FAFC" ss:Pattern="Solid"/></Style>' . "\n");
+
+            fwrite($handle, '  <Style ss:ID="DecimalCell"><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/></Borders><Alignment ss:Horizontal="Right" ss:Vertical="Center"/><NumberFormat ss:Format="0.00"/></Style>' . "\n");
+            fwrite($handle, '  <Style ss:ID="DecimalCellZebra"><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/></Borders><Alignment ss:Horizontal="Right" ss:Vertical="Center"/><NumberFormat ss:Format="0.00"/><Interior ss:Color="#F8FAFC" ss:Pattern="Solid"/></Style>' . "\n");
+
+            fwrite($handle, '  <Style ss:ID="IntegerCell"><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/></Borders><Alignment ss:Horizontal="Right" ss:Vertical="Center"/><NumberFormat ss:Format="#,##0"/></Style>' . "\n");
+            fwrite($handle, '  <Style ss:ID="IntegerCellZebra"><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/></Borders><Alignment ss:Horizontal="Right" ss:Vertical="Center"/><NumberFormat ss:Format="#,##0"/><Interior ss:Color="#F8FAFC" ss:Pattern="Solid"/></Style>' . "\n");
+            fwrite($handle, ' </Styles>' . "\n");
+
+            // Worksheet
+            fwrite($handle, ' <Worksheet ss:Name="Attendance DTR">' . "\n");
+            fwrite($handle, '  <Table ss:DefaultRowHeight="20">' . "\n");
+
+            // Column Widths
+            fwrite($handle, '   <Column ss:Width="95"/>' . "\n");  // Date
+            fwrite($handle, '   <Column ss:Width="115"/>' . "\n"); // Employee ID
+            fwrite($handle, '   <Column ss:Width="175"/>' . "\n"); // Employee Name
+            fwrite($handle, '   <Column ss:Width="140"/>' . "\n"); // Company / Agency
+            fwrite($handle, '   <Column ss:Width="130"/>' . "\n"); // Branch
+            fwrite($handle, '   <Column ss:Width="85"/>' . "\n");  // Time In
+            fwrite($handle, '   <Column ss:Width="85"/>' . "\n");  // Time Out
+            fwrite($handle, '   <Column ss:Width="90"/>' . "\n");  // Total Hours
+            fwrite($handle, '   <Column ss:Width="85"/>' . "\n");  // Late (Min)
+            fwrite($handle, '   <Column ss:Width="95"/>' . "\n");  // Undertime (Min)
+            fwrite($handle, '   <Column ss:Width="95"/>' . "\n");  // Overtime (Hrs)
+            fwrite($handle, '   <Column ss:Width="95"/>' . "\n");  // Night Diff (Hrs)
+            fwrite($handle, '   <Column ss:Width="90"/>' . "\n");  // Status
+
+            // Header Row
+            fwrite($handle, '   <Row ss:Height="26" ss:StyleID="Header">' . "\n");
+            $headers = [
+                'Date', 'Employee ID', 'Employee Name', 'Company / Agency', 'Branch', 'Time In', 'Time Out',
+                'Total Hours', 'Late (Min)', 'Undertime (Min)', 'Overtime (Hrs)', 'Night Diff (Hrs)', 'Status'
+            ];
+            foreach ($headers as $h) {
+                fwrite($handle, '    <Cell><Data ss:Type="String">' . $escape($h) . '</Data></Cell>' . "\n");
+            }
+            fwrite($handle, '   </Row>' . "\n");
+
+            // Data Rows
+            $rowIndex = 0;
+            foreach ($records as $r) {
+                $isZebra = ($rowIndex % 2 === 1);
+                $dStyle = $isZebra ? 'DataCellZebra' : 'DataCell';
+                $cStyle = $isZebra ? 'CenterCellZebra' : 'CenterCell';
+                $dateStyle = $isZebra ? 'DateCellZebra' : 'DateCell';
+                $textStyle = $isZebra ? 'TextCellZebra' : 'TextCell';
+                $decStyle = $isZebra ? 'DecimalCellZebra' : 'DecimalCell';
+                $intStyle = $isZebra ? 'IntegerCellZebra' : 'IntegerCell';
+
+                $empCode = $r->employee?->employee_code ?: ('EMP-' . str_pad($r->employee?->employee_id ?? 0, 4, '0', STR_PAD_LEFT));
+                $date = $r->date ? \Carbon\Carbon::parse($r->date)->format('Y-m-d') : '';
+                $timeIn = $r->time_in ? date('h:i A', strtotime($r->time_in)) : '—';
+                $timeOut = $r->time_out ? date('h:i A', strtotime($r->time_out)) : '—';
+
+                fwrite($handle, '   <Row ss:Height="20">' . "\n");
+                fwrite($handle, '    <Cell ss:StyleID="' . $dateStyle . '"><Data ss:Type="String">' . $escape($date) . '</Data></Cell>' . "\n");
+                fwrite($handle, '    <Cell ss:StyleID="' . $textStyle . '"><Data ss:Type="String">' . $escape($empCode) . '</Data></Cell>' . "\n");
+                fwrite($handle, '    <Cell ss:StyleID="' . $dStyle . '"><Data ss:Type="String">' . $escape($r->employee?->full_name) . '</Data></Cell>' . "\n");
+                fwrite($handle, '    <Cell ss:StyleID="' . $dStyle . '"><Data ss:Type="String">' . $escape($r->employee?->company_or_agency) . '</Data></Cell>' . "\n");
+                fwrite($handle, '    <Cell ss:StyleID="' . $dStyle . '"><Data ss:Type="String">' . $escape($r->employee?->branch?->name) . '</Data></Cell>' . "\n");
+                fwrite($handle, '    <Cell ss:StyleID="' . $cStyle . '"><Data ss:Type="String">' . $escape($timeIn) . '</Data></Cell>' . "\n");
+                fwrite($handle, '    <Cell ss:StyleID="' . $cStyle . '"><Data ss:Type="String">' . $escape($timeOut) . '</Data></Cell>' . "\n");
+                fwrite($handle, '    <Cell ss:StyleID="' . $decStyle . '"><Data ss:Type="Number">' . (float)$r->total_hours . '</Data></Cell>' . "\n");
+                fwrite($handle, '    <Cell ss:StyleID="' . $intStyle . '"><Data ss:Type="Number">' . (int)$r->late_minutes . '</Data></Cell>' . "\n");
+                fwrite($handle, '    <Cell ss:StyleID="' . $intStyle . '"><Data ss:Type="Number">' . (int)$r->undertime_minutes . '</Data></Cell>' . "\n");
+                fwrite($handle, '    <Cell ss:StyleID="' . $decStyle . '"><Data ss:Type="Number">' . (float)$r->overtime_hours . '</Data></Cell>' . "\n");
+                fwrite($handle, '    <Cell ss:StyleID="' . $decStyle . '"><Data ss:Type="Number">' . (float)$r->night_diff_hours . '</Data></Cell>' . "\n");
+                fwrite($handle, '    <Cell ss:StyleID="' . $cStyle . '"><Data ss:Type="String">' . $escape($r->status) . '</Data></Cell>' . "\n");
+                fwrite($handle, '   </Row>' . "\n");
+
+                $rowIndex++;
+            }
+
+            fwrite($handle, '  </Table>' . "\n");
+            fwrite($handle, '  <WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel">' . "\n");
+            fwrite($handle, '   <FreezePanes/>' . "\n");
+            fwrite($handle, '   <FrozenNoSplit/>' . "\n");
+            fwrite($handle, '   <SplitHorizontal>1</SplitHorizontal>' . "\n");
+            fwrite($handle, '   <TopRowBottomPane>1</TopRowBottomPane>' . "\n");
+            fwrite($handle, '   <ActivePane>2</ActivePane>' . "\n");
+            fwrite($handle, '  </WorksheetOptions>' . "\n");
+            fwrite($handle, ' </Worksheet>' . "\n");
+            fwrite($handle, '</Workbook>' . "\n");
+
+            fclose($handle);
+        }, 200, $headers);
+    }
+
+    /**
+     * Export Payroll Register to CSV or Formatted Excel
      */
     public function exportPayroll(Request $request): StreamedResponse
     {
+        if ($request->get('format') === 'excel' || $request->get('format') === 'xls') {
+            return $this->exportPayrollExcel($request);
+        }
+
         $periodId = $request->get('payroll_period_id');
         $query = PayrollRecord::with(['employee.branch', 'employee.department', 'employee.company', 'payrollPeriod']);
         if ($periodId) {
@@ -602,27 +919,178 @@ class HrReportController extends Controller
             ]);
 
             foreach ($records as $p) {
+                $empCode = $p->employee?->employee_code ?: ('EMP-' . str_pad($p->employee?->employee_id ?? 0, 4, '0', STR_PAD_LEFT));
+                $lateAbsence = (float)($p->late_deduction + $p->undertime_deduction + $p->absence_deduction);
+
                 fputcsv($handle, [
                     $p->payrollPeriod?->name,
-                    $p->employee?->employee_id,
+                    $empCode,
                     $p->employee?->full_name,
                     $p->employee?->company_or_agency,
                     $p->employee?->branch?->name,
-                    $p->basic_pay,
-                    $p->overtime_pay,
-                    $p->night_diff_pay,
-                    $p->holiday_pay,
-                    $p->allowances,
-                    $p->gross_pay,
-                    $p->late_deduction + $p->undertime_deduction + $p->absence_deduction,
-                    $p->sss_employee,
-                    $p->philhealth_employee,
-                    $p->pagibig_employee,
-                    $p->withholding_tax,
-                    $p->total_deductions,
-                    $p->net_pay,
+                    number_format((float)$p->basic_pay, 2, '.', ''),
+                    number_format((float)$p->overtime_pay, 2, '.', ''),
+                    number_format((float)$p->night_diff_pay, 2, '.', ''),
+                    number_format((float)$p->holiday_pay, 2, '.', ''),
+                    number_format((float)$p->allowances, 2, '.', ''),
+                    number_format((float)$p->gross_pay, 2, '.', ''),
+                    number_format($lateAbsence, 2, '.', ''),
+                    number_format((float)$p->sss_employee, 2, '.', ''),
+                    number_format((float)$p->philhealth_employee, 2, '.', ''),
+                    number_format((float)$p->pagibig_employee, 2, '.', ''),
+                    number_format((float)$p->withholding_tax, 2, '.', ''),
+                    number_format((float)$p->total_deductions, 2, '.', ''),
+                    number_format((float)$p->net_pay, 2, '.', ''),
                 ]);
             }
+            fclose($handle);
+        }, 200, $headers);
+    }
+
+    /**
+     * Export Payroll Register to Formatted Excel (.xls / SpreadsheetML)
+     */
+    public function exportPayrollExcel(Request $request): StreamedResponse
+    {
+        $periodId = $request->get('payroll_period_id');
+        $query = PayrollRecord::with(['employee.branch', 'employee.department', 'employee.company', 'payrollPeriod']);
+        if ($periodId) {
+            $query->where('payroll_period_id', $periodId);
+        }
+        $this->applyEmployeeFilters($query, $request, false);
+        $records = $query->get();
+
+        $filename = 'payroll_register_' . date('Ymd_His') . '.xls';
+
+        $headers = [
+            'Content-Type' => 'application/vnd.ms-excel; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Cache-Control' => 'max-age=0, no-cache, must-revalidate, proxy-revalidate',
+        ];
+
+        return response()->stream(function () use ($records) {
+            $handle = fopen('php://output', 'w');
+            $escape = fn($val) => htmlspecialchars((string)($val ?? ''), ENT_XML1 | ENT_COMPAT, 'UTF-8');
+
+            fwrite($handle, '<?xml version="1.0" encoding="UTF-8"?>' . "\n");
+            fwrite($handle, '<?mso-application progid="Excel.Sheet"?>' . "\n");
+            fwrite($handle, '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"' . "\n");
+            fwrite($handle, ' xmlns:o="urn:schemas-microsoft-com:office:office"' . "\n");
+            fwrite($handle, ' xmlns:x="urn:schemas-microsoft-com:office:excel"' . "\n");
+            fwrite($handle, ' xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"' . "\n");
+            fwrite($handle, ' xmlns:html="http://www.w3.org/TR/REC-html40">' . "\n");
+
+            // Document Properties
+            fwrite($handle, ' <DocumentProperties xmlns="urn:schemas-microsoft-com:office:office">' . "\n");
+            fwrite($handle, '  <Title>Payroll Register &amp; Statutory Summary</Title>' . "\n");
+            fwrite($handle, '  <Subject>RMS Compensation &amp; Payroll</Subject>' . "\n");
+            fwrite($handle, '  <Author>RMS HR System</Author>' . "\n");
+            fwrite($handle, '  <Created>' . date('Y-m-d\TH:i:s\Z') . '</Created>' . "\n");
+            fwrite($handle, '  <Company>RMS</Company>' . "\n");
+            fwrite($handle, ' </DocumentProperties>' . "\n");
+
+            // Styles
+            fwrite($handle, ' <Styles>' . "\n");
+            fwrite($handle, '  <Style ss:ID="Default" ss:Name="Normal"><Alignment ss:Vertical="Center"/><Font ss:FontName="Segoe UI" x:Family="Swiss" ss:Size="10" ss:Color="#1E293B"/></Style>' . "\n");
+            fwrite($handle, '  <Style ss:ID="Header"><Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="2" ss:Color="#0F172A"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#334155"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#334155"/><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#0F172A"/></Borders><Font ss:FontName="Segoe UI" x:Family="Swiss" ss:Size="10" ss:Color="#FFFFFF" ss:Bold="1"/><Interior ss:Color="#0F172A" ss:Pattern="Solid"/></Style>' . "\n");
+
+            fwrite($handle, '  <Style ss:ID="DataCell"><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/></Borders><Alignment ss:Vertical="Center"/></Style>' . "\n");
+            fwrite($handle, '  <Style ss:ID="DataCellZebra"><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/></Borders><Alignment ss:Vertical="Center"/><Interior ss:Color="#F8FAFC" ss:Pattern="Solid"/></Style>' . "\n");
+
+            fwrite($handle, '  <Style ss:ID="TextCell"><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/></Borders><Alignment ss:Horizontal="Center" ss:Vertical="Center"/><NumberFormat ss:Format="@"/></Style>' . "\n");
+            fwrite($handle, '  <Style ss:ID="TextCellZebra"><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/></Borders><Alignment ss:Horizontal="Center" ss:Vertical="Center"/><NumberFormat ss:Format="@"/><Interior ss:Color="#F8FAFC" ss:Pattern="Solid"/></Style>' . "\n");
+
+            fwrite($handle, '  <Style ss:ID="CurrencyCell"><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/></Borders><Alignment ss:Horizontal="Right" ss:Vertical="Center"/><NumberFormat ss:Format="&quot;PHP &quot;#,##0.00;[Red]\(&quot;PHP &quot;#,##0.00\);&quot;PHP &quot;0.00"/></Style>' . "\n");
+            fwrite($handle, '  <Style ss:ID="CurrencyCellZebra"><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/></Borders><Alignment ss:Horizontal="Right" ss:Vertical="Center"/><NumberFormat ss:Format="&quot;PHP &quot;#,##0.00;[Red]\(&quot;PHP &quot;#,##0.00\);&quot;PHP &quot;0.00"/><Interior ss:Color="#F8FAFC" ss:Pattern="Solid"/></Style>' . "\n");
+
+            fwrite($handle, '  <Style ss:ID="CurrencyGross"><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/></Borders><Alignment ss:Horizontal="Right" ss:Vertical="Center"/><Font ss:FontName="Segoe UI" x:Family="Swiss" ss:Size="10" ss:Color="#0F172A" ss:Bold="1"/><NumberFormat ss:Format="&quot;PHP &quot;#,##0.00;[Red]\(&quot;PHP &quot;#,##0.00\);&quot;PHP &quot;0.00"/><Interior ss:Color="#F1F5F9" ss:Pattern="Solid"/></Style>' . "\n");
+            fwrite($handle, '  <Style ss:ID="CurrencyNet"><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="2" ss:Color="#059669"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/></Borders><Alignment ss:Horizontal="Right" ss:Vertical="Center"/><Font ss:FontName="Segoe UI" x:Family="Swiss" ss:Size="10" ss:Color="#047857" ss:Bold="1"/><NumberFormat ss:Format="&quot;PHP &quot;#,##0.00;[Red]\(&quot;PHP &quot;#,##0.00\);&quot;PHP &quot;0.00"/><Interior ss:Color="#ECFDF5" ss:Pattern="Solid"/></Style>' . "\n");
+            fwrite($handle, ' </Styles>' . "\n");
+
+            // Worksheet
+            fwrite($handle, ' <Worksheet ss:Name="Payroll Register">' . "\n");
+            fwrite($handle, '  <Table ss:DefaultRowHeight="20">' . "\n");
+
+            // Column Widths
+            fwrite($handle, '   <Column ss:Width="130"/>' . "\n"); // Period
+            fwrite($handle, '   <Column ss:Width="115"/>' . "\n"); // Employee ID
+            fwrite($handle, '   <Column ss:Width="175"/>' . "\n"); // Employee Name
+            fwrite($handle, '   <Column ss:Width="140"/>' . "\n"); // Company / Agency
+            fwrite($handle, '   <Column ss:Width="130"/>' . "\n"); // Branch
+            fwrite($handle, '   <Column ss:Width="110"/>' . "\n"); // Basic Pay
+            fwrite($handle, '   <Column ss:Width="110"/>' . "\n"); // Overtime Pay
+            fwrite($handle, '   <Column ss:Width="110"/>' . "\n"); // Night Diff Pay
+            fwrite($handle, '   <Column ss:Width="110"/>' . "\n"); // Holiday Pay
+            fwrite($handle, '   <Column ss:Width="110"/>' . "\n"); // Allowances
+            fwrite($handle, '   <Column ss:Width="120"/>' . "\n"); // Gross Pay
+            fwrite($handle, '   <Column ss:Width="120"/>' . "\n"); // Late/Absence Ded
+            fwrite($handle, '   <Column ss:Width="105"/>' . "\n"); // SSS (EE)
+            fwrite($handle, '   <Column ss:Width="105"/>' . "\n"); // PhilHealth (EE)
+            fwrite($handle, '   <Column ss:Width="105"/>' . "\n"); // Pag-IBIG (EE)
+            fwrite($handle, '   <Column ss:Width="115"/>' . "\n"); // Withholding Tax
+            fwrite($handle, '   <Column ss:Width="120"/>' . "\n"); // Total Deductions
+            fwrite($handle, '   <Column ss:Width="125"/>' . "\n"); // Net Pay
+
+            // Header Row
+            fwrite($handle, '   <Row ss:Height="26" ss:StyleID="Header">' . "\n");
+            $headers = [
+                'Period', 'Employee ID', 'Employee Name', 'Company / Agency', 'Branch', 'Basic Pay',
+                'Overtime Pay', 'Night Diff Pay', 'Holiday Pay', 'Allowances', 'Gross Pay',
+                'Late/Absence Ded', 'SSS (EE)', 'PhilHealth (EE)', 'Pag-IBIG (EE)',
+                'Withholding Tax', 'Total Deductions', 'Net Pay'
+            ];
+            foreach ($headers as $h) {
+                fwrite($handle, '    <Cell><Data ss:Type="String">' . $escape($h) . '</Data></Cell>' . "\n");
+            }
+            fwrite($handle, '   </Row>' . "\n");
+
+            // Data Rows
+            $rowIndex = 0;
+            foreach ($records as $p) {
+                $isZebra = ($rowIndex % 2 === 1);
+                $dStyle = $isZebra ? 'DataCellZebra' : 'DataCell';
+                $textStyle = $isZebra ? 'TextCellZebra' : 'TextCell';
+                $currStyle = $isZebra ? 'CurrencyCellZebra' : 'CurrencyCell';
+
+                $empCode = $p->employee?->employee_code ?: ('EMP-' . str_pad($p->employee?->employee_id ?? 0, 4, '0', STR_PAD_LEFT));
+                $periodName = $p->payrollPeriod?->name ?: '—';
+                $lateAbsence = (float)($p->late_deduction + $p->undertime_deduction + $p->absence_deduction);
+
+                fwrite($handle, '   <Row ss:Height="20">' . "\n");
+                fwrite($handle, '    <Cell ss:StyleID="' . $dStyle . '"><Data ss:Type="String">' . $escape($periodName) . '</Data></Cell>' . "\n");
+                fwrite($handle, '    <Cell ss:StyleID="' . $textStyle . '"><Data ss:Type="String">' . $escape($empCode) . '</Data></Cell>' . "\n");
+                fwrite($handle, '    <Cell ss:StyleID="' . $dStyle . '"><Data ss:Type="String">' . $escape($p->employee?->full_name) . '</Data></Cell>' . "\n");
+                fwrite($handle, '    <Cell ss:StyleID="' . $dStyle . '"><Data ss:Type="String">' . $escape($p->employee?->company_or_agency) . '</Data></Cell>' . "\n");
+                fwrite($handle, '    <Cell ss:StyleID="' . $dStyle . '"><Data ss:Type="String">' . $escape($p->employee?->branch?->name) . '</Data></Cell>' . "\n");
+                fwrite($handle, '    <Cell ss:StyleID="' . $currStyle . '"><Data ss:Type="Number">' . (float)$p->basic_pay . '</Data></Cell>' . "\n");
+                fwrite($handle, '    <Cell ss:StyleID="' . $currStyle . '"><Data ss:Type="Number">' . (float)$p->overtime_pay . '</Data></Cell>' . "\n");
+                fwrite($handle, '    <Cell ss:StyleID="' . $currStyle . '"><Data ss:Type="Number">' . (float)$p->night_diff_pay . '</Data></Cell>' . "\n");
+                fwrite($handle, '    <Cell ss:StyleID="' . $currStyle . '"><Data ss:Type="Number">' . (float)$p->holiday_pay . '</Data></Cell>' . "\n");
+                fwrite($handle, '    <Cell ss:StyleID="' . $currStyle . '"><Data ss:Type="Number">' . (float)$p->allowances . '</Data></Cell>' . "\n");
+                fwrite($handle, '    <Cell ss:StyleID="CurrencyGross"><Data ss:Type="Number">' . (float)$p->gross_pay . '</Data></Cell>' . "\n");
+                fwrite($handle, '    <Cell ss:StyleID="' . $currStyle . '"><Data ss:Type="Number">' . $lateAbsence . '</Data></Cell>' . "\n");
+                fwrite($handle, '    <Cell ss:StyleID="' . $currStyle . '"><Data ss:Type="Number">' . (float)$p->sss_employee . '</Data></Cell>' . "\n");
+                fwrite($handle, '    <Cell ss:StyleID="' . $currStyle . '"><Data ss:Type="Number">' . (float)$p->philhealth_employee . '</Data></Cell>' . "\n");
+                fwrite($handle, '    <Cell ss:StyleID="' . $currStyle . '"><Data ss:Type="Number">' . (float)$p->pagibig_employee . '</Data></Cell>' . "\n");
+                fwrite($handle, '    <Cell ss:StyleID="' . $currStyle . '"><Data ss:Type="Number">' . (float)$p->withholding_tax . '</Data></Cell>' . "\n");
+                fwrite($handle, '    <Cell ss:StyleID="' . $currStyle . '"><Data ss:Type="Number">' . (float)$p->total_deductions . '</Data></Cell>' . "\n");
+                fwrite($handle, '    <Cell ss:StyleID="CurrencyNet"><Data ss:Type="Number">' . (float)$p->net_pay . '</Data></Cell>' . "\n");
+                fwrite($handle, '   </Row>' . "\n");
+
+                $rowIndex++;
+            }
+
+            fwrite($handle, '  </Table>' . "\n");
+            fwrite($handle, '  <WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel">' . "\n");
+            fwrite($handle, '   <FreezePanes/>' . "\n");
+            fwrite($handle, '   <FrozenNoSplit/>' . "\n");
+            fwrite($handle, '   <SplitHorizontal>1</SplitHorizontal>' . "\n");
+            fwrite($handle, '   <TopRowBottomPane>1</TopRowBottomPane>' . "\n");
+            fwrite($handle, '   <ActivePane>2</ActivePane>' . "\n");
+            fwrite($handle, '  </WorksheetOptions>' . "\n");
+            fwrite($handle, ' </Worksheet>' . "\n");
+            fwrite($handle, '</Workbook>' . "\n");
+
             fclose($handle);
         }, 200, $headers);
     }

@@ -35,8 +35,9 @@
             :employees="$employees"
             :showDates="false"
             layout="card"
-            buttonText="Download Employee CSV"
-            buttonIcon="ph-download-simple"
+            :formats="['excel', 'csv']"
+            buttonText="Download Excel"
+            buttonIcon="ph-file-xls"
             placeholder="Search staff, branch, department, position..."
         />
     </div>
@@ -65,8 +66,9 @@
             startDateName="start_date"
             endDateName="end_date"
             layout="card"
-            buttonText="Download Attendance CSV"
-            buttonIcon="ph-download-simple"
+            :formats="['excel', 'csv']"
+            buttonText="Download Excel"
+            buttonIcon="ph-file-xls"
             placeholder="Search staff, branch, department, status..."
         />
     </div>
@@ -91,8 +93,9 @@
             :employees="$employees"
             :showDates="false"
             layout="card"
-            buttonText="Download Payroll CSV"
-            buttonIcon="ph-download-simple"
+            :formats="['excel', 'csv']"
+            buttonText="Download Excel"
+            buttonIcon="ph-file-xls"
             placeholder="Search staff, branch, department, status..."
         >
             <x-slot:extraControls>
