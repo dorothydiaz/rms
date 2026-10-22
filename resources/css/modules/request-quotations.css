@@ -540,52 +540,148 @@
     color: #dc2626;
 }
 
-/* Directory Status Badges - HR Theme Glass Badges */
-.status-pill {
+/* ==========================================================================
+   STATUS PILL & BEACON ARCHITECTURE
+   Linear / Stripe-grade Clean Glass Aesthetics with Pulsing Ambient Dot
+   ========================================================================== */
+@keyframes rfqStatusBeaconGlow {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+        box-shadow: 0 0 0 0 rgba(147, 51, 234, 0.5);
+    }
+    50% {
+        transform: scale(1.15);
+        opacity: 0.85;
+        box-shadow: 0 0 0 4px rgba(147, 51, 234, 0);
+    }
+}
+
+.status-pill,
+.rfq-status-badge {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    padding: 3px 9px;
-    border-radius: 20px;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.02em;
-    line-height: 1;
+    gap: 6px;
+    padding: 4px 11px 4px 9px;
+    border-radius: 9999px;
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: 0.025em;
+    line-height: 1.2;
     white-space: nowrap;
     flex-shrink: 0;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    box-sizing: border-box;
 }
-.status-pill.draft {
-    background: linear-gradient(135deg, rgba(236, 72, 153, 0.10), rgba(168, 85, 247, 0.16));
-    color: #9333ea;
-    border: 1px solid rgba(168, 85, 247, 0.28);
-    box-shadow: 0 1px 4px rgba(168, 85, 247, 0.08);
+
+.status-pill .rfq-status-beacon,
+.status-pill i.ph-dot,
+.rfq-status-badge .rfq-status-beacon,
+.rfq-status-badge i.ph-dot {
+    display: inline-block;
+    width: 6.5px;
+    height: 6.5px;
+    min-width: 6.5px;
+    border-radius: 50%;
+    background-color: currentColor;
+    font-size: 0 !important;
+    line-height: 0;
+    animation: rfqStatusBeaconGlow 2.2s infinite ease-in-out;
+    vertical-align: middle;
 }
-.status-pill.sent, .status-pill.submitted {
-    background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(217, 119, 6, 0.18));
-    color: #b45309;
-    border: 1px solid rgba(245, 158, 11, 0.32);
+
+.status-pill i.ph-check-circle,
+.rfq-status-badge i.ph-check-circle {
+    font-size: 13px;
+    line-height: 1;
+    color: currentColor;
 }
-.status-pill.received, .status-pill.approval {
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.12), rgba(14, 165, 233, 0.18));
-    color: #0369a1;
-    border: 1px solid rgba(14, 165, 233, 0.32);
-}
-.status-pill.approved {
-    background: linear-gradient(135deg, rgba(16, 185, 129, 0.14), rgba(5, 150, 105, 0.22));
-    color: #047857;
-    border: 1px solid rgba(16, 185, 129, 0.38);
-    box-shadow: 0 1px 4px rgba(16, 185, 129, 0.12);
-}
-.status-pill.awarded {
-    background: linear-gradient(135deg, rgba(147, 51, 234, 0.12), rgba(126, 34, 206, 0.20));
+
+/* Specific stage color variants with harmonious soft tints */
+.status-pill.draft,
+.rfq-status-badge.draft {
+    background: #fbf7fe;
     color: #7e22ce;
-    border: 1px solid rgba(147, 51, 234, 0.35);
-    box-shadow: 0 1px 4px rgba(147, 51, 234, 0.10);
+    border: 1px solid rgba(147, 51, 234, 0.24);
+    box-shadow: 0 1px 2px rgba(147, 51, 234, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
-.status-pill.cancelled, .status-pill.refused {
-    background: linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(220, 38, 38, 0.18));
-    color: #b91c1c;
-    border: 1px solid rgba(239, 68, 68, 0.32);
+.status-pill.draft .rfq-status-beacon,
+.status-pill.draft i.ph-dot,
+.rfq-status-badge.draft .rfq-status-beacon,
+.rfq-status-badge.draft i.ph-dot {
+    background-color: #9333ea;
+}
+
+.status-pill.ready,
+.rfq-status-badge.ready {
+    background: #f0fdf4;
+    color: #047857;
+    border: 1px solid rgba(16, 185, 129, 0.28);
+    box-shadow: 0 1px 2px rgba(16, 185, 129, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+.status-pill.ready .rfq-status-beacon,
+.status-pill.ready i.ph-dot,
+.rfq-status-badge.ready .rfq-status-beacon,
+.rfq-status-badge.ready i.ph-dot {
+    background-color: #10b981;
+}
+
+.status-pill.sent,
+.status-pill.submitted,
+.rfq-status-badge.sent,
+.rfq-status-badge.submitted {
+    background: #fffbeb;
+    color: #b45309;
+    border: 1px solid rgba(245, 158, 11, 0.28);
+    box-shadow: 0 1px 2px rgba(245, 158, 11, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+.status-pill.sent .rfq-status-beacon,
+.status-pill.submitted .rfq-status-beacon,
+.status-pill.sent i.ph-dot,
+.status-pill.submitted i.ph-dot {
+    background-color: #f59e0b;
+}
+
+.status-pill.received,
+.status-pill.approval,
+.rfq-status-badge.received,
+.rfq-status-badge.approval {
+    background: #f0f9ff;
+    color: #0284c7;
+    border: 1px solid rgba(14, 165, 233, 0.28);
+    box-shadow: 0 1px 2px rgba(14, 165, 233, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+.status-pill.received .rfq-status-beacon,
+.status-pill.approval .rfq-status-beacon,
+.status-pill.received i.ph-dot,
+.status-pill.approval i.ph-dot {
+    background-color: #0ea5e9;
+}
+
+.status-pill.approved,
+.rfq-status-badge.approved {
+    background: #ecfdf5;
+    color: #059669;
+    border: 1px solid rgba(16, 185, 129, 0.32);
+    box-shadow: 0 1px 2px rgba(16, 185, 129, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.status-pill.awarded,
+.rfq-status-badge.awarded {
+    background: #faf5ff;
+    color: #7e22ce;
+    border: 1px solid rgba(147, 51, 234, 0.30);
+    box-shadow: 0 1px 2px rgba(147, 51, 234, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.status-pill.cancelled,
+.status-pill.refused,
+.rfq-status-badge.cancelled,
+.rfq-status-badge.refused {
+    background: #fef2f2;
+    color: #dc2626;
+    border: 1px solid rgba(239, 68, 68, 0.26);
+    box-shadow: 0 1px 2px rgba(239, 68, 68, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
 /* Global Pessimistic UI Locking Spinner Overlay */
@@ -828,10 +924,10 @@ body:has(#app-sidebar.collapsed) .rfq-builder-workspace-grid {
 }
 
 .rfq-panel-card {
-    background: var(--rfq-surface);
-    border: 1px solid var(--rfq-border-subtle);
-    border-radius: var(--rfq-radius-lg);
-    box-shadow: var(--rfq-shadow-sm);
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -840,44 +936,199 @@ body:has(#app-sidebar.collapsed) .rfq-builder-workspace-grid {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 8px 14px;
-    background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
-    border-bottom: 1px solid var(--rfq-border-subtle);
+    padding: 10px 16px;
+    background: #f8fafc;
+    border-bottom: 1px solid #f1f5f9;
 }
 .rfq-panel-title {
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: 0.84rem;
+    gap: 8px;
+    font-size: 0.85rem;
     font-weight: 700;
-    color: var(--rfq-text-strong);
+    color: #1e293b;
     letter-spacing: 0.01em;
 }
 .rfq-panel-title i {
     font-size: 16px;
-    color: var(--rfq-primary);
+    color: #9333ea;
 }
 .rfq-panel-body {
-    padding: 10px 14px;
+    padding: 14px 18px;
     display: flex;
     flex-direction: column;
+    gap: 12px;
+}
+
+/* ==========================================================================
+   STRUCTURED BUILDER CARDS ARCHITECTURE
+   Clean, Spacious, Minimalist Ergonomics (Linear / Stripe Grade)
+   ========================================================================== */
+.rfq-tender-meta-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 16px 18px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.rfq-tender-meta-card:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+}
+.rfq-tender-meta-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.rfq-tender-meta-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.rfq-tender-icon-badge {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, rgba(147, 51, 234, 0.12), rgba(168, 85, 247, 0.22));
+    border: 1px solid rgba(147, 51, 234, 0.22);
+    color: #9333ea;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+    box-shadow: 0 2px 6px rgba(147, 51, 234, 0.08);
+}
+.rfq-meta-eyebrow {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #94a3b8;
+    margin-bottom: 2px;
+}
+.rfq-tender-meta-right {
+    display: flex;
+    align-items: center;
     gap: 8px;
 }
 
-/* Space-Saving Form Controls & Merged Inputs */
+.rfq-card-icon-pill {
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    background: rgba(147, 51, 234, 0.09);
+    color: #9333ea;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+.rfq-card-tag {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: #64748b;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    padding: 2px 7px;
+    letter-spacing: 0.02em;
+}
+
+.rfq-builder-master-panel {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.rfq-master-section {
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    border-bottom: 1px solid #f1f5f9;
+}
+.rfq-master-section:last-child {
+    border-bottom: none;
+}
+
+.rfq-scope-section {
+    background: linear-gradient(180deg, #fafafa 0%, #ffffff 100%);
+    padding: 14px 18px 16px;
+}
+
+.rfq-scope-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.rfq-ref-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.rfq-ref-badge {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.98rem;
+    font-weight: 700;
+    color: #9333ea;
+    background: #faf5ff;
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(147, 51, 234, 0.22);
+    letter-spacing: -0.01em;
+}
+
+.rfq-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2px;
+}
+
+.rfq-section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #1e293b;
+    letter-spacing: 0.01em;
+}
+.rfq-section-title i {
+    font-size: 16px;
+    color: #9333ea;
+}
+
+/* Spacious, Clean Form Controls */
 .rfq-form-row {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
+    gap: 12px;
 }
 .rfq-field {
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: 5px;
 }
 .rfq-dual-inputs {
     display: flex;
-    gap: 6px;
+    gap: 8px;
     align-items: center;
 }
 .rfq-dual-inputs .rfq-input {
@@ -886,31 +1137,30 @@ body:has(#app-sidebar.collapsed) .rfq-builder-workspace-grid {
 }
 .rfq-label {
     font-size: 0.72rem;
-    font-weight: 700;
-    color: var(--rfq-text-medium);
+    font-weight: 600;
+    color: #475569;
     text-transform: uppercase;
     letter-spacing: 0.03em;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 1px;
 }
 .rfq-label-badge {
     font-size: 0.65rem;
     font-weight: 600;
-    color: var(--rfq-primary-dark);
-    background: var(--rfq-primary-subtle);
-    padding: 1px 5px;
+    color: #7c3aed;
+    background: #faf5ff;
+    padding: 1px 6px;
     border-radius: 4px;
     text-transform: none;
 }
 .rfq-input, .rfq-select, .rfq-textarea {
     width: 100%;
-    padding: 6px 10px;
-    border: 1.5px solid var(--rfq-border-subtle);
-    border-radius: 7px;
-    font-size: 0.82rem;
-    color: var(--rfq-text-strong);
+    padding: 7px 11px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.84rem;
+    color: #0f172a;
     background: #ffffff;
     transition: all 0.15s ease;
     box-sizing: border-box;
@@ -918,22 +1168,21 @@ body:has(#app-sidebar.collapsed) .rfq-builder-workspace-grid {
 }
 .rfq-input:focus, .rfq-select:focus, .rfq-textarea:focus {
     outline: none;
-    border-color: var(--rfq-border-focus);
-    box-shadow: 0 0 0 3px var(--rfq-primary-glow);
+    border-color: #a855f7;
+    box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.14);
 }
 .rfq-input[readonly] {
     background: #f8fafc;
-    color: #475569;
+    color: #64748b;
     cursor: default;
-    border-style: dashed;
+    border-style: solid;
 }
 .rfq-textarea {
     resize: vertical;
-    min-height: 44px;
-    height: 44px;
-    padding: 6px 10px;
-    font-size: 0.8rem;
-    line-height: 1.35;
+    min-height: 56px;
+    padding: 8px 12px;
+    font-size: 0.82rem;
+    line-height: 1.4;
 }
 
 /* Searchable Target Vendor Combobox */
@@ -1093,35 +1342,49 @@ body:has(#app-sidebar.collapsed) .rfq-builder-workspace-grid {
    TABLE SECTION & FLOATING COLUMN FILTER DROPDOWN
    ========================================================================== */
 .rfq-items-panel {
-    background: var(--rfq-surface);
-    border: 1px solid var(--rfq-border-subtle);
-    border-radius: var(--rfq-radius-lg);
-    box-shadow: var(--rfq-shadow-sm);
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 .rfq-items-toolbar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 8px 14px;
+    padding: 12px 18px;
     background: #ffffff;
-    border-bottom: 1px solid var(--rfq-border-subtle);
+    border-bottom: 1px solid #f1f5f9;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 10px;
 }
-.rfq-toolbar-left {
+.rfq-items-toolbar-title {
+    font-weight: 700;
+    font-size: 0.92rem;
+    color: #1e293b;
     display: flex;
     align-items: center;
     gap: 8px;
 }
+.rfq-items-toolbar-title i {
+    font-size: 18px;
+    color: #9333ea;
+}
+.rfq-toolbar-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
 .rfq-items-counter-pill {
-    background: var(--rfq-primary-subtle);
-    color: var(--rfq-primary-dark);
+    background: #faf5ff;
+    color: #9333ea;
+    border: 1px solid rgba(147, 51, 234, 0.2);
     font-size: 11px;
     font-weight: 700;
-    padding: 2px 7px;
-    border-radius: 10px;
+    padding: 2px 8px;
+    border-radius: 12px;
 }
 .rfq-toolbar-right {
     display: flex;
@@ -2324,41 +2587,22 @@ th.is-header-drag-over {
    RFQ LIFECYCLE PROGRESS BAR & STAGE STEPPER
    | Draft > Submitted > Approval > Status |
    ========================================================================== */
+/* ==========================================================================
+   RFQ LIFECYCLE PROGRESS BAR & STAGE STEPPER
+   Clean, Spacious, Minimalist Workflow Architecture
+   ========================================================================== */
 .rfq-lifecycle-stepper-wrap {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid var(--rfq-border-subtle);
-    border-radius: var(--rfq-radius-lg);
-    padding: 14px 18px;
-    box-shadow: var(--rfq-shadow-sm);
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    margin-bottom: 8px;
+    gap: 12px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 14px 20px;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+    transition: all 0.25s ease;
+    margin-bottom: 14px;
     position: relative;
-    overflow: hidden;
-}
-.rfq-lifecycle-stepper-wrap.stage-theme-draft {
-    border-left: 4px solid #9333ea;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(250, 245, 255, 0.7));
-}
-.rfq-lifecycle-stepper-wrap.stage-theme-submitted {
-    border-left: 4px solid #2563eb;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(239, 246, 255, 0.7));
-}
-.rfq-lifecycle-stepper-wrap.stage-theme-approval {
-    border-left: 4px solid #d97706;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(254, 243, 199, 0.7));
-}
-.rfq-lifecycle-stepper-wrap.stage-theme-approved {
-    border-left: 4px solid #059669;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(236, 253, 245, 0.7));
-}
-.rfq-lifecycle-stepper-wrap.stage-theme-refused {
-    border-left: 4px solid #dc2626;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(254, 242, 242, 0.7));
 }
 
 .rfq-lifecycle-stepper {
@@ -2367,53 +2611,52 @@ th.is-header-drag-over {
     justify-content: space-between;
     width: 100%;
     position: relative;
-    gap: 8px;
+    gap: 10px;
 }
+
 .rfq-stepper-step {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     cursor: pointer;
     user-select: none;
     z-index: 2;
-    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-    padding: 10px 14px;
-    border-radius: var(--rfq-radius-md);
-    background: #ffffff;
-    border: 1.5px solid #e2e8f0;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    padding: 8px 12px;
+    border-radius: 10px;
+    background: transparent;
+    border: 1px solid transparent;
     flex: 1;
-    min-width: 140px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    min-width: 0;
 }
 .rfq-stepper-step:hover {
     background: #f8fafc;
-    border-color: #cbd5e1;
-    transform: translateY(-1px);
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.05);
+    border-color: #f1f5f9;
 }
+
 .rfq-stepper-circle {
-    width: 34px;
-    height: 34px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 700;
     color: #64748b;
     background: #f1f5f9;
-    border: 2px solid #cbd5e1;
-    transition: all 0.25s ease;
+    border: 1.5px solid #cbd5e1;
+    transition: all 0.2s ease;
     flex-shrink: 0;
-    position: relative;
 }
 .rfq-stepper-circle i {
-    font-size: 16px;
+    font-size: 14px;
     display: none;
 }
 .rfq-stepper-circle .rfq-step-num {
     display: block;
 }
+
 .rfq-stepper-info {
     display: flex;
     flex-direction: column;
@@ -2421,33 +2664,34 @@ th.is-header-drag-over {
 }
 .rfq-step-title {
     font-size: 13px;
-    font-weight: 700;
-    color: #475569;
-    line-height: 1.2;
+    font-weight: 600;
+    color: #1e293b;
+    line-height: 1.25;
 }
 .rfq-step-desc {
     font-size: 11px;
-    color: #94a3b8;
+    color: #64748b;
     line-height: 1.2;
     white-space: nowrap;
 }
+
 .rfq-stepper-line {
-    flex: 0 0 24px;
-    height: 3px;
+    flex: 0 0 28px;
+    height: 2px;
     background: #e2e8f0;
     border-radius: 2px;
     transition: all 0.3s ease;
     z-index: 1;
-    margin: 0 2px;
 }
 
+/* Stepper Completed State */
 .rfq-stepper-step.is-completed {
     background: #f0fdf4;
-    border-color: #a7f3d0;
+    border-color: rgba(16, 185, 129, 0.2);
 }
 .rfq-stepper-step.is-completed .rfq-stepper-circle {
     background: #10b981;
-    border-color: #059669;
+    border-color: #10b981;
     color: #ffffff;
 }
 .rfq-stepper-step.is-completed .rfq-stepper-circle i {
@@ -2463,18 +2707,16 @@ th.is-header-drag-over {
     background: #10b981;
 }
 
-.rfq-stepper-step.is-active {
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
-}
+/* Stepper Active States (Subtle, Clean & Minimalist) */
 .rfq-stepper-step.is-active.stage-draft {
     background: #faf5ff;
-    border-color: #9333ea;
+    border-color: rgba(147, 51, 234, 0.25);
 }
 .rfq-stepper-step.is-active.stage-draft .rfq-stepper-circle {
     background: #9333ea;
-    border-color: #7c3aed;
+    border-color: #9333ea;
     color: #ffffff;
-    box-shadow: 0 0 0 4px rgba(147, 51, 234, 0.2);
+    box-shadow: 0 0 0 3px rgba(147, 51, 234, 0.15);
 }
 .rfq-stepper-step.is-active.stage-draft .rfq-step-title {
     color: #9333ea;
@@ -2482,13 +2724,13 @@ th.is-header-drag-over {
 
 .rfq-stepper-step.is-active.stage-submitted {
     background: #eff6ff;
-    border-color: #2563eb;
+    border-color: rgba(37, 99, 235, 0.25);
 }
 .rfq-stepper-step.is-active.stage-submitted .rfq-stepper-circle {
     background: #2563eb;
-    border-color: #1d4ed8;
+    border-color: #2563eb;
     color: #ffffff;
-    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.2);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
 }
 .rfq-stepper-step.is-active.stage-submitted .rfq-step-title {
     color: #2563eb;
@@ -2496,13 +2738,13 @@ th.is-header-drag-over {
 
 .rfq-stepper-step.is-active.stage-approval {
     background: #fffbeb;
-    border-color: #d97706;
+    border-color: rgba(217, 119, 6, 0.25);
 }
 .rfq-stepper-step.is-active.stage-approval .rfq-stepper-circle {
     background: #d97706;
-    border-color: #b45309;
+    border-color: #d97706;
     color: #ffffff;
-    box-shadow: 0 0 0 4px rgba(217, 119, 6, 0.2);
+    box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.15);
 }
 .rfq-stepper-step.is-active.stage-approval .rfq-step-title {
     color: #d97706;
@@ -2510,13 +2752,13 @@ th.is-header-drag-over {
 
 .rfq-stepper-step.is-active.stage-approved {
     background: #ecfdf5;
-    border-color: #059669;
+    border-color: rgba(5, 150, 105, 0.25);
 }
 .rfq-stepper-step.is-active.stage-approved .rfq-stepper-circle {
     background: #059669;
-    border-color: #047857;
+    border-color: #059669;
     color: #ffffff;
-    box-shadow: 0 0 0 4px rgba(5, 150, 105, 0.2);
+    box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.15);
 }
 .rfq-stepper-step.is-active.stage-approved .rfq-step-title {
     color: #059669;
@@ -2524,79 +2766,107 @@ th.is-header-drag-over {
 
 .rfq-stepper-step.is-active.stage-refused {
     background: #fef2f2;
-    border-color: #dc2626;
+    border-color: rgba(220, 38, 38, 0.25);
 }
 .rfq-stepper-step.is-active.stage-refused .rfq-stepper-circle {
     background: #dc2626;
-    border-color: #b91c1c;
+    border-color: #dc2626;
     color: #ffffff;
-    box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.2);
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15);
 }
 .rfq-stepper-step.is-active.stage-refused .rfq-step-title {
     color: #dc2626;
 }
 
+/* Integrated Stage Context & Action Banner */
 .rfq-stage-banner {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
-    padding: 8px 14px;
-    border-radius: var(--rfq-radius-md);
-    font-size: 12px;
+    gap: 14px;
+    padding: 10px 16px;
+    border-radius: 10px;
+    font-size: 12.5px;
     background: #f8fafc;
     border: 1px solid #e2e8f0;
     flex-wrap: wrap;
+    transition: all 0.25s ease;
 }
 .rfq-stage-banner.stage-draft {
-    background: rgba(147, 51, 234, 0.06);
-    border-color: rgba(147, 51, 234, 0.2);
-    color: #6b21a8;
+    background: #faf5ff;
+    border-color: rgba(147, 51, 234, 0.15);
+    color: #581c87;
 }
 .rfq-stage-banner.stage-submitted {
-    background: rgba(37, 99, 235, 0.06);
-    border-color: rgba(37, 99, 235, 0.2);
-    color: #1e40af;
+    background: #eff6ff;
+    border-color: rgba(37, 99, 235, 0.15);
+    color: #1e3a8a;
 }
 .rfq-stage-banner.stage-approval {
-    background: rgba(217, 119, 6, 0.08);
-    border-color: rgba(217, 119, 6, 0.25);
-    color: #92400e;
+    background: #fffbeb;
+    border-color: rgba(217, 119, 6, 0.2);
+    color: #78350f;
 }
 .rfq-stage-banner.stage-approved {
-    background: rgba(5, 150, 105, 0.08);
-    border-color: rgba(5, 150, 105, 0.25);
-    color: #065f46;
+    background: #ecfdf5;
+    border-color: rgba(5, 150, 105, 0.2);
+    color: #064e3b;
 }
 .rfq-stage-banner.stage-refused {
-    background: rgba(220, 38, 38, 0.08);
-    border-color: rgba(220, 38, 38, 0.25);
-    color: #991b1b;
+    background: #fef2f2;
+    border-color: rgba(220, 38, 38, 0.2);
+    color: #7f1d1d;
 }
+
 .rfq-stage-banner-icon {
-    font-size: 18px;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
+    font-size: 16px;
     flex-shrink: 0;
+    background: rgba(147, 51, 234, 0.1);
+    color: #9333ea;
 }
+.stage-submitted .rfq-stage-banner-icon {
+    background: rgba(37, 99, 235, 0.1);
+    color: #2563eb;
+}
+.stage-approval .rfq-stage-banner-icon {
+    background: rgba(217, 119, 6, 0.1);
+    color: #d97706;
+}
+.stage-approved .rfq-stage-banner-icon {
+    background: rgba(5, 150, 105, 0.1);
+    color: #059669;
+}
+.stage-refused .rfq-stage-banner-icon {
+    background: rgba(220, 38, 38, 0.1);
+    color: #dc2626;
+}
+
 .rfq-stage-banner-content {
     flex: 1;
-    min-width: 200px;
+    min-width: 220px;
 }
 .rfq-stage-banner-title {
     font-weight: 700;
-    font-size: 12.5px;
+    font-size: 13px;
+    color: #0f172a;
+    line-height: 1.3;
 }
 .rfq-stage-banner-sub {
-    font-size: 11px;
-    opacity: 0.85;
+    font-size: 12px;
+    color: #64748b;
     margin-top: 1px;
+    line-height: 1.35;
 }
 .rfq-stage-banner-actions {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     flex-wrap: wrap;
 }
 

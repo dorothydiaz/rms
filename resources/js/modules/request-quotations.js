@@ -1513,7 +1513,7 @@ function updateLifecycleProgressBar(status) {
     const statusBadge = document.getElementById('rfqStatusBadge');
     if (statusBadge) {
         statusBadge.className = `status-pill ${stage.toLowerCase()}`;
-        statusBadge.innerHTML = `<i class="ph ph-dot"></i> ${stage} RFQ`;
+        statusBadge.innerHTML = `<span class="rfq-status-beacon"></span> ${stage} RFQ`;
     }
 
     // Synchronize tab badge to prevent misleading 'New RFQ' badge when viewing existing/submitted RFQ
@@ -2039,10 +2039,20 @@ function renderItemsTable() {
         const visibleColsCount = activeColumnIds.length + 1;
         tbody.innerHTML = `
             <tr>
-                <td colspan="${visibleColsCount}" style="text-align: center; padding: 48px 20px; color: var(--rfq-text-muted);">
-                    <i class="ph ph-shopping-cart-simple" style="font-size: 42px; color: #cbd5e1; display: block; margin-bottom: 10px;"></i>
-                    <div style="font-weight: 700; font-size: 1rem; color: var(--rfq-text-strong);">No Quotation Line Items Added</div>
-                    <div style="font-size: 0.82rem; margin-top: 4px;">Click <strong>"Select From Master" (F2)</strong> or <strong>"Add Custom Spec Row"</strong> to begin compiling specifications.</div>
+                <td colspan="${visibleColsCount}" class="rfq-empty-table-cell" style="text-align: center; padding: 56px 24px; color: var(--rfq-text-muted);">
+                    <div class="rfq-empty-state-icon-wrap" style="width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, rgba(236, 72, 153, 0.08), rgba(168, 85, 247, 0.14)); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 14px; box-shadow: 0 4px 14px rgba(168, 85, 247, 0.08);">
+                        <i class="ph ph-shopping-cart-simple" style="font-size: 26px; color: #9333ea;"></i>
+                    </div>
+                    <div style="font-weight: 700; font-size: 1.05rem; color: #0f172a; margin-bottom: 4px;">No Quotation Line Items Added</div>
+                    <div style="font-size: 0.84rem; color: #64748b; max-width: 440px; margin: 0 auto 18px; line-height: 1.45;">Click <strong>"Select From Master" (F2)</strong> or <strong>"Add Custom Spec Row"</strong> to begin compiling specifications.</div>
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="openItemMasterQuickSelectModal()" style="font-size: 12px; padding: 6px 14px;">
+                            <i class="ph ph-magnifying-glass"></i> Select Master (F2)
+                        </button>
+                        <button type="button" class="hr-btn hr-btn-primary hr-btn-sm" onclick="addNewBlankItemRow()" style="font-size: 12px; padding: 6px 14px;">
+                            <i class="ph ph-plus-circle"></i> Add Custom Row
+                        </button>
+                    </div>
                 </td>
             </tr>
         `;
@@ -2426,12 +2436,14 @@ function updateMetricsSummary() {
     document.getElementById('rfqItemsBadge').textContent = `${totalLines} Line Item${totalLines === 1 ? '' : 's'}`;
 
     const badge = document.getElementById('rfqStatusBadge');
-    if (totalLines > 0 && window.AppStore.activeRfq.vendorId) {
-        badge.className = 'rfq-status-badge ready';
-        badge.innerHTML = '<i class="ph ph-check-circle"></i> Ready to Dispatch';
-    } else {
-        badge.className = 'rfq-status-badge draft';
-        badge.innerHTML = '<i class="ph ph-dot"></i> Draft RFQ';
+    if (badge) {
+        if (totalLines > 0 && window.AppStore.activeRfq.vendorId) {
+            badge.className = 'status-pill ready';
+            badge.innerHTML = '<span class="rfq-status-beacon"></span> Ready to Dispatch';
+        } else {
+            badge.className = 'status-pill draft';
+            badge.innerHTML = '<span class="rfq-status-beacon"></span> Draft RFQ';
+        }
     }
 }
 
@@ -2911,7 +2923,7 @@ function restoreDraftSession(isAutoRecovery = false) {
             if (norm === 'Submitted') pillCls = 'sent';
             else if (norm === 'Approval') pillCls = 'received';
             statusBadge.className = `status-pill ${pillCls}`;
-            statusBadge.innerHTML = `<i class="ph ph-dot"></i> ${s}`;
+            statusBadge.innerHTML = `<span class="rfq-status-beacon"></span> ${s}`;
         }
 
         if (parsed.vendorId) {
@@ -3079,7 +3091,7 @@ function createNewRfq(promptIfDirty = false) {
     const statusBadge = document.getElementById('rfqStatusBadge');
     if (statusBadge) {
         statusBadge.className = 'status-pill draft';
-        statusBadge.innerHTML = '<i class="ph ph-dot"></i> Draft RFQ';
+        statusBadge.innerHTML = '<span class="rfq-status-beacon"></span> Draft RFQ';
     }
 
     const tabBadge = document.getElementById('tabBuilderBadge');
@@ -5028,7 +5040,7 @@ function editRfqFromDirectory(rfqNumber) {
     const statusBadge = document.getElementById('rfqStatusBadge');
     if (statusBadge) {
         statusBadge.className = `status-pill ${stage.toLowerCase()}`;
-        statusBadge.innerHTML = `<i class="ph ph-dot"></i> ${stage} RFQ`;
+        statusBadge.innerHTML = `<span class="rfq-status-beacon"></span> ${stage} RFQ`;
     }
 
     if (rfq.vendorId) {
