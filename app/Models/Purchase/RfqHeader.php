@@ -23,6 +23,10 @@ class RfqHeader extends Model
     protected $fillable = [
         'rfq_id',
         'rfq_number',
+        'rfq_group_id',
+        'parent_rfq_id',
+        'is_alternative',
+        'alternative_label',
         'company_id',
         'branch_id',
         'ship_to_warehouse_id',
@@ -57,6 +61,7 @@ class RfqHeader extends Model
         'rfq_requested_delivery_date' => 'date',
         'rfq_estimated_total_amount' => 'decimal:4',
         'rfq_quoted_total_amount' => 'decimal:4',
+        'is_alternative' => 'boolean',
     ];
 
     protected static function boot()
@@ -83,4 +88,20 @@ class RfqHeader extends Model
     {
         return $this->belongsTo(PurchaseOrder::class, 'purchase_order_id', 'id');
     }
+
+    public function parentRfq(): BelongsTo
+    {
+        return $this->belongsTo(RfqHeader::class, 'parent_rfq_id', 'rfq_id');
+    }
+
+    public function alternatives(): HasMany
+    {
+        return $this->hasMany(RfqHeader::class, 'parent_rfq_id', 'rfq_id');
+    }
+
+    public function groupRfqs(): HasMany
+    {
+        return $this->hasMany(RfqHeader::class, 'rfq_group_id', 'rfq_group_id');
+    }
 }
+

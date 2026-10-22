@@ -12,6 +12,8 @@ use Tests\TestCase;
 
 class RfqLifecycleApiTest extends TestCase
 {
+    use RefreshDatabase;
+
     protected $user;
 
     protected function setUp(): void

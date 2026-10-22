@@ -11,6 +11,8 @@ use Tests\TestCase;
 
 class RfqModelDatabaseTest extends TestCase
 {
+    use RefreshDatabase;
+
     public function test_rfq_database_schema_has_all_required_lifecycle_columns()
     {
         $this->assertTrue(Schema::hasTable('rfq_header'), 'rfq_header table must exist');

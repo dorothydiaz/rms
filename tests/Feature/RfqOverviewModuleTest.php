@@ -19,42 +19,39 @@ class RfqOverviewModuleTest extends TestCase
 
         $response->assertStatus(200);
 
-        $jsContent = file_get_contents(resource_path('js/modules/request-quotations.js'));
-        $cssContent = file_get_contents(resource_path('css/modules/request-quotations.css'));
-
         // Verify modular table elements and IDs exist
         $response->assertSee('id="rfqDirectoryTable"', false);
         $response->assertSee('id="rfqDirectoryTheadRow"', false);
         $response->assertSee('id="rfqTableSettingsDropdown"', false);
-        $this->assertStringContainsString('id="btnRfqTableSettings"', $jsContent);
+        $response->assertSee('id="btnRfqTableSettings"', false);
 
         // Verify modular CSS classes
-        $this->assertStringContainsString('rfq-th-stacked', $cssContent);
-        $this->assertStringContainsString('rfq-th-title', $cssContent);
-        $this->assertStringContainsString('rfq-th-sub', $cssContent);
-        $this->assertStringContainsString('rfq-th-settings-btn', $cssContent);
-        $this->assertStringContainsString('rfq-col-resizer', $cssContent);
-        $this->assertStringContainsString('rfq-dropdown-col-item', $cssContent);
-        $this->assertStringContainsString('rfq-line-expansion-row', $cssContent);
-        $this->assertStringContainsString('rfq-subtable', $cssContent);
+        $response->assertSee('rfq-th-stacked', false);
+        $response->assertSee('rfq-th-title', false);
+        $response->assertSee('rfq-th-sub', false);
+        $response->assertSee('rfq-th-settings-btn', false);
+        $response->assertSee('rfq-col-resizer', false);
+        $response->assertSee('rfq-dropdown-col-item', false);
+        $response->assertSee('rfq-line-expansion-row', false);
+        $response->assertSee('rfq-subtable', false);
 
         // Verify JavaScript state and LocalStorage keys
-        $this->assertStringContainsString('DIRECTORY_COLUMNS', $jsContent);
-        $this->assertStringContainsString('rms_rfq_directory_cols_v3', $jsContent);
-        $this->assertStringContainsString('rms_rfq_directory_cols_order_v3', $jsContent);
-        $this->assertStringContainsString('rms_rfq_directory_col_widths_v3', $jsContent);
-        $this->assertStringContainsString('toggleRfqTableSettingsDropdown', $jsContent);
-        $this->assertStringContainsString('reorderDirectoryColumns', $jsContent);
-        $this->assertStringContainsString('initDirectoryColResize', $jsContent);
-        $this->assertStringContainsString('toggleRfqRowExpansion', $jsContent);
+        $response->assertSee('DIRECTORY_COLUMNS', false);
+        $response->assertSee('rms_rfq_directory_cols_v3', false);
+        $response->assertSee('rms_rfq_directory_cols_order_v3', false);
+        $response->assertSee('rms_rfq_directory_col_widths_v3', false);
+        $response->assertSee('toggleRfqTableSettingsDropdown', false);
+        $response->assertSee('reorderDirectoryColumns', false);
+        $response->assertSee('initDirectoryColResize', false);
+        $response->assertSee('toggleRfqRowExpansion', false);
 
         // Verify key groupings from RFQ Overview Status specification
-        $this->assertStringContainsString('RFQ Info', $jsContent);
-        $this->assertStringContainsString('Vendor & Contact', $jsContent);
-        $this->assertStringContainsString('Submission Deadline', $jsContent);
-        $this->assertStringContainsString('Payment Terms', $jsContent);
-        $this->assertStringContainsString('RFQ Status', $jsContent);
-        $this->assertStringContainsString('Issue Approval Status', $jsContent);
-        $this->assertStringContainsString('Quantity', $jsContent);
+        $response->assertSee('RFQ Info', false);
+        $response->assertSee('Vendor & Contact', false);
+        $response->assertSee('Submission Deadline', false);
+        $response->assertSee('Payment Terms', false);
+        $response->assertSee('RFQ Status', false);
+        $response->assertSee('Issue Approval Status', false);
+        $response->assertSee('Quantity', false);
     }
 }
