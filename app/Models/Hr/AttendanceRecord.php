@@ -67,6 +67,7 @@ class AttendanceRecord extends Model
             'regular_hours' => 'decimal:2',
             'overtime_hours' => 'decimal:2',
             'night_diff_hours' => 'decimal:2',
+            'absence_days' => 'decimal:2',
             'late_minutes' => 'integer',
             'undertime_minutes' => 'integer',
         ];
