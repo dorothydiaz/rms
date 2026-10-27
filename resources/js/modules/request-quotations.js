@@ -53,6 +53,22 @@ const DRAFT_STAGE_DEFAULT_COLUMNS = [
     'requested_quantity'
 ];
 
+// Submitted Stage: Core request + vendor response inputs (Quoted Qty, Quoted Price, Lead Time, Variance %, Budget)
+const SUBMITTED_STAGE_DEFAULT_COLUMNS = [
+    'index',
+    'item_id',
+    'item_name',
+    'purchase_uom_code',
+    'requested_quantity',
+    'target_unit_price',
+    'quoted_quantity',
+    'quoted_unit_price',
+    'quoted_line_total',
+    'lead_time_days',
+    'price_variance_percentage',
+    'is_price_within_budget'
+];
+
 // Approval Stage: Core request + vendor quotes visible; Qty variance / Price Diff / Variance / Budget check untoggled by default (optional)
 const APPROVAL_STAGE_DEFAULT_COLUMNS = [
     'index',
@@ -69,6 +85,9 @@ function getStageDefaultColumns(stage) {
     const s = getNormalizedRfqStage(stage);
     if (s === 'Approval' || s === 'Approved' || s === 'Refused') {
         return [...APPROVAL_STAGE_DEFAULT_COLUMNS];
+    }
+    if (s === 'Submitted') {
+        return [...SUBMITTED_STAGE_DEFAULT_COLUMNS];
     }
     return [...DRAFT_STAGE_DEFAULT_COLUMNS];
 }
@@ -1343,167 +1362,186 @@ function updateLifecycleProgressBar(status) {
     const wrap = document.getElementById('rfqLifecycleStepperWrap');
     if (!wrap) return;
 
-    // Reset themes
-    wrap.className = `rfq-lifecycle-stepper-wrap stage-theme-${stage.toLowerCase()}`;
+    // Reset toolbar theme
+    wrap.className = `rfq-lifecycle-bar-container stage-theme-${stage.toLowerCase()}`;
 
     const stepDraft = document.getElementById('stepIndicatorDraft');
     const stepSubmitted = document.getElementById('stepIndicatorSubmitted');
     const stepApproval = document.getElementById('stepIndicatorApproval');
     const stepStatus = document.getElementById('stepIndicatorStatus');
 
-    const line1 = document.getElementById('stepTrack1');
-    const line2 = document.getElementById('stepTrack2');
-    const line3 = document.getElementById('stepTrack3');
-
     const banner = document.getElementById('rfqStageBanner');
     const bannerIcon = document.getElementById('rfqStageBannerIcon');
     const bannerTitle = document.getElementById('rfqStageBannerTitle');
     const bannerSub = document.getElementById('rfqStageBannerSub');
     const bannerActions = document.getElementById('rfqStageBannerActions');
+    const stageActionsGroup = document.getElementById('rfqStageActionsGroup');
 
     const statusTitle = document.getElementById('stepStatusTitle');
     const statusDesc = document.getElementById('stepStatusDesc');
 
-    // Clean active classes
+    // Clean active & completed classes on chevron steps
     [stepDraft, stepSubmitted, stepApproval, stepStatus].forEach(s => {
         if (s) {
-            s.className = 'rfq-stepper-step';
+            s.className = 'rfq-chevron-step';
         }
-    });
-    [line1, line2, line3].forEach(l => {
-        if (l) l.className = 'rfq-stepper-line';
     });
 
     if (banner) {
-        banner.className = `rfq-stage-banner stage-${stage.toLowerCase()}`;
+        banner.className = `rfq-stage-helper-ribbon stage-${stage.toLowerCase()}`;
     }
 
+    const attCount = getAttachedFilesCount();
+
     if (stage === 'Draft') {
-        stepDraft.classList.add('is-active', 'stage-draft');
+        if (stepDraft) stepDraft.classList.add('is-active', 'stage-draft');
         if (statusTitle) statusTitle.textContent = 'Status';
-        if (statusDesc) statusDesc.textContent = 'Pending';
+        if (statusDesc) statusDesc.textContent = 'Award / PO';
         if (bannerIcon) bannerIcon.innerHTML = '<i class="ph ph-pencil-simple-line"></i>';
-        if (bannerTitle) bannerTitle.innerHTML = 'Stage 1: RFQ Draft Creation &amp; Specification';
-        if (bannerSub) bannerSub.innerHTML = 'Buyer can add, edit, or adjust items, quantities, and benchmark prices. Vendor quotation inputs remain locked until tender submission.';
+        if (bannerTitle) bannerTitle.innerHTML = 'Stage 1: Drafting';
+        if (bannerSub) bannerSub.innerHTML = 'For internal preparation, gathering info, and consulting.';
         if (bannerActions) {
-            bannerActions.innerHTML = `
-                <button type="button" class="rfq-btn" onclick="submitActiveRfqToVendor()" style="background: #9333ea; color: #ffffff; padding: 6px 16px; font-size: 12px; font-weight: 700; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(147, 51, 234, 0.3);">
-                    <i class="ph ph-paper-plane-tilt"></i>
-                    <span>Submit &rarr; Submitted</span>
+            bannerActions.innerHTML = `<span class="rfq-stage-indicator-pill draft"><i class="ph ph-circle-dashed"></i> Drafting Mode</span>`;
+        }
+        if (stageActionsGroup) {
+            stageActionsGroup.innerHTML = `
+                <button type="button" class="rfq-stage-action-btn rfq-btn-stage-attach" onclick="openRfqAttachedFilesModal()" title="View & Attach Technical Specs, Drawings & Documents">
+                    <i class="ph ph-paperclip"></i>
+                    <span>Attached Files</span>
+                    <span class="rfq-stage-badge-count" id="rfqAttachedCountBadge">${attCount}</span>
                 </button>
-                <button type="button" class="rfq-btn rfq-btn-outline" onclick="createNewRfq(true)" title="Start Fresh RFQ Draft" style="padding: 6px 12px; font-size: 12px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;">
-                    <i class="ph ph-plus-circle"></i>
-                    <span>New RFQ</span>
+                <button type="button" class="rfq-stage-action-btn rfq-btn-stage-submit" onclick="submitActiveRfqToVendor()" title="Submit Tender for Vendor Bidding">
+                    <i class="ph ph-paper-plane-tilt"></i>
+                    <span>Submit</span>
+                </button>
+                <button type="button" class="rfq-stage-action-btn rfq-btn-stage-cancel" onclick="cancelRfqDraft()" title="Cancel / Clear Current Draft">
+                    <i class="ph ph-x-circle"></i>
+                    <span>Cancel</span>
                 </button>
             `;
         }
     } else if (stage === 'Submitted') {
-        stepDraft.classList.add('is-completed');
-        if (line1) line1.classList.add('is-completed');
-        stepSubmitted.classList.add('is-active', 'stage-submitted');
+        if (stepDraft) stepDraft.classList.add('is-completed');
+        if (stepSubmitted) stepSubmitted.classList.add('is-active', 'stage-submitted');
         if (statusTitle) statusTitle.textContent = 'Status';
-        if (statusDesc) statusDesc.textContent = 'Pending';
+        if (statusDesc) statusDesc.textContent = 'Award / PO';
         if (bannerIcon) bannerIcon.innerHTML = '<i class="ph ph-lock-key"></i>';
-        if (bannerTitle) bannerTitle.innerHTML = 'Stage 2: Submitted &amp; Locked for Vendor Bidding';
-        if (bannerSub) bannerSub.innerHTML = 'Tender is locked and immutable. Awaiting vendor quotations. Approver can advance to Approval once quotation arrives.';
+        if (bannerTitle) bannerTitle.innerHTML = 'Stage 2: Submitted';
+        if (bannerSub) bannerSub.innerHTML = 'For sending to vendors, logging responses, and moving forward.';
         if (bannerActions) {
-            bannerActions.innerHTML = `
-                <button type="button" class="rfq-btn" onclick="moveToApprovalStage()" style="background: #2563eb; color: #ffffff; padding: 6px 16px; font-size: 12px; font-weight: 700; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);">
+            bannerActions.innerHTML = `<span class="rfq-stage-indicator-pill submitted" style="color: #2563eb;"><i class="ph ph-clock"></i> Awaiting Vendor Quotes</span>`;
+        }
+        if (stageActionsGroup) {
+            stageActionsGroup.innerHTML = `
+                <button type="button" class="rfq-stage-action-btn rfq-btn-stage-outline" onclick="transitionActiveRfqStage('Draft')" title="Revert to Drafting Stage">
+                    <i class="ph ph-arrow-left"></i>
+                    <span>Back to Draft</span>
+                </button>
+                <button type="button" class="rfq-stage-action-btn rfq-btn-stage-danger" onclick="cancelActiveRfq()" title="Cancel this Tender">
+                    <i class="ph ph-prohibit"></i>
+                    <span>Cancel</span>
+                </button>
+                <button type="button" class="rfq-stage-action-btn rfq-btn-stage-primary" onclick="moveToApprovalStage()" title="Validate Vendor Quotation & Move to Approval">
                     <i class="ph ph-arrow-right"></i>
-                    <span>Move to Approval &rarr;</span>
+                    <span>Move to Approval</span>
                 </button>
-                <button type="button" class="rfq-btn rfq-btn-outline" onclick="transitionActiveRfqStage('Draft')" style="padding: 6px 12px; font-size: 12px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;">
-                    <i class="ph ph-arrow-u-up-left"></i>
-                    <span>Recall to Draft</span>
-                </button>
-                <button type="button" class="rfq-btn rfq-btn-outline" onclick="createNewRfq(false)" title="Create New RFQ" style="padding: 6px 12px; font-size: 12px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;">
-                    <i class="ph ph-plus-circle"></i>
-                    <span>New RFQ</span>
+                <button type="button" class="rfq-stage-action-btn rfq-btn-stage-attach" onclick="openRfqAttachedFilesModal()" title="View Attached Documents">
+                    <i class="ph ph-paperclip"></i>
+                    <span>Files (${attCount})</span>
                 </button>
             `;
         }
     } else if (stage === 'Approval') {
         ensureApprovalColumnsVisible();
-        stepDraft.classList.add('is-completed');
-        stepSubmitted.classList.add('is-completed');
-        if (line1) line1.classList.add('is-completed');
-        if (line2) line2.classList.add('is-completed');
-        stepApproval.classList.add('is-active', 'stage-approval');
+        if (stepDraft) stepDraft.classList.add('is-completed');
+        if (stepSubmitted) stepSubmitted.classList.add('is-completed');
+        if (stepApproval) stepApproval.classList.add('is-active', 'stage-approval');
         if (statusTitle) statusTitle.textContent = 'Status';
         if (statusDesc) statusDesc.textContent = 'In Review';
         if (bannerIcon) bannerIcon.innerHTML = '<i class="ph ph-scales"></i>';
-        if (bannerTitle) bannerTitle.innerHTML = 'Stage 3: Manager Approval &amp; Quotation Validation';
-        if (bannerSub) bannerSub.innerHTML = 'Base request is locked as reference. Approver enters vendor quotation (Price, Qty, Lead Time) and validates budget thresholds.';
+        if (bannerTitle) bannerTitle.innerHTML = 'Stage 3: Approval';
+        if (bannerSub) bannerSub.innerHTML = 'For manager sign-off or sending back for revisions.';
         if (bannerActions) {
-            bannerActions.innerHTML = `
-                <button type="button" class="rfq-btn" onclick="handleApproverApprove()" style="background: #059669; color: #ffffff; padding: 6px 18px; font-size: 12.5px; font-weight: 800; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(5, 150, 105, 0.3);">
+            bannerActions.innerHTML = `<span class="rfq-stage-indicator-pill approval" style="color: #d97706;"><i class="ph ph-shield-check"></i> Manager Review</span>`;
+        }
+        if (stageActionsGroup) {
+            stageActionsGroup.innerHTML = `
+                <button type="button" class="rfq-stage-action-btn rfq-btn-stage-success" onclick="handleApproverApprove()" title="Manager Sign-off & Award Quotation">
                     <i class="ph ph-check-circle"></i>
-                    <span>Approved &rarr; STATUS</span>
+                    <span>Approve</span>
                 </button>
-                <button type="button" class="rfq-btn rfq-btn-danger" onclick="handleApproverRefuse()" style="padding: 6px 12px; font-size: 12px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;">
+                <button type="button" class="rfq-stage-action-btn rfq-btn-stage-danger" onclick="handleApproverRefuse()" title="Refuse Tender / Reject Quotation">
                     <i class="ph ph-x-circle"></i>
                     <span>Refuse</span>
                 </button>
-                <button type="button" class="rfq-btn rfq-btn-outline" onclick="handleApproverRevision()" style="padding: 6px 12px; font-size: 12px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;">
+                <button type="button" class="rfq-stage-action-btn rfq-btn-stage-outline" onclick="handleApproverRevision()" title="Return for Revisions">
                     <i class="ph ph-arrow-counter-clockwise"></i>
-                    <span>Return for Revision</span>
+                    <span>Back to Draft</span>
                 </button>
-                <button type="button" class="rfq-btn rfq-btn-outline" onclick="createNewRfq(false)" title="Create New RFQ" style="padding: 6px 12px; font-size: 12px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;">
-                    <i class="ph ph-plus-circle"></i>
-                    <span>New RFQ</span>
+                <button type="button" class="rfq-stage-action-btn rfq-btn-stage-attach" onclick="openRfqAttachedFilesModal()" title="View Attached Documents">
+                    <i class="ph ph-paperclip"></i>
+                    <span>Files (${attCount})</span>
                 </button>
             `;
         }
     } else if (stage === 'Approved') {
         ensureApprovalColumnsVisible();
-        stepDraft.classList.add('is-completed');
-        stepSubmitted.classList.add('is-completed');
-        stepApproval.classList.add('is-completed');
-        if (line1) line1.classList.add('is-completed');
-        if (line2) line2.classList.add('is-completed');
-        if (line3) line3.classList.add('is-completed');
-        stepStatus.classList.add('is-active', 'stage-approved');
+        if (stepDraft) stepDraft.classList.add('is-completed');
+        if (stepSubmitted) stepSubmitted.classList.add('is-completed');
+        if (stepApproval) stepApproval.classList.add('is-completed');
+        if (stepStatus) stepStatus.classList.add('is-active', 'stage-approved');
         if (statusTitle) statusTitle.textContent = 'Approved';
         if (statusDesc) statusDesc.textContent = 'Ready for PO';
         if (bannerIcon) bannerIcon.innerHTML = '<i class="ph ph-seal-check"></i>';
-        if (bannerTitle) bannerTitle.innerHTML = 'Stage 4: Tender Approved &amp; Awarded';
-        if (bannerSub) bannerSub.innerHTML = 'Quotation is officially approved and locked. Proceed to generate formal Purchase Order for warehouse intake.';
+        if (bannerTitle) bannerTitle.innerHTML = 'Stage 4: Status (Approved)';
+        if (bannerSub) bannerSub.innerHTML = 'For winning quote resolution and order creation, with automatic locking upon delivery fulfillment.';
         if (bannerActions) {
-            bannerActions.innerHTML = `
-                <button type="button" class="rfq-btn" onclick="generatePoForApprovedRfq()" style="background: #059669; color: #ffffff; padding: 7px 20px; font-size: 12.5px; font-weight: 800; border-radius: 8px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 3px 12px rgba(5, 150, 105, 0.35);">
+            bannerActions.innerHTML = `<span class="rfq-stage-indicator-pill approved" style="color: #059669;"><i class="ph ph-check-circle-fill"></i> Tender Awarded</span>`;
+        }
+        if (stageActionsGroup) {
+            stageActionsGroup.innerHTML = `
+                <button type="button" class="rfq-stage-action-btn rfq-btn-stage-success" onclick="generatePoForApprovedRfq()" title="Generate Official Purchase Order">
                     <i class="ph ph-shopping-cart"></i>
-                    <span>Generate Purchase Order (PO)</span>
+                    <span>Create PO</span>
                 </button>
-                <button type="button" class="rfq-btn rfq-btn-outline" onclick="createNewRfq(false)" title="Create New RFQ" style="padding: 7px 14px; font-size: 12px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;">
-                    <i class="ph ph-plus-circle"></i>
-                    <span>New RFQ</span>
+                <button type="button" class="rfq-stage-action-btn rfq-btn-stage-outline" onclick="withdrawApprovedRfq()" title="Withdraw RFQ">
+                    <i class="ph ph-arrow-u-up-left"></i>
+                    <span>Withdraw</span>
+                </button>
+                <button type="button" class="rfq-stage-action-btn rfq-btn-stage-attach" onclick="openRfqAttachedFilesModal()" title="View Attached Documents">
+                    <i class="ph ph-paperclip"></i>
+                    <span>Files (${attCount})</span>
                 </button>
             `;
         }
     } else if (stage === 'Refused') {
         ensureApprovalColumnsVisible();
-        stepDraft.classList.add('is-completed');
-        stepSubmitted.classList.add('is-completed');
-        stepApproval.classList.add('is-completed');
-        if (line1) line1.classList.add('is-completed');
-        if (line2) line2.classList.add('is-completed');
-        if (line3) line3.classList.add('is-completed');
-        stepStatus.classList.add('is-active', 'stage-refused');
+        if (stepDraft) stepDraft.classList.add('is-completed');
+        if (stepSubmitted) stepSubmitted.classList.add('is-completed');
+        if (stepApproval) stepApproval.classList.add('is-completed');
+        if (stepStatus) stepStatus.classList.add('is-active', 'stage-refused');
         if (statusTitle) statusTitle.textContent = 'Refused';
         if (statusDesc) statusDesc.textContent = 'Tender Rejected';
         if (bannerIcon) bannerIcon.innerHTML = '<i class="ph ph-prohibit"></i>';
-        if (bannerTitle) bannerTitle.innerHTML = 'Stage 4: Tender Refused / Rejected';
+        if (bannerTitle) bannerTitle.innerHTML = 'Stage 4: Status (Refused)';
         const reason = window.AppStore.activeRfq.rejectionReason || 'Vendor price exceeded budgeted tolerance or availability was rejected.';
-        if (bannerSub) bannerSub.innerHTML = `RFQ has been refused and locked. Rejection remarks: <em>"${escapeHtml(reason)}"</em>`;
+        if (bannerSub) bannerSub.innerHTML = `RFQ has been refused and locked. Remarks: <em>"${escapeHtml(reason)}"</em>`;
         if (bannerActions) {
-            bannerActions.innerHTML = `
-                <button type="button" class="rfq-btn rfq-btn-outline" onclick="transitionActiveRfqStage('Draft')" style="padding: 7px 14px; font-size: 12px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;">
+            bannerActions.innerHTML = `<span class="rfq-stage-indicator-pill refused" style="color: #dc2626;"><i class="ph ph-x-circle-fill"></i> Refused</span>`;
+        }
+        if (stageActionsGroup) {
+            stageActionsGroup.innerHTML = `
+                <button type="button" class="rfq-stage-action-btn rfq-btn-stage-outline" onclick="transitionActiveRfqStage('Draft')" title="Re-open as Draft">
                     <i class="ph ph-arrow-counter-clockwise"></i>
-                    <span>Re-open as Draft</span>
+                    <span>Back to Draft</span>
                 </button>
-                <button type="button" class="rfq-btn" onclick="createNewRfq(false)" title="Create New RFQ" style="background: #9333ea; color: #ffffff; padding: 7px 16px; font-size: 12px; font-weight: 700; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;">
-                    <i class="ph ph-plus-circle"></i>
-                    <span>Create New RFQ</span>
+                <button type="button" class="rfq-stage-action-btn rfq-btn-stage-danger" onclick="withdrawApprovedRfq()" title="Withdraw and Archive Tender">
+                    <i class="ph ph-archive"></i>
+                    <span>Withdraw</span>
+                </button>
+                <button type="button" class="rfq-stage-action-btn rfq-btn-stage-attach" onclick="openRfqAttachedFilesModal()" title="View Attached Documents">
+                    <i class="ph ph-paperclip"></i>
+                    <span>Files (${attCount})</span>
                 </button>
             `;
         }
@@ -1747,7 +1785,7 @@ function applyStageDefaultColumns(stage, force = false) {
     const norm = getNormalizedRfqStage(stage);
     const targetCols = (norm === 'Approval' || norm === 'Approved' || norm === 'Refused')
         ? APPROVAL_STAGE_DEFAULT_COLUMNS
-        : DRAFT_STAGE_DEFAULT_COLUMNS;
+        : (norm === 'Submitted' ? SUBMITTED_STAGE_DEFAULT_COLUMNS : DRAFT_STAGE_DEFAULT_COLUMNS);
 
     if (force) {
         activeColumnIds = [...targetCols];
@@ -1780,6 +1818,22 @@ function applyStageDefaultColumns(stage, force = false) {
             if (activeColumnIds.length !== prevLen) {
                 changed = true;
             }
+        } else if (norm === 'Submitted') {
+            // In submitted stage: vendor quote inputs & evaluation should be active
+            const requiredInSubmitted = [
+                'quoted_quantity',
+                'quoted_unit_price',
+                'quoted_line_total',
+                'lead_time_days',
+                'price_variance_percentage',
+                'is_price_within_budget'
+            ];
+            requiredInSubmitted.forEach(id => {
+                if (!activeColumnIds.includes(id)) {
+                    activeColumnIds.push(id);
+                    changed = true;
+                }
+            });
         } else if (norm === 'Approval' || norm === 'Approved' || norm === 'Refused') {
             // In approval stage: qty variance, price diff, variance %, budget check are optional -> untoggle by default
             const optionalInApproval = [
@@ -1898,12 +1952,46 @@ function moveToApprovalStage() {
                     if (!firstErrorEl) firstErrorEl = qtyInput;
                     qtyInput.addEventListener('input', () => qtyInput.classList.remove('rfq-field-error-glow'), { once: true });
                 }
-                errors.push(`Row #${idx + 1} Quantity`);
+                errors.push(`Row #${idx + 1} Requested Qty`);
+            }
+
+            // Quote Validation: Check Vendor Quoted Unit Price
+            const qPriceInput = row ? row.querySelector('input[data-field="quotedUnitPrice"], input[onchange*="quotedUnitPrice"]') : null;
+            const qPriceVal = (qPriceInput && qPriceInput.value !== '')
+                ? parseFloat(qPriceInput.value)
+                : (item.quotedUnitPrice !== undefined && item.quotedUnitPrice !== null && item.quotedUnitPrice !== '' ? parseFloat(item.quotedUnitPrice) : 0);
+
+            if (!qPriceVal || qPriceVal <= 0) {
+                if (qPriceInput) {
+                    qPriceInput.classList.add('rfq-field-error-glow');
+                    if (!firstErrorEl) firstErrorEl = qPriceInput;
+                    qPriceInput.addEventListener('input', () => qPriceInput.classList.remove('rfq-field-error-glow'), { once: true });
+                }
+                errors.push(`Row #${idx + 1} Quoted Price`);
+            } else {
+                item.quotedUnitPrice = qPriceVal;
+            }
+
+            // Quote Validation: Check Vendor Quoted Quantity
+            const qQtyInput = row ? row.querySelector('input[data-field="quotedQuantity"], input[onchange*="quotedQuantity"]') : null;
+            const qQtyVal = (qQtyInput && qQtyInput.value !== '')
+                ? parseFloat(qQtyInput.value)
+                : (item.quotedQuantity !== undefined && item.quotedQuantity !== null && item.quotedQuantity !== '' ? parseFloat(item.quotedQuantity) : (item.requestedQuantity || 1));
+
+            if (!qQtyVal || qQtyVal <= 0) {
+                if (qQtyInput) {
+                    qQtyInput.classList.add('rfq-field-error-glow');
+                    if (!firstErrorEl) firstErrorEl = qQtyInput;
+                    qQtyInput.addEventListener('input', () => qQtyInput.classList.remove('rfq-field-error-glow'), { once: true });
+                }
+                errors.push(`Row #${idx + 1} Quoted Qty`);
+            } else {
+                item.quotedQuantity = qQtyVal;
             }
         });
     }
 
-    // 5. If missing important fields, trigger red light focus and alert user
+    // 5. If missing important fields or quote response, trigger red light focus and alert user
     if (errors.length > 0) {
         if (firstErrorEl) {
             if (typeof firstErrorEl.scrollIntoView === 'function') {
@@ -1911,7 +1999,7 @@ function moveToApprovalStage() {
             }
             if (typeof firstErrorEl.focus === 'function') firstErrorEl.focus();
         }
-        showToast(`Cannot advance to Approval: Missing required fields: ${errors.slice(0, 3).join(', ')}${errors.length > 3 ? '...' : ''}. Please complete highlighted fields.`, 'error');
+        showToast(`Quote Validation: Please enter vendor responses (${errors.slice(0, 3).join(', ')}${errors.length > 3 ? '...' : ''}) before moving to Approval.`, 'error');
         return;
     }
 
@@ -2170,13 +2258,14 @@ function renderItemsTable() {
                     `;
                 }
             } else if (col.id === 'quoted_quantity') {
-                if (currentStage === 'Approval') {
+                if (currentStage === 'Submitted' || currentStage === 'Approval') {
                     const qQtyVal = (item.quotedQuantity !== undefined && item.quotedQuantity !== null && item.quotedQuantity !== '') 
                         ? item.quotedQuantity 
                         : (calc.quotedQty > 0 ? calc.quotedQty : '');
+                    const isSub = (currentStage === 'Submitted');
                     rowsHtml += `
                         <td class="td-num">
-                            <input type="number" step="0.01" min="0" value="${qQtyVal}" placeholder="${calc.reqQty}" onchange="updateItemRowField(${idx}, 'quotedQuantity', this.value)" oninput="this.classList.remove('rfq-field-error-glow')" style="text-align: right; font-weight: 700; border-color: #d97706; background: #fffbeb;">
+                            <input type="number" step="0.01" min="0" value="${qQtyVal}" placeholder="${calc.reqQty}" onchange="updateItemRowField(${idx}, 'quotedQuantity', this.value)" oninput="this.classList.remove('rfq-field-error-glow')" style="text-align: right; font-weight: 700; border-color: ${isSub ? '#2563eb' : '#d97706'}; background: ${isSub ? '#eff6ff' : '#fffbeb'}; width: 85px;">
                         </td>
                     `;
                 } else if (currentStage === 'Approved' || currentStage === 'Refused') {
@@ -2193,13 +2282,14 @@ function renderItemsTable() {
                     `;
                 }
             } else if (col.id === 'quoted_unit_price') {
-                if (currentStage === 'Approval') {
+                if (currentStage === 'Submitted' || currentStage === 'Approval') {
                     const qPriceVal = (item.quotedUnitPrice !== undefined && item.quotedUnitPrice !== null && item.quotedUnitPrice !== '')
                         ? item.quotedUnitPrice
                         : '';
+                    const isSub = (currentStage === 'Submitted');
                     rowsHtml += `
                         <td class="td-num">
-                            <input type="number" step="0.01" min="0" value="${qPriceVal}" placeholder="${calc.targetPrice > 0 ? calc.targetPrice : '0.00'}" onchange="updateItemRowField(${idx}, 'quotedUnitPrice', this.value)" oninput="this.classList.remove('rfq-field-error-glow')" style="text-align: right; font-weight: 700; border-color: #d97706; background: #fffbeb;">
+                            <input type="number" step="0.01" min="0" value="${qPriceVal}" placeholder="${calc.targetPrice > 0 ? calc.targetPrice : '0.00'}" onchange="updateItemRowField(${idx}, 'quotedUnitPrice', this.value)" oninput="this.classList.remove('rfq-field-error-glow')" style="text-align: right; font-weight: 700; border-color: ${isSub ? '#2563eb' : '#d97706'}; background: ${isSub ? '#eff6ff' : '#fffbeb'}; width: 105px;">
                         </td>
                     `;
                 } else if (currentStage === 'Approved' || currentStage === 'Refused') {
@@ -2216,7 +2306,7 @@ function renderItemsTable() {
                     `;
                 }
             } else if (col.id === 'quoted_line_total') {
-                if (currentStage === 'Approval' || currentStage === 'Approved' || currentStage === 'Refused') {
+                if (currentStage === 'Submitted' || currentStage === 'Approval' || currentStage === 'Approved' || currentStage === 'Refused') {
                     rowsHtml += `
                         <td class="td-num" style="font-weight: 800; color: #b45309;">
                             ₱${formatMoney(calc.quotedTotal)}
@@ -2230,10 +2320,11 @@ function renderItemsTable() {
                     `;
                 }
             } else if (col.id === 'lead_time_days') {
-                if (currentStage === 'Approval') {
+                if (currentStage === 'Submitted' || currentStage === 'Approval') {
+                    const isSub = (currentStage === 'Submitted');
                     rowsHtml += `
                         <td class="td-center">
-                            <input type="number" step="1" min="0" value="${item.leadTimeDays || 0}" onchange="updateItemRowField(${idx}, 'leadTimeDays', this.value)" style="width: 70px; text-align: center; border-color: #d97706; background: #fffbeb;">
+                            <input type="number" step="1" min="0" value="${item.leadTimeDays || 0}" onchange="updateItemRowField(${idx}, 'leadTimeDays', this.value)" style="width: 70px; text-align: center; border-color: ${isSub ? '#2563eb' : '#d97706'}; background: ${isSub ? '#eff6ff' : '#fffbeb'};">
                         </td>
                     `;
                 } else if (currentStage === 'Approved' || currentStage === 'Refused') {
@@ -2250,7 +2341,7 @@ function renderItemsTable() {
                     `;
                 }
             } else if (col.id === 'quantity_variance') {
-                if (currentStage === 'Approval' || currentStage === 'Approved' || currentStage === 'Refused') {
+                if (currentStage === 'Submitted' || currentStage === 'Approval' || currentStage === 'Approved' || currentStage === 'Refused') {
                     const pillClass = calc.qtyVariance > 0 ? 'positive' : (calc.qtyVariance < 0 ? 'negative' : 'neutral');
                     const sign = calc.qtyVariance > 0 ? '+' : '';
                     rowsHtml += `
@@ -2262,7 +2353,7 @@ function renderItemsTable() {
                     rowsHtml += `<td class="td-center" style="color: #94a3b8;">—</td>`;
                 }
             } else if (col.id === 'price_variance_amount') {
-                if (currentStage === 'Approval' || currentStage === 'Approved' || currentStage === 'Refused') {
+                if (currentStage === 'Submitted' || currentStage === 'Approval' || currentStage === 'Approved' || currentStage === 'Refused') {
                     const pillClass = calc.priceVariance > 0 ? 'positive' : (calc.priceVariance < 0 ? 'negative' : 'neutral');
                     const sign = calc.priceVariance > 0 ? '+' : '';
                     rowsHtml += `
@@ -2274,7 +2365,7 @@ function renderItemsTable() {
                     rowsHtml += `<td class="td-center" style="color: #94a3b8;">—</td>`;
                 }
             } else if (col.id === 'price_variance_percentage') {
-                if (currentStage === 'Approval' || currentStage === 'Approved' || currentStage === 'Refused') {
+                if (currentStage === 'Submitted' || currentStage === 'Approval' || currentStage === 'Approved' || currentStage === 'Refused') {
                     const pillClass = calc.priceVariancePct > 0 ? 'positive' : (calc.priceVariancePct < 0 ? 'negative' : 'neutral');
                     const sign = calc.priceVariancePct > 0 ? '+' : '';
                     rowsHtml += `
@@ -2286,7 +2377,7 @@ function renderItemsTable() {
                     rowsHtml += `<td class="td-center" style="color: #94a3b8;">—</td>`;
                 }
             } else if (col.id === 'is_price_within_budget') {
-                if (currentStage === 'Approval' || currentStage === 'Approved' || currentStage === 'Refused') {
+                if (currentStage === 'Submitted' || currentStage === 'Approval' || currentStage === 'Approved' || currentStage === 'Refused') {
                     const pill = calc.isWithinBudget
                         ? '<span class="budget-pill within"><i class="ph ph-check-circle"></i> Within</span>'
                         : '<span class="budget-pill over"><i class="ph ph-warning-circle"></i> Over</span>';
@@ -5881,9 +5972,179 @@ function showToast(message, type = 'success') {
 }
 
 // ==========================================================================
+// STAGE ACTIONS & ATTACHMENT HELPERS
+// ==========================================================================
+function cancelRfqDraft() {
+    if (confirm('Discard current RFQ draft and start fresh? All unsaved inputs will be cleared.')) {
+        createNewRfq(true);
+        showToast('✓ Draft session reset.', 'info');
+    }
+}
+
+function cancelActiveRfq() {
+    if (confirm('Are you sure you want to cancel this RFQ tender?')) {
+        transitionActiveRfqStage('Refused', { rejectionReason: 'Tender cancelled by Buyer in Submitted stage' });
+    }
+}
+
+function withdrawApprovedRfq() {
+    if (confirm('Are you sure you want to withdraw this quotation tender?')) {
+        transitionActiveRfqStage('Refused', { rejectionReason: 'Tender withdrawn by Procurement Officer' });
+    }
+}
+
+function getAttachedFilesList() {
+    if (!window.AppStore || !window.AppStore.activeRfq) return [];
+    if (!Array.isArray(window.AppStore.activeRfq.attachedFiles)) {
+        const rfqNum = window.AppStore.activeRfq.ref || window.AppStore.activeRfq.rfqNumber || 'RFQ-DRAFT';
+        try {
+            const saved = localStorage.getItem(`rms_rfq_files_${rfqNum}`);
+            window.AppStore.activeRfq.attachedFiles = saved ? JSON.parse(saved) : [];
+        } catch (e) {
+            window.AppStore.activeRfq.attachedFiles = [];
+        }
+    }
+    return window.AppStore.activeRfq.attachedFiles;
+}
+
+function getAttachedFilesCount() {
+    return getAttachedFilesList().length;
+}
+
+function updateAttachedFilesBadge() {
+    const count = getAttachedFilesCount();
+    const badge = document.getElementById('rfqAttachedCountBadge');
+    if (badge) badge.textContent = count;
+    const label = document.getElementById('attachedFilesCountLabel');
+    if (label) label.textContent = `${count} file${count === 1 ? '' : 's'}`;
+}
+
+function openRfqAttachedFilesModal() {
+    const modal = document.getElementById('rfqAttachedFilesModal');
+    if (!modal) return;
+    const rfqNum = window.AppStore?.activeRfq?.ref || window.AppStore?.activeRfq?.rfqNumber || 'RFQ-2026-0044';
+    const rfqRefEl = document.getElementById('attachedFilesModalRfqRef');
+    if (rfqRefEl) rfqRefEl.textContent = rfqNum;
+
+    const currentStage = getNormalizedRfqStage(window.AppStore?.activeRfq?.rfqStatus || window.AppStore?.activeRfq?.status);
+    const stageBadge = document.getElementById('attachedFilesStageBadge');
+    if (stageBadge) {
+        stageBadge.className = `status-pill ${currentStage.toLowerCase()}`;
+        stageBadge.textContent = currentStage;
+    }
+
+    renderAttachedFilesList();
+    modal.classList.add('is-open');
+}
+
+function closeRfqAttachedFilesModal() {
+    const modal = document.getElementById('rfqAttachedFilesModal');
+    if (modal) modal.classList.remove('is-open');
+}
+
+function renderAttachedFilesList() {
+    const container = document.getElementById('attachedFilesListContainer');
+    if (!container) return;
+    const files = getAttachedFilesList();
+    updateAttachedFilesBadge();
+
+    if (files.length === 0) {
+        container.innerHTML = `
+            <div style="text-align: center; padding: 24px 16px; color: #94a3b8; font-size: 12px; font-style: italic; border: 1px dashed #e2e8f0; border-radius: 6px;">
+                No files attached to this tender yet. Click above to upload technical specifications or benchmark sheets.
+            </div>
+        `;
+        return;
+    }
+
+    let html = '';
+    files.forEach((f, idx) => {
+        const isPdf = f.name.toLowerCase().endsWith('.pdf');
+        const icon = isPdf ? 'ph-file-pdf' : (f.name.match(/\.(jpg|jpeg|png)$/i) ? 'ph-file-image' : 'ph-file-text');
+        const iconColor = isPdf ? '#dc2626' : '#2563eb';
+        html += `
+            <div class="rfq-attached-file-item">
+                <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+                    <i class="ph ${icon}" style="font-size: 20px; color: ${iconColor}; flex-shrink: 0;"></i>
+                    <div style="min-width: 0;">
+                        <div style="font-weight: 700; font-size: 12.5px; color: #1e293b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                            ${escapeHtml(f.name)}
+                        </div>
+                        <div style="font-size: 10.5px; color: #64748b;">
+                            ${escapeHtml(f.size || 'Attachment')} &bull; Uploaded ${escapeHtml(f.date || 'Today')}
+                        </div>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+                    <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="showToast('Viewing file: ${escapeHtml(f.name)}', 'info')" title="Download / Preview File" style="padding: 2px 7px; height: 24px; font-size: 11px;">
+                        <i class="ph ph-eye"></i>
+                    </button>
+                    <button type="button" class="hr-btn hr-btn-danger hr-btn-sm" onclick="removeAttachedFile(${idx})" title="Remove attachment" style="padding: 2px 7px; height: 24px; font-size: 11px;">
+                        <i class="ph ph-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+    container.innerHTML = html;
+}
+
+function handleRfqFileUpload(event) {
+    const input = event.target;
+    if (!input || !input.files || input.files.length === 0) return;
+    const files = getAttachedFilesList();
+
+    Array.from(input.files).forEach(file => {
+        const sizeFormatted = file.size > 1024 * 1024
+            ? (file.size / (1024 * 1024)).toFixed(1) + ' MB'
+            : Math.max(1, Math.round(file.size / 1024)) + ' KB';
+
+        files.push({
+            id: 'file_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+            name: file.name,
+            size: sizeFormatted,
+            date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        });
+    });
+
+    const rfqNum = window.AppStore.activeRfq.ref || window.AppStore.activeRfq.rfqNumber || 'RFQ-DRAFT';
+    try {
+        localStorage.setItem(`rms_rfq_files_${rfqNum}`, JSON.stringify(files));
+    } catch (e) {}
+
+    renderAttachedFilesList();
+    showToast(`✓ Attached ${input.files.length} document(s) to tender.`, 'success');
+    input.value = '';
+}
+
+function removeAttachedFile(idx) {
+    const files = getAttachedFilesList();
+    if (idx >= 0 && idx < files.length) {
+        files.splice(idx, 1);
+        const rfqNum = window.AppStore.activeRfq.ref || window.AppStore.activeRfq.rfqNumber || 'RFQ-DRAFT';
+        try {
+            localStorage.setItem(`rms_rfq_files_${rfqNum}`, JSON.stringify(files));
+        } catch (e) {}
+        renderAttachedFilesList();
+        showToast('Attachment removed.', 'info');
+    }
+}
+
+// ==========================================================================
 // WINDOW EXPORTS FOR FULL BACKWARD-COMPATIBILITY & INLINE HANDLERS
 // ==========================================================================
 Object.assign(window, {
+  cancelRfqDraft,
+  cancelActiveRfq,
+  withdrawApprovedRfq,
+  getAttachedFilesList,
+  getAttachedFilesCount,
+  updateAttachedFilesBadge,
+  openRfqAttachedFilesModal,
+  closeRfqAttachedFilesModal,
+  renderAttachedFilesList,
+  handleRfqFileUpload,
+  removeAttachedFile,
   getStageDefaultColumns,
   normalizeRfqItem,
   initAppStore,

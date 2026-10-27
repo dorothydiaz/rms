@@ -2,6 +2,35 @@ import { defineConfig } from 'vite';
 import laravel from 'laravel-vite-plugin';
 import tailwindcss from '@tailwindcss/vite';
 
+import fs from 'node:fs';
+import path from 'node:path';
+
+function normalizeManifestPlugin() {
+    return {
+        name: 'normalize-manifest',
+        closeBundle() {
+            const manifestPath = path.resolve(process.cwd(), 'public/build/manifest.json');
+            if (fs.existsSync(manifestPath)) {
+                try {
+                    const content = fs.readFileSync(manifestPath, 'utf-8');
+                    const manifest = JSON.parse(content);
+                    const normalized = {};
+                    for (const [key, value] of Object.entries(manifest)) {
+                        const cleanKey = key.replace(/^[A-Za-z]:\/.*?(resources\/)/i, '$1');
+                        if (value && typeof value === 'object' && value.src) {
+                            value.src = value.src.replace(/^[A-Za-z]:\/.*?(resources\/)/i, '$1');
+                        }
+                        normalized[cleanKey] = value;
+                    }
+                    fs.writeFileSync(manifestPath, JSON.stringify(normalized, null, 2), 'utf-8');
+                } catch (e) {
+                    console.error('Failed to normalize manifest:', e);
+                }
+            }
+        },
+    };
+}
+
 export default defineConfig({
     plugins: [
         laravel({
@@ -110,6 +139,7 @@ export default defineConfig({
             refresh: true,
         }),
         tailwindcss(),
+        normalizeManifestPlugin(),
     ],
     server: {
         watch: {

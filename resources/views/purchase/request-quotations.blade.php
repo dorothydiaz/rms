@@ -219,79 +219,79 @@
          ==================================================================== -->
     <div class="rfq-tab-pane" id="pane-tab-builder" style="display: none;">
 
-    <!-- RFQ Procurement Lifecycle Stepper / Progress Bar: | Draft > Submitted > Approval > Status | -->
-    <div class="rfq-lifecycle-stepper-wrap stage-theme-draft" id="rfqLifecycleStepperWrap">
-        <div class="rfq-lifecycle-stepper" id="rfqLifecycleProgressBar">
-            <!-- Step 1: Draft -->
-            <div class="rfq-stepper-step is-active stage-draft" id="stepIndicatorDraft" data-stage="Draft" onclick="handleStepClick('Draft')">
-                <div class="rfq-stepper-circle">
-                    <i class="ph ph-check"></i>
-                    <span class="rfq-step-num">1</span>
-                </div>
-                <div class="rfq-stepper-info">
-                    <span class="rfq-step-title">Draft</span>
-                    <span class="rfq-step-desc">Create &amp; Edit</span>
+    <!-- RFQ Procurement Lifecycle Header Bar: Buttons & Chevron Progress Bar Side-by-Side (Ref Image 2) -->
+    <div class="rfq-lifecycle-bar-container stage-theme-draft" id="rfqLifecycleStepperWrap">
+        <!-- Left: Action Buttons Group for Current Stage -->
+        <div class="rfq-stage-actions-group" id="rfqStageActionsGroup">
+            <!-- Rendered dynamically by updateLifecycleProgressBar() -->
+            <button type="button" class="rfq-stage-action-btn rfq-btn-stage-attach" onclick="openRfqAttachedFilesModal()" title="View & Attach Technical Specs, Drawings & Documents">
+                <i class="ph ph-paperclip"></i>
+                <span>Attached Files</span>
+                <span class="rfq-stage-badge-count" id="rfqAttachedCountBadge">0</span>
+            </button>
+            <button type="button" class="rfq-stage-action-btn rfq-btn-stage-submit" onclick="submitActiveRfqToVendor()" title="Submit Tender for Vendor Bidding">
+                <i class="ph ph-paper-plane-tilt"></i>
+                <span>Submit</span>
+            </button>
+            <button type="button" class="rfq-stage-action-btn rfq-btn-stage-cancel" onclick="cancelRfqDraft()" title="Cancel / Clear Current Draft">
+                <i class="ph ph-x-circle"></i>
+                <span>Cancel</span>
+            </button>
+        </div>
+
+        <!-- Right: Chevron Pipeline Progress Bar (Side-by-Side) -->
+        <div class="rfq-chevron-pipeline" id="rfqLifecycleProgressBar">
+            <!-- Stage 1: Drafting -->
+            <div class="rfq-chevron-step is-active stage-draft" id="stepIndicatorDraft" data-stage="Draft" onclick="handleStepClick('Draft')">
+                <div class="rfq-chevron-badge"><i class="ph ph-check"></i><span class="rfq-chevron-num">1</span></div>
+                <div class="rfq-chevron-info">
+                    <span class="rfq-chevron-title">Drafting</span>
+                    <span class="rfq-chevron-desc">Preparation</span>
                 </div>
             </div>
 
-            <div class="rfq-stepper-line" id="stepTrack1"></div>
-
-            <!-- Step 2: Submitted -->
-            <div class="rfq-stepper-step" id="stepIndicatorSubmitted" data-stage="Submitted" onclick="handleStepClick('Submitted')">
-                <div class="rfq-stepper-circle">
-                    <i class="ph ph-check"></i>
-                    <span class="rfq-step-num">2</span>
-                </div>
-                <div class="rfq-stepper-info">
-                    <span class="rfq-step-title">Submitted</span>
-                    <span class="rfq-step-desc">Locked for Bids</span>
+            <!-- Stage 2: Submitted -->
+            <div class="rfq-chevron-step stage-submitted" id="stepIndicatorSubmitted" data-stage="Submitted" onclick="handleStepClick('Submitted')">
+                <div class="rfq-chevron-badge"><i class="ph ph-check"></i><span class="rfq-chevron-num">2</span></div>
+                <div class="rfq-chevron-info">
+                    <span class="rfq-chevron-title">Submitted</span>
+                    <span class="rfq-chevron-desc">Vendor Quotes</span>
                 </div>
             </div>
 
-            <div class="rfq-stepper-line" id="stepTrack2"></div>
-
-            <!-- Step 3: Approval -->
-            <div class="rfq-stepper-step" id="stepIndicatorApproval" data-stage="Approval" onclick="handleStepClick('Approval')">
-                <div class="rfq-stepper-circle">
-                    <i class="ph ph-check"></i>
-                    <span class="rfq-step-num">3</span>
-                </div>
-                <div class="rfq-stepper-info">
-                    <span class="rfq-step-title">Approval</span>
-                    <span class="rfq-step-desc">Quote Validation</span>
+            <!-- Stage 3: Approval -->
+            <div class="rfq-chevron-step stage-approval" id="stepIndicatorApproval" data-stage="Approval" onclick="handleStepClick('Approval')">
+                <div class="rfq-chevron-badge"><i class="ph ph-check"></i><span class="rfq-chevron-num">3</span></div>
+                <div class="rfq-chevron-info">
+                    <span class="rfq-chevron-title">Approval</span>
+                    <span class="rfq-chevron-desc">Sign-Off</span>
                 </div>
             </div>
 
-            <div class="rfq-stepper-line" id="stepTrack3"></div>
-
-            <!-- Step 4: Status -->
-            <div class="rfq-stepper-step" id="stepIndicatorStatus" data-stage="Status" onclick="handleStepClick('Status')">
-                <div class="rfq-stepper-circle">
-                    <i class="ph ph-check"></i>
-                    <span class="rfq-step-num">4</span>
-                </div>
-                <div class="rfq-stepper-info">
-                    <span class="rfq-step-title" id="stepStatusTitle">Status</span>
-                    <span class="rfq-step-desc" id="stepStatusDesc">Pending</span>
+            <!-- Stage 4: Status -->
+            <div class="rfq-chevron-step stage-status" id="stepIndicatorStatus" data-stage="Status" onclick="handleStepClick('Status')">
+                <div class="rfq-chevron-badge"><i class="ph ph-check"></i><span class="rfq-chevron-num">4</span></div>
+                <div class="rfq-chevron-info">
+                    <span class="rfq-chevron-title" id="stepStatusTitle">Status</span>
+                    <span class="rfq-chevron-desc" id="stepStatusDesc">Award / PO</span>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Stage Context & Instruction Banner -->
-        <div class="rfq-stage-banner stage-draft" id="rfqStageBanner">
-            <div class="rfq-stage-banner-icon" id="rfqStageBannerIcon">
-                <i class="ph ph-pencil-simple-line"></i>
-            </div>
-            <div class="rfq-stage-banner-content">
-                <div class="rfq-stage-banner-title" id="rfqStageBannerTitle">Stage 1: RFQ Draft Creation &amp; Specification</div>
-                <div class="rfq-stage-banner-sub" id="rfqStageBannerSub">Buyer can add, edit, or adjust items, quantities, and benchmark prices. Vendor quotation inputs remain inactive until tender submission.</div>
-            </div>
-            <div class="rfq-stage-banner-actions" id="rfqStageBannerActions">
-                <button type="button" class="rfq-btn" onclick="submitActiveRfqToVendor()" style="background: #9333ea; color: #ffffff; padding: 6px 16px; font-size: 12px; font-weight: 700; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(147, 51, 234, 0.3);">
-                    <i class="ph ph-paper-plane-tilt"></i>
-                    <span>Submit &rarr; Submitted</span>
-                </button>
-            </div>
+    <!-- Stage Subtitle & Context Ribbon (Unobtrusive context bar) -->
+    <div class="rfq-stage-helper-ribbon stage-draft" id="rfqStageBanner">
+        <div class="rfq-stage-helper-left">
+            <span class="rfq-stage-helper-icon" id="rfqStageBannerIcon"><i class="ph ph-pencil-simple-line"></i></span>
+            <span class="rfq-stage-helper-title" id="rfqStageBannerTitle">Stage 1: Drafting</span>
+            <span class="rfq-stage-helper-sep">&bull;</span>
+            <span class="rfq-stage-helper-desc" id="rfqStageBannerSub">For internal preparation, gathering info, and consulting.</span>
+        </div>
+        <div class="rfq-stage-helper-right" id="rfqStageBannerActions">
+            <!-- Stage quick indicator badge -->
+            <span class="rfq-stage-indicator-pill draft" id="rfqActiveStagePill">
+                <i class="ph ph-circle-dashed"></i> Drafting Mode
+            </span>
         </div>
     </div>
 
@@ -1056,6 +1056,51 @@
         </div>
         <div class="rfq-modal-footer">
             <button type="button" class="rfq-btn rfq-btn-outline" onclick="closeSingleAuditModal()">Close Audit Log</button>
+        </div>
+<!-- ==========================================================================
+     MODAL 7: ATTACHED FILES & SPECIFICATIONS MODAL
+     ========================================================================== -->
+<div class="rfq-modal-backdrop" id="rfqAttachedFilesModal" role="dialog" aria-modal="true" aria-labelledby="attachedFilesModalTitle">
+    <div class="rfq-modal-card" style="max-width: 660px;">
+        <div class="rfq-modal-header">
+            <div class="rfq-modal-title" id="attachedFilesModalTitle">
+                <i class="ph ph-paperclip" style="color: #9333ea;"></i>
+                <span>Tender File Attachments &amp; Specifications</span>
+            </div>
+            <button type="button" class="rfq-modal-close" onclick="closeRfqAttachedFilesModal()" aria-label="Close Modal">
+                <i class="ph ph-x"></i>
+            </button>
+        </div>
+        <div class="rfq-modal-body">
+            <div style="background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                    <div style="font-weight: 800; font-size: 0.9rem; color: #6b21a8;" id="attachedFilesModalRfqRef">RFQ-2026-0044</div>
+                    <div style="font-size: 0.76rem; color: #7e22ce;">Attach bill of quantities, technical drawings, spec sheets, or consulting notes.</div>
+                </div>
+                <span class="status-pill draft" id="attachedFilesStageBadge">Drafting</span>
+            </div>
+
+            <!-- Upload Dropzone -->
+            <div class="rfq-file-dropzone" id="rfqAttachmentDropzone" onclick="document.getElementById('rfqAttachmentFileInput').click()">
+                <input type="file" id="rfqAttachmentFileInput" style="display: none;" multiple onchange="handleRfqFileUpload(event)" accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.zip">
+                <div class="rfq-dropzone-icon"><i class="ph ph-cloud-arrow-up"></i></div>
+                <div style="font-size: 0.88rem; font-weight: 700; color: #334155;">Click or Drag files to attach</div>
+                <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 2px;">PDF, Word, Excel, Images, ZIP (up to 25MB each)</div>
+            </div>
+
+            <!-- Attached Files List -->
+            <div style="margin-top: 14px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="font-size: 0.78rem; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.04em;">Current Attachments</span>
+                    <span style="font-size: 0.75rem; color: #64748b;" id="attachedFilesCountLabel">0 files</span>
+                </div>
+                <div id="attachedFilesListContainer" style="max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;">
+                    <!-- Rendered dynamically -->
+                </div>
+            </div>
+        </div>
+        <div class="rfq-modal-footer">
+            <button type="button" class="rfq-btn rfq-btn-primary" onclick="closeRfqAttachedFilesModal()" style="padding: 6px 20px;">Done</button>
         </div>
     </div>
 </div>
