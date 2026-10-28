@@ -669,19 +669,26 @@ function initDates() {
     dueDate.setDate(dueDate.getDate() + 7);
     const dueDateStr = dueDate.toISOString().split('T')[0];
 
+    // Automated 30-day default validity duration relative to creation date
     const validityDate = new Date();
-    validityDate.setDate(validityDate.getDate() + 14);
+    validityDate.setDate(validityDate.getDate() + 30);
     const validityDateStr = validityDate.toISOString().split('T')[0];
 
     const deliveryDate = new Date();
     deliveryDate.setDate(deliveryDate.getDate() + 5);
     const deliveryDateStr = deliveryDate.toISOString().split('T')[0];
 
-    document.getElementById('rfqDateIssued').value = dateIssued;
-    document.getElementById('rfqDueDate').value = dueDateStr;
+    const dateIssuedEl = document.getElementById('rfqDateIssued');
+    if (dateIssuedEl) dateIssuedEl.value = dateIssued;
+    
+    const dueDateEl = document.getElementById('rfqDueDate');
+    if (dueDateEl) dueDateEl.value = dueDateStr;
+    
     const quoteValEl = document.getElementById('rfqQuoteValidityDate');
     if (quoteValEl) quoteValEl.value = validityDateStr;
-    document.getElementById('rfqExpectedDelivery').value = deliveryDateStr;
+    
+    const expDelivEl = document.getElementById('rfqExpectedDelivery');
+    if (expDelivEl) expDelivEl.value = deliveryDateStr;
 
     window.AppStore.activeRfq.dateIssued = dateIssued;
     window.AppStore.activeRfq.rfqDate = dateIssued;
@@ -690,6 +697,10 @@ function initDates() {
     window.AppStore.activeRfq.quoteValidUntilDate = validityDateStr;
     window.AppStore.activeRfq.expectedDelivery = deliveryDateStr;
     window.AppStore.activeRfq.rfqRequestedDeliveryDate = deliveryDateStr;
+
+    if (typeof updateLiveDocumentMockup === 'function') {
+        updateLiveDocumentMockup();
+    }
 }
 
 /**
@@ -818,6 +829,19 @@ function selectVendorFromCombo(vendorId) {
     handleVendorSelection(vendorId);
 }
 
+// Global outside-click dismiss for vendor combobox dropdown
+document.addEventListener('pointerdown', function(e) {
+    const combo = document.getElementById('rfqVendorCombobox');
+    const dropdown = document.getElementById('rfqVendorComboDropdown');
+    const trigger = document.getElementById('rfqVendorComboTrigger');
+    if (combo && dropdown && trigger && dropdown.classList.contains('is-active')) {
+        if (!combo.contains(e.target)) {
+            dropdown.classList.remove('is-active');
+            trigger.classList.remove('is-active');
+        }
+    }
+});
+
 function updateVendorComboTrigger(vendor) {
     const textEl = document.getElementById('rfqVendorComboTriggerText');
     if (!textEl) return;
@@ -832,6 +856,95 @@ function updateVendorComboTrigger(vendor) {
     }
 }
 
+/**
+ * Vendor Master lookup (O(1)-style resolution against AppStore.vendors by id or code)
+ */
+function findVendorRecord(vendorId) {
+    if (vendorId === null || vendorId === undefined || vendorId === '') return null;
+    const key = String(vendorId).trim().toLowerCase();
+    return (window.AppStore.vendors || []).find(v =>
+        String(v.id ?? '').toLowerCase() === key ||
+        String(v.code ?? '').toLowerCase() === key
+    ) || null;
+}
+
+/**
+ * Deep link to the selected vendor's profile inside the Vendor Masterlist
+ */
+function buildVendorProfileUrl(vendor) {
+    if (!vendor) return '/purchase/vendor-masterlist';
+    const params = new URLSearchParams();
+    if (vendor.id !== undefined && vendor.id !== null) params.set('vendorId', vendor.id);
+    if (vendor.code) params.set('vendorCode', vendor.code);
+    const name = vendor.legalName || vendor.name || vendor.tradeName;
+    if (name) params.set('vendorName', name);
+    return `/purchase/vendor-masterlist?${params.toString()}`;
+}
+
+/**
+ * Read-only lookup: derives contact, email, phone, address and expected delivery
+ * from the Vendor Master record. Never blocks; only fills blanks in state + hidden inputs.
+ */
+function hydrateVendorLookupFields() {
+    const rfq = window.AppStore?.activeRfq;
+    if (!rfq) return {};
+    const vendor = findVendorRecord(rfq.vendorId || document.getElementById('vendorSelect')?.value);
+    const contact = (vendor && Array.isArray(vendor.contacts) && vendor.contacts.length > 0) ? vendor.contacts[0] : null;
+
+    const lookup = {
+        email: rfq.vendorEmail || contact?.email || vendor?.email || '',
+        phone: rfq.vendorPhone || contact?.phone || vendor?.phone || '',
+        address: rfq.vendorAddress || vendor?.address || vendor?.location || '',
+        contactPerson: rfq.vendorContactPerson || contact?.name || vendor?.contactPerson || '',
+        contactTitle: rfq.vendorContactTitle || contact?.title || vendor?.contactTitle || ''
+    };
+
+    if (!rfq.expectedDelivery && vendor) {
+        const leadDays = parseInt(vendor.leadTimeDays, 10) || 5;
+        const d = new Date();
+        d.setDate(d.getDate() + leadDays);
+        rfq.expectedDelivery = d.toISOString().split('T')[0];
+        rfq.rfqRequestedDeliveryDate = rfq.expectedDelivery;
+        rfq.rfq_requested_delivery_date = rfq.expectedDelivery;
+    }
+    lookup.expectedDelivery = rfq.expectedDelivery || '';
+
+    rfq.vendorEmail = lookup.email;
+    rfq.vendorPhone = lookup.phone;
+    rfq.vendorAddress = lookup.address;
+    rfq.vendorContactPerson = lookup.contactPerson;
+    rfq.vendorContactTitle = lookup.contactTitle;
+
+    const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+    setVal('vendorEmail', lookup.email);
+    setVal('vendorPhone', lookup.phone);
+    setVal('vendorAddress', lookup.address);
+    setVal('vendorContactPerson', lookup.contactPerson);
+    setVal('vendorContactTitle', lookup.contactTitle);
+    setVal('rfqExpectedDelivery', lookup.expectedDelivery);
+
+    return lookup;
+}
+
+function handleVendorRedirectClick(e) {
+    const rfq = window.AppStore?.activeRfq;
+    const vendorId = rfq?.vendorId || document.getElementById('vendorSelect')?.value;
+    const vendor = findVendorRecord(vendorId);
+    if (!vendor) {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        showToast('Please select a target vendor first before opening vendor profile.', 'warning');
+        return false;
+    }
+    const redirectBtn = document.getElementById('rfqVendorRedirectBtn');
+    if (redirectBtn) {
+        redirectBtn.href = buildVendorProfileUrl(vendor);
+    }
+    return true;
+}
+
 function handleVendorSelection(vendorId) {
     if (!vendorId) {
         clearVendorFields();
@@ -840,64 +953,102 @@ function handleVendorSelection(vendorId) {
         return;
     }
 
-    const vendor = window.AppStore.vendors.find(v => (v.id === vendorId || v.code === vendorId));
+    const vendor = (window.AppStore.vendors || []).find(v => (
+        String(v.id) === String(vendorId) ||
+        String(v.code || '').toLowerCase() === String(vendorId).toLowerCase()
+    ));
     if (!vendor) return;
 
     updateVendorComboTrigger(vendor);
     renderVendorComboboxList();
 
-    // Auto-fill company details
-    document.getElementById('vendorSummaryBox').style.display = 'flex';
-    document.getElementById('vendorAvatarText').textContent = (vendor.tradeName || vendor.legalName || 'VM').substring(0, 2).toUpperCase();
-    document.getElementById('vendorTradeName').textContent = vendor.tradeName || vendor.legalName;
-    document.getElementById('vendorCategoryTag').textContent = vendor.category || 'Supplier';
-    document.getElementById('vendorTinDisplay').textContent = vendor.tin || 'N/A';
-    document.getElementById('vendorLocationDisplay').textContent = vendor.location || 'Metro Manila';
+    // Update Vendor Masterlist Redirect button (">")
+    const redirectBtn = document.getElementById('rfqVendorRedirectBtn');
+    if (redirectBtn) {
+        redirectBtn.href = buildVendorProfileUrl(vendor);
+        redirectBtn.title = `Open ${vendor.tradeName || vendor.name || 'vendor'} profile in Vendor Masterlist`;
+        redirectBtn.classList.add('is-active');
+    }
 
-    document.getElementById('vendorAddress').value = vendor.address || vendor.location || '';
+    // Auto-fill company details (kept hidden in retired UI slot)
+    const sumBox = document.getElementById('vendorSummaryBox');
+    if (sumBox) sumBox.style.display = 'none';
+    const emptyPrompt = document.getElementById('vendorEmptyPrompt');
+    if (emptyPrompt) emptyPrompt.style.display = 'none';
+
+    const avatarEl = document.getElementById('vendorAvatarText');
+    if (avatarEl) avatarEl.textContent = (vendor.tradeName || vendor.legalName || 'VM').substring(0, 2).toUpperCase();
+    const tradeNameEl = document.getElementById('vendorTradeName');
+    if (tradeNameEl) tradeNameEl.textContent = vendor.tradeName || vendor.legalName;
+    const catTagEl = document.getElementById('vendorCategoryTag');
+    if (catTagEl) catTagEl.textContent = vendor.category || 'Supplier';
+    const tinEl = document.getElementById('vendorTinDisplay');
+    if (tinEl) tinEl.textContent = vendor.tin || 'N/A';
+    const locEl = document.getElementById('vendorLocationDisplay');
+    if (locEl) locEl.textContent = vendor.location || 'Metro Manila';
+
+    const addrEl = document.getElementById('vendorAddress');
+    if (addrEl) addrEl.value = vendor.address || vendor.location || '';
 
     // Contact person auto-population
     const primaryContact = (vendor.contacts && vendor.contacts.length > 0) ? vendor.contacts[0] : null;
+    const contactPersonEl = document.getElementById('vendorContactPerson');
+    const contactTitleEl = document.getElementById('vendorContactTitle');
+    const vendorEmailEl = document.getElementById('vendorEmail');
+    const vendorPhoneEl = document.getElementById('vendorPhone');
+    const vendorAddrEl = document.getElementById('vendorAddress');
+
     if (primaryContact) {
-        document.getElementById('vendorContactPerson').value = primaryContact.name || '';
-        document.getElementById('vendorContactTitle').value = primaryContact.title || '';
-        document.getElementById('vendorEmail').value = primaryContact.email || vendor.email || '';
-        document.getElementById('vendorPhone').value = primaryContact.phone || '';
+        if (contactPersonEl) contactPersonEl.value = primaryContact.name || '';
+        if (contactTitleEl) contactTitleEl.value = primaryContact.title || '';
+        if (vendorEmailEl) vendorEmailEl.value = primaryContact.email || vendor.email || '';
+        if (vendorPhoneEl) vendorPhoneEl.value = primaryContact.phone || '';
     } else {
-        document.getElementById('vendorContactPerson').value = '';
-        document.getElementById('vendorContactTitle').value = '';
-        document.getElementById('vendorEmail').value = vendor.email || '';
-        document.getElementById('vendorPhone').value = '';
+        if (contactPersonEl) contactPersonEl.value = '';
+        if (contactTitleEl) contactTitleEl.value = '';
+        if (vendorEmailEl) vendorEmailEl.value = vendor.email || '';
+        if (vendorPhoneEl) vendorPhoneEl.value = '';
+    }
+
+    if (vendorAddrEl) {
+        vendorAddrEl.value = vendor.address || vendor.location || '';
     }
 
     // Payment terms & Lead time auto-calculation
     if (vendor.paymentTerms) {
-        document.getElementById('rfqPaymentTerms').value = vendor.paymentTerms;
+        const termsEl = document.getElementById('rfqPaymentTerms');
+        if (termsEl) termsEl.value = vendor.paymentTerms;
     }
 
     const leadTime = vendor.leadTimeDays ? parseInt(vendor.leadTimeDays) : 5;
-    document.getElementById('leadTimeBadge').textContent = `Auto: +${leadTime}d Lead Time`;
+    const leadBadge = document.getElementById('leadTimeBadge');
+    if (leadBadge) leadBadge.textContent = `Auto: +${leadTime}d Lead Time`;
 
     const expectedDate = new Date();
     expectedDate.setDate(expectedDate.getDate() + leadTime);
     const expectedDateStr = expectedDate.toISOString().split('T')[0];
-    document.getElementById('rfqExpectedDelivery').value = expectedDateStr;
+    const expDeliv = document.getElementById('rfqExpectedDelivery');
+    if (expDeliv) expDeliv.value = expectedDateStr;
 
     // Update active RFQ state
     const rfq = window.AppStore.activeRfq;
     rfq.vendorId = vendor.id || vendor.code;
     rfq.vendorName = vendor.legalName || vendor.tradeName;
     rfq.vendorTradeName = vendor.tradeName || vendor.legalName;
-    rfq.vendorEmail = document.getElementById('vendorEmail').value;
-    rfq.vendorPhone = document.getElementById('vendorPhone').value;
-    rfq.vendorAddress = document.getElementById('vendorAddress').value;
+    rfq.vendorEmail = vendorEmailEl?.value || primaryContact?.email || vendor.email || '';
+    rfq.vendorPhone = vendorPhoneEl?.value || primaryContact?.phone || '';
+    rfq.vendorAddress = vendorAddrEl?.value || vendor.address || vendor.location || '';
     rfq.vendorTin = vendor.tin || '';
-    rfq.vendorContactPerson = document.getElementById('vendorContactPerson').value;
-    rfq.vendorContactTitle = document.getElementById('vendorContactTitle').value;
+    rfq.vendorContactPerson = contactPersonEl?.value || primaryContact?.name || '';
+    rfq.vendorContactTitle = contactTitleEl?.value || primaryContact?.title || '';
     rfq.expectedDelivery = expectedDateStr;
-    rfq.paymentTerms = document.getElementById('rfqPaymentTerms').value;
+    const currentTermsEl = document.getElementById('rfqPaymentTerms');
+    if (currentTermsEl) rfq.paymentTerms = currentTermsEl.value;
 
     persistDraft();
+    if (typeof updateLiveDocumentMockup === 'function') {
+        updateLiveDocumentMockup();
+    }
     showToast(`✓ Auto-filled business fields for ${rfq.vendorTradeName}`, 'success');
 }
 
@@ -905,13 +1056,30 @@ function clearVendorFields(shouldPersist = true) {
     updateVendorComboTrigger(null);
     renderVendorComboboxList();
 
-    document.getElementById('vendorSummaryBox').style.display = 'none';
-    document.getElementById('vendorContactPerson').value = '';
-    document.getElementById('vendorContactTitle').value = '';
-    document.getElementById('vendorEmail').value = '';
-    document.getElementById('vendorPhone').value = '';
-    document.getElementById('vendorAddress').value = '';
-    document.getElementById('leadTimeBadge').textContent = 'Based on Lead Time';
+    const sumBox = document.getElementById('vendorSummaryBox');
+    if (sumBox) sumBox.style.display = 'none';
+    const emptyPrompt = document.getElementById('vendorEmptyPrompt');
+    if (emptyPrompt) emptyPrompt.style.display = 'none';
+
+    const redirectBtn = document.getElementById('rfqVendorRedirectBtn');
+    if (redirectBtn) {
+        redirectBtn.href = '/purchase/vendor-masterlist';
+        redirectBtn.classList.remove('is-active');
+    }
+
+    const contactPersonEl = document.getElementById('vendorContactPerson');
+    if (contactPersonEl) contactPersonEl.value = '';
+    const contactTitleEl = document.getElementById('vendorContactTitle');
+    if (contactTitleEl) contactTitleEl.value = '';
+    const vendorEmailEl = document.getElementById('vendorEmail');
+    if (vendorEmailEl) vendorEmailEl.value = '';
+    const vendorPhoneEl = document.getElementById('vendorPhone');
+    if (vendorPhoneEl) vendorPhoneEl.value = '';
+    const vendorAddrEl = document.getElementById('vendorAddress');
+    if (vendorAddrEl) vendorAddrEl.value = '';
+
+    const leadBadge = document.getElementById('leadTimeBadge');
+    if (leadBadge) leadBadge.textContent = 'Based on Lead Time';
 
     const rfq = window.AppStore.activeRfq;
     if (rfq) {
@@ -927,6 +1095,9 @@ function clearVendorFields(shouldPersist = true) {
     }
     if (shouldPersist) {
         persistDraft();
+    }
+    if (typeof updateLiveDocumentMockup === 'function') {
+        updateLiveDocumentMockup();
     }
 }
 
@@ -1718,16 +1889,9 @@ function submitActiveRfqToVendor() {
         errors.push('Vendor Partner');
     }
 
-    // 3. Validate Recipient Email
-    const emailInput = document.getElementById('vendorEmail');
-    if (!emailInput || !emailInput.value.trim() || !emailInput.value.includes('@')) {
-        if (emailInput) {
-            emailInput.classList.add('rfq-field-error-glow');
-            if (!firstErrorEl) firstErrorEl = emailInput;
-            emailInput.addEventListener('input', () => emailInput.classList.remove('rfq-field-error-glow'), { once: true });
-        }
-        errors.push('Recipient Email');
-    }
+    // 3. Vendor contact details are a read-only lookup from the Vendor Master (non-blocking)
+    const vendorLookup = vendorVal ? hydrateVendorLookupFields() : {};
+    const missingVendorEmail = vendorVal && !(vendorLookup.email && vendorLookup.email.includes('@'));
 
     // 4. Validate Line Items Table
     const items = window.AppStore.activeRfq.items || [];
@@ -1777,7 +1941,10 @@ function submitActiveRfqToVendor() {
         return;
     }
 
-    // 6. Valid -> proceed to transition
+    // 6. Valid -> proceed to transition (warn if vendor master has no email on file)
+    if (missingVendorEmail) {
+        showToast('Note: selected vendor has no email on file in the Vendor Masterlist. You can enter a recipient when sending.', 'info');
+    }
     transitionActiveRfqStage('Submitted');
 }
 
@@ -1911,15 +2078,8 @@ function moveToApprovalStage() {
         errors.push('Quotation Due Date');
     }
 
-    const deliveryDateInput = document.getElementById('rfqExpectedDelivery');
-    if (!deliveryDateInput || !deliveryDateInput.value.trim()) {
-        if (deliveryDateInput) {
-            deliveryDateInput.classList.add('rfq-field-error-glow');
-            if (!firstErrorEl) firstErrorEl = deliveryDateInput;
-            deliveryDateInput.addEventListener('input', () => deliveryDateInput.classList.remove('rfq-field-error-glow'), { once: true });
-        }
-        errors.push('Expected Delivery Date');
-    }
+    // Expected delivery is derived from the vendor's lead time (lookup, non-blocking)
+    if (vendorVal) hydrateVendorLookupFields();
 
     // 4. Validate Line Items Table
     const items = window.AppStore.activeRfq.items || [];
@@ -2127,10 +2287,10 @@ function renderItemsTable() {
         const visibleColsCount = activeColumnIds.length + 1;
         tbody.innerHTML = `
             <tr>
-                <td colspan="${visibleColsCount}" style="text-align: center; padding: 48px 20px; color: var(--rfq-text-muted);">
-                    <i class="ph ph-shopping-cart-simple" style="font-size: 42px; color: #cbd5e1; display: block; margin-bottom: 10px;"></i>
-                    <div style="font-weight: 700; font-size: 1rem; color: var(--rfq-text-strong);">No Quotation Line Items Added</div>
-                    <div style="font-size: 0.82rem; margin-top: 4px;">Click <strong>"Select From Master" (F2)</strong> or <strong>"Add Custom Spec Row"</strong> to begin compiling specifications.</div>
+                <td colspan="${visibleColsCount}" style="text-align: center; padding: 24px 16px; color: var(--rfq-text-muted);">
+                    <i class="ph ph-shopping-cart-simple" style="font-size: 30px; color: #cbd5e1; display: block; margin-bottom: 6px;"></i>
+                    <div style="font-weight: 700; font-size: 0.92rem; color: var(--rfq-text-strong);">No Quotation Line Items Added</div>
+                    <div style="font-size: 0.78rem; margin-top: 3px;">Click <strong>"Select Master" (F2)</strong> or <strong>"Add Custom Row"</strong> to begin compiling specifications.</div>
                 </td>
             </tr>
         `;
@@ -2517,12 +2677,18 @@ function updateMetricsSummary() {
     document.getElementById('rfqItemsBadge').textContent = `${totalLines} Line Item${totalLines === 1 ? '' : 's'}`;
 
     const badge = document.getElementById('rfqStatusBadge');
-    if (totalLines > 0 && window.AppStore.activeRfq.vendorId) {
-        badge.className = 'rfq-status-badge ready';
-        badge.innerHTML = '<i class="ph ph-check-circle"></i> Ready to Dispatch';
-    } else {
-        badge.className = 'rfq-status-badge draft';
-        badge.innerHTML = '<i class="ph ph-dot"></i> Draft RFQ';
+    if (badge) {
+        if (totalLines > 0 && window.AppStore.activeRfq.vendorId) {
+            badge.className = 'status-pill submitted';
+            badge.innerHTML = '<i class="ph ph-check-circle"></i> Ready to Dispatch';
+        } else {
+            badge.className = 'status-pill draft';
+            badge.innerHTML = '<i class="ph ph-dot"></i> Draft RFQ';
+        }
+    }
+
+    if (typeof updateLiveDocumentMockup === 'function') {
+        updateLiveDocumentMockup();
     }
 }
 
@@ -2620,57 +2786,337 @@ function addItemFromMasterDirect(sku) {
  */
 function openRfqDocumentPreview() {
     syncFormInputsToState();
-    const rfq = window.AppStore.activeRfq;
+    updateLiveDocumentMockup();
 
-    // Document Header & Metadata
-    document.getElementById('docRfqNumber').textContent = rfq.rfqNumber;
-    document.getElementById('docDateIssued').textContent = formatDateDisplay(rfq.dateIssued);
-    document.getElementById('docQuotationDeadline').textContent = formatDateDisplay(rfq.dueDate);
-    document.getElementById('docTargetDeliveryDate').textContent = formatDateDisplay(rfq.expectedDelivery);
-    document.getElementById('docPaymentTerms').textContent = rfq.paymentTerms;
-    document.getElementById('docDeliveryLocation').textContent = rfq.deliveryLocation;
-    document.getElementById('docSpecialInstructions').textContent = rfq.specialInstructions || 'Standard food safety & packaging compliance required.';
-    document.getElementById('docSignDate').textContent = formatDateDisplay(rfq.dateIssued);
-
-    // Vendor Information Block
-    document.getElementById('docVendorName').textContent = rfq.vendorName || 'Unspecified Vendor Partner';
-    document.getElementById('docVendorContact').textContent = rfq.vendorContactPerson || 'Sales Department';
-    document.getElementById('docVendorTitle').textContent = rfq.vendorContactTitle || 'Representative';
-    document.getElementById('docVendorEmail').textContent = rfq.vendorEmail || 'N/A';
-    document.getElementById('docVendorPhone').textContent = rfq.vendorPhone || 'N/A';
-    document.getElementById('docVendorAddress').textContent = rfq.vendorAddress || 'Metro Manila, Philippines';
-
-    // Populate Printable Items Table with Active Visible Columns
-    const tbody = document.getElementById('docItemsTbody');
-    if (tbody) {
-        if (rfq.items.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 24px; color: #94a3b8;">No items in quotation request</td></tr>`;
-        } else {
-            tbody.innerHTML = rfq.items.map((it, idx) => `
-                <tr>
-                    <td style="text-align: center; font-weight: 700;">${idx + 1}</td>
-                    <td style="font-family: monospace; font-weight: 700;">${escapeHtml(it.sku || '--')}</td>
-                    <td>
-                        <div style="font-weight: 700;">${escapeHtml(it.name || 'Custom Product')}</div>
-                        ${it.specs ? `<div style="font-size: 0.76rem; color: #475569; margin-top: 2px;">${escapeHtml(it.specs)}</div>` : ''}
-                        ${it.notes ? `<div style="font-size: 0.72rem; color: #64748b; font-style: italic;">Note: ${escapeHtml(it.notes)}</div>` : ''}
-                    </td>
-                    <td style="text-align: center; font-weight: 600;">${escapeHtml(it.unit || 'Unit')}</td>
-                    <td class="num" style="font-weight: 700;">${parseFloat(it.quantity || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-                    <td class="quote-slot">____________________</td>
-                    <td class="quote-slot" style="text-align: center;">______ Days</td>
-                </tr>
-            `).join('');
-        }
+    let printSheet = document.getElementById('rfqDedicatedPrintSheet');
+    if (!printSheet) {
+        printSheet = document.createElement('div');
+        printSheet.id = 'rfqDedicatedPrintSheet';
+        printSheet.className = 'rfq-dedicated-print-sheet';
+        document.body.appendChild(printSheet);
+    }
+    const container = document.getElementById('rfqLiveMockupSheet');
+    if (container && printSheet) {
+        printSheet.innerHTML = container.innerHTML;
     }
 
-    const modal = document.getElementById('rfqDocumentPreviewModal');
-    if (modal) modal.classList.add('is-open');
+    // Reflow buffer before print invocation
+    setTimeout(() => {
+        window.print();
+    }, 80);
+}
+
+function printRfqDocument() {
+    openRfqDocumentPreview();
 }
 
 function closeRfqDocumentPreview() {
     const modal = document.getElementById('rfqDocumentPreviewModal');
     if (modal) modal.classList.remove('is-open');
+}
+
+// Global browser print listener for Ctrl+P or browser menu print
+window.addEventListener('beforeprint', () => {
+    syncFormInputsToState();
+    updateLiveDocumentMockup();
+    let printSheet = document.getElementById('rfqDedicatedPrintSheet');
+    if (!printSheet) {
+        printSheet = document.createElement('div');
+        printSheet.id = 'rfqDedicatedPrintSheet';
+        printSheet.className = 'rfq-dedicated-print-sheet';
+        document.body.appendChild(printSheet);
+    }
+    const container = document.getElementById('rfqLiveMockupSheet');
+    if (container && printSheet) {
+        printSheet.innerHTML = container.innerHTML;
+    }
+});
+
+/**
+ * --------------------------------------------------------------------------
+ * REAL-TIME DOCUMENT MOCKUP RENDERING (MOCK UP OF THE REQUEST)
+ * A4 Printable Preview Standard • Fits Up to 20 Line Items per A4 Sheet
+ * --------------------------------------------------------------------------
+ */
+function updateLiveDocumentMockup() {
+    const rfq = window.AppStore?.activeRfq;
+    const container = document.getElementById('rfqLiveMockupSheet');
+    if (!rfq || !container) return;
+
+    const rfqNum = rfq.rfqNumber || '--';
+    const dateIssuedStr = formatDateDisplay(rfq.dateIssued || new Date().toISOString().split('T')[0]);
+    const deadlineStr = formatDateDisplay(rfq.dueDate || '--');
+    const vendorNameStr = rfq.vendorTradeName || rfq.vendorName || '';
+    const vendorContactStr = rfq.vendorContactPerson
+        ? `${rfq.vendorContactPerson}${rfq.vendorContactTitle ? ' (' + rfq.vendorContactTitle + ')' : ''}`
+        : 'Primary Representative';
+    const vendorEmailStr = rfq.vendorEmail || 'Email unassigned';
+    const vendorAddrStr = rfq.vendorAddress || 'Vendor profile location';
+    const delivLocStr = rfq.deliveryLocation || 'Central Commissary';
+    const paymentTermsStr = rfq.paymentTerms || 'Net 30 Days';
+
+    const items = rfq.items || [];
+    // A4 Standard Page Capacity: Fits up to 20 items on Page 1, up to 24 on continuation pages
+    const PAGE_1_CAPACITY = 20;
+    const SUBSEQUENT_PAGE_CAPACITY = 24;
+
+    // Split items into pages
+    let pages = [];
+    if (items.length <= PAGE_1_CAPACITY) {
+        pages.push({
+            pageNumber: 1,
+            items: items,
+            startIdx: 0,
+            isFirst: true,
+            isLast: true
+        });
+    } else {
+        // Page 1
+        pages.push({
+            pageNumber: 1,
+            items: items.slice(0, PAGE_1_CAPACITY),
+            startIdx: 0,
+            isFirst: true,
+            isLast: false
+        });
+        let curIdx = PAGE_1_CAPACITY;
+        let pageNum = 2;
+        while (curIdx < items.length) {
+            const nextSlice = items.slice(curIdx, curIdx + SUBSEQUENT_PAGE_CAPACITY);
+            const isLastPage = (curIdx + SUBSEQUENT_PAGE_CAPACITY) >= items.length;
+            pages.push({
+                pageNumber: pageNum,
+                items: nextSlice,
+                startIdx: curIdx,
+                isFirst: false,
+                isLast: isLastPage
+            });
+            curIdx += SUBSEQUENT_PAGE_CAPACITY;
+            pageNum++;
+        }
+    }
+
+    const totalPages = pages.length;
+
+    // Update page count indicator badge
+    const countBadge = document.getElementById('mockupPageCountBadge');
+    if (countBadge) {
+        countBadge.textContent = `${totalPages} Page${totalPages > 1 ? 's (A4)' : ' (A4)'}`;
+    }
+
+    const renderRowsHtml = (slice, startOffset) => {
+        if (!slice || slice.length === 0) {
+            return `<tr><td colspan="7" style="text-align: center; padding: 22px 8px; color: #94a3b8; font-style: italic;">No line items added to tender yet</td></tr>`;
+        }
+        return slice.map((it, idx) => `
+            <tr>
+                <td style="text-align: center; font-weight: 700; color: #64748b; font-size: 0.65rem;">${startOffset + idx + 1}</td>
+                <td style="font-family: monospace; font-weight: 700; color: #9333ea; font-size: 0.65rem;">${escapeHtml(it.sku || it.itemId || '--')}</td>
+                <td>
+                    <div style="font-weight: 700; color: #0f172a; font-size: 0.68rem;">${escapeHtml(it.name || it.itemName || 'Custom Item')}</div>
+                    ${it.specs ? `<div style="font-size: 0.60rem; color: #64748b; margin-top: 1px;">${escapeHtml(it.specs)}</div>` : ''}
+                </td>
+                <td style="text-align: center; font-weight: 600; color: #475569; font-size: 0.65rem;">${escapeHtml(it.unit || it.purchaseUomCode || 'Unit')}</td>
+                <td style="text-align: right; font-weight: 700; font-family: monospace; font-size: 0.67rem;">${parseFloat(it.quantity || it.requestedQuantity || 0).toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 2 })}</td>
+                <td class="mockup-slot-cell" style="text-align: right; font-size: 0.65rem;">₱ ____________</td>
+                <td class="mockup-slot-cell" style="text-align: center; font-size: 0.65rem;">____ Days</td>
+            </tr>
+        `).join('');
+    };
+
+    let fullHtml = '';
+
+    pages.forEach((p) => {
+        if (p.isFirst) {
+            fullHtml += `
+                <div class="rfq-live-mockup-paper">
+                    <!-- Formal A4 Header -->
+                    <div class="mockup-sheet-header">
+                        <div class="mockup-brand-block">
+                            <div class="mockup-brand-title">RESTAURANT MANAGEMENT SYSTEM</div>
+                            <div class="mockup-brand-subtitle">Procurement & Supply Chain Division • Commissary Hub</div>
+                        </div>
+                        <div class="mockup-badge-block">
+                            <div class="mockup-badge-tag">REQUEST FOR QUOTATION</div>
+                            <div class="mockup-meta-kv">Ref: <strong id="mockupRfqNumber">${escapeHtml(rfqNum)}</strong></div>
+                            <div class="mockup-meta-kv">Issued: <strong id="mockupDateIssued">${escapeHtml(dateIssuedStr)}</strong></div>
+                            <div class="mockup-meta-kv mockup-due-accent">Closing Deadline: <strong id="mockupQuotationDeadline">${escapeHtml(deadlineStr)}</strong></div>
+                        </div>
+                    </div>
+
+                    <!-- Mockup Parties Information -->
+                    <div class="mockup-parties-grid">
+                        <div class="mockup-party-box">
+                            <div class="mockup-party-heading">SUPPLIER RECIPIENT</div>
+                            <div class="mockup-party-name" id="mockupVendorName" style="color: ${vendorNameStr ? '#0f172a' : '#94a3b8'};">
+                                ${escapeHtml(vendorNameStr || 'Choose Target Vendor...')}
+                            </div>
+                            <div class="mockup-party-sub" id="mockupVendorContactRow">Attn: <span id="mockupVendorContact">${escapeHtml(vendorContactStr)}</span></div>
+                            <div class="mockup-party-sub" id="mockupVendorEmailRow"><i class="ph ph-envelope-simple"></i> <span id="mockupVendorEmail">${escapeHtml(vendorEmailStr)}</span></div>
+                            <div class="mockup-party-sub" id="mockupVendorAddressRow"><i class="ph ph-map-pin"></i> <span id="mockupVendorAddress">${escapeHtml(vendorAddrStr)}</span></div>
+                        </div>
+                        <div class="mockup-party-box">
+                            <div class="mockup-party-heading">DELIVERY & COMMERCIAL TERMS</div>
+                            <div class="mockup-party-name" id="mockupDeliveryLocation">${escapeHtml(delivLocStr)}</div>
+                            <div class="mockup-party-sub">Payment Terms: <strong id="mockupPaymentTerms">${escapeHtml(paymentTermsStr)}</strong></div>
+                            <div class="mockup-party-sub">Currency: <strong>Philippine Peso (PHP ₱)</strong></div>
+                            <div class="mockup-party-sub">Quote Validity: <span id="mockupValidityDuration">30 Calendar Days Minimum</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Mockup Printable Line Items Table (A4 Format) -->
+                    <div class="mockup-table-container">
+                        <table class="mockup-table" id="mockupItemsTable">
+                            <thead>
+                                <tr>
+                                    <th style="width: 24px; text-align: center;">#</th>
+                                    <th style="width: 76px;">SKU</th>
+                                    <th>Item Description & Specifications</th>
+                                    <th style="width: 44px; text-align: center;">UOM</th>
+                                    <th style="width: 55px; text-align: right;">Qty</th>
+                                    <th style="width: 90px; text-align: right;">Vendor Quoted ₱</th>
+                                    <th style="width: 68px; text-align: center;">Lead Time</th>
+                                </tr>
+                            </thead>
+                            <tbody id="mockupItemsTbody">
+                                ${renderRowsHtml(p.items, p.startIdx)}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    ${p.isLast ? `
+                        <!-- System Fixed Bidding Disclaimer -->
+                        <div class="mockup-terms-disclaimer">
+                            <div class="mockup-disclaimer-title"><i class="ph ph-info"></i> Instructions & Bidding Notes:</div>
+                            <div class="mockup-disclaimer-body">
+                                1. Quoted unit prices must be VAT-inclusive and reflect delivered pricing to specified destination.<br>
+                                2. Default quote validity is thirty (30) calendar days from receipt.<br>
+                                3. Return official signed quote to <strong>procurement@rms.ph</strong> before specified closing deadline.
+                            </div>
+                        </div>
+
+                        <!-- Formal Dual Signatures Block -->
+                        <div class="mockup-signatures-grid">
+                            <div class="mockup-sig-box">
+                                <div class="mockup-sig-title">Prepared By (Procurement Officer):</div>
+                                <div class="mockup-sig-line">
+                                    <span>Dorothy Diaz</span>
+                                    <span>Date: ${escapeHtml(dateIssuedStr)}</span>
+                                </div>
+                            </div>
+                            <div class="mockup-sig-box">
+                                <div class="mockup-sig-title">Authorized Vendor Signatory & Seal:</div>
+                                <div class="mockup-sig-line">
+                                    <span>Signature & Stamp</span>
+                                    <span>Date: _________</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mockup-page-footer">
+                            <span>RMS Procurement Official Tender Document</span>
+                            <span>Page 1 of ${totalPages}</span>
+                        </div>
+                    ` : `
+                        <div class="mockup-page-continuation-banner">
+                            <span><i class="ph ph-arrow-down" style="vertical-align: middle;"></i> Continued on Page 2...</span>
+                            <span>Page 1 of ${totalPages}</span>
+                        </div>
+                    `}
+                </div>
+            `;
+        } else {
+            // Continuation A4 Page (Page 2, Page 3, ...)
+            fullHtml += `
+                <div class="mockup-page-divider">
+                    <span class="mockup-page-divider-pill">PAGE ${p.pageNumber} OF ${totalPages}</span>
+                </div>
+
+                <div class="rfq-live-mockup-paper">
+                    <!-- Mini Continuation Header -->
+                    <div class="mockup-sheet-header-mini">
+                        <div>
+                            <strong>RESTAURANT MANAGEMENT SYSTEM</strong>
+                            <span style="font-size: 0.65rem; color: #64748b; font-weight: normal; margin-left: 4px;">• Procurement Tender</span>
+                        </div>
+                        <span>Ref: ${escapeHtml(rfqNum)} (Cont.)</span>
+                    </div>
+
+                    <!-- Items Table -->
+                    <div class="mockup-table-container">
+                        <table class="mockup-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 24px; text-align: center;">#</th>
+                                    <th style="width: 76px;">SKU</th>
+                                    <th>Item Description & Specifications</th>
+                                    <th style="width: 44px; text-align: center;">UOM</th>
+                                    <th style="width: 55px; text-align: right;">Qty</th>
+                                    <th style="width: 90px; text-align: right;">Vendor Quoted ₱</th>
+                                    <th style="width: 68px; text-align: center;">Lead Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${renderRowsHtml(p.items, p.startIdx)}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    ${p.isLast ? `
+                        <!-- System Fixed Bidding Disclaimer -->
+                        <div class="mockup-terms-disclaimer">
+                            <div class="mockup-disclaimer-title"><i class="ph ph-info"></i> Instructions & Bidding Notes:</div>
+                            <div class="mockup-disclaimer-body">
+                                1. Quoted unit prices must be VAT-inclusive and reflect delivered pricing to specified destination.<br>
+                                2. Default quote validity is thirty (30) calendar days from receipt.<br>
+                                3. Return official signed quote to <strong>procurement@rms.ph</strong> before specified closing deadline.
+                            </div>
+                        </div>
+
+                        <!-- Formal Dual Signatures Block -->
+                        <div class="mockup-signatures-grid">
+                            <div class="mockup-sig-box">
+                                <div class="mockup-sig-title">Prepared By (Procurement Officer):</div>
+                                <div class="mockup-sig-line">
+                                    <span>Dorothy Diaz</span>
+                                    <span>Date: ${escapeHtml(dateIssuedStr)}</span>
+                                </div>
+                            </div>
+                            <div class="mockup-sig-box">
+                                <div class="mockup-sig-title">Authorized Vendor Signatory & Seal:</div>
+                                <div class="mockup-sig-line">
+                                    <span>Signature & Stamp</span>
+                                    <span>Date: _________</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mockup-page-footer">
+                            <span>End of RFQ Document</span>
+                            <span>Page ${p.pageNumber} of ${totalPages}</span>
+                        </div>
+                    ` : `
+                        <div class="mockup-page-continuation-banner">
+                            <span><i class="ph ph-arrow-down" style="vertical-align: middle;"></i> Continued on Page ${p.pageNumber + 1}...</span>
+                            <span>Page ${p.pageNumber} of ${totalPages}</span>
+                        </div>
+                    `}
+                </div>
+            `;
+        }
+    });
+
+    container.innerHTML = fullHtml;
+
+    // Direct synchronization to dedicated print container
+    let printSheet = document.getElementById('rfqDedicatedPrintSheet');
+    if (!printSheet) {
+        printSheet = document.createElement('div');
+        printSheet.id = 'rfqDedicatedPrintSheet';
+        printSheet.className = 'rfq-dedicated-print-sheet';
+        document.body.appendChild(printSheet);
+    }
+    printSheet.innerHTML = fullHtml;
 }
 
 /**
@@ -2682,9 +3128,10 @@ function openSendEmailModal() {
     syncFormInputsToState();
     const rfq = window.AppStore.activeRfq;
 
-    if (!rfq.vendorEmail) {
-        showToast('⚠️ Please specify or select a Vendor with a valid email address first.', 'error');
-        document.getElementById('vendorEmail').focus();
+    if (!rfq.vendorId) {
+        showToast('⚠️ Please select a Vendor from the Masterlist first.', 'error');
+        const trigger = document.getElementById('rfqVendorComboTrigger');
+        if (trigger) trigger.focus();
         return;
     }
     if (rfq.items.length === 0) {
@@ -2692,7 +3139,8 @@ function openSendEmailModal() {
         return;
     }
 
-    document.getElementById('emailRecipient').value = rfq.vendorEmail;
+    const vendorLookup = hydrateVendorLookupFields();
+    document.getElementById('emailRecipient').value = vendorLookup.email || '';
     document.getElementById('emailSubject').value = `[${rfq.rfqNumber}] Request for Quotation - ${rfq.vendorTradeName || rfq.vendorName}`;
     document.getElementById('emailAttachmentName').textContent = `${rfq.rfqNumber}_Request_for_Quotation.pdf`;
 
@@ -2714,6 +3162,11 @@ function openSendEmailModal() {
 
     const modal = document.getElementById('rfqSendEmailModal');
     if (modal) modal.classList.add('is-open');
+
+    if (!vendorLookup.email) {
+        showToast('Vendor has no email on file. Please enter the recipient email.', 'info');
+        setTimeout(() => document.getElementById('emailRecipient')?.focus(), 60);
+    }
 }
 
 function closeSendEmailModal() {
@@ -2886,14 +3339,15 @@ function syncFormInputsToState() {
     const titleEl = document.getElementById('rfqTenderTitle');
     if (titleEl) rfq.title = titleEl.value;
 
+    // Lookup-only fields: never wipe state with blank hidden inputs
     const emailEl = document.getElementById('vendorEmail');
-    if (emailEl) rfq.vendorEmail = emailEl.value;
+    if (emailEl && emailEl.value) rfq.vendorEmail = emailEl.value;
 
     const phoneEl = document.getElementById('vendorPhone');
-    if (phoneEl) rfq.vendorPhone = phoneEl.value;
+    if (phoneEl && phoneEl.value) rfq.vendorPhone = phoneEl.value;
 
     const addrEl = document.getElementById('vendorAddress');
-    if (addrEl) rfq.vendorAddress = addrEl.value;
+    if (addrEl && addrEl.value) rfq.vendorAddress = addrEl.value;
 
     const contactEl = document.getElementById('vendorContactPerson');
     if (contactEl && contactEl.value) rfq.vendorContactPerson = contactEl.value;
@@ -2922,7 +3376,7 @@ function syncFormInputsToState() {
     }
 
     const delivEl = document.getElementById('rfqExpectedDelivery');
-    if (delivEl) {
+    if (delivEl && delivEl.value) {
         rfq.expectedDelivery = delivEl.value;
         rfq.rfqRequestedDeliveryDate = delivEl.value;
         rfq.rfq_requested_delivery_date = delivEl.value;
@@ -6156,6 +6610,7 @@ Object.assign(window, {
   selectVendorFromCombo,
   updateVendorComboTrigger,
   handleVendorSelection,
+  handleVendorRedirectClick,
   clearVendorFields,
   getColumnWidth,
   getNormalizedRfqStage,
@@ -6204,7 +6659,9 @@ Object.assign(window, {
   renderItemMasterModalRows,
   addItemFromMasterDirect,
   openRfqDocumentPreview,
+  printRfqDocument,
   closeRfqDocumentPreview,
+  updateLiveDocumentMockup,
   openSendEmailModal,
   closeSendEmailModal,
   recordSentRfqInHistory,

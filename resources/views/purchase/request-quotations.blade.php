@@ -137,6 +137,37 @@
                         <input type="text" class="rfq-input" id="rfqDirectorySearch" oninput="handleRfqDirectorySearch(this.value)" placeholder="Search RFQ #, vendor partner, contact..." style="padding: 5px 10px 5px 30px; font-size: 12px; height: 32px;">
                     </div>
                     <div id="rfqActiveFilterChips" style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;"></div>
+
+                    <!-- Multi-Selection Batch Action Bar in Table Toolbar (Light Theme) -->
+                    <div id="rfqBatchActionBar" class="rfq-batch-toolbar-bar" style="display: none;" role="region" aria-label="Batch actions toolbar">
+                        <div class="rfq-batch-bar-container light-theme">
+                            <div class="rfq-batch-info">
+                                <span class="rfq-batch-badge">
+                                    <i class="ph ph-check"></i>
+                                </span>
+                                <span class="rfq-batch-counter">
+                                    <strong id="rfqBatchSelectedCount">0</strong> selected
+                                </span>
+                            </div>
+
+                            <div class="rfq-batch-separator"></div>
+
+                            <div class="rfq-batch-actions">
+                                <button type="button" class="rfq-batch-btn rfq-batch-btn-danger" id="btnBatchDeleteRfq" onclick="executeBatchDelete()" title="Delete selected tenders">
+                                    <i class="ph ph-trash"></i>
+                                    <span>Delete</span>
+                                </button>
+                                <button type="button" class="rfq-batch-btn" id="btnBatchArchiveRfq" onclick="executeBatchArchive()" title="Archive selected tenders">
+                                    <i class="ph ph-archive"></i>
+                                    <span>Archive</span>
+                                </button>
+                                <button type="button" class="rfq-batch-btn" id="btnBatchExportRfq" onclick="executeBatchExport()" title="Export selected tenders to CSV">
+                                    <i class="ph ph-download-simple"></i>
+                                    <span>Export</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="rfq-toolbar-right" style="position: relative; display: flex; align-items: center; gap: 8px;">
                     <!-- Column Visibility Filter Trigger -->
@@ -159,6 +190,9 @@
                 <table class="rfq-table" id="rfqDirectoryTable">
                     <thead id="rfqDirectoryThead">
                         <tr id="rfqDirectoryTheadRow">
+                            <th class="rfq-th-select" style="width: 44px; min-width: 44px; text-align: center; vertical-align: middle;">
+                                <input type="checkbox" id="selectAllRfqCheckbox" onchange="toggleSelectAllRfqs(this.checked)" title="Select all tenders on this page" aria-label="Select all tenders">
+                            </th>
                             <!-- Rendered dynamically by renderDirectoryTableHeader() with modular stacked headers, column resizers & drag/drop -->
                         </tr>
                     </thead>
@@ -295,72 +329,92 @@
         </div>
     </div>
 
-    <!-- Workspace Grid: Asymmetric 4.2fr Left (Cards 1 & 2) / 5.8fr Right (Card 3 Items Panel) -->
-    <div class="rfq-builder-workspace-grid">
+    <!-- Top Section (Full Width - 100%): Main Reference & Operational Header Banner -->
+    <div class="rfq-panel-card rfq-top-banner-card" id="rfqTopBannerCard">
+        <div class="rfq-top-banner-split">
 
-        <!-- Left Column: Vendor Selection & RFQ Terms -->
-        <div class="rfq-builder-left-col">
-
-            <!-- Tender Reference & Identity Header Block (Prominent Placement with Description) -->
-            <div class="rfq-panel-card rfq-tender-ref-card" style="border-left: 4px solid #9333ea; background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(245, 243, 255, 0.65)); padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;">
-                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <div style="width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(135deg, #ec4899, #a855f7); color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 16px; box-shadow: 0 3px 10px rgba(168, 85, 247, 0.28);">
-                            <i class="ph ph-file-text"></i>
-                        </div>
-                        <div>
-                            <div style="font-size: 0.68rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em;">Tender Reference Number</div>
-                            <div style="display: flex; align-items: center; gap: 8px;">
-                                <span id="rfqRefDisplay" style="font-family: monospace; font-size: 1.15rem; font-weight: 800; color: #9333ea; letter-spacing: -0.01em;">RFQ-2026-0044</span>
-                                <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="copyRfqReference()" title="Copy Reference to Clipboard" style="padding: 2px 6px; font-size: 11px; height: 22px;">
-                                    <i class="ph ph-copy"></i>
-                                </button>
-                                <button type="button" class="hr-btn hr-btn-outline hr-btn-sm" onclick="createNewRfq()" title="Create New RFQ" style="padding: 2px 8px; font-size: 11px; height: 22px; color: #9333ea; border-color: rgba(147, 51, 234, 0.3); display: inline-flex; align-items: center; gap: 4px;">
-                                    <i class="ph ph-plus-circle"></i>
-                                    <span>New</span>
-                                </button>
+            <!-- Left Side: RFQ Reference & Notes, Created Date & Destination -->
+            <div class="rfq-top-banner-side rfq-top-left-side">
+                <!-- Row 1: RFQ Reference & Status (Left) + Notes / Tender Purpose (Right) -->
+                <div class="rfq-ref-notes-grid">
+                    <!-- 1. RFQ Reference & Status Box -->
+                    <div class="rfq-ref-row">
+                        <div class="rfq-ref-identity-box">
+                            <div class="rfq-ref-badge-icon">
+                                <i class="ph ph-file-text"></i>
+                            </div>
+                            <div class="rfq-ref-meta-cluster">
+                                <span class="rfq-ref-label">Tender Reference #</span>
+                                <div class="rfq-ref-value-row">
+                                    <span id="rfqRefDisplay" class="rfq-ref-id-display">RFQ-2026-0044</span>
+                                    <input type="hidden" id="rfqNumberInput" value="RFQ-2026-0044">
+                                    <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="copyRfqReference()" title="Copy Reference to Clipboard">
+                                        <i class="ph ph-copy"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
+                        <div class="rfq-status-badge-wrap">
+                            <span class="status-pill draft" id="rfqStatusBadge">
+                                <i class="ph ph-dot"></i> Draft RFQ
+                            </span>
+                        </div>
                     </div>
-                    <div>
-                        <span class="status-pill draft" id="rfqStatusBadge" style="font-size: 11px; padding: 3px 9px;">
-                            <i class="ph ph-dot"></i> Draft RFQ
-                        </span>
+
+                    <!-- 2. Notes / Tender Purpose Description (Beside RFQ Reference) -->
+                    <div class="rfq-field rfq-notes-field">
+                        <label class="rfq-label" for="rfqTenderTitle">
+                            <span>Notes / Tender Purpose</span>
+                            <span class="rfq-label-badge">Description</span>
+                        </label>
+                        <input type="text" class="rfq-input rfq-title-input" id="rfqTenderTitle" placeholder="e.g. Q4 Commissary Dry Goods Bulk Procurement — Manila Hub" oninput="handleRfqTitleChange(this.value)">
                     </div>
                 </div>
 
-                <!-- Tender Purpose / Description Field -->
-                <div class="rfq-field" style="margin-top: 2px;">
-                    <label class="rfq-label" for="rfqTenderTitle" style="font-size: 0.70rem; color: #475569; margin-bottom: 3px;">
-                        <span>Tender Purpose / Title Description</span>
-                        <span class="rfq-label-badge" style="font-size: 0.62rem;">Project Reference</span>
-                    </label>
-                    <input type="text" class="rfq-input" id="rfqTenderTitle" placeholder="e.g. Q4 Commissary Dry Goods Bulk Procurement — Manila Hub" style="font-size: 0.84rem; padding: 5px 10px; font-weight: 500;" oninput="handleRfqTitleChange(this.value)">
+                <!-- Row 2: Created Date & Destination / Location (2-Column Grid) -->
+                <div class="rfq-created-dest-grid">
+                    <!-- Created Date -->
+                    <div class="rfq-field">
+                        <label class="rfq-label" for="rfqDateIssued">
+                            <span>Created Date</span>
+                            <span class="rfq-label-badge">Issued</span>
+                        </label>
+                        <input type="date" class="rfq-input" id="rfqDateIssued" onchange="syncFormInputsToState(); updateLiveDocumentMockup();">
+                    </div>
+
+                    <!-- Destination / Location -->
+                    <div class="rfq-field">
+                        <label class="rfq-label" for="rfqDeliveryLocation">
+                            <span>Destination / Location</span>
+                            <span class="rfq-label-badge">Logistics</span>
+                        </label>
+                        <select class="rfq-select" id="rfqDeliveryLocation" onchange="syncFormInputsToState(); updateLiveDocumentMockup();">
+                            <option value="Central Commissary - Main Dock">Central Commissary - Dock A</option>
+                            <option value="Central Commissary - Main Cold Dock">Central Commissary - Main Cold Dock</option>
+                            <option value="Central Warehouse - Dry Storage">Central Warehouse - Dry Storage</option>
+                            <option value="Branch 1 - Makati Flagship">Branch 1 - Makati Flagship</option>
+                            <option value="Branch 2 - BGC Bistro">Branch 2 - BGC Bistro</option>
+                            <option value="Branch 3 - Ortigas Kitchen">Branch 3 - Ortigas Kitchen</option>
+                        </select>
+                    </div>
                 </div>
             </div>
 
-            <!-- Card 1: Vendor Selection & Company Profile Details -->
-            <div class="rfq-panel-card">
-                <div class="rfq-panel-header">
-                    <div class="rfq-panel-title">
-                        <i class="ph ph-buildings"></i>
-                        <span>Vendor Selection & Partner Profile</span>
-                    </div>
-                    <span class="rfq-label-badge" id="vendorCatalogBadge">Catalog Integrated</span>
-                </div>
-                <div class="rfq-panel-body">
-                    <div class="rfq-field">
-                        <label class="rfq-label" for="vendorSelect">
-                            <span>Select Target Vendor *</span>
-                            <span class="rfq-label-badge">Searchable Masterlist</span>
-                        </label>
-                        <!-- Hidden select for form bindings & backwards-compatibility -->
-                        <select class="rfq-select" id="vendorSelect" style="display: none;" onchange="handleVendorSelection(this.value)">
-                            <option value="">-- Choose Approved Vendor from Masterlist --</option>
-                            <!-- Populated dynamically -->
-                        </select>
+            <!-- Right Side: Vendor Selection on Top, RFQ Terms & Due Date After Vendor Selection -->
+            <div class="rfq-top-banner-side rfq-top-right-side">
+                <!-- Row 1: Vendor Selection * with ">" Redirect to Vendor Masterlist -->
+                <div class="rfq-field rfq-vendor-col">
+                    <label class="rfq-label" for="vendorSelect">
+                        <span>Vendor Selection *</span>
+                        <span class="rfq-label-badge">Masterlist Search</span>
+                    </label>
+                    <!-- Hidden select for form bindings & backwards-compatibility -->
+                    <select class="rfq-select" id="vendorSelect" style="display: none;" onchange="handleVendorSelection(this.value)">
+                        <option value="">-- Choose Approved Vendor from Masterlist --</option>
+                    </select>
 
-                        <!-- Custom Searchable Combobox -->
+                    <!-- Custom Searchable Combobox with ">" Redirect Button -->
+                    <div class="rfq-vendor-combo-wrapper">
                         <div class="rfq-vendor-combobox" id="rfqVendorCombobox">
                             <button type="button" class="rfq-vendor-combo-trigger" id="rfqVendorComboTrigger" onclick="toggleVendorCombobox(event)">
                                 <span id="rfqVendorComboTriggerText" style="color: #64748b;">-- Choose Approved Vendor from Masterlist --</span>
@@ -372,143 +426,77 @@
                                     <i class="ph ph-magnifying-glass"></i>
                                     <input type="text" class="rfq-vendor-combo-search-input" id="rfqVendorSearchInput" placeholder="Search by name, code, category..." oninput="filterVendorCombobox(this.value)" autocomplete="off">
                                 </div>
-                                <div class="rfq-vendor-combo-list" id="rfqVendorComboList">
-                                    <!-- Populated dynamically -->
-                                </div>
+                                <div class="rfq-vendor-combo-list" id="rfqVendorComboList"></div>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Active Vendor Summary Badge Box -->
-                    <div class="rfq-vendor-pill-box" id="vendorSummaryBox" style="display: none;">
-                        <div class="rfq-vendor-avatar" id="vendorAvatarText">VM</div>
-                        <div class="rfq-vendor-summary">
-                            <div class="rfq-vendor-name-row">
-                                <span id="vendorTradeName">--</span>
-                                <span class="rfq-label-badge" id="vendorCategoryTag">Category</span>
-                            </div>
-                            <div class="rfq-vendor-detail-row">
-                                <span><i class="ph ph-identification-card"></i> TIN: <strong id="vendorTinDisplay">--</strong></span>
-                                <span>•</span>
-                                <span><i class="ph ph-map-pin"></i> <span id="vendorLocationDisplay">--</span></span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="rfq-form-row">
-                        <div class="rfq-field">
-                            <label class="rfq-label" for="vendorContactPerson">Contact Person</label>
-                            <input type="text" class="rfq-input" id="vendorContactPerson" placeholder="Contact Person" readonly title="Primary Contact Person">
-                        </div>
-                        <div class="rfq-field">
-                            <label class="rfq-label" for="vendorContactTitle">Designation</label>
-                            <input type="text" class="rfq-input" id="vendorContactTitle" placeholder="Designation" readonly title="Contact Designation / Title">
-                        </div>
-                    </div>
-
-                    <div class="rfq-form-row">
-                        <div class="rfq-field">
-                            <label class="rfq-label" for="vendorEmail">
-                                <span>Recipient Email *</span>
-                            </label>
-                            <input type="email" class="rfq-input" id="vendorEmail" placeholder="vendor@example.com" title="Vendor Recipient Email" required>
-                        </div>
-                        <div class="rfq-field">
-                            <label class="rfq-label" for="vendorPhone">Phone / Mobile</label>
-                            <input type="text" class="rfq-input" id="vendorPhone" placeholder="Direct Phone" title="Contact Direct Phone">
-                        </div>
-                    </div>
-
-                    <div class="rfq-field">
-                        <label class="rfq-label" for="vendorAddress">Physical / Billing Address</label>
-                        <input type="text" class="rfq-input" id="vendorAddress" placeholder="Street, Building, City, ZIP">
+                        <!-- Redirect to Vendor Masterlist Button ">" -->
+                        <a href="/purchase/vendor-masterlist" id="rfqVendorRedirectBtn" class="rfq-vendor-redirect-btn" target="_blank" title="Redirect to Vendor Details in Vendor Masterlist" onclick="return handleVendorRedirectClick(event)">
+                            <i class="ph ph-caret-right"></i>
+                        </a>
                     </div>
                 </div>
-            </div>
 
-            <!-- Card 2: Procurement Terms & Delivery Schedules -->
-            <div class="rfq-panel-card">
-                <div class="rfq-panel-header">
-                    <div class="rfq-panel-title">
-                        <i class="ph ph-calendar-check"></i>
-                        <span>RFQ Terms & Delivery Schedule</span>
-                    </div>
-                    <span class="rfq-label-badge" id="rfqTermsLockBadge">Auto Lead-Time Sync</span>
-                </div>
-                <div class="rfq-panel-body">
-                    <div class="rfq-form-row">
-                        <div class="rfq-field">
-                            <label class="rfq-label" for="rfqNumberInput">RFQ Reference #</label>
-                            <input type="text" class="rfq-input" id="rfqNumberInput" value="RFQ-2026-0042" readonly style="font-family: monospace; font-weight: 700; color: #9333ea;">
-                        </div>
-                        <div class="rfq-field">
-                            <label class="rfq-label" for="rfqDateIssued">Date Issued</label>
-                            <input type="date" class="rfq-input" id="rfqDateIssued">
-                        </div>
-                    </div>
-
-                    <div class="rfq-form-row">
-                        <div class="rfq-field">
-                            <label class="rfq-label" for="rfqDueDate">
-                                <span>Quotation Due *</span>
-                                <span class="rfq-label-badge" style="color: #b45309;">Submission</span>
-                            </label>
-                            <input type="date" class="rfq-input" id="rfqDueDate">
-                        </div>
-                        <div class="rfq-field">
-                            <label class="rfq-label" for="rfqQuoteValidityDate">
-                                <span>Quote Validity Date</span>
-                                <span class="rfq-label-badge" style="color: #6366f1;">Valid Until</span>
-                            </label>
-                            <input type="date" class="rfq-input" id="rfqQuoteValidityDate">
-                        </div>
-                    </div>
-
-                    <div class="rfq-form-row">
-                        <div class="rfq-field">
-                            <label class="rfq-label" for="rfqExpectedDelivery">
-                                <span>Expected Delivery *</span>
-                                <span class="rfq-label-badge" id="leadTimeBadge">Lead Time</span>
-                            </label>
-                            <input type="date" class="rfq-input" id="rfqExpectedDelivery">
-                        </div>
-                        <div class="rfq-field">
-                            <label class="rfq-label" for="rfqPaymentTerms">Payment Terms</label>
-                            <select class="rfq-select" id="rfqPaymentTerms">
-                                <option value="Net 30 Days">Net 30 Days (Standard)</option>
-                                <option value="Net 15 Days">Net 15 Days</option>
-                                <option value="Net 7 Days">Net 7 Days</option>
-                                <option value="COD">Cash on Delivery (COD)</option>
-                                <option value="Advance Payment">100% Advance Payment</option>
-                                <option value="50% DP, 50% Delivery">50% DP, 50% Upon Delivery</option>
-                            </select>
-                        </div>
-                    </div>
-
+                <!-- Row 2: RFQ Terms & Due Date * (Side-by-Side Grid after Vendor Selection) -->
+                <div class="rfq-top-right-fields-grid">
+                    <!-- RFQ Terms -->
                     <div class="rfq-field">
-                        <label class="rfq-label" for="rfqDeliveryLocation">Destination Facility</label>
-                        <select class="rfq-select" id="rfqDeliveryLocation">
-                            <option value="Central Commissary - Main Dock">Central Commissary - Dock A</option>
-                            <option value="Central Commissary - Main Cold Dock">Central Commissary - Main Cold Dock</option>
-                            <option value="Central Warehouse - Dry Storage">Central Warehouse - Dry Storage</option>
-                            <option value="Branch 1 - Makati Flagship">Branch 1 - Makati Flagship</option>
-                            <option value="Branch 2 - BGC Bistro">Branch 2 - BGC Bistro</option>
-                            <option value="Branch 3 - Ortigas Kitchen">Branch 3 - Ortigas Kitchen</option>
+                        <label class="rfq-label" for="rfqPaymentTerms">
+                            <span>RFQ Terms</span>
+                            <span class="rfq-label-badge">Commercial</span>
+                        </label>
+                        <select class="rfq-select" id="rfqPaymentTerms" onchange="syncFormInputsToState(); updateLiveDocumentMockup();">
+                            <option value="Net 30 Days">Net 30 Days (Standard)</option>
+                            <option value="Net 15 Days">Net 15 Days</option>
+                            <option value="Net 7 Days">Net 7 Days</option>
+                            <option value="COD">Cash on Delivery (COD)</option>
+                            <option value="Advance Payment">100% Advance Payment</option>
+                            <option value="50% DP, 50% Delivery">50% DP, 50% Upon Delivery</option>
                         </select>
                     </div>
 
+                    <!-- Due Date * -->
                     <div class="rfq-field">
-                        <label class="rfq-label" for="rfqSpecialInstructions">Bidding Instructions / Notes</label>
-                        <textarea class="rfq-textarea" id="rfqSpecialInstructions" placeholder="e.g. VAT-inclusive pricing; attach COA for dairy/meats."></textarea>
+                        <label class="rfq-label" for="rfqDueDate">
+                            <span>Due Date *</span>
+                            <span class="rfq-label-badge" style="color: #b45309;">Submission</span>
+                        </label>
+                        <input type="date" class="rfq-input" id="rfqDueDate" onchange="syncFormInputsToState(); updateLiveDocumentMockup();">
                     </div>
                 </div>
             </div>
 
-        </div><!-- /.rfq-builder-left-col -->
+        </div>
 
-        <!-- Right Column: Card 3 Line Items Panel -->
-        <div class="rfq-builder-right-col">
-            <!-- Quotation Line Items & Specifications Table (With Floating Column Filter) -->
+        <!-- Automated & Streamlined Hidden Inputs for State Integrity & Backward-Compatibility -->
+        <input type="hidden" id="vendorContactPerson" value="">
+        <input type="hidden" id="vendorContactTitle" value="">
+        <input type="hidden" id="vendorEmail" value="">
+        <input type="hidden" id="vendorPhone" value="">
+        <input type="hidden" id="vendorAddress" value="">
+        <input type="hidden" id="rfqQuoteValidityDate" value="">
+        <input type="hidden" id="rfqExpectedDelivery" value="">
+        <input type="hidden" id="rfqSpecialInstructions" value="">
+        <span id="leadTimeBadge" style="display: none;"></span>
+        <span id="rfqTermsLockBadge" style="display: none;"></span>
+
+        <!-- Hidden backward-compatibility elements for retired vendor summary card -->
+        <div id="vendorSummaryBox" style="display: none !important;">
+            <span id="vendorAvatarText"></span>
+            <span id="vendorTradeName"></span>
+            <span id="vendorCategoryTag"></span>
+            <span id="vendorTinDisplay"></span>
+            <span id="vendorLocationDisplay"></span>
+        </div>
+        <div id="vendorEmptyPrompt" style="display: none !important;"></div>
+        <span id="vendorCatalogBadge" style="display: none !important;"></span>
+    </div>
+
+    <!-- Main Body Split (70% Items Table Panel / 30% Sticky Live Document Mockup) -->
+    <div class="rfq-builder-split-body" id="rfqBuilderSplitBody">
+
+        <!-- Left Side (70% Width): Line Items & Specifications Table Panel -->
+        <div class="rfq-items-panel-col">
             <div class="rfq-items-panel">
                 <div class="rfq-items-toolbar">
                     <div class="rfq-toolbar-left">
@@ -550,8 +538,8 @@
                 </div>
 
                 <!-- Items Table Footer Metric Summary -->
-                <div class="rfq-summary-bar" style="padding: 10px 16px;">
-                    <div class="rfq-metrics-cluster" style="gap: 16px;">
+                <div class="rfq-summary-bar">
+                    <div class="rfq-metrics-cluster">
                         <div class="rfq-metric-unit">
                             <span class="rfq-metric-label">Lines</span>
                             <span class="rfq-metric-val" id="summaryTotalLines" style="font-size: 1.05rem;">0</span>
@@ -565,22 +553,58 @@
                             <span class="rfq-metric-val highlight" id="summaryEstimatedBudget" style="font-size: 1.12rem;">₱0.00</span>
                         </div>
                     </div>
-
-                    <div class="rfq-actions-group" style="display: flex; align-items: center; gap: 8px;">
-                        <button type="button" class="rfq-btn rfq-btn-outline" id="btnToggleBuilderAudit" onclick="openRfqAuditDrawer()" title="View Procurement Audit Trail & Activity Log" style="padding: 5px 12px; font-size: 11.5px; border-radius: 8px;">
-                            <i class="ph ph-clock-counter-clockwise"></i> <span>Audit Trail</span>
-                        </button>
-                        <button type="button" class="rfq-btn rfq-btn-outline" onclick="openRfqDocumentPreview()" title="Open formal printable RFQ document preview (F8)" style="padding: 5px 12px; font-size: 11.5px; border-radius: 8px;">
-                            <i class="ph ph-eye"></i> <span>Preview</span> <span class="rfq-hotkey-badge">F8</span>
-                        </button>
-                        <button type="button" class="rfq-btn rfq-btn-primary" id="btnDispatchEmail" onclick="openSendEmailModal()" title="Send RFQ package directly to vendor contact (F10)" style="padding: 5px 14px; font-size: 11.5px; border-radius: 8px;">
-                            <i class="ph ph-paper-plane-tilt"></i> <span>Send to Vendor</span> <span class="rfq-hotkey-badge" style="background: rgba(255,255,255,0.25);">F10</span>
-                        </button>
+                    <div class="rfq-table-hint">
+                        <i class="ph ph-broadcast"></i> Live synced with Mockup
                     </div>
                 </div>
             </div>
-        </div><!-- /.rfq-builder-right-col -->
-    </div><!-- /.rfq-builder-workspace-grid -->
+        </div><!-- /.rfq-items-panel-col -->
+
+        <!-- Right Side (30% Width): Sticky Live Document Mockup & Accessible Action Buttons -->
+        <div class="rfq-mockup-panel-col" id="rfqMockupPanelCol">
+            <div class="rfq-panel-card rfq-mockup-card">
+                <!-- Action Buttons Header: Strictly Single Row via 3-Column Grid -->
+                <div class="rfq-mockup-header-actions">
+                    <button type="button" class="rfq-btn rfq-btn-outline rfq-mockup-action-btn" id="btnToggleBuilderAudit" onclick="openRfqAuditDrawer()" title="View Procurement Audit Trail & Activity Log">
+                        <i class="ph ph-clock-counter-clockwise"></i>
+                        <span>Audit Trail</span>
+                    </button>
+                    <button type="button" class="rfq-btn rfq-btn-outline rfq-mockup-action-btn" onclick="openRfqDocumentPreview()" title="Open formal printable RFQ document preview (F8)">
+                        <i class="ph ph-eye"></i>
+                        <span>Preview</span>
+                        <span class="rfq-hotkey-badge">F8</span>
+                    </button>
+                    <button type="button" class="rfq-btn rfq-btn-primary rfq-mockup-action-btn" id="btnDispatchEmail" onclick="openSendEmailModal()" title="Send RFQ package directly to vendor contact (F10)">
+                        <i class="ph ph-paper-plane-tilt"></i>
+                        <span>Send to Vendor</span>
+                        <span class="rfq-hotkey-badge rfq-hotkey-contrast">F10</span>
+                    </button>
+                </div>
+
+                <!-- Sticky Mockup Sheet Container with Dedicated Scrollbar -->
+                <div class="rfq-mockup-content-wrap" id="rfqMockupContentWrap">
+                    <div class="rfq-mockup-top-strip">
+                        <div class="rfq-mockup-pill-tag">
+                            <i class="ph ph-file-text"></i>
+                            <span>Mock up of the Request</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span class="rfq-mockup-pages-badge" id="mockupPageCountBadge">1 Page</span>
+                            <span class="rfq-mockup-live-status">
+                                <span class="rfq-live-dot"></span> Live Sync
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Rendered Document Mockup Paper Sheet Container (Multi-Page Capable) -->
+                    <div class="rfq-live-mockup-container" id="rfqLiveMockupSheet">
+                        <!-- Populated dynamically via updateLiveDocumentMockup() -->
+                    </div>
+                </div><!-- /.rfq-mockup-content-wrap -->
+            </div><!-- /.rfq-mockup-card -->
+        </div><!-- /.rfq-mockup-panel-col -->
+
+    </div><!-- /.rfq-builder-split-body -->
 </div><!-- /#pane-tab-builder -->
 
 </div>

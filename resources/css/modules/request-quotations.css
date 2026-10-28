@@ -772,59 +772,980 @@
     color: #64748b;
 }
 
-/* Industrial Workspace Grid (30% Left: Tender Ref & Terms / 70% Right: Items Table - Expands with Sidebar Minimize) */
-.rfq-builder-workspace-grid {
-    display: grid;
-    grid-template-columns: minmax(260px, 30%) minmax(0, 1fr);
-    gap: 12px;
-    align-items: stretch;
+/* ==========================================================================
+   TOP SECTION (FULL WIDTH - 100%): HORIZONTAL BANNER CARD
+   ========================================================================== */
+.rfq-top-banner-card {
+    background: var(--rfq-surface);
+    border: 1px solid var(--rfq-border-subtle);
+    border-radius: var(--rfq-radius-lg);
+    box-shadow: var(--rfq-shadow-sm);
+    display: flex;
+    flex-direction: column;
+    overflow: visible;
+    margin-bottom: 14px;
     width: 100%;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    z-index: 100;
 }
-@media (max-width: 1100px) {
-    .rfq-builder-workspace-grid {
+
+/* Two-Sided Top Banner Split (Left: RFQ, Notes, Facility, Vendor / Right: Vendor selection, Terms, Due) */
+.rfq-top-banner-split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    padding: 14px 18px;
+    align-items: start;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.99), rgba(248, 250, 252, 0.95));
+    border-radius: var(--rfq-radius-lg);
+    position: relative;
+    z-index: 100;
+    overflow: visible;
+}
+
+@media (max-width: 980px) {
+    .rfq-top-banner-split {
         grid-template-columns: 1fr;
+        gap: 14px;
     }
 }
 
-.rfq-builder-left-col {
+.rfq-top-banner-side {
     display: flex;
     flex-direction: column;
     gap: 10px;
     min-width: 0;
+    position: relative;
 }
 
-.rfq-builder-right-col {
+.rfq-top-left-side {
+    border-right: 1px solid var(--rfq-border-subtle);
+    padding-right: 18px;
+    position: relative;
+    z-index: 1;
+}
+
+@media (max-width: 980px) {
+    .rfq-top-left-side {
+        border-right: none;
+        padding-right: 0;
+        border-bottom: 1px solid var(--rfq-border-subtle);
+        padding-bottom: 14px;
+    }
+}
+
+.rfq-top-right-side {
+    position: relative;
+    z-index: 101;
+    overflow: visible;
+}
+
+/* RFQ Reference & Status Header Row */
+.rfq-ref-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 58px;
+    min-height: 58px;
+    max-height: 58px;
+    box-sizing: border-box;
+    padding: 0;
+    gap: 10px;
+    margin: 0;
+}
+
+.rfq-ref-identity-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.rfq-ref-badge-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    background: linear-gradient(135deg, #ec4899, #a855f7);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px;
+    box-shadow: 0 3px 10px rgba(168, 85, 247, 0.28);
+    flex-shrink: 0;
+}
+
+.rfq-ref-meta-cluster {
     display: flex;
     flex-direction: column;
-    height: 100%;
+    gap: 2px;
+}
+
+.rfq-ref-label {
+    font-size: 0.67rem;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.rfq-ref-value-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.rfq-ref-id-display {
+    font-family: monospace;
+    font-size: 1.18rem;
+    font-weight: 800;
+    color: #9333ea;
+    letter-spacing: -0.01em;
+}
+
+.rfq-vendor-empty-placeholder {
+    background: #f8fafc;
+    border: 1.5px dashed #cbd5e1;
+    border-radius: 8px;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #64748b;
+    font-size: 0.77rem;
+    font-style: italic;
+}
+
+.rfq-vendor-empty-placeholder i {
+    font-size: 16px;
+    color: #94a3b8;
+    flex-shrink: 0;
+}
+
+.rfq-ref-notes-grid {
+    display: grid;
+    grid-template-columns: minmax(260px, 1fr) minmax(260px, 1.35fr);
+    gap: 12px;
+    align-items: end;
+}
+
+@media (max-width: 820px) {
+    .rfq-ref-notes-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.rfq-notes-field {
+    margin-bottom: 0 !important;
+}
+
+.rfq-top-right-fields-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    align-items: start;
+}
+
+@media (max-width: 600px) {
+    .rfq-top-right-fields-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.rfq-created-dest-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.3fr;
+    gap: 10px;
+    align-items: start;
+}
+
+@media (max-width: 600px) {
+    .rfq-created-dest-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Vendor Selection Column & Combobox Layering */
+.rfq-vendor-col {
+    position: relative;
+    z-index: 102;
+    overflow: visible;
+}
+
+/* Vendor Combobox Wrapper & Masterlist Redirect Button (">") */
+.rfq-vendor-combo-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    position: relative;
+    z-index: 102;
+    overflow: visible;
+}
+
+.rfq-vendor-combo-wrapper .rfq-vendor-combobox {
+    flex: 1 1 auto;
+    min-width: 0;
+    position: relative;
+    z-index: 103;
+    overflow: visible;
+}
+
+.rfq-vendor-redirect-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    min-height: 36px;
+    max-height: 36px;
+    box-sizing: border-box;
+    border-radius: var(--rfq-radius-md, 7px);
+    background: #f8fafc;
+    border: 1.5px solid var(--rfq-border-subtle, #cbd5e1);
+    color: #64748b;
+    font-size: 16px;
+    text-decoration: none;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+}
+
+.rfq-vendor-redirect-btn:hover {
+    background: rgba(147, 51, 234, 0.10);
+    border-color: #a855f7;
+    color: #9333ea;
+    box-shadow: 0 2px 6px rgba(147, 51, 234, 0.18);
+}
+
+.rfq-vendor-redirect-btn.is-active {
+    background: linear-gradient(135deg, rgba(236, 72, 153, 0.14), rgba(168, 85, 247, 0.22));
+    border-color: #a855f7;
+    color: #9333ea;
+    font-weight: 700;
+}
+
+/* ==========================================================================
+   MAIN BODY SPLIT: 70% ITEMS TABLE PANEL / 30% STICKY DOCUMENT MOCKUP
+   ========================================================================== */
+.rfq-builder-split-body {
+    display: grid;
+    grid-template-columns: minmax(0, 70%) minmax(320px, 30%);
+    gap: 14px;
+    align-items: stretch; /* Stretch both columns evenly */
+    width: 100%;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (max-width: 1160px) {
+    .rfq-builder-split-body {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Fluid responsive expand when Dual-Rail Sidebar is collapsed */
+#app-sidebar.collapsed ~ .main-content .rfq-builder-split-body,
+body.sidebar-collapsed .rfq-builder-split-body,
+body:has(#app-sidebar.collapsed) .rfq-builder-split-body {
+    grid-template-columns: minmax(0, 72%) minmax(320px, 28%);
+}
+
+.rfq-items-panel-col {
+    display: flex;
+    flex-direction: column;
     min-width: 0;
     width: 100%;
-    flex: 1 1 auto;
+    height: 100%;
 }
 
-.rfq-builder-right-col .rfq-items-panel {
+/* Snug, zero-dead-space items panel with cleanly docked bottom summary */
+.rfq-items-panel-col .rfq-items-panel {
     display: flex;
     flex-direction: column;
     height: 100%;
+    min-height: 480px;
     width: 100%;
     min-width: 0;
     overflow: hidden;
+    background: var(--rfq-surface);
+    border: 1px solid var(--rfq-border-subtle);
+    border-radius: var(--rfq-radius-lg);
+    box-shadow: var(--rfq-shadow-sm);
+    position: relative;
 }
 
-.rfq-builder-right-col .rfq-table-responsive {
-    flex: 1 1 auto;
-    min-height: 220px;
+/* Table container flexes fully: zero artificial max-height cutoffs */
+.rfq-items-panel-col .rfq-table-responsive {
+    flex: 1 1 0px;
+    min-height: 0;
+    height: auto;
+    max-height: none;
     overflow-y: auto;
     overflow-x: auto;
     width: 100%;
+    padding-bottom: 12px;
 }
 
-/* Fluid responsive behavior: Quotation Line Items & Specifications expands when Dual-Rail Sidebar is collapsed/minimized */
-#app-sidebar.collapsed ~ .main-content .rfq-builder-workspace-grid,
-body.sidebar-collapsed .rfq-builder-workspace-grid,
-body:has(#app-sidebar.collapsed) .rfq-builder-workspace-grid {
-    grid-template-columns: minmax(260px, 28%) minmax(0, 1fr);
+/* Docked bottom summary bar: fixed flex item, never covers table rows or creates dead space */
+.rfq-items-panel-col .rfq-summary-bar {
+    flex: 0 0 auto;
+    position: static;
+    margin-top: 0;
+    padding: 10px 16px;
+    background: #ffffff;
+    border-top: 1px solid var(--rfq-border-subtle);
+    box-shadow: 0 -2px 8px rgba(15, 23, 42, 0.05);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    z-index: 5;
+}
+
+.rfq-table-hint {
+    font-size: 0.72rem;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Legacy grid fallback */
+.rfq-builder-workspace-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+}
+
+/* ==========================================================================
+   RIGHT SIDE STICKY DOCUMENT MOCKUP CARD
+   ========================================================================== */
+.rfq-mockup-panel-col {
+    position: sticky;
+    top: 14px;
+    z-index: 20;
+    min-width: 0;
+    width: 100%;
+    align-self: start;
+}
+
+.rfq-mockup-card {
+    background: var(--rfq-surface);
+    border: 1px solid var(--rfq-border-subtle);
+    border-radius: var(--rfq-radius-lg);
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 110px); /* Bounded within screen, never overly long */
+}
+
+/* Action Buttons Header inside Right Card: ALWAYS EXACT SINGLE ROW */
+.rfq-mockup-header-actions {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+    padding: 8px 10px !important;
+    background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+    border-bottom: 1px solid var(--rfq-border-subtle);
+    width: 100% !important;
+    box-sizing: border-box !important;
+    align-items: center !important;
+}
+
+.rfq-mockup-action-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 4px !important;
+    padding: 6px 4px !important;
+    font-size: 0.72rem !important;
+    font-weight: 700 !important;
+    white-space: nowrap !important;
+    border-radius: 6px !important;
+    height: 32px !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    text-align: center !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+    transition: all 0.15s ease !important;
+}
+
+.rfq-mockup-action-btn span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.rfq-mockup-action-btn .rfq-hotkey-badge {
+    font-size: 0.58rem !important;
+    padding: 1px 4px !important;
+    border-radius: 3px !important;
+    line-height: 1;
+    font-weight: 800;
+    flex-shrink: 0;
+}
+
+.rfq-mockup-action-btn .rfq-hotkey-contrast {
+    background: rgba(255, 255, 255, 0.28) !important;
+    color: #ffffff !important;
+}
+
+/* Mockup Content Wrap with Dedicated Smooth Scrollbar */
+.rfq-mockup-content-wrap {
+    padding: 12px;
+    background: #f1f5f9;
+    flex: 1 1 auto;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 #f1f5f9;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.rfq-mockup-content-wrap::-webkit-scrollbar {
+    width: 6px;
+}
+.rfq-mockup-content-wrap::-webkit-scrollbar-track {
+    background: #f1f5f9;
+}
+.rfq-mockup-content-wrap::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+.rfq-mockup-content-wrap::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+.rfq-mockup-top-strip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.rfq-mockup-pill-tag {
+    font-size: 0.74rem;
+    font-weight: 700;
+    color: #9333ea;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(147, 51, 234, 0.08);
+    padding: 3px 8px;
+    border-radius: 6px;
+}
+
+.rfq-mockup-pages-badge {
+    background: #e0e7ff;
+    color: #4338ca;
+    font-size: 0.65rem;
+    font-weight: 800;
+    padding: 2px 7px;
+    border-radius: 10px;
+    letter-spacing: 0.02em;
+    border: 1px solid rgba(99, 102, 241, 0.25);
+}
+
+.rfq-mockup-live-status {
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: #059669;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.rfq-live-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #10b981;
+    box-shadow: 0 0 6px rgba(16, 185, 129, 0.7);
+    animation: rfqMockupPulse 1.8s infinite ease-in-out;
+}
+
+@keyframes rfqMockupPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.85); }
+}
+
+/* ==========================================================================
+   RENDERED LIVE DOCUMENT MOCKUP CONTAINER & MULTI-PAGE SHEETS
+   ========================================================================== */
+.rfq-live-mockup-container {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    width: 100%;
+}
+
+.rfq-live-mockup-paper {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 14px 16px;
+    color: #1e293b;
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    font-size: 0.76rem;
+    position: relative;
+    box-sizing: border-box;
+}
+
+/* Visual Page Break / Divider between 2 or more pages */
+.mockup-page-divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    margin: 8px 0;
+}
+
+.mockup-page-divider::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 1px;
+    border-top: 2px dashed #94a3b8;
+}
+
+.mockup-page-divider-pill {
+    position: relative;
+    background: #334155;
+    color: #ffffff;
+    font-size: 0.60rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    padding: 2px 10px;
+    border-radius: 12px;
+    text-transform: uppercase;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.mockup-page-continuation-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 5px 8px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    font-size: 0.64rem;
+    color: #64748b;
+    font-weight: 600;
+}
+
+.mockup-sheet-header-mini {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1.5px solid #0f172a;
+    padding-bottom: 6px;
+    font-size: 0.70rem;
+}
+.mockup-sheet-header-mini strong {
+    color: #0f172a;
+    font-size: 0.74rem;
+}
+.mockup-sheet-header-mini span {
+    color: #9333ea;
+    font-weight: 700;
+    font-family: monospace;
+}
+
+.mockup-page-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.62rem;
+    color: #94a3b8;
+    padding-top: 4px;
+    border-top: 1px dashed #e2e8f0;
+    margin-top: 2px;
+}
+
+.mockup-sheet-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 2px solid #0f172a;
+    padding-bottom: 8px;
+    gap: 8px;
+}
+
+.mockup-brand-title {
+    font-size: 0.86rem;
+    font-weight: 900;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+}
+
+.mockup-brand-subtitle {
+    font-size: 0.66rem;
+    color: #64748b;
+    margin-top: 1px;
+}
+
+.mockup-badge-block {
+    text-align: right;
+}
+
+.mockup-badge-tag {
+    font-size: 0.78rem;
+    font-weight: 900;
+    color: #9333ea;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+
+.mockup-meta-kv {
+    font-size: 0.67rem;
+    color: #475569;
+    margin-top: 1px;
+}
+
+.mockup-due-accent strong {
+    color: #dc2626 !important;
+}
+
+.mockup-parties-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.mockup-party-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.mockup-party-heading {
+    font-size: 0.62rem;
+    font-weight: 800;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 2px;
+}
+
+.mockup-party-name {
+    font-size: 0.78rem;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1.2;
+}
+
+.mockup-party-sub,
+.mockup-party-details {
+    font-size: 0.67rem;
+    color: #475569;
+    line-height: 1.3;
+}
+
+.mockup-party-sub i {
+    font-size: 11px;
+    color: #94a3b8;
+}
+
+.mockup-table-container {
+    width: 100%;
+    overflow-x: auto;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+}
+
+.mockup-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.67rem;
+}
+
+.mockup-table thead tr {
+    background: #0f172a;
+    color: #ffffff;
+}
+
+.mockup-table th {
+    padding: 4px 6px;
+    font-weight: 700;
+    text-align: left;
+    font-size: 0.63rem;
+    letter-spacing: 0.02em;
+    border: 1px solid #334155;
+}
+
+.mockup-table td {
+    padding: 3px 6px;
+    border: 1px solid #e2e8f0;
+    color: #1e293b;
+    vertical-align: middle;
+    line-height: 1.25;
+}
+
+.mockup-table tbody tr:nth-child(even) {
+    background: #f8fafc;
+}
+
+.mockup-table td.mockup-slot-cell {
+    font-family: monospace;
+    color: #94a3b8;
+    background: #fafafa;
+}
+
+.mockup-terms-disclaimer {
+    background: rgba(147, 51, 234, 0.03);
+    border: 1px dashed rgba(147, 51, 234, 0.25);
+    border-radius: 4px;
+    padding: 6px 10px;
+}
+
+.mockup-disclaimer-title {
+    font-size: 0.66rem;
+    font-weight: 800;
+    color: #9333ea;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 2px;
+}
+
+.mockup-disclaimer-body {
+    font-size: 0.62rem;
+    color: #475569;
+    line-height: 1.35;
+}
+
+.mockup-signatures-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.mockup-sig-box {
+    border: 1px dashed #cbd5e1;
+    border-radius: 4px;
+    padding: 6px 10px;
+    background: #fbfbfb;
+}
+
+.mockup-sig-title {
+    font-size: 0.60rem;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-bottom: 20px;
+}
+
+.mockup-sig-line {
+    border-top: 1px solid #94a3b8;
+    padding-top: 3px;
+    font-size: 0.64rem;
+    color: #0f172a;
+    font-weight: 700;
+    display: flex;
+    justify-content: space-between;
+}
+
+.mockup-footer-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 6px;
+    border-top: 1px solid #e2e8f0;
+    font-size: 0.64rem;
+}
+
+/* ==========================================================================
+   OFFICIAL A4 RFQ PRINT STYLESHEET (PDF EXPORT & PRINT PREVIEW)
+   ========================================================================== */
+@media screen {
+    #rfqDedicatedPrintSheet {
+        display: none !important;
+    }
+}
+
+@media print {
+    @page {
+        size: A4 portrait;
+        margin: 10mm 12mm;
+    }
+
+    /* 1. Neutralize viewport & document root */
+    html, body {
+        width: 100% !important;
+        height: auto !important;
+        min-height: 0 !important;
+        overflow: visible !important;
+        background: #ffffff !important;
+        color: #000000 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    /* 2. Hide entire app layout: eliminates all height: 100vh, flex, and overflow clipping */
+    .app-container,
+    .main-sidebar,
+    .dual-rail-sidebar,
+    .main-header,
+    .header-left,
+    .header-actions,
+    .content-area,
+    .main-content,
+    .rfq-workspace-container,
+    #rfqAppWorkspace,
+    .hr-parent-header,
+    .rfq-nav-tabs-bar,
+    .rfq-kpi-grid,
+    #pane-tab-list,
+    #pane-tab-builder,
+    .rfq-top-banner-card,
+    .rfq-items-panel-col,
+    .rfq-mockup-panel-col,
+    .rfq-mockup-header-actions,
+    .rfq-mockup-top-strip,
+    .rfq-toast-container,
+    .rfq-lock-overlay,
+    .hr-drawer,
+    .hr-drawer-overlay,
+    .rfq-modal-backdrop,
+    .rfq-header-filter-popover,
+    .rfq-table-settings-dropdown,
+    #defaultLandingModal,
+    .mockup-page-divider,
+    .mockup-page-continuation-banner {
+        display: none !important;
+    }
+
+    /* 3. Render ONLY the dedicated print sheet attached directly to body */
+    #rfqDedicatedPrintSheet {
+        display: block !important;
+        position: static !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: 0 !important;
+        max-height: none !important;
+        overflow: visible !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: none !important;
+        background: #ffffff !important;
+        box-shadow: none !important;
+        visibility: visible !important;
+    }
+
+    #rfqDedicatedPrintSheet * {
+        visibility: visible !important;
+    }
+
+    #rfqDedicatedPrintSheet .mockup-page-divider,
+    #rfqDedicatedPrintSheet .mockup-page-continuation-banner {
+        display: none !important;
+    }
+
+    /* 4. Format A4 Paper Sheets */
+    #rfqDedicatedPrintSheet .rfq-live-mockup-paper {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 12px !important;
+        width: 100% !important;
+        min-height: 265mm !important;
+        box-sizing: border-box !important;
+        padding: 0 !important;
+        margin: 0 0 10mm 0 !important;
+        background: #ffffff !important;
+        color: #0f172a !important;
+        border: none !important;
+        box-shadow: none !important;
+        page-break-after: always !important;
+        break-after: page !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+    }
+
+    #rfqDedicatedPrintSheet .rfq-live-mockup-paper:last-child {
+        page-break-after: avoid !important;
+        break-after: avoid !important;
+        margin-bottom: 0 !important;
+    }
+
+    /* 5. Force exact print colors for headers and boxes */
+    #rfqDedicatedPrintSheet .mockup-sheet-header,
+    #rfqDedicatedPrintSheet .mockup-sheet-header-mini {
+        border-bottom: 2px solid #0f172a !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    #rfqDedicatedPrintSheet .mockup-table-container {
+        border: 1px solid #cbd5e1 !important;
+        overflow: visible !important;
+        width: 100% !important;
+    }
+
+    #rfqDedicatedPrintSheet .mockup-table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+    }
+
+    #rfqDedicatedPrintSheet .mockup-table thead tr {
+        background: #0f172a !important;
+        color: #ffffff !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    #rfqDedicatedPrintSheet .mockup-table th {
+        background: #0f172a !important;
+        color: #ffffff !important;
+        border: 1px solid #334155 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    #rfqDedicatedPrintSheet .mockup-table td {
+        border: 1px solid #cbd5e1 !important;
+        color: #0f172a !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    #rfqDedicatedPrintSheet .mockup-party-box {
+        background: #f8fafc !important;
+        border: 1px solid #cbd5e1 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    #rfqDedicatedPrintSheet .mockup-terms-disclaimer {
+        background: #fdf4ff !important;
+        border: 1px dashed #d8b4fe !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    #rfqDedicatedPrintSheet .mockup-sig-box {
+        background: #fbfbfb !important;
+        border: 1px dashed #cbd5e1 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
 }
 
 .rfq-panel-card {
@@ -873,7 +1794,8 @@ body:has(#app-sidebar.collapsed) .rfq-builder-workspace-grid {
 .rfq-field {
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: 0;
+    min-width: 0;
 }
 .rfq-dual-inputs {
     display: flex;
@@ -893,7 +1815,10 @@ body:has(#app-sidebar.collapsed) .rfq-builder-workspace-grid {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 1px;
+    height: 18px;
+    line-height: 18px;
+    margin-bottom: 4px;
+    box-sizing: border-box;
 }
 .rfq-label-badge {
     font-size: 0.65rem;
@@ -904,9 +1829,12 @@ body:has(#app-sidebar.collapsed) .rfq-builder-workspace-grid {
     border-radius: 4px;
     text-transform: none;
 }
-.rfq-input, .rfq-select, .rfq-textarea {
+.rfq-input, .rfq-select {
     width: 100%;
-    padding: 6px 10px;
+    height: 36px;
+    min-height: 36px;
+    max-height: 36px;
+    padding: 0 10px;
     border: 1.5px solid var(--rfq-border-subtle);
     border-radius: 7px;
     font-size: 0.82rem;
@@ -915,6 +1843,24 @@ body:has(#app-sidebar.collapsed) .rfq-builder-workspace-grid {
     transition: all 0.15s ease;
     box-sizing: border-box;
     font-family: inherit;
+    line-height: 33px;
+}
+.rfq-select {
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 256 256'%3E%3Cpath fill='%2394a3b8' d='m213.66 101.66l-80 80a8 8 0 0 1-11.32 0l-80-80a8 8 0 0 1 11.32-11.32L128 164.69l74.34-74.35a8 8 0 0 1 11.32 11.32Z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 28px;
+    cursor: pointer;
+}
+input[type="date"].rfq-input {
+    display: inline-flex;
+    align-items: center;
+    line-height: normal;
+}
+input[type="date"].rfq-input::-webkit-calendar-picker-indicator {
+    cursor: pointer;
 }
 .rfq-input:focus, .rfq-select:focus, .rfq-textarea:focus {
     outline: none;
@@ -934,19 +1880,32 @@ body:has(#app-sidebar.collapsed) .rfq-builder-workspace-grid {
     padding: 6px 10px;
     font-size: 0.8rem;
     line-height: 1.35;
+    width: 100%;
+    border: 1.5px solid var(--rfq-border-subtle);
+    border-radius: 7px;
+    color: var(--rfq-text-strong);
+    background: #ffffff;
+    box-sizing: border-box;
+    font-family: inherit;
 }
 
 /* Searchable Target Vendor Combobox */
 .rfq-vendor-combobox {
     position: relative;
     width: 100%;
+    z-index: 103;
+    overflow: visible;
 }
 .rfq-vendor-combo-trigger {
     width: 100%;
+    height: 36px;
+    min-height: 36px;
+    max-height: 36px;
+    box-sizing: border-box;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 6px 10px;
+    padding: 0 10px;
     border: 1.5px solid var(--rfq-border-subtle);
     border-radius: 7px;
     background: #ffffff;
@@ -972,11 +1931,11 @@ body:has(#app-sidebar.collapsed) .rfq-builder-workspace-grid {
     top: calc(100% + 4px);
     left: 0;
     right: 0;
-    z-index: 1050;
+    z-index: 99999;
     background: #ffffff;
-    border: 1px solid rgba(226, 232, 240, 0.95);
+    border: 1px solid rgba(203, 213, 225, 0.95);
     border-radius: 9px;
-    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.15), 0 4px 10px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 16px 36px rgba(15, 23, 42, 0.22), 0 4px 12px rgba(0, 0, 0, 0.08);
     display: none;
     flex-direction: column;
     overflow: hidden;
@@ -2298,26 +3257,6 @@ th.is-header-drag-over {
 .audit-diff-table td {
     color: var(--rfq-text-strong);
     font-weight: 600;
-}
-
-/* Media Print Rules for Spotless RFQ Export */
-@media print {
-    body * {
-        visibility: hidden;
-    }
-    #rfqDocumentPreviewPaper, #rfqDocumentPreviewPaper * {
-        visibility: visible;
-    }
-    #rfqDocumentPreviewPaper {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        margin: 0;
-        padding: 20px;
-        box-shadow: none;
-        border: none;
-    }
 }
 
 /* ==========================================================================

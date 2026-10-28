@@ -72,6 +72,9 @@
             </div>
         </main>
     </div>
+    
+    <!-- Dedicated Direct-Child Print Container for Spotless PDF/Print Rendering -->
+    <div id="rfqDedicatedPrintSheet" class="rfq-dedicated-print-sheet"></div>
 
     <!-- Default Landing Location Modal -->
     <x-default-landing-modal />

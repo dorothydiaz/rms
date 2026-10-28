@@ -1545,6 +1545,9 @@ document.addEventListener('DOMContentLoaded', () => {
     populateItemMasterDropdown();
     updateDirectoryMetrics();
 
+    // Deep-link: open a specific vendor profile from ?vendorId= / ?vendorCode= / ?vendorName=
+    openVendorFromUrlParams();
+
     // Auto-sync dispatch address when same-as-billing is checked
     const billingInput = document.getElementById('editBillingAddress');
     if (billingInput) {
@@ -1874,6 +1877,31 @@ function handleCatalogSearch(query) {
 
     renderCatalogTable(filtered);
     setText('catalogItemCountBadge', `Found ${filtered.length} of ${catalog.length} items`);
+}
+
+/**
+ * Deep-link resolver: opens the vendor profile referenced in the URL query string.
+ * Matches strictly by id, code, or legal/trade name (no fallback to the first vendor).
+ */
+function openVendorFromUrlParams() {
+    const params = new URLSearchParams(window.location.search);
+    const keys = [params.get('vendorId'), params.get('vendorCode'), params.get('vendorName')]
+        .filter(Boolean)
+        .map(k => String(k).trim().toLowerCase());
+    if (keys.length === 0) return;
+
+    const match = VENDOR_DATABASE.find(v => {
+        const candidates = [v.id, v.code, v.legalName, v.tradeName]
+            .filter(Boolean)
+            .map(x => String(x).trim().toLowerCase());
+        return candidates.some(c => keys.includes(c));
+    });
+
+    if (match) {
+        openVendorProfile(match.id);
+    } else if (typeof showToast === 'function') {
+        showToast('Selected vendor was not found in the Vendor Masterlist.', 'error');
+    }
 }
 
 /**
