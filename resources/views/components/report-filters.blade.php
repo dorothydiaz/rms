@@ -38,10 +38,12 @@
     $tagsJsonId = $uid . '_filterTagsJson';
     $hiddenContainerId = $uid . '_hiddenFilterInputs';
 
-    // Ensure positions list is populated
+    // Ensure positions list is populated with in-memory cache
     if (empty($positions)) {
         try {
-            $positions = \App\Models\Hr\Position::orderBy('name')->get();
+            $positions = \Illuminate\Support\Facades\Cache::remember('hr_positions_list', 3600, function () {
+                return \App\Models\Hr\Position::orderBy('name')->get();
+            });
         } catch (\Throwable $e) {
             $positions = collect();
         }

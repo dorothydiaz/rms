@@ -31,9 +31,14 @@ class PurchaseController extends Controller
 
     public function requestQuotations(): View
     {
-        $rfqs = RfqHeader::with(['lines', 'vendor'])->orderByDesc('rfq_created_at')->get();
-        $vendors = ProcurementVendor::where('is_active', true)->orderBy('legal_name')->get();
-        $items = InventoryItem::where('is_active', true)->orderBy('name')->get();
+        // Windowed initial payload (most recent 30 records for instant DOM render)
+        $rfqs = RfqHeader::with(['lines', 'vendor'])->orderByDesc('rfq_created_at')->take(30)->get();
+        $vendors = \Illuminate\Support\Facades\Cache::remember('active_procurement_vendors', 3600, function () {
+            return ProcurementVendor::where('is_active', true)->orderBy('legal_name')->get();
+        });
+        $items = \Illuminate\Support\Facades\Cache::remember('active_inventory_items_lookup', 3600, function () {
+            return InventoryItem::where('is_active', true)->orderBy('name')->get();
+        });
 
         return view('purchase.request-quotations', [
             'initialRfqs' => $rfqs,
@@ -78,9 +83,14 @@ class PurchaseController extends Controller
      */
     public function purchaseOrders(Request $request): View
     {
-        $purchaseOrders = PurchaseOrder::with('items')->orderByDesc('id')->get();
-        $vendors = ProcurementVendor::where('is_active', true)->orderBy('legal_name')->get();
-        $items = InventoryItem::where('is_active', true)->orderBy('name')->get();
+        // Windowed initial payload (most recent 30 records for instant DOM render)
+        $purchaseOrders = PurchaseOrder::with('items')->orderByDesc('id')->take(30)->get();
+        $vendors = \Illuminate\Support\Facades\Cache::remember('active_procurement_vendors', 3600, function () {
+            return ProcurementVendor::where('is_active', true)->orderBy('legal_name')->get();
+        });
+        $items = \Illuminate\Support\Facades\Cache::remember('active_inventory_items_lookup', 3600, function () {
+            return InventoryItem::where('is_active', true)->orderBy('name')->get();
+        });
 
         return view('purchase.purchase-orders', [
             'initialPurchaseOrders' => $purchaseOrders,

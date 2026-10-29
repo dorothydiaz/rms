@@ -646,7 +646,11 @@ function initAppStore() {
             } catch (e) {}
         }
         window.AppStore.rfqs = [...normalizedServer, ...localDrafts];
-        localStorage.setItem('rms_rfq_directory', JSON.stringify(window.AppStore.rfqs));
+        try {
+            localStorage.setItem('rms_rfq_directory', JSON.stringify(window.AppStore.rfqs));
+        } catch (storageErr) {
+            console.warn('[RFQ Workspace] LocalStorage quota exceeded or restricted; skipping cache write.', storageErr);
+        }
     } else {
         const storedRfqs = localStorage.getItem('rms_rfq_directory');
         if (storedRfqs) {
@@ -658,7 +662,11 @@ function initAppStore() {
             }
         } else {
             window.AppStore.rfqs = SEEDED_RFQS.map(normalizeRfqItem);
-            localStorage.setItem('rms_rfq_directory', JSON.stringify(window.AppStore.rfqs));
+            try {
+                localStorage.setItem('rms_rfq_directory', JSON.stringify(window.AppStore.rfqs));
+            } catch (storageErr) {
+                console.warn('[RFQ Workspace] LocalStorage quota exceeded or restricted; skipping cache write.', storageErr);
+            }
         }
     }
 
@@ -1470,10 +1478,9 @@ function toggleBuilderColumnVisibility(colId, isVisible) {
         const idxB = ALL_COLUMNS.findIndex(c => c.id === b);
         return idxA - idxB;
     });
-    localStorage.setItem('rms_rfq_builder_cols_v6', JSON.stringify(activeColumnIds));
-    localStorage.setItem('rms_rfq_builder_cols_v5', JSON.stringify(activeColumnIds));
-    localStorage.setItem('rms_rfq_builder_cols_v4', JSON.stringify(activeColumnIds));
-    localStorage.setItem('rms_rfq_columns', JSON.stringify(activeColumnIds));
+    try {
+        localStorage.setItem('rms_rfq_builder_cols_v6', JSON.stringify(activeColumnIds));
+    } catch (e) {}
     renderTableHeaderAndColumns();
     renderItemsTable();
 }
@@ -1484,10 +1491,9 @@ function toggleColumnVisibility(colId, isVisible) {
 
 function showAllBuilderColumns() {
     activeColumnIds = ALL_COLUMNS.map(c => c.id);
-    localStorage.setItem('rms_rfq_builder_cols_v6', JSON.stringify(activeColumnIds));
-    localStorage.setItem('rms_rfq_builder_cols_v5', JSON.stringify(activeColumnIds));
-    localStorage.setItem('rms_rfq_builder_cols_v4', JSON.stringify(activeColumnIds));
-    localStorage.setItem('rms_rfq_columns', JSON.stringify(activeColumnIds));
+    try {
+        localStorage.setItem('rms_rfq_builder_cols_v6', JSON.stringify(activeColumnIds));
+    } catch (e) {}
     renderTableHeaderAndColumns();
     renderItemsTable();
     showToast('✓ Showing all columns', 'info');
@@ -1509,10 +1515,9 @@ function resetColumnDefaults() {
 
 function showCompactColumns() {
     activeColumnIds = [...DRAFT_STAGE_DEFAULT_COLUMNS];
-    localStorage.setItem('rms_rfq_builder_cols_v6', JSON.stringify(activeColumnIds));
-    localStorage.setItem('rms_rfq_builder_cols_v5', JSON.stringify(activeColumnIds));
-    localStorage.setItem('rms_rfq_builder_cols_v4', JSON.stringify(activeColumnIds));
-    localStorage.setItem('rms_rfq_columns', JSON.stringify(activeColumnIds));
+    try {
+        localStorage.setItem('rms_rfq_builder_cols_v6', JSON.stringify(activeColumnIds));
+    } catch (e) {}
     renderTableHeaderAndColumns();
     renderItemsTable();
 }

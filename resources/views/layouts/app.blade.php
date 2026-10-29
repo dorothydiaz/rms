@@ -14,8 +14,8 @@
     <!-- Custom UoM Dropdown Component Stylesheet -->
     <link rel="stylesheet" href="{{ asset('assets/css/uom-dropdown.css') }}?v={{ file_exists(public_path('assets/css/uom-dropdown.css')) ? filemtime(public_path('assets/css/uom-dropdown.css')) : '1.0' }}">
 
-    <!-- Phosphor Icons -->
-    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- Phosphor Icons (Deferred for non-blocking render) -->
+    <script src="https://unpkg.com/@phosphor-icons/web" defer></script>
 
     <!-- Google Typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -79,12 +79,12 @@
     <!-- Default Landing Location Modal -->
     <x-default-landing-modal />
 
-    <!-- SweetAlert2 (Rich Interactive Alerts & Confirmation Modals) -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <!-- Chart.js for Analytics -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Client Interactive JS -->
-    <script src="{{ asset('assets/js/script.js') }}?v={{ time() }}"></script>
+    <!-- SweetAlert2 (Deferred for non-blocking render) -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
+    <!-- Chart.js for Analytics (Deferred) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+    <!-- Client Interactive JS (Cached with filemtime for instant 0ms 304 reloads) -->
+    <script src="{{ asset('assets/js/script.js') }}?v={{ file_exists(public_path('assets/js/script.js')) ? filemtime(public_path('assets/js/script.js')) : '1.0' }}"></script>
     <!-- Universal UOM Registry & Cross-Module Hydration Engine -->
     <script src="{{ asset('assets/js/uom-registry.js') }}?v={{ file_exists(public_path('assets/js/uom-registry.js')) ? filemtime(public_path('assets/js/uom-registry.js')) : '1.0' }}"></script>
     @stack('blade-data')

@@ -224,12 +224,20 @@ class AttendanceController extends Controller
         $branches = Branch::where('is_active', true)->get();
         $employees = Employee::activeWorkforce()->get();
 
-        // Totals
+        // Consolidated Totals (Single high-performance query aggregate)
+        $aggregateQuery = clone $query;
+        $aggregated = $aggregateQuery->selectRaw('
+            COALESCE(SUM(attendance_record_total_hours), 0) as hours,
+            COALESCE(SUM(attendance_record_late_minutes), 0) as late_min,
+            COALESCE(SUM(attendance_record_overtime_hours), 0) as ot_hours,
+            COALESCE(SUM(attendance_record_night_diff_hours), 0) as nd_hours
+        ')->first();
+
         $totals = [
-            'hours' => (clone $query)->sum('total_hours'),
-            'late_min' => (clone $query)->sum('late_minutes'),
-            'ot_hours' => (clone $query)->sum('overtime_hours'),
-            'nd_hours' => (clone $query)->sum('night_diff_hours'),
+            'hours' => (float) ($aggregated?->hours ?? 0),
+            'late_min' => (int) ($aggregated?->late_min ?? 0),
+            'ot_hours' => (float) ($aggregated?->ot_hours ?? 0),
+            'nd_hours' => (float) ($aggregated?->nd_hours ?? 0),
         ];
 
         return view('hr.attendance.dtr', compact('records', 'startDate', 'endDate', 'branches', 'employees', 'totals'));
@@ -366,6 +374,10 @@ class AttendanceController extends Controller
 
     public function dtrExportPdf(Request $request)
     {
+        // Enterprise Hardening: Temporarily bump memory limit and execution time for PDF rendering
+        @ini_set('memory_limit', '512M');
+        @set_time_limit(180);
+
         $user = Auth::user();
         $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->toDateString());
         $endDate = $request->input('end_date', Carbon::now()->toDateString());
@@ -682,11 +694,14 @@ class AttendanceController extends Controller
                         'runDate' => $runDate,
                         'runTime' => $runTime,
                     ])->setPaper('letter', 'portrait')
-                      ->setOption('isRemoteEnabled', true);
+                      ->setOption('isRemoteEnabled', true)
+                      ->setOption('isFontSubsettingEnabled', true);
 
                     $cleanEmpId = preg_replace('/[^A-Za-z0-9_\-]/', '_', $empData['employee_id']);
                     $cleanName = preg_replace('/[^A-Za-z0-9_\-]/', '_', $empData['employee_name']);
                     $zip->addFromString("DTR_{$cleanEmpId}_{$cleanName}_{$startDate}_{$endDate}.pdf", $singlePdf->output());
+                    unset($singlePdf);
+                    gc_collect_cycles();
                 }
                 $zip->close();
                 return response()->download($zipPath, "DTR_Individual_PDFs_{$startDate}_{$endDate}.zip")->deleteFileAfterSend(true);
@@ -699,7 +714,8 @@ class AttendanceController extends Controller
             'runDate' => $runDate,
             'runTime' => $runTime,
         ])->setPaper('letter', 'portrait')
-          ->setOption('isRemoteEnabled', true);
+          ->setOption('isRemoteEnabled', true)
+          ->setOption('isFontSubsettingEnabled', true);
 
         if (count($employeesData) === 1) {
             $cleanEmpId = preg_replace('/[^A-Za-z0-9_\-]/', '_', $employeesData[0]['employee_id']);

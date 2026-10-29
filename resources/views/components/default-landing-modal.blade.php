@@ -1,6 +1,8 @@
 @php
     $authUser = auth()->user();
-    $tree = $navCompaniesTree ?? \App\Models\Company::active()->with(['branches' => fn($q) => $q->active()->orderBy('branch_name')])->orderBy('company_legal_name')->get();
+    $tree = $navCompaniesTree ?? \Illuminate\Support\Facades\Cache::remember('global_nav_companies_tree', 3600, function () {
+        return \App\Models\Company::active()->with(['branches' => fn($q) => $q->active()->orderBy('branch_name')])->orderBy('company_legal_name')->get();
+    });
 @endphp
 
 <!-- Default Landing Location Modal -->

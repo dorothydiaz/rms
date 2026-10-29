@@ -6,28 +6,33 @@ use Illuminate\Database\Eloquent\Builder;
 
 class EnterpriseEntityBuilder extends Builder
 {
+    /**
+     * In-memory static cache for translated columns to avoid redundant string operations.
+     */
+    protected static array $columnTranslationCache = [];
+
     public function translateColumn($column)
     {
         if (!is_string($column) || $column === '*' || str_contains($column, '(') || str_contains($column, ' as ') || str_contains($column, ' AS ')) {
             return $column;
         }
 
-        if (!method_exists($this->model, 'getEntityPrefix')) {
-            return $column;
+        $table = $this->model->getTable();
+        if (isset(self::$columnTranslationCache[$table][$column])) {
+            return self::$columnTranslationCache[$table][$column];
         }
 
-        $table = $this->model->getTable();
-        if (!str_starts_with($table, 'hr_')) {
-            return $column;
+        if (!method_exists($this->model, 'getEntityPrefix') || !str_starts_with($table, 'hr_')) {
+            return self::$columnTranslationCache[$table][$column] = $column;
         }
 
         $prefix = $this->model->getEntityPrefix();
         if (empty($prefix)) {
-            return $column;
+            return self::$columnTranslationCache[$table][$column] = $column;
         }
 
         if ($column === 'id') {
-            return $this->model->getKeyName();
+            return self::$columnTranslationCache[$table][$column] = $this->model->getKeyName();
         }
 
         $aliases = method_exists($this->model, 'getColumnAliases') ? $this->model->getColumnAliases() : [];
@@ -36,27 +41,27 @@ class EnterpriseEntityBuilder extends Builder
             [$t, $c] = explode('.', $column, 2);
             if ($t === $table && $c !== '*') {
                 if ($c === 'id') {
-                    return $table . '.' . $this->model->getKeyName();
+                    return self::$columnTranslationCache[$table][$column] = $table . '.' . $this->model->getKeyName();
                 }
                 if (isset($aliases[$c])) {
-                    return $table . '.' . $aliases[$c];
+                    return self::$columnTranslationCache[$table][$column] = $table . '.' . $aliases[$c];
                 }
                 if (!str_starts_with($c, $prefix . '_')) {
-                    return $table . '.' . $prefix . '_' . $c;
+                    return self::$columnTranslationCache[$table][$column] = $table . '.' . $prefix . '_' . $c;
                 }
             }
-            return $column;
+            return self::$columnTranslationCache[$table][$column] = $column;
         }
 
         if (isset($aliases[$column])) {
-            return $aliases[$column];
+            return self::$columnTranslationCache[$table][$column] = $aliases[$column];
         }
 
         if (!str_starts_with($column, $prefix . '_')) {
-            return $prefix . '_' . $column;
+            return self::$columnTranslationCache[$table][$column] = $prefix . '_' . $column;
         }
 
-        return $column;
+        return self::$columnTranslationCache[$table][$column] = $column;
     }
 
     public function where($column, $operator = null, $value = null, $boolean = 'and')

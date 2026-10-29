@@ -885,72 +885,21 @@
     z-index: 10000 !important;
 }
 
-/* Two-Sided Top Banner Split (Left: RFQ, Notes, Facility, Vendor / Right: Vendor selection, Terms, Due) */
-.rfq-top-banner-split {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 18px;
-    padding: 14px 18px;
-    align-items: start;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.99), rgba(248, 250, 252, 0.95));
-    border-radius: var(--rfq-radius-lg);
-    position: relative;
-    z-index: 1050;
-    overflow: visible !important;
-}
-
-@media (max-width: 1080px) {
-    .rfq-top-banner-split {
-        grid-template-columns: 1fr;
-        gap: 16px;
-    }
-}
-
-.rfq-top-banner-side {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    min-width: 0;
-    position: relative;
-}
-
-.rfq-top-left-side {
-    border-right: 1px solid var(--rfq-border-subtle);
-    padding-right: 18px;
-    position: relative;
-    z-index: 1;
-}
-
-@media (max-width: 1080px) {
-    .rfq-top-left-side {
-        border-right: none;
-        padding-right: 0;
-        border-bottom: 1px solid var(--rfq-border-subtle);
-        padding-bottom: 14px;
-    }
-}
-
-.rfq-top-right-side {
-    position: relative;
-    z-index: 1055;
-    overflow: visible !important;
-}
-
-/* RFQ Reference & Status Header Row */
-.rfq-ref-row {
+/* ==========================================================================
+   1. TOP IDENTITY & STATUS RIBBON STRIP
+   ========================================================================== */
+.rfq-top-identity-row {
     display: flex;
     align-items: center;
-    justify-content: flex-start;
-    gap: 10px;
-    height: 58px;
-    min-height: 58px;
-    max-height: 58px;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 18px;
+    background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+    border-bottom: 1px solid var(--rfq-border-subtle);
+    border-top-left-radius: var(--rfq-radius-lg);
+    border-top-right-radius: var(--rfq-radius-lg);
+    flex-wrap: wrap;
     box-sizing: border-box;
-    padding: 0;
-    margin: 0;
-    white-space: nowrap !important;
-    flex-wrap: nowrap;
-    flex-shrink: 0;
 }
 
 .rfq-ref-identity-box {
@@ -959,6 +908,7 @@
     gap: 10px;
     white-space: nowrap !important;
     flex-shrink: 0;
+    flex-wrap: nowrap;
 }
 
 .rfq-ref-badge-icon {
@@ -990,6 +940,7 @@
     text-transform: uppercase;
     letter-spacing: 0.05em;
     white-space: nowrap !important;
+    line-height: 1.1;
 }
 
 .rfq-ref-value-row {
@@ -1007,8 +958,33 @@
     color: #9333ea;
     letter-spacing: -0.01em;
     white-space: nowrap !important;
+    word-break: keep-all !important;
+    overflow-wrap: normal !important;
+    hyphens: none !important;
     display: inline-block;
     flex-shrink: 0;
+    line-height: 1.2;
+}
+
+.rfq-copy-ref-btn {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    color: #64748b;
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.rfq-copy-ref-btn:hover {
+    background: #e2e8f0;
+    color: #334155;
+    border-color: #94a3b8;
 }
 
 .rfq-status-badge-wrap {
@@ -1017,6 +993,93 @@
     white-space: nowrap !important;
     flex-shrink: 0;
     margin-left: 4px;
+}
+
+.rfq-identity-meta-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Legacy fallback container row */
+.rfq-ref-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-sizing: border-box;
+    padding: 0;
+    margin: 0;
+    white-space: nowrap !important;
+    flex-wrap: nowrap;
+    flex-shrink: 0;
+}
+
+/* ==========================================================================
+   2. OPERATIONAL FORM PARAMETERS GRID (FLUID MULTI-COLUMN)
+   ========================================================================== */
+.rfq-top-banner-grid,
+.rfq-top-banner-split {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px 16px;
+    padding: 14px 18px 18px 18px;
+    align-items: start;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.99), rgba(248, 250, 252, 0.95));
+    border-bottom-left-radius: var(--rfq-radius-lg);
+    border-bottom-right-radius: var(--rfq-radius-lg);
+    position: relative;
+    z-index: 1050;
+    overflow: visible !important;
+    box-sizing: border-box;
+}
+
+/* Row 1 fields span 2 columns each on large screens (Vendor: 50%, Notes: 50%) */
+.rfq-top-banner-grid .rfq-vendor-col,
+.rfq-top-banner-split .rfq-vendor-col {
+    grid-column: span 2;
+    position: relative;
+    z-index: 1060 !important;
+    overflow: visible !important;
+}
+
+.rfq-top-banner-grid .rfq-notes-field,
+.rfq-top-banner-split .rfq-notes-field {
+    grid-column: span 2;
+    margin-bottom: 0 !important;
+}
+
+/* Row 2 fields (Destination, Terms, Created Date, Due Date) span 1 column each */
+.rfq-top-banner-grid .rfq-destination-col,
+.rfq-top-banner-grid .rfq-terms-col,
+.rfq-top-banner-grid .rfq-created-col,
+.rfq-top-banner-grid .rfq-due-col,
+.rfq-top-banner-split .rfq-destination-col,
+.rfq-top-banner-split .rfq-terms-col,
+.rfq-top-banner-split .rfq-created-col,
+.rfq-top-banner-split .rfq-due-col {
+    grid-column: span 1;
+}
+
+/* Backward-compatibility fallback styles for legacy internal classes */
+.rfq-top-banner-side {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+    position: relative;
+}
+
+.rfq-top-left-side,
+.rfq-top-right-side {
+    position: relative;
+}
+
+.rfq-ref-notes-grid,
+.rfq-top-right-fields-grid,
+.rfq-created-dest-grid {
+    display: grid;
+    gap: 10px;
+    align-items: start;
 }
 
 .rfq-vendor-empty-placeholder {
@@ -1038,49 +1101,84 @@
     flex-shrink: 0;
 }
 
-.rfq-ref-notes-grid {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    gap: 14px;
-    align-items: end;
+/* ==========================================================================
+   RESPONSIVE BREAKPOINTS (ALL SCREEN SIZES)
+   ========================================================================== */
+
+/* 1. Medium Screens (Laptops with Dual-Rail Sidebar, Tablets Landscape: 768px - 1180px) */
+@media (max-width: 1180px) {
+    .rfq-top-banner-grid,
+    .rfq-top-banner-split {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        padding: 12px 16px 16px 16px;
+    }
+
+    .rfq-top-banner-grid .rfq-vendor-col,
+    .rfq-top-banner-split .rfq-vendor-col {
+        grid-column: span 1;
+    }
+
+    .rfq-top-banner-grid .rfq-notes-field,
+    .rfq-top-banner-split .rfq-notes-field {
+        grid-column: span 1;
+    }
+
+    .rfq-top-banner-grid .rfq-destination-col,
+    .rfq-top-banner-grid .rfq-terms-col,
+    .rfq-top-banner-grid .rfq-created-col,
+    .rfq-top-banner-grid .rfq-due-col,
+    .rfq-top-banner-split .rfq-destination-col,
+    .rfq-top-banner-split .rfq-terms-col,
+    .rfq-top-banner-split .rfq-created-col,
+    .rfq-top-banner-split .rfq-due-col {
+        grid-column: span 1;
+    }
 }
 
-@media (max-width: 820px) {
-    .rfq-ref-notes-grid {
+/* 2. Compact Screens & Tablets Portrait (540px - 767px) */
+@media (max-width: 767px) {
+    .rfq-top-identity-row {
+        padding: 8px 12px;
+        gap: 8px;
+    }
+
+    .rfq-top-banner-grid,
+    .rfq-top-banner-split {
         grid-template-columns: 1fr;
         gap: 10px;
+        padding: 10px 12px 14px 12px;
+    }
+
+    .rfq-top-banner-grid .rfq-vendor-col,
+    .rfq-top-banner-grid .rfq-notes-field,
+    .rfq-top-banner-grid .rfq-destination-col,
+    .rfq-top-banner-grid .rfq-terms-col,
+    .rfq-top-banner-grid .rfq-created-col,
+    .rfq-top-banner-grid .rfq-due-col,
+    .rfq-top-banner-split .rfq-vendor-col,
+    .rfq-top-banner-split .rfq-notes-field,
+    .rfq-top-banner-split .rfq-destination-col,
+    .rfq-top-banner-split .rfq-terms-col,
+    .rfq-top-banner-split .rfq-created-col,
+    .rfq-top-banner-split .rfq-due-col {
+        grid-column: span 1;
     }
 }
 
-.rfq-notes-field {
-    margin-bottom: 0 !important;
-}
-
-.rfq-top-right-fields-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    align-items: start;
-    position: relative;
-    z-index: 1;
-}
-
-@media (max-width: 600px) {
-    .rfq-top-right-fields-grid {
-        grid-template-columns: 1fr;
+/* 3. Small Mobile Devices (< 540px) */
+@media (max-width: 539px) {
+    .rfq-ref-identity-box {
+        flex-wrap: wrap;
+        gap: 8px;
     }
-}
 
-.rfq-created-dest-grid {
-    display: grid;
-    grid-template-columns: 1fr 1.3fr;
-    gap: 10px;
-    align-items: start;
-}
+    .rfq-status-badge-wrap {
+        margin-left: 0;
+    }
 
-@media (max-width: 600px) {
-    .rfq-created-dest-grid {
-        grid-template-columns: 1fr;
+    .rfq-ref-id-display {
+        font-size: 1.05rem;
     }
 }
 

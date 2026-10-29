@@ -136,7 +136,9 @@ class InventoryController extends Controller
     public function apiGetStocksOverviewData(): JsonResponse
     {
         $products = InventoryItem::where('is_active', true)->orderBy('name')->get();
-        $categories = InventoryCategory::where('is_active', true)->orderBy('name')->get();
+        $categories = \Illuminate\Support\Facades\Cache::remember('active_inventory_categories', 3600, function () {
+            return InventoryCategory::where('is_active', true)->orderBy('name')->get();
+        });
         $ledger = StockLedger::orderByDesc('id')->take(100)->get();
 
         // Production movements aggregated per SKU
