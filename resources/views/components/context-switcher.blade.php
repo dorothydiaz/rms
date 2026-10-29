@@ -2,6 +2,11 @@
     $checkedCompanyIds = $checkedCompanyIds ?? [];
     $checkedBranchIds = $checkedBranchIds ?? [];
     $totalCheckedCount = count($checkedCompanyIds) + count($checkedBranchIds);
+    $isConsolidatedView = $isConsolidatedView ?? false;
+    $currentCompany = $currentCompany ?? null;
+    $currentBranch = $currentBranch ?? null;
+    $navCompaniesTree = $navCompaniesTree ?? collect();
+    $allowedCompanies = $allowedCompanies ?? collect();
 @endphp
 
 <div class="entity-context-switcher" id="entityContextSwitcher">

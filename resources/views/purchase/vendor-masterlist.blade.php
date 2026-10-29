@@ -13,6 +13,9 @@
             purchaseOrders: @json(route('purchase.purchase-orders')),
             rfq: @json(route('purchase.request-quotations')),
             productCategories: @json(route('inventory.product-categories')),
+        },
+        data: {
+            initialVendors: @json($initialVendors ?? []),
         }
     });
 </script>

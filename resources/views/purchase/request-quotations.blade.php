@@ -407,6 +407,9 @@
                     <label class="rfq-label" for="vendorSelect">
                         <span>Vendor Selection *</span>
                         <span class="rfq-label-badge">Masterlist Search</span>
+                        <a href="/purchase/vendor-masterlist" id="rfqVendorDirectLink" class="rfq-vendor-label-link" target="_blank" style="display: none;" title="Open Vendor Profile in Vendor Masterlist">
+                            <i class="ph ph-arrow-square-out"></i> Masterlist
+                        </a>
                     </label>
                     <!-- Hidden select for form bindings & backwards-compatibility -->
                     <select class="rfq-select" id="vendorSelect" style="display: none;" onchange="handleVendorSelection(this.value)">

@@ -12,6 +12,8 @@ use Tests\TestCase;
 
 class StockOutUsageModuleTest extends TestCase
 {
+    use RefreshDatabase;
+
     protected User $user;
     protected InventoryItem $testProduct;
     protected ProcurementVendor $testVendor;

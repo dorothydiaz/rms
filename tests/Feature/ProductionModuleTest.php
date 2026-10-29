@@ -10,10 +10,13 @@ use App\Models\Inventory\ProductionOrder;
 use App\Models\Inventory\ProductionOrderItem;
 use App\Models\Inventory\StockLedger;
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class ProductionModuleTest extends TestCase
 {
+    use RefreshDatabase;
+
     protected User $user;
     protected InventoryItem $finishedItem;
     protected InventoryItem $rawCoffee;

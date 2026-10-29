@@ -559,18 +559,30 @@ function initAppStore() {
     // 1. Vendors
     if (Array.isArray(serverVendors) && serverVendors.length > 0) {
         window.AppStore.vendors = serverVendors.map(v => ({
-            id: v.vendor_id || v.id,
+            id: v.vendor_code || v.vendor_id || v.id,
+            dbId: v.id,
             code: v.vendor_code || ('VND-' + v.id),
             name: v.legal_name || v.trade_name || 'Vendor',
+            legalName: v.legal_name || v.trade_name || 'Vendor',
             tradeName: v.trade_name || v.legal_name || 'Vendor',
-            tin: v.tax_identification_number || '--',
-            category: v.vendor_type || 'Supplies',
-            contactPerson: v.primary_contact_name || 'Procurement Contact',
+            tin: v.tax_id || v.tax_identification_number || '--',
+            category: v.category || v.vendor_type || 'Supplies',
+            contactPerson: v.contact_person || v.primary_contact_name || 'Procurement Contact',
             contactTitle: v.primary_contact_title || 'Account Representative',
-            email: v.email_address || '',
-            phone: v.phone_number || '',
-            address: v.business_address || '',
-            paymentTerms: v.payment_terms || 'Net 30 Days'
+            email: v.email || v.email_address || '',
+            phone: v.phone || v.phone_number || '',
+            address: v.address || v.business_address || '',
+            paymentTerms: v.payment_terms || 'Net 30 Days',
+            leadTimeDays: parseInt(v.lead_time_days || v.leadTimeDays || 3, 10),
+            contacts: [
+                {
+                    name: v.contact_person || v.primary_contact_name || 'Procurement Contact',
+                    title: v.primary_contact_title || 'Account Representative',
+                    email: v.email || v.email_address || '',
+                    phone: v.phone || v.phone_number || '',
+                    role: 'sales'
+                }
+            ]
         }));
     } else {
         const storedVendors = localStorage.getItem('rms_vendor_database_v6');
@@ -764,13 +776,17 @@ function renderVendorComboboxList() {
     itemsHtml += filtered.map(v => {
         const vId = v.id || v.code;
         const isSelected = vId === activeId;
+        const vCodeOrId = v.code || v.id;
+        const vProfileUrl = (typeof buildVendorProfileUrl === 'function')
+            ? buildVendorProfileUrl(v)
+            : `/purchase/vendor-masterlist?search=${encodeURIComponent(vCodeOrId)}`;
         return `
             <div class="rfq-vendor-combo-item ${isSelected ? 'is-selected' : ''}" onclick="selectVendorFromCombo('${vId}')">
-                <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
+                <div style="display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1;">
                     <div style="width: 22px; height: 22px; border-radius: 5px; background: linear-gradient(135deg, #ec4899, #a855f7); color: #fff; font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                         ${(v.tradeName || v.legalName || 'V').substring(0, 1).toUpperCase()}
                     </div>
-                    <div style="min-width: 0; line-height: 1.25;">
+                    <div style="min-width: 0; line-height: 1.25; flex: 1;">
                         <div style="font-weight: 600; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                             ${escapeHtml(v.tradeName || v.legalName)}
                         </div>
@@ -779,7 +795,12 @@ function renderVendorComboboxList() {
                         </div>
                     </div>
                 </div>
-                ${isSelected ? '<i class="ph ph-check" style="color: #9333ea; font-size: 14px; flex-shrink: 0;"></i>' : ''}
+                <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+                    ${isSelected ? '<i class="ph ph-check" style="color: #9333ea; font-size: 14px;"></i>' : ''}
+                    <a href="${vProfileUrl}" target="_blank" class="rfq-vendor-combo-ext-link" onclick="event.stopPropagation();" title="Open ${escapeHtml(v.tradeName || v.legalName)} Profile in Masterlist">
+                        <i class="ph ph-arrow-square-out"></i>
+                    </a>
+                </div>
             </div>
         `;
     }).join('');
@@ -791,15 +812,18 @@ function toggleVendorCombobox(event) {
     if (event) event.stopPropagation();
     const dropdown = document.getElementById('rfqVendorComboDropdown');
     const trigger = document.getElementById('rfqVendorComboTrigger');
+    const card = document.getElementById('rfqTopBannerCard');
     if (!dropdown || !trigger) return;
 
     const isActive = dropdown.classList.contains('is-active');
     if (isActive) {
         dropdown.classList.remove('is-active');
         trigger.classList.remove('is-active');
+        if (card) card.classList.remove('has-dropdown-open');
     } else {
         dropdown.classList.add('is-active');
         trigger.classList.add('is-active');
+        if (card) card.classList.add('has-dropdown-open');
         const input = document.getElementById('rfqVendorSearchInput');
         if (input) {
             input.value = '';
@@ -823,8 +847,10 @@ function selectVendorFromCombo(vendorId) {
     
     const dropdown = document.getElementById('rfqVendorComboDropdown');
     const trigger = document.getElementById('rfqVendorComboTrigger');
+    const card = document.getElementById('rfqTopBannerCard');
     if (dropdown) dropdown.classList.remove('is-active');
     if (trigger) trigger.classList.remove('is-active');
+    if (card) card.classList.remove('has-dropdown-open');
 
     handleVendorSelection(vendorId);
 }
@@ -834,25 +860,55 @@ document.addEventListener('pointerdown', function(e) {
     const combo = document.getElementById('rfqVendorCombobox');
     const dropdown = document.getElementById('rfqVendorComboDropdown');
     const trigger = document.getElementById('rfqVendorComboTrigger');
+    const card = document.getElementById('rfqTopBannerCard');
     if (combo && dropdown && trigger && dropdown.classList.contains('is-active')) {
         if (!combo.contains(e.target)) {
             dropdown.classList.remove('is-active');
             trigger.classList.remove('is-active');
+            if (card) card.classList.remove('has-dropdown-open');
         }
     }
 });
 
 function updateVendorComboTrigger(vendor) {
     const textEl = document.getElementById('rfqVendorComboTriggerText');
-    if (!textEl) return;
+    const directLink = document.getElementById('rfqVendorDirectLink');
+    const redirectBtn = document.getElementById('rfqVendorRedirectBtn');
 
     if (!vendor) {
-        textEl.textContent = '-- Choose Approved Vendor from Masterlist --';
-        textEl.style.color = '#64748b';
-        textEl.style.fontWeight = 'normal';
+        if (textEl) {
+            textEl.textContent = '-- Choose Approved Vendor from Masterlist --';
+            textEl.style.color = '#64748b';
+            textEl.style.fontWeight = 'normal';
+        }
+        if (directLink) {
+            directLink.style.display = 'none';
+            directLink.href = '/purchase/vendor-masterlist';
+        }
+        if (redirectBtn) {
+            redirectBtn.classList.remove('is-active');
+            redirectBtn.href = '/purchase/vendor-masterlist';
+            redirectBtn.title = 'Open Vendor Masterlist';
+        }
     } else {
-        textEl.innerHTML = `<strong>[${escapeHtml(vendor.code || vendor.id)}]</strong> ${escapeHtml(vendor.tradeName || vendor.legalName)} <span style="font-size: 0.72rem; color: #9333ea; margin-left: 6px;">(${escapeHtml(vendor.category || 'Vendor')})</span>`;
-        textEl.style.color = '#0f172a';
+        const vUrl = (typeof buildVendorProfileUrl === 'function') 
+            ? buildVendorProfileUrl(vendor) 
+            : `/purchase/vendor-masterlist?search=${encodeURIComponent(vendor.code || vendor.id || '')}`;
+        if (textEl) {
+            textEl.innerHTML = `<strong>[${escapeHtml(vendor.code || vendor.id || '')}]</strong> ${escapeHtml(vendor.tradeName || vendor.legalName)} <span style="font-size: 0.72rem; color: #9333ea; margin-left: 6px;">(${escapeHtml(vendor.category || 'Vendor')})</span>`;
+            textEl.style.color = '#0f172a';
+        }
+        if (directLink) {
+            directLink.style.display = 'inline-flex';
+            directLink.href = vUrl;
+            directLink.title = `View ${vendor.tradeName || vendor.legalName} in Vendor Masterlist`;
+            directLink.innerHTML = `<i class="ph ph-arrow-square-out"></i> ${escapeHtml(vendor.tradeName || vendor.legalName || 'Masterlist')}`;
+        }
+        if (redirectBtn) {
+            redirectBtn.classList.add('is-active');
+            redirectBtn.href = vUrl;
+            redirectBtn.title = `View ${vendor.tradeName || vendor.legalName} in Vendor Masterlist`;
+        }
     }
 }
 
@@ -878,6 +934,7 @@ function buildVendorProfileUrl(vendor) {
     if (vendor.code) params.set('vendorCode', vendor.code);
     const name = vendor.legalName || vendor.name || vendor.tradeName;
     if (name) params.set('vendorName', name);
+    params.set('search', vendor.code || vendor.id || '');
     return `/purchase/vendor-masterlist?${params.toString()}`;
 }
 
@@ -1592,6 +1649,7 @@ function updateLifecycleProgressBar(status) {
             `;
         }
     } else if (stage === 'Submitted') {
+        ensureSubmittedColumnsVisible();
         if (stepDraft) stepDraft.classList.add('is-completed');
         if (stepSubmitted) stepSubmitted.classList.add('is-active', 'stage-submitted');
         if (statusTitle) statusTitle.textContent = 'Status';
@@ -1877,23 +1935,13 @@ function submitActiveRfqToVendor() {
     let firstErrorEl = null;
     let errors = [];
 
-    // 2. Validate Target Vendor Selection
+    // Target Vendor Selection validation is moved to Stage 2 (moveToApprovalStage)
     const vendorVal = window.AppStore.activeRfq.vendorId || document.getElementById('vendorSelect')?.value;
-    if (!vendorVal) {
-        const vendorTrigger = document.getElementById('rfqVendorComboTrigger');
-        if (vendorTrigger) {
-            vendorTrigger.classList.add('rfq-field-error-glow');
-            if (!firstErrorEl) firstErrorEl = vendorTrigger;
-            vendorTrigger.addEventListener('click', () => vendorTrigger.classList.remove('rfq-field-error-glow'), { once: true });
-        }
-        errors.push('Vendor Partner');
+    if (vendorVal) {
+        hydrateVendorLookupFields();
     }
 
-    // 3. Vendor contact details are a read-only lookup from the Vendor Master (non-blocking)
-    const vendorLookup = vendorVal ? hydrateVendorLookupFields() : {};
-    const missingVendorEmail = vendorVal && !(vendorLookup.email && vendorLookup.email.includes('@'));
-
-    // 4. Validate Line Items Table
+    // 2. Validate Line Items Table (at least 1 valid line required)
     const items = window.AppStore.activeRfq.items || [];
     if (items.length === 0) {
         const btnMaster = document.querySelector('button[onclick*="openItemMasterQuickSelectModal"]');
@@ -1929,7 +1977,7 @@ function submitActiveRfqToVendor() {
         });
     }
 
-    // 5. If missing important fields, trigger red light focus and alert user
+    // 3. If missing line items, trigger red light focus and alert user
     if (errors.length > 0) {
         if (firstErrorEl) {
             if (typeof firstErrorEl.scrollIntoView === 'function') {
@@ -1941,10 +1989,7 @@ function submitActiveRfqToVendor() {
         return;
     }
 
-    // 6. Valid -> proceed to transition (warn if vendor master has no email on file)
-    if (missingVendorEmail) {
-        showToast('Note: selected vendor has no email on file in the Vendor Masterlist. You can enter a recipient when sending.', 'info');
-    }
+    // 4. Valid -> proceed to transition to Stage 2 (Submitted)
     transitionActiveRfqStage('Submitted');
 }
 
@@ -2043,6 +2088,11 @@ function ensureApprovalColumnsVisible() {
     applyStageDefaultColumns('Approval', false);
 }
 
+function ensureSubmittedColumnsVisible() {
+    // Required columns for Quotation Line Items & Specifications in Submitted stage
+    applyStageDefaultColumns('Submitted', false);
+}
+
 function ensureDraftColumnsVisible() {
     // Required columns for Quotation Line Items & Specifications in Draft stage
     applyStageDefaultColumns('Draft', false);
@@ -2053,18 +2103,22 @@ function moveToApprovalStage() {
     document.querySelectorAll('.rfq-field-error-glow').forEach(el => el.classList.remove('rfq-field-error-glow'));
 
     let firstErrorEl = null;
-    let errors = [];
 
-    // 2. Validate Target Vendor Selection
+    // 2. Validate Target Vendor Selection (Stage 2 Gatekeeper)
     const vendorVal = window.AppStore.activeRfq.vendorId || document.getElementById('vendorSelect')?.value;
     if (!vendorVal) {
         const vendorTrigger = document.getElementById('rfqVendorComboTrigger');
         if (vendorTrigger) {
             vendorTrigger.classList.add('rfq-field-error-glow');
-            if (!firstErrorEl) firstErrorEl = vendorTrigger;
+            firstErrorEl = vendorTrigger;
             vendorTrigger.addEventListener('click', () => vendorTrigger.classList.remove('rfq-field-error-glow'), { once: true });
         }
-        errors.push('Vendor Partner');
+        if (firstErrorEl) {
+            if (typeof firstErrorEl.scrollIntoView === 'function') firstErrorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            if (typeof firstErrorEl.focus === 'function') firstErrorEl.focus();
+        }
+        showToast('Vendor Validation: Please select an approved vendor before moving to Approval.', 'error');
+        return;
     }
 
     // 3. Validate Cutoff Dates
@@ -2072,94 +2126,102 @@ function moveToApprovalStage() {
     if (!dueDateInput || !dueDateInput.value.trim()) {
         if (dueDateInput) {
             dueDateInput.classList.add('rfq-field-error-glow');
-            if (!firstErrorEl) firstErrorEl = dueDateInput;
+            firstErrorEl = dueDateInput;
             dueDateInput.addEventListener('input', () => dueDateInput.classList.remove('rfq-field-error-glow'), { once: true });
         }
-        errors.push('Quotation Due Date');
+        if (firstErrorEl) {
+            if (typeof firstErrorEl.scrollIntoView === 'function') firstErrorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            if (typeof firstErrorEl.focus === 'function') firstErrorEl.focus();
+        }
+        showToast('Submission Validation: Please enter quotation due date before moving to Approval.', 'error');
+        return;
     }
 
     // Expected delivery is derived from the vendor's lead time (lookup, non-blocking)
-    if (vendorVal) hydrateVendorLookupFields();
+    hydrateVendorLookupFields();
 
-    // 4. Validate Line Items Table
+    // 4. Validate Line Items Table & Vendor Response Inputs
     const items = window.AppStore.activeRfq.items || [];
     if (items.length === 0) {
         const btnMaster = document.querySelector('button[onclick*="openItemMasterQuickSelectModal"]');
         const btnCustom = document.querySelector('button[onclick*="addNewBlankItemRow"]');
         if (btnMaster) btnMaster.classList.add('rfq-field-error-glow');
         if (btnCustom) btnCustom.classList.add('rfq-field-error-glow');
-        if (!firstErrorEl) firstErrorEl = btnMaster || btnCustom;
-        errors.push('Quotation Line Items (at least 1 required)');
-    } else {
-        items.forEach((item, idx) => {
-            const row = document.querySelector(`tr[data-row-idx="${idx}"]`);
-            const itemName = String(item.itemName || item.name || '').trim();
-            if (!itemName) {
-                const nameInput = row ? row.querySelector('input[placeholder*="description"]') : null;
-                if (nameInput) {
-                    nameInput.classList.add('rfq-field-error-glow');
-                    if (!firstErrorEl) firstErrorEl = nameInput;
-                    nameInput.addEventListener('input', () => nameInput.classList.remove('rfq-field-error-glow'), { once: true });
-                }
-                errors.push(`Row #${idx + 1} Description`);
-            }
-
-            const qty = parseFloat(item.requestedQuantity !== undefined ? item.requestedQuantity : item.quantity) || 0;
-            if (qty <= 0) {
-                const qtyInput = row ? row.querySelector('input[type="number"][step="0.01"]') : null;
-                if (qtyInput) {
-                    qtyInput.classList.add('rfq-field-error-glow');
-                    if (!firstErrorEl) firstErrorEl = qtyInput;
-                    qtyInput.addEventListener('input', () => qtyInput.classList.remove('rfq-field-error-glow'), { once: true });
-                }
-                errors.push(`Row #${idx + 1} Requested Qty`);
-            }
-
-            // Quote Validation: Check Vendor Quoted Unit Price
-            const qPriceInput = row ? row.querySelector('input[data-field="quotedUnitPrice"], input[onchange*="quotedUnitPrice"]') : null;
-            const qPriceVal = (qPriceInput && qPriceInput.value !== '')
-                ? parseFloat(qPriceInput.value)
-                : (item.quotedUnitPrice !== undefined && item.quotedUnitPrice !== null && item.quotedUnitPrice !== '' ? parseFloat(item.quotedUnitPrice) : 0);
-
-            if (!qPriceVal || qPriceVal <= 0) {
-                if (qPriceInput) {
-                    qPriceInput.classList.add('rfq-field-error-glow');
-                    if (!firstErrorEl) firstErrorEl = qPriceInput;
-                    qPriceInput.addEventListener('input', () => qPriceInput.classList.remove('rfq-field-error-glow'), { once: true });
-                }
-                errors.push(`Row #${idx + 1} Quoted Price`);
-            } else {
-                item.quotedUnitPrice = qPriceVal;
-            }
-
-            // Quote Validation: Check Vendor Quoted Quantity
-            const qQtyInput = row ? row.querySelector('input[data-field="quotedQuantity"], input[onchange*="quotedQuantity"]') : null;
-            const qQtyVal = (qQtyInput && qQtyInput.value !== '')
-                ? parseFloat(qQtyInput.value)
-                : (item.quotedQuantity !== undefined && item.quotedQuantity !== null && item.quotedQuantity !== '' ? parseFloat(item.quotedQuantity) : (item.requestedQuantity || 1));
-
-            if (!qQtyVal || qQtyVal <= 0) {
-                if (qQtyInput) {
-                    qQtyInput.classList.add('rfq-field-error-glow');
-                    if (!firstErrorEl) firstErrorEl = qQtyInput;
-                    qQtyInput.addEventListener('input', () => qQtyInput.classList.remove('rfq-field-error-glow'), { once: true });
-                }
-                errors.push(`Row #${idx + 1} Quoted Qty`);
-            } else {
-                item.quotedQuantity = qQtyVal;
-            }
-        });
+        showToast('Cannot move to Approval: No line items found in quotation.', 'error');
+        return;
     }
 
-    // 5. If missing important fields or quote response, trigger red light focus and alert user
-    if (errors.length > 0) {
+    let quoteErrors = [];
+    items.forEach((item, idx) => {
+        const row = document.querySelector(`tr[data-row-idx="${idx}"]`);
+        const itemName = String(item.itemName || item.name || '').trim();
+        if (!itemName) {
+            const nameInput = row ? row.querySelector('input[placeholder*="description"]') : null;
+            if (nameInput) {
+                nameInput.classList.add('rfq-field-error-glow');
+                if (!firstErrorEl) firstErrorEl = nameInput;
+                nameInput.addEventListener('input', () => nameInput.classList.remove('rfq-field-error-glow'), { once: true });
+            }
+            quoteErrors.push(`Row #${idx + 1} Description`);
+        }
+
+        const qty = parseFloat(item.requestedQuantity !== undefined ? item.requestedQuantity : item.quantity) || 0;
+        if (qty <= 0) {
+            const qtyInput = row ? row.querySelector('input[type="number"][step="0.01"]') : null;
+            if (qtyInput) {
+                qtyInput.classList.add('rfq-field-error-glow');
+                if (!firstErrorEl) firstErrorEl = qtyInput;
+                qtyInput.addEventListener('input', () => qtyInput.classList.remove('rfq-field-error-glow'), { once: true });
+            }
+            quoteErrors.push(`Row #${idx + 1} Requested Qty`);
+        }
+
+        // Quote Validation: Check Vendor Quoted Unit Price
+        const qPriceInput = row ? row.querySelector('input[data-field="quotedUnitPrice"], input[onchange*="quotedUnitPrice"]') : null;
+        const qPriceVal = (qPriceInput && qPriceInput.value !== '')
+            ? parseFloat(qPriceInput.value)
+            : (item.quotedUnitPrice !== undefined && item.quotedUnitPrice !== null && item.quotedUnitPrice !== '' ? parseFloat(item.quotedUnitPrice) : 0);
+
+        if (!qPriceVal || qPriceVal <= 0) {
+            if (qPriceInput) {
+                qPriceInput.classList.add('rfq-field-error-glow');
+                if (!firstErrorEl) firstErrorEl = qPriceInput;
+                qPriceInput.addEventListener('input', () => qPriceInput.classList.remove('rfq-field-error-glow'), { once: true });
+            }
+            quoteErrors.push(`Row #${idx + 1} Quoted Price`);
+        } else {
+            item.quotedUnitPrice = qPriceVal;
+        }
+
+        // Quote Validation: Check Vendor Quoted Quantity
+        const qQtyInput = row ? row.querySelector('input[data-field="quotedQuantity"], input[onchange*="quotedQuantity"]') : null;
+        const qQtyVal = (qQtyInput && qQtyInput.value !== '')
+            ? parseFloat(qQtyInput.value)
+            : (item.quotedQuantity !== undefined && item.quotedQuantity !== null && item.quotedQuantity !== '' ? parseFloat(item.quotedQuantity) : (item.requestedQuantity || 1));
+
+        if (!qQtyVal || qQtyVal <= 0) {
+            if (qQtyInput) {
+                qQtyInput.classList.add('rfq-field-error-glow');
+                if (!firstErrorEl) firstErrorEl = qQtyInput;
+                qQtyInput.addEventListener('input', () => qQtyInput.classList.remove('rfq-field-error-glow'), { once: true });
+            }
+            if (!quoteErrors.includes(`Row #${idx + 1} Quoted Price`)) {
+                quoteErrors.push(`Row #${idx + 1} Quoted Qty`);
+            }
+        } else {
+            item.quotedQuantity = qQtyVal;
+        }
+    });
+
+    // 5. If missing quote response, trigger red light focus and alert user with precise validation toast
+    if (quoteErrors.length > 0) {
         if (firstErrorEl) {
             if (typeof firstErrorEl.scrollIntoView === 'function') {
                 firstErrorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
             if (typeof firstErrorEl.focus === 'function') firstErrorEl.focus();
         }
-        showToast(`Quote Validation: Please enter vendor responses (${errors.slice(0, 3).join(', ')}${errors.length > 3 ? '...' : ''}) before moving to Approval.`, 'error');
+        showToast(`Quote Validation: Please enter vendor responses (${quoteErrors.join(', ')}) before moving to Approval.`, 'error');
         return;
     }
 
@@ -2268,6 +2330,8 @@ function renderItemsTable() {
         window.AppStore._lastSyncedStage = currentStage;
         if (currentStage === 'Approval' || currentStage === 'Approved' || currentStage === 'Refused') {
             ensureApprovalColumnsVisible();
+        } else if (currentStage === 'Submitted') {
+            ensureSubmittedColumnsVisible();
         } else if (currentStage === 'Draft') {
             ensureDraftColumnsVisible();
         }
@@ -2425,7 +2489,7 @@ function renderItemsTable() {
                     const isSub = (currentStage === 'Submitted');
                     rowsHtml += `
                         <td class="td-num">
-                            <input type="number" step="0.01" min="0" value="${qQtyVal}" placeholder="${calc.reqQty}" onchange="updateItemRowField(${idx}, 'quotedQuantity', this.value)" oninput="this.classList.remove('rfq-field-error-glow')" style="text-align: right; font-weight: 700; border-color: ${isSub ? '#2563eb' : '#d97706'}; background: ${isSub ? '#eff6ff' : '#fffbeb'}; width: 85px;">
+                            <input type="number" step="0.01" min="0" data-field="quotedQuantity" value="${qQtyVal}" placeholder="${calc.reqQty}" onchange="updateItemRowField(${idx}, 'quotedQuantity', this.value)" oninput="this.classList.remove('rfq-field-error-glow'); updateItemRowFieldLive(${idx}, 'quotedQuantity', this.value);" style="text-align: right; font-weight: 700; border-color: ${isSub ? '#2563eb' : '#d97706'}; background: ${isSub ? '#eff6ff' : '#fffbeb'}; width: 85px;">
                         </td>
                     `;
                 } else if (currentStage === 'Approved' || currentStage === 'Refused') {
@@ -2449,7 +2513,7 @@ function renderItemsTable() {
                     const isSub = (currentStage === 'Submitted');
                     rowsHtml += `
                         <td class="td-num">
-                            <input type="number" step="0.01" min="0" value="${qPriceVal}" placeholder="${calc.targetPrice > 0 ? calc.targetPrice : '0.00'}" onchange="updateItemRowField(${idx}, 'quotedUnitPrice', this.value)" oninput="this.classList.remove('rfq-field-error-glow')" style="text-align: right; font-weight: 700; border-color: ${isSub ? '#2563eb' : '#d97706'}; background: ${isSub ? '#eff6ff' : '#fffbeb'}; width: 105px;">
+                            <input type="number" step="0.01" min="0" data-field="quotedUnitPrice" value="${qPriceVal}" placeholder="${calc.targetPrice > 0 ? calc.targetPrice : '0.00'}" onchange="updateItemRowField(${idx}, 'quotedUnitPrice', this.value)" oninput="this.classList.remove('rfq-field-error-glow'); updateItemRowFieldLive(${idx}, 'quotedUnitPrice', this.value);" style="text-align: right; font-weight: 700; border-color: ${isSub ? '#2563eb' : '#d97706'}; background: ${isSub ? '#eff6ff' : '#fffbeb'}; width: 105px;">
                         </td>
                     `;
                 } else if (currentStage === 'Approved' || currentStage === 'Refused') {
@@ -2484,7 +2548,7 @@ function renderItemsTable() {
                     const isSub = (currentStage === 'Submitted');
                     rowsHtml += `
                         <td class="td-center">
-                            <input type="number" step="1" min="0" value="${item.leadTimeDays || 0}" onchange="updateItemRowField(${idx}, 'leadTimeDays', this.value)" style="width: 70px; text-align: center; border-color: ${isSub ? '#2563eb' : '#d97706'}; background: ${isSub ? '#eff6ff' : '#fffbeb'};">
+                            <input type="number" step="1" min="0" value="${item.leadTimeDays || 0}" onchange="updateItemRowField(${idx}, 'leadTimeDays', this.value)" oninput="updateItemRowFieldLive(${idx}, 'leadTimeDays', this.value);" style="width: 70px; text-align: center; border-color: ${isSub ? '#2563eb' : '#d97706'}; background: ${isSub ? '#eff6ff' : '#fffbeb'};">
                         </td>
                     `;
                 } else if (currentStage === 'Approved' || currentStage === 'Refused') {
@@ -2569,6 +2633,24 @@ function renderItemsTable() {
     tbody.innerHTML = rowsHtml;
     updateMetricsSummary();
     window.UomRegistry?.autoHydrate();
+    if (typeof updateLiveDocumentMockup === 'function') {
+        updateLiveDocumentMockup();
+    }
+}
+
+function updateItemRowFieldLive(index, field, value) {
+    const item = window.AppStore?.activeRfq?.items?.[index];
+    if (!item) return;
+    if (field === 'quotedQuantity') {
+        item.quotedQuantity = parseFloat(value) || 0;
+    } else if (field === 'quotedUnitPrice') {
+        item.quotedUnitPrice = parseFloat(value) || 0;
+    } else if (field === 'leadTimeDays') {
+        item.leadTimeDays = parseInt(value, 10) || 0;
+    }
+    if (typeof updateLiveDocumentMockup === 'function') {
+        updateLiveDocumentMockup();
+    }
 }
 
 function updateItemRowField(index, field, value) {
@@ -2607,6 +2689,9 @@ function updateItemRowField(index, field, value) {
 
     persistDraft();
     updateMetricsSummary();
+    if (typeof updateLiveDocumentMockup === 'function') {
+        updateLiveDocumentMockup();
+    }
 
     // Re-render table if variance fields or calculations are impacted
     if (['requestedQuantity', 'quantity', 'targetUnitPrice', 'targetPrice', 'quotedQuantity', 'quotedUnitPrice'].includes(field)) {
@@ -2908,7 +2993,56 @@ function updateLiveDocumentMockup() {
         if (!slice || slice.length === 0) {
             return `<tr><td colspan="7" style="text-align: center; padding: 22px 8px; color: #94a3b8; font-style: italic;">No line items added to tender yet</td></tr>`;
         }
-        return slice.map((it, idx) => `
+        return slice.map((it, idx) => {
+            const reqQty = parseFloat(it.quantity || it.requestedQuantity || 0);
+            const hasQuotedQty = (it.quotedQuantity !== undefined && it.quotedQuantity !== null && it.quotedQuantity !== '' && !isNaN(parseFloat(it.quotedQuantity)));
+            const quotedQty = hasQuotedQty ? parseFloat(it.quotedQuantity) : null;
+
+            const hasQuotedPrice = (it.quotedUnitPrice !== undefined && it.quotedUnitPrice !== null && it.quotedUnitPrice !== '' && !isNaN(parseFloat(it.quotedUnitPrice)) && parseFloat(it.quotedUnitPrice) > 0);
+            const quotedPrice = hasQuotedPrice ? parseFloat(it.quotedUnitPrice) : null;
+
+            const hasLeadTime = (it.leadTimeDays !== undefined && it.leadTimeDays !== null && it.leadTimeDays !== '' && !isNaN(parseInt(it.leadTimeDays, 10)) && parseInt(it.leadTimeDays, 10) > 0);
+            const leadTime = hasLeadTime ? parseInt(it.leadTimeDays, 10) : null;
+
+            // Quantity formatting
+            let qtyCellHtml = '';
+            if (hasQuotedQty && quotedQty > 0) {
+                if (Math.abs(quotedQty - reqQty) > 0.001 && reqQty > 0) {
+                    qtyCellHtml = `
+                        <div style="font-weight: 700; color: #0f172a; font-family: monospace; font-size: 0.67rem;">${quotedQty.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 2 })}</div>
+                        <div style="font-size: 0.58rem; color: #64748b;">(Req: ${reqQty.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 2 })})</div>
+                    `;
+                } else {
+                    qtyCellHtml = `<div style="font-weight: 700; color: #0f172a; font-family: monospace; font-size: 0.67rem;">${quotedQty.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 2 })}</div>`;
+                }
+            } else {
+                qtyCellHtml = `<div style="font-weight: 700; color: #475569; font-family: monospace; font-size: 0.67rem;">${reqQty.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 2 })}</div>`;
+            }
+
+            // Vendor Quoted ₱ formatting
+            let priceCellHtml = '';
+            if (hasQuotedPrice) {
+                const effQty = (hasQuotedQty && quotedQty > 0) ? quotedQty : reqQty;
+                const lineTotal = (it.quotedLineTotal !== undefined && it.quotedLineTotal !== null && parseFloat(it.quotedLineTotal) > 0)
+                    ? parseFloat(it.quotedLineTotal)
+                    : (quotedPrice * effQty);
+                priceCellHtml = `
+                    <div style="font-weight: 700; color: #047857; font-family: monospace; font-size: 0.67rem;">₱${formatMoney(quotedPrice)}</div>
+                    <div style="font-size: 0.58rem; color: #64748b; font-family: monospace;">Total: ₱${formatMoney(lineTotal)}</div>
+                `;
+            } else {
+                priceCellHtml = `<span class="mockup-slot-cell" style="font-size: 0.65rem; color: #94a3b8;">₱ ____________</span>`;
+            }
+
+            // Lead Time formatting
+            let leadCellHtml = '';
+            if (hasLeadTime) {
+                leadCellHtml = `<span style="font-weight: 700; color: #1e293b; font-size: 0.67rem;">${leadTime} Days</span>`;
+            } else {
+                leadCellHtml = `<span class="mockup-slot-cell" style="font-size: 0.65rem; color: #94a3b8;">____ Days</span>`;
+            }
+
+            return `
             <tr>
                 <td style="text-align: center; font-weight: 700; color: #64748b; font-size: 0.65rem;">${startOffset + idx + 1}</td>
                 <td style="font-family: monospace; font-weight: 700; color: #9333ea; font-size: 0.65rem;">${escapeHtml(it.sku || it.itemId || '--')}</td>
@@ -2917,12 +3051,24 @@ function updateLiveDocumentMockup() {
                     ${it.specs ? `<div style="font-size: 0.60rem; color: #64748b; margin-top: 1px;">${escapeHtml(it.specs)}</div>` : ''}
                 </td>
                 <td style="text-align: center; font-weight: 600; color: #475569; font-size: 0.65rem;">${escapeHtml(it.unit || it.purchaseUomCode || 'Unit')}</td>
-                <td style="text-align: right; font-weight: 700; font-family: monospace; font-size: 0.67rem;">${parseFloat(it.quantity || it.requestedQuantity || 0).toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 2 })}</td>
-                <td class="mockup-slot-cell" style="text-align: right; font-size: 0.65rem;">₱ ____________</td>
-                <td class="mockup-slot-cell" style="text-align: center; font-size: 0.65rem;">____ Days</td>
+                <td style="text-align: right;">${qtyCellHtml}</td>
+                <td style="text-align: right;">${priceCellHtml}</td>
+                <td style="text-align: center;">${leadCellHtml}</td>
             </tr>
-        `).join('');
+            `;
+        }).join('');
     };
+
+    // Calculate overall quoted statistics if any item has vendor quoted response
+    const hasAnyQuotedPrice = items.some(it => parseFloat(it.quotedUnitPrice) > 0);
+    const totalQuotedAmount = items.reduce((acc, it) => {
+        const p = parseFloat(it.quotedUnitPrice) || 0;
+        const q = parseFloat(it.quotedQuantity || it.quantity || it.requestedQuantity || 0);
+        const lt = (it.quotedLineTotal !== undefined && parseFloat(it.quotedLineTotal) > 0) ? parseFloat(it.quotedLineTotal) : (p * q);
+        return acc + lt;
+    }, 0);
+    const totalQuotedUnits = items.reduce((s, it) => s + (parseFloat(it.quotedQuantity || it.quantity || it.requestedQuantity) || 0), 0);
+    const maxLeadTime = items.reduce((max, it) => Math.max(max, parseInt(it.leadTimeDays, 10) || 0), 0);
 
     let fullHtml = '';
 
@@ -2981,6 +3127,15 @@ function updateLiveDocumentMockup() {
                             <tbody id="mockupItemsTbody">
                                 ${renderRowsHtml(p.items, p.startIdx)}
                             </tbody>
+                            ${(p.isLast && hasAnyQuotedPrice) ? `
+                            <tfoot>
+                                <tr style="background: #f8fafc; border-top: 1.5px solid #cbd5e1;">
+                                    <td colspan="4" style="text-align: right; font-weight: 700; font-size: 0.65rem; color: #475569;">Vendor Quoted Grand Total:</td>
+                                    <td style="text-align: right; font-weight: 700; font-size: 0.67rem; font-family: monospace; color: #0f172a;">${totalQuotedUnits.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 2 })}</td>
+                                    <td style="text-align: right; font-weight: 800; font-size: 0.70rem; color: #047857; font-family: monospace;">₱${formatMoney(totalQuotedAmount)}</td>
+                                    <td style="text-align: center; font-size: 0.65rem; font-weight: 700; color: #1e293b;">${maxLeadTime > 0 ? maxLeadTime + ' Days' : '—'}</td>
+                                </tr>
+                            </tfoot>` : ''}
                         </table>
                     </div>
 
@@ -3059,6 +3214,15 @@ function updateLiveDocumentMockup() {
                             <tbody>
                                 ${renderRowsHtml(p.items, p.startIdx)}
                             </tbody>
+                            ${(p.isLast && hasAnyQuotedPrice) ? `
+                            <tfoot>
+                                <tr style="background: #f8fafc; border-top: 1.5px solid #cbd5e1;">
+                                    <td colspan="4" style="text-align: right; font-weight: 700; font-size: 0.65rem; color: #475569;">Vendor Quoted Grand Total:</td>
+                                    <td style="text-align: right; font-weight: 700; font-size: 0.67rem; font-family: monospace; color: #0f172a;">${totalQuotedUnits.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 2 })}</td>
+                                    <td style="text-align: right; font-weight: 800; font-size: 0.70rem; color: #047857; font-family: monospace;">₱${formatMoney(totalQuotedAmount)}</td>
+                                    <td style="text-align: center; font-size: 0.65rem; font-weight: 700; color: #1e293b;">${maxLeadTime > 0 ? maxLeadTime + ' Days' : '—'}</td>
+                                </tr>
+                            </tfoot>` : ''}
                         </table>
                     </div>
 
@@ -6641,6 +6805,7 @@ Object.assign(window, {
   submitActiveRfqToVendor,
   applyStageDefaultColumns,
   ensureApprovalColumnsVisible,
+  ensureSubmittedColumnsVisible,
   ensureDraftColumnsVisible,
   moveToApprovalStage,
   handleApproverApprove,
@@ -6648,6 +6813,7 @@ Object.assign(window, {
   handleApproverRevision,
   renderItemsTable,
   updateItemRowField,
+  updateItemRowFieldLive,
   addNewBlankItemRow,
   cloneItemRow,
   deleteItemRow,

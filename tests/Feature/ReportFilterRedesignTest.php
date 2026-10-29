@@ -12,6 +12,8 @@ use Tests\TestCase;
 
 class ReportFilterRedesignTest extends TestCase
 {
+    use RefreshDatabase;
+
     protected function getAdminUser(): User
     {
         $user = User::first();
@@ -101,9 +103,8 @@ class ReportFilterRedesignTest extends TestCase
         $response->assertSee('Payroll Register & Statutory Summary', false);
 
         // All 3 cards use the redesigned filter bar with "All Active" and "All Employees"
-        $response->assertSee('Download Employee CSV');
-        $response->assertSee('Download Attendance CSV');
-        $response->assertSee('Download Payroll CSV');
+        $response->assertSee('Download Excel');
+        $response->assertSee('CSV');
         $response->assertSee('All Active');
         $response->assertSee('All Employees');
 

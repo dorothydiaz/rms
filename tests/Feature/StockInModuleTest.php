@@ -10,10 +10,13 @@ use App\Models\Purchase\ProcurementVendor;
 use App\Models\Purchase\PurchaseOrder;
 use App\Models\Purchase\PurchaseOrderItem;
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class StockInModuleTest extends TestCase
 {
+    use RefreshDatabase;
+
     protected User $user;
     protected InventoryItem $testProduct;
     protected ProcurementVendor $testVendor;

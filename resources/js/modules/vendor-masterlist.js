@@ -1581,12 +1581,60 @@ function saveToLocalStorage() {
 function loadFromLocalStorage() {
     try {
         loadCustomCategories();
+
+        const serverVendors = window.VendorMasterlistConfig?.data?.initialVendors;
+        let dbVendorsMapped = [];
+        if (Array.isArray(serverVendors) && serverVendors.length > 0) {
+            dbVendorsMapped = serverVendors.map(v => ({
+                id: v.vendor_code || ('VND-' + v.id),
+                code: v.vendor_code || ('VND-' + v.id),
+                dbId: v.id,
+                legalName: v.legal_name || v.trade_name || 'Vendor',
+                tradeName: v.trade_name || v.legal_name || 'Vendor',
+                tin: v.tax_id || v.tax_identification_number || '--',
+                category: v.category || v.vendor_type || 'Supplies',
+                status: v.is_active ? 'Active' : 'Inactive',
+                rating: 4.8,
+                paymentTerms: v.payment_terms || 'Net 30 Days',
+                leadTimeDays: parseInt(v.lead_time_days || 3, 10),
+                address: v.address || '',
+                billingAddress: v.address || '',
+                dispatchAddress: v.address || '',
+                contacts: [
+                    {
+                        name: v.contact_person || 'Procurement Contact',
+                        title: 'Account Representative',
+                        email: v.email || '',
+                        phone: v.phone || '',
+                        role: 'sales'
+                    }
+                ],
+                catalog: []
+            }));
+        }
+
         const cached = localStorage.getItem('rms_vendor_database_v6');
         if (cached) {
             const parsed = JSON.parse(cached);
             if (Array.isArray(parsed) && parsed.length > 0) {
                 parsed.forEach(v => sanitizeVendor(v));
                 VENDOR_DATABASE = parsed;
+                // Merge in any database vendors that aren't already present in VENDOR_DATABASE
+                if (dbVendorsMapped.length > 0) {
+                    dbVendorsMapped.forEach(dbV => {
+                        const existingIdx = VENDOR_DATABASE.findIndex(x => 
+                            String(x.id).toLowerCase() === String(dbV.id).toLowerCase() ||
+                            String(x.code).toLowerCase() === String(dbV.code).toLowerCase() ||
+                            (dbV.dbId && String(x.id).toLowerCase() === String(dbV.dbId).toLowerCase())
+                        );
+                        if (existingIdx !== -1) {
+                            VENDOR_DATABASE[existingIdx] = { ...VENDOR_DATABASE[existingIdx], ...dbV };
+                        } else {
+                            VENDOR_DATABASE.push(dbV);
+                        }
+                    });
+                    saveToLocalStorage();
+                }
                 return;
             }
         }
@@ -1597,11 +1645,28 @@ function loadFromLocalStorage() {
             if (Array.isArray(parsed) && parsed.length > 0) {
                 parsed.forEach(v => sanitizeVendor(v));
                 VENDOR_DATABASE = parsed;
+                if (dbVendorsMapped.length > 0) {
+                    dbVendorsMapped.forEach(dbV => {
+                        const existingIdx = VENDOR_DATABASE.findIndex(x => 
+                            String(x.id).toLowerCase() === String(dbV.id).toLowerCase() ||
+                            String(x.code).toLowerCase() === String(dbV.code).toLowerCase()
+                        );
+                        if (existingIdx !== -1) {
+                            VENDOR_DATABASE[existingIdx] = { ...VENDOR_DATABASE[existingIdx], ...dbV };
+                        } else {
+                            VENDOR_DATABASE.push(dbV);
+                        }
+                    });
+                }
                 saveToLocalStorage();
                 return;
             }
         }
+        if (dbVendorsMapped.length > 0) {
+            VENDOR_DATABASE = dbVendorsMapped;
+        }
         VENDOR_DATABASE.forEach(v => sanitizeVendor(v));
+        saveToLocalStorage();
     } catch (e) {
         console.warn('LocalStorage parse error:', e);
     }
@@ -1885,16 +1950,16 @@ function handleCatalogSearch(query) {
  */
 function openVendorFromUrlParams() {
     const params = new URLSearchParams(window.location.search);
-    const keys = [params.get('vendorId'), params.get('vendorCode'), params.get('vendorName')]
+    const keys = [params.get('vendorId'), params.get('vendorCode'), params.get('vendorName'), params.get('search'), params.get('q')]
         .filter(Boolean)
         .map(k => String(k).trim().toLowerCase());
     if (keys.length === 0) return;
 
     const match = VENDOR_DATABASE.find(v => {
-        const candidates = [v.id, v.code, v.legalName, v.tradeName]
+        const candidates = [v.id, v.code, v.legalName, v.tradeName, (v.dbId !== undefined ? String(v.dbId) : null)]
             .filter(Boolean)
             .map(x => String(x).trim().toLowerCase());
-        return candidates.some(c => keys.includes(c));
+        return candidates.some(c => keys.includes(c) || keys.some(k => c === k || c.includes(k) || k.includes(c)));
     });
 
     if (match) {

@@ -6,10 +6,13 @@ use App\Models\Inventory\InventoryCategory;
 use App\Models\Inventory\InventoryItem;
 use App\Models\Inventory\StockLedger;
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class StocksOverviewModuleTest extends TestCase
 {
+    use RefreshDatabase;
+
     protected User $user;
     protected InventoryItem $product;
 

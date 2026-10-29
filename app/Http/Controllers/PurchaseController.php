@@ -638,7 +638,11 @@ class PurchaseController extends Controller
 
     public function vendorMasterlist(): View
     {
-        return view('purchase.vendor-masterlist');
+        $vendors = ProcurementVendor::where('is_active', true)->orderBy('legal_name')->get();
+
+        return view('purchase.vendor-masterlist', [
+            'initialVendors' => $vendors,
+        ]);
     }
 
     public function vendorBills(): View

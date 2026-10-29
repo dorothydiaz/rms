@@ -8,10 +8,13 @@ use App\Models\Inventory\StockLedger;
 use App\Models\Inventory\WasteRecord;
 use App\Models\Inventory\WasteRecordItem;
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class WasteExpiryModuleTest extends TestCase
 {
+    use RefreshDatabase;
+
     protected User $user;
     protected InventoryItem $testItem;
 
