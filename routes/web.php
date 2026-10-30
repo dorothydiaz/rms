@@ -415,6 +415,10 @@ Route::middleware('auth')->group(function () {
         // Purchase JSON API Bridges
         Route::get('/api/orders', [PurchaseController::class, 'apiGetPurchaseOrders'])->name('api.orders');
         Route::post('/api/orders', [PurchaseController::class, 'apiCreatePurchaseOrder'])->name('api.orders.create');
+        Route::post('/api/orders/save-draft', [PurchaseController::class, 'apiSavePoDraft'])->name('api.orders.save-draft');
+        Route::post('/api/orders/transition-status', [PurchaseController::class, 'apiTransitionPoStatus'])->name('api.orders.transition-status');
+        Route::post('/api/orders/batch-delete', [PurchaseController::class, 'apiBatchDeletePos'])->name('api.orders.batch-delete');
+        Route::post('/api/orders/batch-archive', [PurchaseController::class, 'apiBatchArchivePos'])->name('api.orders.batch-archive');
         Route::get('/api/orders/{poNumber}/items', [PurchaseController::class, 'apiGetPoItems'])->name('api.orders.items');
 
         // RFQ Lifecycle API Bridges

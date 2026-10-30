@@ -11,6 +11,7 @@
     window.RfqConfig = Object.freeze({
         routes: {
             transitionStatus: @json(route('purchase.api.rfq.transition-status')),
+            convertToPo: @json(route('purchase.api.rfq.convert-po')),
             sendEmail: @json(route('purchase.request-quotations.send-email')),
             purchaseOrders: @json(route('purchase.purchase-orders')),
         },
@@ -21,6 +22,7 @@
             initialRfqs: @json($initialRfqs ?? []),
             initialVendors: @json($initialVendors ?? []),
             initialItems: @json($initialItems ?? []),
+            linkedPoMap: @json($linkedPoMap ?? []),
         }
     });
 </script>
@@ -86,7 +88,7 @@
     <div class="rfq-tab-pane active" id="pane-tab-list">
         <!-- KPI Metrics Cluster -->
         <div class="rfq-kpi-grid">
-            <div class="rfq-kpi-card" onclick="filterRfqByStatus('all')">
+            <div class="rfq-kpi-card is-active-filter" data-kpi-filter="all" onclick="filterRfqByStatus('all')">
                 <div class="rfq-kpi-header">
                     <span class="rfq-kpi-label">Total RFQs</span>
                     <div class="rfq-kpi-icon"><i class="ph ph-files"></i></div>
@@ -94,7 +96,7 @@
                 <div class="rfq-kpi-val" id="kpiTotalRfqs">0</div>
                 <div class="rfq-kpi-sub">All active procurement tenders</div>
             </div>
-            <div class="rfq-kpi-card" onclick="filterRfqByStatus('Draft')">
+            <div class="rfq-kpi-card" data-kpi-filter="Draft" onclick="filterRfqByStatus('Draft')">
                 <div class="rfq-kpi-header">
                     <span class="rfq-kpi-label">Draft Sessions</span>
                     <div class="rfq-kpi-icon draft"><i class="ph ph-pencil-simple"></i></div>
@@ -102,7 +104,7 @@
                 <div class="rfq-kpi-val" id="kpiDraftRfqs">0</div>
                 <div class="rfq-kpi-sub">Unsent in-progress tenders</div>
             </div>
-            <div class="rfq-kpi-card" onclick="filterRfqByStatus('Submitted')">
+            <div class="rfq-kpi-card" data-kpi-filter="Submitted" onclick="filterRfqByStatus('Submitted')">
                 <div class="rfq-kpi-header">
                     <span class="rfq-kpi-label">Submitted / Sent</span>
                     <div class="rfq-kpi-icon awaiting"><i class="ph ph-paper-plane-tilt"></i></div>
@@ -110,7 +112,7 @@
                 <div class="rfq-kpi-val" id="kpiAwaitingRfqs">0</div>
                 <div class="rfq-kpi-sub">Dispatched to vendor contacts</div>
             </div>
-            <div class="rfq-kpi-card" onclick="filterRfqByStatus('Approval')">
+            <div class="rfq-kpi-card" data-kpi-filter="Approval" onclick="filterRfqByStatus('Approval')">
                 <div class="rfq-kpi-header">
                     <span class="rfq-kpi-label">In Review / Quote Rcvd</span>
                     <div class="rfq-kpi-icon in-review" style="color: #2563eb; background: rgba(37, 99, 235, 0.12);"><i class="ph ph-scales"></i></div>
@@ -118,7 +120,7 @@
                 <div class="rfq-kpi-val" id="kpiApprovalRfqs">0</div>
                 <div class="rfq-kpi-sub">Validating quotation inputs</div>
             </div>
-            <div class="rfq-kpi-card" onclick="filterRfqByStatus('Approved')">
+            <div class="rfq-kpi-card" data-kpi-filter="Approved" onclick="filterRfqByStatus('Approved')">
                 <div class="rfq-kpi-header">
                     <span class="rfq-kpi-label">Approved / Awarded</span>
                     <div class="rfq-kpi-icon awarded"><i class="ph ph-seal-check"></i></div>

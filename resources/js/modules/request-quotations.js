@@ -369,13 +369,76 @@ const SEEDED_RFQS = [
     }
 ];
 
+function getLinkedPoNumberForRfq(rfq) {
+    if (!rfq) return '';
+    const rfqNum = typeof rfq === 'string' ? rfq : (rfq.rfqNumber || rfq.rfq_number || '');
+    if (!rfqNum) return '';
+
+    const serverMap = window.RfqConfig?.data?.linkedPoMap || {};
+    if (serverMap && serverMap[rfqNum]) {
+        return serverMap[rfqNum];
+    }
+
+    if (typeof rfq === 'object') {
+        const directPo = rfq.purchase_order?.po_number || rfq.purchaseOrder?.po_number || '';
+        if (directPo) return directPo;
+    }
+
+    try {
+        const deletedPos = new Set(JSON.parse(localStorage.getItem('rms_deleted_po_numbers') || '[]'));
+        const localPos = JSON.parse(localStorage.getItem('rms_purchase_orders') || '[]');
+        if (Array.isArray(localPos)) {
+            const match = localPos.find(p =>
+                (p.rfqReference === rfqNum || p.rfq_reference === rfqNum) &&
+                p.status !== 'Cancelled' && p.status !== 'Archived' &&
+                !deletedPos.has(p.poNumber || p.po_number)
+            );
+            if (match && (match.poNumber || match.po_number)) {
+                return match.poNumber || match.po_number;
+            }
+        }
+    } catch (e) {}
+
+    if (typeof rfq === 'object' && rfq.poReference) {
+        try {
+            const deletedPos = new Set(JSON.parse(localStorage.getItem('rms_deleted_po_numbers') || '[]'));
+            if (!deletedPos.has(rfq.poReference)) return rfq.poReference;
+        } catch (e) {
+            return rfq.poReference;
+        }
+    }
+
+    return '';
+}
+
+function openLinkedPoFromRfq(poNumber) {
+    if (!poNumber) return;
+    const poBaseRoute = window.RfqConfig?.routes?.purchaseOrders || '/purchase/purchase-orders';
+    window.location.href = `${poBaseRoute}?po=${encodeURIComponent(poNumber)}`;
+}
+
+async function quickCreatePoFromDirectory(rfqNumber) {
+    const rfq = (window.AppStore?.rfqs || []).find(r => r.rfqNumber === rfqNumber);
+    if (!rfq) return;
+    const existingPo = getLinkedPoNumberForRfq(rfq);
+    if (existingPo) {
+        openLinkedPoFromRfq(existingPo);
+        return;
+    }
+    window.AppStore.activeRfq = JSON.parse(JSON.stringify(rfq));
+    await generatePoForApprovedRfq();
+}
+
 function normalizeRfqItem(r) {
     if (!r) return null;
     const estTotal = (r.items || []).reduce((acc, it) => acc + ((parseFloat(it.requestedQuantity || it.quantity) || 0) * (parseFloat(it.targetUnitPrice || it.targetPrice) || 0)), 0);
     const quotedTotal = (r.items || []).reduce((acc, it) => acc + (parseFloat(it.quotedLineTotal) || ((parseFloat(it.requestedQuantity || it.quantity) || 0) * (parseFloat(it.quotedUnitPrice || it.targetPrice) || 0))), 0);
+    const rfqNumberVal = r.rfqNumber || r.rfq_number || 'RFQ-2026-0001';
+    const linkedPo = getLinkedPoNumberForRfq({ ...r, rfqNumber: rfqNumberVal });
 
     return {
-        rfqNumber: r.rfqNumber || r.rfq_number || 'RFQ-2026-0001',
+        rfqNumber: rfqNumberVal,
+        poReference: linkedPo || r.poReference || r.po_reference || '',
         rfqDate: r.rfqDate || r.rfq_date || r.dateIssued || '2026-10-01',
         companyId: r.companyId || r.company_id || 'CMP-001',
         companyName: r.companyName || 'RMS Holdings Corp.',
@@ -500,6 +563,13 @@ document.addEventListener('DOMContentLoaded', () => {
     renderRfqDirectory();
     updateLifecycleProgressBar(window.AppStore.activeRfq?.rfqStatus || window.AppStore.activeRfq?.status || 'Draft');
     checkDraftRecovery();
+
+    // Handle ?rfq=RFQ-YYYY-XXXX deep link from Purchase Orders module
+    const urlParams = new URLSearchParams(window.location.search);
+    const deepRfq = (urlParams.get('rfq') || '').trim();
+    if (deepRfq && typeof editRfqFromDirectory === 'function') {
+        setTimeout(() => editRfqFromDirectory(deepRfq), 60);
+    }
 
     // Hotkey listener (F2: Item Master, F8: Preview, F10: Send)
     document.addEventListener('keydown', (e) => {
@@ -1720,24 +1790,46 @@ function updateLifecycleProgressBar(status) {
         }
     } else if (stage === 'Approved') {
         ensureApprovalColumnsVisible();
+        const linkedPoNum = getLinkedPoNumberForRfq(window.AppStore?.activeRfq);
+        if (window.AppStore?.activeRfq && linkedPoNum) {
+            window.AppStore.activeRfq.poReference = linkedPoNum;
+        }
         if (stepDraft) stepDraft.classList.add('is-completed');
         if (stepSubmitted) stepSubmitted.classList.add('is-completed');
         if (stepApproval) stepApproval.classList.add('is-completed');
         if (stepStatus) stepStatus.classList.add('is-active', 'stage-approved');
-        if (statusTitle) statusTitle.textContent = 'Approved';
-        if (statusDesc) statusDesc.textContent = 'Ready for PO';
+        if (statusTitle) statusTitle.textContent = linkedPoNum ? 'PO Created' : 'Approved';
+        if (statusDesc) statusDesc.textContent = linkedPoNum ? linkedPoNum : 'Ready for PO';
         if (bannerIcon) bannerIcon.innerHTML = '<i class="ph ph-seal-check"></i>';
-        if (bannerTitle) bannerTitle.innerHTML = 'Stage 4: Status (Approved)';
-        if (bannerSub) bannerSub.innerHTML = 'For winning quote resolution and order creation, with automatic locking upon delivery fulfillment.';
+        if (bannerTitle) bannerTitle.innerHTML = linkedPoNum ? `Stage 4: Status (Approved • ${escapeHtml(linkedPoNum)})` : 'Stage 4: Status (Approved)';
+        if (bannerSub) {
+            bannerSub.innerHTML = linkedPoNum
+                ? `Official Purchase Order <strong>${escapeHtml(linkedPoNum)}</strong> has already been created for this RFQ. Use the smart button to open it.`
+                : 'For winning quote resolution and order creation, with automatic locking upon delivery fulfillment.';
+        }
         if (bannerActions) {
-            bannerActions.innerHTML = `<span class="rfq-stage-indicator-pill approved" style="color: #059669;"><i class="ph ph-check-circle-fill"></i> Tender Awarded</span>`;
+            bannerActions.innerHTML = linkedPoNum
+                ? `<button type="button" class="rfq-stage-action-btn rfq-btn-stage-success" onclick="openLinkedPoFromRfq('${escapeHtml(linkedPoNum)}')" title="Redirect to Created Purchase Order ${escapeHtml(linkedPoNum)}" style="padding: 4px 10px; font-size: 11px;">
+                       <i class="ph ph-receipt"></i>
+                       <span>PO: ${escapeHtml(linkedPoNum)}</span>
+                       <i class="ph ph-arrow-square-out"></i>
+                   </button>`
+                : `<span class="rfq-stage-indicator-pill approved" style="color: #059669;"><i class="ph ph-check-circle-fill"></i> Tender Awarded</span>`;
         }
         if (stageActionsGroup) {
             stageActionsGroup.innerHTML = `
-                <button type="button" class="rfq-stage-action-btn rfq-btn-stage-success" onclick="generatePoForApprovedRfq()" title="Generate Official Purchase Order">
-                    <i class="ph ph-shopping-cart"></i>
-                    <span>Create PO</span>
-                </button>
+                ${linkedPoNum ? `
+                    <button type="button" class="rfq-stage-action-btn rfq-btn-stage-success" onclick="openLinkedPoFromRfq('${escapeHtml(linkedPoNum)}')" title="Redirect to Created Purchase Order ${escapeHtml(linkedPoNum)}">
+                        <i class="ph ph-receipt"></i>
+                        <span>View PO (${escapeHtml(linkedPoNum)})</span>
+                        <i class="ph ph-arrow-square-out"></i>
+                    </button>
+                ` : `
+                    <button type="button" class="rfq-stage-action-btn rfq-btn-stage-success" onclick="generatePoForApprovedRfq()" title="Generate Official Purchase Order">
+                        <i class="ph ph-shopping-cart"></i>
+                        <span>Create PO</span>
+                    </button>
+                `}
                 <button type="button" class="rfq-stage-action-btn rfq-btn-stage-outline" onclick="withdrawApprovedRfq()" title="Withdraw RFQ">
                     <i class="ph ph-arrow-u-up-left"></i>
                     <span>Withdraw</span>
@@ -4096,7 +4188,7 @@ const DIRECTORY_COLUMNS = [
         default: false,
         lockVisible: false,
         defaultWidth: '95px',
-        align: 'center',
+        align: 'left',
         topField: 'rfqCurrencyCode',
         bottomField: '',
         topPurpose: 'ISO 4217 bidding currency (e.g., PHP, USD)',
@@ -4105,10 +4197,10 @@ const DIRECTORY_COLUMNS = [
     {
         id: 'payment_terms',
         label: 'Payment Terms',
-        subLabel: 'Requested Terms',
+        subLabel: 'Terms & Incoterms',
         default: true,
         lockVisible: false,
-        defaultWidth: '135px',
+        defaultWidth: '145px',
         align: 'left',
         topField: 'rfqPaymentTermsCode',
         bottomField: '',
@@ -4122,7 +4214,7 @@ const DIRECTORY_COLUMNS = [
         default: false,
         lockVisible: false,
         defaultWidth: '105px',
-        align: 'center',
+        align: 'left',
         topField: 'rfqIncotermsCode',
         bottomField: '',
         topPurpose: 'Shipping trade terms (e.g., FOB, DDP, CIF) from vendor_master',
@@ -4131,10 +4223,10 @@ const DIRECTORY_COLUMNS = [
     {
         id: 'total_amount',
         label: 'Total Amount',
-        subLabel: 'Quoted / Target',
-        default: false,
+        subLabel: 'Quoted / Target (₱)',
+        default: true,
         lockVisible: false,
-        defaultWidth: '160px',
+        defaultWidth: '150px',
         align: 'right',
         topField: 'rfqQuotedTotalAmount',
         bottomField: 'rfqEstimatedTotalAmount',
@@ -4144,11 +4236,11 @@ const DIRECTORY_COLUMNS = [
     {
         id: 'rfq_status',
         label: 'RFQ Status',
-        subLabel: 'Lifecycle State',
+        subLabel: 'Stage & Linked PO',
         default: true,
         lockVisible: false,
-        defaultWidth: '145px',
-        align: 'center',
+        defaultWidth: '155px',
+        align: 'left',
         topField: 'rfqStatus',
         bottomField: '',
         topPurpose: 'Lifecycle (DRAFT, SENT, QUOTED, AWARDED, REJECTED, CANCELLED)',
@@ -4156,12 +4248,12 @@ const DIRECTORY_COLUMNS = [
     },
     {
         id: 'rfq_approval_status',
-        label: 'Issue Approval Status',
-        subLabel: 'Issue State',
+        label: 'Issue Approval',
+        subLabel: 'Sign-off State',
         default: true,
         lockVisible: false,
-        defaultWidth: '140px',
-        align: 'center',
+        defaultWidth: '145px',
+        align: 'left',
         topField: 'rfqApprovalStatus',
         bottomField: '',
         topPurpose: 'Approval summary for RFQ issue (NOT_REQUIRED, PENDING, APPROVED, etc.)',
@@ -4187,7 +4279,7 @@ const DIRECTORY_COLUMNS = [
         default: false,
         lockVisible: false,
         defaultWidth: '140px',
-        align: 'center',
+        align: 'left',
         topField: 'rfqAwardApprovalStatus',
         bottomField: '',
         topPurpose: 'Approval summary for awarding quote (NOT_REQUIRED, PENDING, etc.)',
@@ -4251,8 +4343,8 @@ const DIRECTORY_COLUMNS = [
         subLabel: 'Items Count',
         default: false,
         lockVisible: false,
-        defaultWidth: '95px',
-        align: 'center',
+        defaultWidth: '100px',
+        align: 'right',
         topField: 'itemCount',
         bottomField: '',
         topPurpose: 'Line item sequence number (1, 2, 3)',
@@ -4277,7 +4369,7 @@ const DIRECTORY_COLUMNS = [
         subLabel: 'Requested Qty / UOM',
         default: true,
         lockVisible: false,
-        defaultWidth: '135px',
+        defaultWidth: '130px',
         align: 'right',
         topField: 'totalQuantity',
         bottomField: 'primaryUom',
@@ -4317,7 +4409,7 @@ const DIRECTORY_COLUMNS = [
         default: false,
         lockVisible: false,
         defaultWidth: '110px',
-        align: 'center',
+        align: 'right',
         topField: 'primaryLeadTime',
         bottomField: '',
         topPurpose: 'Vendor promised manufacturing/shipping time in days',
@@ -4329,8 +4421,8 @@ const DIRECTORY_COLUMNS = [
         subLabel: 'Line Acceptance',
         default: false,
         lockVisible: false,
-        defaultWidth: '115px',
-        align: 'center',
+        defaultWidth: '120px',
+        align: 'left',
         topField: 'isAwarded',
         bottomField: '',
         topPurpose: 'Indicates if this item/bid was officially accepted',
@@ -4368,8 +4460,8 @@ const DIRECTORY_COLUMNS = [
         subLabel: 'Edit / View / Del',
         default: true,
         lockVisible: true,
-        defaultWidth: '125px',
-        align: 'center',
+        defaultWidth: '175px',
+        align: 'right',
         topField: '',
         bottomField: '',
         topPurpose: 'Action Button (Edit, View, Delete) the RFQ',
@@ -4380,7 +4472,7 @@ const DIRECTORY_COLUMNS = [
 // 1. Column Sequence Order State (Saved in LocalStorage)
 let directoryColOrder = (() => {
     try {
-        const savedOrder = localStorage.getItem('rms_rfq_directory_cols_order_v3');
+        const savedOrder = localStorage.getItem('rms_rfq_directory_cols_order_v4');
         if (savedOrder) {
             const parsed = JSON.parse(savedOrder);
             if (Array.isArray(parsed) && parsed.length > 0) {
@@ -4406,7 +4498,7 @@ let directoryColOrder = (() => {
 // 2. Active Visible Column IDs State (Saved in LocalStorage)
 let activeDirectoryColIds = (() => {
     try {
-        const saved = localStorage.getItem('rms_rfq_directory_cols_v3');
+        const saved = localStorage.getItem('rms_rfq_directory_cols_v4');
         if (saved) {
             const parsed = JSON.parse(saved);
             const allIds = DIRECTORY_COLUMNS.map(c => c.id);
@@ -4423,7 +4515,7 @@ let activeDirectoryColIds = (() => {
 // 3. Saved Column Widths State (Saved in LocalStorage)
 let savedDirectoryColWidths = (() => {
     try {
-        const saved = localStorage.getItem('rms_rfq_directory_col_widths_v3');
+        const saved = localStorage.getItem('rms_rfq_directory_col_widths_v4');
         if (saved) return JSON.parse(saved);
     } catch (e) {}
     return {};
@@ -4466,14 +4558,18 @@ function renderDirectoryTableHeader() {
     let thHtml = '';
     visibleCols.forEach(col => {
         const w = getDirectoryColWidth(col);
-        const alignClass = col.align === 'right' ? 'th-num' : (col.align === 'center' ? 'th-center' : '');
+        const isRight = (col.align === 'right');
+        const alignClass = isRight ? 'th-num' : 'th-left';
 
         if (col.id === 'actions') {
-            // End Column Header with Settings Gear Icon
+            // End Column Header with Right-Aligned Label & Settings Gear Icon
             thHtml += `
-                <th class="th-center th-actions-sticky" data-col-id="actions" style="width: ${w}; text-align: center; user-select: none;">
-                    <div class="rfq-header-action-wrapper">
-                        <span>Action</span>
+                <th class="rfq-th-stacked th-num th-actions-sticky" data-col-id="actions" style="width: ${w}; text-align: right; user-select: none;">
+                    <div class="rfq-header-action-wrapper" style="justify-content: flex-end; gap: 8px;">
+                        <div class="rfq-th-content" style="align-items: flex-end; text-align: right;">
+                            <div class="rfq-th-title">${escapeHtml(col.label || 'Actions')}</div>
+                            <div class="rfq-th-sub">${escapeHtml(col.subLabel || 'Edit / View / Del')}</div>
+                        </div>
                         <button type="button" class="rfq-th-settings-btn" id="btnRfqTableSettings" onclick="toggleRfqTableSettingsDropdown(event)" title="Customize Columns & Drag Sequence">
                             <i class="ph ph-gear"></i>
                         </button>
@@ -4481,7 +4577,7 @@ function renderDirectoryTableHeader() {
                 </th>
             `;
         } else {
-            // Modular Stacked Header with Drag & Drop Reordering and Col Resizer
+            // Modular Stacked Header with Strict Left (Text) / Right (Number) Alignment
             const hasStatusFilter = (col.id === 'rfq_status');
             const hasTermsFilter = (col.id === 'payment_terms');
 
@@ -4492,10 +4588,10 @@ function renderDirectoryTableHeader() {
                     ondragleave="handleHeaderDragLeave(event)"
                     ondrop="handleHeaderDrop(event, '${col.id}')"
                     ondragend="handleHeaderDragEnd(event)"
-                    style="width: ${w}; position: relative; user-select: none;"
+                    style="width: ${w}; text-align: ${isRight ? 'right' : 'left'}; position: relative; user-select: none;"
                     title="${escapeHtml(col.topPurpose || col.label)}">
-                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 4px; min-width: 0;">
-                        <div class="rfq-th-content">
+                    <div style="display: flex; align-items: center; justify-content: ${isRight ? 'flex-end' : 'space-between'}; gap: 6px; min-width: 0; width: 100%;">
+                        <div class="rfq-th-content" style="align-items: ${isRight ? 'flex-end' : 'flex-start'}; text-align: ${isRight ? 'right' : 'left'};">
                             <div class="rfq-th-title">${escapeHtml(col.label)}</div>
                             ${col.subLabel ? `<div class="rfq-th-sub">${escapeHtml(col.subLabel)}</div>` : ''}
                         </div>
@@ -4642,7 +4738,7 @@ function reorderDirectoryColumns(sourceColId, targetColId) {
     directoryColOrder.splice(targetIdx, 0, sourceColId);
 
     // Save to LocalStorage
-    localStorage.setItem('rms_rfq_directory_cols_order_v3', JSON.stringify(directoryColOrder));
+    localStorage.setItem('rms_rfq_directory_cols_order_v4', JSON.stringify(directoryColOrder));
 
     renderDirectoryTableHeader();
     renderDirectoryColDropdownChecklist();
@@ -4750,14 +4846,14 @@ function toggleDirectoryColVisibility(colId, isVisible) {
     } else {
         activeDirectoryColIds = activeDirectoryColIds.filter(id => id !== colId);
     }
-    localStorage.setItem('rms_rfq_directory_cols_v3', JSON.stringify(activeDirectoryColIds));
+    localStorage.setItem('rms_rfq_directory_cols_v4', JSON.stringify(activeDirectoryColIds));
     renderDirectoryTableHeader();
     renderRfqDirectory();
 }
 
 function showAllDirectoryColumns() {
     activeDirectoryColIds = DIRECTORY_COLUMNS.map(c => c.id);
-    localStorage.setItem('rms_rfq_directory_cols_v3', JSON.stringify(activeDirectoryColIds));
+    localStorage.setItem('rms_rfq_directory_cols_v4', JSON.stringify(activeDirectoryColIds));
     renderDirectoryTableHeader();
     renderRfqDirectory();
     showToast('✓ Showing all columns', 'success');
@@ -4767,8 +4863,8 @@ function resetDirectoryColumnDefaults() {
     // Reset to only Default = True columns
     activeDirectoryColIds = DIRECTORY_COLUMNS.filter(c => c.default).map(c => c.id);
     directoryColOrder = DIRECTORY_COLUMNS.map(c => c.id);
-    localStorage.setItem('rms_rfq_directory_cols_v3', JSON.stringify(activeDirectoryColIds));
-    localStorage.removeItem('rms_rfq_directory_cols_order_v3');
+    localStorage.setItem('rms_rfq_directory_cols_v4', JSON.stringify(activeDirectoryColIds));
+    localStorage.removeItem('rms_rfq_directory_cols_order_v4');
     renderDirectoryTableHeader();
     renderRfqDirectory();
     showToast('✓ Reset to Default headers', 'success');
@@ -4780,7 +4876,7 @@ function resetDirectoryColumns() {
 
 function resetDirectoryColumnWidths() {
     savedDirectoryColWidths = {};
-    localStorage.removeItem('rms_rfq_directory_col_widths_v3');
+    localStorage.removeItem('rms_rfq_directory_col_widths_v4');
     renderDirectoryTableHeader();
     renderRfqDirectory();
     showToast('✓ Directory column widths reset to defaults', 'success');
@@ -4820,7 +4916,7 @@ function handleDirectoryColMouseMove(e) {
 
 function handleDirectoryColMouseUp() {
     if (!dirResizingColId) return;
-    localStorage.setItem('rms_rfq_directory_col_widths_v3', JSON.stringify(savedDirectoryColWidths));
+    localStorage.setItem('rms_rfq_directory_col_widths_v4', JSON.stringify(savedDirectoryColWidths));
     dirResizingColId = null;
     document.removeEventListener('mousemove', handleDirectoryColMouseMove);
     document.removeEventListener('mouseup', handleDirectoryColMouseUp);
@@ -5023,8 +5119,8 @@ function renderRfqDirectory() {
             switch (col.id) {
                 case 'rfq_info':
                     rowCells += `
-                        <td style="font-family: monospace; font-weight: 700; color: var(--rfq-primary-dark);">
-                            <div style="display: flex; align-items: center; gap: 4px;">
+                        <td class="td-left">
+                            <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
                                 <button type="button" class="rfq-row-expand-btn ${isExpanded ? 'is-expanded' : ''}" 
                                     onclick="toggleRfqRowExpansion('${escapeHtml(r.rfqNumber)}', event)" 
                                     title="${isExpanded ? 'Collapse Line Items' : 'Expand ' + items.length + ' Line Items'}">
@@ -5032,12 +5128,12 @@ function renderRfqDirectory() {
                                 </button>
                                 <div class="rms-cell-stack">
                                     <div class="rms-cell-title">
-                                        <a href="javascript:void(0)" onclick="editRfqFromDirectory('${escapeHtml(r.rfqNumber)}')" title="${escapeHtml(r.rfqNumber)}" style="color: inherit; text-decoration: underline;">
+                                        <a href="javascript:void(0)" class="rfq-dir-ref-link" onclick="editRfqFromDirectory('${escapeHtml(r.rfqNumber)}')" title="Open ${escapeHtml(r.rfqNumber)} in RFQ Builder">
                                             ${escapeHtml(r.rfqNumber)}
                                         </a>
                                     </div>
-                                    <div class="rms-cell-sub" style="font-size: 0.70rem; color: #64748b; font-family: sans-serif;">
-                                        ${formatDateDisplay(r.rfqDate || r.dateIssued)}
+                                    <div class="rms-cell-sub">
+                                        Issued: ${formatDateDisplay(r.rfqDate || r.dateIssued)}
                                     </div>
                                 </div>
                             </div>
@@ -5047,10 +5143,10 @@ function renderRfqDirectory() {
 
                 case 'company':
                     rowCells += `
-                        <td>
+                        <td class="td-left">
                             <div class="rms-cell-stack">
                                 <div class="rms-cell-title" title="${escapeHtml(r.companyName)}">${escapeHtml(r.companyName)}</div>
-                                <div class="rms-cell-sub" style="font-family: monospace; font-size: 0.69rem;">${escapeHtml(r.companyId || '—')}</div>
+                                <div class="rms-cell-sub" style="font-family: monospace;">${escapeHtml(r.companyId || '—')}</div>
                             </div>
                         </td>
                     `;
@@ -5058,10 +5154,10 @@ function renderRfqDirectory() {
 
                 case 'branch_warehouse':
                     rowCells += `
-                        <td>
+                        <td class="td-left">
                             <div class="rms-cell-stack">
                                 <div class="rms-cell-title" title="${escapeHtml(r.branchName)}">${escapeHtml(r.branchName)}</div>
-                                <div class="rms-cell-sub" title="${escapeHtml(r.shipToWarehouseName)}"><i class="ph ph-warehouse" style="font-size: 11px;"></i> ${escapeHtml(r.shipToWarehouseName)}</div>
+                                <div class="rms-cell-sub" title="${escapeHtml(r.shipToWarehouseName)}"><i class="ph ph-warehouse" style="font-size: 11px; color: #94a3b8;"></i> ${escapeHtml(r.shipToWarehouseName)}</div>
                             </div>
                         </td>
                     `;
@@ -5069,13 +5165,13 @@ function renderRfqDirectory() {
 
                 case 'vendor_contact':
                     rowCells += `
-                        <td>
+                        <td class="td-left">
                             <div class="rms-cell-stack">
                                 <div class="rms-cell-title" title="${escapeHtml(r.vendorTradeName || r.vendorName)}">
                                     ${escapeHtml(r.vendorTradeName || r.vendorName)}
                                 </div>
                                 <div class="rms-cell-sub" title="${escapeHtml((r.vendorContactPerson || 'No Contact') + ' • ' + (r.vendorEmail || r.vendorPhone || ''))}">
-                                    ${escapeHtml(r.vendorContactPerson || 'No Contact')}
+                                    <i class="ph ph-user" style="font-size: 11px; color: #94a3b8;"></i> ${escapeHtml(r.vendorContactPerson || 'Purchasing Contact')}
                                 </div>
                             </div>
                         </td>
@@ -5084,12 +5180,12 @@ function renderRfqDirectory() {
 
                 case 'submission_deadline':
                     rowCells += `
-                        <td>
+                        <td class="td-left">
                             <div class="rms-cell-stack">
-                                <div class="rms-cell-title" style="color: #b45309; font-weight: 700;">
+                                <div class="rms-cell-title">
                                     ${formatDateDisplay(r.submissionDeadline || r.dueDate)}
                                 </div>
-                                <div class="rms-cell-sub" style="font-size: 0.68rem; color: #94a3b8;">Cutoff Deadline</div>
+                                <div class="rms-cell-sub">Cutoff Deadline</div>
                             </div>
                         </td>
                     `;
@@ -5097,10 +5193,10 @@ function renderRfqDirectory() {
 
                 case 'quote_validity_date':
                     rowCells += `
-                        <td>
+                        <td class="td-left">
                             <div class="rms-cell-stack">
                                 <div class="rms-cell-title">${formatDateDisplay(r.quoteValidUntilDate)}</div>
-                                <div class="rms-cell-sub" style="font-size: 0.68rem;">Validity Date</div>
+                                <div class="rms-cell-sub">Quote Valid Until</div>
                             </div>
                         </td>
                     `;
@@ -5108,10 +5204,10 @@ function renderRfqDirectory() {
 
                 case 'requested_delivery_date':
                     rowCells += `
-                        <td>
+                        <td class="td-left">
                             <div class="rms-cell-stack">
-                                <div class="rms-cell-title" style="color: #4f46e5; font-weight: 600;">${formatDateDisplay(r.rfqRequestedDeliveryDate || r.expectedDelivery)}</div>
-                                <div class="rms-cell-sub" style="font-size: 0.68rem;">Target Arrival</div>
+                                <div class="rms-cell-title">${formatDateDisplay(r.rfqRequestedDeliveryDate || r.expectedDelivery)}</div>
+                                <div class="rms-cell-sub">Target Arrival</div>
                             </div>
                         </td>
                     `;
@@ -5119,30 +5215,37 @@ function renderRfqDirectory() {
 
                 case 'currency':
                     rowCells += `
-                        <td class="td-center">
-                            <span class="hr-badge hr-badge-neutral" style="font-weight: 700; font-size: 11px;">
-                                ${escapeHtml(r.rfqCurrencyCode || 'PHP')}
-                            </span>
+                        <td class="td-left">
+                            <div class="rms-cell-stack">
+                                <div class="rms-cell-title">${escapeHtml(r.rfqCurrencyCode || 'PHP')}</div>
+                                <div class="rms-cell-sub">Bidding Currency</div>
+                            </div>
                         </td>
                     `;
                     break;
 
                 case 'payment_terms':
                     rowCells += `
-                        <td>
-                            <span class="terms-pill" style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.74rem; font-weight: 600; background: #f1f5f9; color: #334155; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;" title="${escapeHtml(r.rfqPaymentTermsCode || r.paymentTerms)}">
-                                ${escapeHtml(r.rfqPaymentTermsCode || r.paymentTerms)}
-                            </span>
+                        <td class="td-left">
+                            <div class="rms-cell-stack">
+                                <div class="rms-cell-title" title="${escapeHtml(r.rfqPaymentTermsCode || r.paymentTerms || 'Net 30 Days')}">
+                                    ${escapeHtml(r.rfqPaymentTermsCode || r.paymentTerms || 'Net 30 Days')}
+                                </div>
+                                <div class="rms-cell-sub">
+                                    ${escapeHtml(r.rfqIncotermsCode || 'FOB')} • ${escapeHtml(r.rfqCurrencyCode || 'PHP')}
+                                </div>
+                            </div>
                         </td>
                     `;
                     break;
 
                 case 'incoterms':
                     rowCells += `
-                        <td class="td-center">
-                            <span class="hr-badge hr-badge-neutral" style="font-weight: 600; font-size: 10.5px;">
-                                ${escapeHtml(r.rfqIncotermsCode || 'FOB')}
-                            </span>
+                        <td class="td-left">
+                            <div class="rms-cell-stack">
+                                <div class="rms-cell-title">${escapeHtml(r.rfqIncotermsCode || 'FOB')}</div>
+                                <div class="rms-cell-sub">Trade Terms</div>
+                            </div>
                         </td>
                     `;
                     break;
@@ -5150,20 +5253,31 @@ function renderRfqDirectory() {
                 case 'total_amount':
                     rowCells += `
                         <td class="td-num">
-                            <div class="rms-cell-stack" style="align-items: flex-end;">
-                                <div class="rms-cell-title" style="color: #0f172a; font-weight: 800;">₱${formatMoney(quotedTotal)}</div>
-                                <div class="rms-cell-sub" style="font-size: 0.69rem; color: #64748b;">Target: ₱${formatMoney(estTotal)}</div>
+                            <div class="rms-cell-stack rms-stack-right">
+                                <div class="rms-cell-title" style="color: #0f172a; font-weight: 800; font-variant-numeric: tabular-nums;">₱${formatMoney(quotedTotal || estTotal)}</div>
+                                <div class="rms-cell-sub" style="justify-content: flex-end; font-variant-numeric: tabular-nums;">Target: ₱${formatMoney(estTotal)}</div>
                             </div>
                         </td>
                     `;
                     break;
 
                 case 'rfq_status':
+                    const rowLinkedPo = getLinkedPoNumberForRfq(r);
+                    if (rowLinkedPo) r.poReference = rowLinkedPo;
                     rowCells += `
-                        <td class="td-center">
-                            <span class="status-pill ${pillClass}">
-                                <i class="ph ph-dot"></i> ${escapeHtml(r.rfqStatus || r.status)}
-                            </span>
+                        <td class="td-left">
+                            <div class="rms-cell-stack" style="align-items: flex-start; gap: 3px;">
+                                <span class="status-pill ${pillClass}">
+                                    <span class="status-pill-dot"></span> ${escapeHtml(r.rfqStatus || r.status)}
+                                </span>
+                                ${rowLinkedPo ? `
+                                    <button type="button" class="rfq-linked-po-sublink" onclick="openLinkedPoFromRfq('${escapeHtml(rowLinkedPo)}')" title="Open Purchase Order ${escapeHtml(rowLinkedPo)}">
+                                        <i class="ph ph-link"></i> ${escapeHtml(rowLinkedPo)} <i class="ph ph-arrow-up-right" style="font-size: 9px;"></i>
+                                    </button>
+                                ` : `
+                                    <div class="rms-cell-sub">Stage: ${escapeHtml(stage)}</div>
+                                `}
+                            </div>
                         </td>
                     `;
                     break;
@@ -5171,26 +5285,33 @@ function renderRfqDirectory() {
                 case 'rfq_approval_status':
                     const isAppr = (r.rfqApprovalStatus === 'APPROVED' || r.isApproved === true || r.status === 'Awarded');
                     rowCells += `
-                        <td class="td-center">
-                            ${isAppr ? `
-                                <button type="button" class="hr-badge hr-badge-success" onclick="openManagerApprovalModal('${r.rfqNumber}')" title="Issue Approved - Click to view" style="cursor: pointer; border: none; font-size: 9.5px; padding: 2px 7px; display: inline-flex; align-items: center; gap: 3px;">
-                                    <i class="ph ph-check-circle"></i> Approved
-                                </button>
-                            ` : `
-                                <button type="button" class="hr-badge hr-badge-warning" onclick="openManagerApprovalModal('${r.rfqNumber}')" title="Issue Pending - Click to toggle" style="cursor: pointer; border: none; font-size: 9.5px; padding: 2px 7px; display: inline-flex; align-items: center; gap: 3px;">
-                                    <i class="ph ph-hourglass-simple"></i> Pending
-                                </button>
-                            `}
+                        <td class="td-left">
+                            <div class="rms-cell-stack" style="align-items: flex-start; gap: 3px;">
+                                ${isAppr ? `
+                                    <button type="button" class="rfq-appr-pill rfq-appr-approved" onclick="openManagerApprovalModal('${escapeHtml(r.rfqNumber)}')" title="Issue Approved - Click to inspect">
+                                        <i class="ph ph-check-circle"></i> Approved
+                                    </button>
+                                    <div class="rms-cell-sub">Manager Verified</div>
+                                ` : `
+                                    <button type="button" class="rfq-appr-pill rfq-appr-pending" onclick="openManagerApprovalModal('${escapeHtml(r.rfqNumber)}')" title="Issue Pending - Click to review">
+                                        <i class="ph ph-clock"></i> Pending
+                                    </button>
+                                    <div class="rms-cell-sub">Awaiting Sign-off</div>
+                                `}
+                            </div>
                         </td>
                     `;
                     break;
 
                 case 'approval_request_id':
                     rowCells += `
-                        <td>
-                            <span style="font-family: monospace; font-size: 0.72rem; color: #475569;" title="${escapeHtml(r.approvalRequestId || 'N/A')}">
-                                ${escapeHtml(r.approvalRequestId || '—')}
-                            </span>
+                        <td class="td-left">
+                            <div class="rms-cell-stack">
+                                <div class="rms-cell-title" style="font-family: monospace;" title="${escapeHtml(r.approvalRequestId || 'N/A')}">
+                                    ${escapeHtml(r.approvalRequestId || '—')}
+                                </div>
+                                <div class="rms-cell-sub">Issue Approval Ref</div>
+                            </div>
                         </td>
                     `;
                     break;
@@ -5198,20 +5319,26 @@ function renderRfqDirectory() {
                 case 'rfq_award_approval_status':
                     const isAwardedAppr = (r.rfqAwardApprovalStatus === 'APPROVED' || r.status === 'Awarded');
                     rowCells += `
-                        <td class="td-center">
-                            <span class="hr-badge ${isAwardedAppr ? 'hr-badge-success' : 'hr-badge-neutral'}" style="font-size: 9.5px; padding: 2px 6px;">
-                                ${escapeHtml(r.rfqAwardApprovalStatus || (isAwardedAppr ? 'APPROVED' : 'NOT_REQUIRED'))}
-                            </span>
+                        <td class="td-left">
+                            <div class="rms-cell-stack" style="align-items: flex-start;">
+                                <span class="rfq-appr-pill ${isAwardedAppr ? 'rfq-appr-approved' : 'rfq-appr-neutral'}">
+                                    ${escapeHtml(r.rfqAwardApprovalStatus || (isAwardedAppr ? 'APPROVED' : 'NOT REQUIRED'))}
+                                </span>
+                                <div class="rms-cell-sub">Award Governance</div>
+                            </div>
                         </td>
                     `;
                     break;
 
                 case 'award_approval_request_id':
                     rowCells += `
-                        <td>
-                            <span style="font-family: monospace; font-size: 0.72rem; color: #475569;" title="${escapeHtml(r.awardApprovalRequestId || 'N/A')}">
-                                ${escapeHtml(r.awardApprovalRequestId || '—')}
-                            </span>
+                        <td class="td-left">
+                            <div class="rms-cell-stack">
+                                <div class="rms-cell-title" style="font-family: monospace;" title="${escapeHtml(r.awardApprovalRequestId || 'N/A')}">
+                                    ${escapeHtml(r.awardApprovalRequestId || '—')}
+                                </div>
+                                <div class="rms-cell-sub">Award Doc ID</div>
+                            </div>
                         </td>
                     `;
                     break;
@@ -5219,9 +5346,12 @@ function renderRfqDirectory() {
                 case 'rfq_notes':
                     const noteStr = r.rfqNotes || r.specialInstructions || r.notes || '—';
                     rowCells += `
-                        <td>
-                            <div class="rms-cell-title" style="font-weight: 500; color: #475569;" title="${escapeHtml(noteStr)}">
-                                ${escapeHtml(noteStr)}
+                        <td class="td-left">
+                            <div class="rms-cell-stack">
+                                <div class="rms-cell-title" style="font-weight: 500; color: #334155;" title="${escapeHtml(noteStr)}">
+                                    ${escapeHtml(noteStr)}
+                                </div>
+                                <div class="rms-cell-sub">Tender Instructions</div>
                             </div>
                         </td>
                     `;
@@ -5229,10 +5359,10 @@ function renderRfqDirectory() {
 
                 case 'created_by':
                     rowCells += `
-                        <td>
+                        <td class="td-left">
                             <div class="rms-cell-stack">
                                 <div class="rms-cell-title">${escapeHtml(r.rfqCreatedBy || 'Admin')}</div>
-                                <div class="rms-cell-sub" style="font-size: 0.69rem;">${formatDateDisplay(r.rfqCreatedAt || r.dateIssued)}</div>
+                                <div class="rms-cell-sub">${formatDateDisplay(r.rfqCreatedAt || r.dateIssued)}</div>
                             </div>
                         </td>
                     `;
@@ -5240,10 +5370,10 @@ function renderRfqDirectory() {
 
                 case 'last_modified_by':
                     rowCells += `
-                        <td>
+                        <td class="td-left">
                             <div class="rms-cell-stack">
                                 <div class="rms-cell-title">${escapeHtml(r.rfqUpdatedBy || 'Lead')}</div>
-                                <div class="rms-cell-sub" style="font-size: 0.69rem;">${formatDateDisplay(r.rfqUpdatedAt || r.rfqCreatedAt)}</div>
+                                <div class="rms-cell-sub">${formatDateDisplay(r.rfqUpdatedAt || r.rfqCreatedAt)}</div>
                             </div>
                         </td>
                     `;
@@ -5251,21 +5381,24 @@ function renderRfqDirectory() {
 
                 case 'line_number':
                     rowCells += `
-                        <td class="td-center">
-                            <span class="rfq-items-counter-pill">${items.length} Lines</span>
+                        <td class="td-num">
+                            <div class="rms-cell-stack rms-stack-right">
+                                <div class="rms-cell-title" style="font-variant-numeric: tabular-nums;">${items.length}</div>
+                                <div class="rms-cell-sub" style="justify-content: flex-end;">Total Lines</div>
+                            </div>
                         </td>
                     `;
                     break;
 
                 case 'item_details':
                     rowCells += `
-                        <td>
+                        <td class="td-left">
                             <div class="rms-cell-stack">
                                 <div class="rms-cell-title" title="${escapeHtml(primaryItem.name || 'No Items')}">
                                     ${escapeHtml(primaryItem.name || 'No Items')}
                                 </div>
                                 <div class="rms-cell-sub" title="${escapeHtml(primaryItem.specs || primaryItem.rfqLineNotes || '')}">
-                                    ${escapeHtml(primaryItem.specs || primaryItem.rfqLineNotes || (items.length > 1 ? '+' + (items.length - 1) + ' more items' : ''))}
+                                    ${escapeHtml(primaryItem.specs || primaryItem.rfqLineNotes || (items.length > 1 ? '+' + (items.length - 1) + ' more items' : 'Primary line item'))}
                                 </div>
                             </div>
                         </td>
@@ -5275,9 +5408,13 @@ function renderRfqDirectory() {
                 case 'quantity':
                     rowCells += `
                         <td class="td-num">
-                            <div class="rms-cell-stack" style="align-items: flex-end;">
-                                <div class="rms-cell-title" style="font-weight: 700;">${formatMoney(totalQty, 1)}</div>
-                                <div class="rms-cell-sub" style="font-size: 0.69rem; color: #94a3b8;">${escapeHtml(primaryUom)}</div>
+                            <div class="rms-cell-stack rms-stack-right">
+                                <div class="rms-cell-title" style="font-weight: 700; font-variant-numeric: tabular-nums;">
+                                    ${formatMoney(totalQty, 1)} <span style="font-size: 0.72rem; font-weight: 600; color: #64748b;">${escapeHtml(primaryUom)}</span>
+                                </div>
+                                <div class="rms-cell-sub" style="justify-content: flex-end;">
+                                    ${items.length} line item${items.length === 1 ? '' : 's'}
+                                </div>
                             </div>
                         </td>
                     `;
@@ -5286,9 +5423,9 @@ function renderRfqDirectory() {
                 case 'unit_price':
                     rowCells += `
                         <td class="td-num">
-                            <div class="rms-cell-stack" style="align-items: flex-end;">
-                                <div class="rms-cell-title">₱${formatMoney(primaryItem.quotedUnitPrice || primaryItem.targetUnitPrice || 0)}</div>
-                                <div class="rms-cell-sub" style="font-size: 0.68rem; color: #64748b;">Target: ₱${formatMoney(primaryItem.targetUnitPrice || 0)}</div>
+                            <div class="rms-cell-stack rms-stack-right">
+                                <div class="rms-cell-title" style="font-variant-numeric: tabular-nums;">₱${formatMoney(primaryItem.quotedUnitPrice || primaryItem.targetUnitPrice || 0)}</div>
+                                <div class="rms-cell-sub" style="justify-content: flex-end; font-variant-numeric: tabular-nums;">Target: ₱${formatMoney(primaryItem.targetUnitPrice || 0)}</div>
                             </div>
                         </td>
                     `;
@@ -5297,35 +5434,46 @@ function renderRfqDirectory() {
                 case 'line_total':
                     rowCells += `
                         <td class="td-num">
-                            <span style="font-weight: 700; color: #0f172a;">₱${formatMoney(primaryItem.quotedLineTotal || ((primaryItem.requestedQuantity || 0) * (primaryItem.quotedUnitPrice || 0)))}</span>
+                            <div class="rms-cell-stack rms-stack-right">
+                                <div class="rms-cell-title" style="font-weight: 700; color: #0f172a; font-variant-numeric: tabular-nums;">
+                                    ₱${formatMoney(primaryItem.quotedLineTotal || ((primaryItem.requestedQuantity || 0) * (primaryItem.quotedUnitPrice || 0)))}
+                                </div>
+                                <div class="rms-cell-sub" style="justify-content: flex-end;">Primary Line Sum</div>
+                            </div>
                         </td>
                     `;
                     break;
 
                 case 'lead_time':
                     rowCells += `
-                        <td class="td-center">
-                            <span class="hr-badge hr-badge-neutral" style="font-size: 11px;">${primaryItem.leadTimeDays || 3}d</span>
+                        <td class="td-num">
+                            <div class="rms-cell-stack rms-stack-right">
+                                <div class="rms-cell-title" style="font-variant-numeric: tabular-nums;">${primaryItem.leadTimeDays || 3} Days</div>
+                                <div class="rms-cell-sub" style="justify-content: flex-end;">Est. Lead Time</div>
+                            </div>
                         </td>
                     `;
                     break;
 
                 case 'is_awarded':
                     rowCells += `
-                        <td class="td-center">
-                            <span class="hr-badge ${primaryItem.isAwarded ? 'hr-badge-success' : 'hr-badge-neutral'}" style="font-size: 10px;">
-                                ${primaryItem.isAwarded ? 'Accepted' : 'Pending'}
-                            </span>
+                        <td class="td-left">
+                            <div class="rms-cell-stack" style="align-items: flex-start;">
+                                <span class="rfq-appr-pill ${primaryItem.isAwarded ? 'rfq-appr-approved' : 'rfq-appr-neutral'}">
+                                    ${primaryItem.isAwarded ? 'Accepted' : 'Pending'}
+                                </span>
+                                <div class="rms-cell-sub">Line Award</div>
+                            </div>
                         </td>
                     `;
                     break;
 
                 case 'line_created_by':
                     rowCells += `
-                        <td>
+                        <td class="td-left">
                             <div class="rms-cell-stack">
                                 <div class="rms-cell-title">${escapeHtml(primaryItem.rfqLineCreatedBy || 'Admin')}</div>
-                                <div class="rms-cell-sub" style="font-size: 0.68rem;">${formatDateDisplay(primaryItem.rfqLineCreatedAt || r.rfqCreatedAt)}</div>
+                                <div class="rms-cell-sub">${formatDateDisplay(primaryItem.rfqLineCreatedAt || r.rfqCreatedAt)}</div>
                             </div>
                         </td>
                     `;
@@ -5333,26 +5481,39 @@ function renderRfqDirectory() {
 
                 case 'line_modified_by':
                     rowCells += `
-                        <td>
+                        <td class="td-left">
                             <div class="rms-cell-stack">
                                 <div class="rms-cell-title">${escapeHtml(primaryItem.rfqLineUpdatedBy || 'Lead')}</div>
-                                <div class="rms-cell-sub" style="font-size: 0.68rem;">${formatDateDisplay(primaryItem.rfqLineUpdatedAt || r.rfqUpdatedAt)}</div>
+                                <div class="rms-cell-sub">${formatDateDisplay(primaryItem.rfqLineUpdatedAt || r.rfqUpdatedAt)}</div>
                             </div>
                         </td>
                     `;
                     break;
 
                 case 'actions':
+                    const actionLinkedPo = getLinkedPoNumberForRfq(r);
                     rowCells += `
-                        <td class="td-center">
-                            <div style="display: flex; align-items: center; justify-content: center; gap: 4px;">
-                                <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="editRfqFromDirectory('${r.rfqNumber}')" title="Edit RFQ" style="padding: 3px 6px; font-size: 12px;">
+                        <td class="td-num td-actions-cell">
+                            <div class="rfq-row-actions">
+                                ${actionLinkedPo ? `
+                                    <button type="button" class="rfq-act-pill rfq-act-pill-po" onclick="openLinkedPoFromRfq('${escapeHtml(actionLinkedPo)}')" title="Redirect to Created PO: ${escapeHtml(actionLinkedPo)}">
+                                        <i class="ph ph-receipt"></i>
+                                        <span>View PO</span>
+                                        <i class="ph ph-arrow-up-right"></i>
+                                    </button>
+                                ` : (stage === 'Approved' ? `
+                                    <button type="button" class="rfq-act-pill rfq-act-pill-create" onclick="quickCreatePoFromDirectory('${escapeHtml(r.rfqNumber)}')" title="Create Purchase Order for ${escapeHtml(r.rfqNumber)}">
+                                        <i class="ph ph-plus-circle"></i>
+                                        <span>Create PO</span>
+                                    </button>
+                                ` : '')}
+                                <button type="button" class="rfq-act-icon-btn" onclick="editRfqFromDirectory('${escapeHtml(r.rfqNumber)}')" title="Open & Edit RFQ">
                                     <i class="ph ph-pencil-simple"></i>
                                 </button>
-                                <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="previewRfqFromDirectory('${r.rfqNumber}')" title="View Document Preview" style="padding: 3px 6px; font-size: 12px;">
+                                <button type="button" class="rfq-act-icon-btn" onclick="previewRfqFromDirectory('${escapeHtml(r.rfqNumber)}')" title="View Document Preview">
                                     <i class="ph ph-eye"></i>
                                 </button>
-                                <button type="button" class="hr-btn hr-btn-danger hr-btn-sm" onclick="deleteRfqFromDirectory('${r.rfqNumber}')" title="Delete RFQ" style="padding: 3px 6px; font-size: 12px;">
+                                <button type="button" class="rfq-act-icon-btn rfq-act-icon-danger" onclick="deleteRfqFromDirectory('${escapeHtml(r.rfqNumber)}')" title="Delete RFQ">
                                     <i class="ph ph-trash"></i>
                                 </button>
                             </div>
@@ -5361,12 +5522,12 @@ function renderRfqDirectory() {
                     break;
 
                 default:
-                    rowCells += `<td>—</td>`;
+                    rowCells += `<td class="td-left">—</td>`;
                     break;
             }
         });
 
-        rowsHtml += `<tr>${rowCells}</tr>`;
+        rowsHtml += `<tr class="${isExpanded ? 'is-row-expanded' : ''}">${rowCells}</tr>`;
 
         // Multi-line Accordion Drawer (Expanded Subtable)
         if (isExpanded) {
@@ -5386,40 +5547,40 @@ function renderRfqDirectory() {
                             <table class="rfq-subtable">
                                 <thead>
                                     <tr>
-                                        <th style="width: 50px; text-align: center;">Line #</th>
-                                        <th style="width: 110px;">Item SKU</th>
-                                        <th>Description & Technical Specs</th>
-                                        <th style="width: 90px; text-align: right;">Qty</th>
-                                        <th style="width: 70px; text-align: center;">UOM</th>
-                                        <th style="width: 110px; text-align: right;">Target Price</th>
-                                        <th style="width: 110px; text-align: right;">Quoted Price</th>
-                                        <th style="width: 120px; text-align: right;">Line Total</th>
-                                        <th style="width: 80px; text-align: center;">Lead Time</th>
-                                        <th style="width: 90px; text-align: center;">Award</th>
-                                        <th style="width: 150px;">Line Remarks</th>
+                                        <th style="width: 56px; text-align: right;">Line #</th>
+                                        <th style="width: 115px; text-align: left;">Item SKU</th>
+                                        <th style="text-align: left;">Description & Technical Specs</th>
+                                        <th style="width: 75px; text-align: left;">UOM</th>
+                                        <th style="width: 95px; text-align: right;">Qty</th>
+                                        <th style="width: 115px; text-align: right;">Target Price</th>
+                                        <th style="width: 115px; text-align: right;">Quoted Price</th>
+                                        <th style="width: 125px; text-align: right;">Line Total</th>
+                                        <th style="width: 90px; text-align: right;">Lead Time</th>
+                                        <th style="width: 100px; text-align: left;">Award</th>
+                                        <th style="width: 150px; text-align: left;">Line Remarks</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     ${items.map((line, lIdx) => `
                                         <tr>
-                                            <td style="text-align: center; font-weight: 700; color: #64748b;">${line.lineNumber || (lIdx + 1)}</td>
-                                            <td style="font-family: monospace; font-weight: 700; color: #475569;">${escapeHtml(line.itemId || line.sku || '—')}</td>
-                                            <td>
+                                            <td style="text-align: right; font-weight: 700; color: #64748b; font-variant-numeric: tabular-nums;">${line.lineNumber || (lIdx + 1)}</td>
+                                            <td style="text-align: left; font-family: monospace; font-weight: 700; color: #475569;">${escapeHtml(line.itemId || line.sku || '—')}</td>
+                                            <td style="text-align: left;">
                                                 <div style="font-weight: 600; color: #0f172a;">${escapeHtml(line.name)}</div>
                                                 ${line.specs ? `<div style="font-size: 0.70rem; color: #64748b;">${escapeHtml(line.specs)}</div>` : ''}
                                             </td>
-                                            <td style="text-align: right; font-weight: 700;">${formatMoney(line.requestedQuantity || line.quantity, 1)}</td>
-                                            <td style="text-align: center;"><span class="hr-badge hr-badge-neutral">${escapeHtml(line.purchaseUomCode || line.unit)}</span></td>
-                                            <td style="text-align: right; color: #64748b;">₱${formatMoney(line.targetUnitPrice || line.targetPrice)}</td>
-                                            <td style="text-align: right; font-weight: 700; color: var(--rfq-primary-dark);">₱${formatMoney(line.quotedUnitPrice || line.targetPrice)}</td>
-                                            <td style="text-align: right; font-weight: 800; color: #0f172a;">₱${formatMoney(line.quotedLineTotal || ((line.quantity || 1) * (line.targetPrice || 0)))}</td>
-                                            <td style="text-align: center;">${line.leadTimeDays || 3}d</td>
-                                            <td style="text-align: center;">
-                                                <span class="hr-badge ${line.isAwarded ? 'hr-badge-success' : 'hr-badge-neutral'}">
+                                            <td style="text-align: left;"><span class="hr-badge hr-badge-neutral">${escapeHtml(line.purchaseUomCode || line.unit)}</span></td>
+                                            <td style="text-align: right; font-weight: 700; font-variant-numeric: tabular-nums;">${formatMoney(line.requestedQuantity || line.quantity, 1)}</td>
+                                            <td style="text-align: right; color: #64748b; font-variant-numeric: tabular-nums;">₱${formatMoney(line.targetUnitPrice || line.targetPrice)}</td>
+                                            <td style="text-align: right; font-weight: 700; color: var(--rfq-primary-dark); font-variant-numeric: tabular-nums;">₱${formatMoney(line.quotedUnitPrice || line.targetPrice)}</td>
+                                            <td style="text-align: right; font-weight: 800; color: #0f172a; font-variant-numeric: tabular-nums;">₱${formatMoney(line.quotedLineTotal || ((line.quantity || 1) * (line.targetPrice || 0)))}</td>
+                                            <td style="text-align: right; font-variant-numeric: tabular-nums;">${line.leadTimeDays || 3}d</td>
+                                            <td style="text-align: left;">
+                                                <span class="rfq-appr-pill ${line.isAwarded ? 'rfq-appr-approved' : 'rfq-appr-neutral'}">
                                                     ${line.isAwarded ? 'Accepted' : 'Pending'}
                                                 </span>
                                             </td>
-                                            <td style="font-size: 0.71rem; color: #64748b;">${escapeHtml(line.rfqLineNotes || line.notes || '—')}</td>
+                                            <td style="text-align: left; font-size: 0.71rem; color: #64748b;">${escapeHtml(line.rfqLineNotes || line.notes || '—')}</td>
                                         </tr>
                                     `).join('')}
                                 </tbody>
@@ -5438,6 +5599,9 @@ function renderRfqDirectory() {
 function filterRfqByStatus(status) {
     activeRfqStatusFilter = status;
     directoryCurrentPage = 1;
+    document.querySelectorAll('#pane-tab-list .rfq-kpi-card[data-kpi-filter]').forEach(card => {
+        card.classList.toggle('is-active-filter', card.getAttribute('data-kpi-filter') === status);
+    });
     renderDirectoryTableHeader();
     renderRfqDirectory();
 }
@@ -5821,8 +5985,11 @@ function openManagerApprovalModal(rfqNumber) {
     if (!rfq) return;
 
     pendingApprovalRfqNumber = rfqNumber;
+    const linkedPoNum = getLinkedPoNumberForRfq(rfq);
+    if (linkedPoNum) rfq.poReference = linkedPoNum;
+
     const estTotal = (rfq.items || []).reduce((acc, it) => acc + ((parseFloat(it.quantity) || 0) * (parseFloat(it.targetPrice) || 0)), 0);
-    const isApproved = rfq.isApproved === true || rfq.status === 'Awarded' || rfq.status === 'Approved' || !!rfq.poReference;
+    const isApproved = rfq.isApproved === true || rfq.status === 'Awarded' || rfq.status === 'Approved' || !!linkedPoNum;
 
     document.getElementById('approvalRfqTitle').textContent = `${rfq.rfqNumber} • ${rfq.vendorTradeName || rfq.vendorName}`;
     document.getElementById('approvalPoDeliveryDate').value = rfq.expectedDelivery || '';
@@ -5846,13 +6013,13 @@ function openManagerApprovalModal(rfqNumber) {
         document.getElementById('approvedNotesText').textContent = rfq.approvalNotes ? `“${rfq.approvalNotes}”` : 'No evaluation notes recorded.';
 
         const poBadge = document.getElementById('approvedPoLinkedBadge');
-        if (rfq.poReference) {
+        if (linkedPoNum) {
             poBadge.style.display = 'block';
             poBadge.innerHTML = `
                 <div style="font-size: 0.8rem; font-weight: 700; color: #065f46; margin-bottom: 4px;">Linked Purchase Order:</div>
-                <a href="${window.RfqConfig?.routes?.purchaseOrders || '/purchase/purchase-orders'}" class="rfq-btn rfq-btn-teal" style="font-size: 0.78rem; padding: 6px 14px;">
-                    <i class="ph ph-receipt"></i> Open Purchase Order ${escapeHtml(rfq.poReference)}
-                </a>
+                <button type="button" onclick="openLinkedPoFromRfq('${escapeHtml(linkedPoNum)}')" class="rfq-btn rfq-btn-teal" style="font-size: 0.78rem; padding: 6px 14px;">
+                    <i class="ph ph-receipt"></i> Open Purchase Order ${escapeHtml(linkedPoNum)} <i class="ph ph-arrow-square-out"></i>
+                </button>
             `;
         } else {
             poBadge.style.display = 'none';
@@ -5863,11 +6030,15 @@ function openManagerApprovalModal(rfqNumber) {
             <button type="button" class="rfq-btn rfq-btn-outline" style="color: #dc2626; border-color: #fca5a5;" onclick="revokeRfqApproval()">
                 <i class="ph ph-arrow-u-up-left"></i> Revoke Approval
             </button>
-            ${!rfq.poReference ? `
+            ${linkedPoNum ? `
+                <button type="button" class="rfq-btn rfq-btn-teal" onclick="openLinkedPoFromRfq('${escapeHtml(linkedPoNum)}')">
+                    <i class="ph ph-receipt"></i> View Created PO (${escapeHtml(linkedPoNum)}) <i class="ph ph-arrow-square-out"></i>
+                </button>
+            ` : `
                 <button type="button" class="rfq-btn rfq-btn-teal" onclick="generatePoForApprovedRfq()">
                     <i class="ph ph-receipt"></i> Generate Purchase Order Now
                 </button>
-            ` : ''}
+            `}
         `;
     } else {
         bannerSubtitle.textContent = `Authorized Procurement Managers can review bid evaluation, stamp approval, or award and generate a formal Purchase Order.`;
@@ -5904,12 +6075,13 @@ function approveRfqOnly() {
     const rfq = (window.AppStore.rfqs || []).find(r => r.rfqNumber === pendingApprovalRfqNumber);
     if (!rfq) return;
 
-    const approver = document.getElementById('approvalOfficer').value.trim() || 'Procurement Manager';
-    const notes = document.getElementById('approvalNotes').value.trim();
+    const approver = document.getElementById('approvalOfficer')?.value?.trim() || 'Procurement Manager';
+    const notes = document.getElementById('approvalNotes')?.value?.trim() || '';
     const estTotal = (rfq.items || []).reduce((acc, it) => acc + ((parseFloat(it.quantity) || 0) * (parseFloat(it.targetPrice) || 0)), 0);
 
     rfq.isApproved = true;
     rfq.status = 'Approved';
+    rfq.rfqStatus = 'Approved';
     rfq.approvedBy = approver;
     rfq.approvedAt = new Date().toISOString();
     rfq.approvalNotes = notes || 'Manager approval granted. Ready for PO issuance.';
@@ -5936,99 +6108,166 @@ function approveRfqOnly() {
     showToast(`✓ RFQ ${rfq.rfqNumber} successfully Approved by Manager!`, 'success');
 }
 
-function confirmApprovalAndGeneratePO() {
+async function confirmApprovalAndGeneratePO() {
     if (!pendingApprovalRfqNumber) return;
     const rfq = (window.AppStore.rfqs || []).find(r => r.rfqNumber === pendingApprovalRfqNumber);
     if (!rfq) return;
 
-    const approver = document.getElementById('approvalOfficer').value.trim() || 'Procurement Manager';
-    const deliveryDate = document.getElementById('approvalPoDeliveryDate').value;
-    const terms = document.getElementById('approvalPaymentTerms').value;
-    const dest = document.getElementById('approvalDestination').value;
-    const notes = document.getElementById('approvalNotes').value.trim();
+    const existingPoNum = getLinkedPoNumberForRfq(rfq);
+    if (existingPoNum) {
+        closeApprovalModal();
+        showToast(`Purchase Order ${existingPoNum} already exists for ${rfq.rfqNumber}. Redirecting...`, 'info');
+        openLinkedPoFromRfq(existingPoNum);
+        return;
+    }
 
-    const pos = JSON.parse(localStorage.getItem('rms_purchase_orders') || '[]');
-    const nextPoNum = `PO-2026-${String(pos.length + 101).padStart(4, '0')}`;
-    const estTotal = (rfq.items || []).reduce((acc, it) => acc + ((parseFloat(it.quantity) || 0) * (parseFloat(it.targetPrice) || 0)), 0);
+    const approver = document.getElementById('approvalOfficer')?.value?.trim() || 'Procurement Manager';
+    const deliveryDate = document.getElementById('approvalPoDeliveryDate')?.value || rfq.expectedDelivery || '';
+    const terms = document.getElementById('approvalPaymentTerms')?.value || rfq.paymentTerms || 'Net 30 Days';
+    const dest = document.getElementById('approvalDestination')?.value || rfq.deliveryLocation || 'Central Commissary - Receiving Dock 1';
+    const notes = document.getElementById('approvalNotes')?.value?.trim() || '';
 
-    // 1. Mark RFQ as Awarded
     rfq.isApproved = true;
-    rfq.status = 'Awarded';
+    rfq.status = 'Approved';
+    rfq.rfqStatus = 'APPROVED';
     rfq.approvedBy = approver;
     rfq.approvedAt = new Date().toISOString();
     rfq.approvalNotes = notes || 'Quotation approved and transferred to formal Purchase Order.';
-    rfq.poReference = nextPoNum;
-    localStorage.setItem('rms_rfq_directory', JSON.stringify(window.AppStore.rfqs));
+    rfq.expectedDelivery = deliveryDate;
+    rfq.paymentTerms = terms;
+    rfq.deliveryLocation = dest;
 
-    // 2. Insert new PO into rms_purchase_orders
+    closeApprovalModal();
+    window.AppStore.activeRfq = JSON.parse(JSON.stringify(rfq));
+    await generatePoForApprovedRfq();
+}
+
+async function generatePoForApprovedRfq() {
+    const activeRfq = window.AppStore?.activeRfq;
+    const rfq = activeRfq || (window.AppStore?.rfqs || []).find(r => r.rfqNumber === pendingApprovalRfqNumber);
+    if (!rfq || !rfq.rfqNumber) {
+        showToast('No active Approved RFQ found to convert.', 'warning');
+        return;
+    }
+
+    // 1. Smart Guard: If a PO is ALREADY created for this RFQ, do NOT create a duplicate; redirect straight to it
+    const existingLinkedPo = getLinkedPoNumberForRfq(rfq);
+    if (existingLinkedPo) {
+        rfq.poReference = existingLinkedPo;
+        updateLifecycleProgressBar('Approved');
+        renderRfqDirectory();
+        showToast(`Purchase Order ${existingLinkedPo} is already created for ${rfq.rfqNumber}. Redirecting...`, 'info');
+        openLinkedPoFromRfq(existingLinkedPo);
+        return;
+    }
+
+    const pos = JSON.parse(localStorage.getItem('rms_purchase_orders') || '[]');
+    let nextPoNum = `PO-2026-${String(pos.length + 105).padStart(4, '0')}`;
+
+    const mappedItems = (rfq.items || []).map(it => {
+        const q = parseFloat(it.quotedQuantity !== undefined && it.quotedQuantity !== '' ? it.quotedQuantity : (it.requestedQuantity !== undefined ? it.requestedQuantity : it.quantity)) || 1;
+        const p = parseFloat(it.quotedUnitPrice !== undefined && it.quotedUnitPrice !== '' ? it.quotedUnitPrice : (it.targetUnitPrice !== undefined ? it.targetUnitPrice : (it.unitPrice || it.targetPrice || 0))) || 0;
+        const t = parseFloat(it.targetUnitPrice !== undefined ? it.targetUnitPrice : (it.targetPrice || p)) || p;
+        return {
+            sku: it.itemId || it.sku || 'CAT-01',
+            name: it.itemName || it.name || 'Awarded Specification Item',
+            specs: it.rfqLineNotes || it.specs || '',
+            category: it.category || 'Raw Ingredients',
+            unit: it.purchaseUomCode || it.unit || it.uom || 'PCS',
+            quantity: q,
+            rfqQuotedQty: q,
+            unitPrice: p,
+            rfqTargetPrice: t,
+            receivedQuantity: 0
+        };
+    });
+
+    const grossTotal = mappedItems.reduce((acc, it) => acc + (it.quantity * it.unitPrice), 0);
+
+    showLockOverlay(`Creating Purchase Order from ${rfq.rfqNumber}...`);
+    try {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        const convertUrl = window.RfqConfig?.routes?.convertToPo || '/purchase/api/rfq/convert-po';
+        const res = await fetch(convertUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken || '' },
+            body: JSON.stringify({
+                rfq_number: rfq.rfqNumber,
+                vendor_id: rfq.vendorId || null,
+                vendor_name: rfq.vendorName || rfq.vendorTradeName || 'Approved Vendor',
+                vendor_trade_name: rfq.vendorTradeName || rfq.vendorName || 'Approved Vendor',
+                vendor_contact_person: rfq.vendorContactPerson || '',
+                vendor_phone: rfq.vendorPhone || '',
+                vendor_email: rfq.vendorEmail || '',
+                vendor_address: rfq.vendorAddress || '',
+                expected_delivery: rfq.expectedDelivery || rfq.rfqRequestedDeliveryDate || '',
+                payment_terms: rfq.paymentTerms || rfq.rfqPaymentTermsCode || 'Net 30 Days',
+                delivery_location: rfq.deliveryLocation || rfq.shipToWarehouseName || 'Central Commissary - Receiving Dock 1',
+                approved_by: rfq.approvedBy || 'Procurement Manager',
+                items: mappedItems
+            })
+        });
+        const json = await res.json();
+        if (json?.success && json?.data?.po_number) {
+            nextPoNum = json.data.po_number;
+        }
+    } catch (e) {
+        console.warn('generatePoForApprovedRfq API fallback:', e);
+    } finally {
+        hideLockOverlay();
+    }
+
+    rfq.isApproved = true;
+    rfq.status = 'Awarded';
+    rfq.rfqStatus = 'AWARDED';
+    rfq.poReference = nextPoNum;
+    if (window.AppStore?.activeRfq && window.AppStore.activeRfq.rfqNumber === rfq.rfqNumber) {
+        window.AppStore.activeRfq.poReference = nextPoNum;
+    }
+    syncRfqToDirectory(rfq, 'Approved');
+
+    // Ensure nextPoNum is not in rms_deleted_po_numbers
+    try {
+        const deletedPos = JSON.parse(localStorage.getItem('rms_deleted_po_numbers') || '[]');
+        if (Array.isArray(deletedPos) && deletedPos.includes(nextPoNum)) {
+            localStorage.setItem('rms_deleted_po_numbers', JSON.stringify(deletedPos.filter(n => n !== nextPoNum)));
+        }
+    } catch (e) {}
+
     const newPO = {
         poNumber: nextPoNum,
         poType: 'vendor',
         rfqReference: rfq.rfqNumber,
-        vendorId: rfq.vendorId,
-        vendorName: rfq.vendorName,
-        vendorTradeName: rfq.vendorTradeName || rfq.vendorName,
+        orderTitle: rfq.tenderTitle || rfq.projectTitle || `Procurement Continuation from ${rfq.rfqNumber}`,
+        vendorId: rfq.vendorId || '',
+        vendorName: rfq.vendorName || 'Approved Vendor',
+        vendorTradeName: rfq.vendorTradeName || rfq.vendorName || 'Approved Vendor',
         vendorContactPerson: rfq.vendorContactPerson || '',
         vendorPhone: rfq.vendorPhone || '',
         vendorEmail: rfq.vendorEmail || '',
         vendorAddress: rfq.vendorAddress || '',
         orderDate: new Date().toISOString().split('T')[0],
-        expectedDelivery: deliveryDate || rfq.expectedDelivery,
-        deliveryLocation: dest,
-        paymentTerms: terms,
+        expectedDelivery: rfq.expectedDelivery || rfq.rfqRequestedDeliveryDate || '',
+        deliveryLocation: rfq.deliveryLocation || rfq.shipToWarehouseName || 'Central Commissary - Receiving Dock 1',
+        paymentTerms: rfq.paymentTerms || rfq.rfqPaymentTermsCode || 'Net 30 Days',
         paymentStatus: 'Unpaid / Credit',
         paymentMethod: 'Trade Credit (Net 30/15)',
         amountPaid: 0,
-        balanceDue: estTotal,
-        paymentReference: '',
-        paymentDate: '',
-        fundSource: 'Main Commissary Checking Acct',
-        paymentRemarks: '',
-        approvalNotes: notes || 'Quotation approved and transferred to PO.',
-        approvedBy: approver,
+        balanceDue: grossTotal,
+        approvedBy: rfq.approvedBy || 'Procurement Manager',
         status: 'Approved / Issued',
-        items: rfq.items || []
+        items: mappedItems
     };
 
-    pos.unshift(newPO);
+    const existingPoIdx = pos.findIndex(p => p.poNumber === nextPoNum);
+    if (existingPoIdx >= 0) pos[existingPoIdx] = newPO;
+    else pos.unshift(newPO);
     localStorage.setItem('rms_purchase_orders', JSON.stringify(pos));
 
-    // Audit Trail: RFQ Approved & Awarded
-    logProcurementAudit(
-        'RFQ',
-        rfq.rfqNumber,
-        'APPROVED',
-        'RFQ Approved & Awarded',
-        `Manager ${approver} approved quotation and authorized immediate issuance of ${nextPoNum}.`,
-        [
-            { label: 'Approving Manager', value: approver },
-            { label: 'Assigned PO', value: nextPoNum },
-            { label: 'Awarded Value', value: `₱${formatMoney(estTotal)}` },
-            { label: 'Committed Delivery', value: deliveryDate || 'Standard Lead Time' }
-        ]
-    );
-
-    // Audit Trail: PO Created from RFQ
-    logProcurementAudit(
-        'PO',
-        nextPoNum,
-        'PO_TRANSFERRED',
-        'Purchase Order Transferred from RFQ',
-        `Generated formal Purchase Order ${nextPoNum} transferred from approved quotation ${rfq.rfqNumber} for ${rfq.vendorTradeName || rfq.vendorName}.`,
-        [
-            { label: 'Source RFQ', value: rfq.rfqNumber },
-            { label: 'Supplier', value: rfq.vendorTradeName || rfq.vendorName },
-            { label: 'Order Total', value: `₱${formatMoney(estTotal)}` }
-        ]
-    );
-
-    closeApprovalModal();
+    updateLifecycleProgressBar('Approved');
     renderRfqDirectory();
-    showToast(`✓ Approved! Generated ${nextPoNum} for ${rfq.vendorTradeName || rfq.vendorName}`, 'success');
-}
-
-function generatePoForApprovedRfq() {
-    confirmApprovalAndGeneratePO();
+    showToast(`✓ Created ${nextPoNum} from ${rfq.rfqNumber}! Opening in Purchase Order Builder...`, 'success');
+    openLinkedPoFromRfq(nextPoNum);
 }
 
 function revokeRfqApproval() {
@@ -6910,6 +7149,9 @@ Object.assign(window, {
   approveRfqOnly,
   confirmApprovalAndGeneratePO,
   generatePoForApprovedRfq,
+  getLinkedPoNumberForRfq,
+  openLinkedPoFromRfq,
+  quickCreatePoFromDirectory,
   revokeRfqApproval,
   getProcurementAuditTrail,
   seedProcurementAuditTrail,

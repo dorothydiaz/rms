@@ -992,6 +992,9 @@
     text-align: left;
     white-space: nowrap;
 }
+.po-table th.th-left, .po-table td.td-left {
+    text-align: left;
+}
 .po-table th.th-num, .po-table td.td-num {
     text-align: right;
     font-variant-numeric: tabular-nums;
@@ -1013,13 +1016,20 @@
 #poDirectoryTable {
     table-layout: fixed;
     width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+#poDirectoryTable thead th {
+    background: #f8fafc;
+    border-bottom: 1.5px solid #e2e8f0;
+    padding: 10px 14px !important;
 }
 #poDirectoryTable tbody tr {
-    height: 52px;
+    height: 58px;
 }
 #poDirectoryTable td {
-    height: 52px;
-    padding: 6px 12px;
+    height: 58px;
+    padding: 8px 14px;
     border-bottom: 1px solid #f1f5f9;
     vertical-align: middle;
     background: #ffffff;
@@ -1032,10 +1042,15 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
-    gap: 2px;
+    align-items: flex-start;
+    gap: 3px;
     line-height: 1.25;
     min-width: 0;
     overflow: hidden;
+}
+.rms-cell-stack.rms-stack-right {
+    align-items: flex-end;
+    text-align: right;
 }
 .rms-cell-title {
     font-size: 0.8125rem;
@@ -1044,6 +1059,7 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    max-width: 100%;
 }
 .rms-cell-sub {
     font-size: 0.72rem;
@@ -1054,7 +1070,189 @@
     display: flex;
     align-items: center;
     gap: 4px;
+    max-width: 100%;
 }
+
+/* Stacked Header Typography for PO Tracker */
+.rfq-th-stacked {
+    position: relative;
+    user-select: none;
+    vertical-align: middle;
+}
+.rfq-th-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+.rfq-th-title {
+    font-size: 0.77rem;
+    font-weight: 700;
+    color: #0f172a;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.rfq-th-sub {
+    font-size: 0.67rem;
+    font-weight: 500;
+    color: #64748b;
+    text-transform: none;
+    letter-spacing: normal;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.po-dir-ref-link {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8125rem;
+    font-weight: 800;
+    color: #7e22ce;
+    text-decoration: none;
+    transition: color 0.15s ease;
+}
+.po-dir-ref-link:hover {
+    color: #581c87;
+    text-decoration: underline;
+}
+
+.po-linked-rfq-sublink {
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin: 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.70rem;
+    font-weight: 700;
+    color: #7e22ce;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    transition: color 0.15s ease;
+}
+.po-linked-rfq-sublink:hover {
+    color: #581c87;
+    text-decoration: underline;
+}
+
+.status-pill-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.po-appr-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 0.70rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    line-height: 1.15;
+    border: 1px solid transparent;
+}
+.po-appr-pill.po-appr-approved {
+    background: #ecfdf5;
+    color: #047857;
+    border-color: #a7f3d0;
+}
+.po-appr-pill.po-appr-pending {
+    background: #fffbeb;
+    color: #b45309;
+    border-color: #fde68a;
+}
+.po-appr-pill.po-appr-neutral {
+    background: #f8fafc;
+    color: #475569;
+    border-color: #e2e8f0;
+}
+
+/* Harmonized Right-Aligned Row Action Toolbar */
+#poDirectoryTable td.td-actions-cell {
+    text-align: right;
+    overflow: visible;
+}
+.po-row-actions {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 5px;
+    width: 100%;
+}
+.po-act-pill {
+    height: 28px;
+    padding: 0 9px;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.po-act-pill-grn {
+    background: #ecfdf5;
+    color: #047857;
+    border: 1px solid #a7f3d0;
+}
+.po-act-pill-grn:hover {
+    background: #059669;
+    color: #ffffff;
+    border-color: #047857;
+    box-shadow: 0 2px 6px rgba(5, 150, 105, 0.22);
+}
+.po-act-icon-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    color: #475569;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13.5px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    padding: 0;
+    flex-shrink: 0;
+}
+.po-act-icon-btn:hover {
+    background: #f5f3ff;
+    border-color: #c084fc;
+    color: #7e22ce;
+}
+.po-act-icon-btn.po-act-icon-danger {
+    background: #ef4444;
+    border-color: #dc2626;
+    color: #ffffff;
+}
+.po-act-icon-btn.po-act-icon-danger:hover {
+    background: #dc2626;
+    border-color: #b91c1c;
+    color: #ffffff;
+    box-shadow: 0 2px 6px rgba(220, 38, 38, 0.28);
+}
+
+.po-kpi-card.is-active-filter {
+    border-color: rgba(147, 51, 234, 0.48) !important;
+    background: #ffffff !important;
+    box-shadow: 0 6px 18px rgba(147, 51, 234, 0.11), 0 2px 4px rgba(15, 23, 42, 0.04) !important;
+}
+
 .po-table td input, .po-table td select {
     width: 100%;
     padding: 6px 9px;
@@ -1590,3 +1788,205 @@
 .po-modal-card-lg { max-width: 760px; }
 .po-modal-scroll-area { max-height: 380px; overflow-y: auto; border: 1px solid var(--po-border-subtle); border-radius: 8px; }
 .po-audit-summary-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; }
+
+
+/* ==========================================================================
+   REDESIGNED PO TRACKER & BUILDER (RFQ PARITY ARCHITECTURE)
+   ========================================================================== */
+.po-lock-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(4px);
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+.po-lock-overlay.is-active {
+    display: flex;
+}
+.po-lock-card {
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 20px 28px;
+    box-shadow: 0 20px 45px rgba(15, 23, 42, 0.25);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border: 1px solid #e2e8f0;
+}
+
+/* 1. Multi-Selection Batch Action Bar */
+.po-batch-toolbar-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 4px 12px;
+    background: linear-gradient(135deg, #faf5ff, #f3e8ff);
+    border: 1px solid #d8b4fe;
+    border-radius: 8px;
+    font-size: 12px;
+    color: #581c87;
+}
+.po-batch-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #334155;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.po-batch-btn:hover {
+    background: #f8fafc;
+    border-color: #94a3b8;
+}
+.po-batch-btn-danger {
+    color: #dc2626;
+    border-color: #fecaca;
+    background: #fef2f2;
+}
+.po-batch-btn-danger:hover {
+    background: #fee2e2;
+    border-color: #f87171;
+}
+
+/* 2. Floating Column Settings Dropdowns (Directory & Builder) */
+.po-table-settings-dropdown,
+.po-builder-settings-dropdown {
+    position: fixed;
+    width: 310px;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    box-shadow: 0 18px 40px -8px rgba(15, 23, 42, 0.22);
+    z-index: 9500;
+    overflow: hidden;
+}
+
+/* 3. PO Lifecycle Header Bar & 4-Step Chevron Pipeline (Harmonized with RFQ Chevron UI) */
+.po-lifecycle-bar-container.stage-theme-issued,
+.rfq-lifecycle-bar-container.stage-theme-issued {
+    border-left: 4px solid #2563eb;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(239, 246, 255, 0.65));
+}
+
+.rfq-stage-helper-ribbon.stage-issued {
+    background: rgba(37, 99, 235, 0.05);
+    border-color: rgba(37, 99, 235, 0.18);
+    color: #1e40af;
+}
+
+.rfq-chevron-step.is-active.stage-issued {
+    background: #2563eb;
+    color: #ffffff;
+}
+
+.rfq-chevron-step.is-active.stage-issued .rfq-chevron-badge {
+    background: #ffffff;
+    color: #2563eb;
+}
+
+.rfq-chevron-step.is-active.stage-issued .rfq-chevron-desc {
+    color: rgba(255, 255, 255, 0.85);
+}
+
+/* 4. Top Section (100% Full Width): Reference & Operational Header Banner */
+.po-top-banner-card {
+    width: 100%;
+    padding: 12px 16px;
+    margin-bottom: 12px;
+    border-radius: 12px;
+    background: #ffffff;
+    border: 1px solid var(--po-border-subtle, #e2e8f0);
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
+}
+.po-ref-id-display {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: var(--po-primary-dark, #7e22ce);
+    white-space: nowrap !important;
+}
+.po-vendor-redirect-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    color: #475569;
+    text-decoration: none;
+    flex-shrink: 0;
+    transition: all 0.15s ease;
+}
+.po-vendor-redirect-btn:hover {
+    background: #f3e8ff;
+    color: #7e22ce;
+    border-color: #c084fc;
+}
+
+/* 5. Main Body Split (70% Items Table Panel / 30% Sticky Live Document Mockup) */
+.po-builder-split-body {
+    display: grid;
+    grid-template-columns: minmax(0, 7fr) minmax(340px, 3fr);
+    gap: 14px;
+    align-items: start;
+}
+@media (max-width: 1200px) {
+    .po-builder-split-body {
+        grid-template-columns: 1fr;
+    }
+}
+.po-items-panel-col {
+    min-width: 0;
+}
+.po-mockup-panel-col {
+    position: sticky;
+    top: 12px;
+    min-width: 0;
+}
+.po-mockup-card {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: 12px;
+    border: 1px solid var(--po-border-subtle, #e2e8f0);
+    background: #ffffff;
+}
+.po-mockup-header-actions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    padding: 10px 12px;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+}
+.po-mockup-content-wrap {
+    padding: 12px;
+    background: #f1f5f9;
+    max-height: calc(100vh - 210px);
+    overflow-y: auto;
+}
+.po-live-mockup-container {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 18px 20px;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+    font-size: 11.5px;
+    color: #0f172a;
+}
+.po-field-error-glow {
+    border-color: #dc2626 !important;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.18) !important;
+}

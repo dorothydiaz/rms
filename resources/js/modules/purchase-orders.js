@@ -195,8 +195,11 @@ document.addEventListener('DOMContentLoaded', () => {
     initPoColumns();
     initPoDates();
     renderPoVendorDropdown();
+    updatePoLifecycleProgressBar(window.PoStore.activePo.status || 'Draft PO');
     renderPoItemsTable();
     renderPoDirectory();
+    updatePoLiveDocumentMockup();
+    handlePoDeepLinkParams();
 
     // Close header filter popover when clicking outside
     document.addEventListener('click', (e) => {
@@ -205,6 +208,17 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!popover.contains(e.target) && !e.target.closest('.po-th-filter-wrapper')) {
                 closePoHeaderFilter();
             }
+        }
+        const tableSettings = document.getElementById('poTableSettingsDropdown');
+        const btnCol = document.getElementById('btnPoColConfig');
+        const btnActionGear = document.getElementById('btnPoActionColFilter');
+        if (tableSettings && tableSettings.style.display !== 'none' && !tableSettings.contains(e.target) && (!btnCol || !btnCol.contains(e.target)) && (!btnActionGear || !btnActionGear.contains(e.target))) {
+            tableSettings.style.display = 'none';
+        }
+        const builderSettings = document.getElementById('poBuilderSettingsDropdown');
+        const btnBuilderGear = document.getElementById('btnPoBuilderSettings');
+        if (builderSettings && builderSettings.style.display !== 'none' && !builderSettings.contains(e.target) && (!btnBuilderGear || !btnBuilderGear.contains(e.target))) {
+            builderSettings.style.display = 'none';
         }
     });
 
@@ -235,69 +249,105 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
+function getNextUniquePoNumber() {
+    const pos = window.PoStore?.purchaseOrders || [];
+    const existingSet = new Set(pos.map(p => p.poNumber));
+    let seq = Math.max(105, pos.length + 105);
+    let candidate = `PO-2026-${String(seq).padStart(4, '0')}`;
+    while (existingSet.has(candidate)) {
+        seq++;
+        candidate = `PO-2026-${String(seq).padStart(4, '0')}`;
+    }
+    return candidate;
+}
+
 function initPoStore() {
     const serverPos = window.PurchaseOrderConfig?.data?.initialPurchaseOrders || [];
     const serverVendors = window.PurchaseOrderConfig?.data?.initialVendors || [];
     const serverItems = window.PurchaseOrderConfig?.data?.initialItems || [];
+    let deletedPoSet = new Set();
+    try {
+        deletedPoSet = new Set(JSON.parse(localStorage.getItem('rms_deleted_po_numbers') || '[]'));
+    } catch (e) {}
 
-    // 1. Load Purchase Orders
+    // 1. Load Purchase Orders (Server + LocalStorage Merge)
     if (Array.isArray(serverPos) && serverPos.length > 0) {
-        window.PoStore.purchaseOrders = serverPos.map(p => ({
-            id: p.id,
-            poNumber: p.po_number,
-            poType: p.po_type || 'vendor',
-            rfqReference: p.rfq_reference || '',
-            vendorId: p.vendor_id || '',
-            vendorName: p.vendor_name,
-            vendorTradeName: p.vendor_trade_name || p.vendor_name,
-            vendorContactPerson: p.vendor_contact_person || '',
-            vendorPhone: p.vendor_phone || '',
-            vendorEmail: p.vendor_email || '',
-            vendorAddress: p.vendor_address || '',
-            orderDate: p.order_date ? p.order_date.split('T')[0] : '',
-            expectedDelivery: p.expected_delivery ? p.expected_delivery.split('T')[0] : '',
-            deliveryLocation: p.delivery_location || 'Central Commissary - Receiving Dock A',
-            specialNotes: p.special_notes || '',
-            paymentStatus: p.payment_status || 'Unpaid / Credit',
-            paymentMethod: p.payment_method || 'Trade Credit (Net 30/15)',
-            amountPaid: parseFloat(p.amount_paid || 0),
-            balanceDue: parseFloat(p.balance_due || 0),
-            paymentReference: p.payment_reference || '',
-            paymentDate: p.payment_date || '',
-            fundSource: p.fund_source || '',
-            paymentRemarks: p.payment_remarks || '',
-            approvalNotes: p.approval_notes || '',
-            approvedBy: p.approved_by || 'Procurement Specialist',
-            status: p.status || 'Approved / Issued',
-            items: (p.items || []).map(it => ({
-                id: it.id,
-                sku: it.sku,
-                name: it.item_name,
-                specs: it.specifications || '',
-                category: it.category || 'Raw Ingredients',
-                unit: it.unit || 'Kg',
-                quantity: parseFloat(it.quantity_ordered),
-                unitPrice: parseFloat(it.unit_price)
-            }))
-        }));
+        const mappedServerPos = serverPos
+            .filter(p => p && p.po_number && !deletedPoSet.has(p.po_number))
+            .map(p => ({
+                id: p.id,
+                poNumber: p.po_number,
+                poType: p.po_type || 'vendor',
+                rfqReference: p.rfq_reference || '',
+                orderTitle: p.special_notes || '',
+                vendorId: p.vendor_id || '',
+                vendorName: p.vendor_name,
+                vendorTradeName: p.vendor_trade_name || p.vendor_name,
+                vendorContactPerson: p.vendor_contact_person || '',
+                vendorPhone: p.vendor_phone || '',
+                vendorEmail: p.vendor_email || '',
+                vendorAddress: p.vendor_address || '',
+                orderDate: p.order_date ? String(p.order_date).split('T')[0] : '',
+                expectedDelivery: p.expected_delivery ? String(p.expected_delivery).split('T')[0] : '',
+                deliveryLocation: p.delivery_location || 'Central Commissary - Receiving Dock 1',
+                paymentTerms: p.payment_terms || 'Net 30 Days',
+                specialNotes: p.special_notes || '',
+                paymentStatus: p.payment_status || 'Unpaid / Credit',
+                paymentMethod: p.payment_method || 'Trade Credit (Net 30/15)',
+                amountPaid: parseFloat(p.amount_paid || 0),
+                balanceDue: parseFloat(p.balance_due || 0),
+                paymentReference: p.payment_reference || '',
+                paymentDate: p.payment_date ? String(p.payment_date).split('T')[0] : '',
+                fundSource: p.fund_source || '',
+                paymentRemarks: p.payment_remarks || '',
+                approvalNotes: p.approval_notes || '',
+                approvedBy: p.approved_by || 'Procurement Specialist',
+                status: p.status || 'Approved / Issued',
+                items: (p.items || []).map(it => ({
+                    id: it.id,
+                    sku: it.sku || 'CAT-01',
+                    name: it.item_name || it.name || 'Ordered Item',
+                    specs: it.specs || it.specifications || '',
+                    category: it.category || 'Raw Ingredients',
+                    unit: it.uom || it.unit || 'PCS',
+                    quantity: parseFloat(it.quantity !== undefined ? it.quantity : (it.quantity_ordered || 1)),
+                    unitPrice: parseFloat(it.unit_price !== undefined ? it.unit_price : (it.unitPrice || 0)),
+                    receivedQuantity: parseFloat(it.received_quantity !== undefined ? it.received_quantity : (it.receivedQuantity || 0))
+                }))
+            }));
+
+        const serverPoNums = new Set(mappedServerPos.map(p => p.poNumber));
+        const seedIds = new Set((SEEDED_PURCHASE_ORDERS || []).map(s => s.poNumber));
+        let localUnsynced = [];
+        try {
+            const rawLocal = JSON.parse(localStorage.getItem('rms_purchase_orders') || '[]');
+            if (Array.isArray(rawLocal)) {
+                localUnsynced = rawLocal.filter(lp =>
+                    lp && lp.poNumber &&
+                    !serverPoNums.has(lp.poNumber) &&
+                    !deletedPoSet.has(lp.poNumber) &&
+                    !seedIds.has(lp.poNumber)
+                );
+            }
+        } catch (e) {}
+
+        window.PoStore.purchaseOrders = [...localUnsynced, ...mappedServerPos];
         localStorage.setItem('rms_purchase_orders', JSON.stringify(window.PoStore.purchaseOrders));
     } else {
         const storedPos = localStorage.getItem('rms_purchase_orders');
         if (storedPos) {
             try {
-                window.PoStore.purchaseOrders = JSON.parse(storedPos);
+                const parsed = JSON.parse(storedPos);
+                window.PoStore.purchaseOrders = Array.isArray(parsed)
+                    ? parsed.filter(p => p && !deletedPoSet.has(p.poNumber))
+                    : [];
             } catch (e) {
-                window.PoStore.purchaseOrders = JSON.parse(JSON.stringify(SEEDED_PURCHASE_ORDERS));
+                window.PoStore.purchaseOrders = JSON.parse(JSON.stringify(SEEDED_PURCHASE_ORDERS)).filter(p => !deletedPoSet.has(p.poNumber));
             }
         } else {
-            window.PoStore.purchaseOrders = JSON.parse(JSON.stringify(SEEDED_PURCHASE_ORDERS));
+            window.PoStore.purchaseOrders = JSON.parse(JSON.stringify(SEEDED_PURCHASE_ORDERS)).filter(p => !deletedPoSet.has(p.poNumber));
             localStorage.setItem('rms_purchase_orders', JSON.stringify(window.PoStore.purchaseOrders));
         }
-    }
-
-    if (!Array.isArray(window.PoStore.purchaseOrders) || window.PoStore.purchaseOrders.length === 0) {
-        window.PoStore.purchaseOrders = JSON.parse(JSON.stringify(SEEDED_PURCHASE_ORDERS));
-        localStorage.setItem('rms_purchase_orders', JSON.stringify(window.PoStore.purchaseOrders));
     }
 
     // 2. Automatically sync any newly approved / awarded RFQs into PO list
@@ -368,8 +418,7 @@ function initPoStore() {
     }
 
     // Next PO Number
-    const count = (window.PoStore.purchaseOrders || []).length;
-    const poNum = `PO-2026-${String(count + 105).padStart(4, '0')}`;
+    const poNum = getNextUniquePoNumber();
     window.PoStore.activePo.poNumber = poNum;
     const poNumberInputEl = document.getElementById('poNumberInput');
     if (poNumberInputEl) poNumberInputEl.value = poNum;
@@ -576,7 +625,12 @@ function switchPoTab(tabId) {
     const paneBuilder = document.getElementById('pane-tab-po-builder');
 
     [btnList, btnBuilder].forEach(b => b && b.classList.remove('active'));
-    [paneList, paneBuilder].forEach(p => p && (p.style.display = 'none'));
+    [paneList, paneBuilder].forEach(p => {
+        if (p) {
+            p.classList.remove('active');
+            p.style.display = 'none';
+        }
+    });
 
     const pos = window.PoStore.purchaseOrders || [];
     const countBadge = document.getElementById('tabPoCount');
@@ -596,11 +650,20 @@ function switchPoTab(tabId) {
 
     if (tabId === 'tab-po-list') {
         if (btnList) btnList.classList.add('active');
-        if (paneList) paneList.style.display = 'flex';
+        if (paneList) {
+            paneList.classList.add('active');
+            paneList.style.display = 'block';
+        }
         renderPoDirectory();
     } else if (tabId === 'tab-po-builder') {
         if (btnBuilder) btnBuilder.classList.add('active');
-        if (paneBuilder) paneBuilder.style.display = 'flex';
+        if (paneBuilder) {
+            paneBuilder.classList.add('active');
+            paneBuilder.style.display = 'block';
+        }
+        updatePoLifecycleProgressBar(window.PoStore?.activePo?.status || 'Draft PO');
+        renderPoBuilderTableHeader();
+        updatePoLiveDocumentMockup();
     }
 }
 
@@ -616,64 +679,71 @@ function setPoMode(mode) {
     const titleEl = document.getElementById('sourceCardTitle');
     const badgeEl = document.getElementById('sourceTypeBadge');
     const iconEl = document.getElementById('sourceCardIcon');
+    const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
 
     if (mode === 'wet_market') {
-        btnMarket.classList.add('active');
-        btnVendor.classList.remove('active');
-        secMarket.style.display = 'block';
-        secVendor.style.display = 'none';
-        titleEl.textContent = 'Wet Market Stall & Purchaser Sourcing';
-        badgeEl.textContent = 'Wet Market Cash Run';
-        badgeEl.style.background = '#fef3c7';
-        badgeEl.style.color = '#92400e';
-        iconEl.className = 'ph ph-basket';
+        if (btnMarket) btnMarket.classList.add('active');
+        if (btnVendor) btnVendor.classList.remove('active');
+        if (secMarket) secMarket.style.display = 'block';
+        if (secVendor) secVendor.style.display = 'none';
+        if (titleEl) titleEl.textContent = 'Wet Market Stall & Purchaser Sourcing';
+        if (badgeEl) {
+            badgeEl.textContent = 'Wet Market Cash Run';
+            badgeEl.style.background = '#fef3c7';
+            badgeEl.style.color = '#92400e';
+        }
+        if (iconEl) iconEl.className = 'ph ph-basket';
 
         // Auto default to Cash / Petty Cash and Paid in Full
-        document.getElementById('poPaymentStatus').value = 'Paid in Full / Cash Out';
-        document.getElementById('poPaymentMethod').value = 'Cash / Petty Cash';
-        document.getElementById('poFundSource').value = 'Branch Petty Cash Fund';
+        setVal('poPaymentStatus', 'Paid in Full / Cash Out');
+        setVal('poPaymentMethod', 'Cash / Petty Cash');
+        setVal('poFundSource', 'Branch Petty Cash Fund');
         handlePaymentStatusChange('Paid in Full / Cash Out');
         showToast('Switched to Direct Wet Market Cash Purchase mode', 'success');
     } else {
-        btnVendor.classList.add('active');
-        btnMarket.classList.remove('active');
-        secVendor.style.display = 'block';
-        secMarket.style.display = 'none';
-        titleEl.textContent = 'Vendor & Partner Profile';
-        badgeEl.textContent = 'Approved Vendor';
-        badgeEl.style.background = 'var(--po-primary-subtle)';
-        badgeEl.style.color = 'var(--po-primary-dark)';
-        iconEl.className = 'ph ph-buildings';
+        if (btnVendor) btnVendor.classList.add('active');
+        if (btnMarket) btnMarket.classList.remove('active');
+        if (secVendor) secVendor.style.display = 'block';
+        if (secMarket) secMarket.style.display = 'none';
+        if (titleEl) titleEl.textContent = 'Vendor & Partner Profile';
+        if (badgeEl) {
+            badgeEl.textContent = 'Approved Vendor';
+            badgeEl.style.background = 'var(--po-primary-subtle)';
+            badgeEl.style.color = 'var(--po-primary-dark)';
+        }
+        if (iconEl) iconEl.className = 'ph ph-buildings';
 
-        document.getElementById('poPaymentStatus').value = 'Unpaid / Credit';
-        document.getElementById('poPaymentMethod').value = 'Trade Credit (Net 30/15)';
+        setVal('poPaymentStatus', 'Unpaid / Credit');
+        setVal('poPaymentMethod', 'Trade Credit (Net 30/15)');
         handlePaymentStatusChange('Unpaid / Credit');
     }
 }
 
 function handlePoVendorSelect(vendorId) {
+    const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
     if (!vendorId) {
-        document.getElementById('poContactPerson').value = '';
-        document.getElementById('poContactTitle').value = '';
-        document.getElementById('poContactPhone').value = '';
-        document.getElementById('poContactEmail').value = '';
-        document.getElementById('poFullAddress').value = '';
+        setVal('poContactPerson', '');
+        setVal('poContactTitle', '');
+        setVal('poContactPhone', '');
+        setVal('poContactEmail', '');
+        setVal('poFullAddress', '');
         window.PoStore.activePo.vendorId = '';
         window.PoStore.activePo.vendorName = '';
         window.PoStore.activePo.vendorTradeName = '';
         updatePoVendorSummaryCard(null);
         renderPoVendorComboboxList();
+        updatePoLiveDocumentMockup();
         return;
     }
 
     const vendor = window.PoStore.vendors.find(v => (v.id === vendorId || v.code === vendorId));
     if (!vendor) return;
 
-    document.getElementById('poContactPerson').value = (vendor.contacts && vendor.contacts[0]) ? vendor.contacts[0].name : '';
-    document.getElementById('poContactTitle').value = (vendor.contacts && vendor.contacts[0]) ? (vendor.contacts[0].title || vendor.contacts[0].designation || 'Account Representative') : 'Account Manager';
-    document.getElementById('poContactPhone').value = (vendor.contacts && vendor.contacts[0]) ? vendor.contacts[0].phone : '';
-    document.getElementById('poContactEmail').value = (vendor.contacts && vendor.contacts[0]) ? vendor.contacts[0].email : (vendor.email || '');
-    document.getElementById('poFullAddress').value = vendor.address || '';
+    setVal('poContactPerson', (vendor.contacts && vendor.contacts[0]) ? vendor.contacts[0].name : '');
+    setVal('poContactTitle', (vendor.contacts && vendor.contacts[0]) ? (vendor.contacts[0].title || vendor.contacts[0].designation || 'Account Representative') : 'Account Manager');
+    setVal('poContactPhone', (vendor.contacts && vendor.contacts[0]) ? vendor.contacts[0].phone : '');
+    setVal('poContactEmail', (vendor.contacts && vendor.contacts[0]) ? vendor.contacts[0].email : (vendor.email || ''));
+    setVal('poFullAddress', vendor.address || '');
 
     window.PoStore.activePo.vendorId = vendor.id || vendor.code;
     window.PoStore.activePo.vendorName = vendor.legalName || vendor.tradeName;
@@ -681,6 +751,7 @@ function handlePoVendorSelect(vendorId) {
 
     updatePoVendorSummaryCard(vendor);
     renderPoVendorComboboxList();
+    updatePoLiveDocumentMockup();
     showToast(`✓ Selected vendor ${vendor.tradeName || vendor.legalName}`, 'success');
 }
 
@@ -774,60 +845,294 @@ function calculatePoGrossTotal() {
  * LINE ITEMS MANAGEMENT
  * --------------------------------------------------------------------------
  */
+/**
+ * --------------------------------------------------------------------------
+ * PO BUILDER STAGE-PROGRESSIVE COLUMN MATRIX (RFQ PARITY)
+ * --------------------------------------------------------------------------
+ */
+const PO_ALL_COLUMNS = [
+    // 1. Base Order Fields
+    { id: 'index', label: '#', category: 'Base Order', default: true, align: 'center', width: '44px', lockVisible: true },
+    { id: 'sku', label: 'Item ID / SKU', category: 'Base Order', default: true, align: 'left', width: '120px', lockVisible: true },
+    { id: 'item_name', label: 'Item Description', category: 'Base Order', default: true, align: 'left', minWidth: '185px', lockVisible: true },
+    { id: 'uom', label: 'Purchase UOM', category: 'Base Order', default: true, align: 'center', width: '130px' },
+    { id: 'quantity', label: 'Ordered Qty', category: 'Base Order', default: true, align: 'right', width: '115px' },
+    { id: 'unit_price', label: 'Unit Price (₱)', category: 'Base Order', default: true, align: 'right', width: '125px' },
+    { id: 'line_total', label: 'Line Total (₱)', category: 'Base Order', default: true, align: 'right', width: '130px' },
+    { id: 'specs', label: 'Specifications / Notes', category: 'Base Order', default: false, align: 'left', minWidth: '150px' },
+
+    // 2. RFQ Benchmark & Variance Fields (Revealed in Approval Stage or RFQ-Linked PO)
+    { id: 'rfq_quoted_qty', label: 'RFQ Quoted Qty', category: 'RFQ Benchmark & Variance', default: false, align: 'right', width: '115px' },
+    { id: 'rfq_target_price', label: 'Benchmark Price (₱)', category: 'RFQ Benchmark & Variance', default: false, align: 'right', width: '130px' },
+    { id: 'price_variance_amount', label: 'Price Diff (₱)', category: 'RFQ Benchmark & Variance', default: false, align: 'right', width: '120px' },
+    { id: 'price_variance_pct', label: 'Variance (%)', category: 'RFQ Benchmark & Variance', default: false, align: 'right', width: '115px' },
+    { id: 'is_within_budget', label: 'Budget Check', category: 'RFQ Benchmark & Variance', default: false, align: 'center', width: '120px' },
+
+    // 3. Receiving & Fulfillment Fields (Revealed in Issued & Status Stages)
+    { id: 'received_quantity', label: 'Received Qty (GRN)', category: 'Receiving & Fulfillment', default: false, align: 'right', width: '130px' },
+    { id: 'remaining_quantity', label: 'Pending / Balance', category: 'Receiving & Fulfillment', default: false, align: 'right', width: '125px' },
+    { id: 'fulfillment_status', label: 'Fulfillment', category: 'Receiving & Fulfillment', default: false, align: 'center', width: '125px' }
+];
+
+const PO_DRAFT_STAGE_DEFAULT_COLUMNS = [
+    'index', 'sku', 'item_name', 'uom', 'quantity', 'unit_price', 'line_total'
+];
+
+const PO_APPROVAL_STAGE_DEFAULT_COLUMNS = [
+    'index', 'sku', 'item_name', 'uom', 'quantity', 'unit_price', 'line_total',
+    'rfq_target_price', 'price_variance_pct', 'is_within_budget'
+];
+
+const PO_ISSUED_STAGE_DEFAULT_COLUMNS = [
+    'index', 'sku', 'item_name', 'uom', 'quantity', 'unit_price', 'line_total',
+    'received_quantity', 'remaining_quantity', 'fulfillment_status'
+];
+
+let activePoBuilderCols = [...PO_DRAFT_STAGE_DEFAULT_COLUMNS];
+let poBuilderColSearchTerm = '';
+
+function getNormalizedPoStage(status) {
+    const s = String(status || 'Draft PO').trim().toUpperCase();
+    if (s === 'DRAFT' || s === 'DRAFT PO') return 'Draft';
+    if (s === 'APPROVAL' || s === 'PENDING APPROVAL' || s === 'PENDING_APPROVAL') return 'Approval';
+    if (s === 'ISSUED' || s === 'APPROVED / ISSUED' || s === 'SENT' || s === 'PARTIALLY RECEIVED' || s === 'PARTIALLY_RECEIVED') return 'Issued';
+    if (s === 'FULFILLED' || s === 'FULLY RECEIVED' || s === 'FULLY_RECEIVED' || s === 'CLOSED' || s === 'APPROVED') return 'Approved';
+    if (s === 'REFUSED' || s === 'CANCELLED' || s === 'SHORT-CLOSED') return 'Refused';
+    return 'Draft';
+}
+
+function applyPoStageDefaultColumns(stage) {
+    const norm = getNormalizedPoStage(stage);
+    if (norm === 'Approval') {
+        activePoBuilderCols = [...PO_APPROVAL_STAGE_DEFAULT_COLUMNS];
+    } else if (norm === 'Issued' || norm === 'Approved') {
+        activePoBuilderCols = [...PO_ISSUED_STAGE_DEFAULT_COLUMNS];
+    } else {
+        activePoBuilderCols = [...PO_DRAFT_STAGE_DEFAULT_COLUMNS];
+    }
+}
+
+function renderPoBuilderTableHeader() {
+    const theadRow = document.getElementById('poItemsTheadRow');
+    if (!theadRow) return;
+
+    const visibleCols = PO_ALL_COLUMNS.filter(c => c.lockVisible || activePoBuilderCols.includes(c.id));
+    let html = visibleCols.map(col => {
+        const alignClass = col.align === 'right' ? 'th-num' : (col.align === 'center' ? 'th-center' : '');
+        const wStyle = col.width ? `width: ${col.width};` : (col.minWidth ? `min-width: ${col.minWidth};` : '');
+        return `<th class="${alignClass}" style="${wStyle}">${escapeHtml(col.label)}</th>`;
+    }).join('');
+
+    html += `
+        <th class="th-center" style="width: 72px; position: relative;">
+            <div style="display: inline-flex; align-items: center; justify-content: center; gap: 4px;">
+                <span>Action</span>
+                <button type="button" class="inv-table-filter-btn" id="btnPoBuilderSettings" onclick="togglePoBuilderSettingsDropdown(event)" title="Customize PO Builder Columns" style="width: 22px; height: 22px; font-size: 12px; border-radius: 5px; color: #9333ea; background: #faf5ff; border: 1px solid #e9d5ff;">
+                    <i class="ph ph-gear-six"></i>
+                </button>
+            </div>
+            <div id="poBuilderSettingsDropdown" class="po-builder-settings-dropdown rfq-builder-settings-dropdown" style="display: none; text-align: left; right: 0; top: 36px;" onclick="event.stopPropagation()">
+                <div style="padding: 10px 14px; border-bottom: 1px solid #f1f5f9; background: #f8fafc; display: flex; align-items: center; justify-content: space-between;">
+                    <span style="font-weight: 800; font-size: 12px; color: #0f172a;"><i class="ph ph-columns" style="color: #9333ea;"></i> Builder Columns</span>
+                    <span style="font-size: 10.5px; font-weight: 700; color: #7e22ce; background: #f3e8ff; padding: 2px 7px; border-radius: 8px;">${visibleCols.length} of ${PO_ALL_COLUMNS.length}</span>
+                </div>
+                <div style="padding: 6px 10px; border-bottom: 1px solid #f1f5f9; display: flex; gap: 6px;">
+                    <button type="button" class="inv-col-quick-link" onclick="showAllPoBuilderColumns()" style="font-size: 11px;">Show All</button>
+                    <button type="button" class="inv-col-quick-link" onclick="resetPoBuilderColumnsToStage()" style="font-size: 11px;">Stage Default</button>
+                </div>
+                <div style="max-height: 260px; overflow-y: auto; padding: 6px 10px;">
+                    ${PO_ALL_COLUMNS.map(col => {
+                        const checked = col.lockVisible || activePoBuilderCols.includes(col.id);
+                        return `
+                            <label style="display: flex; align-items: center; justify-content: space-between; padding: 4px 6px; font-size: 11.5px; cursor: ${col.lockVisible ? 'default' : 'pointer'};">
+                                <span style="display: flex; align-items: center; gap: 6px; color: ${col.lockVisible ? '#94a3b8' : '#1e293b'}; font-weight: ${checked ? '600' : '400'};">
+                                    <input type="checkbox" ${checked ? 'checked' : ''} ${col.lockVisible ? 'disabled' : ''} onchange="togglePoBuilderColumn('${col.id}', this.checked)" style="accent-color: #9333ea;">
+                                    <span>${escapeHtml(col.label)}</span>
+                                </span>
+                                <span style="font-size: 9.5px; color: #94a3b8;">${escapeHtml(col.category.split(' ')[0])}</span>
+                            </label>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+        </th>
+    `;
+
+    theadRow.innerHTML = html;
+}
+
+function togglePoBuilderSettingsDropdown(event) {
+    if (event) event.stopPropagation();
+    const dd = document.getElementById('poBuilderSettingsDropdown');
+    if (!dd) return;
+    dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+}
+
+function togglePoBuilderColumn(colId, isVisible) {
+    if (isVisible) {
+        if (!activePoBuilderCols.includes(colId)) activePoBuilderCols.push(colId);
+    } else {
+        activePoBuilderCols = activePoBuilderCols.filter(c => c !== colId);
+    }
+    renderPoItemsTable();
+}
+
+function showAllPoBuilderColumns() {
+    activePoBuilderCols = PO_ALL_COLUMNS.map(c => c.id);
+    renderPoItemsTable();
+}
+
+function resetPoBuilderColumnsToStage() {
+    applyPoStageDefaultColumns(window.PoStore?.activePo?.status || 'Draft PO');
+    renderPoItemsTable();
+}
+
 function renderPoItemsTable() {
+    renderPoBuilderTableHeader();
     const tbody = document.getElementById('poItemsTbody');
-    const items = window.PoStore.activePo.items;
+    const items = window.PoStore.activePo.items || [];
     if (!tbody) return;
+
+    const visibleCols = PO_ALL_COLUMNS.filter(c => c.lockVisible || activePoBuilderCols.includes(c.id));
+    const stage = getNormalizedPoStage(window.PoStore.activePo.status);
+    const isLocked = (stage !== 'Draft');
 
     if (items.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="7" style="text-align: center; padding: 42px; color: var(--po-text-muted);">
+                <td colspan="${visibleCols.length + 1}" style="text-align: center; padding: 42px; color: var(--po-text-muted);">
                     <i class="ph ph-shopping-bag-open" style="font-size: 38px; color: #cbd5e1; display: block; margin-bottom: 8px;"></i>
                     <div style="font-weight: 700; color: var(--po-text-strong);">No Line Items in Purchase Order</div>
-                    <div style="font-size: 0.8rem; margin-top: 4px;">Click <strong>"Select Master" (F2)</strong> or <strong>"Add Custom Row"</strong> to input items.</div>
+                    <div style="font-size: 0.8rem; margin-top: 4px;">Click <strong>"Import RFQ"</strong>, <strong>"Select Master" (F2)</strong>, or <strong>"Add Custom Row"</strong> to populate items.</div>
                 </td>
             </tr>
         `;
         updatePoTotals();
+        updatePoLiveDocumentMockup();
         return;
     }
 
     tbody.innerHTML = items.map((it, idx) => {
-        const lineTotal = (parseFloat(it.quantity) || 0) * (parseFloat(it.unitPrice) || 0);
-        return `
-            <tr>
-                <td class="td-center" style="font-weight: 700; color: var(--po-text-muted);">${idx + 1}</td>
-                <td>
-                    <input type="text" value="${escapeHtml(it.name || '')}" placeholder="Item Description / Cut / Brand" onchange="updatePoItemField(${idx}, 'name', this.value)" required style="font-weight: 600;">
-                </td>
-                <td class="td-center" style="min-width: 135px;">
-                    <select data-uom-select onchange="updatePoItemField(${idx}, 'unit', this.value)" style="text-align: center;">
-                        ${(() => {
-                            if (window.UomRegistry && window.UomRegistry.isLoaded) {
-                                const units = window.UomRegistry.getUnits();
-                                let opts = units.map(u => `<option value="${u.uom_code}" ${String(it.unit).toUpperCase() === u.uom_code.toUpperCase() ? 'selected' : ''}>${u.uom_code}</option>`).join('');
-                                if (it.unit && !units.some(u => u.uom_code.toUpperCase() === String(it.unit).toUpperCase())) {
-                                    opts = `<option value="${it.unit}" selected>${it.unit}</option>` + opts;
+        const qty = parseFloat(it.quantity) || 0;
+        const unitPrice = parseFloat(it.unitPrice) || 0;
+        const lineTotal = qty * unitPrice;
+        const targetPrice = parseFloat(it.rfqTargetPrice !== undefined ? it.rfqTargetPrice : (it.targetUnitPrice || unitPrice)) || 0;
+        const priceDiff = unitPrice - targetPrice;
+        const variancePct = targetPrice > 0 ? ((priceDiff / targetPrice) * 100) : 0;
+        const withinBudget = targetPrice <= 0 || unitPrice <= targetPrice;
+        const recQty = parseFloat(it.receivedQuantity || 0);
+        const remQty = Math.max(0, qty - recQty);
+
+        const cells = visibleCols.map(col => {
+            if (col.id === 'index') {
+                return `<td class="td-center" style="font-weight: 700; color: var(--po-text-muted);">${idx + 1}</td>`;
+            }
+            if (col.id === 'sku') {
+                return `
+                    <td>
+                        <input type="text" value="${escapeHtml(it.sku || 'CAT-ITEM')}" ${isLocked ? 'readonly' : ''} onchange="updatePoItemField(${idx}, 'sku', this.value)" style="font-family: monospace; font-size: 11.5px; font-weight: 700; color: #475569;">
+                    </td>
+                `;
+            }
+            if (col.id === 'item_name') {
+                return `
+                    <td>
+                        <input type="text" value="${escapeHtml(it.name || '')}" ${isLocked ? 'readonly' : ''} placeholder="Item Description / Cut / Brand" onchange="updatePoItemField(${idx}, 'name', this.value)" required style="font-weight: 600;">
+                    </td>
+                `;
+            }
+            if (col.id === 'uom') {
+                return `
+                    <td class="td-center" style="min-width: 135px;">
+                        <select data-uom-select ${isLocked ? 'disabled' : ''} onchange="updatePoItemField(${idx}, 'unit', this.value)" style="text-align: center;">
+                            ${(() => {
+                                if (window.UomRegistry && window.UomRegistry.isLoaded) {
+                                    const units = window.UomRegistry.getUnits();
+                                    let opts = units.map(u => `<option value="${u.uom_code}" ${String(it.unit).toUpperCase() === u.uom_code.toUpperCase() ? 'selected' : ''}>${u.uom_code}</option>`).join('');
+                                    if (it.unit && !units.some(u => u.uom_code.toUpperCase() === String(it.unit).toUpperCase())) {
+                                        opts = `<option value="${it.unit}" selected>${it.unit}</option>` + opts;
+                                    }
+                                    return opts;
                                 }
-                                return opts;
-                            }
-                            const fallbackUnits = ['KG', 'L', 'PCS', 'BOX', 'PACK', 'TRAY', 'SACK'];
-                            return fallbackUnits.map(u => `<option value="${u}" ${String(it.unit).toUpperCase() === u ? 'selected' : ''}>${u}</option>`).join('');
-                        })()}
-                    </select>
-                </td>
-                <td class="td-num">
-                    <input type="number" step="0.01" min="0.01" value="${it.quantity || 1}" onchange="updatePoItemField(${idx}, 'quantity', this.value)" style="text-align: right; font-weight: 700;">
-                </td>
-                <td class="td-num">
-                    <input type="number" step="0.01" min="0" value="${it.unitPrice !== undefined ? it.unitPrice : 0}" onchange="updatePoItemField(${idx}, 'unitPrice', this.value)" style="text-align: right; font-weight: 700;">
-                </td>
-                <td class="td-num" style="font-weight: 800; color: var(--po-text-strong);">
-                    ₱${formatMoney(lineTotal)}
-                </td>
+                                const fallbackUnits = ['KG', 'L', 'PCS', 'BOX', 'PACK', 'TRAY', 'SACK'];
+                                return fallbackUnits.map(u => `<option value="${u}" ${String(it.unit).toUpperCase() === u ? 'selected' : ''}>${u}</option>`).join('');
+                            })()}
+                        </select>
+                    </td>
+                `;
+            }
+            if (col.id === 'quantity') {
+                return `
+                    <td class="td-num">
+                        <input type="number" step="0.01" min="0.01" value="${qty || 1}" ${isLocked ? 'readonly' : ''} onchange="updatePoItemField(${idx}, 'quantity', this.value)" style="text-align: right; font-weight: 700;">
+                    </td>
+                `;
+            }
+            if (col.id === 'unit_price') {
+                return `
+                    <td class="td-num">
+                        <input type="number" step="0.01" min="0" value="${unitPrice}" ${isLocked ? 'readonly' : ''} onchange="updatePoItemField(${idx}, 'unitPrice', this.value)" style="text-align: right; font-weight: 700;">
+                    </td>
+                `;
+            }
+            if (col.id === 'line_total') {
+                return `<td class="td-num" style="font-weight: 800; color: var(--po-text-strong);">₱${formatMoney(lineTotal)}</td>`;
+            }
+            if (col.id === 'specs') {
+                return `
+                    <td>
+                        <input type="text" value="${escapeHtml(it.specs || '')}" ${isLocked ? 'readonly' : ''} placeholder="Packaging / delivery note" onchange="updatePoItemField(${idx}, 'specs', this.value)">
+                    </td>
+                `;
+            }
+            if (col.id === 'rfq_quoted_qty') {
+                return `<td class="td-num" style="color: #64748b; font-weight: 600;">${(parseFloat(it.rfqQuotedQty || qty) || 0).toFixed(2)}</td>`;
+            }
+            if (col.id === 'rfq_target_price') {
+                return `<td class="td-num" style="color: #64748b;">₱${formatMoney(targetPrice)}</td>`;
+            }
+            if (col.id === 'price_variance_amount') {
+                const color = priceDiff > 0 ? '#dc2626' : '#059669';
+                return `<td class="td-num" style="font-weight: 700; color: ${color};">${priceDiff > 0 ? '+' : ''}₱${formatMoney(priceDiff)}</td>`;
+            }
+            if (col.id === 'price_variance_pct') {
+                const color = variancePct > 0 ? '#dc2626' : '#059669';
+                return `<td class="td-num" style="font-weight: 700; color: ${color};">${variancePct > 0 ? '+' : ''}${variancePct.toFixed(1)}%</td>`;
+            }
+            if (col.id === 'is_within_budget') {
+                return `<td class="td-center"><span class="status-pill ${withinBudget ? 'approved' : 'refused'}" style="font-size: 10px; padding: 2px 6px;">${withinBudget ? 'Within Budget' : 'Over Benchmark'}</span></td>`;
+            }
+            if (col.id === 'received_quantity') {
+                const canInputGrn = (stage === 'Issued' || stage === 'Draft');
+                if (canInputGrn) {
+                    return `
+                        <td class="td-num">
+                            <input type="number" step="0.01" min="0" value="${recQty}"
+                                onchange="updatePoReceivedQty(${idx}, this.value)"
+                                placeholder="0.00"
+                                title="Input received quantity (GRN) for ${escapeHtml(it.name || it.sku || 'item')}"
+                                style="text-align: right; font-weight: 800; color: #059669; background: #ecfdf5; border: 1.5px solid #10b981; border-radius: 6px; padding: 4px 8px; width: 100%; max-width: 115px;">
+                        </td>
+                    `;
+                }
+                return `<td class="td-num" style="font-weight: 700; color: #059669;">${recQty.toFixed(2)}</td>`;
+            }
+            if (col.id === 'remaining_quantity') {
+                return `<td class="td-num" style="font-weight: 700; color: ${remQty > 0 ? '#d97706' : '#64748b'};">${remQty.toFixed(2)}</td>`;
+            }
+            if (col.id === 'fulfillment_status') {
+                const fBadge = recQty >= qty && qty > 0 ? 'Fully Received' : (recQty > 0 ? 'Partial' : 'Pending GRN');
+                const fColor = recQty >= qty && qty > 0 ? '#059669' : (recQty > 0 ? '#d97706' : '#64748b');
+                return `<td class="td-center"><span style="font-size: 10.5px; font-weight: 700; color: ${fColor};">${fBadge}</span></td>`;
+            }
+            return `<td>--</td>`;
+        }).join('');
+
+        return `
+            <tr data-po-row-idx="${idx}">
+                ${cells}
                 <td class="td-center">
-                    <button type="button" class="inv-table-filter-btn" style="color: var(--po-danger);" onclick="deletePoItemRow(${idx})" title="Remove item">
+                    <button type="button" class="inv-table-filter-btn" style="color: var(--po-danger);" ${isLocked ? 'disabled' : ''} onclick="deletePoItemRow(${idx})" title="Remove item">
                         <i class="ph ph-trash"></i>
                     </button>
                 </td>
@@ -836,6 +1141,7 @@ function renderPoItemsTable() {
     }).join('');
 
     updatePoTotals();
+    updatePoLiveDocumentMockup();
     window.UomRegistry?.autoHydrate();
 }
 
@@ -843,7 +1149,7 @@ function updatePoItemField(idx, field, val) {
     const item = window.PoStore.activePo.items[idx];
     if (!item) return;
 
-    if (field === 'quantity' || field === 'unitPrice') {
+    if (field === 'quantity' || field === 'unitPrice' || field === 'receivedQuantity') {
         item[field] = parseFloat(val) || 0;
     } else {
         item[field] = val;
@@ -852,15 +1158,78 @@ function updatePoItemField(idx, field, val) {
     renderPoItemsTable();
 }
 
+async function updatePoReceivedQty(idx, val) {
+    const po = window.PoStore?.activePo;
+    if (!po || !Array.isArray(po.items) || !po.items[idx]) return;
+
+    const item = po.items[idx];
+    const rec = Math.max(0, parseFloat(val) || 0);
+    item.receivedQuantity = rec;
+
+    const stage = getNormalizedPoStage(po.status);
+    if (stage === 'Issued') {
+        const totalOrdered = po.items.reduce((acc, it) => acc + (parseFloat(it.quantity) || 0), 0);
+        const totalReceived = po.items.reduce((acc, it) => acc + (parseFloat(it.receivedQuantity) || 0), 0);
+        po.status = (totalReceived > 0 && totalOrdered > 0) ? 'Partially Received' : 'Approved / Issued';
+    }
+
+    const existingIdx = (window.PoStore.purchaseOrders || []).findIndex(p => p.poNumber === po.poNumber);
+    if (existingIdx >= 0) {
+        window.PoStore.purchaseOrders[existingIdx] = JSON.parse(JSON.stringify(po));
+    } else {
+        window.PoStore.purchaseOrders.unshift(JSON.parse(JSON.stringify(po)));
+    }
+    localStorage.setItem('rms_purchase_orders', JSON.stringify(window.PoStore.purchaseOrders));
+
+    renderPoItemsTable();
+    renderPoDirectory();
+    updatePoLiveDocumentMockup();
+
+    // Persist updated received quantities to database asynchronously
+    try {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+        const route = window.PurchaseOrderConfig?.routes?.transitionStatus || '/purchase/api/orders/transition-status';
+        await fetch(route, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+            body: JSON.stringify({
+                po_number: po.poNumber,
+                target_status: po.status || 'Approved / Issued',
+                rfq_reference: po.rfqReference || null,
+                vendor_id: po.vendorId ? String(po.vendorId) : null,
+                vendor_name: po.vendorName || po.vendorTradeName || 'Approved Vendor',
+                vendor_trade_name: po.vendorTradeName || po.vendorName || 'Approved Vendor',
+                items: po.items
+            })
+        });
+    } catch (e) {
+        console.warn('updatePoReceivedQty sync fallback:', e);
+    }
+
+    showToast(`✓ Updated GRN Qty for ${item.name || item.sku}: ${rec.toFixed(2)} ${item.unit || 'PCS'}`, 'success');
+}
+
+async function receiveAllPoItems() {
+    const po = window.PoStore?.activePo;
+    if (!po || !Array.isArray(po.items) || po.items.length === 0) return;
+
+    po.items.forEach(it => {
+        it.receivedQuantity = parseFloat(it.quantity) || 0;
+    });
+
+    await transitionActivePoStage('Approved');
+}
+
 function addNewBlankPoItemRow() {
     window.PoStore.activePo.items.push({
-        sku: 'WET-MKT',
+        sku: 'CUSTOM-01',
         name: '',
         specs: '',
         category: 'Raw Ingredients',
-        unit: 'Kg',
+        unit: 'PCS',
         quantity: 1.00,
-        unitPrice: 0.00
+        unitPrice: 0.00,
+        receivedQuantity: 0.00
     });
     renderPoItemsTable();
 }
@@ -878,7 +1247,7 @@ function clearAllPoItems() {
 }
 
 function updatePoTotals() {
-    const items = window.PoStore.activePo.items;
+    const items = window.PoStore.activePo.items || [];
     const totalLines = items.length;
     let totalUnits = 0;
     let totalGross = 0;
@@ -890,10 +1259,15 @@ function updatePoTotals() {
         totalGross += (q * p);
     });
 
-    document.getElementById('summaryPoLines').textContent = totalLines;
-    document.getElementById('summaryPoUnits').textContent = totalUnits.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    document.getElementById('summaryPoGross').textContent = `₱${formatMoney(totalGross)}`;
-    document.getElementById('poItemCountBadge').textContent = `${totalLines} Line Item${totalLines === 1 ? '' : 's'}`;
+    const elLines = document.getElementById('summaryPoLines');
+    const elUnits = document.getElementById('summaryPoUnits');
+    const elGross = document.getElementById('summaryPoGross');
+    const elBadge = document.getElementById('poItemCountBadge');
+
+    if (elLines) elLines.textContent = totalLines;
+    if (elUnits) elUnits.textContent = totalUnits.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    if (elGross) elGross.textContent = `₱${formatMoney(totalGross)}`;
+    if (elBadge) elBadge.textContent = `${totalLines} Line Item${totalLines === 1 ? '' : 's'}`;
 
     calculateBalanceDue();
     updatePoSummaryPayBadge();
@@ -981,36 +1355,39 @@ function addMasterItemToPoDirect(sku) {
  * PO ISSUANCE & DIRECTORY TRACKING
  * --------------------------------------------------------------------------
  */
-function issuePurchaseOrderSubmit() {
+async function issuePurchaseOrderSubmit() {
+    syncPoFormInputsToState();
     const po = window.PoStore.activePo;
     const isMarket = po.poType === 'wet_market';
+    const getVal = (id) => document.getElementById(id)?.value?.trim() || '';
 
-    const sourceName = isMarket ? 
-        document.getElementById('poMarketStallName').value.trim() : 
-        (po.vendorTradeName || po.vendorName);
+    const sourceName = isMarket
+        ? (getVal('poMarketStallName') || po.vendorName || po.vendorTradeName)
+        : (po.vendorTradeName || po.vendorName || getVal('poVendorSelect'));
 
     if (!sourceName) {
         showToast(isMarket ? 'Please enter the wet market stall name' : 'Please select an approved vendor', 'error');
         return;
     }
 
-    if (po.items.length === 0) {
+    if (!po.items || po.items.length === 0) {
         showToast('Please add at least one line item to the purchase order', 'error');
         return;
     }
 
-    // Collect inputs
+    // Collect inputs safely
     po.vendorName = sourceName;
     po.vendorTradeName = sourceName;
-    po.vendorContactPerson = document.getElementById('poContactPerson').value.trim();
-    po.vendorPhone = document.getElementById('poContactPhone').value.trim();
-    po.vendorEmail = document.getElementById('poContactEmail').value.trim();
-    po.vendorAddress = document.getElementById('poFullAddress').value.trim() || document.getElementById('poSourceLocation').value.trim();
-    po.orderDate = document.getElementById('poOrderDate').value;
-    po.expectedDelivery = document.getElementById('poExpectedDelivery').value;
-    po.rfqReference = document.getElementById('poRfqReference').value.trim() || 'Direct Market Purchase';
-    po.deliveryLocation = document.getElementById('poDeliveryLocation').value;
-    po.specialNotes = document.getElementById('poSpecialNotes').value.trim();
+    po.vendorContactPerson = getVal('poContactPerson') || po.vendorContactPerson || '';
+    po.vendorPhone = getVal('poContactPhone') || po.vendorPhone || '';
+    po.vendorEmail = getVal('poContactEmail') || po.vendorEmail || '';
+    po.vendorAddress = getVal('poFullAddress') || getVal('poSourceLocation') || po.vendorAddress || '';
+    po.orderDate = getVal('poOrderDate') || po.orderDate || new Date().toISOString().split('T')[0];
+    po.expectedDelivery = getVal('poExpectedDelivery') || po.expectedDelivery || '';
+    po.rfqReference = getVal('poRfqReference') || po.rfqReference || '';
+    po.deliveryLocation = getVal('poDeliveryLocation') || po.deliveryLocation || 'Central Commissary - Receiving Dock 1';
+    po.specialNotes = getVal('poOrderTitle') || getVal('poSpecialNotes') || po.orderTitle || po.specialNotes || '';
+    po.orderTitle = po.specialNotes;
 
     // Financial payment collection
     po.paymentStatus = document.getElementById('poPaymentStatus')?.value || window.PoStore.activePo.paymentStatus || 'Unpaid / Credit';
@@ -1023,8 +1400,16 @@ function issuePurchaseOrderSubmit() {
     po.paymentRemarks = document.getElementById('poPaymentRemarks')?.value?.trim() || window.PoStore.activePo.paymentRemarks || '';
     po.status = (po.paymentStatus === 'Paid in Full / Cash Out') ? 'Fully Received' : 'Approved / Issued';
 
+    // Remove from deleted set if present
+    try {
+        const deletedPos = JSON.parse(localStorage.getItem('rms_deleted_po_numbers') || '[]');
+        if (Array.isArray(deletedPos) && deletedPos.includes(po.poNumber)) {
+            localStorage.setItem('rms_deleted_po_numbers', JSON.stringify(deletedPos.filter(n => n !== po.poNumber)));
+        }
+    } catch (e) {}
+
     // Save to list
-    const existingIdx = window.PoStore.purchaseOrders.findIndex(p => p.poNumber === po.poNumber);
+    const existingIdx = (window.PoStore.purchaseOrders || []).findIndex(p => p.poNumber === po.poNumber);
     const grossTotal = calculatePoGrossTotal();
 
     if (existingIdx >= 0) {
@@ -1073,7 +1458,6 @@ function issuePurchaseOrderSubmit() {
         }
     }
 
-    // Financial payment audit tracking if payment details recorded
     if (po.amountPaid > 0 || po.paymentStatus !== 'Unpaid / Credit') {
         logProcurementAudit(
             'PO',
@@ -1094,58 +1478,63 @@ function issuePurchaseOrderSubmit() {
 
     localStorage.setItem('rms_purchase_orders', JSON.stringify(window.PoStore.purchaseOrders));
 
-    // Asynchronously synchronize issued PO to database backend
-    fetch(window.PurchaseOrderConfig?.routes?.ordersCreate || '/purchase/api/orders/create', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-        },
-        body: JSON.stringify({
-            po_number: po.poNumber,
-            po_type: po.poType,
-            rfq_reference: po.rfqReference,
-            vendor_id: po.vendorId,
-            vendor_name: po.vendorName,
-            vendor_trade_name: po.vendorTradeName,
-            vendor_contact_person: po.vendorContactPerson,
-            vendor_phone: po.vendorPhone,
-            vendor_email: po.vendorEmail,
-            vendor_address: po.vendorAddress,
-            order_date: po.orderDate,
-            expected_delivery: po.expectedDelivery,
-            delivery_location: po.deliveryLocation,
-            special_notes: po.specialNotes,
-            payment_status: po.paymentStatus,
-            payment_method: po.paymentMethod,
-            amount_paid: po.amountPaid,
-            balance_due: po.balanceDue,
-            payment_reference: po.paymentReference,
-            payment_date: po.paymentDate,
-            fund_source: po.fundSource,
-            payment_remarks: po.paymentRemarks,
-            approval_notes: po.approvalNotes,
-            approved_by: po.approvedBy,
-            status: po.status,
-            items: (po.items || []).map(i => ({
-                sku: i.sku,
-                name: i.name,
-                specs: i.specs,
-                category: i.category,
-                unit: i.unit,
-                quantity: i.quantity,
-                unitPrice: i.unitPrice
-            }))
-        })
-    }).then(r => r.json()).then(res => {
-        if (res.success) {
-            console.log('PO database synchronization confirmed:', res.data?.po?.po_number);
-        }
-    }).catch(e => console.warn('PO DB sync note:', e));
+    // Synchronize issued PO to database backend
+    try {
+        await fetch(window.PurchaseOrderConfig?.routes?.ordersCreate || '/purchase/api/orders/create', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+            },
+            body: JSON.stringify({
+                po_number: po.poNumber,
+                po_type: po.poType,
+                rfq_reference: po.rfqReference || null,
+                vendor_id: po.vendorId ? String(po.vendorId) : null,
+                vendor_name: po.vendorName,
+                vendor_trade_name: po.vendorTradeName,
+                vendor_contact_person: po.vendorContactPerson,
+                vendor_phone: po.vendorPhone,
+                vendor_email: po.vendorEmail,
+                vendor_address: po.vendorAddress,
+                order_date: po.orderDate || null,
+                expected_delivery: po.expectedDelivery || null,
+                delivery_location: po.deliveryLocation,
+                special_notes: po.specialNotes,
+                payment_status: po.paymentStatus,
+                payment_method: po.paymentMethod,
+                amount_paid: po.amountPaid,
+                balance_due: po.balanceDue,
+                payment_reference: po.paymentReference,
+                payment_date: po.paymentDate || null,
+                fund_source: po.fundSource,
+                payment_remarks: po.paymentRemarks,
+                approval_notes: po.approvalNotes,
+                approved_by: po.approvedBy,
+                status: po.status,
+                items: (po.items || []).map(i => ({
+                    sku: i.sku || 'ITEM',
+                    name: i.name || 'Ordered Item',
+                    specs: i.specs || '',
+                    category: i.category || 'Raw Ingredients',
+                    unit: i.unit || 'PCS',
+                    quantity: Math.max(0.01, parseFloat(i.quantity) || 1),
+                    unitPrice: Math.max(0, parseFloat(i.unitPrice) || 0)
+                }))
+            })
+        });
+    } catch (e) {
+        console.warn('PO DB sync note:', e);
+    }
 
-    showToast(`✓ Purchase Order ${po.poNumber} successfully issued!`, 'success');
-    switchPoTab('tab-po-list');
+    applyPoStageDefaultColumns(po.status);
+    updatePoLifecycleProgressBar(po.status);
+    renderPoBuilderTableHeader();
+    renderPoItemsTable();
+    renderPoDirectory();
+    updatePoLiveDocumentMockup();
+    showToast(`✓ Purchase Order ${po.poNumber} approved and issued!`, 'success');
 }
 
 /**
@@ -1154,19 +1543,30 @@ function issuePurchaseOrderSubmit() {
  * --------------------------------------------------------------------------
  */
 const PO_DIRECTORY_COLUMNS = [
-    { id: 'ref', label: 'Ref #', default: true, lockVisible: true, defaultWidth: '140px', align: 'left' },
-    { id: 'vendor', label: 'Vendor & Contact', default: true, lockVisible: true, defaultWidth: '220px', align: 'left' },
-    { id: 'dates', label: 'Order / Delivery Date', default: true, lockVisible: false, defaultWidth: '140px', align: 'left' },
-    { id: 'destination', label: 'Ship To / Warehouse', default: true, lockVisible: false, defaultWidth: '170px', align: 'left' },
-    { id: 'items', label: 'Line Items', default: true, lockVisible: false, defaultWidth: '110px', align: 'center' },
-    { id: 'payment', label: 'Payment / Terms', default: true, lockVisible: false, defaultWidth: '145px', align: 'center' },
-    { id: 'status', label: 'Status', default: true, lockVisible: false, defaultWidth: '130px', align: 'center' },
-    { id: 'actions', label: 'Actions', default: true, lockVisible: true, defaultWidth: '150px', align: 'center' }
+    { id: 'ref', label: 'PO Info', subLabel: 'PO # / Source RFQ', default: true, lockVisible: true, defaultWidth: '160px', align: 'left' },
+    { id: 'vendor', label: 'Vendor & Contact', subLabel: 'Supplier / Contact Person', default: true, lockVisible: true, defaultWidth: '215px', align: 'left' },
+    { id: 'dates', label: 'Order / Delivery Date', subLabel: 'Issued / Expected Arrival', default: true, lockVisible: false, defaultWidth: '155px', align: 'left' },
+    { id: 'destination', label: 'Branch & Warehouse', subLabel: 'Ship-To / Receiving Dock', default: true, lockVisible: false, defaultWidth: '175px', align: 'left' },
+    { id: 'items', label: 'Order Valuation', subLabel: 'Gross Total (₱) / Items', default: true, lockVisible: false, defaultWidth: '145px', align: 'right' },
+    { id: 'fulfillment', label: 'Fulfillment (GRN)', subLabel: 'Dock Status / Units', default: true, lockVisible: false, defaultWidth: '145px', align: 'left' },
+    { id: 'payment', label: 'Payment / Terms', subLabel: 'Settlement / Credit Terms', default: true, lockVisible: false, defaultWidth: '150px', align: 'left' },
+    { id: 'status', label: 'PO Status', subLabel: 'Lifecycle / Approval State', default: true, lockVisible: false, defaultWidth: '155px', align: 'left' },
+    { id: 'company', label: 'Company', subLabel: 'Buying Legal Entity', default: false, lockVisible: false, defaultWidth: '155px', align: 'left' },
+    { id: 'currency_incoterms', label: 'Currency & Incoterms', subLabel: 'ISO 4217 / Trade Terms', default: false, lockVisible: false, defaultWidth: '140px', align: 'left' },
+    { id: 'amount_paid', label: 'Amount Paid', subLabel: 'Disbursed / Balance (₱)', default: false, lockVisible: false, defaultWidth: '145px', align: 'right' },
+    { id: 'payment_reference', label: 'Payment Reference', subLabel: 'Check / Ref # & Date', default: false, lockVisible: false, defaultWidth: '145px', align: 'left' },
+    { id: 'po_notes', label: 'PO Notes & Purpose', subLabel: 'Title / Receiving Instructions', default: false, lockVisible: false, defaultWidth: '180px', align: 'left' },
+    { id: 'approval_details', label: 'Approval Details', subLabel: 'Approver / Remarks', default: false, lockVisible: false, defaultWidth: '155px', align: 'left' },
+    { id: 'created_by', label: 'Created By', subLabel: 'Buyer / Created Date', default: false, lockVisible: false, defaultWidth: '145px', align: 'left' },
+    { id: 'actions', label: 'Actions', subLabel: 'Edit / Preview / Del', default: true, lockVisible: true, defaultWidth: '165px', align: 'right' }
 ];
+
+let selectedPoNumbers = new Set();
+let poDirectoryColSearchTerm = '';
 
 let activePoColIds = (() => {
     try {
-        const saved = localStorage.getItem('rms_po_directory_cols_v3');
+        const saved = localStorage.getItem('rms_po_directory_cols_v4');
         if (saved) {
             const parsed = JSON.parse(saved);
             const validIds = PO_DIRECTORY_COLUMNS.map(c => c.id);
@@ -1175,12 +1575,12 @@ let activePoColIds = (() => {
             }
         }
     } catch (e) {}
-    return PO_DIRECTORY_COLUMNS.map(c => c.id);
+    return PO_DIRECTORY_COLUMNS.filter(c => c.default).map(c => c.id);
 })();
 
 let savedPoColWidths = (() => {
     try {
-        const saved = localStorage.getItem('rms_po_directory_col_widths_v2');
+        const saved = localStorage.getItem('rms_po_directory_col_widths_v3');
         if (saved) return JSON.parse(saved);
     } catch (e) {}
     return {};
@@ -1202,53 +1602,56 @@ function renderPoTableHeader() {
     const isStatusFiltered = (activePoStatusFilter !== 'all' || activePoApprovalFilter !== 'all');
     const isPaymentFiltered = (activePoPaymentFilter !== 'all' || activePoTypeFilter !== 'all');
 
-    let thHtml = '';
+    let thHtml = `
+        <th style="width: 38px; min-width: 38px; text-align: center; vertical-align: middle;">
+            <input type="checkbox" id="selectAllPoCheckbox" onchange="toggleSelectAllPos(this.checked)" title="Select all POs on this page" aria-label="Select all POs">
+        </th>
+    `;
+
     PO_DIRECTORY_COLUMNS.forEach(col => {
         if (!activePoColIds.includes(col.id)) return;
         const w = getPoColWidth(col);
-        const alignClass = col.align === 'right' ? 'th-num' : (col.align === 'center' ? 'th-center' : '');
+        const isRight = (col.align === 'right');
+        const alignClass = isRight ? 'th-num' : 'th-left';
 
-        if (col.id === 'status') {
+        if (col.id === 'actions') {
             thHtml += `
-                <th class="${alignClass}" data-col-id="status" style="width: ${w}; position: relative; user-select: none;">
-                    <div class="po-th-filter-wrapper" onclick="togglePoHeaderFilter(event, 'status')" title="Click to filter by Approval Status & Order Status">
-                        <span>${col.label}</span>
-                        <button type="button" class="po-th-funnel-btn ${isStatusFiltered ? 'is-active' : ''}">
-                            <i class="ph ph-funnel"></i>
-                            ${isStatusFiltered ? '<span class="po-th-funnel-dot"></span>' : ''}
-                        </button>
-                    </div>
-                    <div class="po-col-resizer" onmousedown="initPoColResize(event, '${col.id}')"></div>
-                </th>
-            `;
-        } else if (col.id === 'payment') {
-            thHtml += `
-                <th class="${alignClass}" data-col-id="payment" style="width: ${w}; position: relative; user-select: none;">
-                    <div class="po-th-filter-wrapper" onclick="togglePoHeaderFilter(event, 'payment')" title="Click to filter by Payment & Terms">
-                        <span>${col.label}</span>
-                        <button type="button" class="po-th-funnel-btn ${isPaymentFiltered ? 'is-active' : ''}">
-                            <i class="ph ph-funnel"></i>
-                            ${isPaymentFiltered ? '<span class="po-th-funnel-dot"></span>' : ''}
-                        </button>
-                    </div>
-                    <div class="po-col-resizer" onmousedown="initPoColResize(event, '${col.id}')"></div>
-                </th>
-            `;
-        } else if (col.id === 'actions') {
-            thHtml += `
-                <th class="${alignClass}" data-col-id="actions" style="width: ${w}; position: relative; user-select: none;">
-                    <div class="inv-header-action-wrapper" style="display: flex; align-items: center; justify-content: center; gap: 4px;">
-                        <span>Action</span>
-                        <button type="button" class="inv-table-filter-btn" id="btnPoActionColFilter" onclick="togglePoColumnConfigDropdown(event)" title="Column Display Filter" style="width: 22px; height: 22px; font-size: 11px; border-radius: 5px; color: #0284c7; background: rgba(2, 132, 199, 0.10); border: 1px solid rgba(2, 132, 199, 0.25);">
-                            <i class="ph ph-funnel"></i>
+                <th class="rfq-th-stacked th-num th-actions-sticky" data-col-id="actions" style="width: ${w}; text-align: right; position: relative; user-select: none;">
+                    <div class="inv-header-action-wrapper" style="display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
+                        <div class="rfq-th-content" style="align-items: flex-end; text-align: right;">
+                            <div class="rfq-th-title">${escapeHtml(col.label || 'Actions')}</div>
+                            <div class="rfq-th-sub">${escapeHtml(col.subLabel || 'Edit / Preview / Del')}</div>
+                        </div>
+                        <button type="button" class="rfq-th-settings-btn inv-table-filter-btn" id="btnPoActionColFilter" onclick="togglePoTableSettingsDropdown(event)" title="Customize Tracker Columns">
+                            <i class="ph ph-gear"></i>
                         </button>
                     </div>
                 </th>
             `;
         } else {
+            const hasStatusFilter = (col.id === 'status');
+            const hasPaymentFilter = (col.id === 'payment');
+
             thHtml += `
-                <th class="${alignClass}" data-col-id="${col.id}" style="width: ${w}; position: relative; user-select: none;">
-                    <span>${col.label}</span>
+                <th class="rfq-th-stacked ${alignClass}" data-col-id="${col.id}" style="width: ${w}; text-align: ${isRight ? 'right' : 'left'}; position: relative; user-select: none;">
+                    <div style="display: flex; align-items: center; justify-content: ${isRight ? 'flex-end' : 'space-between'}; gap: 6px; min-width: 0; width: 100%;">
+                        <div class="rfq-th-content" style="align-items: ${isRight ? 'flex-end' : 'flex-start'}; text-align: ${isRight ? 'right' : 'left'};">
+                            <div class="rfq-th-title">${escapeHtml(col.label)}</div>
+                            ${col.subLabel ? `<div class="rfq-th-sub">${escapeHtml(col.subLabel)}</div>` : ''}
+                        </div>
+                        ${hasStatusFilter ? `
+                            <button type="button" class="po-th-funnel-btn ${isStatusFiltered ? 'is-active' : ''}" onclick="togglePoHeaderFilter(event, 'status')" title="Click to filter by Approval Status & Order Status">
+                                <i class="ph ph-funnel"></i>
+                                ${isStatusFiltered ? '<span class="po-th-funnel-dot"></span>' : ''}
+                            </button>
+                        ` : ''}
+                        ${hasPaymentFilter ? `
+                            <button type="button" class="po-th-funnel-btn ${isPaymentFiltered ? 'is-active' : ''}" onclick="togglePoHeaderFilter(event, 'payment')" title="Click to filter by Payment & Terms">
+                                <i class="ph ph-funnel"></i>
+                                ${isPaymentFiltered ? '<span class="po-th-funnel-dot"></span>' : ''}
+                            </button>
+                        ` : ''}
+                    </div>
                     <div class="po-col-resizer" onmousedown="initPoColResize(event, '${col.id}')"></div>
                 </th>
             `;
@@ -1261,17 +1664,23 @@ function renderPoTableHeader() {
 }
 
 function renderPoColumnChecklist() {
-    const listEl = document.getElementById('poColChecklist');
+    const listEl = document.getElementById('poDirectoryColCheckboxesList') || document.getElementById('poColChecklist');
     if (!listEl) return;
 
-    listEl.innerHTML = PO_DIRECTORY_COLUMNS.map(col => {
+    const q = (poDirectoryColSearchTerm || '').toLowerCase().trim();
+    const colsToShow = PO_DIRECTORY_COLUMNS.filter(c => !q || c.label.toLowerCase().includes(q) || (c.subLabel && c.subLabel.toLowerCase().includes(q)));
+
+    listEl.innerHTML = colsToShow.map(col => {
         const isChecked = activePoColIds.includes(col.id);
         const isDisabled = col.lockVisible ? 'disabled' : '';
         return `
             <label class="inv-col-item-row" title="${col.label}" style="display: flex; align-items: center; justify-content: space-between; padding: 5px 8px; font-size: 12px; border-radius: 6px; cursor: ${col.lockVisible ? 'default' : 'pointer'};">
                 <span style="display: flex; align-items: center; gap: 7px; color: ${col.lockVisible ? '#94a3b8' : '#1e293b'}; font-weight: ${isChecked ? '600' : '400'};">
                     <input type="checkbox" ${isChecked ? 'checked' : ''} ${isDisabled} onchange="togglePoColumnVisibility('${col.id}', this.checked)" style="accent-color: #9333ea; width: 14px; height: 14px; cursor: ${col.lockVisible ? 'default' : 'pointer'};">
-                    ${col.label}
+                    <span>
+                        <div>${escapeHtml(col.label)}</div>
+                        ${col.subLabel ? `<div style="font-size: 10px; color: #94a3b8; font-weight: 400;">${escapeHtml(col.subLabel)}</div>` : ''}
+                    </span>
                 </span>
                 ${col.lockVisible ? '<span style="font-size: 10px; color: #94a3b8; font-weight: 600;">(Locked)</span>' : ''}
             </label>
@@ -1284,15 +1693,34 @@ function renderPoColumnChecklist() {
     }
 }
 
-function togglePoColumnConfigDropdown(event) {
+function togglePoTableSettingsDropdown(event) {
     if (event) event.stopPropagation();
-    const dropdown = document.getElementById('poColConfigDropdown');
-    const btn = document.getElementById('btnPoColConfig');
+    const dropdown = document.getElementById('poTableSettingsDropdown');
     if (!dropdown) return;
 
     const isVisible = dropdown.style.display !== 'none';
-    dropdown.style.display = isVisible ? 'none' : 'block';
-    if (btn) btn.classList.toggle('active', !isVisible);
+    if (isVisible) {
+        dropdown.style.display = 'none';
+        return;
+    }
+
+    const trigger = event?.currentTarget || document.getElementById('btnPoColConfig');
+    if (trigger) {
+        const rect = trigger.getBoundingClientRect();
+        dropdown.style.top = `${Math.min(window.innerHeight - 360, rect.bottom + 6)}px`;
+        dropdown.style.left = `${Math.max(12, rect.right - 310)}px`;
+    }
+    dropdown.style.display = 'block';
+    renderPoColumnChecklist();
+}
+
+function handlePoDirectoryColSearch(q) {
+    poDirectoryColSearchTerm = q || '';
+    renderPoColumnChecklist();
+}
+
+function togglePoColumnConfigDropdown(event) {
+    togglePoTableSettingsDropdown(event);
 }
 
 function togglePoColumnVisibility(colId, isVisible) {
@@ -1303,25 +1731,25 @@ function togglePoColumnVisibility(colId, isVisible) {
     } else {
         activePoColIds = activePoColIds.filter(id => id !== colId);
     }
-    localStorage.setItem('rms_po_directory_cols_v3', JSON.stringify(activePoColIds));
+    localStorage.setItem('rms_po_directory_cols_v4', JSON.stringify(activePoColIds));
     renderPoTableHeader();
     renderPoDirectory();
 }
 
 function showAllPoColumns() {
     activePoColIds = PO_DIRECTORY_COLUMNS.map(c => c.id);
-    localStorage.setItem('rms_po_directory_cols_v3', JSON.stringify(activePoColIds));
+    localStorage.setItem('rms_po_directory_cols_v4', JSON.stringify(activePoColIds));
     renderPoTableHeader();
     renderPoDirectory();
-    showToast('✓ All columns visible', 'success');
+    showToast('✓ All tracker columns visible', 'success');
 }
 
 function resetPoColumnDefaults() {
     activePoColIds = PO_DIRECTORY_COLUMNS.filter(c => c.default).map(c => c.id);
-    localStorage.setItem('rms_po_directory_cols_v3', JSON.stringify(activePoColIds));
+    localStorage.setItem('rms_po_directory_cols_v4', JSON.stringify(activePoColIds));
     renderPoTableHeader();
     renderPoDirectory();
-    showToast('✓ Reset to default columns', 'success');
+    showToast('✓ Reset to default tracker columns', 'success');
 }
 
 function resetPoColumns() {
@@ -1330,7 +1758,7 @@ function resetPoColumns() {
 
 function resetPoColumnWidths() {
     savedPoColWidths = {};
-    localStorage.removeItem('rms_po_directory_col_widths_v2');
+    localStorage.removeItem('rms_po_directory_col_widths_v3');
     renderPoTableHeader();
     renderPoDirectory();
     showToast('✓ Column widths reset to defaults', 'success');
@@ -1368,7 +1796,7 @@ function handlePoColMouseMove(e) {
 
 function handlePoColMouseUp() {
     if (!poResizingColId) return;
-    localStorage.setItem('rms_po_directory_col_widths', JSON.stringify(savedPoColWidths));
+    localStorage.setItem('rms_po_directory_col_widths_v3', JSON.stringify(savedPoColWidths));
     poResizingColId = null;
     document.removeEventListener('mousemove', handlePoColMouseMove);
     document.removeEventListener('mouseup', handlePoColMouseUp);
@@ -1389,13 +1817,13 @@ function syncPoFilterPillActive(filterVal) {
 
 function renderPoDirectory() {
     const tbody = document.getElementById('poDirectoryTbody');
-    const pos = window.PoStore.purchaseOrders || [];
+    const pos = (window.PoStore.purchaseOrders || []).filter(p => p.status !== 'Archived');
     if (!tbody) return;
 
     // Filter
     const filtered = pos.filter(p => {
         const matchesStatus = (activePoStatusFilter === 'all') || (p.status === activePoStatusFilter);
-        
+
         let matchesApproval = true;
         if (activePoApprovalFilter === 'approved') {
             matchesApproval = (p.status === 'Approved / Issued' || p.status === 'Partially Received' || p.status === 'Fully Received' || p.isApproved === true);
@@ -1403,13 +1831,13 @@ function renderPoDirectory() {
             matchesApproval = (p.status === 'Draft PO' || p.status === 'Draft' || p.status === 'Pending Approval');
         }
 
-        const matchesPayment = (activePoPaymentFilter === 'all') || 
+        const matchesPayment = (activePoPaymentFilter === 'all') ||
             (p.paymentStatus && p.paymentStatus.toLowerCase().includes(activePoPaymentFilter.toLowerCase()));
 
         const matchesType = (activePoTypeFilter === 'all') || (p.poType === activePoTypeFilter);
 
         const q = (poSearchTerm || '').toLowerCase().trim();
-        const matchesSearch = !q || 
+        const matchesSearch = !q ||
             (p.poNumber && p.poNumber.toLowerCase().includes(q)) ||
             (p.vendorName && p.vendorName.toLowerCase().includes(q)) ||
             (p.vendorTradeName && p.vendorTradeName.toLowerCase().includes(q)) ||
@@ -1423,19 +1851,22 @@ function renderPoDirectory() {
         return matchesStatus && matchesApproval && matchesPayment && matchesType && matchesSearch;
     });
 
-    // KPI Counts
+    // KPI Counts (5 Cards)
     const total = pos.length;
-    const pending = pos.filter(p => p.status === 'Approved / Issued').length;
+    const drafts = pos.filter(p => p.status === 'Draft PO' || p.status === 'Draft' || p.status === 'Pending Approval').length;
+    const pending = pos.filter(p => p.status === 'Approved / Issued' || p.status === 'Partially Received').length;
     const received = pos.filter(p => p.status === 'Fully Received').length;
     const paid = pos.filter(p => p.paymentStatus === 'Paid in Full / Cash Out').length;
 
     const elKpiTotal = document.getElementById('kpiPoTotal');
+    const elKpiDrafts = document.getElementById('kpiPoDrafts');
     const elKpiPending = document.getElementById('kpiPoPending');
     const elKpiReceived = document.getElementById('kpiPoReceived');
     const elKpiPaid = document.getElementById('kpiPoPaid');
     const elTabCount = document.getElementById('tabPoCount');
 
     if (elKpiTotal) elKpiTotal.textContent = total;
+    if (elKpiDrafts) elKpiDrafts.textContent = drafts;
     if (elKpiPending) elKpiPending.textContent = pending;
     if (elKpiReceived) elKpiReceived.textContent = received;
     if (elKpiPaid) elKpiPaid.textContent = paid;
@@ -1451,9 +1882,10 @@ function renderPoDirectory() {
     if (elCountPaid) elCountPaid.textContent = paid;
 
     renderPoActiveFilterChips();
+    updatePoBatchToolbarUI();
 
     if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="${activePoColIds.length || 8}" style="text-align: center; padding: 36px; color: var(--po-text-muted);">No Purchase Orders found matching the filter criteria.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="${(activePoColIds.length || 8) + 1}" style="text-align: center; padding: 36px; color: var(--po-text-muted);">No Purchase Orders found matching the filter criteria.</td></tr>`;
         const pStart = document.getElementById('poPaginationStart');
         const pEnd = document.getElementById('poPaginationEnd');
         const pTotal = document.getElementById('poPaginationTotal');
@@ -1484,138 +1916,167 @@ function renderPoDirectory() {
 
     tbody.innerHTML = pageItems.map(p => {
         const gross = (p.items || []).reduce((acc, it) => acc + ((parseFloat(it.quantity) || 0) * (parseFloat(it.unitPrice) || 0)), 0);
+        const totalOrderedUnits = (p.items || []).reduce((acc, it) => acc + (parseFloat(it.quantity) || 0), 0);
+        const totalReceivedUnits = (p.items || []).reduce((acc, it) => acc + (parseFloat(it.receivedQuantity || 0)), 0);
         const isMarket = p.poType === 'wet_market';
         let payBadgeClass = 'unpaid';
         if (p.paymentStatus === 'Paid in Full / Cash Out') payBadgeClass = 'paid';
         else if (p.paymentStatus === 'Partial Payment') payBadgeClass = 'partial';
 
         let poStatusClass = 'draft';
-        if (p.status === 'Approved / Issued') poStatusClass = 'approved';
+        if (p.status === 'Approved / Issued' || p.status === 'Partially Received') poStatusClass = 'approved';
         else if (p.status === 'Fully Received') poStatusClass = 'received';
+        else if (p.status === 'Pending Approval') poStatusClass = 'approval';
 
-        let cellsHtml = '';
+        const isChecked = selectedPoNumbers.has(p.poNumber);
+
+        let cellsHtml = `
+            <td style="text-align: center;">
+                <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleSelectSinglePo('${escapeHtml(p.poNumber)}', this.checked)" aria-label="Select ${escapeHtml(p.poNumber)}">
+            </td>
+        `;
+
         PO_DIRECTORY_COLUMNS.forEach(col => {
             if (!activePoColIds.includes(col.id)) return;
 
             if (col.id === 'ref') {
                 cellsHtml += `
-                    <td>
+                    <td class="td-left">
                         <div class="rms-cell-stack">
-                            <div class="rms-cell-title" style="font-family: monospace; color: var(--po-primary-dark, #0284c7);">
-                                <a href="javascript:void(0)" onclick="editPoFromDirectory('${escapeHtml(p.poNumber)}')" title="PO: ${escapeHtml(p.poNumber)}" style="color: inherit; text-decoration: underline; font-weight: 700;">
+                            <div class="rms-cell-title">
+                                <a href="javascript:void(0)" class="po-dir-ref-link" onclick="editPoFromDirectory('${escapeHtml(p.poNumber)}')" title="Open ${escapeHtml(p.poNumber)} in Builder">
                                     ${escapeHtml(p.poNumber)}
                                 </a>
                             </div>
                             <div class="rms-cell-sub" title="RFQ: ${escapeHtml(p.rfqReference || 'Direct Buy')}">
-                                <span style="color: #94a3b8; font-family: monospace;">RFQ:</span> <span style="font-family: monospace;">${escapeHtml(p.rfqReference || 'Direct Buy')}</span>
+                                ${p.rfqReference ? `<button type="button" class="po-linked-rfq-sublink" onclick="openLinkedRfqModal('${escapeHtml(p.rfqReference)}')"><i class="ph ph-link"></i> ${escapeHtml(p.rfqReference)} <i class="ph ph-arrow-up-right" style="font-size: 9px;"></i></button>` : `<span style="color: #94a3b8; font-family: monospace;">Direct Order</span>`}
                             </div>
                         </div>
                     </td>
                 `;
             } else if (col.id === 'vendor') {
                 cellsHtml += `
-                    <td>
+                    <td class="td-left">
                         <div class="rms-cell-stack">
                             <div class="rms-cell-title" title="${escapeHtml(p.vendorTradeName || p.vendorName || 'Supplier')}">
                                 ${escapeHtml(p.vendorTradeName || p.vendorName || 'Supplier')}
                                 ${isMarket ? '<span style="font-size: 0.65rem; background: #fef3c7; color: #b45309; padding: 1px 4px; border-radius: 3px; font-weight: 600; margin-left: 4px;">Market</span>' : ''}
                             </div>
                             <div class="rms-cell-sub" title="${escapeHtml((p.vendorContactPerson || 'Purchaser') + ' • ' + (p.vendorPhone || p.vendorEmail || ''))}">
-                                ${escapeHtml(p.vendorContactPerson || 'Purchaser')} • ${escapeHtml(p.vendorPhone || p.vendorEmail || '')}
+                                <i class="ph ph-user" style="font-size: 11px; color: #94a3b8;"></i> ${escapeHtml(p.vendorContactPerson || 'Purchasing Contact')}
                             </div>
                         </div>
                     </td>
                 `;
             } else if (col.id === 'dates') {
                 cellsHtml += `
-                    <td>
+                    <td class="td-left">
                         <div class="rms-cell-stack">
-                            <div class="rms-cell-title" style="font-size: 0.78rem;" title="Order Date: ${formatDateDisplay(p.orderDate)}">
-                                <span style="color: #64748b; font-weight: 500;">Order:</span> ${formatDateDisplay(p.orderDate)}
+                            <div class="rms-cell-title" title="Order Date: ${formatDateDisplay(p.orderDate)}">
+                                ${formatDateDisplay(p.orderDate)}
                             </div>
-                            <div class="rms-cell-sub" style="color: var(--po-teal-dark, #0f766e); font-weight: 600;" title="Expected Delivery: ${formatDateDisplay(p.expectedDelivery)}">
-                                <span style="color: #94a3b8; font-weight: 500;">Arrival:</span> ${formatDateDisplay(p.expectedDelivery)}
+                            <div class="rms-cell-sub" title="Expected Delivery: ${formatDateDisplay(p.expectedDelivery)}">
+                                Arrival: ${formatDateDisplay(p.expectedDelivery)}
                             </div>
                         </div>
                     </td>
                 `;
             } else if (col.id === 'destination') {
                 cellsHtml += `
-                    <td>
+                    <td class="td-left">
                         <div class="rms-cell-stack">
-                            <div class="rms-cell-title" style="font-weight: 600; color: #334155;" title="${escapeHtml(p.deliveryLocation || 'Main Commissary / Outlet')}">
-                                <i class="ph ph-map-pin" style="color: #94a3b8; font-size: 12px; margin-right: 2px;"></i>${escapeHtml(p.deliveryLocation || 'Main Commissary')}
+                            <div class="rms-cell-title" title="${escapeHtml(p.deliveryLocation || 'Main Commissary / Outlet')}">
+                                ${escapeHtml(p.deliveryLocation || 'Main Commissary')}
                             </div>
                             <div class="rms-cell-sub" title="${escapeHtml(p.shippingNotes || 'Central Warehouse')}">
-                                ${escapeHtml(p.shippingNotes || 'Central Warehouse')}
+                                <i class="ph ph-warehouse" style="font-size: 11px; color: #94a3b8;"></i> ${escapeHtml(p.shippingNotes || 'Central Warehouse')}
                             </div>
                         </div>
                     </td>
                 `;
             } else if (col.id === 'items') {
+                const lineCount = (p.items || []).length;
                 cellsHtml += `
-                    <td class="td-center">
-                        <div class="rms-cell-stack" style="align-items: center;">
-                            <span class="po-tab-count">${(p.items || []).length} items</span>
-                            <span style="font-size: 0.72rem; color: #0f172a; font-weight: 800;">₱${formatMoney(gross)}</span>
+                    <td class="td-num">
+                        <div class="rms-cell-stack rms-stack-right">
+                            <div class="rms-cell-title" style="color: #0f172a; font-weight: 800; font-variant-numeric: tabular-nums;">₱${formatMoney(gross)}</div>
+                            <div class="rms-cell-sub" style="justify-content: flex-end;">${lineCount} line item${lineCount === 1 ? '' : 's'}</div>
+                        </div>
+                    </td>
+                `;
+            } else if (col.id === 'fulfillment') {
+                const isFull = p.status === 'Fully Received' || (totalOrderedUnits > 0 && totalReceivedUnits >= totalOrderedUnits);
+                const isPart = !isFull && (p.status === 'Partially Received' || totalReceivedUnits > 0);
+                const fLabel = isFull ? '100% Received' : (isPart ? 'Partial GRN' : 'Awaiting Dock');
+                const fClass = isFull ? 'po-appr-approved' : (isPart ? 'po-appr-pending' : 'po-appr-neutral');
+                cellsHtml += `
+                    <td class="td-left">
+                        <div class="rms-cell-stack" style="align-items: flex-start; gap: 3px;">
+                            <span class="po-appr-pill ${fClass}">${fLabel}</span>
+                            <div class="rms-cell-sub" style="font-variant-numeric: tabular-nums;">${isFull ? totalOrderedUnits.toFixed(1) : totalReceivedUnits.toFixed(1)} / ${totalOrderedUnits.toFixed(1)} units</div>
                         </div>
                     </td>
                 `;
             } else if (col.id === 'payment') {
                 cellsHtml += `
-                    <td class="td-center">
-                        <div class="rms-cell-stack" style="align-items: center; gap: 2px;">
-                            <span class="pay-badge ${payBadgeClass}" style="cursor: pointer; padding: 2px 7px; font-size: 10px;" onclick="openPaymentSettlementModal('${escapeHtml(p.poNumber)}')" title="View Financial Settlement">
+                    <td class="td-left">
+                        <div class="rms-cell-stack" style="align-items: flex-start; gap: 3px;">
+                            <span class="pay-badge ${payBadgeClass}" style="cursor: pointer; padding: 2px 8px; font-size: 0.70rem; border-radius: 6px;" onclick="openPaymentSettlementModal('${escapeHtml(p.poNumber)}')" title="View Financial Settlement">
                                 ${escapeHtml(p.paymentStatus || 'Unpaid')}
                             </span>
-                            <span class="rms-cell-sub" style="font-size: 0.70rem; color: #64748b;" title="${escapeHtml(p.paymentMethod || p.paymentRemarks || 'Standard Terms')}">
-                                ${escapeHtml(p.paymentMethod || 'Terms')}
-                            </span>
+                            <div class="rms-cell-sub" title="${escapeHtml(p.paymentMethod || p.paymentRemarks || 'Standard Terms')}">
+                                ${escapeHtml(p.paymentTerms || p.paymentMethod || 'Net 30 Days')}
+                            </div>
                         </div>
                     </td>
                 `;
             } else if (col.id === 'status') {
                 const isApproved = (p.status === 'Approved / Issued' || p.status === 'Partially Received' || p.status === 'Fully Received' || p.isApproved === true);
                 cellsHtml += `
-                    <td class="td-center">
-                        <div class="rms-cell-stack" style="align-items: center; gap: 2px;">
-                            <span class="po-status-badge ${poStatusClass}" style="font-size: 0.70rem; padding: 1px 7px;">
-                                <i class="ph ph-dot"></i> ${escapeHtml(p.status)}
+                    <td class="td-left">
+                        <div class="rms-cell-stack" style="align-items: flex-start; gap: 3px;">
+                            <span class="po-status-badge ${poStatusClass}" style="font-size: 0.70rem; padding: 2px 8px;">
+                                <span class="status-pill-dot"></span> ${escapeHtml(p.status)}
                             </span>
-                            ${isApproved ? `
-                                <span class="po-approval-badge approved" title="Procurement Approval: Approved">
-                                    <i class="ph ph-check-circle"></i> Approved
-                                </span>
-                            ` : `
-                                <span class="po-approval-badge pending" title="Procurement Approval: Pending Approval">
-                                    <i class="ph ph-hourglass-simple"></i> Pending
-                                </span>
-                            `}
+                            <div class="rms-cell-sub">
+                                ${isApproved ? '<span style="color: #047857; font-weight: 600;"><i class="ph ph-check-circle"></i> Manager Approved</span>' : '<span style="color: #b45309; font-weight: 600;"><i class="ph ph-clock"></i> Pending Sign-off</span>'}
+                            </div>
                         </div>
                     </td>
                 `;
+            } else if (col.id === 'company') {
+                cellsHtml += `<td class="td-left"><div class="rms-cell-stack"><div class="rms-cell-title">Top C Culinary Group</div><div class="rms-cell-sub" style="font-family: monospace;">COMP-01</div></div></td>`;
+            } else if (col.id === 'currency_incoterms') {
+                cellsHtml += `<td class="td-left"><div class="rms-cell-stack"><div class="rms-cell-title">PHP (₱)</div><div class="rms-cell-sub">DDP Commissary</div></div></td>`;
+            } else if (col.id === 'amount_paid') {
+                const paidAmt = parseFloat(p.amountPaid || 0);
+                const balAmt = Math.max(0, gross - paidAmt);
+                cellsHtml += `<td class="td-num"><div class="rms-cell-stack rms-stack-right"><div class="rms-cell-title" style="color: #059669; font-variant-numeric: tabular-nums;">₱${formatMoney(paidAmt)}</div><div class="rms-cell-sub" style="justify-content: flex-end; font-variant-numeric: tabular-nums;">Bal: ₱${formatMoney(balAmt)}</div></div></td>`;
+            } else if (col.id === 'payment_reference') {
+                cellsHtml += `<td class="td-left"><div class="rms-cell-stack"><div class="rms-cell-title" style="font-family: monospace;">${escapeHtml(p.paymentReference || 'N/A')}</div><div class="rms-cell-sub">${formatDateDisplay(p.paymentDate) || '--'}</div></div></td>`;
+            } else if (col.id === 'po_notes') {
+                cellsHtml += `<td class="td-left"><div class="rms-cell-stack"><div class="rms-cell-title">${escapeHtml(p.orderTitle || 'Standard PO')}</div><div class="rms-cell-sub">${escapeHtml(p.specialNotes || '--')}</div></div></td>`;
+            } else if (col.id === 'approval_details') {
+                cellsHtml += `<td class="td-left"><div class="rms-cell-stack"><div class="rms-cell-title">${escapeHtml(p.approvedBy || 'Procurement Manager')}</div><div class="rms-cell-sub">${escapeHtml(p.approvalNotes || 'Verified')}</div></div></td>`;
+            } else if (col.id === 'created_by') {
+                cellsHtml += `<td class="td-left"><div class="rms-cell-stack"><div class="rms-cell-title">${escapeHtml(p.createdByUser || 'Procurement Specialist')}</div><div class="rms-cell-sub">${formatDateDisplay(p.orderDate)}</div></div></td>`;
             } else if (col.id === 'actions') {
                 cellsHtml += `
-                    <td class="td-center">
-                        <div style="display: flex; align-items: center; justify-content: center; gap: 4px;">
+                    <td class="td-num td-actions-cell">
+                        <div class="po-row-actions">
                             ${(p.status === 'Approved / Issued' || p.status === 'Partially Received') ? `
-                                <a href="${window.PurchaseOrderConfig?.routes?.inventoryStockIn || '/inventory/stock-in'}?po=${encodeURIComponent(p.poNumber)}" class="inv-table-filter-btn" style="color: #059669; text-decoration: none; width: 24px; height: 24px; font-size: 12px;" title="Receive Stock in Inventory (Stock In / GRN)">
+                                <a href="${window.PurchaseOrderConfig?.routes?.inventoryStockIn || '/inventory/stock-in'}?po=${encodeURIComponent(p.poNumber)}" class="po-act-pill po-act-pill-grn" title="Receive Stock in Inventory (Stock In / GRN)">
                                     <i class="ph ph-tray-arrow-down"></i>
+                                    <span>Stock-In</span>
                                 </a>
                             ` : ''}
-                            <button type="button" class="inv-table-filter-btn" onclick="openPaymentSettlementModal('${escapeHtml(p.poNumber)}')" title="Financial Settlement & Payments" style="color: #0284c7; width: 24px; height: 24px; font-size: 12px;">
-                                <i class="ph ph-bank"></i>
-                            </button>
-                            <button type="button" class="inv-table-filter-btn" onclick="openPoSingleAuditModal('${escapeHtml(p.poNumber)}')" title="View Audit Trail for this PO" style="width: 24px; height: 24px; font-size: 12px;">
-                                <i class="ph ph-clock-counter-clockwise"></i>
-                            </button>
-                            <button type="button" class="inv-table-filter-btn" onclick="previewPoFromDirectory('${escapeHtml(p.poNumber)}')" title="Preview Printable PO" style="width: 24px; height: 24px; font-size: 12px;">
-                                <i class="ph ph-eye"></i>
-                            </button>
-                            <button type="button" class="inv-table-filter-btn" onclick="editPoFromDirectory('${escapeHtml(p.poNumber)}')" title="Edit Purchase Order" style="width: 24px; height: 24px; font-size: 12px;">
+                            <button type="button" class="po-act-icon-btn" onclick="editPoFromDirectory('${escapeHtml(p.poNumber)}')" title="Edit Purchase Order in Builder">
                                 <i class="ph ph-pencil-simple"></i>
                             </button>
-                            <button type="button" class="inv-table-filter-btn" style="color: var(--po-danger); width: 24px; height: 24px; font-size: 12px;" onclick="deletePo('${escapeHtml(p.poNumber)}')" title="Delete PO">
+                            <button type="button" class="po-act-icon-btn" onclick="previewPoFromDirectory('${escapeHtml(p.poNumber)}')" title="Preview Printable PO">
+                                <i class="ph ph-eye"></i>
+                            </button>
+                            <button type="button" class="po-act-icon-btn po-act-icon-danger" onclick="deletePo('${escapeHtml(p.poNumber)}')" title="Delete PO">
                                 <i class="ph ph-trash"></i>
                             </button>
                         </div>
@@ -1678,7 +2139,11 @@ function changePoPageSize(size) {
 
 function filterPoStatus(status, btn) {
     activePoStatusFilter = status;
+    if (status === 'all') activePoPaymentFilter = 'all';
     poCurrentPage = 1;
+    document.querySelectorAll('#pane-tab-po-list .po-kpi-card[data-kpi-filter]').forEach(card => {
+        card.classList.toggle('is-active-filter', card.getAttribute('data-kpi-filter') === status);
+    });
     renderPoTableHeader();
     renderPoDirectory();
 }
@@ -1693,6 +2158,9 @@ function filterPoType(type, btn) {
 function filterPoPayment(payStatus, btn) {
     activePoPaymentFilter = payStatus;
     poCurrentPage = 1;
+    document.querySelectorAll('#pane-tab-po-list .po-kpi-card[data-kpi-filter]').forEach(card => {
+        card.classList.toggle('is-active-filter', card.getAttribute('data-kpi-filter') === payStatus);
+    });
     renderPoTableHeader();
     renderPoDirectory();
 }
@@ -2026,19 +2494,23 @@ function editPoFromDirectory(poNumber) {
     if (!po) return;
 
     window.PoStore.activePo = JSON.parse(JSON.stringify(po));
+    window.PoStore._isExplicitlyEditing = true;
 
     // Update Form
-    document.getElementById('poNumberInput').value = po.poNumber;
-    document.getElementById('poRefDisplay').textContent = po.poNumber;
-    if (document.getElementById('poOrderTitle')) {
-        document.getElementById('poOrderTitle').value = po.orderTitle || po.purpose || '';
+    const numIn = document.getElementById('poNumberInput');
+    if (numIn) numIn.value = po.poNumber;
+    const refDisp = document.getElementById('poRefDisplay');
+    if (refDisp) refDisp.textContent = po.poNumber;
+    const titleIn = document.getElementById('poOrderTitle');
+    if (titleIn) {
+        titleIn.value = po.orderTitle || po.purpose || '';
     }
 
     const rfqBadge = document.getElementById('poLinkedRfqPill');
     if (rfqBadge) {
         if (po.rfqReference) {
             rfqBadge.style.display = 'inline-flex';
-            rfqBadge.textContent = `Tender: ${po.rfqReference}`;
+            rfqBadge.innerHTML = `<i class="ph ph-link"></i> Source RFQ: ${escapeHtml(po.rfqReference)}`;
         } else {
             rfqBadge.style.display = 'none';
         }
@@ -2046,13 +2518,15 @@ function editPoFromDirectory(poNumber) {
 
     setPoMode(po.poType || 'vendor');
 
-    if (po.poType === 'wet_market') {
-        document.getElementById('poMarketStallName').value = po.vendorName || '';
-    } else {
+    const stallIn = document.getElementById('poMarketStallName');
+    if (po.poType === 'wet_market' && stallIn) {
+        stallIn.value = po.vendorName || '';
+    } else if (document.getElementById('poVendorSelect')) {
         document.getElementById('poVendorSelect').value = po.vendorId || '';
     }
 
-    const vendor = window.PoStore.vendors.find(v => (v.id === po.vendorId || v.code === po.vendorId)) || (po.vendorName ? {
+    const vendor = window.PoStore.vendors.find(v => (v.id === po.vendorId || v.code === po.vendorId || v.vendorCode === po.vendorId)) || (po.vendorName ? {
+        id: po.vendorId || 'VND',
         code: po.vendorId || 'VND',
         tradeName: po.vendorTradeName || po.vendorName,
         legalName: po.vendorName,
@@ -2061,29 +2535,35 @@ function editPoFromDirectory(poNumber) {
     } : null);
     updatePoVendorSummaryCard(vendor);
 
-    document.getElementById('poContactPerson').value = po.vendorContactPerson || '';
-    document.getElementById('poContactPhone').value = po.vendorPhone || '';
-    document.getElementById('poContactEmail').value = po.vendorEmail || '';
-    document.getElementById('poFullAddress').value = po.vendorAddress || '';
-    document.getElementById('poOrderDate').value = po.orderDate || '';
-    document.getElementById('poExpectedDelivery').value = po.expectedDelivery || '';
-    document.getElementById('poRfqReference').value = po.rfqReference || '';
-    document.getElementById('poDeliveryLocation').value = po.deliveryLocation || '';
-    document.getElementById('poSpecialNotes').value = po.specialNotes || '';
+    const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
+    setVal('poContactPerson', po.vendorContactPerson || '');
+    setVal('poContactPhone', po.vendorPhone || '');
+    setVal('poContactEmail', po.vendorEmail || '');
+    setVal('poFullAddress', po.vendorAddress || '');
+    setVal('poOrderDate', po.orderDate || '');
+    setVal('poExpectedDelivery', po.expectedDelivery || '');
+    setVal('poRfqReference', po.rfqReference || '');
+    setVal('poDeliveryLocation', po.deliveryLocation || 'Central Commissary - Receiving Dock 1');
+    setVal('poSpecialNotes', po.specialNotes || '');
+    setVal('poPaymentTerms', po.paymentTerms || 'Net 30 Days');
 
     // Payment fields
-    document.getElementById('poPaymentStatus').value = po.paymentStatus || 'Unpaid / Credit';
-    document.getElementById('poPaymentMethod').value = po.paymentMethod || 'Cash / Petty Cash';
-    document.getElementById('poAmountPaid').value = parseFloat(po.amountPaid || 0).toFixed(2);
-    document.getElementById('poPaymentRef').value = po.paymentReference || '';
-    document.getElementById('poPaymentDate').value = po.paymentDate || '';
-    document.getElementById('poFundSource').value = po.fundSource || 'Branch Petty Cash Fund';
-    document.getElementById('poPaymentRemarks').value = po.paymentRemarks || '';
+    setVal('poPaymentStatus', po.paymentStatus || 'Unpaid / Credit');
+    setVal('poPaymentMethod', po.paymentMethod || 'Trade Credit (Net 30/15)');
+    setVal('poAmountPaid', parseFloat(po.amountPaid || 0).toFixed(2));
+    setVal('poPaymentRef', po.paymentReference || '');
+    setVal('poPaymentDate', po.paymentDate || '');
+    setVal('poFundSource', po.fundSource || 'Main Commissary Checking Acct');
+    setVal('poPaymentRemarks', po.paymentRemarks || '');
 
+    applyPoStageDefaultColumns(po.status || 'Draft PO');
+    updatePoLifecycleProgressBar(po.status || 'Draft PO');
     renderPoItemsTable();
     handlePaymentStatusChange(po.paymentStatus || 'Unpaid / Credit');
+    updatePoLiveDocumentMockup();
 
-    document.getElementById('tabPoBuilderBadge').textContent = `Editing ${po.poNumber}`;
+    const badge = document.getElementById('tabPoBuilderBadge');
+    if (badge) badge.textContent = `Editing ${po.poNumber}`;
     switchPoTab('tab-po-builder');
     showToast(`Loaded ${po.poNumber} into Purchase Order Builder`, 'success');
 }
@@ -2095,29 +2575,68 @@ function previewPoFromDirectory(poNumber) {
     openPoDocumentPreview();
 }
 
-function deletePo(poNumber) {
-    if (confirm(`Are you sure you want to delete purchase order ${poNumber}?`)) {
-        const deletedPo = (window.PoStore.purchaseOrders || []).find(p => p.poNumber === poNumber);
-        window.PoStore.purchaseOrders = window.PoStore.purchaseOrders.filter(p => p.poNumber !== poNumber);
-        localStorage.setItem('rms_purchase_orders', JSON.stringify(window.PoStore.purchaseOrders));
+async function deletePo(poNumber) {
+    if (!confirm(`Are you sure you want to delete Purchase Order ${poNumber}?`)) return;
 
-        logProcurementAudit(
-            'PO',
-            poNumber,
-            'DELETED',
-            'Purchase Order Cancelled / Deleted',
-            `Purchase Order ${poNumber} was archived and removed from registry.`,
-            [{ label: 'Supplier / Stall', value: deletedPo ? (deletedPo.vendorTradeName || deletedPo.vendorName) : 'N/A' }]
-        );
+    const deletedPo = (window.PoStore.purchaseOrders || []).find(p => p.poNumber === poNumber);
 
-        renderPoDirectory();
-        showToast(`Purchase Order ${poNumber} deleted`, 'success');
+    try {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        const route = window.PurchaseOrderConfig?.routes?.batchDelete || '/purchase/api/orders/batch-delete';
+        await fetch(route, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken || '' },
+            body: JSON.stringify({ po_numbers: [poNumber], force: true })
+        });
+    } catch (e) {
+        console.warn('deletePo API fallback:', e);
     }
+
+    // Track in deleted PO numbers so seeded/cached entries do not resurrect
+    try {
+        const deletedList = JSON.parse(localStorage.getItem('rms_deleted_po_numbers') || '[]');
+        if (Array.isArray(deletedList) && !deletedList.includes(poNumber)) {
+            deletedList.push(poNumber);
+            localStorage.setItem('rms_deleted_po_numbers', JSON.stringify(deletedList));
+        }
+    } catch (e) {}
+
+    // Unlink any RFQ in localStorage rms_rfq_directory that pointed to this PO
+    try {
+        const rfqList = JSON.parse(localStorage.getItem('rms_rfq_directory') || '[]');
+        if (Array.isArray(rfqList)) {
+            let changed = false;
+            rfqList.forEach(r => {
+                if (r && (r.poReference === poNumber || (deletedPo && deletedPo.rfqReference && r.rfqNumber === deletedPo.rfqReference))) {
+                    r.poReference = '';
+                    changed = true;
+                }
+            });
+            if (changed) localStorage.setItem('rms_rfq_directory', JSON.stringify(rfqList));
+        }
+    } catch (e) {}
+
+    selectedPoNumbers.delete(poNumber);
+    window.PoStore.purchaseOrders = (window.PoStore.purchaseOrders || []).filter(p => p.poNumber !== poNumber);
+    localStorage.setItem('rms_purchase_orders', JSON.stringify(window.PoStore.purchaseOrders));
+
+    logProcurementAudit(
+        'PO',
+        poNumber,
+        'DELETED',
+        'Purchase Order Cancelled / Deleted',
+        `Purchase Order ${poNumber} was deleted and removed from registry.`,
+        [{ label: 'Supplier / Stall', value: deletedPo ? (deletedPo.vendorTradeName || deletedPo.vendorName) : 'N/A' }]
+    );
+
+    updatePoBatchToolbarUI();
+    renderPoDirectory();
+    showToast(`✓ Purchase Order ${poNumber} deleted`, 'success');
 }
 
 function resetPoForm() {
-    const count = (window.PoStore.purchaseOrders || []).length;
-    const poNum = `PO-2026-${String(count + 105).padStart(4, '0')}`;
+    const poNum = getNextUniquePoNumber();
+    window.PoStore._isExplicitlyEditing = false;
     window.PoStore.activePo = {
         poNumber: poNum,
         poType: 'vendor',
@@ -2133,7 +2652,8 @@ function resetPoForm() {
         vendorAddress: '',
         orderDate: new Date().toISOString().split('T')[0],
         expectedDelivery: '',
-        deliveryLocation: 'Central Commissary - Receiving Dock A',
+        deliveryLocation: 'Central Commissary - Receiving Dock 1',
+        paymentTerms: 'Net 30 Days',
         specialNotes: '',
         paymentStatus: 'Unpaid / Credit',
         paymentMethod: 'Trade Credit (Net 30/15)',
@@ -2141,38 +2661,44 @@ function resetPoForm() {
         balanceDue: 0.00,
         paymentReference: '',
         paymentDate: '',
-        fundSource: 'Branch Petty Cash Fund',
+        fundSource: 'Main Commissary Checking Acct',
         paymentRemarks: '',
         approvalNotes: '',
         approvedBy: 'Procurement Specialist',
         status: 'Draft PO',
+        attachedFiles: [],
         items: []
     };
 
-    document.getElementById('poNumberInput').value = poNum;
-    document.getElementById('poRefDisplay').textContent = poNum;
-    if (document.getElementById('poOrderTitle')) document.getElementById('poOrderTitle').value = '';
+    const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
+    setVal('poNumberInput', poNum);
+    const refDisp = document.getElementById('poRefDisplay');
+    if (refDisp) refDisp.textContent = poNum;
+    setVal('poOrderTitle', '');
     const rfqBadge = document.getElementById('poLinkedRfqPill');
     if (rfqBadge) { rfqBadge.style.display = 'none'; rfqBadge.textContent = ''; }
-    document.getElementById('poVendorSelect').value = '';
+    setVal('poVendorSelect', '');
     updatePoVendorSummaryCard(null);
     renderPoVendorComboboxList();
 
-    document.getElementById('poMarketStallName').value = '';
-    document.getElementById('poContactPerson').value = '';
-    document.getElementById('poContactPhone').value = '';
-    document.getElementById('poContactEmail').value = '';
-    document.getElementById('poFullAddress').value = '';
-    document.getElementById('poRfqReference').value = '';
-    document.getElementById('poPaymentStatus').value = 'Unpaid / Credit';
-    document.getElementById('poAmountPaid').value = '0.00';
-    document.getElementById('poPaymentRef').value = '';
-    document.getElementById('tabPoBuilderBadge').textContent = 'New PO';
+    setVal('poMarketStallName', '');
+    setVal('poContactPerson', '');
+    setVal('poContactPhone', '');
+    setVal('poContactEmail', '');
+    setVal('poFullAddress', '');
+    setVal('poRfqReference', '');
+    setVal('poPaymentStatus', 'Unpaid / Credit');
+    setVal('poAmountPaid', '0.00');
+    setVal('poPaymentRef', '');
+    const badge = document.getElementById('tabPoBuilderBadge');
+    if (badge) badge.textContent = 'New PO';
 
     setPoMode('vendor');
     initPoDates();
+    applyPoStageDefaultColumns('Draft PO');
+    updatePoLifecycleProgressBar('Draft PO');
     renderPoItemsTable();
-    showToast('PO Form Reset', 'success');
+    updatePoLiveDocumentMockup();
 }
 
 /**
@@ -2184,28 +2710,33 @@ function openPoDocumentPreview() {
     const po = window.PoStore.activePo;
     const isMarket = po.poType === 'wet_market';
     const gross = calculatePoGrossTotal();
-    const paid = parseFloat(document.getElementById('poAmountPaid').value) || (po.amountPaid || 0);
+    const getVal = id => document.getElementById(id)?.value || '';
+    const setTxt = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    const paid = parseFloat(getVal('poAmountPaid')) || (po.amountPaid || 0);
     const balance = Math.max(0, gross - paid);
 
-    document.getElementById('docPoNumber').textContent = po.poNumber;
-    document.getElementById('docPoDate').textContent = formatDateDisplay(document.getElementById('poOrderDate').value || po.orderDate);
-    document.getElementById('docPoDeliveryDue').textContent = formatDateDisplay(document.getElementById('poExpectedDelivery').value || po.expectedDelivery);
+    setTxt('docPoNumber', po.poNumber);
+    setTxt('docPoDate', formatDateDisplay(getVal('poOrderDate') || po.orderDate));
+    setTxt('docPoDeliveryDue', formatDateDisplay(getVal('poExpectedDelivery') || po.expectedDelivery));
 
     const vendorTitle = isMarket ? 
-        (document.getElementById('poMarketStallName').value || po.vendorName || 'Wet Market Stall') : 
+        (getVal('poMarketStallName') || po.vendorName || 'Wet Market Stall') : 
         (po.vendorTradeName || po.vendorName || 'Vendor Partner');
 
-    document.getElementById('docPoVendor').textContent = vendorTitle;
-    document.getElementById('docPoVendorDetails').innerHTML = `
-        <strong>Attn:</strong> ${escapeHtml(document.getElementById('poContactPerson').value || po.vendorContactPerson || 'Representative')}<br>
-        <strong>Phone:</strong> ${escapeHtml(document.getElementById('poContactPhone').value || po.vendorPhone || 'N/A')}<br>
-        <strong>Address / Market:</strong> ${escapeHtml(document.getElementById('poFullAddress').value || po.vendorAddress || 'Metro Manila')}
-    `;
+    setTxt('docPoVendor', vendorTitle);
+    const detailsEl = document.getElementById('docPoVendorDetails');
+    if (detailsEl) {
+        detailsEl.innerHTML = `
+            <strong>Attn:</strong> ${escapeHtml(getVal('poContactPerson') || po.vendorContactPerson || 'Representative')}<br>
+            <strong>Phone:</strong> ${escapeHtml(getVal('poContactPhone') || po.vendorPhone || 'N/A')}<br>
+            <strong>Address / Market:</strong> ${escapeHtml(getVal('poFullAddress') || po.vendorAddress || 'Metro Manila')}
+        `;
+    }
 
-    document.getElementById('docPoDeliveryDest').textContent = document.getElementById('poDeliveryLocation').value || po.deliveryLocation;
-    document.getElementById('docPoPaymentStatus').textContent = document.getElementById('poPaymentStatus').value || po.paymentStatus;
-    document.getElementById('docPoPaymentMethod').textContent = document.getElementById('poPaymentMethod').value || po.paymentMethod;
-    document.getElementById('docPoPaymentRef').textContent = document.getElementById('poPaymentRef').value || po.paymentReference || 'N/A';
+    setTxt('docPoDeliveryDest', getVal('poDeliveryLocation') || po.deliveryLocation);
+    setTxt('docPoPaymentStatus', getVal('poPaymentStatus') || po.paymentStatus);
+    setTxt('docPoPaymentMethod', getVal('poPaymentMethod') || po.paymentMethod);
+    setTxt('docPoPaymentRef', getVal('poPaymentRef') || po.paymentReference || 'N/A');
 
     // Populate table
     const tbody = document.getElementById('docPoItemsTbody');
@@ -2233,9 +2764,9 @@ function openPoDocumentPreview() {
         }
     }
 
-    document.getElementById('docPoGross').textContent = `₱${formatMoney(gross)}`;
-    document.getElementById('docPoPaid').textContent = `₱${formatMoney(paid)}`;
-    document.getElementById('docPoBalance').textContent = `₱${formatMoney(balance)}`;
+    setTxt('docPoGross', `₱${formatMoney(gross)}`);
+    setTxt('docPoPaid', `₱${formatMoney(paid)}`);
+    setTxt('docPoBalance', `₱${formatMoney(balance)}`);
 
     const modal = document.getElementById('poDocumentModal');
     if (modal) modal.classList.add('is-open');
@@ -2749,7 +3280,7 @@ function openImportRfqModal() {
         rfqs = JSON.parse(localStorage.getItem('rms_rfq_directory') || '[]');
     } catch(e) { rfqs = []; }
 
-    const approvedRfqs = rfqs.filter(r => (r.status === 'Awarded' || r.isApproved === true));
+    const approvedRfqs = rfqs.filter(r => (r.status === 'Awarded' || r.rfqStatus === 'APPROVED' || r.isApproved === true));
 
     if (approvedRfqs.length === 0) {
         container.innerHTML = `
@@ -2760,12 +3291,17 @@ function openImportRfqModal() {
             </div>
         `;
     } else {
-        container.innerHTML = approvedRfqs.map(r => `
+        const allPos = window.PoStore?.purchaseOrders || [];
+        container.innerHTML = approvedRfqs.map(r => {
+            const existingPo = allPos.find(p => p.rfqReference === r.rfqNumber || (r.poReference && p.poNumber === r.poReference));
+            const linkedPoNum = existingPo ? existingPo.poNumber : (r.poReference || '');
+            return `
             <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 10px; transition: all 0.15s ease;">
                 <div style="display: flex; flex-direction: column; gap: 3px; min-width: 0;">
-                    <div style="display: flex; align-items: center; gap: 8px;">
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                         <span style="font-family: monospace; font-weight: 800; color: #9333ea; font-size: 13px;">${escapeHtml(r.rfqNumber)}</span>
                         <span class="status-pill approved" style="font-size: 10.5px; padding: 2px 7px;"><i class="ph ph-check-circle"></i> Awarded Tender</span>
+                        ${linkedPoNum ? `<span style="font-size: 10.5px; font-weight: 700; padding: 2px 7px; border-radius: 99px; background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;"><i class="ph ph-file-text"></i> PO Created: ${escapeHtml(linkedPoNum)}</span>` : ''}
                     </div>
                     <div style="font-weight: 700; color: #0f172a; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                         ${escapeHtml(r.vendorName || r.vendorTradeName || 'Contracted Supplier')}
@@ -2774,11 +3310,17 @@ function openImportRfqModal() {
                         ${escapeHtml(r.projectTitle || r.purpose || 'General Procurement')} • Issued: ${formatDateDisplay(r.dateIssued)} • Items: ${(r.items || []).length} lines
                     </div>
                 </div>
+                ${linkedPoNum ? `
+                <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="closeImportRfqModal(); editPo('${escapeHtml(linkedPoNum)}')" style="flex-shrink: 0; padding: 6px 14px; font-size: 12px; background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; font-weight: 700;">
+                    <i class="ph ph-arrow-square-out"></i> View PO (${escapeHtml(linkedPoNum)})
+                </button>
+                ` : `
                 <button type="button" class="hr-btn hr-btn-primary hr-btn-sm" onclick="importApprovedRfqToBuilder('${escapeHtml(r.rfqNumber)}')" style="flex-shrink: 0; padding: 6px 14px; font-size: 12px;">
                     <i class="ph ph-arrow-down-left"></i> Import to Builder
                 </button>
+                `}
             </div>
-        `).join('');
+        `}).join('');
     }
 
     modal.classList.add('is-open');
@@ -2803,9 +3345,16 @@ function importApprovedRfqToBuilder(rfqNum) {
 
     closeImportRfqModal();
 
-    // Populate Active PO
-    const count = (window.PoStore.purchaseOrders || []).length;
-    const nextPoNum = rfq.poReference || `PO-2026-${String(count + 105).padStart(4, '0')}`;
+    // Prevent duplicate PO if one already exists for this RFQ
+    const existingPo = (window.PoStore?.purchaseOrders || []).find(p => p.rfqReference === rfq.rfqNumber || (rfq.poReference && p.poNumber === rfq.poReference));
+    if (existingPo) {
+        editPo(existingPo.poNumber);
+        showToast(`Opened existing Purchase Order ${existingPo.poNumber} for ${rfq.rfqNumber}`, 'info');
+        return;
+    }
+
+    // Populate Active PO with collision-free PO Number
+    const nextPoNum = rfq.poReference || getNextUniquePoNumber();
 
     window.PoStore.activePo.poNumber = nextPoNum;
     window.PoStore.activePo.rfqReference = rfq.rfqNumber;
@@ -2822,6 +3371,7 @@ function importApprovedRfqToBuilder(rfqNum) {
     window.PoStore.activePo.expectedDelivery = rfq.expectedDelivery || '';
     window.PoStore.activePo.specialNotes = `Imported from Tender Evaluation ${rfq.rfqNumber}. ${rfq.specialInstructions || ''}`;
     window.PoStore.activePo.status = 'Draft PO';
+    window.PoStore.activePo.poStatus = 'DRAFT';
 
     // Map items
     window.PoStore.activePo.items = (rfq.items || []).map(it => ({
@@ -2834,21 +3384,21 @@ function importApprovedRfqToBuilder(rfqNum) {
         unitPrice: parseFloat(it.quotedUnitPrice || it.unitPrice || it.budgetPrice || 0)
     }));
 
-    // Update DOM inputs
-    document.getElementById('poNumberInput').value = nextPoNum;
-    document.getElementById('poRefDisplay').textContent = nextPoNum;
-    document.getElementById('poOrderTitle').value = window.PoStore.activePo.orderTitle;
-    document.getElementById('poVendorSelect').value = rfq.vendorId || '';
-    document.getElementById('poContactPerson').value = window.PoStore.activePo.vendorContactPerson;
-    document.getElementById('poContactPhone').value = window.PoStore.activePo.vendorPhone;
-    document.getElementById('poContactEmail').value = window.PoStore.activePo.vendorEmail;
-    document.getElementById('poFullAddress').value = window.PoStore.activePo.vendorAddress;
-    document.getElementById('poPaymentTerms').value = window.PoStore.activePo.paymentTerms;
-    if (document.getElementById('poExpectedDelivery')) {
-        document.getElementById('poExpectedDelivery').value = window.PoStore.activePo.expectedDelivery;
-    }
-    document.getElementById('poDeliveryLocation').value = window.PoStore.activePo.deliveryLocation;
-    document.getElementById('poSpecialNotes').value = window.PoStore.activePo.specialNotes;
+    // Update DOM inputs safely
+    const setElVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val ?? ''; };
+    setElVal('poNumberInput', nextPoNum);
+    const refDisp = document.getElementById('poRefDisplay');
+    if (refDisp) refDisp.textContent = nextPoNum;
+    setElVal('poOrderTitle', window.PoStore.activePo.orderTitle);
+    setElVal('poVendorSelect', rfq.vendorId || '');
+    setElVal('poContactPerson', window.PoStore.activePo.vendorContactPerson);
+    setElVal('poContactPhone', window.PoStore.activePo.vendorPhone);
+    setElVal('poContactEmail', window.PoStore.activePo.vendorEmail);
+    setElVal('poFullAddress', window.PoStore.activePo.vendorAddress);
+    setElVal('poPaymentTerms', window.PoStore.activePo.paymentTerms);
+    setElVal('poExpectedDelivery', window.PoStore.activePo.expectedDelivery);
+    setElVal('poDeliveryLocation', window.PoStore.activePo.deliveryLocation);
+    setElVal('poSpecialNotes', window.PoStore.activePo.specialNotes);
 
     const rfqBadge = document.getElementById('poLinkedRfqPill');
     if (rfqBadge) {
@@ -2866,6 +3416,8 @@ function importApprovedRfqToBuilder(rfqNum) {
     updatePoVendorSummaryCard(vendor);
 
     renderPoItemsTable();
+    recalculatePoTotals();
+    updatePoLiveDocumentMockup();
     switchPoTab('tab-po-builder');
     showToast(`✓ Imported tender ${rfq.rfqNumber} with ${(rfq.items || []).length} items into PO Builder!`, 'success');
 }
@@ -2879,11 +3431,39 @@ function openLinkedRfqModal(rfqNum) {
         rfqs = JSON.parse(localStorage.getItem('rms_rfq_directory') || '[]');
     } catch(e) { rfqs = []; }
 
-    const rfq = rfqs.find(r => r.rfqNumber === rfqNum);
-    const content = document.getElementById('linkedRfqDetailContent');
-    const title = document.getElementById('linkedRfqModalRef');
+    let rfq = rfqs.find(r => r.rfqNumber === rfqNum);
+    if (!rfq) {
+        // Synthesize from linked PO in PoStore if RFQ isn't cached in localStorage
+        const linkedPo = (window.PoStore?.purchaseOrders || []).find(p => p.rfqReference === rfqNum) ||
+            (window.PoStore?.activePo?.rfqReference === rfqNum ? window.PoStore.activePo : null);
+        if (linkedPo) {
+            rfq = {
+                rfqNumber: rfqNum,
+                vendorTradeName: linkedPo.vendorTradeName || linkedPo.vendorName || 'Awarded Supplier',
+                vendorName: linkedPo.vendorName || linkedPo.vendorTradeName || 'Awarded Supplier',
+                vendorAddress: linkedPo.vendorAddress || 'Metro Manila',
+                dateIssued: linkedPo.dateCreated || linkedPo.orderDate || '',
+                items: (linkedPo.items || []).map(it => ({
+                    name: it.name || it.itemDescription || 'Awarded Item',
+                    unit: it.unit || it.uom || 'Kg',
+                    quantity: it.quantity || it.qtyOrdered || 1,
+                    quotedUnitPrice: it.unitPrice || 0
+                }))
+            };
+        }
+    }
 
-    if (title) title.textContent = rfqNum;
+    const content = document.getElementById('linkedRfqModalBody') || document.getElementById('linkedRfqDetailContent');
+    const title = document.getElementById('linkedRfqModalTitle') || document.getElementById('linkedRfqModalRef');
+
+    if (title) {
+        title.innerHTML = `<i class="ph ph-link" style="color: #9333ea;"></i> <span>Originating Tender &amp; Quotation Details — ${escapeHtml(rfqNum)}</span>`;
+    }
+
+    const footerLink = modal.querySelector('.po-modal-footer a.po-btn-primary');
+    if (footerLink) {
+        footerLink.href = `/purchase/request-quotations?rfq=${encodeURIComponent(rfqNum)}`;
+    }
 
     if (!rfq) {
         if (content) {
@@ -3293,6 +3873,780 @@ function deletePaymentDisbursement(id) {
     showToast('Payment disbursement entry removed', 'success');
 }
 
+/**
+ * --------------------------------------------------------------------------
+ * PO LIFECYCLE PROGRESS BAR, STAGE TRANSITIONS & LIVE DOCUMENT MOCKUP ENGINE
+ * --------------------------------------------------------------------------
+ */
+function showPoLockOverlay(msg = 'Processing Purchase Order...') {
+    const overlay = document.getElementById('poGlobalLockOverlay');
+    const lockMsg = document.getElementById('poLockOverlayMessage');
+    if (overlay) overlay.classList.add('is-active');
+    if (lockMsg) lockMsg.textContent = msg;
+}
+
+function hidePoLockOverlay() {
+    const overlay = document.getElementById('poGlobalLockOverlay');
+    if (overlay) overlay.classList.remove('is-active');
+}
+
+function getPoAttachedFilesCount() {
+    return (window.PoStore?.activePo?.attachedFiles || []).length;
+}
+
+function applyPoStageFormLocks(stage) {
+    const isDraft = (stage === 'Draft');
+    const lockIds = ['poOrderTitle', 'poDeliveryLocation', 'poPaymentTerms', 'poOrderDate', 'poExpectedDelivery'];
+    lockIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            if (el.tagName === 'SELECT') el.disabled = !isDraft;
+            else el.readOnly = !isDraft;
+        }
+    });
+    const comboTrigger = document.getElementById('poVendorComboTrigger');
+    if (comboTrigger) comboTrigger.disabled = !isDraft;
+    const btnAddRow = document.getElementById('btnAddCustomPoRow');
+    if (btnAddRow) btnAddRow.disabled = !isDraft;
+    const btnClearRows = document.getElementById('btnClearAllPoRows');
+    if (btnClearRows) btnClearRows.disabled = !isDraft;
+}
+
+function updatePoLifecycleProgressBar(status) {
+    const effectiveStatus = status || window.PoStore?.activePo?.status || 'Draft PO';
+    const stage = getNormalizedPoStage(effectiveStatus);
+    applyPoStageFormLocks(stage);
+    const wrap = document.getElementById('poLifecycleStepperWrap');
+    if (!wrap) return;
+
+    wrap.className = `po-lifecycle-bar-container rfq-lifecycle-bar-container stage-theme-${stage.toLowerCase()}`;
+
+    const stepDraft = document.getElementById('poStepIndicatorDraft');
+    const stepApproval = document.getElementById('poStepIndicatorApproval');
+    const stepIssued = document.getElementById('poStepIndicatorIssued');
+    const stepStatus = document.getElementById('poStepIndicatorStatus');
+
+    const banner = document.getElementById('poStageBanner');
+    const bannerIcon = document.getElementById('poStageBannerIcon');
+    const bannerTitle = document.getElementById('poStageBannerTitle');
+    const bannerSub = document.getElementById('poStageBannerSub');
+    const bannerActions = document.getElementById('poStageBannerActions');
+    const stageActionsGroup = document.getElementById('poStageActionsGroup');
+
+    const statusTitle = document.getElementById('poStepStatusTitle');
+    const statusDesc = document.getElementById('poStepStatusDesc');
+
+    if (stepDraft) stepDraft.className = 'po-chevron-step rfq-chevron-step stage-draft';
+    if (stepApproval) stepApproval.className = 'po-chevron-step rfq-chevron-step stage-approval';
+    if (stepIssued) stepIssued.className = 'po-chevron-step rfq-chevron-step stage-submitted';
+    if (stepStatus) stepStatus.className = 'po-chevron-step rfq-chevron-step stage-status';
+
+    if (banner) {
+        banner.className = `po-stage-helper-ribbon rfq-stage-helper-ribbon stage-${stage.toLowerCase()}`;
+    }
+
+    const attCount = getPoAttachedFilesCount();
+    const poNum = window.PoStore?.activePo?.poNumber || '';
+
+    if (stage === 'Draft') {
+        if (stepDraft) stepDraft.classList.add('is-active', 'stage-draft');
+        if (statusTitle) statusTitle.textContent = 'Status';
+        if (statusDesc) statusDesc.textContent = 'GRN & Settled';
+        if (bannerIcon) bannerIcon.innerHTML = '<i class="ph ph-pencil-simple-line"></i>';
+        if (bannerTitle) bannerTitle.textContent = 'Stage 1: Drafting';
+        if (bannerSub) bannerSub.textContent = 'Prepare Purchase Order specifications, or import an awarded RFQ package to continue procurement.';
+        if (bannerActions) {
+            bannerActions.innerHTML = `<span class="rfq-stage-indicator-pill draft"><i class="ph ph-circle-dashed"></i> Drafting Mode</span>`;
+        }
+        if (stageActionsGroup) {
+            stageActionsGroup.innerHTML = `
+                <button type="button" class="rfq-stage-action-btn rfq-btn-stage-attach" onclick="openPoAttachedFilesModal()" title="View & Attach Supporting Documents">
+                    <i class="ph ph-paperclip"></i>
+                    <span>Attached Files</span>
+                    <span class="rfq-stage-badge-count" id="poAttachedCountBadge">${attCount}</span>
+                </button>
+                <button type="button" class="rfq-stage-action-btn rfq-btn-stage-outline" onclick="saveActivePoDraft()" title="Save Purchase Order as Draft">
+                    <i class="ph ph-floppy-disk"></i>
+                    <span>Save Draft</span>
+                </button>
+                <button type="button" class="rfq-stage-action-btn rfq-btn-stage-submit" onclick="transitionActivePoStage('Approval')" title="Submit PO for Manager Sign-Off">
+                    <i class="ph ph-arrow-right"></i>
+                    <span>Submit for Approval</span>
+                </button>
+                <button type="button" class="rfq-stage-action-btn rfq-btn-stage-cancel" onclick="resetPoForm()" title="Reset / Clear Draft">
+                    <i class="ph ph-x-circle"></i>
+                    <span>Cancel</span>
+                </button>
+            `;
+        }
+    } else if (stage === 'Approval') {
+        if (stepDraft) stepDraft.classList.add('is-completed');
+        if (stepApproval) stepApproval.classList.add('is-active', 'stage-approval');
+        if (statusTitle) statusTitle.textContent = 'Status';
+        if (statusDesc) statusDesc.textContent = 'In Review';
+        if (bannerIcon) bannerIcon.innerHTML = '<i class="ph ph-scales"></i>';
+        if (bannerTitle) bannerTitle.textContent = 'Stage 2: Manager Approval';
+        if (bannerSub) bannerSub.textContent = 'Verify vendor terms, quantities, and unit prices against RFQ benchmarks before issuing the PO.';
+        if (bannerActions) {
+            bannerActions.innerHTML = `<span class="rfq-stage-indicator-pill approval" style="color: #d97706;"><i class="ph ph-shield-check"></i> Pending Approval</span>`;
+        }
+        if (stageActionsGroup) {
+            stageActionsGroup.innerHTML = `
+                <button type="button" class="rfq-stage-action-btn rfq-btn-stage-success" onclick="issuePurchaseOrderSubmit()" title="Approve & Issue Official Purchase Order">
+                    <i class="ph ph-check-circle"></i>
+                    <span>Approve & Issue PO</span>
+                </button>
+                <button type="button" class="rfq-stage-action-btn rfq-btn-stage-danger" onclick="transitionActivePoStage('Refused')" title="Refuse / Cancel Purchase Order">
+                    <i class="ph ph-x-circle"></i>
+                    <span>Refuse</span>
+                </button>
+                <button type="button" class="rfq-stage-action-btn rfq-btn-stage-outline" onclick="transitionActivePoStage('Draft')" title="Return to Draft for Revisions">
+                    <i class="ph ph-arrow-counter-clockwise"></i>
+                    <span>Back to Draft</span>
+                </button>
+                <button type="button" class="rfq-stage-action-btn rfq-btn-stage-attach" onclick="openPoAttachedFilesModal()" title="View Attached Documents">
+                    <i class="ph ph-paperclip"></i>
+                    <span>Files (${attCount})</span>
+                </button>
+            `;
+        }
+    } else if (stage === 'Issued') {
+        if (stepDraft) stepDraft.classList.add('is-completed');
+        if (stepApproval) stepApproval.classList.add('is-completed');
+        if (stepIssued) stepIssued.classList.add('is-active', 'stage-submitted');
+        if (statusTitle) statusTitle.textContent = 'Status';
+        if (statusDesc) statusDesc.textContent = 'Awaiting GRN';
+        if (bannerIcon) bannerIcon.innerHTML = '<i class="ph ph-truck"></i>';
+        if (bannerTitle) bannerTitle.textContent = 'Stage 3: Issued & In-Transit';
+        if (bannerSub) bannerSub.textContent = 'Official PO dispatched to vendor. Input Received Qty (GRN) directly in the table below or via Stock-In.';
+        if (bannerActions) {
+            bannerActions.innerHTML = `<span class="rfq-stage-indicator-pill submitted" style="color: #2563eb;"><i class="ph ph-truck"></i> Dispatched to Vendor</span>`;
+        }
+        const stockInUrl = `${window.PurchaseOrderConfig?.routes?.inventoryStockIn || '/inventory/stock-in'}?po=${encodeURIComponent(poNum)}`;
+        if (stageActionsGroup) {
+            stageActionsGroup.innerHTML = `
+                <button type="button" class="rfq-stage-action-btn rfq-btn-stage-success" onclick="receiveAllPoItems()" title="Receive 100% of Ordered Quantities & Mark Fulfilled">
+                    <i class="ph ph-checks"></i>
+                    <span>Receive All (100%)</span>
+                </button>
+                <a href="${stockInUrl}" class="rfq-stage-action-btn rfq-btn-stage-outline" style="text-decoration: none;" title="Open Stock-In Receiving Dock to log Goods Receipt (GRN)">
+                    <i class="ph ph-tray-arrow-down"></i>
+                    <span>Receive in Stock-In (GRN)</span>
+                </a>
+                <button type="button" class="rfq-stage-action-btn rfq-btn-stage-primary" onclick="openPaymentSettlementModal('${escapeHtml(poNum)}')" title="Record Disbursement & Financial Settlement">
+                    <i class="ph ph-bank"></i>
+                    <span>Payment Settlement</span>
+                </button>
+                <button type="button" class="rfq-stage-action-btn rfq-btn-stage-outline" onclick="transitionActivePoStage('Approved')" title="Mark PO as 100% Fulfilled / Received">
+                    <i class="ph ph-seal-check"></i>
+                    <span>Mark Fulfilled</span>
+                </button>
+                <button type="button" class="rfq-stage-action-btn rfq-btn-stage-attach" onclick="openPoAttachedFilesModal()" title="View Attached Documents">
+                    <i class="ph ph-paperclip"></i>
+                    <span>Files (${attCount})</span>
+                </button>
+            `;
+        }
+    } else if (stage === 'Approved') {
+        if (stepDraft) stepDraft.classList.add('is-completed');
+        if (stepApproval) stepApproval.classList.add('is-completed');
+        if (stepIssued) stepIssued.classList.add('is-completed');
+        if (stepStatus) stepStatus.classList.add('is-active', 'stage-approved');
+        if (statusTitle) statusTitle.textContent = 'Fulfilled';
+        if (statusDesc) statusDesc.textContent = '100% Received';
+        if (bannerIcon) bannerIcon.innerHTML = '<i class="ph ph-seal-check"></i>';
+        if (bannerTitle) bannerTitle.textContent = 'Stage 4: Status (Fully Received)';
+        if (bannerSub) bannerSub.textContent = 'All ordered items have been received into inventory. Manage final AP payment settlement below.';
+        if (bannerActions) {
+            bannerActions.innerHTML = `<span class="rfq-stage-indicator-pill approved" style="color: #059669;"><i class="ph ph-check-circle-fill"></i> Fully Received</span>`;
+        }
+        if (stageActionsGroup) {
+            stageActionsGroup.innerHTML = `
+                <button type="button" class="rfq-stage-action-btn rfq-btn-stage-success" onclick="openPaymentSettlementModal('${escapeHtml(poNum)}')" title="Manage Payment Settlement">
+                    <i class="ph ph-bank"></i>
+                    <span>Payment Settlement</span>
+                </button>
+                <button type="button" class="rfq-stage-action-btn rfq-btn-stage-outline" onclick="openPoDocumentPreview()" title="Print / Export Completed PO">
+                    <i class="ph ph-printer"></i>
+                    <span>Print Voucher</span>
+                </button>
+                <button type="button" class="rfq-stage-action-btn rfq-btn-stage-attach" onclick="openPoAttachedFilesModal()" title="View Attached Documents">
+                    <i class="ph ph-paperclip"></i>
+                    <span>Files (${attCount})</span>
+                </button>
+            `;
+        }
+    } else if (stage === 'Refused') {
+        if (stepDraft) stepDraft.classList.add('is-completed');
+        if (stepApproval) stepApproval.classList.add('is-completed');
+        if (stepIssued) stepIssued.classList.add('is-completed');
+        if (stepStatus) stepStatus.classList.add('is-active', 'stage-refused');
+        if (statusTitle) statusTitle.textContent = 'Cancelled';
+        if (statusDesc) statusDesc.textContent = 'PO Voided';
+        if (bannerIcon) bannerIcon.innerHTML = '<i class="ph ph-prohibit"></i>';
+        if (bannerTitle) bannerTitle.textContent = 'Stage 4: Status (Cancelled / Refused)';
+        if (bannerSub) bannerSub.textContent = 'This Purchase Order was cancelled or refused. Click Re-open as Draft to revise.';
+        if (bannerActions) {
+            bannerActions.innerHTML = `<span class="rfq-stage-indicator-pill refused" style="color: #dc2626;"><i class="ph ph-x-circle-fill"></i> Cancelled</span>`;
+        }
+        if (stageActionsGroup) {
+            stageActionsGroup.innerHTML = `
+                <button type="button" class="rfq-stage-action-btn rfq-btn-stage-outline" onclick="transitionActivePoStage('Draft')" title="Re-open as Draft">
+                    <i class="ph ph-arrow-counter-clockwise"></i>
+                    <span>Back to Draft</span>
+                </button>
+            `;
+        }
+    }
+
+    const statusBadge = document.getElementById('poStatusBadge');
+    if (statusBadge) {
+        statusBadge.className = `status-pill ${stage.toLowerCase()}`;
+        statusBadge.innerHTML = `<i class="ph ph-dot"></i> ${escapeHtml(window.PoStore?.activePo?.status || stage)}`;
+    }
+}
+
+async function saveActivePoDraft() {
+    syncPoFormInputsToState();
+    const po = window.PoStore.activePo;
+    po.status = 'Draft PO';
+
+    try {
+        const deletedPos = JSON.parse(localStorage.getItem('rms_deleted_po_numbers') || '[]');
+        if (Array.isArray(deletedPos) && deletedPos.includes(po.poNumber)) {
+            localStorage.setItem('rms_deleted_po_numbers', JSON.stringify(deletedPos.filter(n => n !== po.poNumber)));
+        }
+    } catch (e) {}
+
+    const existingIdx = (window.PoStore.purchaseOrders || []).findIndex(p => p.poNumber === po.poNumber);
+    if (existingIdx >= 0) {
+        window.PoStore.purchaseOrders[existingIdx] = JSON.parse(JSON.stringify(po));
+    } else {
+        window.PoStore.purchaseOrders.unshift(JSON.parse(JSON.stringify(po)));
+    }
+    localStorage.setItem('rms_purchase_orders', JSON.stringify(window.PoStore.purchaseOrders));
+
+    try {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        const route = window.PurchaseOrderConfig?.routes?.saveDraft || '/purchase/api/orders/save-draft';
+        await fetch(route, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken || '' },
+            body: JSON.stringify({
+                po_number: po.poNumber,
+                po_type: po.poType || 'vendor',
+                rfq_reference: po.rfqReference || null,
+                vendor_id: po.vendorId ? String(po.vendorId) : null,
+                vendor_name: po.vendorName || po.vendorTradeName || 'Draft Vendor',
+                vendor_trade_name: po.vendorTradeName || po.vendorName || 'Draft Vendor',
+                vendor_contact_person: po.vendorContactPerson || '',
+                vendor_phone: po.vendorPhone || '',
+                vendor_email: po.vendorEmail || '',
+                vendor_address: po.vendorAddress || '',
+                order_date: po.orderDate || null,
+                expected_delivery: po.expectedDelivery || null,
+                delivery_location: po.deliveryLocation || 'Central Commissary - Receiving Dock 1',
+                special_notes: po.orderTitle || po.specialNotes || '',
+                items: po.items
+            })
+        });
+    } catch (e) {
+        console.warn('saveActivePoDraft network fallback:', e);
+    }
+
+    renderPoDirectory();
+    updatePoLifecycleProgressBar('Draft PO');
+    showToast(`✓ Draft ${po.poNumber} saved!`, 'success');
+}
+
+async function transitionActivePoStage(targetStage) {
+    syncPoFormInputsToState();
+    const po = window.PoStore.activePo;
+
+    if ((targetStage === 'Approval' || targetStage === 'Issued') && (!po.items || po.items.length === 0)) {
+        showToast('Please add at least 1 line item before advancing the Purchase Order stage.', 'warning');
+        return;
+    }
+
+    const statusMap = {
+        'Draft': 'Draft PO',
+        'Approval': 'Pending Approval',
+        'Issued': 'Approved / Issued',
+        'Approved': 'Fully Received',
+        'Refused': 'Cancelled'
+    };
+    const nextStatus = statusMap[targetStage] || targetStage;
+
+    if (targetStage === 'Approved' && Array.isArray(po.items)) {
+        po.items.forEach(it => {
+            const ordered = parseFloat(it.quantity) || 0;
+            const currentRec = parseFloat(it.receivedQuantity) || 0;
+            if (currentRec < ordered) {
+                it.receivedQuantity = ordered;
+            }
+        });
+    }
+
+    try {
+        const deletedPos = JSON.parse(localStorage.getItem('rms_deleted_po_numbers') || '[]');
+        if (Array.isArray(deletedPos) && deletedPos.includes(po.poNumber)) {
+            localStorage.setItem('rms_deleted_po_numbers', JSON.stringify(deletedPos.filter(n => n !== po.poNumber)));
+        }
+    } catch (e) {}
+
+    showPoLockOverlay(`Transitioning ${po.poNumber} to ${nextStatus}...`);
+    try {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        const route = window.PurchaseOrderConfig?.routes?.transitionStatus || '/purchase/api/orders/transition-status';
+        await fetch(route, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken || '' },
+            body: JSON.stringify({
+                po_number: po.poNumber,
+                target_status: nextStatus,
+                rfq_reference: po.rfqReference || null,
+                vendor_id: po.vendorId ? String(po.vendorId) : null,
+                vendor_name: po.vendorName || po.vendorTradeName || 'Approved Vendor',
+                vendor_trade_name: po.vendorTradeName || po.vendorName || 'Approved Vendor',
+                vendor_contact_person: po.vendorContactPerson || '',
+                vendor_phone: po.vendorPhone || '',
+                vendor_email: po.vendorEmail || '',
+                vendor_address: po.vendorAddress || '',
+                order_date: po.orderDate || null,
+                expected_delivery: po.expectedDelivery || null,
+                delivery_location: po.deliveryLocation || 'Central Commissary - Receiving Dock 1',
+                special_notes: po.orderTitle || po.specialNotes || '',
+                items: po.items
+            })
+        });
+    } catch (e) {
+        console.warn('transitionActivePoStage fallback:', e);
+    } finally {
+        hidePoLockOverlay();
+    }
+
+    po.status = nextStatus;
+    const existingIdx = (window.PoStore.purchaseOrders || []).findIndex(p => p.poNumber === po.poNumber);
+    if (existingIdx >= 0) {
+        window.PoStore.purchaseOrders[existingIdx] = JSON.parse(JSON.stringify(po));
+    } else {
+        window.PoStore.purchaseOrders.unshift(JSON.parse(JSON.stringify(po)));
+    }
+    localStorage.setItem('rms_purchase_orders', JSON.stringify(window.PoStore.purchaseOrders));
+
+    applyPoStageDefaultColumns(nextStatus);
+    updatePoLifecycleProgressBar(nextStatus);
+    renderPoBuilderTableHeader();
+    renderPoItemsTable();
+    renderPoDirectory();
+    updatePoLiveDocumentMockup();
+    showToast(`✓ ${po.poNumber} moved to ${nextStatus}`, 'success');
+}
+
+function handlePoStepClick(targetStage) {
+    const currentStage = getNormalizedPoStage(window.PoStore?.activePo?.status);
+    if (targetStage === currentStage) return;
+    if (targetStage === 'Issued') {
+        issuePurchaseOrderSubmit();
+        return;
+    }
+    transitionActivePoStage(targetStage);
+}
+
+function handlePoBuilderTabClick() {
+    switchPoTab('tab-po-builder');
+    updatePoLifecycleProgressBar(window.PoStore?.activePo?.status || 'Draft PO');
+    updatePoLiveDocumentMockup();
+}
+
+function handlePoVendorRedirectClick(event) {
+    const vId = window.PoStore?.activePo?.vendorId || document.getElementById('poVendorSelect')?.value;
+    const baseUrl = window.PurchaseOrderConfig?.routes?.vendorMasterlist || '/purchase/vendor-masterlist';
+    const btn = document.getElementById('poVendorRedirectBtn');
+    if (btn) {
+        btn.href = vId ? `${baseUrl}?vendor_id=${encodeURIComponent(vId)}` : baseUrl;
+    }
+    return true;
+}
+
+function syncPoFormInputsToState() {
+    if (!window.PoStore || !window.PoStore.activePo) return;
+    const po = window.PoStore.activePo;
+    const getVal = (id) => document.getElementById(id)?.value;
+
+    if (getVal('poOrderTitle') !== undefined) po.orderTitle = getVal('poOrderTitle');
+    if (getVal('poDeliveryLocation') !== undefined) po.deliveryLocation = getVal('poDeliveryLocation');
+    if (getVal('poPaymentTerms') !== undefined) po.paymentTerms = getVal('poPaymentTerms');
+    if (getVal('poOrderDate') !== undefined) po.orderDate = getVal('poOrderDate');
+    if (getVal('poExpectedDelivery') !== undefined) po.expectedDelivery = getVal('poExpectedDelivery');
+}
+
+function updatePoLiveDocumentMockup() {
+    const sheet = document.getElementById('poLiveMockupSheet');
+    if (!sheet || !window.PoStore || !window.PoStore.activePo) return;
+
+    const po = window.PoStore.activePo;
+    const items = po.items || [];
+    const gross = items.reduce((acc, it) => acc + ((parseFloat(it.quantity) || 0) * (parseFloat(it.unitPrice) || 0)), 0);
+    const paid = parseFloat(po.amountPaid || 0);
+    const balance = Math.max(0, gross - paid);
+
+    const directLink = document.getElementById('poVendorDirectLink');
+    if (directLink) {
+        if (po.vendorName || po.vendorTradeName) {
+            directLink.style.display = 'inline-flex';
+            const linkText = document.getElementById('poVendorDirectLinkText');
+            if (linkText) linkText.textContent = po.vendorTradeName || po.vendorName;
+        } else {
+            directLink.style.display = 'none';
+        }
+    }
+
+    const pageBadge = document.getElementById('poMockupPageCountBadge');
+    if (pageBadge) {
+        const pages = Math.max(1, Math.ceil(items.length / 10));
+        pageBadge.textContent = `${pages} Page${pages > 1 ? 's' : ''}`;
+    }
+
+    sheet.innerHTML = `
+        <div style="border-bottom: 2px solid #0f172a; padding-bottom: 10px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+                <div style="font-weight: 900; font-size: 13px; color: #0f172a; letter-spacing: -0.02em;">TOP C CULINARY GROUP</div>
+                <div style="font-size: 10px; color: #64748b;">Central Commissary Procurement Division</div>
+            </div>
+            <div style="text-align: right;">
+                <div style="font-weight: 900; font-size: 12px; color: #7e22ce; text-transform: uppercase;">PURCHASE ORDER</div>
+                <div style="font-family: monospace; font-weight: 800; font-size: 11px; color: #0f172a;">${escapeHtml(po.poNumber || 'PO-2026-XXXX')}</div>
+                ${po.rfqReference ? `<div style="font-family: monospace; font-size: 9.5px; color: #7e22ce; font-weight: 700;">Ref: ${escapeHtml(po.rfqReference)}</div>` : ''}
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; font-size: 10.5px;">
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px;">
+                <div style="font-weight: 800; font-size: 9px; color: #64748b; text-transform: uppercase; margin-bottom: 3px;">Vendor Partner</div>
+                <div style="font-weight: 800; color: #0f172a;">${escapeHtml(po.vendorTradeName || po.vendorName || 'Select Target Vendor')}</div>
+                <div style="color: #475569; font-size: 9.5px; margin-top: 2px;">${escapeHtml(po.vendorContactPerson || 'Primary Contact')} ${po.vendorPhone ? '• ' + escapeHtml(po.vendorPhone) : ''}</div>
+            </div>
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px;">
+                <div style="font-weight: 800; font-size: 9px; color: #64748b; text-transform: uppercase; margin-bottom: 3px;">Delivery & Terms</div>
+                <div style="font-weight: 700; color: #0f172a;">${escapeHtml(po.deliveryLocation || 'Central Commissary')}</div>
+                <div style="color: #475569; font-size: 9.5px; margin-top: 2px;">Due: <strong>${formatDateDisplay(po.expectedDelivery) || 'TBD'}</strong> • ${escapeHtml(po.paymentTerms || 'Net 30 Days')}</div>
+            </div>
+        </div>
+
+        ${po.orderTitle ? `<div style="font-size: 10px; font-weight: 700; color: #334155; background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 5px; padding: 5px 8px; margin-bottom: 10px;">Purpose: ${escapeHtml(po.orderTitle)}</div>` : ''}
+
+        <table style="width: 100%; border-collapse: collapse; font-size: 10px; margin-bottom: 12px;">
+            <thead>
+                <tr style="background: #f1f5f9; border-bottom: 1.5px solid #cbd5e1; text-align: left;">
+                    <th style="padding: 4px 6px;">#</th>
+                    <th style="padding: 4px 6px;">Item / SKU</th>
+                    <th style="padding: 4px 6px; text-align: center;">UOM</th>
+                    <th style="padding: 4px 6px; text-align: right;">Qty</th>
+                    <th style="padding: 4px 6px; text-align: right;">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${items.length === 0 ? `
+                    <tr><td colspan="5" style="text-align: center; padding: 16px; color: #94a3b8; font-style: italic;">No items added yet</td></tr>
+                ` : items.map((it, i) => {
+                    const q = parseFloat(it.quantity) || 0;
+                    const p = parseFloat(it.unitPrice) || 0;
+                    return `
+                        <tr style="border-bottom: 1px solid #f1f5f9;">
+                            <td style="padding: 4px 6px; color: #64748b;">${i + 1}</td>
+                            <td style="padding: 4px 6px; font-weight: 700; color: #0f172a;">${escapeHtml(it.name || it.sku || 'Item')}</td>
+                            <td style="padding: 4px 6px; text-align: center; font-family: monospace;">${escapeHtml(it.unit || 'PCS')}</td>
+                            <td style="padding: 4px 6px; text-align: right; font-variant-numeric: tabular-nums;">${q.toFixed(2)}</td>
+                            <td style="padding: 4px 6px; text-align: right; font-weight: 700; font-variant-numeric: tabular-nums;">₱${formatMoney(q * p)}</td>
+                        </tr>
+                    `;
+                }).join('')}
+            </tbody>
+        </table>
+
+        <div style="border-top: 1.5px solid #0f172a; padding-top: 8px; display: flex; flex-direction: column; gap: 4px; font-size: 10.5px;">
+            <div style="display: flex; justify-content: space-between; font-weight: 900; font-size: 11.5px; color: #0f172a;">
+                <span>GROSS ORDER TOTAL:</span>
+                <span style="color: #7e22ce; font-variant-numeric: tabular-nums;">₱${formatMoney(gross)}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 10px; color: #059669;">
+                <span>Amount Paid / Disbursed:</span>
+                <span style="font-variant-numeric: tabular-nums;">₱${formatMoney(paid)}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 10px; font-weight: 700; color: ${balance > 0 ? '#dc2626' : '#64748b'};">
+                <span>Balance Due:</span>
+                <span style="font-variant-numeric: tabular-nums;">₱${formatMoney(balance)}</span>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * --------------------------------------------------------------------------
+ * MULTI-SELECTION BATCH ACTION BAR ENGINE (DELETE, ARCHIVE, EXPORT CSV)
+ * --------------------------------------------------------------------------
+ */
+function toggleSelectAllPos(checked) {
+    const pos = (window.PoStore.purchaseOrders || []).filter(p => p.status !== 'Archived');
+    if (checked) {
+        pos.forEach(p => selectedPoNumbers.add(p.poNumber));
+    } else {
+        selectedPoNumbers.clear();
+    }
+    renderPoDirectory();
+}
+
+function toggleSelectSinglePo(poNumber, checked) {
+    if (checked) selectedPoNumbers.add(poNumber);
+    else selectedPoNumbers.delete(poNumber);
+    updatePoBatchToolbarUI();
+}
+
+function updatePoBatchToolbarUI() {
+    const bar = document.getElementById('poBatchActionBar');
+    const countEl = document.getElementById('poBatchSelectedCount');
+    if (!bar || !countEl) return;
+
+    const count = selectedPoNumbers.size;
+    countEl.textContent = count;
+    bar.style.display = count > 0 ? 'inline-flex' : 'none';
+}
+
+function clearPoBatchSelection() {
+    selectedPoNumbers.clear();
+    const selAll = document.getElementById('selectAllPoCheckbox');
+    if (selAll) selAll.checked = false;
+    renderPoDirectory();
+}
+
+async function executePoBatchDelete() {
+    if (selectedPoNumbers.size === 0) return;
+    const targets = Array.from(selectedPoNumbers);
+    if (!confirm(`Are you sure you want to delete ${targets.length} selected Purchase Order(s)?`)) return;
+
+    try {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        const route = window.PurchaseOrderConfig?.routes?.batchDelete || '/purchase/api/orders/batch-delete';
+        await fetch(route, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken || '' },
+            body: JSON.stringify({ po_numbers: targets, force: true })
+        });
+    } catch (e) {
+        console.warn('executePoBatchDelete fallback:', e);
+    }
+
+    try {
+        const deletedList = JSON.parse(localStorage.getItem('rms_deleted_po_numbers') || '[]');
+        const merged = Array.from(new Set([...(Array.isArray(deletedList) ? deletedList : []), ...targets]));
+        localStorage.setItem('rms_deleted_po_numbers', JSON.stringify(merged));
+    } catch (e) {}
+
+    try {
+        const targetSet = new Set(targets);
+        const rfqList = JSON.parse(localStorage.getItem('rms_rfq_directory') || '[]');
+        if (Array.isArray(rfqList)) {
+            let changed = false;
+            rfqList.forEach(r => {
+                if (r && r.poReference && targetSet.has(r.poReference)) {
+                    r.poReference = '';
+                    changed = true;
+                }
+            });
+            if (changed) localStorage.setItem('rms_rfq_directory', JSON.stringify(rfqList));
+        }
+    } catch (e) {}
+
+    window.PoStore.purchaseOrders = (window.PoStore.purchaseOrders || []).filter(p => !selectedPoNumbers.has(p.poNumber));
+    localStorage.setItem('rms_purchase_orders', JSON.stringify(window.PoStore.purchaseOrders));
+    clearPoBatchSelection();
+    showToast(`✓ Deleted ${targets.length} Purchase Order(s).`, 'success');
+}
+
+async function executePoBatchArchive() {
+    if (selectedPoNumbers.size === 0) return;
+    const targets = Array.from(selectedPoNumbers);
+    try {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        const route = window.PurchaseOrderConfig?.routes?.batchArchive || '/purchase/api/orders/batch-archive';
+        await fetch(route, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken || '' },
+            body: JSON.stringify({ po_numbers: targets })
+        });
+    } catch (e) {
+        console.warn('executePoBatchArchive fallback:', e);
+    }
+
+    (window.PoStore.purchaseOrders || []).forEach(p => {
+        if (selectedPoNumbers.has(p.poNumber)) p.status = 'Archived';
+    });
+    localStorage.setItem('rms_purchase_orders', JSON.stringify(window.PoStore.purchaseOrders));
+    clearPoBatchSelection();
+    showToast(`✓ Archived ${targets.length} Purchase Order(s).`, 'success');
+}
+
+function executePoBatchExport() {
+    const targets = selectedPoNumbers.size > 0
+        ? (window.PoStore.purchaseOrders || []).filter(p => selectedPoNumbers.has(p.poNumber))
+        : (window.PoStore.purchaseOrders || []);
+    if (targets.length === 0) {
+        showToast('No Purchase Orders to export.', 'warning');
+        return;
+    }
+    const headers = ['PO Number', 'Source RFQ', 'Vendor', 'Order Date', 'Expected Delivery', 'Status', 'Payment Status', 'Gross Total (PHP)'];
+    const rows = targets.map(p => {
+        const gross = (p.items || []).reduce((acc, it) => acc + ((parseFloat(it.quantity) || 0) * (parseFloat(it.unitPrice) || 0)), 0);
+        return [
+            `"${p.poNumber || ''}"`,
+            `"${p.rfqReference || 'Direct'}"`,
+            `"${(p.vendorTradeName || p.vendorName || '').replace(/"/g, '""')}"`,
+            `"${p.orderDate || ''}"`,
+            `"${p.expectedDelivery || ''}"`,
+            `"${p.status || ''}"`,
+            `"${p.paymentStatus || ''}"`,
+            gross.toFixed(2)
+        ].join(',');
+    });
+    const csv = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `Purchase_Orders_Export_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    showToast(`✓ Exported ${targets.length} Purchase Order(s) to CSV.`, 'success');
+}
+
+/**
+ * --------------------------------------------------------------------------
+ * ATTACHED FILES MODAL & DEEP-LINKING HANDLER (?po=PO-XXXX / ?rfq=RFQ-XXXX)
+ * --------------------------------------------------------------------------
+ */
+function openPoAttachedFilesModal() {
+    const modal = document.getElementById('poAttachedFilesModal');
+    if (!modal) return;
+    renderPoAttachedFilesList();
+    modal.classList.add('is-open');
+}
+
+function closePoAttachedFilesModal() {
+    const modal = document.getElementById('poAttachedFilesModal');
+    if (modal) modal.classList.remove('is-open');
+}
+
+function handlePoFileUpload(fileList) {
+    if (!fileList || fileList.length === 0) return;
+    if (!window.PoStore.activePo.attachedFiles) window.PoStore.activePo.attachedFiles = [];
+    Array.from(fileList).forEach(f => {
+        window.PoStore.activePo.attachedFiles.push({
+            name: f.name,
+            size: `${(f.size / 1024).toFixed(1)} KB`,
+            uploadedAt: new Date().toLocaleTimeString()
+        });
+    });
+    renderPoAttachedFilesList();
+    updatePoLifecycleProgressBar(window.PoStore.activePo.status);
+    showToast(`✓ Attached ${fileList.length} document(s) to ${window.PoStore.activePo.poNumber}`, 'success');
+}
+
+function removePoAttachedFile(idx) {
+    if (!window.PoStore.activePo.attachedFiles) return;
+    window.PoStore.activePo.attachedFiles.splice(idx, 1);
+    renderPoAttachedFilesList();
+    updatePoLifecycleProgressBar(window.PoStore.activePo.status);
+}
+
+function renderPoAttachedFilesList() {
+    const listEl = document.getElementById('poAttachedFilesList');
+    if (!listEl) return;
+    const files = window.PoStore?.activePo?.attachedFiles || [];
+    if (files.length === 0) {
+        listEl.innerHTML = `<div style="text-align: center; padding: 18px; color: #94a3b8; font-size: 12px;">No supporting documents attached yet.</div>`;
+        return;
+    }
+    listEl.innerHTML = files.map((f, i) => `
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 12px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <i class="ph ph-file-pdf" style="color: #9333ea; font-size: 16px;"></i>
+                <div>
+                    <div style="font-weight: 700; color: #0f172a;">${escapeHtml(f.name)}</div>
+                    <div style="font-size: 10.5px; color: #64748b;">${escapeHtml(f.size)} • ${escapeHtml(f.uploadedAt)}</div>
+                </div>
+            </div>
+            <button type="button" class="inv-table-filter-btn" style="color: #dc2626;" onclick="removePoAttachedFile(${i})"><i class="ph ph-trash"></i></button>
+        </div>
+    `).join('');
+}
+
+async function handlePoDeepLinkParams() {
+    try {
+        const params = new URLSearchParams(window.location.search);
+        const targetPo = params.get('po');
+        const targetRfq = params.get('rfq');
+        if (targetPo) {
+            let exists = (window.PoStore.purchaseOrders || []).find(p => p.poNumber === targetPo);
+            if (!exists) {
+                try {
+                    const res = await fetch(`/purchase/api/orders/${encodeURIComponent(targetPo)}`, {
+                        headers: { 'Accept': 'application/json' }
+                    });
+                    const json = await res.json();
+                    if (json?.success && json?.data?.po) {
+                        const p = json.data.po;
+                        exists = {
+                            id: p.id,
+                            poNumber: p.po_number,
+                            poType: p.po_type || 'vendor',
+                            rfqReference: p.rfq_reference || '',
+                            orderTitle: p.special_notes || '',
+                            vendorId: p.vendor_id || '',
+                            vendorName: p.vendor_name,
+                            vendorTradeName: p.vendor_trade_name || p.vendor_name,
+                            vendorContactPerson: p.vendor_contact_person || '',
+                            vendorPhone: p.vendor_phone || '',
+                            vendorEmail: p.vendor_email || '',
+                            vendorAddress: p.vendor_address || '',
+                            orderDate: p.order_date ? String(p.order_date).split('T')[0] : '',
+                            expectedDelivery: p.expected_delivery ? String(p.expected_delivery).split('T')[0] : '',
+                            deliveryLocation: p.delivery_location || 'Central Commissary - Receiving Dock 1',
+                            paymentTerms: p.payment_terms || 'Net 30 Days',
+                            specialNotes: p.special_notes || '',
+                            paymentStatus: p.payment_status || 'Unpaid / Credit',
+                            paymentMethod: p.payment_method || 'Trade Credit (Net 30/15)',
+                            amountPaid: parseFloat(p.amount_paid || 0),
+                            balanceDue: parseFloat(p.balance_due || 0),
+                            approvedBy: p.approved_by || 'Procurement Specialist',
+                            status: p.status || 'Approved / Issued',
+                            items: (json.data.items || p.items || []).map(it => ({
+                                id: it.id,
+                                sku: it.sku || 'CAT-01',
+                                name: it.item_name || it.name || 'Ordered Item',
+                                specs: it.specs || '',
+                                category: it.category || 'Raw Ingredients',
+                                unit: it.uom || it.unit || 'PCS',
+                                quantity: parseFloat(it.quantity || 1),
+                                unitPrice: parseFloat(it.unit_price || 0),
+                                receivedQuantity: parseFloat(it.received_quantity || 0)
+                            }))
+                        };
+                        window.PoStore.purchaseOrders.unshift(exists);
+                        localStorage.setItem('rms_purchase_orders', JSON.stringify(window.PoStore.purchaseOrders));
+                        renderPoDirectory();
+                    }
+                } catch (e) {}
+            }
+            if (exists) {
+                editPoFromDirectory(targetPo);
+            }
+        } else if (targetRfq) {
+            importApprovedRfqToBuilder(targetRfq);
+        }
+    } catch (e) {
+        console.warn('handlePoDeepLinkParams error:', e);
+    }
+}
+
 // Global click handler to close vendor combobox dropdown
 window.addEventListener('click', (e) => {
     const combobox = document.getElementById('poVendorCombobox');
@@ -3324,8 +4678,15 @@ Object.assign(window, {
   handlePoInlineAmountPaid,
   calculateBalanceDue,
   calculatePoGrossTotal,
+  renderPoBuilderTableHeader,
+  togglePoBuilderSettingsDropdown,
+  togglePoBuilderColumn,
+  showAllPoBuilderColumns,
+  resetPoBuilderColumnsToStage,
   renderPoItemsTable,
   updatePoItemField,
+  updatePoReceivedQty,
+  receiveAllPoItems,
   addNewBlankPoItemRow,
   deletePoItemRow,
   clearAllPoItems,
@@ -3340,6 +4701,8 @@ Object.assign(window, {
   initPoColumns,
   renderPoTableHeader,
   renderPoColumnChecklist,
+  togglePoTableSettingsDropdown,
+  handlePoDirectoryColSearch,
   togglePoColumnConfigDropdown,
   togglePoColumnVisibility,
   showAllPoColumns,
@@ -3413,5 +4776,26 @@ Object.assign(window, {
   renderPaymentSettlementData,
   fillFullRemainingBalance,
   addPaymentDisbursement,
-  deletePaymentDisbursement
+  deletePaymentDisbursement,
+  updatePoLifecycleProgressBar,
+  applyPoStageFormLocks,
+  saveActivePoDraft,
+  transitionActivePoStage,
+  handlePoStepClick,
+  handlePoBuilderTabClick,
+  handlePoVendorRedirectClick,
+  syncPoFormInputsToState,
+  updatePoLiveDocumentMockup,
+  toggleSelectAllPos,
+  toggleSelectSinglePo,
+  updatePoBatchToolbarUI,
+  clearPoBatchSelection,
+  executePoBatchDelete,
+  executePoBatchArchive,
+  executePoBatchExport,
+  openPoAttachedFilesModal,
+  closePoAttachedFilesModal,
+  handlePoFileUpload,
+  removePoAttachedFile,
+  handlePoDeepLinkParams
 });

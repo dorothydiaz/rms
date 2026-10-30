@@ -32,18 +32,23 @@ class PurchaseController extends Controller
     public function requestQuotations(): View
     {
         // Windowed initial payload (most recent 30 records for instant DOM render)
-        $rfqs = RfqHeader::with(['lines', 'vendor'])->orderByDesc('rfq_created_at')->take(30)->get();
+        $rfqs = RfqHeader::with(['lines', 'vendor', 'purchaseOrder'])->orderByDesc('rfq_created_at')->take(30)->get();
         $vendors = \Illuminate\Support\Facades\Cache::remember('active_procurement_vendors', 3600, function () {
             return ProcurementVendor::where('is_active', true)->orderBy('legal_name')->get();
         });
         $items = \Illuminate\Support\Facades\Cache::remember('active_inventory_items_lookup', 3600, function () {
             return InventoryItem::where('is_active', true)->orderBy('name')->get();
         });
+        $linkedPoMap = PurchaseOrder::whereNotNull('rfq_reference')
+            ->whereNotIn('status', ['Cancelled', 'Archived'])
+            ->pluck('po_number', 'rfq_reference')
+            ->toArray();
 
         return view('purchase.request-quotations', [
             'initialRfqs' => $rfqs,
             'initialVendors' => $vendors,
             'initialItems' => $items,
+            'linkedPoMap' => $linkedPoMap,
         ]);
     }
 
@@ -148,15 +153,15 @@ class PurchaseController extends Controller
             'po_number' => 'nullable|string|max:50',
             'po_type' => 'nullable|string|max:50',
             'rfq_reference' => 'nullable|string|max:100',
-            'vendor_id' => 'nullable|string|max:100',
+            'vendor_id' => 'nullable',
             'vendor_name' => 'required|string|max:255',
             'vendor_trade_name' => 'nullable|string|max:255',
             'vendor_contact_person' => 'nullable|string|max:255',
             'vendor_phone' => 'nullable|string|max:100',
             'vendor_email' => 'nullable|string|max:255',
             'vendor_address' => 'nullable|string',
-            'order_date' => 'nullable|date',
-            'expected_delivery' => 'nullable|date',
+            'order_date' => 'nullable|string|max:50',
+            'expected_delivery' => 'nullable|string|max:50',
             'delivery_location' => 'nullable|string|max:255',
             'special_notes' => 'nullable|string',
             'payment_status' => 'nullable|string|max:100',
@@ -164,7 +169,7 @@ class PurchaseController extends Controller
             'amount_paid' => 'nullable|numeric|min:0',
             'balance_due' => 'nullable|numeric|min:0',
             'payment_reference' => 'nullable|string|max:100',
-            'payment_date' => 'nullable|date',
+            'payment_date' => 'nullable|string|max:50',
             'fund_source' => 'nullable|string|max:100',
             'payment_remarks' => 'nullable|string',
             'approval_notes' => 'nullable|string',
@@ -196,37 +201,41 @@ class PurchaseController extends Controller
             $amountPaid = (float) ($validated['amount_paid'] ?? 0);
             $balanceDue = max(0, $grossTotal - $amountPaid);
 
-            $po = PurchaseOrder::create([
-                'po_number' => $poNum,
-                'po_type' => $validated['po_type'] ?? 'vendor',
-                'rfq_reference' => $validated['rfq_reference'] ?? null,
-                'vendor_id' => $validated['vendor_id'] ?? null,
-                'vendor_name' => $validated['vendor_name'],
-                'vendor_trade_name' => $validated['vendor_trade_name'] ?? null,
-                'vendor_contact_person' => $validated['vendor_contact_person'] ?? null,
-                'vendor_phone' => $validated['vendor_phone'] ?? null,
-                'vendor_email' => $validated['vendor_email'] ?? null,
-                'vendor_address' => $validated['vendor_address'] ?? null,
-                'order_date' => $validated['order_date'] ?? now()->toDateString(),
-                'expected_delivery' => $validated['expected_delivery'] ?? now()->addDays(3)->toDateString(),
-                'delivery_location' => $validated['delivery_location'] ?? 'Central Commissary - Receiving Dock 1',
-                'special_notes' => $validated['special_notes'] ?? null,
-                'payment_status' => $validated['payment_status'] ?? 'Unpaid / Credit',
-                'payment_method' => $validated['payment_method'] ?? 'Trade Credit (Net 30/15)',
-                'amount_paid' => $amountPaid,
-                'balance_due' => $balanceDue,
-                'payment_reference' => $validated['payment_reference'] ?? null,
-                'payment_date' => $validated['payment_date'] ?? null,
-                'fund_source' => $validated['fund_source'] ?? 'Operating Account',
-                'payment_remarks' => $validated['payment_remarks'] ?? null,
-                'approval_notes' => $validated['approval_notes'] ?? null,
-                'approved_by' => $validated['approved_by'] ?? 'Procurement Officer',
-                'status' => $validated['status'] ?? 'Approved / Issued',
-                'subtotal' => $grossTotal,
-                'tax_amount' => 0.00,
-                'gross_total' => $grossTotal,
-                'created_by_user' => auth()->user()->name ?? 'Procurement Specialist',
-            ]);
+            $po = PurchaseOrder::updateOrCreate(
+                ['po_number' => $poNum],
+                [
+                    'po_type' => $validated['po_type'] ?? 'vendor',
+                    'rfq_reference' => $validated['rfq_reference'] ?? null,
+                    'vendor_id' => $validated['vendor_id'] ?? null,
+                    'vendor_name' => $validated['vendor_name'],
+                    'vendor_trade_name' => $validated['vendor_trade_name'] ?? null,
+                    'vendor_contact_person' => $validated['vendor_contact_person'] ?? null,
+                    'vendor_phone' => $validated['vendor_phone'] ?? null,
+                    'vendor_email' => $validated['vendor_email'] ?? null,
+                    'vendor_address' => $validated['vendor_address'] ?? null,
+                    'order_date' => $validated['order_date'] ?? now()->toDateString(),
+                    'expected_delivery' => $validated['expected_delivery'] ?? now()->addDays(3)->toDateString(),
+                    'delivery_location' => $validated['delivery_location'] ?? 'Central Commissary - Receiving Dock 1',
+                    'special_notes' => $validated['special_notes'] ?? null,
+                    'payment_status' => $validated['payment_status'] ?? 'Unpaid / Credit',
+                    'payment_method' => $validated['payment_method'] ?? 'Trade Credit (Net 30/15)',
+                    'amount_paid' => $amountPaid,
+                    'balance_due' => $balanceDue,
+                    'payment_reference' => $validated['payment_reference'] ?? null,
+                    'payment_date' => $validated['payment_date'] ?? null,
+                    'fund_source' => $validated['fund_source'] ?? 'Operating Account',
+                    'payment_remarks' => $validated['payment_remarks'] ?? null,
+                    'approval_notes' => $validated['approval_notes'] ?? null,
+                    'approved_by' => $validated['approved_by'] ?? 'Procurement Officer',
+                    'status' => $validated['status'] ?? 'Approved / Issued',
+                    'subtotal' => $grossTotal,
+                    'tax_amount' => 0.00,
+                    'gross_total' => $grossTotal,
+                    'created_by_user' => auth()->user()->name ?? 'Procurement Specialist',
+                ]
+            );
+
+            PurchaseOrderItem::where('purchase_order_id', $po->id)->delete();
 
             foreach ($validated['items'] as $it) {
                 PurchaseOrderItem::create([
@@ -235,7 +244,7 @@ class PurchaseController extends Controller
                     'item_name' => $it['name'],
                     'specs' => $it['specs'] ?? null,
                     'category' => $it['category'] ?? 'Raw Ingredients',
-                    'uom' => $it['unit'] ?? 'Unit',
+                    'uom' => $it['unit'] ?? 'PCS',
                     'quantity' => (float) $it['quantity'],
                     'unit_price' => (float) $it['unitPrice'],
                     'total_amount' => (float) $it['quantity'] * (float) $it['unitPrice'],
@@ -250,6 +259,8 @@ class PurchaseController extends Controller
                 'data' => [
                     'po_number' => $po->po_number,
                     'gross_total' => $po->gross_total,
+                    'status' => $po->status,
+                    'po' => $po->load('items'),
                 ],
             ]);
         });
@@ -549,42 +560,138 @@ class PurchaseController extends Controller
     }
 
     /**
-     * API: Convert Approved RFQ to Purchase Order (Atomic Transaction)
+     * API: Convert Approved RFQ to Purchase Order (Idempotent Atomic Transaction)
      */
     public function apiConvertRfqToPo(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'rfq_number' => 'required|string',
+            'vendor_id' => 'nullable|string|max:100',
             'vendor_name' => 'nullable|string|max:255',
+            'vendor_trade_name' => 'nullable|string|max:255',
+            'vendor_contact_person' => 'nullable|string|max:255',
+            'vendor_phone' => 'nullable|string|max:100',
+            'vendor_email' => 'nullable|string|max:255',
+            'vendor_address' => 'nullable|string',
+            'expected_delivery' => 'nullable|string|max:50',
+            'payment_terms' => 'nullable|string|max:100',
             'delivery_location' => 'nullable|string|max:255',
             'approved_by' => 'nullable|string|max:255',
+            'items' => 'nullable|array',
+            'items.*.sku' => 'nullable|string|max:100',
+            'items.*.name' => 'nullable|string|max:255',
+            'items.*.specs' => 'nullable|string',
+            'items.*.category' => 'nullable|string|max:100',
+            'items.*.unit' => 'nullable|string|max:50',
+            'items.*.quantity' => 'nullable|numeric|min:0',
+            'items.*.unitPrice' => 'nullable|numeric|min:0',
         ]);
 
-        $rfq = RfqHeader::with(['lines', 'vendor'])->where('rfq_number', $validated['rfq_number'])->first();
-        if (!$rfq) {
-            return response()->json([
-                'success' => false,
-                'message' => "RFQ {$validated['rfq_number']} not found.",
-            ], 404);
-        }
+        return DB::transaction(function () use ($validated) {
+            $rfq = RfqHeader::with(['lines', 'vendor'])->where('rfq_number', $validated['rfq_number'])->first();
 
-        if ($rfq->rfq_status !== 'APPROVED') {
-            return response()->json([
-                'success' => false,
-                'message' => "Only APPROVED RFQs can be converted to Purchase Orders.",
-            ], 422);
-        }
+            // 1. Check if a Purchase Order is ALREADY created for this RFQ (Idempotency guard)
+            $existingPo = PurchaseOrder::with('items')
+                ->where('rfq_reference', $validated['rfq_number'])
+                ->whereNotIn('status', ['Cancelled', 'Archived'])
+                ->first();
 
-        return DB::transaction(function () use ($rfq, $validated) {
+            if (!$existingPo && $rfq && $rfq->purchase_order_id) {
+                $existingPo = PurchaseOrder::with('items')->find($rfq->purchase_order_id);
+            }
+
+            if ($existingPo) {
+                if ($rfq && $rfq->rfq_status !== 'AWARDED') {
+                    $rfq->rfq_status = 'AWARDED';
+                    $rfq->purchase_order_id = $existingPo->id;
+                    $rfq->save();
+                }
+
+                return response()->json([
+                    'success' => true,
+                    'already_exists' => true,
+                    'message' => "Purchase Order {$existingPo->po_number} is already created for RFQ {$validated['rfq_number']}.",
+                    'data' => [
+                        'po_number' => $existingPo->po_number,
+                        'gross_total' => $existingPo->gross_total,
+                        'rfq_number' => $validated['rfq_number'],
+                        'redirect_url' => '/purchase/purchase-orders?po=' . urlencode($existingPo->po_number),
+                        'po' => $existingPo,
+                    ],
+                ]);
+            }
+
+            // 2. If RFQ is not yet persisted in rfq_header (e.g., seeded/local Approved RFQ), auto-create when items are supplied
+            if (!$rfq) {
+                if (empty($validated['items'])) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "RFQ {$validated['rfq_number']} not found.",
+                    ], 404);
+                }
+
+                $rfq = RfqHeader::create([
+                    'rfq_id' => (string) Str::uuid(),
+                    'rfq_number' => $validated['rfq_number'],
+                    'vendor_id' => $validated['vendor_id'] ?? null,
+                    'rfq_date' => now()->toDateString(),
+                    'rfq_requested_delivery_date' => !empty($validated['expected_delivery']) ? $validated['expected_delivery'] : now()->addDays(3)->toDateString(),
+                    'rfq_payment_terms_code' => $validated['payment_terms'] ?? 'Net 30 Days',
+                    'rfq_status' => 'APPROVED',
+                    'rfq_approval_status' => 'APPROVED',
+                ]);
+
+                foreach ($validated['items'] as $idx => $it) {
+                    $qty = (float) ($it['quantity'] ?? 1);
+                    $price = (float) ($it['unitPrice'] ?? 0);
+                    RfqLine::create([
+                        'rfq_line_id' => (string) Str::uuid(),
+                        'rfq_id' => $rfq->rfq_id,
+                        'line_number' => $idx + 1,
+                        'item_id' => $it['sku'] ?? ('ITEM-' . ($idx + 1)),
+                        'requested_quantity' => $qty,
+                        'quoted_quantity' => $qty,
+                        'purchase_uom_code' => $it['unit'] ?? 'PCS',
+                        'target_unit_price' => $price,
+                        'quoted_unit_price' => $price,
+                        'quoted_line_total' => $qty * $price,
+                        'is_awarded' => true,
+                    ]);
+                }
+
+                $rfq->load(['lines', 'vendor']);
+            }
+
+            if (!in_array(strtoupper((string) $rfq->rfq_status), ['APPROVED', 'AWARDED'], true)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Only APPROVED RFQs can be converted to Purchase Orders.",
+                ], 422);
+            }
+
+            // 3. Collision-free PO Number generation
             $year = date('Y');
-            $count = PurchaseOrder::whereYear('created_at', $year)->count() + 1;
-            $poNum = sprintf('PO-%s-%04d', $year, $count);
+            $seq = max(1, PurchaseOrder::whereYear('created_at', $year)->count() + 1);
+            do {
+                $poNum = sprintf('PO-%s-%04d', $year, $seq);
+                $seq++;
+            } while (PurchaseOrder::where('po_number', $poNum)->exists());
 
+            // 4. Calculate gross total from RFQ lines or fallback payload items
             $grossTotal = 0.0;
-            foreach ($rfq->lines as $line) {
-                $qty = (float) ($line->quoted_quantity ?: $line->requested_quantity);
-                $price = (float) ($line->quoted_unit_price ?: $line->target_unit_price);
-                $grossTotal += ($qty * $price);
+            $payloadItems = $validated['items'] ?? [];
+            if ($rfq->lines->count() > 0) {
+                foreach ($rfq->lines as $line) {
+                    $qty = (float) ($line->quoted_quantity ?: $line->requested_quantity);
+                    $price = (float) ($line->quoted_unit_price ?: $line->target_unit_price);
+                    $grossTotal += ($qty * $price);
+                }
+            } else {
+                foreach ($payloadItems as $it) {
+                    $qty = (float) ($it['quantity'] ?? 1);
+                    $price = (float) ($it['unitPrice'] ?? 0);
+                    $grossTotal += ($qty * $price);
+                }
             }
 
             $vendorName = $validated['vendor_name']
@@ -594,12 +701,19 @@ class PurchaseController extends Controller
                 'po_number' => $poNum,
                 'po_type' => 'vendor',
                 'rfq_reference' => $rfq->rfq_number,
-                'vendor_id' => $rfq->vendor_id,
+                'vendor_id' => $validated['vendor_id'] ?? $rfq->vendor_id,
                 'vendor_name' => $vendorName,
+                'vendor_trade_name' => $validated['vendor_trade_name'] ?? $vendorName,
+                'vendor_contact_person' => $validated['vendor_contact_person'] ?? null,
+                'vendor_phone' => $validated['vendor_phone'] ?? null,
+                'vendor_email' => $validated['vendor_email'] ?? null,
+                'vendor_address' => $validated['vendor_address'] ?? null,
                 'order_date' => now()->toDateString(),
-                'expected_delivery' => $rfq->rfq_requested_delivery_date ?: now()->addDays(3)->toDateString(),
+                'expected_delivery' => !empty($validated['expected_delivery'])
+                    ? $validated['expected_delivery']
+                    : ($rfq->rfq_requested_delivery_date ?: now()->addDays(3)->toDateString()),
                 'delivery_location' => $validated['delivery_location'] ?? 'Central Commissary - Receiving Dock 1',
-                'payment_terms' => $rfq->rfq_payment_terms_code ?: 'Net 30 Days',
+                'payment_terms' => $validated['payment_terms'] ?? ($rfq->rfq_payment_terms_code ?: 'Net 30 Days'),
                 'payment_status' => 'Unpaid / Credit',
                 'payment_method' => 'Trade Credit (Net 30/15)',
                 'amount_paid' => 0.00,
@@ -612,21 +726,43 @@ class PurchaseController extends Controller
                 'created_by_user' => auth()->user()->name ?? 'Procurement Specialist',
             ]);
 
-            foreach ($rfq->lines as $line) {
-                $qty = (float) ($line->quoted_quantity ?: $line->requested_quantity);
-                $price = (float) ($line->quoted_unit_price ?: $line->target_unit_price);
-                PurchaseOrderItem::create([
-                    'purchase_order_id' => $po->id,
-                    'sku' => $line->item_id,
-                    'item_name' => $line->item ? $line->item->name : $line->item_id,
-                    'category' => 'Raw Ingredients',
-                    'uom' => $line->purchase_uom_code ?: 'PCS',
-                    'quantity' => $qty,
-                    'unit_price' => $price,
-                    'total_amount' => $qty * $price,
-                    'received_quantity' => 0.00,
-                    'status' => 'PENDING',
-                ]);
+            if ($rfq->lines->count() > 0) {
+                foreach ($rfq->lines as $idx => $line) {
+                    $qty = (float) ($line->quoted_quantity ?: $line->requested_quantity);
+                    $price = (float) ($line->quoted_unit_price ?: $line->target_unit_price);
+                    $fallbackItem = $payloadItems[$idx] ?? [];
+                    PurchaseOrderItem::create([
+                        'purchase_order_id' => $po->id,
+                        'sku' => $line->item_id ?: ($fallbackItem['sku'] ?? 'ITEM'),
+                        'item_name' => $line->item ? $line->item->name : ($fallbackItem['name'] ?? $line->item_id),
+                        'specs' => $fallbackItem['specs'] ?? $line->rfq_line_notes,
+                        'category' => $fallbackItem['category'] ?? 'Raw Ingredients',
+                        'uom' => $line->purchase_uom_code ?: ($fallbackItem['unit'] ?? 'PCS'),
+                        'quantity' => $qty,
+                        'unit_price' => $price,
+                        'total_amount' => $qty * $price,
+                        'received_quantity' => 0.00,
+                        'status' => 'PENDING',
+                    ]);
+                }
+            } else {
+                foreach ($payloadItems as $it) {
+                    $qty = (float) ($it['quantity'] ?? 1);
+                    $price = (float) ($it['unitPrice'] ?? 0);
+                    PurchaseOrderItem::create([
+                        'purchase_order_id' => $po->id,
+                        'sku' => $it['sku'] ?? 'ITEM',
+                        'item_name' => $it['name'] ?? ($it['sku'] ?? 'Custom Item'),
+                        'specs' => $it['specs'] ?? null,
+                        'category' => $it['category'] ?? 'Raw Ingredients',
+                        'uom' => $it['unit'] ?? 'PCS',
+                        'quantity' => $qty,
+                        'unit_price' => $price,
+                        'total_amount' => $qty * $price,
+                        'received_quantity' => 0.00,
+                        'status' => 'PENDING',
+                    ]);
+                }
             }
 
             // Update RFQ status to AWARDED and link PO
@@ -636,11 +772,14 @@ class PurchaseController extends Controller
 
             return response()->json([
                 'success' => true,
+                'already_exists' => false,
                 'message' => "Purchase Order {$po->po_number} successfully generated from RFQ {$rfq->rfq_number}.",
                 'data' => [
                     'po_number' => $po->po_number,
                     'gross_total' => $po->gross_total,
                     'rfq_number' => $rfq->rfq_number,
+                    'redirect_url' => '/purchase/purchase-orders?po=' . urlencode($po->po_number),
+                    'po' => $po->load('items'),
                 ],
             ]);
         });
@@ -791,6 +930,339 @@ class PurchaseController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => "Successfully archived {$archivedCount} Request(s) for Quotation.",
+                'archived_count' => $archivedCount,
+            ]);
+        });
+    }
+
+    /**
+     * API: Save or Update Purchase Order Draft
+     */
+    public function apiSavePoDraft(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'po_number' => 'nullable|string|max:50',
+            'po_type' => 'nullable|string|max:50',
+            'rfq_reference' => 'nullable|string|max:100',
+            'vendor_id' => 'nullable',
+            'vendor_name' => 'nullable|string|max:255',
+            'vendor_trade_name' => 'nullable|string|max:255',
+            'vendor_contact_person' => 'nullable|string|max:255',
+            'vendor_phone' => 'nullable|string|max:100',
+            'vendor_email' => 'nullable|string|max:255',
+            'vendor_address' => 'nullable|string',
+            'order_date' => 'nullable|string|max:50',
+            'expected_delivery' => 'nullable|string|max:50',
+            'delivery_location' => 'nullable|string|max:255',
+            'special_notes' => 'nullable|string',
+            'payment_status' => 'nullable|string|max:100',
+            'payment_method' => 'nullable|string|max:100',
+            'amount_paid' => 'nullable|numeric|min:0',
+            'items' => 'nullable|array',
+            'items.*.sku' => 'nullable|string|max:100',
+            'items.*.name' => 'nullable|string|max:255',
+            'items.*.specs' => 'nullable|string',
+            'items.*.category' => 'nullable|string|max:100',
+            'items.*.unit' => 'nullable|string|max:50',
+            'items.*.quantity' => 'nullable|numeric|min:0',
+            'items.*.unitPrice' => 'nullable|numeric|min:0',
+        ]);
+
+        return DB::transaction(function () use ($validated) {
+            $year = date('Y');
+            $poNum = $validated['po_number'] ?? null;
+            if (empty($poNum)) {
+                $count = PurchaseOrder::whereYear('created_at', $year)->count() + 1;
+                $poNum = sprintf('PO-%s-%04d', $year, $count);
+            }
+
+            $items = $validated['items'] ?? [];
+            $grossTotal = 0.0;
+            foreach ($items as $it) {
+                $grossTotal += ((float) ($it['quantity'] ?? 0) * (float) ($it['unitPrice'] ?? 0));
+            }
+
+            $amountPaid = (float) ($validated['amount_paid'] ?? 0);
+            $balanceDue = max(0, $grossTotal - $amountPaid);
+
+            $po = PurchaseOrder::updateOrCreate(
+                ['po_number' => $poNum],
+                [
+                    'po_type' => $validated['po_type'] ?? 'vendor',
+                    'rfq_reference' => $validated['rfq_reference'] ?? null,
+                    'vendor_id' => $validated['vendor_id'] ?? null,
+                    'vendor_name' => $validated['vendor_name'] ?? 'Draft Vendor',
+                    'vendor_trade_name' => $validated['vendor_trade_name'] ?? null,
+                    'vendor_contact_person' => $validated['vendor_contact_person'] ?? null,
+                    'vendor_phone' => $validated['vendor_phone'] ?? null,
+                    'vendor_email' => $validated['vendor_email'] ?? null,
+                    'vendor_address' => $validated['vendor_address'] ?? null,
+                    'order_date' => $validated['order_date'] ?? now()->toDateString(),
+                    'expected_delivery' => $validated['expected_delivery'] ?? now()->addDays(3)->toDateString(),
+                    'delivery_location' => $validated['delivery_location'] ?? 'Central Commissary - Receiving Dock 1',
+                    'special_notes' => $validated['special_notes'] ?? null,
+                    'payment_status' => $validated['payment_status'] ?? 'Unpaid / Credit',
+                    'payment_method' => $validated['payment_method'] ?? 'Trade Credit (Net 30/15)',
+                    'amount_paid' => $amountPaid,
+                    'balance_due' => $balanceDue,
+                    'status' => 'Draft PO',
+                    'subtotal' => $grossTotal,
+                    'tax_amount' => 0.00,
+                    'gross_total' => $grossTotal,
+                    'created_by_user' => auth()->user()->name ?? 'Procurement Specialist',
+                ]
+            );
+
+            PurchaseOrderItem::where('purchase_order_id', $po->id)->delete();
+
+            foreach ($items as $it) {
+                $qty = (float) ($it['quantity'] ?? 0);
+                $price = (float) ($it['unitPrice'] ?? 0);
+                PurchaseOrderItem::create([
+                    'purchase_order_id' => $po->id,
+                    'sku' => $it['sku'] ?? null,
+                    'item_name' => $it['name'] ?? ($it['sku'] ?? 'Custom Item'),
+                    'specs' => $it['specs'] ?? null,
+                    'category' => $it['category'] ?? 'Raw Ingredients',
+                    'uom' => $it['unit'] ?? 'PCS',
+                    'quantity' => $qty,
+                    'unit_price' => $price,
+                    'total_amount' => $qty * $price,
+                    'received_quantity' => 0.00,
+                    'status' => 'PENDING',
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => "Draft Purchase Order {$po->po_number} saved.",
+                'data' => $po->load('items'),
+            ]);
+        });
+    }
+
+    /**
+     * API: Transition Purchase Order Lifecycle Status (4-Stage FSM)
+     */
+    public function apiTransitionPoStatus(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'po_number' => 'required|string|max:50',
+            'target_status' => 'required|string|max:50',
+            'rfq_reference' => 'nullable|string|max:100',
+            'vendor_id' => 'nullable',
+            'vendor_name' => 'nullable|string|max:255',
+            'vendor_trade_name' => 'nullable|string|max:255',
+            'vendor_contact_person' => 'nullable|string|max:255',
+            'vendor_phone' => 'nullable|string|max:100',
+            'vendor_email' => 'nullable|string|max:255',
+            'vendor_address' => 'nullable|string',
+            'order_date' => 'nullable|string|max:50',
+            'expected_delivery' => 'nullable|string|max:50',
+            'delivery_location' => 'nullable|string|max:255',
+            'special_notes' => 'nullable|string',
+            'approved_by' => 'nullable|string|max:255',
+            'approval_notes' => 'nullable|string',
+            'items' => 'nullable|array',
+        ]);
+
+        return DB::transaction(function () use ($validated) {
+            $po = PurchaseOrder::where('po_number', $validated['po_number'])->lockForUpdate()->first();
+
+            if (!$po) {
+                $po = PurchaseOrder::create([
+                    'po_number' => $validated['po_number'],
+                    'rfq_reference' => $validated['rfq_reference'] ?? null,
+                    'vendor_id' => $validated['vendor_id'] ?? null,
+                    'vendor_name' => $validated['vendor_name'] ?? 'Approved Vendor',
+                    'vendor_trade_name' => $validated['vendor_trade_name'] ?? ($validated['vendor_name'] ?? 'Approved Vendor'),
+                    'vendor_contact_person' => $validated['vendor_contact_person'] ?? null,
+                    'vendor_phone' => $validated['vendor_phone'] ?? null,
+                    'vendor_email' => $validated['vendor_email'] ?? null,
+                    'vendor_address' => $validated['vendor_address'] ?? null,
+                    'order_date' => !empty($validated['order_date']) ? $validated['order_date'] : now()->toDateString(),
+                    'expected_delivery' => !empty($validated['expected_delivery']) ? $validated['expected_delivery'] : now()->addDays(3)->toDateString(),
+                    'delivery_location' => $validated['delivery_location'] ?? 'Central Commissary - Receiving Dock 1',
+                    'special_notes' => $validated['special_notes'] ?? null,
+                    'status' => 'Draft PO',
+                    'subtotal' => 0,
+                    'gross_total' => 0,
+                    'balance_due' => 0,
+                ]);
+            }
+
+            $normalizeStage = function (string $status): string {
+                $u = strtoupper(trim($status));
+                if (in_array($u, ['DRAFT', 'DRAFT PO'])) return 'DRAFT';
+                if (in_array($u, ['APPROVAL', 'PENDING APPROVAL', 'PENDING_APPROVAL'])) return 'APPROVAL';
+                if (in_array($u, ['ISSUED', 'APPROVED / ISSUED', 'SENT', 'PARTIALLY RECEIVED', 'PARTIALLY_RECEIVED'])) return 'ISSUED';
+                if (in_array($u, ['FULFILLED', 'FULLY RECEIVED', 'FULLY_RECEIVED', 'CLOSED', 'COMPLETED'])) return 'FULFILLED';
+                if (in_array($u, ['REFUSED', 'CANCELLED', 'SHORT-CLOSED'])) return 'REFUSED';
+                return 'DRAFT';
+            };
+
+            $currentStage = $normalizeStage($po->status);
+            $targetStage = $normalizeStage($validated['target_status']);
+
+            $allowedTransitions = [
+                'DRAFT' => ['DRAFT', 'APPROVAL', 'ISSUED', 'REFUSED'],
+                'APPROVAL' => ['DRAFT', 'APPROVAL', 'ISSUED', 'REFUSED'],
+                'ISSUED' => ['DRAFT', 'APPROVAL', 'ISSUED', 'FULFILLED', 'REFUSED'],
+                'FULFILLED' => ['ISSUED', 'FULFILLED'],
+                'REFUSED' => ['DRAFT', 'REFUSED'],
+            ];
+
+            if (!in_array($targetStage, $allowedTransitions[$currentStage] ?? [], true)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Invalid Purchase Order lifecycle transition from {$po->status} to {$validated['target_status']}.",
+                ], 422);
+            }
+
+            $canonicalStatusMap = [
+                'DRAFT' => 'Draft PO',
+                'APPROVAL' => 'Pending Approval',
+                'ISSUED' => 'Approved / Issued',
+                'FULFILLED' => 'Fully Received',
+                'REFUSED' => 'Cancelled',
+            ];
+
+            if (in_array(strtoupper(trim($validated['target_status'])), ['PARTIALLY RECEIVED', 'PARTIALLY_RECEIVED'], true)) {
+                $po->status = 'Partially Received';
+            } else {
+                $po->status = $canonicalStatusMap[$targetStage] ?? $validated['target_status'];
+            }
+            if (!empty($validated['vendor_name'])) {
+                $po->vendor_name = $validated['vendor_name'];
+            }
+            if (!empty($validated['vendor_trade_name'])) {
+                $po->vendor_trade_name = $validated['vendor_trade_name'];
+            }
+            if (!empty($validated['vendor_id'])) {
+                $po->vendor_id = $validated['vendor_id'];
+            }
+            if (!empty($validated['rfq_reference'])) {
+                $po->rfq_reference = $validated['rfq_reference'];
+            }
+            if (!empty($validated['approved_by'])) {
+                $po->approved_by = $validated['approved_by'];
+            }
+            if (!empty($validated['approval_notes'])) {
+                $po->approval_notes = $validated['approval_notes'];
+            }
+
+            if (!empty($validated['items']) && is_array($validated['items'])) {
+                $grossTotal = 0.0;
+                PurchaseOrderItem::where('purchase_order_id', $po->id)->delete();
+                foreach ($validated['items'] as $it) {
+                    $qty = (float) ($it['quantity'] ?? 0);
+                    $price = (float) ($it['unitPrice'] ?? 0);
+                    $recQty = (float) ($it['receivedQuantity'] ?? 0);
+                    if ($targetStage === 'FULFILLED' && $recQty <= 0) {
+                        $recQty = $qty;
+                    }
+                    $grossTotal += ($qty * $price);
+                    PurchaseOrderItem::create([
+                        'purchase_order_id' => $po->id,
+                        'sku' => $it['sku'] ?? null,
+                        'item_name' => $it['name'] ?? ($it['sku'] ?? 'Custom Item'),
+                        'specs' => $it['specs'] ?? null,
+                        'category' => $it['category'] ?? 'Raw Ingredients',
+                        'uom' => $it['unit'] ?? 'PCS',
+                        'quantity' => $qty,
+                        'unit_price' => $price,
+                        'total_amount' => $qty * $price,
+                        'received_quantity' => $recQty,
+                        'status' => ($recQty >= $qty && $qty > 0) ? 'RECEIVED' : ($recQty > 0 ? 'PARTIAL' : 'PENDING'),
+                    ]);
+                }
+                $po->subtotal = $grossTotal;
+                $po->gross_total = $grossTotal;
+                $po->balance_due = max(0, $grossTotal - (float) $po->amount_paid);
+            }
+
+            $po->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => "Purchase Order {$po->po_number} transitioned to {$po->status}.",
+                'data' => $po->fresh('items'),
+            ]);
+        });
+    }
+
+    /**
+     * API: Delete / Batch Delete Purchase Orders
+     */
+    public function apiBatchDeletePos(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'po_numbers' => 'required|array|min:1',
+            'po_numbers.*' => 'required|string',
+            'force' => 'nullable|boolean',
+        ]);
+
+        return DB::transaction(function () use ($validated) {
+            $query = PurchaseOrder::whereIn('po_number', $validated['po_numbers']);
+            if (empty($validated['force'])) {
+                $query->whereIn('status', ['Draft PO', 'DRAFT', 'Draft', 'Cancelled', 'Refused']);
+            }
+            $headers = $query->get();
+
+            $poIds = $headers->pluck('id')->all();
+            $poNums = $headers->pluck('po_number')->all();
+
+            if (!empty($poIds)) {
+                // Unlink any RFQ referencing these POs so the RFQ can be re-converted if needed
+                RfqHeader::whereIn('purchase_order_id', $poIds)->update([
+                    'purchase_order_id' => null,
+                    'rfq_status' => 'APPROVED',
+                ]);
+                RfqHeader::whereIn('rfq_number', $headers->pluck('rfq_reference')->filter()->all())->update([
+                    'purchase_order_id' => null,
+                    'rfq_status' => 'APPROVED',
+                ]);
+
+                // Clean up any GoodsReceipt lines/headers referencing these POs
+                $grnIds = \App\Models\Inventory\GoodsReceipt::whereIn('purchase_order_id', $poIds)->pluck('id')->all();
+                if (!empty($grnIds)) {
+                    \App\Models\Inventory\GoodsReceiptItem::whereIn('goods_receipt_id', $grnIds)->delete();
+                    \App\Models\Inventory\GoodsReceipt::whereIn('id', $grnIds)->delete();
+                }
+
+                PurchaseOrderItem::whereIn('purchase_order_id', $poIds)->delete();
+            }
+
+            $deletedCount = !empty($poIds)
+                ? PurchaseOrder::whereIn('id', $poIds)->delete()
+                : 0;
+
+            return response()->json([
+                'success' => true,
+                'message' => "Successfully deleted {$deletedCount} Purchase Order(s).",
+                'deleted_count' => $deletedCount,
+                'deleted_po_numbers' => $poNums,
+            ]);
+        });
+    }
+
+    /**
+     * API: Batch Archive Purchase Orders
+     */
+    public function apiBatchArchivePos(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'po_numbers' => 'required|array|min:1',
+            'po_numbers.*' => 'required|string',
+        ]);
+
+        return DB::transaction(function () use ($validated) {
+            $archivedCount = PurchaseOrder::whereIn('po_number', $validated['po_numbers'])
+                ->update(['status' => 'Archived']);
+
+            return response()->json([
+                'success' => true,
+                'message' => "Successfully archived {$archivedCount} Purchase Order(s).",
                 'archived_count' => $archivedCount,
             ]);
         });

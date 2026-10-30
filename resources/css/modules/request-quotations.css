@@ -2452,6 +2452,11 @@ input[type="date"].rfq-input::-webkit-calendar-picker-indicator {
     white-space: nowrap;
 }
 
+.rfq-table th.th-left,
+.rfq-table td.td-left {
+    text-align: left;
+}
+
 .rfq-table th.th-num,
 .rfq-table td.td-num {
     text-align: right;
@@ -2479,15 +2484,27 @@ input[type="date"].rfq-input::-webkit-calendar-picker-indicator {
 #rfqDirectoryTable {
     table-layout: fixed;
     width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+#rfqDirectoryTable thead th {
+    background: #f8fafc;
+    border-bottom: 1.5px solid #e2e8f0;
+    padding: 10px 14px !important;
 }
 
 #rfqDirectoryTable tbody tr {
-    height: 52px;
+    height: 58px;
+}
+
+#rfqDirectoryTable tbody tr.is-row-expanded td {
+    background: #faf5ff;
 }
 
 #rfqDirectoryTable td {
-    height: 52px;
-    padding: 6px 12px;
+    height: 58px;
+    padding: 8px 14px;
     border-bottom: 1px solid #f1f5f9;
     vertical-align: middle;
     background: #ffffff;
@@ -2501,10 +2518,16 @@ input[type="date"].rfq-input::-webkit-calendar-picker-indicator {
     display: flex;
     flex-direction: column;
     justify-content: center;
-    gap: 2px;
+    align-items: flex-start;
+    gap: 3px;
     line-height: 1.25;
     min-width: 0;
     overflow: hidden;
+}
+
+.rms-cell-stack.rms-stack-right {
+    align-items: flex-end;
+    text-align: right;
 }
 
 .rms-cell-title {
@@ -2514,6 +2537,7 @@ input[type="date"].rfq-input::-webkit-calendar-picker-indicator {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    max-width: 100%;
 }
 
 .rms-cell-sub {
@@ -2525,6 +2549,198 @@ input[type="date"].rfq-input::-webkit-calendar-picker-indicator {
     display: flex;
     align-items: center;
     gap: 4px;
+    max-width: 100%;
+}
+
+.rfq-dir-ref-link {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8125rem;
+    font-weight: 800;
+    color: #7e22ce;
+    text-decoration: none;
+    transition: color 0.15s ease;
+}
+
+.rfq-dir-ref-link:hover {
+    color: #581c87;
+    text-decoration: underline;
+}
+
+.rfq-linked-po-sublink {
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin: 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.70rem;
+    font-weight: 700;
+    color: #047857;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    transition: color 0.15s ease;
+}
+
+.rfq-linked-po-sublink:hover {
+    color: #065f46;
+    text-decoration: underline;
+}
+
+.status-pill-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+/* Harmonized Issue & Award Approval Pills */
+.rfq-appr-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 0.70rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    line-height: 1.1;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.rfq-appr-pill.rfq-appr-approved {
+    background: #ecfdf5;
+    color: #047857;
+    border-color: #a7f3d0;
+}
+
+.rfq-appr-pill.rfq-appr-approved:hover {
+    background: #d1fae5;
+    border-color: #6ee7b7;
+}
+
+.rfq-appr-pill.rfq-appr-pending {
+    background: #fffbeb;
+    color: #b45309;
+    border-color: #fde68a;
+}
+
+.rfq-appr-pill.rfq-appr-pending:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
+}
+
+.rfq-appr-pill.rfq-appr-neutral {
+    background: #f8fafc;
+    color: #475569;
+    border-color: #e2e8f0;
+    cursor: default;
+}
+
+/* Harmonized Right-Aligned Row Action Toolbar */
+#rfqDirectoryTable td.td-actions-cell {
+    text-align: right;
+    overflow: visible;
+}
+
+.rfq-row-actions {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 5px;
+    width: 100%;
+}
+
+.rfq-act-pill {
+    height: 28px;
+    padding: 0 9px;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.rfq-act-pill-po {
+    background: #ecfdf5;
+    color: #047857;
+    border: 1px solid #a7f3d0;
+}
+
+.rfq-act-pill-po:hover {
+    background: #059669;
+    color: #ffffff;
+    border-color: #047857;
+    box-shadow: 0 2px 6px rgba(5, 150, 105, 0.22);
+}
+
+.rfq-act-pill-create {
+    background: #f5f3ff;
+    color: #7e22ce;
+    border: 1px solid #ddd6fe;
+}
+
+.rfq-act-pill-create:hover {
+    background: #7e22ce;
+    color: #ffffff;
+    border-color: #6b21a8;
+    box-shadow: 0 2px 6px rgba(126, 34, 206, 0.22);
+}
+
+.rfq-act-icon-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    color: #475569;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13.5px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    padding: 0;
+    flex-shrink: 0;
+}
+
+.rfq-act-icon-btn:hover {
+    background: #f5f3ff;
+    border-color: #c084fc;
+    color: #7e22ce;
+}
+
+.rfq-act-icon-btn.rfq-act-icon-danger {
+    background: #ef4444;
+    border-color: #dc2626;
+    color: #ffffff;
+}
+
+.rfq-act-icon-btn.rfq-act-icon-danger:hover {
+    background: #dc2626;
+    border-color: #b91c1c;
+    color: #ffffff;
+    box-shadow: 0 2px 6px rgba(220, 38, 38, 0.28);
+}
+
+/* Active KPI Card State */
+.rfq-kpi-card.is-active-filter {
+    border-color: rgba(147, 51, 234, 0.48);
+    background: #ffffff;
+    box-shadow: 0 6px 18px rgba(147, 51, 234, 0.11), 0 2px 4px rgba(15, 23, 42, 0.04);
+}
+
+.rfq-kpi-card.is-active-filter::before {
+    opacity: 1;
 }
 
 .rfq-table td input,
