@@ -9,7 +9,16 @@ class HrOrganizationDropdownTest extends TestCase
 {
     protected function getAdminUser(): User
     {
-        return User::where('username', 'peter')->first();
+        return User::firstOrCreate(
+            ['username' => 'peter'],
+            [
+                'full_name' => 'Peter Admin',
+                'email' => 'peter@test.com',
+                'password' => bcrypt('password123'),
+                'role' => 'Admin',
+                'status' => 'Active',
+            ]
+        );
     }
 
     public function test_organization_dropdown_renders_on_employee_management(): void
@@ -24,8 +33,8 @@ class HrOrganizationDropdownTest extends TestCase
         $response->assertSee('Organization');
         $response->assertSee(route('hr.people.departments'));
         $response->assertSee(route('hr.people.positions'));
-        $response->assertSee(route('hr.people.branches'));
-        $response->assertSee(route('hr.people.companies'));
+        $response->assertDontSee(route('hr.people.branches'));
+        $response->assertDontSee(route('hr.people.companies'));
     }
 
     public function test_organization_dropdown_renders_active_state_on_organization_pages(): void
@@ -42,24 +51,15 @@ class HrOrganizationDropdownTest extends TestCase
         $resPos = $this->actingAs($user)->get(route('hr.people.positions'));
         $resPos->assertStatus(200);
         $resPos->assertSee('hr-tab-dropdown-trigger active', false);
-        $resPos->assertSee(route('hr.people.branches'));
-
-        // 3. Branches Page
-        $resBranch = $this->actingAs($user)->get(route('hr.people.branches'));
-        $resBranch->assertStatus(200);
-        $resBranch->assertSee('hr-tab-dropdown-trigger active', false);
-
-        // 4. Companies Page
-        $resComp = $this->actingAs($user)->get(route('hr.people.companies'));
-        $resComp->assertStatus(200);
-        $resComp->assertSee('hr-tab-dropdown-trigger active', false);
+        $resPos->assertDontSee(route('hr.people.branches'));
+        $resPos->assertDontSee(route('hr.people.companies'));
     }
 
     public function test_members_modal_pagination_bar_is_positioned_above_modal_footer(): void
     {
         $user = $this->getAdminUser();
 
-        foreach ([route('hr.people.departments'), route('hr.people.positions'), route('hr.people.branches'), route('hr.people.companies')] as $url) {
+        foreach ([route('hr.people.departments'), route('hr.people.positions'), route('config.companies-branches.index')] as $url) {
             $response = $this->actingAs($user)->get($url);
             $response->assertStatus(200);
 

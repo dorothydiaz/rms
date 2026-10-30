@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Branch;
 use App\Models\BusinessLegalDocument;
 use App\Models\Company;
+use App\Models\Hr\Employee;
 use App\Services\AuditLogger;
 use App\Services\CompanyBranchContext;
 use Illuminate\Http\RedirectResponse;
@@ -22,55 +23,11 @@ class BusinessSettingsController extends Controller
     }
 
     /**
-     * Render the unified Business Settings configuration console.
+     * Render the unified Companies & Branches configuration console (consolidating legacy Business Settings).
      */
     public function index(Request $request): View
     {
-        $company = $this->context->getActiveCompany() ?? Company::first();
-        $branches = $company ? Branch::where('company_id', $company->company_id)->orderBy('branch_name')->get() : collect();
-        $legalDocuments = $company ? BusinessLegalDocument::where('documentable_type', Company::class)
-            ->where('documentable_id', $company->company_id)
-            ->orderBy('expiration_date', 'asc')
-            ->get() : collect();
-
-        $allCompanies = Company::active()->orderBy('company_legal_name')->get();
-
-        // Document vault statistics
-        $vaultStats = [
-            'total' => $legalDocuments->count(),
-            'active' => $legalDocuments->where('expiration_status', 'Active')->count(),
-            'expiring_soon' => $legalDocuments->where('expiration_status', 'Expiring Soon')->count(),
-            'expired' => $legalDocuments->where('expiration_status', 'Expired')->count(),
-        ];
-
-        $currencies = ['PHP', 'USD', 'EUR', 'JPY', 'SGD', 'HKD', 'AUD'];
-        $timezones = ['Asia/Manila', 'Asia/Singapore', 'Asia/Tokyo', 'UTC', 'America/New_York', 'America/Los_Angeles'];
-        $branchTypes = ['Store / Dine-In', 'Takeout / Kiosk', 'Central Commissary', 'Warehouse', 'Head Office'];
-        $taxTypes = ['VAT Registered', 'Non-VAT Registered', 'Tax Exempt', 'Special Economic Zone / PEZA'];
-        $docCategories = [
-            'Certificate of Registration (COR / BIR Form 2303)',
-            "Mayor's / Business Permit",
-            'SEC Certificate of Incorporation / DTI Registration',
-            'Sanitary Permit & Health Clearances',
-            'Fire Safety Inspection Certificate (FSIC)',
-            'Tax Exemption / PEZA Certificate',
-            'Commercial Lease Contract',
-            'Barangay Business Clearance',
-            'Other Legal Compliance Document',
-        ];
-
-        return view('config.business-settings', compact(
-            'company',
-            'branches',
-            'legalDocuments',
-            'allCompanies',
-            'vaultStats',
-            'currencies',
-            'timezones',
-            'branchTypes',
-            'taxTypes',
-            'docCategories'
-        ));
+        return $this->companiesBranchesIndex($request);
     }
 
     /**
@@ -84,29 +41,61 @@ class BusinessSettingsController extends Controller
 
         $allBranches = Branch::with('company')->orderBy('branch_name')->get();
 
+        // Compute workforce deployment counts across companies, agencies, and branches
+        $allEmps = Employee::select('id', 'company_id', 'branch_id', 'assigned_branch_ids', 'company_name', 'agency_name', 'company_agency_name')->get();
+        foreach ($companies as $comp) {
+            $comp->employees_count = $allEmps->filter(fn($e) =>
+                $e->company_id === $comp->company_id ||
+                strcasecmp((string) $e->company_name, (string) $comp->company_legal_name) === 0 ||
+                strcasecmp((string) $e->agency_name, (string) $comp->company_legal_name) === 0 ||
+                strcasecmp((string) $e->company_agency_name, (string) $comp->company_legal_name) === 0
+            )->count();
+
+            foreach ($comp->branches as $br) {
+                $br->employees_count = $allEmps->filter(fn($e) => in_array($br->branch_id, $e->all_branch_ids))->count();
+            }
+        }
+
+        foreach ($allBranches as $br) {
+            $br->employees_count = $allEmps->filter(fn($e) => in_array($br->branch_id, $e->all_branch_ids))->count();
+        }
+
         // Calculate telemetry metrics
         $metrics = [
             'total_companies' => $companies->count(),
+            'direct_companies' => $companies->whereIn('company_type', ['Company', 'Holding Enterprise', 'Subsidiary'])->count(),
+            'agencies_count' => $companies->where('company_type', 'Agency')->count(),
             'total_branches' => $allBranches->count(),
             'active_companies' => $companies->where('company_is_active', true)->count(),
             'active_branches' => $allBranches->where('branch_is_active', true)->count(),
             'vat_registered' => $companies->filter(fn($c) => $c->company_is_vat_registered || $c->company_tax_type === 'VAT Registered')->count(),
             'holding_groups' => $companies->where('company_type', 'Holding Enterprise')->count(),
+            'assigned_employees' => $allEmps->filter(fn($e) => $e->company_id || $e->company_name || $e->agency_name || $e->branch_id)->count(),
         ];
 
         // Determine view mode and selected company
         $currentView = $request->get('view', 'directory');
         $selectedCompanyId = $request->get('company_id');
+        $activeSubTab = $request->get('tab', 'general');
 
         if ($selectedCompanyId) {
             $selectedCompany = $companies->firstWhere('company_id', (int) $selectedCompanyId) ?? $this->context->getActiveCompany() ?? $companies->first();
             $currentView = 'details';
         } else {
             $selectedCompany = $this->context->getActiveCompany() ?? $companies->first();
+            if ($request->has('tab')) {
+                $currentView = 'details';
+            }
         }
 
+        if ($selectedCompany && !$selectedCompany->relationLoaded('branches')) {
+            $selectedCompany->load(['branches', 'parentCompany', 'childCompanies', 'legalDocuments']);
+        }
+
+        $company = $selectedCompany;
         $branches = $selectedCompany ? $selectedCompany->branches : collect();
         $legalDocuments = $selectedCompany ? $selectedCompany->legalDocuments : collect();
+        $allCompanies = $companies;
 
         $vaultStats = [
             'total' => $legalDocuments->count(),
@@ -133,10 +122,13 @@ class BusinessSettingsController extends Controller
 
         return view('config.companies-branches', compact(
             'companies',
+            'allCompanies',
             'allBranches',
             'metrics',
             'currentView',
+            'activeSubTab',
             'selectedCompany',
+            'company',
             'branches',
             'legalDocuments',
             'vaultStats',
@@ -169,6 +161,7 @@ class BusinessSettingsController extends Controller
             'company_trade_name' => ['nullable', 'string', 'max:255'],
             'company_type' => ['nullable', 'string', 'in:Company,Holding Enterprise,Subsidiary,Agency'],
             'parent_company_id' => ['nullable', 'exists:companies,company_id'],
+            'company_registration_no' => ['nullable', 'string', 'max:100'],
             'company_tax_id' => ['nullable', 'string', 'max:50'],
             'company_branch_code' => ['nullable', 'string', 'max:20'],
             'company_rdo_code' => ['nullable', 'string', 'max:20'],
@@ -176,10 +169,12 @@ class BusinessSettingsController extends Controller
             'company_is_vat_registered' => ['nullable', 'boolean'],
             'company_base_currency_code' => ['required', 'string', 'size:3'],
             'company_timezone' => ['nullable', 'string', 'max:50'],
+            'fiscal_year_start_month' => ['nullable', 'integer', 'min:1', 'max:12'],
             'company_phone_number' => ['nullable', 'string', 'max:30'],
             'company_email_address' => ['nullable', 'email', 'max:255'],
             'company_website_url' => ['nullable', 'string', 'max:255'],
             'company_email_domain' => ['nullable', 'string', 'max:150'],
+            'company_contact_person' => ['nullable', 'string', 'max:100'],
             'company_brand_color' => ['nullable', 'string', 'max:30'],
             'company_external_code' => ['nullable', 'string', 'max:100'],
             'company_address_line_1' => ['nullable', 'string', 'max:150'],
@@ -188,16 +183,21 @@ class BusinessSettingsController extends Controller
             'company_state_province_code' => ['nullable', 'string', 'max:50'],
             'company_postal_code' => ['nullable', 'string', 'max:20'],
             'company_country_code' => ['nullable', 'string', 'size:2'],
+            'bir_permit_number' => ['nullable', 'string', 'max:100'],
+            'invoice_header_text' => ['nullable', 'string', 'max:1000'],
+            'invoice_footer_text' => ['nullable', 'string', 'max:1000'],
+            'company_notes' => ['nullable', 'string', 'max:2000'],
             'logo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,svg,webp', 'max:2048'],
         ]);
 
         $validated['company_type'] = $validated['company_type'] ?? 'Company';
         $validated['company_is_vat_registered'] = $request->has('company_is_vat_registered');
-        if ($validated['company_is_vat_registered']) {
+        if ($validated['company_is_vat_registered'] && empty($validated['company_tax_type'])) {
             $validated['company_tax_type'] = 'VAT Registered';
         }
         $validated['company_country_code'] = $validated['company_country_code'] ?? 'PH';
         $validated['company_timezone'] = $validated['company_timezone'] ?? 'Asia/Manila';
+        $validated['fiscal_year_start_month'] = $validated['fiscal_year_start_month'] ?? 1;
         $validated['company_is_active'] = true;
         $validated['company_created_by'] = Auth::id();
 
@@ -226,6 +226,7 @@ class BusinessSettingsController extends Controller
             'company_trade_name' => ['nullable', 'string', 'max:255'],
             'company_type' => ['nullable', 'string', 'in:Company,Holding Enterprise,Subsidiary,Agency'],
             'parent_company_id' => ['nullable', 'exists:companies,company_id'],
+            'company_registration_no' => ['nullable', 'string', 'max:100'],
             'company_tax_id' => ['nullable', 'string', 'max:50'],
             'company_branch_code' => ['nullable', 'string', 'max:20'],
             'company_rdo_code' => ['nullable', 'string', 'max:20'],
@@ -233,10 +234,12 @@ class BusinessSettingsController extends Controller
             'company_is_vat_registered' => ['nullable', 'boolean'],
             'company_base_currency_code' => ['required', 'string', 'size:3'],
             'company_timezone' => ['nullable', 'string', 'max:50'],
+            'fiscal_year_start_month' => ['nullable', 'integer', 'min:1', 'max:12'],
             'company_phone_number' => ['nullable', 'string', 'max:30'],
             'company_email_address' => ['nullable', 'email', 'max:255'],
             'company_website_url' => ['nullable', 'string', 'max:255'],
             'company_email_domain' => ['nullable', 'string', 'max:150'],
+            'company_contact_person' => ['nullable', 'string', 'max:100'],
             'company_brand_color' => ['nullable', 'string', 'max:30'],
             'company_external_code' => ['nullable', 'string', 'max:100'],
             'company_address_line_1' => ['nullable', 'string', 'max:150'],
@@ -245,12 +248,24 @@ class BusinessSettingsController extends Controller
             'company_state_province_code' => ['nullable', 'string', 'max:50'],
             'company_postal_code' => ['nullable', 'string', 'max:20'],
             'company_country_code' => ['nullable', 'string', 'size:2'],
+            'bir_permit_number' => ['nullable', 'string', 'max:100'],
+            'invoice_header_text' => ['nullable', 'string', 'max:1000'],
+            'invoice_footer_text' => ['nullable', 'string', 'max:1000'],
+            'company_notes' => ['nullable', 'string', 'max:2000'],
+            'share_chart_of_accounts' => ['nullable', 'boolean'],
+            'share_customer_vendor_directory' => ['nullable', 'boolean'],
+            'share_product_catalog' => ['nullable', 'boolean'],
             'logo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,svg,webp', 'max:2048'],
         ]);
 
         $validated['company_is_vat_registered'] = $request->has('company_is_vat_registered');
-        if ($validated['company_is_vat_registered']) {
+        if ($validated['company_is_vat_registered'] && empty($validated['company_tax_type'])) {
             $validated['company_tax_type'] = 'VAT Registered';
+        }
+        if ($request->has('hierarchy_section_present')) {
+            $validated['share_chart_of_accounts'] = $request->has('share_chart_of_accounts');
+            $validated['share_customer_vendor_directory'] = $request->has('share_customer_vendor_directory');
+            $validated['share_product_catalog'] = $request->has('share_product_catalog');
         }
         $validated['company_updated_by'] = Auth::id();
 
@@ -450,7 +465,8 @@ class BusinessSettingsController extends Controller
      */
     public function storeDocument(Request $request): RedirectResponse
     {
-        $company = $this->context->getActiveCompany();
+        $companyId = $request->input('company_id');
+        $company = $companyId ? Company::find($companyId) : $this->context->getActiveCompany();
         if (!$company) {
             return redirect()->back()->with('error', 'No active company selected.');
         }
@@ -490,6 +506,11 @@ class BusinessSettingsController extends Controller
 
         AuditLogger::log('Create', 'DocumentVault', $company->company_id, "Uploaded legal document '{$validated['document_name']}'");
 
+        if ($request->boolean('from_companies_branches')) {
+            return redirect()->route('config.companies-branches.show', ['id' => $company->company_id, 'tab' => 'vault'])
+                ->with('success', "Document '{$validated['document_name']}' securely stored in Document Vault.");
+        }
+
         return redirect()->route('config.business-settings', ['tab' => 'legal'])
             ->with('success', "Document '{$validated['document_name']}' securely stored in Document Vault.");
     }
@@ -500,6 +521,7 @@ class BusinessSettingsController extends Controller
     public function destroyDocument(int $id): RedirectResponse
     {
         $doc = BusinessLegalDocument::findOrFail($id);
+        $companyId = $doc->documentable_id;
         if ($doc->file_path && Storage::disk('public')->exists($doc->file_path)) {
             Storage::disk('public')->delete($doc->file_path);
         }
@@ -509,16 +531,22 @@ class BusinessSettingsController extends Controller
 
         AuditLogger::log('Delete', 'DocumentVault', $id, "Deleted document '{$name}'");
 
+        if (request()->boolean('from_companies_branches') && $companyId) {
+            return redirect()->route('config.companies-branches.show', ['id' => $companyId, 'tab' => 'vault'])
+                ->with('success', "Document '{$name}' deleted from Document Vault.");
+        }
+
         return redirect()->route('config.business-settings', ['tab' => 'legal'])
             ->with('success', "Document '{$name}' deleted from Document Vault.");
     }
 
     /**
-     * Create an operational branch under current company.
+     * Create an operational branch under selected or current company.
      */
     public function storeBranch(Request $request): RedirectResponse
     {
-        $company = $this->context->getActiveCompany();
+        $companyId = $request->input('company_id');
+        $company = $companyId ? Company::find($companyId) : $this->context->getActiveCompany();
         if (!$company) {
             return redirect()->back()->with('error', 'No active company selected.');
         }
@@ -543,6 +571,11 @@ class BusinessSettingsController extends Controller
 
         $branch = Branch::create($validated);
         AuditLogger::log('Create', 'Branches', $branch->branch_id, "Created branch '{$branch->branch_name}' ({$branch->branch_code})");
+
+        if ($request->boolean('from_companies_branches')) {
+            return redirect()->route('config.companies-branches.show', ['id' => $company->company_id, 'tab' => 'branches'])
+                ->with('success', "Branch '{$branch->branch_name}' created successfully.");
+        }
 
         return redirect()->route('config.business-settings', ['tab' => 'branches'])
             ->with('success', "Branch '{$branch->branch_name}' created successfully.");
@@ -572,6 +605,11 @@ class BusinessSettingsController extends Controller
         $branch->update($validated);
         AuditLogger::log('Update', 'Branches', $branch->branch_id, "Updated branch '{$branch->branch_name}'");
 
+        if ($request->boolean('from_companies_branches')) {
+            return redirect()->route('config.companies-branches.show', ['id' => $branch->company_id, 'tab' => 'branches'])
+                ->with('success', "Branch '{$branch->branch_name}' updated successfully.");
+        }
+
         return redirect()->route('config.business-settings', ['tab' => 'branches'])
             ->with('success', "Branch '{$branch->branch_name}' updated successfully.");
     }
@@ -586,6 +624,11 @@ class BusinessSettingsController extends Controller
 
         $statusStr = $branch->branch_is_active ? 'activated' : 'deactivated';
         AuditLogger::log('Update', 'Branches', $branch->branch_id, "{$statusStr} branch '{$branch->branch_name}'");
+
+        if (request()->boolean('from_companies_branches')) {
+            return redirect()->route('config.companies-branches.show', ['id' => $branch->company_id, 'tab' => 'branches'])
+                ->with('success', "Branch '{$branch->branch_name}' {$statusStr}.");
+        }
 
         return redirect()->route('config.business-settings', ['tab' => 'branches'])
             ->with('success', "Branch '{$branch->branch_name}' {$statusStr}.");

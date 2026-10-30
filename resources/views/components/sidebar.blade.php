@@ -365,15 +365,15 @@
                     </button>
 
                     <div class="popup-menu-divider"></div>
-                    <div class="popup-section-label">Settings & Administration</div>
+                    <div class="popup-section-label" data-group-id="config-biz">Settings & Administration</div>
 
-                    <a href="{{ route('config.business-settings') }}" class="popup-menu-item{{ request()->routeIs('config.business-settings*') ? ' active' : '' }}" role="menuitem">
+                    <a href="{{ route('config.companies-branches.index') }}" class="popup-menu-item{{ request()->routeIs('config.companies-branches*', 'config.business-settings*') ? ' active' : '' }}" role="menuitem">
                         <div class="popup-item-icon">
-                            <i class="ph ph-sliders"></i>
+                            <i class="ph ph-buildings"></i>
                         </div>
                         <div class="popup-item-text">
-                            <span class="popup-item-title">Business Settings</span>
-                            <span class="popup-item-desc">Company profiles, legal hub, branches</span>
+                            <span class="popup-item-title">Companies & Branches</span>
+                            <span class="popup-item-desc">Company & agency profiles, legal hub, branches</span>
                         </div>
                     </a>
 

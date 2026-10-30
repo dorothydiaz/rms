@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Companies & Branches - Business Settings')
+@section('title', 'Companies & Branches - Enterprise Configuration Hub')
 
 @push('blade-data')
 <script>
@@ -22,27 +22,49 @@
 @endpush
 
 @section('content')
-<div class="biz-settings-wrapper" id="companiesBranchesApp">
+@php
+    $activeSubTab = $activeSubTab ?? request('tab', 'general');
+    if ($activeSubTab === 'legal') {
+        $activeSubTab = 'vault';
+    }
+    $fiscalMonths = [
+        1 => 'January', 2 => 'February', 3 => 'March', 4 => 'April',
+        5 => 'May', 6 => 'June', 7 => 'July', 8 => 'August',
+        9 => 'September', 10 => 'October', 11 => 'November', 12 => 'December'
+    ];
+@endphp
 
-    <!-- Top View Switcher & Module Header -->
-    <div class="biz-top-bar" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
-        <div style="display: flex; align-items: center; gap: 12px;">
-            <div style="width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);">
-                <i class="ph ph-buildings"></i>
-            </div>
+<div class="cb-hub-wrapper biz-settings-wrapper" id="companiesBranchesApp">
+
+    <!-- Standard ERP Page Title & Tab Strip (Matches HR & System Administration Tabs) -->
+    <div class="hr-parent-header">
+        <div class="hr-parent-title-row">
             <div>
-                <h1 style="font-size: 1.35rem; font-weight: 700; color: #0f172a; margin: 0; line-height: 1.2;">Companies &amp; Branches</h1>
-                <p style="font-size: 0.8rem; color: #64748b; margin: 2px 0 0;">Enterprise Multi-Entity Directory, Branch Management &amp; Legal Tax Registrations</p>
+                <h1 class="hr-parent-title">
+                    <i class="ph ph-buildings"></i>
+                    <span>Companies &amp; Branches</span>
+                </h1>
+                <p class="hr-parent-subtitle">Manage registered corporate entities, staffing agencies, branch networks, and legal compliance</p>
+            </div>
+            <div class="hr-page-actions">
+                <button type="button" class="hr-btn hr-btn-secondary" onclick="openCreateBranchModal({{ $selectedCompany ? $selectedCompany->company_id : 'null' }})">
+                    <i class="ph ph-storefront"></i>
+                    <span>Add Branch</span>
+                </button>
+                <button type="button" class="hr-btn hr-btn-primary" onclick="openCreateCompanyModal()">
+                    <i class="ph ph-plus-circle"></i>
+                    <span>New Company / Agency</span>
+                </button>
             </div>
         </div>
 
-        <!-- Mode Switcher Pills: [Directory] / [Company Details] -->
-        <div class="view-mode-pill-group" style="display: inline-flex; background: #f1f5f9; padding: 3px; border-radius: 10px; border: 1px solid #e2e8f0;">
-            <button type="button" class="view-mode-pill {{ $currentView === 'directory' ? 'active' : '' }}" onclick="switchViewMode('directory')" style="border: none; background: {{ $currentView === 'directory' ? '#ffffff' : 'transparent' }}; color: {{ $currentView === 'directory' ? '#0f172a' : '#64748b' }}; font-weight: 600; font-size: 12.5px; padding: 6px 14px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: {{ $currentView === 'directory' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none' }}; transition: all 0.2s;">
-                <i class="ph ph-table"></i>
+        <!-- Tab Navigation Strip -->
+        <div class="hr-tabs-wrapper">
+            <button type="button" class="hr-tab-item view-mode-pill {{ $currentView === 'directory' ? 'active' : '' }}" onclick="switchViewMode('directory')">
+                <i class="ph ph-buildings"></i>
                 <span>Companies Directory</span>
             </button>
-            <button type="button" class="view-mode-pill {{ $currentView === 'details' ? 'active' : '' }}" onclick="switchViewMode('details')" style="border: none; background: {{ $currentView === 'details' ? '#ffffff' : 'transparent' }}; color: {{ $currentView === 'details' ? '#0f172a' : '#64748b' }}; font-weight: 600; font-size: 12.5px; padding: 6px 14px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: {{ $currentView === 'details' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none' }}; transition: all 0.2s;">
+            <button type="button" class="hr-tab-item view-mode-pill {{ $currentView === 'details' ? 'active' : '' }}" onclick="switchViewMode('details')">
                 <i class="ph ph-identification-card"></i>
                 <span>Company Details {{ $selectedCompany ? '(' . ($selectedCompany->company_trade_name ?: $selectedCompany->company_code) . ')' : '' }}</span>
             </button>
@@ -50,147 +72,170 @@
     </div>
 
     <!-- ====================================================================
-         VIEW 1: COMPANIES & BRANCHES MODULAR DIRECTORY (Modular Table RFQ Pattern)
+         VIEW 1: COMPANIES, AGENCIES & BRANCHES MODULAR DIRECTORY
          ==================================================================== -->
-    <div id="sectionViewDirectory" style="display: {{ $currentView === 'directory' ? 'block' : 'none' }};">
+    <div id="sectionViewDirectory" class="cb-view-pane" style="display: {{ $currentView === 'directory' ? 'flex' : 'none' }};">
 
-        <!-- KPI Radar Strip (4-Pillar Metric Cluster) -->
-        <div class="biz-kpi-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 20px;">
-            <div class="biz-kpi-card" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 18px; box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04); display: flex; align-items: center; gap: 14px;">
-                <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(59, 130, 246, 0.1); color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 22px;">
+        <!-- 5 Summary Metric Cards (Matches HR Stat Cards) -->
+        <div class="hr-company-summary-grid cb-kpi-grid">
+            <div class="hr-stat-card hr-stat-card-purple">
+                <div class="hr-stat-icon-wrap">
                     <i class="ph ph-buildings"></i>
                 </div>
-                <div>
-                    <span style="font-size: 0.72rem; font-weight: 600; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em;">Total Companies</span>
-                    <div style="font-size: 1.45rem; font-weight: 700; color: #0f172a;">{{ $metrics['total_companies'] }}</div>
-                    <span style="font-size: 0.7rem; color: #10b981; font-weight: 600;"><i class="ph ph-check-circle"></i> {{ $metrics['active_companies'] }} Active Entities</span>
+                <div class="hr-stat-content">
+                    <span class="hr-stat-label">Total Companies</span>
+                    <div class="hr-stat-value">{{ $metrics['total_companies'] }}</div>
+                    <span class="hr-stat-sub">{{ $metrics['active_companies'] }} Active Entities</span>
                 </div>
             </div>
 
-            <div class="biz-kpi-card" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 18px; box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04); display: flex; align-items: center; gap: 14px;">
-                <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(16, 185, 129, 0.1); color: #059669; display: flex; align-items: center; justify-content: center; font-size: 22px;">
+            <div class="hr-stat-card hr-stat-card-green">
+                <div class="hr-stat-icon-wrap">
                     <i class="ph ph-storefront"></i>
                 </div>
-                <div>
-                    <span style="font-size: 0.72rem; font-weight: 600; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em;">Connected Branches</span>
-                    <div style="font-size: 1.45rem; font-weight: 700; color: #0f172a;">{{ $metrics['total_branches'] }}</div>
-                    <span style="font-size: 0.7rem; color: #059669; font-weight: 600;"><i class="ph ph-check-circle"></i> {{ $metrics['active_branches'] }} Operational Sites</span>
+                <div class="hr-stat-content">
+                    <span class="hr-stat-label">Connected Branches</span>
+                    <div class="hr-stat-value">{{ $metrics['total_branches'] }}</div>
+                    <span class="hr-stat-sub">{{ $metrics['active_branches'] }} Operational Sites</span>
                 </div>
             </div>
 
-            <div class="biz-kpi-card" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 18px; box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04); display: flex; align-items: center; gap: 14px;">
-                <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(139, 92, 246, 0.1); color: #7c3aed; display: flex; align-items: center; justify-content: center; font-size: 22px;">
+            <div class="hr-stat-card hr-stat-card-pink">
+                <div class="hr-stat-icon-wrap">
+                    <i class="ph ph-handshake"></i>
+                </div>
+                <div class="hr-stat-content">
+                    <span class="hr-stat-label">Staffing Agencies</span>
+                    <div class="hr-stat-value">{{ $metrics['agencies_count'] ?? 0 }}</div>
+                    <span class="hr-stat-sub">{{ $metrics['assigned_employees'] ?? 0 }} Deployed Staff</span>
+                </div>
+            </div>
+
+            <div class="hr-stat-card hr-stat-card-blue">
+                <div class="hr-stat-icon-wrap">
                     <i class="ph ph-receipt"></i>
                 </div>
-                <div>
-                    <span style="font-size: 0.72rem; font-weight: 600; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em;">VAT Registered</span>
-                    <div style="font-size: 1.45rem; font-weight: 700; color: #0f172a;">{{ $metrics['vat_registered'] }}</div>
-                    <span style="font-size: 0.7rem; color: #64748b; font-weight: 500;">BIR Compliant Entities</span>
+                <div class="hr-stat-content">
+                    <span class="hr-stat-label">VAT Registered</span>
+                    <div class="hr-stat-value">{{ $metrics['vat_registered'] }}</div>
+                    <span class="hr-stat-sub">BIR Compliant Entities</span>
                 </div>
             </div>
 
-            <div class="biz-kpi-card" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 18px; box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04); display: flex; align-items: center; gap: 14px;">
-                <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(245, 158, 11, 0.1); color: #d97706; display: flex; align-items: center; justify-content: center; font-size: 22px;">
+            <div class="hr-stat-card hr-stat-card-amber">
+                <div class="hr-stat-icon-wrap">
                     <i class="ph ph-tree-structure"></i>
                 </div>
-                <div>
-                    <span style="font-size: 0.72rem; font-weight: 600; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em;">Enterprise Groups</span>
-                    <div style="font-size: 1.45rem; font-weight: 700; color: #0f172a;">{{ $metrics['holding_groups'] }}</div>
-                    <span style="font-size: 0.7rem; color: #64748b; font-weight: 500;">Parent / Holding Networks</span>
+                <div class="hr-stat-content">
+                    <span class="hr-stat-label">Enterprise Groups</span>
+                    <div class="hr-stat-value">{{ $metrics['holding_groups'] }}</div>
+                    <span class="hr-stat-sub">Parent / Holding Networks</span>
                 </div>
             </div>
         </div>
 
-        <!-- Modular Table Master Panel -->
-        <div class="modular-table-panel" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; box-shadow: 0 3px 12px rgba(15, 23, 42, 0.05); overflow: hidden;">
-            
-            <!-- Modular Table Toolbar (RFQ Style) -->
-            <div class="modular-toolbar" style="padding: 12px 16px; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
-                <!-- Left: Live Search & Active Filter Chips -->
-                <div style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 260px; max-width: 520px;">
-                    <div style="position: relative; width: 100%;">
-                        <i class="ph ph-magnifying-glass" style="position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 15px;"></i>
-                        <input type="text" id="companiesDirectorySearch" oninput="handleCompaniesDirectorySearch(this.value)" placeholder="Search company code, name, branch, TIN, city, contact..." style="width: 100%; height: 34px; padding: 6px 12px 6px 32px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12.5px; outline: none; background: #f8fafc; transition: border-color 0.2s;" onfocus="this.style.borderColor='#3b82f6'; this.style.background='#ffffff';" onblur="this.style.borderColor='#cbd5e1'; this.style.background='#f8fafc';">
-                    </div>
-                    <div id="companiesActiveFilterChips" style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;"></div>
+        <!-- Real-Time Filter & Search Bar (Matches HR Filter Bar) -->
+        <div class="hr-filter-bar modular-toolbar" style="position: relative;">
+            <!-- Left: Live Search & Entity Type Filter Pills -->
+            <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 280px; flex-wrap: wrap;">
+                <div style="position: relative; width: 280px; max-width: 100%; flex-shrink: 0;">
+                    <i class="ph ph-magnifying-glass" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 15px; pointer-events: none;"></i>
+                    <input type="text" id="companiesDirectorySearch" oninput="handleCompaniesDirectorySearch(this.value)" placeholder="Search code, legal name, branch, TIN, city..." class="hr-input" style="width: 100%; box-sizing: border-box; padding-left: 32px; height: 31px; font-size: 12px;">
                 </div>
 
-                <!-- Right: Column Customizer Dropdown Trigger & Create Actions -->
-                <div style="display: flex; align-items: center; gap: 8px; position: relative;">
-                    <!-- Column Customizer Dropdown Trigger -->
-                    <div style="position: relative;">
-                        <button type="button" class="btn-table-control" id="btnCompaniesColFilter" onclick="toggleCompaniesTableSettingsDropdown(event)" style="height: 34px; padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 8px; background: #ffffff; color: #334155; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s;">
-                            <i class="ph ph-columns" style="font-size: 14px; color: #2563eb;"></i>
-                            <span>Columns</span>
-                            <i class="ph ph-caret-down" style="font-size: 10px; color: #64748b;"></i>
-                        </button>
-                    </div>
-
-                    <button type="button" class="btn-table-action" onclick="openCreateBranchModal({{ $selectedCompany ? $selectedCompany->company_id : 'null' }})" style="height: 34px; padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 8px; background: #f8fafc; color: #1e293b; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s;">
-                        <i class="ph ph-plus" style="font-size: 13px;"></i>
-                        <span>Add Branch</span>
-                    </button>
-
-                    <button type="button" class="btn-table-primary" onclick="openCreateCompanyModal()" style="height: 34px; padding: 6px 14px; border: none; border-radius: 8px; background: #2563eb; color: #ffffff; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25); transition: all 0.2s;">
-                        <i class="ph ph-plus-circle" style="font-size: 15px;"></i>
-                        <span>New Company</span>
-                    </button>
+                <!-- Quick Classification Filter Pills -->
+                <div class="cb-type-filter-pills" role="tablist" aria-label="Filter by Entity Classification">
+                    <button type="button" class="cb-type-pill active" data-type="all" onclick="filterCompaniesByType('all')">All ({{ $metrics['total_companies'] }})</button>
+                    <button type="button" class="cb-type-pill" data-type="Company" onclick="filterCompaniesByType('Company')">Companies</button>
+                    <button type="button" class="cb-type-pill" data-type="Group" onclick="filterCompaniesByType('Group')">Holding / Sub</button>
+                    <button type="button" class="cb-type-pill" data-type="Agency" onclick="filterCompaniesByType('Agency')">Agencies ({{ $metrics['agencies_count'] ?? 0 }})</button>
                 </div>
+
+                <div id="companiesActiveFilterChips" style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;"></div>
             </div>
 
-            <!-- Floating Settings Dropdown Menu (Exact RFQ Pattern) -->
-            <div id="companiesTableSettingsDropdown" class="modular-settings-dropdown" style="display: none; position: absolute; right: 20px; z-index: 999; width: 330px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.15); padding: 12px;">
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-                    <div style="display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700; color: #0f172a;">
-                        <i class="ph ph-gear-six" style="color: #2563eb;"></i>
-                        <span>Table Columns &amp; Sequence</span>
+            <!-- Right: Column Customizer Dropdown Trigger -->
+            <div style="display: flex; align-items: center; gap: 8px; position: relative; flex-shrink: 0;">
+                <button type="button" class="hr-btn hr-btn-secondary" id="btnCompaniesColFilter" onclick="toggleCompaniesTableSettingsDropdown(event)" style="height: 31px; font-size: 12px; padding: 0 12px;">
+                    <i class="ph ph-columns" style="color: #7c3aed;"></i>
+                    <span>Columns</span>
+                    <i class="ph ph-caret-down" style="font-size: 10px; color: #64748b;"></i>
+                </button>
+
+                <!-- Floating Settings Dropdown Menu -->
+                <div id="companiesTableSettingsDropdown" class="modular-settings-dropdown" style="display: none; position: absolute; right: 0; top: calc(100% + 6px); z-index: 999; width: 330px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; box-shadow: 0 12px 32px rgba(15, 23, 42, 0.15); padding: 14px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                        <div style="display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700; color: #0f172a;">
+                            <i class="ph ph-gear-six" style="color: #7c3aed;"></i>
+                            <span>Table Columns &amp; Sequence</span>
+                        </div>
+                        <span id="companiesColActiveCounter" style="font-size: 11px; background: #f5f3ff; color: #7c3aed; padding: 2px 8px; border-radius: 999px; font-weight: 700;">9 of 13 visible</span>
                     </div>
-                    <span id="companiesColActiveCounter" style="font-size: 11px; background: #eff6ff; color: #1d4ed8; padding: 2px 7px; border-radius: 999px; font-weight: 600;">8 of 12 visible</span>
-                </div>
-                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 11px;">
-                    <button type="button" onclick="resetDirectoryColumnDefaults()" style="border: none; background: none; color: #2563eb; font-weight: 600; cursor: pointer; padding: 0;">Reset Default</button>
-                    <span style="color: #cbd5e1;">&bull;</span>
-                    <button type="button" onclick="showAllDirectoryColumns()" style="border: none; background: none; color: #2563eb; font-weight: 600; cursor: pointer; padding: 0;">Select All</button>
-                    <span style="color: #cbd5e1;">&bull;</span>
-                    <button type="button" onclick="resetDirectoryColumnWidths()" style="border: none; background: none; color: #2563eb; font-weight: 600; cursor: pointer; padding: 0;">Reset Widths</button>
-                </div>
-                <input type="text" id="directoryColSearchInput" placeholder="Filter columns..." oninput="handleDirectoryColSearch(this.value)" style="width: 100%; height: 28px; padding: 4px 8px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 11.5px; margin-bottom: 8px; outline: none;">
-                
-                <div id="directoryColCheckboxesList" style="max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px;">
-                    <!-- Populated dynamically by JS with draggable column order -->
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 11px;">
+                        <button type="button" onclick="resetDirectoryColumnDefaults()" style="border: none; background: none; color: #7c3aed; font-weight: 600; cursor: pointer; padding: 0;">Reset Default</button>
+                        <span style="color: #cbd5e1;">&bull;</span>
+                        <button type="button" onclick="showAllDirectoryColumns()" style="border: none; background: none; color: #7c3aed; font-weight: 600; cursor: pointer; padding: 0;">Select All</button>
+                        <span style="color: #cbd5e1;">&bull;</span>
+                        <button type="button" onclick="resetDirectoryColumnWidths()" style="border: none; background: none; color: #7c3aed; font-weight: 600; cursor: pointer; padding: 0;">Reset Widths</button>
+                    </div>
+                    <input type="text" id="directoryColSearchInput" placeholder="Filter columns..." oninput="handleDirectoryColSearch(this.value)" class="hr-input" style="height: 30px; font-size: 11.5px; margin-bottom: 8px; width: 100%; box-sizing: border-box;">
+                    
+                    <div id="directoryColCheckboxesList" style="max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px;">
+                        <!-- Populated dynamically by JS with draggable column order -->
+                    </div>
                 </div>
             </div>
+        </div>
 
+        <!-- Full-Viewport Table Card with Sticky Headers & Pinned Bottom Footer -->
+        <div class="hr-table-card hr-table-card-full modular-table-panel">
             <!-- Responsive Table Container -->
-            <div class="modular-table-responsive" style="overflow-x: auto; width: 100%; position: relative;">
-                <table class="modular-table" id="companiesDirectoryTable" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 12.5px;">
-                    <thead id="companiesDirectoryThead" style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; user-select: none;">
+            <div class="hr-table-wrapper modular-table-responsive" id="companiesTableWrapper">
+                <table class="hr-table modular-table" id="companiesDirectoryTable">
+                    <thead id="companiesDirectoryThead">
                         <tr id="companiesDirectoryTheadRow">
                             <!-- Populated dynamically with stacked headers, resizers & drag-and-drop -->
                         </tr>
                     </thead>
                     <tbody id="companiesDirectoryTbody">
-                        <!-- Populated dynamically by renderCompaniesDirectory() -->
+                        <!-- Server-rendered initial fallback for instant paint & SEO/Testing, hydrated by renderCompaniesDirectory() -->
+                        @foreach($companies as $comp)
+                            <tr>
+                                <td>{{ $comp->company_code }} - {{ $comp->company_legal_name }}</td>
+                                <td>
+                                    <div class="branch-pills-wrap">
+                                        @foreach($comp->branches as $b)
+                                            <span class="branch-pill">{{ $b->branch_code }} - {{ $b->branch_name }}</span>
+                                        @endforeach
+                                    </div>
+                                </td>
+                                <td>
+                                    <button type="button" onclick="confirmDeleteCompany({{ $comp->company_id }}, '{{ addslashes($comp->company_legal_name) }}')">Delete</button>
+                                </td>
+                            </tr>
+                        @endforeach
                     </tbody>
                 </table>
             </div>
 
-            <!-- Client-Side Pagination Bar -->
-            <div id="companiesDirectoryPaginationBar" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-top: 1px solid #f1f5f9; background: #f8fafc; flex-wrap: wrap; gap: 10px;">
-                <div id="companiesPaginationInfo" style="font-size: 12px; color: #64748b;">
-                    Showing <strong>1</strong> to <strong>10</strong> of <strong>{{ $companies->count() }}</strong> companies
-                </div>
-                <div style="display: flex; align-items: center; gap: 14px;">
-                    <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #64748b;">
-                        <span>Show</span>
-                        <select id="companiesPageSizeSelect" onchange="changeDirectoryPageSize(this.value)" style="padding: 3px 6px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 11.5px;">
-                            <option value="10">10</option>
-                            <option value="25">25</option>
-                            <option value="50">50</option>
-                        </select>
-                        <span>rows</span>
+            <!-- Glassmorphic Table Footer & Pagination (Pinned at Bottom) -->
+            <div class="hr-table-footer" id="companiesDirectoryPaginationBar">
+                <div class="hr-pagination-container">
+                    <div class="hr-pagination-left">
+                        <div class="hr-pagination-info" id="companiesPaginationInfo">
+                            Showing <strong>1</strong> to <strong>{{ min(10, $companies->count()) }}</strong> of <strong>{{ $companies->count() }}</strong> companies
+                        </div>
+                        <div class="hr-per-page-wrap">
+                            <span class="hr-per-page-label">Show</span>
+                            <select id="companiesPageSizeSelect" class="hr-per-page-select" onchange="changeDirectoryPageSize(this.value)">
+                                <option value="10">10</option>
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                            </select>
+                            <span class="hr-per-page-label">rows</span>
+                        </div>
                     </div>
-                    <div id="companiesPaginationControls" style="display: flex; align-items: center; gap: 4px;">
+                    <div class="hr-pagination-nav" id="companiesPaginationControls">
                         <!-- Rendered by JS -->
                     </div>
                 </div>
@@ -199,23 +244,31 @@
     </div>
 
     <!-- ====================================================================
-         VIEW 2: REDESIGNED COMPANY DETAILS PAGE (/modern-ux-designer)
-         (Goodfarms Reference Redesign: Header banner + General Info & Branches tabs)
+         VIEW 2: UNIFIED ERP COMPANY, AGENCY & BRANCH DETAILS WORKSPACE
          ==================================================================== -->
-    <div id="sectionViewDetails" style="display: {{ $currentView === 'details' ? 'block' : 'none' }};">
+    <div id="sectionViewDetails" class="cb-view-pane" style="display: {{ $currentView === 'details' ? 'flex' : 'none' }};">
         @if($selectedCompany)
-            <div class="company-details-container" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.06); padding: 24px; position: relative;">
+            <div class="company-details-container">
                 
-                <!-- Back Link & Action Bar -->
+                <!-- Top Action Bar -->
                 <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #f1f5f9;">
-                    <button type="button" onclick="switchViewMode('directory')" style="border: none; background: #f1f5f9; color: #334155; font-size: 12.5px; font-weight: 600; padding: 6px 14px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: background 0.2s;">
+                    <button type="button" class="cb-btn-secondary" onclick="switchViewMode('directory')">
                         <i class="ph ph-arrow-left"></i>
                         <span>Back to Companies Directory</span>
                     </button>
 
-                    <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <!-- Toggle Company Active Status -->
+                        <form action="{{ route('config.companies-branches.toggle', $selectedCompany->company_id) }}" method="POST" style="margin: 0;">
+                            @csrf
+                            <button type="submit" class="cb-btn-secondary" style="border-color: {{ $selectedCompany->company_is_active ? '#fde68a' : '#a7f3d0' }}; background: {{ $selectedCompany->company_is_active ? '#fffbeb' : '#ecfdf5' }}; color: {{ $selectedCompany->company_is_active ? '#b45309' : '#047857' }};">
+                                <i class="ph {{ $selectedCompany->company_is_active ? 'ph-pause-circle' : 'ph-play-circle' }}"></i>
+                                <span>{{ $selectedCompany->company_is_active ? 'Deactivate Entity' : 'Activate Entity' }}</span>
+                            </button>
+                        </form>
+
                         <!-- Delete Company CTA -->
-                        <button type="button" onclick="confirmDeleteCompany({{ $selectedCompany->company_id }}, '{{ addslashes($selectedCompany->company_legal_name) }}')" style="border: 1px solid #fecaca; background: #fff5f5; color: #dc2626; font-size: 12px; font-weight: 600; padding: 7px 14px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s;" title="Delete this company and all associated records">
+                        <button type="button" onclick="confirmDeleteCompany({{ $selectedCompany->company_id }}, '{{ addslashes($selectedCompany->company_legal_name) }}')" style="height: 34px; border: 1px solid #fecaca; background: #fff5f5; color: #dc2626; font-size: 12px; font-weight: 600; padding: 6px 13px; border-radius: 9px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;" title="Delete this company and all associated records">
                             <i class="ph ph-trash"></i>
                             <span>Delete Company</span>
                         </button>
@@ -225,36 +278,36 @@
                             @csrf
                             <input type="hidden" name="company_id" value="{{ $selectedCompany->company_id }}">
                             <input type="hidden" name="is_consolidated" value="0">
-                            <button type="submit" class="btn-action-context" style="border: 1px solid #cbd5e1; background: #ffffff; color: #1e293b; font-size: 12px; font-weight: 600; padding: 7px 14px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s;">
-                                <i class="ph ph-arrows-clockwise" style="color: #2563eb;"></i>
+                            <button type="submit" class="cb-btn-secondary">
+                                <i class="ph ph-arrows-clockwise" style="color: #7c3aed;"></i>
                                 <span>Switch Workspace Context</span>
                             </button>
                         </form>
 
                         <!-- Save Profile Form Submit -->
-                        <button type="submit" form="companyDetailsUpdateForm" style="border: none; background: #2563eb; color: #ffffff; font-size: 12.5px; font-weight: 600; padding: 7px 18px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25); transition: background 0.2s;">
+                        <button type="submit" form="companyDetailsUpdateForm" class="cb-btn-primary" style="padding: 6px 18px;">
                             <i class="ph ph-floppy-disk"></i>
                             <span>Save Changes</span>
                         </button>
                     </div>
                 </div>
 
-                <!-- Form Wrapping Updates -->
+                <!-- Master Company Profile & Hierarchy Form -->
                 <form id="companyDetailsUpdateForm" action="{{ route('config.companies-branches.update', $selectedCompany->company_id) }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     @method('PUT')
+                    <input type="hidden" name="hierarchy_section_present" value="1">
 
-                    <!-- Hero Identity Header Card (Redesign of Reference Screenshot) -->
-                    <div class="company-hero-banner" style="display: flex; align-items: flex-start; gap: 20px; padding: 20px; background: linear-gradient(135deg, rgba(248, 250, 252, 0.8), rgba(241, 245, 249, 0.4)); border: 1px solid #e2e8f0; border-radius: 14px; margin-bottom: 24px;">
-                        
+                    <!-- Hero Identity Header Card -->
+                    <div class="company-hero-banner">
                         <!-- Company Logo Square Dropzone -->
-                        <div class="company-logo-dropzone" style="position: relative; width: 88px; height: 88px; border-radius: 12px; border: 2px dashed #cbd5e1; background: #ffffff; display: flex; align-items: center; justify-content: center; cursor: pointer; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.04); flex-shrink: 0;" onclick="document.getElementById('companyLogoFileInput').click()" title="Click to upload/change company logo">
+                        <div class="company-logo-dropzone" onclick="document.getElementById('companyLogoFileInput').click()" title="Click to upload/change company logo">
                             @if($selectedCompany->company_logo)
                                 <img id="companyLogoPreviewImg" src="{{ asset('storage/' . $selectedCompany->company_logo) }}" alt="Logo" style="width: 100%; height: 100%; object-fit: contain;">
                             @else
-                                <div id="companyLogoPlaceholder" style="display: flex; flex-direction: column; align-items: center; color: #94a3b8; font-size: 11px; text-align: center; padding: 4px;">
-                                    <i class="ph ph-camera" style="font-size: 26px; color: #64748b; margin-bottom: 2px;"></i>
-                                    <span style="font-weight: 600;">Your logo</span>
+                                <div id="companyLogoPlaceholder" style="display: flex; flex-direction: column; align-items: center; color: #7c3aed; font-size: 11px; text-align: center; padding: 4px;">
+                                    <i class="ph ph-camera" style="font-size: 26px; margin-bottom: 2px;"></i>
+                                    <span style="font-weight: 700;">Entity Logo</span>
                                 </div>
                             @endif
                             <div class="logo-hover-mask" style="position: absolute; inset: 0; background: rgba(15, 23, 42, 0.65); color: #ffffff; display: none; align-items: center; justify-content: center; flex-direction: column; font-size: 10px; font-weight: 600;">
@@ -266,26 +319,33 @@
 
                         <!-- Company Names & Badges -->
                         <div style="flex: 1; min-width: 0;">
-                            <span style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.05em; display: block; margin-bottom: 4px;">Company Name</span>
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                                <span style="font-size: 0.7rem; font-weight: 800; text-transform: uppercase; color: #7c3aed; letter-spacing: 0.05em;">General Business Profile &bull; {{ $selectedCompany->company_type ?: 'Company' }}</span>
+                            </div>
                             <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-                                <input type="text" name="company_legal_name" value="{{ old('company_legal_name', $selectedCompany->company_legal_name) }}" required placeholder="Legal Entity Name (e.g. GOODFARMS TRADING CORPORATION)" style="font-size: clamp(1.3rem, 2vw, 1.7rem); font-weight: 800; color: #0f172a; border: 1px solid transparent; background: transparent; padding: 2px 6px; border-radius: 8px; width: 100%; max-width: 650px; outline: none; transition: all 0.2s;" onfocus="this.style.background='#ffffff'; this.style.borderColor='#cbd5e1';" onblur="this.style.background='transparent'; this.style.borderColor='transparent';">
+                                <input type="text" name="company_legal_name" value="{{ old('company_legal_name', $selectedCompany->company_legal_name) }}" required placeholder="Legal Registered Entity Name" style="font-size: clamp(1.25rem, 2vw, 1.65rem); font-weight: 800; color: #0f172a; border: 1px solid transparent; background: rgba(255,255,255,0.6); padding: 3px 8px; border-radius: 8px; width: 100%; max-width: 660px; outline: none; transition: all 0.2s;" onfocus="this.style.background='#ffffff'; this.style.borderColor='#a855f7';" onblur="this.style.background='rgba(255,255,255,0.6)'; this.style.borderColor='transparent';">
                             </div>
 
-                            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 8px;">
+                            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 10px;">
                                 <div style="display: flex; align-items: center; gap: 6px;">
                                     <span style="font-size: 11.5px; color: #64748b; font-weight: 600;">Trade Name:</span>
-                                    <input type="text" name="company_trade_name" value="{{ old('company_trade_name', $selectedCompany->company_trade_name) }}" placeholder="Trade / Brand Name" style="font-size: 12px; font-weight: 600; color: #1e293b; padding: 3px 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: #ffffff;">
+                                    <input type="text" name="company_trade_name" value="{{ old('company_trade_name', $selectedCompany->company_trade_name) }}" placeholder="DBA / Brand Name" style="font-size: 12px; font-weight: 600; color: #1e293b; padding: 3px 9px; border: 1px solid #cbd5e1; border-radius: 7px; background: #ffffff;">
                                 </div>
 
                                 <div style="display: flex; align-items: center; gap: 6px;">
                                     <span style="font-size: 11.5px; color: #64748b; font-weight: 600;">Code:</span>
-                                    <input type="text" name="company_code" value="{{ old('company_code', $selectedCompany->company_code) }}" required style="font-size: 12px; font-weight: 700; color: #1e293b; padding: 3px 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: #ffffff; width: 85px; text-transform: uppercase;">
+                                    <input type="text" name="company_code" value="{{ old('company_code', $selectedCompany->company_code) }}" required style="font-size: 12px; font-weight: 700; color: #7c3aed; padding: 3px 9px; border: 1px solid #cbd5e1; border-radius: 7px; background: #ffffff; width: 95px; text-transform: uppercase; font-family: monospace;">
                                 </div>
 
-                                <span style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; background: {{ $selectedCompany->company_is_active ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)' }}; color: {{ $selectedCompany->company_is_active ? '#059669' : '#dc2626' }};">
+                                <span style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; background: {{ $selectedCompany->company_is_active ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)' }}; color: {{ $selectedCompany->company_is_active ? '#059669' : '#dc2626' }};">
                                     <i class="ph {{ $selectedCompany->company_is_active ? 'ph-check-circle' : 'ph-x-circle' }}"></i>
                                     {{ $selectedCompany->company_is_active ? 'Active Entity' : 'Inactive' }}
                                 </span>
+
+                                <button type="button" class="cb-staff-pill-btn" onclick="openMembersModal('company', {{ $selectedCompany->company_id }}, '{{ addslashes($selectedCompany->company_legal_name) }}')">
+                                    <i class="ph ph-users-three"></i>
+                                    <span>{{ $selectedCompany->employees_count ?? 0 }} Assigned Staff</span>
+                                </button>
 
                                 <!-- Brand Color Indicator Dot -->
                                 <div style="display: flex; align-items: center; gap: 6px;">
@@ -296,391 +356,265 @@
                         </div>
                     </div>
 
-                    <!-- Functional Tabs (Matching Reference Image: General Information & Branches) -->
-                    <div class="company-tabs-nav" style="display: flex; align-items: center; gap: 8px; border-bottom: 2px solid #e2e8f0; margin-bottom: 24px;">
-                        <button type="button" class="company-tab-btn active" id="tabBtnGeneral" onclick="switchCompanySubTab('general')" style="border: none; background: transparent; padding: 10px 18px; font-size: 13.5px; font-weight: 700; color: #2563eb; cursor: pointer; border-bottom: 3px solid #2563eb; margin-bottom: -2px; display: flex; align-items: center; gap: 8px;">
+                    <!-- Functional Sub-Tabs -->
+                    <div class="company-tabs-nav">
+                        <button type="button" class="company-tab-btn {{ $activeSubTab === 'general' ? 'active' : '' }}" id="tabBtnGeneral" onclick="switchCompanySubTab('general')" title="General Business Profile">
                             <i class="ph ph-buildings"></i>
                             <span>General Information</span>
                         </button>
-                        <button type="button" class="company-tab-btn" id="tabBtnBranches" onclick="switchCompanySubTab('branches')" style="border: none; background: transparent; padding: 10px 18px; font-size: 13.5px; font-weight: 600; color: #64748b; cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; display: flex; align-items: center; gap: 8px;">
+                        <button type="button" class="company-tab-btn {{ $activeSubTab === 'branches' ? 'active' : '' }}" id="tabBtnBranches" onclick="switchCompanySubTab('branches')" title="Branches & Sites Hub">
                             <i class="ph ph-storefront"></i>
-                            <span>Branches</span>
-                            <span style="background: #e2e8f0; color: #334155; font-size: 11px; padding: 2px 7px; border-radius: 999px; font-weight: 700;">{{ $selectedCompany->branches->count() }}</span>
+                            <span>Branches &amp; Sites Hub</span>
+                            <span style="background: #f5f3ff; color: #7c3aed; font-size: 11px; padding: 2px 7px; border-radius: 999px; font-weight: 700;">{{ $selectedCompany->branches->count() }}</span>
                         </button>
-                        <button type="button" class="company-tab-btn" id="tabBtnVault" onclick="switchCompanySubTab('vault')" style="border: none; background: transparent; padding: 10px 18px; font-size: 13.5px; font-weight: 600; color: #64748b; cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; display: flex; align-items: center; gap: 8px;">
+                        <button type="button" class="company-tab-btn {{ $activeSubTab === 'vault' ? 'active' : '' }}" id="tabBtnVault" onclick="switchCompanySubTab('vault')" title="Certificate & Legal Hub">
                             <i class="ph ph-file-lock"></i>
                             <span>Certificate &amp; Legal Hub</span>
                             @if($vaultStats['expiring_soon'] > 0 || $vaultStats['expired'] > 0)
                                 <span style="background: #fee2e2; color: #dc2626; font-size: 10.5px; padding: 2px 6px; border-radius: 999px; font-weight: 700;">{{ $vaultStats['expiring_soon'] + $vaultStats['expired'] }}</span>
                             @endif
                         </button>
-                        <button type="button" class="company-tab-btn" id="tabBtnHierarchy" onclick="switchCompanySubTab('hierarchy')" style="border: none; background: transparent; padding: 10px 18px; font-size: 13.5px; font-weight: 600; color: #64748b; cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; display: flex; align-items: center; gap: 8px;">
+                        <button type="button" class="company-tab-btn {{ $activeSubTab === 'hierarchy' ? 'active' : '' }}" id="tabBtnHierarchy" onclick="switchCompanySubTab('hierarchy')" title="Hierarchy & Relationships">
                             <i class="ph ph-tree-structure"></i>
                             <span>Hierarchy &amp; Relationships</span>
                         </button>
                     </div>
 
                     <!-- ==========================================================
-                         SUB-TAB 1: GENERAL INFORMATION (2-Column Industrial Grid)
-                         (Matches fields in Reference Image: Address, TIN, Branch Code, RDO, VAT, Currency, External Code | Phone, Email, Website, Email Domain, Color)
+                         SUB-TAB 1: GENERAL INFORMATION (4-Card ERP Settings Grid)
                          ========================================================== -->
-                    <div id="companyTabPaneGeneral" class="company-subtab-pane" style="display: block;">
-                        <div class="general-info-2col" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 28px;">
+                    <div id="companyTabPaneGeneral" class="company-subtab-pane" style="display: {{ $activeSubTab === 'general' ? 'block' : 'none' }};">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px;">
                             
-                            <!-- Left Column: Legal, Tax & Physical Address -->
-                            <div class="col-section" style="display: flex; flex-direction: column; gap: 16px;">
-                                
-                                <!-- Address Block -->
-                                <div class="form-row-block" style="display: flex; flex-direction: column; gap: 6px;">
-                                    <label style="font-size: 12.5px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 6px;">
-                                        <span>Address</span>
-                                    </label>
-                                    <div style="display: flex; flex-direction: column; gap: 6px;">
-                                        <input type="text" name="company_address_line_1" value="{{ old('company_address_line_1', $selectedCompany->company_address_line_1) }}" placeholder="Street / Purok (e.g. Purok-5)" style="height: 34px; padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12.5px;">
-                                        <input type="text" name="company_address_line_2" value="{{ old('company_address_line_2', $selectedCompany->company_address_line_2) }}" placeholder="Barangay / Camp (e.g. Camp 1)" style="height: 34px; padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12.5px;">
-                                        <div style="display: grid; grid-template-columns: 2fr 2fr 1fr; gap: 6px;">
-                                            <input type="text" name="company_city" value="{{ old('company_city', $selectedCompany->company_city) }}" placeholder="City / Municipality (e.g. Maramag)" style="height: 34px; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12.5px;">
-                                            <input type="text" name="company_state_province_code" value="{{ old('company_state_province_code', $selectedCompany->company_state_province_code) }}" placeholder="Province (e.g. Bukidnon (PH))" style="height: 34px; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12.5px;">
-                                            <input type="text" name="company_postal_code" value="{{ old('company_postal_code', $selectedCompany->company_postal_code) }}" placeholder="ZIP (8712)" style="height: 34px; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12.5px;">
+                            <!-- Card 1: Registered Address & Principal Location -->
+                            <div class="cb-section-card">
+                                <div class="cb-section-card-header">
+                                    <div class="cb-section-card-icon"><i class="ph ph-map-pin-line"></i></div>
+                                    <div>
+                                        <h3 class="cb-section-card-title">Principal Office &amp; Registered Address</h3>
+                                    </div>
+                                </div>
+
+                                <div style="display: flex; flex-direction: column; gap: 10px;">
+                                    <div>
+                                        <label style="font-size: 11.5px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">Address Line 1 (Street / Purok / Building)</label>
+                                        <input type="text" name="company_address_line_1" value="{{ old('company_address_line_1', $selectedCompany->company_address_line_1) }}" placeholder="e.g. Purok-5" class="cb-input">
+                                    </div>
+                                    <div>
+                                        <label style="font-size: 11.5px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">Address Line 2 (Barangay / District / Floor)</label>
+                                        <input type="text" name="company_address_line_2" value="{{ old('company_address_line_2', $selectedCompany->company_address_line_2) }}" placeholder="e.g. Camp 1" class="cb-input">
+                                    </div>
+                                    <div style="display: grid; grid-template-columns: 2fr 2fr 1fr; gap: 8px;">
+                                        <div>
+                                            <label style="font-size: 11.5px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">City / Municipality</label>
+                                            <input type="text" name="company_city" value="{{ old('company_city', $selectedCompany->company_city) }}" placeholder="Maramag" class="cb-input">
                                         </div>
-                                        <input type="text" name="company_country_code" value="{{ old('company_country_code', $selectedCompany->company_country_code ?: 'PH') }}" placeholder="Country (e.g. Philippines)" style="height: 34px; padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12.5px;">
+                                        <div>
+                                            <label style="font-size: 11.5px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">Province / State</label>
+                                            <input type="text" name="company_state_province_code" value="{{ old('company_state_province_code', $selectedCompany->company_state_province_code) }}" placeholder="Bukidnon (PH)" class="cb-input">
+                                        </div>
+                                        <div>
+                                            <label style="font-size: 11.5px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">Postal / ZIP</label>
+                                            <input type="text" name="company_postal_code" value="{{ old('company_postal_code', $selectedCompany->company_postal_code) }}" placeholder="8712" class="cb-input">
+                                        </div>
                                     </div>
-                                </div>
-
-                                <!-- TIN (Taxpayer Identification Number) with Tooltip -->
-                                <div class="form-row" style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-                                    <label style="font-size: 12.5px; font-weight: 700; color: #1e293b; min-width: 140px; display: flex; align-items: center; gap: 4px;">
-                                        <span>TIN</span>
-                                        <span title="Taxpayer Identification Number (9 digits + 3 to 5 digit branch suffix)" style="color: #64748b; cursor: help; font-size: 13px;"><i class="ph ph-question"></i></span>
-                                    </label>
-                                    <div style="flex: 1; position: relative;">
-                                        <input type="text" name="company_tax_id" value="{{ old('company_tax_id', $selectedCompany->company_tax_id) }}" placeholder="412-277-750-00000" style="width: 100%; height: 34px; padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12.5px; font-family: monospace;">
+                                    <div>
+                                        <label style="font-size: 11.5px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">Country Code (ISO-2)</label>
+                                        <input type="text" name="company_country_code" value="{{ old('company_country_code', $selectedCompany->company_country_code ?: 'PH') }}" maxlength="2" placeholder="PH" class="cb-input">
                                     </div>
-                                </div>
-
-                                <!-- Company Branch Code -->
-                                <div class="form-row" style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-                                    <label style="font-size: 12.5px; font-weight: 700; color: #1e293b; min-width: 140px;">
-                                        <span>Company Branch Code</span>
-                                    </label>
-                                    <input type="text" name="company_branch_code" value="{{ old('company_branch_code', $selectedCompany->company_branch_code ?: '00000') }}" placeholder="00000" style="flex: 1; height: 34px; padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12.5px; font-family: monospace;">
-                                </div>
-
-                                <!-- RDO with Tooltip -->
-                                <div class="form-row" style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-                                    <label style="font-size: 12.5px; font-weight: 700; color: #1e293b; min-width: 140px; display: flex; align-items: center; gap: 4px;">
-                                        <span>RDO</span>
-                                        <span title="Revenue District Office code (e.g. 098 or 047)" style="color: #64748b; cursor: help; font-size: 13px;"><i class="ph ph-question"></i></span>
-                                    </label>
-                                    <input type="text" name="company_rdo_code" value="{{ old('company_rdo_code', $selectedCompany->company_rdo_code) }}" placeholder="e.g. 098" style="flex: 1; height: 34px; padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12.5px;">
-                                </div>
-
-                                <!-- VAT Registered Toggle Checkbox -->
-                                <div class="form-row" style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-                                    <label style="font-size: 12.5px; font-weight: 700; color: #1e293b; min-width: 140px; display: flex; align-items: center; gap: 4px;">
-                                        <span>VAT Registered</span>
-                                        <span title="Check if entity is registered for Value Added Tax with the BIR" style="color: #64748b; cursor: help; font-size: 13px;"><i class="ph ph-question"></i></span>
-                                    </label>
-                                    <div style="flex: 1; display: flex; align-items: center; gap: 8px;">
-                                        <input type="checkbox" name="company_is_vat_registered" id="vatCheckbox" value="1" {{ ($selectedCompany->company_is_vat_registered ?? ($selectedCompany->company_tax_type === 'VAT Registered')) ? 'checked' : '' }} style="width: 18px; height: 18px; cursor: pointer; accent-color: #2563eb;">
-                                        <label for="vatCheckbox" style="font-size: 12px; color: #475569; cursor: pointer;">Yes, entity is VAT Registered</label>
-                                    </div>
-                                </div>
-
-                                <!-- Currency -->
-                                <div class="form-row" style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-                                    <label style="font-size: 12.5px; font-weight: 700; color: #1e293b; min-width: 140px;">
-                                        <span>Currency</span>
-                                    </label>
-                                    <select name="company_base_currency_code" style="flex: 1; height: 34px; padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12.5px; background: #ffffff;">
-                                        @foreach($currencies as $curr)
-                                            <option value="{{ $curr }}" {{ $selectedCompany->company_base_currency_code === $curr ? 'selected' : '' }}>
-                                                {{ $curr }} - {{ $curr === 'PHP' ? 'Philippine Peso (PHP)' : ($curr === 'USD' ? 'US Dollar (USD)' : $curr) }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-
-                                <!-- External Code with Tooltip -->
-                                <div class="form-row" style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-                                    <label style="font-size: 12.5px; font-weight: 700; color: #1e293b; min-width: 140px; display: flex; align-items: center; gap: 4px;">
-                                        <span>External Code</span>
-                                        <span title="Code used in work entry exports and external HR/payroll integrations" style="color: #64748b; cursor: help; font-size: 13px;"><i class="ph ph-question"></i></span>
-                                    </label>
-                                    <input type="text" name="company_external_code" value="{{ old('company_external_code', $selectedCompany->company_external_code) }}" placeholder="Code used in work entry exports" style="flex: 1; height: 34px; padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12.5px;">
                                 </div>
                             </div>
 
-                            <!-- Right Column: Phone, Email, Website, Email Domain & Brand Color -->
-                            <div class="col-section" style="display: flex; flex-direction: column; gap: 16px;">
-                                
-                                <!-- Phone -->
-                                <div class="form-row" style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-                                    <label style="font-size: 12.5px; font-weight: 700; color: #1e293b; min-width: 140px;">
-                                        <span>Phone</span>
-                                    </label>
-                                    <div style="flex: 1; position: relative;">
-                                        <i class="ph ph-phone" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 14px;"></i>
-                                        <input type="text" name="company_phone_number" value="{{ old('company_phone_number', $selectedCompany->company_phone_number) }}" placeholder="+63 2 8000 0000" style="width: 100%; height: 34px; padding: 6px 12px 6px 32px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12.5px;">
+                            <!-- Card 2: Statutory Tax & BIR Registration -->
+                            <div class="cb-section-card">
+                                <div class="cb-section-card-header">
+                                    <div class="cb-section-card-icon"><i class="ph ph-receipt"></i></div>
+                                    <div>
+                                        <h3 class="cb-section-card-title">Statutory Tax &amp; BIR Registration</h3>
                                     </div>
                                 </div>
 
-                                <!-- Email -->
-                                <div class="form-row" style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-                                    <label style="font-size: 12.5px; font-weight: 700; color: #1e293b; min-width: 140px;">
-                                        <span>Email</span>
-                                    </label>
-                                    <div style="flex: 1; position: relative;">
-                                        <i class="ph ph-envelope" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 14px;"></i>
-                                        <input type="email" name="company_email_address" value="{{ old('company_email_address', $selectedCompany->company_email_address) }}" placeholder="info@goodfarms.com" style="width: 100%; height: 34px; padding: 6px 12px 6px 32px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12.5px;">
+                                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 10px;">
+                                    <div>
+                                        <label style="font-size: 11.5px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">TIN (Taxpayer Identification No.)</label>
+                                        <input type="text" name="company_tax_id" value="{{ old('company_tax_id', $selectedCompany->company_tax_id) }}" placeholder="412-277-750-00000" class="cb-input" style="font-family: monospace;">
+                                    </div>
+                                    <div>
+                                        <label style="font-size: 11.5px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">BIR Branch Code</label>
+                                        <input type="text" name="company_branch_code" value="{{ old('company_branch_code', $selectedCompany->company_branch_code ?: '00000') }}" placeholder="00000" class="cb-input" style="font-family: monospace;">
                                     </div>
                                 </div>
 
-                                <!-- Website -->
-                                <div class="form-row" style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-                                    <label style="font-size: 12.5px; font-weight: 700; color: #1e293b; min-width: 140px;">
-                                        <span>Website</span>
-                                    </label>
-                                    <div style="flex: 1; position: relative;">
-                                        <i class="ph ph-globe" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 14px;"></i>
-                                        <input type="text" name="company_website_url" value="{{ old('company_website_url', $selectedCompany->company_website_url) }}" placeholder="e.g. https://www.odoo.com" style="width: 100%; height: 34px; padding: 6px 12px 6px 32px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12.5px;">
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                    <div>
+                                        <label style="font-size: 11.5px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">RDO Code</label>
+                                        <input type="text" name="company_rdo_code" value="{{ old('company_rdo_code', $selectedCompany->company_rdo_code) }}" placeholder="e.g. 098" class="cb-input">
+                                    </div>
+                                    <div>
+                                        <label style="font-size: 11.5px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">SEC / DTI Reg. No.</label>
+                                        <input type="text" name="company_registration_no" value="{{ old('company_registration_no', $selectedCompany->company_registration_no) }}" placeholder="e.g. CS202600192" class="cb-input">
                                     </div>
                                 </div>
 
-                                <!-- Email Domain -->
-                                <div class="form-row" style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-                                    <label style="font-size: 12.5px; font-weight: 700; color: #1e293b; min-width: 140px;">
-                                        <span>Email Domain</span>
-                                    </label>
-                                    <div style="flex: 1; position: relative;">
-                                        <i class="ph ph-at" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 14px;"></i>
-                                        <input type="text" name="company_email_domain" value="{{ old('company_email_domain', $selectedCompany->company_email_domain) }}" placeholder="goodfarms.odoo.com" style="width: 100%; height: 34px; padding: 6px 12px 6px 32px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12.5px;">
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: end;">
+                                    <div>
+                                        <label style="font-size: 11.5px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">Tax Classification</label>
+                                        <select name="company_tax_type" class="cb-select">
+                                            @foreach($taxTypes as $tt)
+                                                <option value="{{ $tt }}" {{ $selectedCompany->company_tax_type === $tt ? 'selected' : '' }}>{{ $tt }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 8px; height: 35px; padding: 0 10px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
+                                        <input type="checkbox" name="company_is_vat_registered" id="vatCheckbox" value="1" {{ ($selectedCompany->company_is_vat_registered ?? ($selectedCompany->company_tax_type === 'VAT Registered')) ? 'checked' : '' }} style="width: 16px; height: 16px; cursor: pointer; accent-color: #7c3aed;">
+                                        <label for="vatCheckbox" style="font-size: 12px; font-weight: 600; color: #334155; cursor: pointer;">VAT Registered Entity</label>
                                     </div>
                                 </div>
 
-                                <!-- Color (Brand Dot Swatch & Color Picker) -->
-                                <div class="form-row" style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-                                    <label style="font-size: 12.5px; font-weight: 700; color: #1e293b; min-width: 140px;">
-                                        <span>Color</span>
-                                    </label>
-                                    <div style="flex: 1; display: flex; align-items: center; gap: 10px;">
-                                        <div style="position: relative; display: flex; align-items: center;">
-                                            <input type="color" name="company_brand_color" id="companyBrandColorPicker" value="{{ old('company_brand_color', $selectedCompany->company_brand_color ?: '#ef4444') }}" onchange="handleBrandColorChange(this.value)" style="width: 34px; height: 34px; border: none; border-radius: 50%; cursor: pointer; padding: 0; background: transparent;">
-                                        </div>
-                                        <span id="brandColorHexLabel" style="font-size: 12px; font-family: monospace; font-weight: 600; color: #334155;">{{ $selectedCompany->company_brand_color ?: '#ef4444' }}</span>
+                                <div>
+                                    <label style="font-size: 11.5px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">BIR PTU / POS Permit Number</label>
+                                    <input type="text" name="bir_permit_number" value="{{ old('bir_permit_number', $selectedCompany->bir_permit_number) }}" placeholder="e.g. FP012026-047-0019283-00000" class="cb-input">
+                                </div>
+                            </div>
 
-                                        <!-- Quick Color Preset Swatches -->
+                            <!-- Card 3: Accounting, Fiscal & System Integration -->
+                            <div class="cb-section-card">
+                                <div class="cb-section-card-header">
+                                    <div class="cb-section-card-icon"><i class="ph ph-coins"></i></div>
+                                    <div>
+                                        <h3 class="cb-section-card-title">Accounting, Fiscal Calendar &amp; Branding</h3>
+                                    </div>
+                                </div>
+
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                    <div>
+                                        <label style="font-size: 11.5px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">Base Accounting Currency</label>
+                                        <select name="company_base_currency_code" class="cb-select">
+                                            @foreach($currencies as $curr)
+                                                <option value="{{ $curr }}" {{ $selectedCompany->company_base_currency_code === $curr ? 'selected' : '' }}>
+                                                    {{ $curr }} - {{ $curr === 'PHP' ? 'Philippine Peso (PHP)' : ($curr === 'USD' ? 'US Dollar (USD)' : $curr) }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label style="font-size: 11.5px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">Fiscal Year Start Month</label>
+                                        <select name="fiscal_year_start_month" class="cb-select">
+                                            @foreach($fiscalMonths as $mNum => $mName)
+                                                <option value="{{ $mNum }}" {{ ((int)($selectedCompany->fiscal_year_start_month ?: 1)) === $mNum ? 'selected' : '' }}>{{ $mName }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                    <div>
+                                        <label style="font-size: 11.5px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">System Timezone</label>
+                                        <select name="company_timezone" class="cb-select">
+                                            @foreach($timezones as $tz)
+                                                <option value="{{ $tz }}" {{ $selectedCompany->company_timezone === $tz ? 'selected' : '' }}>{{ $tz }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label style="font-size: 11.5px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">External Payroll / ERP Code</label>
+                                        <input type="text" name="company_external_code" value="{{ old('company_external_code', $selectedCompany->company_external_code) }}" placeholder="Code used in work entry exports" class="cb-input">
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label style="font-size: 11.5px; font-weight: 700; color: #334155; display: block; margin-bottom: 6px;">Brand Accent Color</label>
+                                    <div style="display: flex; align-items: center; gap: 10px; background: #ffffff; padding: 6px 10px; border-radius: 8px; border: 1px solid #cbd5e1;">
+                                        <input type="color" name="company_brand_color" id="companyBrandColorPicker" value="{{ old('company_brand_color', $selectedCompany->company_brand_color ?: '#ef4444') }}" onchange="handleBrandColorChange(this.value)" style="width: 30px; height: 28px; border: none; border-radius: 6px; cursor: pointer; padding: 0; background: transparent;">
+                                        <span id="brandColorHexLabel" style="font-size: 12px; font-family: monospace; font-weight: 700; color: #334155;">{{ $selectedCompany->company_brand_color ?: '#ef4444' }}</span>
                                         <div style="display: flex; align-items: center; gap: 6px; margin-left: auto;">
-                                            @foreach(['#ef4444', '#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#0f172a'] as $presetColor)
-                                                <button type="button" onclick="selectBrandColorPreset('{{ $presetColor }}')" style="width: 18px; height: 18px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.15); background-color: {{ $presetColor }}; cursor: pointer; padding: 0; transition: transform 0.15s;" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'" title="{{ $presetColor }}"></button>
+                                            @foreach(['#ef4444', '#7c3aed', '#ec4899', '#10b981', '#3b82f6', '#f59e0b'] as $presetColor)
+                                                <button type="button" onclick="selectBrandColorPreset('{{ $presetColor }}')" style="width: 18px; height: 18px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.15); background-color: {{ $presetColor }}; cursor: pointer; padding: 0;" title="{{ $presetColor }}"></button>
                                             @endforeach
                                         </div>
                                     </div>
                                 </div>
-
-                                <!-- Timezone & Fiscal Year Info -->
-                                <div class="form-row" style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-                                    <label style="font-size: 12.5px; font-weight: 700; color: #1e293b; min-width: 140px;">
-                                        <span>Timezone</span>
-                                    </label>
-                                    <select name="company_timezone" style="flex: 1; height: 34px; padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12.5px; background: #ffffff;">
-                                        @foreach($timezones as $tz)
-                                            <option value="{{ $tz }}" {{ $selectedCompany->company_timezone === $tz ? 'selected' : '' }}>{{ $tz }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-
-                                <div class="form-row" style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-                                    <label style="font-size: 12.5px; font-weight: 700; color: #1e293b; min-width: 140px;">
-                                        <span>Contact Person</span>
-                                    </label>
-                                    <input type="text" name="company_contact_person" value="{{ old('company_contact_person', $selectedCompany->company_contact_person) }}" placeholder="Designated Administrator" style="flex: 1; height: 34px; padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12.5px;">
-                                </div>
                             </div>
-                        </div>
-                    </div>
 
-                    <!-- ==========================================================
-                         SUB-TAB 2: BRANCHES (Operational Outlets under this Company)
-                         ========================================================== -->
-                    <div id="companyTabPaneBranches" class="company-subtab-pane" style="display: none;">
-                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
-                            <div>
-                                <h3 style="font-size: 1.05rem; font-weight: 700; color: #0f172a; margin: 0;">Branches of {{ $selectedCompany->company_trade_name ?: $selectedCompany->company_legal_name }}</h3>
-                                <p style="font-size: 0.8rem; color: #64748b; margin: 2px 0 0;">Manage retail stores, commissaries, warehouses, and takeout stations linked to this legal entity.</p>
-                            </div>
-                            <button type="button" onclick="openCreateBranchModal({{ $selectedCompany->company_id }})" style="border: none; background: #2563eb; color: #ffffff; font-size: 12.5px; font-weight: 600; padding: 7px 16px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);">
-                                <i class="ph ph-plus-circle" style="font-size: 15px;"></i>
-                                <span>Add New Branch</span>
-                            </button>
-                        </div>
-
-                        <!-- Branches Grid Cards -->
-                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px;">
-                            @forelse($selectedCompany->branches as $branch)
-                                <div class="branch-item-card" style="border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; background: #ffffff; box-shadow: 0 2px 6px rgba(0,0,0,0.03); display: flex; flex-direction: column; justify-content: space-between; transition: all 0.2s;">
+                            <!-- Card 4: Contact, Digital Presence & Receipt Compliance -->
+                            <div class="cb-section-card">
+                                <div class="cb-section-card-header">
+                                    <div class="cb-section-card-icon"><i class="ph ph-address-book"></i></div>
                                     <div>
-                                        <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 8px;">
-                                            <div>
-                                                <h4 style="font-size: 1rem; font-weight: 700; color: #0f172a; margin: 0;">{{ $branch->branch_name }}</h4>
-                                                <span style="font-size: 11px; font-family: monospace; color: #2563eb; font-weight: 700;">{{ $branch->branch_code }}</span>
-                                            </div>
-                                            <span style="font-size: 11px; padding: 2px 8px; border-radius: 999px; font-weight: 600; background: {{ $branch->branch_is_active ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)' }}; color: {{ $branch->branch_is_active ? '#059669' : '#dc2626' }};">
-                                                {{ $branch->branch_is_active ? 'Active' : 'Inactive' }}
-                                            </span>
-                                        </div>
-
-                                        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #475569; margin-bottom: 14px;">
-                                            <div style="display: flex; align-items: center; gap: 6px;">
-                                                <i class="ph ph-tag" style="color: #64748b;"></i>
-                                                <span>{{ $branch->branch_type }}</span>
-                                            </div>
-                                            <div style="display: flex; align-items: center; gap: 6px;">
-                                                <i class="ph ph-clock" style="color: #64748b;"></i>
-                                                <span>{{ $branch->operating_hours ?: '10:00 AM - 10:00 PM' }}</span>
-                                            </div>
-                                            <div style="display: flex; align-items: center; gap: 6px;">
-                                                <i class="ph ph-map-pin" style="color: #64748b;"></i>
-                                                <span>{{ $branch->full_address ?: 'No address specified' }}</span>
-                                            </div>
-                                            <div style="display: flex; align-items: center; gap: 6px;">
-                                                <i class="ph ph-receipt" style="color: #64748b;"></i>
-                                                <span>Tax Code: <strong>{{ $branch->branch_tax_code ?: 'N/A' }}</strong></span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div style="display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #f1f5f9; padding-top: 10px;">
-                                        <div style="display: flex; align-items: center; gap: 6px;">
-                                            <button type="button" onclick="editBranch({{ $branch->toJson() }})" style="border: 1px solid #cbd5e1; background: #ffffff; color: #334155; font-size: 11.5px; font-weight: 600; padding: 4px 10px; border-radius: 6px; cursor: pointer;">
-                                                <i class="ph ph-pencil-simple"></i> Edit Branch
-                                            </button>
-
-                                            <button type="button" onclick="confirmDeleteBranch({{ $branch->branch_id }}, '{{ addslashes($branch->branch_name) }}')" style="border: 1px solid #fecaca; background: #fff5f5; color: #dc2626; font-size: 11.5px; font-weight: 600; padding: 4px 8px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="Delete Branch">
-                                                <i class="ph ph-trash"></i> Delete
-                                            </button>
-                                        </div>
-
-                                        <form action="{{ route('config.business-settings.branches.toggle', $branch->branch_id) }}" method="POST" style="margin: 0;">
-                                            @csrf
-                                            <button type="submit" style="border: none; background: {{ $branch->branch_is_active ? '#fef2f2' : '#ecfdf5' }}; color: {{ $branch->branch_is_active ? '#dc2626' : '#059669' }}; font-size: 11.5px; font-weight: 600; padding: 4px 10px; border-radius: 6px; cursor: pointer;">
-                                                {{ $branch->branch_is_active ? 'Deactivate' : 'Activate' }}
-                                            </button>
-                                        </form>
+                                        <h3 class="cb-section-card-title">Contact, Digital Presence &amp; Receipt Footers</h3>
                                     </div>
                                 </div>
-                            @empty
-                                <div style="grid-column: 1 / -1; padding: 30px; text-align: center; background: #f8fafc; border-radius: 12px; border: 1px dashed #cbd5e1;">
-                                    <i class="ph ph-storefront" style="font-size: 32px; color: #94a3b8; margin-bottom: 6px;"></i>
-                                    <h4 style="font-size: 13px; font-weight: 700; color: #334155; margin: 0;">No Branches Connected Yet</h4>
-                                    <p style="font-size: 12px; color: #64748b; margin: 4px 0 12px;">Create retail outlets, central commissaries, or warehouses attached to this company.</p>
-                                    <button type="button" onclick="openCreateBranchModal({{ $selectedCompany->company_id }})" style="border: none; background: #2563eb; color: #ffffff; font-size: 12px; font-weight: 600; padding: 6px 14px; border-radius: 8px; cursor: pointer;">
-                                        <i class="ph ph-plus"></i> Add First Branch
-                                    </button>
+
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                    <div>
+                                        <label style="font-size: 11.5px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">Designated Contact Person</label>
+                                        <input type="text" name="company_contact_person" value="{{ old('company_contact_person', $selectedCompany->company_contact_person) }}" placeholder="Administrator / Account Exec" class="cb-input">
+                                    </div>
+                                    <div>
+                                        <label style="font-size: 11.5px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">Official Phone</label>
+                                        <input type="text" name="company_phone_number" value="{{ old('company_phone_number', $selectedCompany->company_phone_number) }}" placeholder="+63 2 8000 0000" class="cb-input">
+                                    </div>
                                 </div>
-                            @endforelse
-                        </div>
-                    </div>
 
-                    <!-- ==========================================================
-                         SUB-TAB 3: CERTIFICATE & LEGAL HUB (Document Vault)
-                         ========================================================== -->
-                    <div id="companyTabPaneVault" class="company-subtab-pane" style="display: none;">
-                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
-                            <div>
-                                <h3 style="font-size: 1.05rem; font-weight: 700; color: #0f172a; margin: 0;">Compliance &amp; Document Vault</h3>
-                                <p style="font-size: 0.8rem; color: #64748b; margin: 2px 0 0;">COR, Mayor's Permit, Fire Clearances, and Statutory Certificates for {{ $selectedCompany->company_legal_name }}</p>
-                            </div>
-                            <button type="button" onclick="openDocumentModal()" style="border: none; background: #2563eb; color: #ffffff; font-size: 12.5px; font-weight: 600; padding: 7px 16px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
-                                <i class="ph ph-upload-simple"></i>
-                                <span>Upload Legal Document</span>
-                            </button>
-                        </div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                    <div>
+                                        <label style="font-size: 11.5px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">Corporate Email</label>
+                                        <input type="email" name="company_email_address" value="{{ old('company_email_address', $selectedCompany->company_email_address) }}" placeholder="info@company.com" class="cb-input">
+                                    </div>
+                                    <div>
+                                        <label style="font-size: 11.5px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">Email Domain</label>
+                                        <input type="text" name="company_email_domain" value="{{ old('company_email_domain', $selectedCompany->company_email_domain) }}" placeholder="goodfarms.odoo.com" class="cb-input">
+                                    </div>
+                                </div>
 
-                        <!-- Vault Radar Badges -->
-                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap;">
-                            <span style="font-size: 12px; font-weight: 600; color: #059669; background: #ecfdf5; padding: 4px 10px; border-radius: 999px;">
-                                <i class="ph ph-shield-check"></i> {{ $vaultStats['active'] }} Active Documents
-                            </span>
-                            @if($vaultStats['expiring_soon'] > 0)
-                                <span style="font-size: 12px; font-weight: 600; color: #d97706; background: #fef3c7; padding: 4px 10px; border-radius: 999px;">
-                                    <i class="ph ph-warning"></i> {{ $vaultStats['expiring_soon'] }} Expiring Soon (&le;30 Days)
-                                </span>
-                            @endif
-                            @if($vaultStats['expired'] > 0)
-                                <span style="font-size: 12px; font-weight: 600; color: #dc2626; background: #fee2e2; padding: 4px 10px; border-radius: 999px;">
-                                    <i class="ph ph-x-circle"></i> {{ $vaultStats['expired'] }} Expired
-                                </span>
-                            @endif
-                        </div>
-
-                        <!-- Documents List Table -->
-                        <div style="overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 10px;">
-                            <table style="width: 100%; border-collapse: collapse; font-size: 12.5px; text-align: left;">
-                                <thead style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
-                                    <tr>
-                                        <th style="padding: 10px 14px;">Document Name</th>
-                                        <th style="padding: 10px 14px;">Category</th>
-                                        <th style="padding: 10px 14px;">Authority</th>
-                                        <th style="padding: 10px 14px;">Expiration</th>
-                                        <th style="padding: 10px 14px;">Status</th>
-                                        <th style="padding: 10px 14px; text-align: right;">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @forelse($selectedCompany->legalDocuments as $doc)
-                                        <tr style="border-bottom: 1px solid #f1f5f9;">
-                                            <td style="padding: 10px 14px; font-weight: 600; color: #0f172a;">{{ $doc->document_name }}</td>
-                                            <td style="padding: 10px 14px; color: #475569;">{{ $doc->document_category }}</td>
-                                            <td style="padding: 10px 14px; color: #475569;">{{ $doc->issuing_authority ?: 'N/A' }}</td>
-                                            <td style="padding: 10px 14px; color: #475569;">{{ $doc->expiration_date ? \Carbon\Carbon::parse($doc->expiration_date)->format('M d, Y') : 'Perpetual' }}</td>
-                                            <td style="padding: 10px 14px;">
-                                                <span style="font-size: 11px; padding: 2px 7px; border-radius: 999px; font-weight: 600; background: {{ $doc->expiration_status === 'Active' ? '#ecfdf5' : ($doc->expiration_status === 'Expiring Soon' ? '#fef3c7' : '#fee2e2') }}; color: {{ $doc->expiration_status === 'Active' ? '#059669' : ($doc->expiration_status === 'Expiring Soon' ? '#d97706' : '#dc2626') }};">
-                                                    {{ $doc->expiration_status }}
-                                                </span>
-                                            </td>
-                                            <td style="padding: 10px 14px; text-align: right;">
-                                                @if($doc->file_path)
-                                                    <a href="{{ asset('storage/' . $doc->file_path) }}" target="_blank" style="color: #2563eb; text-decoration: none; margin-right: 8px;"><i class="ph ph-arrow-square-out"></i> View</a>
-                                                @endif
-                                            </td>
-                                        </tr>
-                                    @empty
-                                        <tr>
-                                            <td colspan="6" style="padding: 24px; text-align: center; color: #94a3b8;">
-                                                No compliance documents stored in the vault yet.
-                                            </td>
-                                        </tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- ==========================================================
-                         SUB-TAB 4: HIERARCHY & RELATIONSHIPS
-                         ========================================================== -->
-                    <div id="companyTabPaneHierarchy" class="company-subtab-pane" style="display: none;">
-                        <div style="margin-bottom: 16px;">
-                            <h3 style="font-size: 1.05rem; font-weight: 700; color: #0f172a; margin: 0;">Enterprise Structure &amp; Master Data Sharing</h3>
-                            <p style="font-size: 0.8rem; color: #64748b; margin: 2px 0 0;">Define corporate holding relationships and cross-subsidiary catalog sharing rules.</p>
-                        </div>
-
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
-                            <div style="display: flex; flex-direction: column; gap: 14px;">
                                 <div>
-                                    <label style="font-size: 12.5px; font-weight: 700; color: #1e293b; display: block; margin-bottom: 4px;">Entity Classification</label>
-                                    <select name="company_type" style="width: 100%; height: 34px; padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12.5px; background: #ffffff;">
+                                    <label style="font-size: 11.5px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">Website URL</label>
+                                    <input type="text" name="company_website_url" value="{{ old('company_website_url', $selectedCompany->company_website_url) }}" placeholder="https://www.company.com" class="cb-input">
+                                </div>
+
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                    <div>
+                                        <label style="font-size: 11.5px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">Invoice / Receipt Header Text</label>
+                                        <textarea name="invoice_header_text" rows="2" class="cb-textarea" placeholder="TIN & VAT Header lines on POS/Invoices">{{ old('invoice_header_text', $selectedCompany->invoice_header_text) }}</textarea>
+                                    </div>
+                                    <div>
+                                        <label style="font-size: 11.5px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">Invoice / Receipt Footer Text</label>
+                                        <textarea name="invoice_footer_text" rows="2" class="cb-textarea" placeholder="THIS INVOICE/RECEIPT SHALL BE VALID FOR FIVE (5) YEARS">{{ old('invoice_footer_text', $selectedCompany->invoice_footer_text) }}</textarea>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- ==========================================================
+                         SUB-TAB 4: HIERARCHY & RELATIONSHIPS (Inside Master Form)
+                         ========================================================== -->
+                    <div id="companyTabPaneHierarchy" class="company-subtab-pane" style="display: {{ $activeSubTab === 'hierarchy' ? 'block' : 'none' }};">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 20px;">
+                            
+                            <!-- Left Card: Corporate Structure & Holding Hierarchy -->
+                            <div class="cb-section-card">
+                                <div class="cb-section-card-header">
+                                    <div class="cb-section-card-icon"><i class="ph ph-tree-structure"></i></div>
+                                    <div>
+                                        <h3 class="cb-section-card-title">Entity Level &amp; Consolidation Hierarchy</h3>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label style="font-size: 12px; font-weight: 700; color: #1e293b; display: block; margin-bottom: 4px;">Entity Classification</label>
+                                    <select name="company_type" class="cb-select">
                                         <option value="Company" {{ $selectedCompany->company_type === 'Company' ? 'selected' : '' }}>Company (Standard Operating Entity)</option>
                                         <option value="Holding Enterprise" {{ $selectedCompany->company_type === 'Holding Enterprise' ? 'selected' : '' }}>Holding Enterprise (Parent Group)</option>
                                         <option value="Subsidiary" {{ $selectedCompany->company_type === 'Subsidiary' ? 'selected' : '' }}>Subsidiary Operating Brand</option>
-                                        <option value="Agency" {{ $selectedCompany->company_type === 'Agency' ? 'selected' : '' }}>Agency / Third-Party Partner</option>
+                                        <option value="Agency" {{ $selectedCompany->company_type === 'Agency' ? 'selected' : '' }}>Agency / External Staffing Partner</option>
                                     </select>
                                 </div>
 
                                 <div>
-                                    <label style="font-size: 12.5px; font-weight: 700; color: #1e293b; display: block; margin-bottom: 4px;">Parent Holding Company</label>
-                                    <select name="parent_company_id" style="width: 100%; height: 34px; padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12.5px; background: #ffffff;">
+                                    <label style="font-size: 12px; font-weight: 700; color: #1e293b; display: block; margin-bottom: 4px;">Parent Holding Company</label>
+                                    <select name="parent_company_id" class="cb-select">
                                         <option value="">None (Top-Level Independent Entity)</option>
                                         @foreach($companies as $c)
                                             @if($c->company_id !== $selectedCompany->company_id)
@@ -689,60 +623,280 @@
                                         @endforeach
                                     </select>
                                 </div>
+
+                                <div>
+                                    <label style="font-size: 12px; font-weight: 700; color: #1e293b; display: block; margin-bottom: 4px;">Internal Notes &amp; Engagement Scope</label>
+                                    <textarea name="company_notes" rows="3" class="cb-textarea" placeholder="Notes on subsidiary scope, SLA terms for staffing agencies, or inter-company billing">{{ old('company_notes', $selectedCompany->company_notes) }}</textarea>
+                                </div>
                             </div>
+
+                            <!-- Right Card: Shared vs. Independent Master Data Rules Matrix -->
+                            <div class="cb-section-card">
+                                <div class="cb-section-card-header">
+                                    <div class="cb-section-card-icon"><i class="ph ph-git-merge"></i></div>
+                                    <div>
+                                        <h3 class="cb-section-card-title">Shared vs. Independent Master Data Matrix</h3>
+                                    </div>
+                                </div>
+
+                                <div class="cb-sharing-rule-card">
+                                    <div>
+                                        <div style="font-size: 13px; font-weight: 700; color: #0f172a;">Shared Chart of Accounts (COA)</div>
+                                        <div style="font-size: 11.5px; color: #64748b; margin-top: 2px;">Use unified GL account codes across parent and subsidiary entities for consolidated financial statements.</div>
+                                    </div>
+                                    <input type="checkbox" name="share_chart_of_accounts" value="1" {{ ($selectedCompany->share_chart_of_accounts ?? true) ? 'checked' : '' }} style="width: 18px; height: 18px; accent-color: #7c3aed; cursor: pointer; flex-shrink: 0;">
+                                </div>
+
+                                <div class="cb-sharing-rule-card">
+                                    <div>
+                                        <div style="font-size: 13px; font-weight: 700; color: #0f172a;">Shared Customer &amp; Vendor Directory</div>
+                                        <div style="font-size: 11.5px; color: #64748b; margin-top: 2px;">Allow accredited suppliers, RFQs, and B2B customers to transact across all connected branches and subsidiaries.</div>
+                                    </div>
+                                    <input type="checkbox" name="share_customer_vendor_directory" value="1" {{ ($selectedCompany->share_customer_vendor_directory ?? true) ? 'checked' : '' }} style="width: 18px; height: 18px; accent-color: #7c3aed; cursor: pointer; flex-shrink: 0;">
+                                </div>
+
+                                <div class="cb-sharing-rule-card">
+                                    <div>
+                                        <div style="font-size: 13px; font-weight: 700; color: #0f172a;">Shared Product Catalog, Recipes &amp; UOM</div>
+                                        <div style="font-size: 11.5px; color: #64748b; margin-top: 2px;">Synchronize Item Master SKUs, standard UOM conversions, and central commissary BOMs across entities.</div>
+                                    </div>
+                                    <input type="checkbox" name="share_product_catalog" value="1" {{ ($selectedCompany->share_product_catalog ?? true) ? 'checked' : '' }} style="width: 18px; height: 18px; accent-color: #7c3aed; cursor: pointer; flex-shrink: 0;">
+                                </div>
+                            </div>
+
                         </div>
                     </div>
                 </form>
+
+                <!-- ==========================================================
+                     SUB-TAB 2: BRANCHES & SITES HUB (Outside Master Form to avoid nested forms)
+                     ========================================================== -->
+                <div id="companyTabPaneBranches" class="company-subtab-pane" style="display: {{ $activeSubTab === 'branches' ? 'block' : 'none' }};">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+                        <div>
+                            <h3 style="font-size: 1.05rem; font-weight: 700; color: #0f172a; margin: 0;">Branches of {{ $selectedCompany->company_trade_name ?: $selectedCompany->company_legal_name }}</h3>
+                            <p style="font-size: 0.8rem; color: #64748b; margin: 2px 0 0;">Manage retail stores, commissaries, warehouses, and head office sites linked to this legal entity.</p>
+                        </div>
+                        <button type="button" class="cb-btn-primary" onclick="openCreateBranchModal({{ $selectedCompany->company_id }})">
+                            <i class="ph ph-plus-circle" style="font-size: 15px;"></i>
+                            <span>Add New Branch</span>
+                        </button>
+                    </div>
+
+                    <!-- Branches Grid Cards -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px;">
+                        @forelse($selectedCompany->branches as $branch)
+                            <div class="branch-item-card">
+                                <div>
+                                    <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 10px;">
+                                        <div>
+                                            <h4 style="font-size: 1rem; font-weight: 700; color: #0f172a; margin: 0;">{{ $branch->branch_name }}</h4>
+                                            <span style="font-size: 11px; font-family: monospace; color: #7c3aed; font-weight: 700;">{{ $branch->branch_code }}</span>
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 6px;">
+                                            <button type="button" class="cb-staff-pill-btn" onclick="openMembersModal('branch', {{ $branch->branch_id }}, '{{ addslashes($branch->branch_name) }}')" title="View Branch Staff">
+                                                <i class="ph ph-users"></i>
+                                                <span>{{ $branch->employees_count ?? 0 }}</span>
+                                            </button>
+                                            <span style="font-size: 11px; padding: 2px 8px; border-radius: 999px; font-weight: 600; background: {{ $branch->branch_is_active ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)' }}; color: {{ $branch->branch_is_active ? '#059669' : '#dc2626' }};">
+                                                {{ $branch->branch_is_active ? 'Active' : 'Inactive' }}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #475569; margin-bottom: 14px;">
+                                        <div style="display: flex; align-items: center; gap: 6px;">
+                                            <i class="ph ph-tag" style="color: #7c3aed;"></i>
+                                            <span>{{ $branch->branch_type }}</span>
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 6px;">
+                                            <i class="ph ph-clock" style="color: #64748b;"></i>
+                                            <span>{{ $branch->operating_hours ?: '10:00 AM - 10:00 PM' }}</span>
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 6px;">
+                                            <i class="ph ph-map-pin" style="color: #64748b;"></i>
+                                            <span>{{ $branch->full_address ?: 'No address specified' }}</span>
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 6px;">
+                                            <i class="ph ph-receipt" style="color: #64748b;"></i>
+                                            <span>Tax Code: <strong>{{ $branch->branch_tax_code ?: 'N/A' }}</strong></span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div style="display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #f1f5f9; padding-top: 10px;">
+                                    <div style="display: flex; align-items: center; gap: 6px;">
+                                        <button type="button" onclick="editBranch({{ $branch->toJson() }})" class="cb-btn-secondary" style="height: 28px; padding: 3px 10px; font-size: 11.5px;">
+                                            <i class="ph ph-pencil-simple"></i> Edit Branch
+                                        </button>
+
+                                        <button type="button" onclick="confirmDeleteBranch({{ $branch->branch_id }}, '{{ addslashes($branch->branch_name) }}')" style="border: 1px solid #fecaca; background: #fff5f5; color: #dc2626; font-size: 11.5px; font-weight: 600; padding: 4px 8px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="Delete Branch">
+                                            <i class="ph ph-trash"></i> Delete
+                                        </button>
+                                    </div>
+
+                                    <form action="{{ route('config.business-settings.branches.toggle', $branch->branch_id) }}" method="POST" style="margin: 0;">
+                                        @csrf
+                                        <input type="hidden" name="from_companies_branches" value="1">
+                                        <button type="submit" style="border: none; background: {{ $branch->branch_is_active ? '#fef2f2' : '#ecfdf5' }}; color: {{ $branch->branch_is_active ? '#dc2626' : '#059669' }}; font-size: 11.5px; font-weight: 600; padding: 4px 10px; border-radius: 6px; cursor: pointer;">
+                                            {{ $branch->branch_is_active ? 'Deactivate' : 'Activate' }}
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        @empty
+                            <div style="grid-column: 1 / -1; padding: 30px; text-align: center; background: #f8fafc; border-radius: 12px; border: 1px dashed #cbd5e1;">
+                                <i class="ph ph-storefront" style="font-size: 32px; color: #94a3b8; margin-bottom: 6px;"></i>
+                                <h4 style="font-size: 13px; font-weight: 700; color: #334155; margin: 0;">No Branches Connected Yet</h4>
+                                <p style="font-size: 12px; color: #64748b; margin: 4px 0 12px;">Create retail outlets, central commissaries, or warehouses attached to this company.</p>
+                                <button type="button" class="cb-btn-primary" onclick="openCreateBranchModal({{ $selectedCompany->company_id }})">
+                                    <i class="ph ph-plus"></i> Add First Branch
+                                </button>
+                            </div>
+                        @endforelse
+                    </div>
+                </div>
+
+                <!-- ==========================================================
+                     SUB-TAB 3: CERTIFICATE & LEGAL HUB (Document Vault)
+                     ========================================================== -->
+                <div id="companyTabPaneVault" class="company-subtab-pane" style="display: {{ $activeSubTab === 'vault' ? 'block' : 'none' }};">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+                        <div>
+                            <h3 style="font-size: 1.05rem; font-weight: 700; color: #0f172a; margin: 0;">Compliance &amp; Document Vault</h3>
+                            <p style="font-size: 0.8rem; color: #64748b; margin: 2px 0 0;">COR (BIR Form 2303), Mayor's Permit, Fire Clearances, and Statutory Certificates for {{ $selectedCompany->company_legal_name }}</p>
+                        </div>
+                        <button type="button" class="cb-btn-primary" onclick="openDocumentModal()">
+                            <i class="ph ph-upload-simple"></i>
+                            <span>Upload Legal Document</span>
+                        </button>
+                    </div>
+
+                    <!-- Vault Radar Badges -->
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap;">
+                        <span style="font-size: 12px; font-weight: 600; color: #059669; background: #ecfdf5; padding: 4px 10px; border-radius: 999px;">
+                            <i class="ph ph-shield-check"></i> {{ $vaultStats['active'] }} Active Documents
+                        </span>
+                        @if($vaultStats['expiring_soon'] > 0)
+                            <span style="font-size: 12px; font-weight: 600; color: #d97706; background: #fef3c7; padding: 4px 10px; border-radius: 999px;">
+                                <i class="ph ph-warning"></i> {{ $vaultStats['expiring_soon'] }} Expiring Soon (&le;30 Days)
+                            </span>
+                        @endif
+                        @if($vaultStats['expired'] > 0)
+                            <span style="font-size: 12px; font-weight: 600; color: #dc2626; background: #fee2e2; padding: 4px 10px; border-radius: 999px;">
+                                <i class="ph ph-x-circle"></i> {{ $vaultStats['expired'] }} Expired
+                            </span>
+                        @endif
+                    </div>
+
+                    <!-- Documents List Table -->
+                    <div style="overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 12px;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 12.5px; text-align: left;">
+                            <thead style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                                <tr>
+                                    <th style="padding: 10px 14px;">Document Name &amp; No.</th>
+                                    <th style="padding: 10px 14px;">Category</th>
+                                    <th style="padding: 10px 14px;">Issuing Authority</th>
+                                    <th style="padding: 10px 14px;">Expiration</th>
+                                    <th style="padding: 10px 14px;">Status</th>
+                                    <th style="padding: 10px 14px; text-align: right;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($selectedCompany->legalDocuments as $doc)
+                                    <tr style="border-bottom: 1px solid #f1f5f9;">
+                                        <td style="padding: 10px 14px;">
+                                            <div style="font-weight: 700; color: #0f172a;">{{ $doc->document_name }}</div>
+                                            @if($doc->document_number)
+                                                <div style="font-size: 11px; color: #64748b; font-family: monospace;">No: {{ $doc->document_number }}</div>
+                                            @endif
+                                        </td>
+                                        <td style="padding: 10px 14px; color: #475569;">{{ $doc->document_category }}</td>
+                                        <td style="padding: 10px 14px; color: #475569;">{{ $doc->issuing_authority ?: 'N/A' }}</td>
+                                        <td style="padding: 10px 14px; color: #475569;">{{ $doc->expiration_date ? \Carbon\Carbon::parse($doc->expiration_date)->format('M d, Y') : 'Perpetual' }}</td>
+                                        <td style="padding: 10px 14px;">
+                                            <span style="font-size: 11px; padding: 2px 8px; border-radius: 999px; font-weight: 600; background: {{ $doc->expiration_status === 'Active' ? '#ecfdf5' : ($doc->expiration_status === 'Expiring Soon' ? '#fef3c7' : '#fee2e2') }}; color: {{ $doc->expiration_status === 'Active' ? '#059669' : ($doc->expiration_status === 'Expiring Soon' ? '#d97706' : '#dc2626') }};">
+                                                {{ $doc->expiration_status }}
+                                            </span>
+                                        </td>
+                                        <td style="padding: 10px 14px; text-align: right;">
+                                            <div style="display: inline-flex; align-items: center; gap: 8px;">
+                                                @if($doc->file_path)
+                                                    <a href="{{ asset('storage/' . $doc->file_path) }}" target="_blank" style="color: #7c3aed; font-weight: 600; text-decoration: none;"><i class="ph ph-arrow-square-out"></i> View</a>
+                                                @endif
+                                                <form action="{{ route('config.business-settings.documents.destroy', $doc->id) }}" method="POST" onsubmit="return confirm('Delete document {{ addslashes($doc->document_name) }}?');" style="display: inline; margin: 0;">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <input type="hidden" name="from_companies_branches" value="1">
+                                                    <button type="submit" style="border: none; background: transparent; color: #dc2626; cursor: pointer; font-size: 13px;" title="Delete Document">
+                                                        <i class="ph ph-trash"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="6" style="padding: 24px; text-align: center; color: #94a3b8;">
+                                            No compliance documents stored in the vault yet.
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
             </div>
         @else
-            <div style="padding: 40px; text-align: center; background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0;">
+            <div style="padding: 40px; text-align: center; background: #ffffff; border-radius: 14px; border: 1px solid #e2e8f0;">
                 <i class="ph ph-buildings" style="font-size: 40px; color: #94a3b8;"></i>
                 <h3 style="font-size: 16px; font-weight: 700; color: #0f172a; margin-top: 10px;">No Company Selected</h3>
                 <p style="font-size: 13px; color: #64748b;">Please select a company from the directory to view its details.</p>
-                <button type="button" onclick="switchViewMode('directory')" style="margin-top: 10px; border: none; background: #2563eb; color: #ffffff; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600;">Back to Directory</button>
+                <button type="button" class="cb-btn-primary" onclick="switchViewMode('directory')" style="margin-top: 10px;">Back to Directory</button>
             </div>
         @endif
     </div>
 
     <!-- ====================================================================
-         MODALS: CREATE COMPANY & CREATE/EDIT BRANCH
+         MODALS: CREATE COMPANY/AGENCY, BRANCHES & DOCUMENT VAULT
          ==================================================================== -->
     
-    <!-- 1. Modal: New Company -->
+    <!-- 1. Modal: New Company / Agency -->
     <div id="modalCreateCompany" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center; padding: 20px;">
-        <div style="background: #ffffff; border-radius: 14px; width: 100%; max-width: 580px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); overflow: hidden;">
-            <div style="padding: 16px 20px; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between;">
-                <div style="display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; color: #0f172a;">
-                    <i class="ph ph-buildings" style="color: #2563eb; font-size: 20px;"></i>
-                    <span>Register New Company Entity</span>
+        <div style="background: #ffffff; border-radius: 16px; width: 100%; max-width: 600px; box-shadow: 0 20px 45px rgba(15, 23, 42, 0.22); overflow: hidden;">
+            <div style="padding: 16px 22px; border-bottom: 1px solid #f1f5f9; background: linear-gradient(135deg, #fdf4ff 0%, #f5f3ff 100%); display: flex; align-items: center; justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 800; color: #0f172a;">
+                    <i class="ph ph-buildings" style="color: #7c3aed; font-size: 20px;"></i>
+                    <span>Register New Company or Staffing Agency</span>
                 </div>
                 <button type="button" onclick="closeCreateCompanyModal()" style="border: none; background: transparent; color: #64748b; font-size: 18px; cursor: pointer;"><i class="ph ph-x"></i></button>
             </div>
-            <form action="{{ route('config.companies-branches.store') }}" method="POST" enctype="multipart/form-data" style="padding: 20px; display: flex; flex-direction: column; gap: 14px;">
+            <form action="{{ route('config.companies-branches.store') }}" method="POST" enctype="multipart/form-data" style="padding: 20px 22px; display: flex; flex-direction: column; gap: 14px;">
                 @csrf
                 <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 12px;">
                     <div>
-                        <label style="font-size: 12px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">Company Code *</label>
-                        <input type="text" name="company_code" required placeholder="e.g. GF-01" style="width: 100%; height: 34px; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12.5px; text-transform: uppercase;">
+                        <label style="font-size: 12px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">Entity Code *</label>
+                        <input type="text" name="company_code" required placeholder="e.g. GF-01" class="cb-input" style="text-transform: uppercase;">
                     </div>
                     <div>
                         <label style="font-size: 12px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">Legal Registered Name *</label>
-                        <input type="text" name="company_legal_name" required placeholder="e.g. Goodfarms Trading Corporation" style="width: 100%; height: 34px; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12.5px;">
+                        <input type="text" name="company_legal_name" required placeholder="e.g. Goodfarms Trading Corporation" class="cb-input">
                     </div>
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                     <div>
                         <label style="font-size: 12px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">Trade / Brand Name</label>
-                        <input type="text" name="company_trade_name" placeholder="e.g. Goodfarms" style="width: 100%; height: 34px; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12.5px;">
+                        <input type="text" name="company_trade_name" placeholder="e.g. Goodfarms" class="cb-input">
                     </div>
                     <div>
                         <label style="font-size: 12px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">Entity Classification</label>
-                        <select name="company_type" style="width: 100%; height: 34px; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12.5px; background: #ffffff;">
-                            <option value="Company">Company (Standard)</option>
-                            <option value="Holding Enterprise">Holding Enterprise</option>
-                            <option value="Subsidiary">Subsidiary</option>
-                            <option value="Agency">Agency</option>
+                        <select name="company_type" class="cb-select">
+                            <option value="Company">Company (Standard Operating Entity)</option>
+                            <option value="Holding Enterprise">Holding Enterprise (Parent Group)</option>
+                            <option value="Subsidiary">Subsidiary Operating Brand</option>
+                            <option value="Agency">Agency (External Staffing Partner)</option>
                         </select>
                     </div>
                 </div>
@@ -750,31 +904,31 @@
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                     <div>
                         <label style="font-size: 12px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">TIN</label>
-                        <input type="text" name="company_tax_id" placeholder="412-277-750-00000" style="width: 100%; height: 34px; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12.5px;">
+                        <input type="text" name="company_tax_id" placeholder="412-277-750-00000" class="cb-input">
                     </div>
                     <div>
-                        <label style="font-size: 12px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">Branch Code</label>
-                        <input type="text" name="company_branch_code" value="00000" placeholder="00000" style="width: 100%; height: 34px; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12.5px;">
+                        <label style="font-size: 12px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">BIR Branch Code</label>
+                        <input type="text" name="company_branch_code" value="00000" placeholder="00000" class="cb-input">
                     </div>
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                     <div>
                         <label style="font-size: 12px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">Base Currency</label>
-                        <select name="company_base_currency_code" style="width: 100%; height: 34px; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12.5px; background: #ffffff;">
+                        <select name="company_base_currency_code" class="cb-select">
                             <option value="PHP">PHP - Philippine Peso</option>
                             <option value="USD">USD - US Dollar</option>
                         </select>
                     </div>
                     <div>
                         <label style="font-size: 12px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">Brand Accent Color</label>
-                        <input type="color" name="company_brand_color" value="#ef4444" style="width: 100%; height: 34px; padding: 2px; border: 1px solid #cbd5e1; border-radius: 8px; cursor: pointer; background: #ffffff;">
+                        <input type="color" name="company_brand_color" value="#7c3aed" class="cb-input" style="padding: 2px; cursor: pointer;">
                     </div>
                 </div>
 
                 <div style="padding-top: 10px; display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
-                    <button type="button" onclick="closeCreateCompanyModal()" style="border: 1px solid #cbd5e1; background: #ffffff; color: #334155; font-size: 12.5px; font-weight: 600; padding: 7px 16px; border-radius: 8px; cursor: pointer;">Cancel</button>
-                    <button type="submit" style="border: none; background: #2563eb; color: #ffffff; font-size: 12.5px; font-weight: 600; padding: 7px 20px; border-radius: 8px; cursor: pointer;">Create Company</button>
+                    <button type="button" class="cb-btn-secondary" onclick="closeCreateCompanyModal()">Cancel</button>
+                    <button type="submit" class="cb-btn-primary">Create Entity</button>
                 </div>
             </form>
         </div>
@@ -782,19 +936,20 @@
 
     <!-- 2. Modal: New Branch -->
     <div id="modalCreateBranch" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center; padding: 20px;">
-        <div style="background: #ffffff; border-radius: 14px; width: 100%; max-width: 580px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); overflow: hidden;">
-            <div style="padding: 16px 20px; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between;">
-                <div style="display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; color: #0f172a;">
+        <div style="background: #ffffff; border-radius: 16px; width: 100%; max-width: 580px; box-shadow: 0 20px 45px rgba(15, 23, 42, 0.22); overflow: hidden;">
+            <div style="padding: 16px 22px; border-bottom: 1px solid #f1f5f9; background: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%); display: flex; align-items: center; justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 800; color: #0f172a;">
                     <i class="ph ph-storefront" style="color: #059669; font-size: 20px;"></i>
                     <span>Add New Operational Branch</span>
                 </div>
                 <button type="button" onclick="closeCreateBranchModal()" style="border: none; background: transparent; color: #64748b; font-size: 18px; cursor: pointer;"><i class="ph ph-x"></i></button>
             </div>
-            <form action="{{ route('config.business-settings.branches.store') }}" method="POST" style="padding: 20px; display: flex; flex-direction: column; gap: 14px;">
+            <form action="{{ route('config.business-settings.branches.store') }}" method="POST" style="padding: 20px 22px; display: flex; flex-direction: column; gap: 14px;">
                 @csrf
+                <input type="hidden" name="from_companies_branches" value="1">
                 <div>
                     <label style="font-size: 12px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">Belongs to Company *</label>
-                    <select name="company_id" id="branchModalCompanySelect" required style="width: 100%; height: 34px; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12.5px; background: #ffffff;">
+                    <select name="company_id" id="branchModalCompanySelect" required class="cb-select">
                         @foreach($companies as $c)
                             <option value="{{ $c->company_id }}" {{ $selectedCompany && $selectedCompany->company_id === $c->company_id ? 'selected' : '' }}>{{ $c->company_legal_name }} ({{ $c->company_code }})</option>
                         @endforeach
@@ -804,18 +959,18 @@
                 <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 12px;">
                     <div>
                         <label style="font-size: 12px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">Branch Code *</label>
-                        <input type="text" name="branch_code" required placeholder="e.g. BR-01" style="width: 100%; height: 34px; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12.5px; text-transform: uppercase;">
+                        <input type="text" name="branch_code" required placeholder="e.g. BR-01" class="cb-input" style="text-transform: uppercase;">
                     </div>
                     <div>
                         <label style="font-size: 12px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">Branch Name *</label>
-                        <input type="text" name="branch_name" required placeholder="e.g. Main Commissary / SM Mall Store" style="width: 100%; height: 34px; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12.5px;">
+                        <input type="text" name="branch_name" required placeholder="e.g. Main Commissary / SM Mall Store" class="cb-input">
                     </div>
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                     <div>
                         <label style="font-size: 12px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">Branch Type</label>
-                        <select name="branch_type" style="width: 100%; height: 34px; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12.5px; background: #ffffff;">
+                        <select name="branch_type" class="cb-select">
                             @foreach($branchTypes as $bt)
                                 <option value="{{ $bt }}">{{ $bt }}</option>
                             @endforeach
@@ -823,24 +978,24 @@
                     </div>
                     <div>
                         <label style="font-size: 12px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">Branch Tax Code / Suffix</label>
-                        <input type="text" name="branch_tax_code" placeholder="e.g. 00001" style="width: 100%; height: 34px; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12.5px;">
+                        <input type="text" name="branch_tax_code" placeholder="e.g. 00001" class="cb-input">
                     </div>
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                     <div>
                         <label style="font-size: 12px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">City</label>
-                        <input type="text" name="branch_city" placeholder="e.g. Taguig City" style="width: 100%; height: 34px; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12.5px;">
+                        <input type="text" name="branch_city" placeholder="e.g. Taguig City" class="cb-input">
                     </div>
                     <div>
                         <label style="font-size: 12px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">Operating Hours</label>
-                        <input type="text" name="operating_hours" placeholder="10:00 AM - 10:00 PM" style="width: 100%; height: 34px; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12.5px;">
+                        <input type="text" name="operating_hours" placeholder="10:00 AM - 10:00 PM" class="cb-input">
                     </div>
                 </div>
 
                 <div style="padding-top: 10px; display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
-                    <button type="button" onclick="closeCreateBranchModal()" style="border: 1px solid #cbd5e1; background: #ffffff; color: #334155; font-size: 12.5px; font-weight: 600; padding: 7px 16px; border-radius: 8px; cursor: pointer;">Cancel</button>
-                    <button type="submit" style="border: none; background: #059669; color: #ffffff; font-size: 12.5px; font-weight: 600; padding: 7px 20px; border-radius: 8px; cursor: pointer;">Add Branch</button>
+                    <button type="button" class="cb-btn-secondary" onclick="closeCreateBranchModal()">Cancel</button>
+                    <button type="submit" class="cb-btn-primary">Add Branch</button>
                 </div>
             </form>
         </div>
@@ -848,32 +1003,33 @@
 
     <!-- 3. Modal: Edit Branch -->
     <div id="modalEditBranch" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center; padding: 20px;">
-        <div style="background: #ffffff; border-radius: 14px; width: 100%; max-width: 580px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); overflow: hidden;">
-            <div style="padding: 16px 20px; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between;">
-                <div style="display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; color: #0f172a;">
-                    <i class="ph ph-pencil-simple" style="color: #2563eb; font-size: 20px;"></i>
+        <div style="background: #ffffff; border-radius: 16px; width: 100%; max-width: 580px; box-shadow: 0 20px 45px rgba(15, 23, 42, 0.22); overflow: hidden;">
+            <div style="padding: 16px 22px; border-bottom: 1px solid #f1f5f9; background: linear-gradient(135deg, #fdf4ff 0%, #f5f3ff 100%); display: flex; align-items: center; justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 800; color: #0f172a;">
+                    <i class="ph ph-pencil-simple" style="color: #7c3aed; font-size: 20px;"></i>
                     <span>Edit Operational Branch</span>
                 </div>
                 <button type="button" onclick="closeEditBranchModal()" style="border: none; background: transparent; color: #64748b; font-size: 18px; cursor: pointer;"><i class="ph ph-x"></i></button>
             </div>
-            <form id="editBranchForm" action="" method="POST" style="padding: 20px; display: flex; flex-direction: column; gap: 14px;">
+            <form id="editBranchForm" action="" method="POST" style="padding: 20px 22px; display: flex; flex-direction: column; gap: 14px;">
                 @csrf
                 @method('PUT')
+                <input type="hidden" name="from_companies_branches" value="1">
                 <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 12px;">
                     <div>
                         <label style="font-size: 12px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">Branch Code *</label>
-                        <input type="text" name="branch_code" id="editBranchCode" required style="width: 100%; height: 34px; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12.5px; text-transform: uppercase;">
+                        <input type="text" name="branch_code" id="editBranchCode" required class="cb-input" style="text-transform: uppercase;">
                     </div>
                     <div>
                         <label style="font-size: 12px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">Branch Name *</label>
-                        <input type="text" name="branch_name" id="editBranchName" required style="width: 100%; height: 34px; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12.5px;">
+                        <input type="text" name="branch_name" id="editBranchName" required class="cb-input">
                     </div>
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                     <div>
                         <label style="font-size: 12px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">Branch Type</label>
-                        <select name="branch_type" id="editBranchType" style="width: 100%; height: 34px; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12.5px; background: #ffffff;">
+                        <select name="branch_type" id="editBranchType" class="cb-select">
                             @foreach($branchTypes as $bt)
                                 <option value="{{ $bt }}">{{ $bt }}</option>
                             @endforeach
@@ -881,18 +1037,18 @@
                     </div>
                     <div>
                         <label style="font-size: 12px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">Branch Tax Code</label>
-                        <input type="text" name="branch_tax_code" id="editBranchTaxCode" style="width: 100%; height: 34px; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12.5px;">
+                        <input type="text" name="branch_tax_code" id="editBranchTaxCode" class="cb-input">
                     </div>
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                     <div>
                         <label style="font-size: 12px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">City</label>
-                        <input type="text" name="branch_city" id="editBranchCity" style="width: 100%; height: 34px; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12.5px;">
+                        <input type="text" name="branch_city" id="editBranchCity" class="cb-input">
                     </div>
                     <div>
                         <label style="font-size: 12px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">Operating Hours</label>
-                        <input type="text" name="operating_hours" id="editBranchHours" style="width: 100%; height: 34px; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12.5px;">
+                        <input type="text" name="operating_hours" id="editBranchHours" class="cb-input">
                     </div>
                 </div>
 
@@ -901,15 +1057,78 @@
                         <i class="ph ph-trash"></i> Delete Branch
                     </button>
                     <div style="display: flex; align-items: center; gap: 8px;">
-                        <button type="button" onclick="closeEditBranchModal()" style="border: 1px solid #cbd5e1; background: #ffffff; color: #334155; font-size: 12.5px; font-weight: 600; padding: 7px 16px; border-radius: 8px; cursor: pointer;">Cancel</button>
-                        <button type="submit" style="border: none; background: #2563eb; color: #ffffff; font-size: 12.5px; font-weight: 600; padding: 7px 20px; border-radius: 8px; cursor: pointer;">Update Branch</button>
+                        <button type="button" class="cb-btn-secondary" onclick="closeEditBranchModal()">Cancel</button>
+                        <button type="submit" class="cb-btn-primary">Update Branch</button>
                     </div>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- 4. Modal: Confirm Delete Company -->
+    <!-- 4. Modal: Upload Legal Document (Document Vault) -->
+    <div id="modalUploadDocument" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center; padding: 20px;">
+        <div style="background: #ffffff; border-radius: 16px; width: 100%; max-width: 580px; box-shadow: 0 20px 45px rgba(15, 23, 42, 0.22); overflow: hidden;">
+            <div style="padding: 16px 22px; border-bottom: 1px solid #f1f5f9; background: linear-gradient(135deg, #fdf4ff 0%, #f5f3ff 100%); display: flex; align-items: center; justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 800; color: #0f172a;">
+                    <i class="ph ph-file-lock" style="color: #7c3aed; font-size: 20px;"></i>
+                    <span>Upload Compliance &amp; Legal Document</span>
+                </div>
+                <button type="button" onclick="closeDocumentModal()" style="border: none; background: transparent; color: #64748b; font-size: 18px; cursor: pointer;"><i class="ph ph-x"></i></button>
+            </div>
+            <form action="{{ route('config.business-settings.documents.store') }}" method="POST" enctype="multipart/form-data" style="padding: 20px 22px; display: flex; flex-direction: column; gap: 12px;">
+                @csrf
+                <input type="hidden" name="from_companies_branches" value="1">
+                <input type="hidden" name="company_id" value="{{ $selectedCompany ? $selectedCompany->company_id : '' }}">
+
+                <div>
+                    <label style="font-size: 12px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">Compliance Category *</label>
+                    <select name="document_category" required class="cb-select">
+                        @foreach($docCategories as $cat)
+                            <option value="{{ $cat }}">{{ $cat }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px;">
+                    <div>
+                        <label style="font-size: 12px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">Document Title *</label>
+                        <input type="text" name="document_name" required placeholder="e.g. BIR Form 2303 - 2026" class="cb-input">
+                    </div>
+                    <div>
+                        <label style="font-size: 12px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">Permit / Cert No.</label>
+                        <input type="text" name="document_number" placeholder="e.g. COR-2026-01" class="cb-input">
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+                    <div>
+                        <label style="font-size: 12px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">Issuing Authority</label>
+                        <input type="text" name="issuing_authority" placeholder="e.g. BIR / SEC / LGU" class="cb-input">
+                    </div>
+                    <div>
+                        <label style="font-size: 12px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">Issue Date</label>
+                        <input type="date" name="issue_date" class="cb-input">
+                    </div>
+                    <div>
+                        <label style="font-size: 12px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">Expiration Date</label>
+                        <input type="date" name="expiration_date" class="cb-input">
+                    </div>
+                </div>
+
+                <div>
+                    <label style="font-size: 12px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">Document File (PDF, PNG, JPG up to 10MB) *</label>
+                    <input type="file" name="document_file" required accept=".pdf,image/*" class="cb-input" style="padding: 4px 8px;">
+                </div>
+
+                <div style="padding-top: 8px; display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
+                    <button type="button" class="cb-btn-secondary" onclick="closeDocumentModal()">Cancel</button>
+                    <button type="submit" class="cb-btn-primary">Upload to Vault</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 5. Modal: Confirm Delete Company -->
     <div id="modalConfirmDeleteCompany" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 1050; align-items: center; justify-content: center; padding: 20px;">
         <div style="background: #ffffff; border-radius: 14px; width: 100%; max-width: 480px; box-shadow: 0 20px 40px rgba(0,0,0,0.25); overflow: hidden; border: 1px solid #fee2e2;">
             <div style="padding: 16px 20px; border-bottom: 1px solid #fee2e2; background: #fff5f5; display: flex; align-items: center; justify-content: space-between;">
@@ -939,7 +1158,7 @@
         </div>
     </div>
 
-    <!-- 5. Modal: Confirm Delete Branch -->
+    <!-- 6. Modal: Confirm Delete Branch -->
     <div id="modalConfirmDeleteBranch" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 1050; align-items: center; justify-content: center; padding: 20px;">
         <div style="background: #ffffff; border-radius: 14px; width: 100%; max-width: 460px; box-shadow: 0 20px 40px rgba(0,0,0,0.25); overflow: hidden; border: 1px solid #fee2e2;">
             <div style="padding: 16px 20px; border-bottom: 1px solid #fee2e2; background: #fff5f5; display: flex; align-items: center; justify-content: space-between;">
@@ -969,4 +1188,6 @@
         </div>
     </div>
 </div>
+
+@include('hr.people.partials.members-modal')
 @endsection

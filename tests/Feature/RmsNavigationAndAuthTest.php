@@ -135,6 +135,7 @@ class RmsNavigationAndAuthTest extends TestCase
         $user = $this->getAdminUser();
 
         $routes = [
+            'config.companies-branches.index',
             'config.business-settings',
             'account-settings',
             'credits.tickets',

@@ -28,8 +28,6 @@
                         ['title' => 'Organization', 'url' => route('hr.people.organization'), 'icon' => 'ph-tree-structure', 'route' => 'hr.people.organization'],
                         ['title' => 'Departments', 'url' => route('hr.people.departments'), 'icon' => 'ph-tree-structure', 'route' => 'hr.people.departments'],
                         ['title' => 'Positions', 'url' => route('hr.people.positions'), 'icon' => 'ph-identification-card', 'route' => 'hr.people.positions'],
-                        ['title' => 'Branches', 'url' => route('hr.people.branches'), 'icon' => 'ph-storefront', 'route' => 'hr.people.branches'],
-                        ['title' => 'Agency / Company', 'url' => route('hr.people.companies'), 'icon' => 'ph-buildings', 'route' => 'hr.people.companies'],
                         ['title' => 'Documents Repository', 'url' => route('hr.people.documents'), 'icon' => 'ph-folder-simple-user', 'route' => 'hr.people.documents'],
                         ['title' => 'Employee Masterlist (Legacy)', 'url' => route('hr.employee'), 'icon' => 'ph-users', 'route' => 'hr.employee'],
                     ]
@@ -250,14 +248,14 @@
         'config' => [
             'title' => 'Settings',
             'icon' => 'ph-gear',
-            'dashboard_url' => route('config.business-settings'),
+            'dashboard_url' => route('config.companies-branches.index'),
             'sections' => [
                 'business' => [
-                    'title' => 'Business Settings',
+                    'title' => 'Companies & Branches',
                     'url' => route('config.companies-branches.index'),
+                    'icon' => 'ph-buildings',
                     'items' => [
-                        ['title' => 'Companies & Branches', 'url' => route('config.companies-branches.index'), 'icon' => 'ph-buildings', 'route' => 'config.companies-branches.*'],
-                        ['title' => 'Business Settings', 'url' => route('config.business-settings'), 'icon' => 'ph-storefront', 'route' => 'config.business-settings'],
+                        ['title' => 'Companies & Branches', 'url' => route('config.companies-branches.index'), 'icon' => 'ph-buildings', 'route' => 'config.companies-branches.index'],
                     ]
                 ],
                 'admin' => [
@@ -321,7 +319,7 @@
         foreach ($moduleRegistry as $mKey => $mVal) {
             foreach ($mVal['sections'] as $sKey => $sVal) {
                 foreach ($sVal['items'] as $item) {
-                    if ($item['route'] === $currentRouteName) {
+                    if ($item['route'] === $currentRouteName || fnmatch($item['route'], $currentRouteName) || ($item['route'] === 'config.companies-branches.index' && str_starts_with($currentRouteName, 'config.companies-branches.'))) {
                         $currentModule = $mVal;
                         $currentSectionKey = $sKey;
                         $currentSection = $sVal;

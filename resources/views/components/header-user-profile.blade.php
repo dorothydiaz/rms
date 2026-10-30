@@ -55,11 +55,11 @@
                 </div>
             </button>
 
-            <a href="{{ route('config.business-settings') }}" class="user-dropdown-item">
-                <i class="ph ph-sliders"></i>
+            <a href="{{ route('config.companies-branches.index') }}" class="user-dropdown-item">
+                <i class="ph ph-buildings"></i>
                 <div class="item-text">
-                    <span class="item-title">Business Settings</span>
-                    <span class="item-sub">Company profiles, legal hub, branches</span>
+                    <span class="item-title">Companies & Branches</span>
+                    <span class="item-sub">Company & agency profiles, legal hub, branches</span>
                 </div>
             </a>
         </div>

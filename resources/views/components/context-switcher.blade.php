@@ -210,9 +210,9 @@
 
         <!-- Dropdown Footer -->
         <div class="entity-dropdown-footer">
-            <a href="{{ route('config.business-settings') }}" class="btn-manage-entities">
-                <i class="ph ph-gear"></i>
-                <span>Business Settings & Hub</span>
+            <a href="{{ route('config.companies-branches.index') }}" class="btn-manage-entities">
+                <i class="ph ph-buildings"></i>
+                <span>Companies & Branches Hub</span>
             </a>
             <div class="scope-status-pill" id="scopeStatusIndicator">
                 <span id="scopeSelectedCount">{{ $totalCheckedCount }} In Scope</span>

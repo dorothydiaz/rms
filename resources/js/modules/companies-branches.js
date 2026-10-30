@@ -47,8 +47,19 @@ const DIRECTORY_COLUMNS = [
         default: true,
         lockVisible: false,
         align: 'left',
-        width: '280px',
-        minWidth: '220px'
+        width: '260px',
+        minWidth: '200px'
+    },
+    {
+        id: 'workforce',
+        label: 'Assigned Staff',
+        subLabel: 'HR Headcount & Roster',
+        topPurpose: 'Active deployed employees and staffing agency personnel',
+        default: true,
+        lockVisible: false,
+        align: 'center',
+        width: '135px',
+        minWidth: '115px'
     },
     {
         id: 'tax_tin',
@@ -141,11 +152,12 @@ const DIRECTORY_COLUMNS = [
 ];
 
 // State & Persistent Storage Keys
-const STORAGE_PREFS_KEY = 'rms_companies_table_prefs_v1';
+const STORAGE_PREFS_KEY = 'rms_companies_table_prefs_v2';
 let activeDirectoryColIds = [];
 let directoryColOrder = [];
 let directoryColWidths = {};
 let directorySearchTerm = '';
+let directoryTypeFilter = 'all';
 let directoryColSearchTerm = '';
 let currentDirectoryPage = 1;
 let directoryPageSize = 10;
@@ -356,6 +368,15 @@ function renderCompaniesDirectory() {
 
     let items = Array.isArray(window.COMPANIES_DATA) ? [...window.COMPANIES_DATA] : [];
 
+    // Filter by entity type classification pill
+    if (directoryTypeFilter && directoryTypeFilter !== 'all') {
+        if (directoryTypeFilter === 'Group') {
+            items = items.filter(c => c.company_type === 'Holding Enterprise' || c.company_type === 'Subsidiary');
+        } else {
+            items = items.filter(c => (c.company_type || 'Company') === directoryTypeFilter);
+        }
+    }
+
     // Filter by live search
     if (directorySearchTerm) {
         const q = directorySearchTerm.toLowerCase();
@@ -408,10 +429,10 @@ function renderCompaniesDirectory() {
                     rowsHtml += `
                         <div style="display: flex; align-items: center; gap: 10px;">
                             <div style="width: 34px; height: 34px; border-radius: 8px; border: 1px solid #e2e8f0; background: #ffffff; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0;">
-                                ${logoSrc ? `<img src="${logoSrc}" alt="Logo" style="width: 100%; height: 100%; object-fit: contain;">` : `<i class="ph ph-buildings" style="color: #94a3b8; font-size: 18px;"></i>`}
+                                ${logoSrc ? `<img src="${logoSrc}" alt="Logo" style="width: 100%; height: 100%; object-fit: contain;">` : `<i class="ph ph-buildings" style="color: #7c3aed; font-size: 18px;"></i>`}
                             </div>
                             <div>
-                                <span style="font-size: 12px; font-weight: 700; color: #2563eb; font-family: monospace;">${escapeHtml(company.company_code)}</span>
+                                <span style="font-size: 12px; font-weight: 700; color: #7c3aed; font-family: monospace;">${escapeHtml(company.company_code)}</span>
                                 <div style="display: flex; align-items: center; gap: 4px; margin-top: 1px;">
                                     <span style="width: 6px; height: 6px; border-radius: 50%; background: ${company.company_is_active ? '#10b981' : '#ef4444'};"></span>
                                     <span style="font-size: 10.5px; color: #64748b;">${company.company_is_active ? 'Active' : 'Inactive'}</span>
@@ -424,7 +445,7 @@ function renderCompaniesDirectory() {
                 case 'legal_name':
                     rowsHtml += `
                         <div style="max-height: 44px; overflow: hidden; line-height: 1.3;">
-                            <a href="javascript:void(0)" onclick="selectCompanyForDetails(${company.company_id})" style="font-size: 12.5px; font-weight: 700; color: #0f172a; text-decoration: none; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px;" title="${escapeHtml(company.company_legal_name)}" onmouseover="this.style.color='#2563eb'" onmouseout="this.style.color='#0f172a'">
+                            <a href="javascript:void(0)" onclick="selectCompanyForDetails(${company.company_id})" style="font-size: 12.5px; font-weight: 700; color: #0f172a; text-decoration: none; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px;" title="${escapeHtml(company.company_legal_name)}" onmouseover="this.style.color='#7c3aed'" onmouseout="this.style.color='#0f172a'">
                                 ${escapeHtml(company.company_legal_name)}
                             </a>
                             ${company.company_trade_name ? `<div style="font-size: 11px; color: #64748b; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px;" title="DBA: ${escapeHtml(company.company_trade_name)}">DBA: ${escapeHtml(company.company_trade_name)}</div>` : ''}
@@ -433,13 +454,29 @@ function renderCompaniesDirectory() {
                     break;
 
                 case 'entity_type':
-                    const badgeBg = company.company_type === 'Holding Enterprise' ? '#f5f3ff' : '#eff6ff';
-                    const badgeColor = company.company_type === 'Holding Enterprise' ? '#7c3aed' : '#2563eb';
+                    const cType = company.company_type || 'Company';
+                    let badgeBg = '#f0f9ff', badgeColor = '#0284c7';
+                    if (cType === 'Holding Enterprise') { badgeBg = '#f5f3ff'; badgeColor = '#7c3aed'; }
+                    else if (cType === 'Subsidiary') { badgeBg = '#eef2ff'; badgeColor = '#4f46e5'; }
+                    else if (cType === 'Agency') { badgeBg = '#fdf2f8'; badgeColor = '#db2777'; }
                     rowsHtml += `
                         <div style="text-align: center;">
-                            <span style="font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: ${badgeBg}; color: ${badgeColor};">
-                                ${escapeHtml(company.company_type || 'Company')}
+                            <span style="font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 999px; background: ${badgeBg}; color: ${badgeColor};">
+                                ${escapeHtml(cType)}
                             </span>
+                        </div>
+                    `;
+                    break;
+
+                case 'workforce':
+                    const staffCount = Number(company.employees_count || 0);
+                    const safeName = escapeHtml(company.company_legal_name).replace(/'/g, "\\'");
+                    rowsHtml += `
+                        <div style="text-align: center;">
+                            <button type="button" class="cb-staff-pill-btn" onclick="event.stopPropagation(); if(typeof openMembersModal === 'function') openMembersModal('company', ${company.company_id}, '${safeName}');" title="View Assigned Workforce">
+                                <i class="ph ph-users-three"></i>
+                                <span>${staffCount} Staff</span>
+                            </button>
                         </div>
                     `;
                     break;
@@ -544,7 +581,7 @@ function renderCompaniesDirectory() {
                 case 'actions':
                     rowsHtml += `
                         <div style="display: flex; align-items: center; justify-content: center; gap: 6px;">
-                            <button type="button" onclick="selectCompanyForDetails(${company.company_id})" style="border: 1px solid #bfdbfe; background: #eff6ff; color: #2563eb; font-size: 11.5px; font-weight: 600; padding: 4px 9px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: all 0.15s;" title="View & Edit Company Details">
+                            <button type="button" onclick="selectCompanyForDetails(${company.company_id})" style="border: 1px solid rgba(168, 85, 247, 0.28); background: rgba(168, 85, 247, 0.08); color: #7c3aed; font-size: 11.5px; font-weight: 600; padding: 4px 10px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: all 0.15s;" title="View & Edit Company Details">
                                 <i class="ph ph-arrow-right"></i> Details
                             </button>
                             <button type="button" onclick="confirmDeleteCompany(${company.company_id}, '${escapeHtml(company.company_legal_name).replace(/'/g, "\\'")}')" style="border: 1px solid #fecaca; background: #fef2f2; color: #dc2626; font-size: 11.5px; font-weight: 600; padding: 4px 8px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: all 0.15s;" title="Delete Company">
@@ -579,7 +616,7 @@ function renderPaginationBar(start, end, total) {
 
     const totalPages = Math.ceil(total / directoryPageSize) || 1;
     let btns = `
-        <button type="button" onclick="changeDirectoryPage(${currentDirectoryPage - 1})" ${currentDirectoryPage <= 1 ? 'disabled' : ''} style="border: 1px solid #cbd5e1; background: #ffffff; color: #334155; font-size: 11px; padding: 3px 8px; border-radius: 6px; cursor: pointer;">
+        <button type="button" class="hr-page-btn" onclick="changeDirectoryPage(${currentDirectoryPage - 1})" ${currentDirectoryPage <= 1 ? 'disabled' : ''}>
             Prev
         </button>
     `;
@@ -589,14 +626,14 @@ function renderPaginationBar(start, end, total) {
             continue;
         }
         btns += `
-            <button type="button" onclick="changeDirectoryPage(${p})" style="border: 1px solid ${p === currentDirectoryPage ? '#2563eb' : '#cbd5e1'}; background: ${p === currentDirectoryPage ? '#2563eb' : '#ffffff'}; color: ${p === currentDirectoryPage ? '#ffffff' : '#334155'}; font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 6px; cursor: pointer;">
+            <button type="button" class="hr-page-btn ${p === currentDirectoryPage ? 'active' : ''}" onclick="changeDirectoryPage(${p})" style="${p === currentDirectoryPage ? 'background: linear-gradient(135deg, #ec4899, #a855f7); color: #ffffff; border-color: transparent;' : ''}">
                 ${p}
             </button>
         `;
     }
 
     btns += `
-        <button type="button" onclick="changeDirectoryPage(${currentDirectoryPage + 1})" ${currentDirectoryPage >= totalPages ? 'disabled' : ''} style="border: 1px solid #cbd5e1; background: #ffffff; color: #334155; font-size: 11px; padding: 3px 8px; border-radius: 6px; cursor: pointer;">
+        <button type="button" class="hr-page-btn" onclick="changeDirectoryPage(${currentDirectoryPage + 1})" ${currentDirectoryPage >= totalPages ? 'disabled' : ''}>
             Next
         </button>
     `;
@@ -623,6 +660,15 @@ function handleCompaniesDirectorySearch(val) {
     renderCompaniesDirectory();
 }
 
+function filterCompaniesByType(type) {
+    directoryTypeFilter = type || 'all';
+    currentDirectoryPage = 1;
+    document.querySelectorAll('.cb-type-pill').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-type') === directoryTypeFilter);
+    });
+    renderCompaniesDirectory();
+}
+
 /**
  * View Mode Switching: Directory vs Company Details
  */
@@ -633,15 +679,15 @@ function switchViewMode(mode) {
 
     if (mode === 'details') {
         if (dirSec) dirSec.style.display = 'none';
-        if (detSec) detSec.style.display = 'block';
-        if (pills[0]) { pills[0].style.background = 'transparent'; pills[0].style.color = '#64748b'; pills[0].style.boxShadow = 'none'; }
-        if (pills[1]) { pills[1].style.background = '#ffffff'; pills[1].style.color = '#0f172a'; pills[1].style.boxShadow = '0 1px 3px rgba(0,0,0,0.08)'; }
+        if (detSec) detSec.style.display = 'flex';
+        if (pills[0]) pills[0].classList.remove('active');
+        if (pills[1]) pills[1].classList.add('active');
         window.history.replaceState(null, '', `?view=details${window.SELECTED_COMPANY_ID ? '&company_id=' + window.SELECTED_COMPANY_ID : ''}`);
     } else {
-        if (dirSec) dirSec.style.display = 'block';
+        if (dirSec) dirSec.style.display = 'flex';
         if (detSec) detSec.style.display = 'none';
-        if (pills[0]) { pills[0].style.background = '#ffffff'; pills[0].style.color = '#0f172a'; pills[0].style.boxShadow = '0 1px 3px rgba(0,0,0,0.08)'; }
-        if (pills[1]) { pills[1].style.background = 'transparent'; pills[1].style.color = '#64748b'; pills[1].style.boxShadow = 'none'; }
+        if (pills[0]) pills[0].classList.add('active');
+        if (pills[1]) pills[1].classList.remove('active');
         window.history.replaceState(null, '', '?view=directory');
     }
 }
@@ -671,9 +717,10 @@ function switchCompanySubTab(tab) {
     Object.keys(panes).forEach(k => {
         if (panes[k]) panes[k].style.display = (k === tab ? 'block' : 'none');
         if (btns[k]) {
+            btns[k].classList.toggle('active', k === tab);
             if (k === tab) {
-                btns[k].style.color = '#2563eb';
-                btns[k].style.borderBottomColor = '#2563eb';
+                btns[k].style.color = '#7c3aed';
+                btns[k].style.borderBottomColor = '#7c3aed';
             } else {
                 btns[k].style.color = '#64748b';
                 btns[k].style.borderBottomColor = 'transparent';
@@ -751,6 +798,15 @@ function closeCreateBranchModal() {
     if (m) m.style.display = 'none';
 }
 
+function openDocumentModal() {
+    const m = document.getElementById('modalUploadDocument');
+    if (m) m.style.display = 'flex';
+}
+function closeDocumentModal() {
+    const m = document.getElementById('modalUploadDocument');
+    if (m) m.style.display = 'none';
+}
+
 let currentEditingBranch = null;
 
 function editBranch(branch) {
@@ -766,6 +822,16 @@ function editBranch(branch) {
     document.getElementById('editBranchTaxCode').value = branch.branch_tax_code || '';
     document.getElementById('editBranchCity').value = branch.branch_city || '';
     document.getElementById('editBranchHours').value = branch.operating_hours || '';
+    const contactEl = document.getElementById('editBranchContact');
+    if (contactEl) contactEl.value = branch.branch_contact_person || '';
+    const phoneEl = document.getElementById('editBranchPhone');
+    if (phoneEl) phoneEl.value = branch.branch_phone_number || '';
+    const emailEl = document.getElementById('editBranchEmail');
+    if (emailEl) emailEl.value = branch.branch_email_address || '';
+    const addrEl = document.getElementById('editBranchAddress');
+    if (addrEl) addrEl.value = branch.branch_address_line_1 || '';
+    const zipEl = document.getElementById('editBranchPostalCode');
+    if (zipEl) zipEl.value = branch.branch_postal_code || '';
 
     m.style.display = 'flex';
 }
@@ -890,6 +956,7 @@ Object.assign(window, {
     changeDirectoryPage,
     changeDirectoryPageSize,
     handleCompaniesDirectorySearch,
+    filterCompaniesByType,
     switchViewMode,
     selectCompanyForDetails,
     switchCompanySubTab,
@@ -900,6 +967,8 @@ Object.assign(window, {
     closeCreateCompanyModal,
     openCreateBranchModal,
     closeCreateBranchModal,
+    openDocumentModal,
+    closeDocumentModal,
     editBranch,
     closeEditBranchModal,
     handleDeleteFromEditBranchModal,
