@@ -157,15 +157,15 @@ a {
     display: contents;
 }
 
-/* Sidebar Styles */
+/* Sidebar Styles (Optimized for Low-Spec Integrated GPUs — Zero Gaussian Blur) */
 .sidebar {
     display: flex;
     height: 100%;
-    background-color: rgba(255, 255, 255, 0.4);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-right: var(--glass-border);
-    box-shadow: var(--glass-shadow);
+    background-color: #ffffff;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border-right: 1px solid #e2e8f0;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
     transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s ease;
     position: relative;
     z-index: 1020;
@@ -199,8 +199,8 @@ a {
     position: fixed;
     inset: 0;
     background-color: rgba(0, 0, 0, 0.2);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     z-index: 999;
     opacity: 0;
     visibility: hidden;
@@ -337,9 +337,9 @@ a {
     bottom: auto !important;
     right: auto !important;
     transform: translateY(-50%) translateX(-4px) !important;
-    background: rgba(15, 23, 42, 0.96);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: rgba(15, 23, 42, 0.98);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     color: #ffffff !important;
     font-family: var(--font-family, 'Poppins', sans-serif);
     font-size: 11px;
@@ -423,13 +423,13 @@ a {
     width: var(--panel-width);
     display: flex;
     flex-direction: column;
-    background-color: rgba(255, 255, 255, 0.4);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: var(--glass-border);
+    background-color: #ffffff;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: 1px solid #e2e8f0;
     border-radius: 16px;
     margin: 12px 12px 12px 0;
-    box-shadow: var(--glass-shadow);
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
     transition: width 0.3s ease, opacity 0.2s ease, margin 0.3s ease, border 0.3s ease;
     overflow: hidden;
 }
@@ -454,7 +454,7 @@ a {
 .workspace-icon {
     width: 40px;
     height: 40px;
-    background-color: rgba(255, 255, 255, 0.22);
+    background-color: rgba(255, 255, 255, 0.25);
     border: 1px solid rgba(255, 255, 255, 0.3);
     border-radius: 10px;
     display: flex;
@@ -462,8 +462,8 @@ a {
     align-items: center;
     font-size: 22px;
     flex-shrink: 0;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
@@ -639,12 +639,12 @@ a {
     bottom: calc(100% + 10px);
     left: 10px;
     right: 10px;
-    background: rgba(255, 255, 255, 0.98);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
+    background: #ffffff;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     border: 1px solid rgba(168, 85, 247, 0.25);
     border-radius: 16px;
-    box-shadow: 0 20px 40px -10px rgba(15, 23, 42, 0.22), 0 0 0 1px rgba(255, 255, 255, 0.9) inset;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
     padding: 10px;
     z-index: 9999;
     opacity: 0;
@@ -914,8 +914,8 @@ a {
     right: auto !important;
     transform: translateX(-50%) translateY(4px) !important;
     background: rgba(15, 23, 42, 0.94);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     color: #ffffff !important;
     font-family: var(--font-family, 'Poppins', sans-serif);
     font-size: 11px;
@@ -1420,8 +1420,8 @@ a {
     height: auto;
     border-bottom: var(--glass-border);
     background-color: rgba(255, 255, 255, 0.45);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     display: flex;
     align-items: center;
     padding: 10px 24px;
@@ -1457,8 +1457,8 @@ a {
     border-radius: 9px;
     border: 1px solid rgba(168, 85, 247, 0.22);
     background: linear-gradient(135deg, rgba(168, 85, 247, 0.12) 0%, rgba(236, 72, 153, 0.12) 100%);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     color: #9333ea;
     font-size: 16px;
     cursor: pointer;
@@ -1503,8 +1503,8 @@ a {
     right: auto !important;
     transform: translateX(-50%) translateY(-4px) !important;
     background: rgba(15, 23, 42, 0.94);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     color: #ffffff !important;
     font-family: var(--font-family, 'Poppins', sans-serif);
     font-size: 11px;
@@ -1858,8 +1858,8 @@ a {
     gap: 8px;
     padding: 6px 14px;
     background: rgba(255, 255, 255, 0.72);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     border: 1px solid rgba(226, 232, 240, 0.95);
     border-radius: 9999px;
     font-size: 12.5px;
@@ -2003,8 +2003,8 @@ a {
     width: 100%;
     max-width: 440px;
     background: rgba(255, 255, 255, 0.72);
-    backdrop-filter: blur(28px) saturate(190%);
-    -webkit-backdrop-filter: blur(28px) saturate(190%);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     border: 1px solid rgba(255, 255, 255, 0.95);
     box-shadow: 
         0 24px 60px -12px rgba(15, 23, 42, 0.12),
@@ -2094,8 +2094,8 @@ a {
     font-size: 12.5px;
     line-height: 1.4;
     font-weight: 500;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
 }
 
 .login-alert i {
@@ -2443,8 +2443,8 @@ a {
 
 .hr-metric-card {
     background: rgba(255, 255, 255, 0.90);
-    backdrop-filter: blur(24px) saturate(180%);
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     border: 1px solid rgba(255, 255, 255, 0.95);
     border-radius: 16px;
     padding: 18px 20px;
@@ -2626,8 +2626,8 @@ a {
 .po-filter-pills-bar,
 .rfq-filter-pills-bar {
     background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     border: 1px solid #e2e8f0;
     border-radius: 10px !important;
     padding: 8px 14px !important;
@@ -2917,8 +2917,8 @@ a {
     border-radius: 10px;
     border: 1px solid rgba(203, 213, 225, 0.8);
     background: rgba(255, 255, 255, 0.75);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     color: #0f172a;
     outline: none;
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
@@ -2963,8 +2963,8 @@ a {
 
 .hr-btn-secondary {
     background: rgba(255, 255, 255, 0.65);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     color: #334155;
     border: 1px solid rgba(255, 255, 255, 0.85);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
@@ -3014,8 +3014,8 @@ a {
 .hr-card,
 .hr-table-card {
     background: rgba(255, 255, 255, 0.90);
-    backdrop-filter: blur(24px) saturate(180%);
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     border: 1px solid rgba(255, 255, 255, 0.95);
     border-radius: 18px;
     box-shadow: 0 10px 32px rgba(148, 163, 184, 0.08), 0 2px 8px rgba(0, 0, 0, 0.02), inset 0 1px 1.5px rgba(255, 255, 255, 0.95);
@@ -3307,8 +3307,8 @@ th.sortable.sorted-desc .sort-badge.desc,
     z-index: 10;
     padding: 10px 20px;
     background: rgba(255, 255, 255, 0.96);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     border-top: 1px solid rgba(226, 232, 240, 0.9);
     box-shadow: 0 -2px 12px rgba(15, 23, 42, 0.06);
     display: flex;
@@ -3370,8 +3370,8 @@ th.sortable.sorted-desc .sort-badge.desc,
     font-weight: 600 !important;
     color: #0f172a !important;
     background: rgba(255, 255, 255, 0.90) !important;
-    backdrop-filter: blur(16px) !important;
-    -webkit-backdrop-filter: blur(16px) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
     border: 1px solid rgba(203, 213, 225, 0.9) !important;
     border-radius: 8px !important;
     outline: none !important;
@@ -3585,8 +3585,8 @@ select,
 .form-select,
 .form-control:is(select) {
     background: rgba(255, 255, 255, 0.90) !important;
-    backdrop-filter: blur(24px) saturate(180%) !important;
-    -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
     border: 1px solid rgba(203, 213, 225, 0.9) !important;
     border-radius: 11px !important;
     color: #0f172a !important;
@@ -3627,8 +3627,8 @@ select option {
 .hr-dropdown-menu,
 .custom-dropdown-menu {
     background: rgba(255, 255, 255, 0.90) !important;
-    backdrop-filter: blur(28px) saturate(190%) !important;
-    -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
     border: 1px solid rgba(255, 255, 255, 0.95) !important;
     box-shadow: 0 20px 48px rgba(15, 23, 42, 0.12), 0 4px 16px rgba(168, 85, 247, 0.08), inset 0 1px 1.5px #ffffff !important;
     border-radius: 16px !important;
@@ -3638,8 +3638,8 @@ select option {
 .hr-dropdown-trigger,
 .dropdown-toggle-custom {
     background: rgba(255, 255, 255, 0.90) !important;
-    backdrop-filter: blur(20px) !important;
-    -webkit-backdrop-filter: blur(20px) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
     border: 1px solid rgba(226, 232, 240, 0.95) !important;
     box-shadow: 0 2px 8px rgba(148, 163, 184, 0.08), inset 0 1px 1px #ffffff !important;
     border-radius: 12px !important;
@@ -3850,8 +3850,8 @@ select option {
 
 .hr-chart-card {
     background: rgba(255, 255, 255, 0.58);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     border: 1px solid rgba(255, 255, 255, 0.75);
     border-radius: 18px;
     padding: 20px 22px;
@@ -3906,8 +3906,8 @@ select option {
     right: 0;
     bottom: 0;
     background: rgba(15, 23, 42, 0.45) !important;
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     display: flex !important;
     align-items: stretch !important;
     justify-content: flex-end !important;
@@ -4595,7 +4595,7 @@ select option {
 /* Printable Payslip Styling */
 .payslip-container {
     background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(20px);
+    backdrop-filter: none;
     border: 1px solid rgba(168, 85, 247, 0.25);
     border-radius: 18px;
     padding: 34px;
@@ -4653,8 +4653,8 @@ select option {
     align-items: center;
     gap: 8px;
     background: rgba(255, 255, 255, 0.90);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     border: 1px solid rgba(255, 255, 255, 0.90);
     border-radius: 9999px;
     padding: 7px 16px;
@@ -4697,8 +4697,8 @@ select option {
     right: 0;
     min-width: 230px;
     background: rgba(255, 255, 255, 0.90);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     border: 1px solid rgba(255, 255, 255, 0.85);
     border-radius: 16px;
     box-shadow: 0 20px 48px rgba(148, 163, 184, 0.18), 0 4px 12px rgba(168, 85, 247, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.95);
@@ -4802,8 +4802,8 @@ select option {
 
 .hr-kpi-card {
     background: rgba(255, 255, 255, 0.90);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     border-radius: 16px;
     border: 1px solid rgba(255, 255, 255, 0.9);
     padding: 16px 18px;
@@ -5050,8 +5050,8 @@ select option {
 /* 2. Attention Required Banner */
 .hr-attention-banner {
     background: linear-gradient(135deg, rgba(255, 241, 242, 0.90) 0%, rgba(255, 245, 245, 0.92) 50%, rgba(253, 242, 248, 0.90) 100%);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     border: 1px solid rgba(254, 205, 211, 0.8);
     border-radius: 16px;
     padding: 12px 18px;
@@ -5108,8 +5108,8 @@ select option {
 
 .hr-attention-card {
     background: rgba(255, 255, 255, 0.90);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     border-radius: 12px;
     padding: 8px 14px;
     display: flex;
@@ -5208,8 +5208,8 @@ select option {
 
 .hr-dash-card {
     background: rgba(255, 255, 255, 0.90);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     border-radius: 16px;
     border: 1px solid rgba(255, 255, 255, 0.9);
     padding: 18px 20px;
@@ -5531,8 +5531,8 @@ select option {
 /* Common Card Base - Clean Frosted Glassmorphism */
 .hr-bento-card {
     background: rgba(255, 255, 255, 0.84);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     border: 1px solid rgba(255, 255, 255, 0.95);
     border-radius: 20px;
     padding: 20px 22px;
@@ -5628,8 +5628,8 @@ select option {
 
 .hr-bento-kpi-card {
     background: rgba(255, 255, 255, 0.84);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     border: 1px solid rgba(255, 255, 255, 0.95);
     border-radius: 20px;
     padding: 18px 20px;
@@ -6419,8 +6419,8 @@ select option {
 /* Quote Card with Plant/Interior Aesthetic */
 .hr-quote-card {
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.88) 0%, rgba(248, 250, 252, 0.75) 100%);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     border: 1px solid rgba(255, 255, 255, 0.95);
     border-radius: 20px;
     padding: 22px 24px;
@@ -7413,8 +7413,8 @@ body > .hr-custom-select-menu {
 
 .hr-tabs-wrapper {
     background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     border: 1px solid rgba(226, 232, 240, 0.9);
     border-radius: 10px;
     padding: 3px 5px;
@@ -7639,8 +7639,8 @@ body > .hr-custom-select-menu {
     left: 0;
     min-width: 220px;
     background: rgba(255, 255, 255, 0.98);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     border: 1px solid rgba(226, 232, 240, 0.95);
     border-radius: 14px;
     padding: 6px;
@@ -8063,8 +8063,8 @@ body > .hr-custom-select-menu {
     width: 100vw;
     height: 100vh;
     background: rgba(15, 23, 42, 0.45);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     z-index: 1000;
     opacity: 0;
     visibility: hidden;
@@ -9011,8 +9011,8 @@ body > .hr-custom-select-menu {
     border-radius: 10px;
     border: 1px solid rgba(168, 85, 247, 0.22);
     background: linear-gradient(135deg, rgba(168, 85, 247, 0.12) 0%, rgba(236, 72, 153, 0.12) 100%);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     color: #9333ea;
     font-size: 16px;
     cursor: pointer;
@@ -9093,8 +9093,8 @@ body > .hr-custom-select-menu {
     border-radius: 9px;
     border: 1px solid rgba(168, 85, 247, 0.22);
     background: linear-gradient(135deg, rgba(168, 85, 247, 0.12) 0%, rgba(236, 72, 153, 0.12) 100%);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     color: #9333ea;
     font-size: 16px;
     cursor: pointer;
@@ -9165,8 +9165,8 @@ body > .hr-custom-select-menu {
     display: inline-flex;
     align-items: center;
     background: rgba(255, 255, 255, 0.75);
-    backdrop-filter: blur(16px) saturate(180%);
-    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     border: 1px solid rgba(203, 213, 225, 0.85);
     border-radius: 8px;
     height: 31px;
@@ -9272,8 +9272,8 @@ body > .hr-custom-select-menu {
     display: flex;
     align-items: center;
     background: rgba(255, 255, 255, 0.65);
-    backdrop-filter: blur(16px) saturate(180%);
-    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     border: 1px solid rgba(255, 255, 255, 0.85);
     border-radius: 8px;
     padding: 0 10px;
@@ -9377,8 +9377,8 @@ body > .hr-custom-select-menu {
     font-weight: 500;
     color: #1e293b;
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.88) 0%, rgba(253, 242, 248, 0.72) 45%, rgba(243, 232, 255, 0.72) 100%);
-    backdrop-filter: blur(14px) saturate(180%);
-    -webkit-backdrop-filter: blur(14px) saturate(180%);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     border: 1px solid rgba(168, 85, 247, 0.3);
     border-radius: 6px;
     padding: 3px 9px;
@@ -9433,8 +9433,8 @@ body > .hr-custom-select-menu {
 
 .hr-clear-all-chips-btn {
     background: linear-gradient(135deg, rgba(236, 72, 153, 0.1) 0%, rgba(168, 85, 247, 0.14) 100%);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     border: 1px solid rgba(236, 72, 153, 0.3);
     font-size: 12px;
     font-weight: 600;
@@ -9596,8 +9596,8 @@ body > .hr-custom-select-menu {
     font-weight: 600;
     color: #475569;
     background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(12px) saturate(160%);
-    -webkit-backdrop-filter: blur(12px) saturate(160%);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     border: 1px solid rgba(203, 213, 225, 0.7);
     border-radius: 20px;
     cursor: pointer;
@@ -9636,7 +9636,7 @@ body > .hr-custom-select-menu {
     padding: 14px 16px !important;
     border-radius: 14px !important;
     background: rgba(255, 255, 255, 0.78) !important;
-    backdrop-filter: blur(14px) saturate(180%) !important;
+    backdrop-filter: none !important;
     border: 1px solid rgba(226, 232, 240, 0.9) !important;
     box-shadow: 0 4px 14px rgba(168, 85, 247, 0.04) !important;
     margin-bottom: 0 !important;
@@ -9741,8 +9741,8 @@ body > .hr-custom-select-menu {
 /* Standalone Date Input in Card: Native, Single Border, No Double-Box */
 .hr-glass-date-input {
     background: rgba(255, 255, 255, 0.72) !important;
-    backdrop-filter: blur(12px) saturate(160%) !important;
-    -webkit-backdrop-filter: blur(12px) saturate(160%) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
     border: 1px solid rgba(203, 213, 225, 0.85) !important;
     border-radius: 6px !important;
     height: 31px !important;
@@ -9860,8 +9860,8 @@ body > .hr-custom-select-menu {
 .hr-glass-select,
 .hr-layout-card .hr-custom-select-trigger {
     background: rgba(255, 255, 255, 0.72) !important;
-    backdrop-filter: blur(12px) saturate(160%) !important;
-    -webkit-backdrop-filter: blur(12px) saturate(160%) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
     border: 1px solid rgba(203, 213, 225, 0.85) !important;
     border-radius: 8px !important;
     height: 35px !important;

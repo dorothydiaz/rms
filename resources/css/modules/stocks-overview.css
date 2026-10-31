@@ -67,7 +67,7 @@
     border: 1px solid var(--stk-glass-border);
     border-radius: 16px;
     box-shadow: var(--stk-glass-shadow);
-    backdrop-filter: blur(12px);
+    backdrop-filter: none;
 }
 
 .stk-header-title-box {
@@ -729,7 +729,7 @@
     top: 0;
     z-index: 10;
     background: rgba(248, 250, 252, 0.97);
-    backdrop-filter: blur(8px);
+    backdrop-filter: none;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
 }
 
@@ -1212,7 +1212,7 @@
     position: fixed;
     inset: 0;
     background: rgba(15, 23, 42, 0.4);
-    backdrop-filter: blur(4px);
+    backdrop-filter: none;
     z-index: 998;
     opacity: 0;
     visibility: hidden;

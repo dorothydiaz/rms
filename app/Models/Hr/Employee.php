@@ -193,27 +193,79 @@ class Employee extends Model
         return count($this->all_department_ids) > 1;
     }
 
+    protected static ?\Illuminate\Support\Collection $cachedDeptsById = null;
+    protected static ?\Illuminate\Support\Collection $cachedBranchesById = null;
+    protected static ?\Illuminate\Support\Collection $cachedPositionsById = null;
+
+    public static function flushLookupCache(): void
+    {
+        static::$cachedDeptsById = null;
+        static::$cachedBranchesById = null;
+        static::$cachedPositionsById = null;
+    }
+
+    protected static function getDepartmentMap(): \Illuminate\Support\Collection
+    {
+        if (static::$cachedDeptsById === null || !app()->runningInConsole() === false) {
+            static::$cachedDeptsById = Department::all()->keyBy('id');
+        }
+        return static::$cachedDeptsById;
+    }
+
+    protected static function getBranchMap(): \Illuminate\Support\Collection
+    {
+        if (static::$cachedBranchesById === null || !app()->runningInConsole() === false) {
+            static::$cachedBranchesById = Branch::all()->keyBy('id');
+        }
+        return static::$cachedBranchesById;
+    }
+
+    protected static function getPositionMap(): \Illuminate\Support\Collection
+    {
+        if (static::$cachedPositionsById === null || !app()->runningInConsole() === false) {
+            static::$cachedPositionsById = Position::all()->keyBy('id');
+        }
+        return static::$cachedPositionsById;
+    }
+
     public function getAssignedDepartmentNamesAttribute(): array
     {
         if (empty($this->all_department_ids)) {
             return $this->department ? [$this->department->name] : [];
         }
-        return Department::whereIn('id', $this->all_department_ids)->pluck('name')->toArray();
+        $map = static::getDepartmentMap();
+        return collect($this->all_department_ids)
+            ->map(fn ($id) => $map->get((int) $id)?->name)
+            ->filter()
+            ->values()
+            ->toArray();
     }
 
     public function assignedDepartments()
     {
-        return Department::whereIn('id', $this->all_department_ids)->get();
+        $map = static::getDepartmentMap();
+        return collect($this->all_department_ids)
+            ->map(fn ($id) => $map->get((int) $id))
+            ->filter()
+            ->values();
     }
 
     public function assignedBranches()
     {
-        return Branch::whereIn('id', $this->all_branch_ids)->get();
+        $map = static::getBranchMap();
+        return collect($this->all_branch_ids)
+            ->map(fn ($id) => $map->get((int) $id))
+            ->filter()
+            ->values();
     }
 
     public function assignedPositions()
     {
-        return Position::whereIn('id', $this->all_position_ids)->get();
+        $map = static::getPositionMap();
+        return collect($this->all_position_ids)
+            ->map(fn ($id) => $map->get((int) $id))
+            ->filter()
+            ->values();
     }
 
     public function getPayrollTypeAttribute(?string $value = null): string

@@ -22,6 +22,7 @@
 @endpush
 
 @push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
     @vite(['resources/js/modules/hr-dashboard.js'])
 @endpush
 

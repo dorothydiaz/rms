@@ -51,13 +51,21 @@ class PeopleController extends Controller
             });
         }
 
-        // Summary Statistics Cards
+        // Summary Statistics Cards (Consolidated into a single SQL query)
+        $rawCounts = (clone $baseQuery)->selectRaw("
+            COUNT(*) as total,
+            SUM(CASE WHEN employee_employment_status = 'Active' THEN 1 ELSE 0 END) as active,
+            SUM(CASE WHEN employee_employment_status = 'Probationary' THEN 1 ELSE 0 END) as probationary,
+            SUM(CASE WHEN employee_employment_status = 'On Leave' THEN 1 ELSE 0 END) as on_leave,
+            SUM(CASE WHEN employee_employment_status IN ('Resigned', 'Terminated', 'Retired') THEN 1 ELSE 0 END) as separated
+        ")->first();
+
         $counts = [
-            'total' => (clone $baseQuery)->count(),
-            'active' => (clone $baseQuery)->where('employment_status', 'Active')->count(),
-            'probationary' => (clone $baseQuery)->where('employment_status', 'Probationary')->count(),
-            'on_leave' => (clone $baseQuery)->where('employment_status', 'On Leave')->count(),
-            'separated' => (clone $baseQuery)->whereIn('employment_status', ['Resigned', 'Terminated', 'Retired'])->count(),
+            'total' => (int) ($rawCounts->total ?? 0),
+            'active' => (int) ($rawCounts->active ?? 0),
+            'probationary' => (int) ($rawCounts->probationary ?? 0),
+            'on_leave' => (int) ($rawCounts->on_leave ?? 0),
+            'separated' => (int) ($rawCounts->separated ?? 0),
         ];
 
         if ($request->filled('department_id')) {
@@ -130,7 +138,7 @@ class PeopleController extends Controller
             if ($c) $filterContext = ['type' => $c->type ?? 'Company / Agency', 'name' => $c->name, 'code' => $c->code, 'id' => $c->id];
         }
 
-        $perPage = (int) $request->get('per_page', 100);
+        $perPage = (int) $request->get('per_page', 25);
         $employees = $query->orderBy('created_at', 'desc')->paginate($perPage)->withQueryString();
         $branches = Branch::where('is_active', true)->orderBy('name')->get();
         $departments = Department::orderBy('name')->get();

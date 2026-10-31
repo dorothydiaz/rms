@@ -1510,43 +1510,54 @@ function filterMatrixByCategory() {
 }
 
 /**
- * Levenshtein distance for fuzzy employee search.
- * Returns the edit-distance between two strings.
+ * Levenshtein distance for fuzzy employee search (Two-row 1D array O(min(M,N)) memory).
+ * Returns the edit-distance between two strings with zero 2D matrix GC pressure.
  */
 function _levenshtein(a, b) {
-    const m = a.length, n = b.length;
-    const dp = Array.from({ length: m + 1 }, (_, i) =>
-        Array.from({ length: n + 1 }, (_, j) => (i === 0 ? j : j === 0 ? i : 0))
-    );
-    for (let i = 1; i <= m; i++) {
-        for (let j = 1; j <= n; j++) {
-            dp[i][j] = a[i-1] === b[j-1]
-                ? dp[i-1][j-1]
-                : 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
+    if (a === b) return 0;
+    if (!a.length) return b.length;
+    if (!b.length) return a.length;
+
+    let v0 = new Array(b.length + 1);
+    let v1 = new Array(b.length + 1);
+    for (let i = 0; i <= b.length; i++) v0[i] = i;
+
+    for (let i = 0; i < a.length; i++) {
+        v1[0] = i + 1;
+        for (let j = 0; j < b.length; j++) {
+            const cost = a[i] === b[j] ? 0 : 1;
+            v1[j + 1] = Math.min(v1[j] + 1, v0[j + 1] + 1, v0[j] + cost);
         }
+        for (let j = 0; j <= b.length; j++) v0[j] = v1[j];
     }
-    return dp[m][n];
+    return v0[b.length];
 }
 
 /**
  * Fuzzy match: returns true if query loosely matches any token in the haystack.
- * Allows exact substring OR Levenshtein distance ≤ floor(token.length/4)+1.
+ * Allows exact substring OR Levenshtein distance ≤ floor(token.length/4)+1 (gated to qLen >= 3).
  */
 function _fuzzyMatch(haystack, query) {
     if (!query) return true;
     if (haystack.includes(query)) return true;
-    const tokens = haystack.split(/[\s,._\-\/]+/).filter(Boolean);
     const qLen = query.length;
+    if (qLen < 3) return false;
+    const tokens = haystack.split(/[\s,._\-\/]+/).filter(Boolean);
     for (const token of tokens) {
         if (token.length < 2) continue;
+        if (Math.abs(token.length - qLen) > 3) continue;
         const threshold = Math.floor(Math.min(token.length, qLen) / 4) + 1;
         if (_levenshtein(token, query) <= threshold) return true;
     }
     return false;
 }
 
+let _schedSearchDebounceTimer = null;
 function filterMatrixRowsBySearch() {
-    filterMatrixRows(true);
+    if (_schedSearchDebounceTimer) clearTimeout(_schedSearchDebounceTimer);
+    _schedSearchDebounceTimer = setTimeout(() => {
+        filterMatrixRows(true);
+    }, 200);
 }
 
 function clearLiveSearch() {

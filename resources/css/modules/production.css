@@ -123,8 +123,8 @@
 .hr-tabs-wrapper,
 .tabs-wrapper {
     background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     border: 1px solid rgba(226, 232, 240, 0.9);
     border-radius: 12px;
     padding: 4px 6px;
@@ -594,7 +594,7 @@
     right: 0;
     bottom: 0;
     background: rgba(15, 23, 42, 0.55);
-    backdrop-filter: blur(4px);
+    backdrop-filter: none;
     z-index: 1000;
     align-items: center;
     justify-content: center;

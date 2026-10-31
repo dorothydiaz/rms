@@ -235,8 +235,8 @@
 /* Cohesive Glassmorphic 8 Profile Tabs Bar */
 .hr-profile-nav-wrap {
     background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     border: 1px solid rgba(226, 232, 240, 0.9);
     border-radius: 14px;
     padding: 6px;

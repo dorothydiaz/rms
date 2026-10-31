@@ -17,10 +17,10 @@
     <!-- Phosphor Icons (Deferred for non-blocking render) -->
     <script src="https://unpkg.com/@phosphor-icons/web" defer></script>
 
-    <!-- Google Typography -->
+    <!-- Google Typography (Pruned to essential weights for Low-Spec Performance) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@300;400;500;600;700;800;900&family=Outfit:wght@500;600;700;800&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@600;700&family=Outfit:wght@600&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
     
     @stack('styles')
 </head>
@@ -79,10 +79,8 @@
     <!-- Default Landing Location Modal -->
     <x-default-landing-modal />
 
-    <!-- SweetAlert2 (Deferred for non-blocking render) -->
+    <!-- SweetAlert2 (Deferred for non-blocking render; kept global for system-wide dialogs) -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
-    <!-- Chart.js for Analytics (Deferred) -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
     <!-- Client Interactive JS (Cached with filemtime for instant 0ms 304 reloads) -->
     <script src="{{ asset('assets/js/script.js') }}?v={{ file_exists(public_path('assets/js/script.js')) ? filemtime(public_path('assets/js/script.js')) : '1.0' }}"></script>
     <!-- Universal UOM Registry & Cross-Module Hydration Engine -->

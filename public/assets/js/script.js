@@ -1037,11 +1037,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
             updateOptions();
 
-            // Observe dynamic option changes in native select
+            // Observe direct option list changes in native select (coalesced via rAF for Low-Spec CPU)
+            let selectRafId = null;
             const selectObserver = new MutationObserver(() => {
-                updateOptions();
+                if (selectRafId) cancelAnimationFrame(selectRafId);
+                selectRafId = requestAnimationFrame(() => {
+                    updateOptions();
+                    selectRafId = null;
+                });
             });
-            selectObserver.observe(select, { childList: true, subtree: true });
+            selectObserver.observe(select, { childList: true });
 
             // Listen for external change events on native select to update trigger label
             select.addEventListener('change', () => {
