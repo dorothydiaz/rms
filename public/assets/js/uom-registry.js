@@ -500,10 +500,19 @@
              */
             function updateTriggerDisplay() {
                 const uom = self.get(selectedCode);
-                if (!selectedCode || !uom) {
+                if (!selectedCode) {
                     trigger.innerHTML = `
                         <div class="uom-trigger-content">
                             <span class="uom-trigger-placeholder">${escapeHtml(placeholder)}</span>
+                        </div>
+                        <i class="ph ph-caret-down uom-trigger-arrow"></i>
+                    `;
+                    return;
+                }
+                if (!uom) {
+                    trigger.innerHTML = `
+                        <div class="uom-trigger-content">
+                            <span class="uom-code-pill cat-OTHER">${escapeHtml(selectedCode)}</span>
                         </div>
                         <i class="ph ph-caret-down uom-trigger-arrow"></i>
                     `;

@@ -37,15 +37,125 @@ class InventoryController extends Controller
     }
 
     /**
-     * Stocks Overview - Live inventory balances and audit ledger
+     * Stocks Overview - Live inventory balances, multi-warehouse tracking and audit ledger
      */
     public function stocksOverview(Request $request): View
     {
+        $enriched = $this->getEnrichedStocksOverviewData();
+
+        return view('inventory.stocks-overview', [
+            'initialProducts' => $enriched['products'],
+            'initialCategories' => $enriched['categories'],
+            'initialLedger' => $enriched['ledger'],
+            'initialWarehouses' => $enriched['warehouses'],
+            'initialStorageAreas' => $enriched['storageAreas'],
+        ]);
+    }
+
+    /**
+     * API: Stocks Overview Live Payload
+     */
+    public function apiGetStocksOverviewData(): JsonResponse
+    {
+        $enriched = $this->getEnrichedStocksOverviewData();
+        $products = $enriched['products'];
+
+        $totalItems = $products->count();
+        $totalValuation = $products->sum(function ($p) {
+            return (float) $p->current_stock * (float) $p->cost_price;
+        });
+        $lowStockCount = $products->filter(function ($p) {
+            return (float) $p->current_stock <= (float) $p->min_stock;
+        })->count();
+        $outOfStockCount = $products->filter(function ($p) {
+            return (float) $p->current_stock <= 0;
+        })->count();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'products' => $products,
+                'categories' => $enriched['categories'],
+                'stocksLedger' => $enriched['ledger'],
+                'warehouses' => $enriched['warehouses'],
+                'storageAreas' => $enriched['storageAreas'],
+                'stats' => [
+                    'totalItems' => $totalItems,
+                    'totalValuation' => $totalValuation,
+                    'lowStockCount' => $lowStockCount,
+                    'outOfStockCount' => $outOfStockCount,
+                ],
+            ],
+        ]);
+    }
+
+    /**
+     * Enterprise Stocks Aggregator: Computes multi-warehouse stock balances,
+     * location-specific bin holdings, and inbound open Purchase Order demand.
+     */
+    private function getEnrichedStocksOverviewData(): array
+    {
         $products = InventoryItem::where('is_active', true)->orderBy('name')->get();
         $categories = InventoryCategory::where('is_active', true)->orderBy('name')->get();
-        $ledger = StockLedger::orderByDesc('id')->take(50)->get();
+        $ledger = StockLedger::orderByDesc('id')->take(100)->get();
+        $warehouses = self::getDefaultWarehousesPayload();
+        $storageAreas = self::getDefaultStorageAreasPayload();
 
-        // Production movements aggregated per SKU
+        // 1. Open Purchase Orders: calculate Inbound PO demand per SKU and per Warehouse
+        $openPos = PurchaseOrder::with('items')
+            ->whereIn('status', ['Issued', 'Approved', 'Partially Received', 'Ready to Receive', 'Draft'])
+            ->get();
+
+        $poInboundBySku = [];
+        $openPosBySku = [];
+
+        foreach ($openPos as $po) {
+            $poWhId = 'WH-MAIN';
+            $poLoc = strtolower($po->delivery_location ?? '');
+            foreach ($warehouses as $wh) {
+                if (str_contains($poLoc, strtolower($wh['id'])) || str_contains($poLoc, strtolower($wh['code'])) || str_contains($poLoc, strtolower($wh['name']))) {
+                    $poWhId = $wh['id'];
+                    break;
+                }
+            }
+
+            foreach ($po->items as $pi) {
+                $ordered = (float) $pi->quantity;
+                $recv = (float) ($pi->received_quantity ?? 0);
+                $pending = max(0, $ordered - $recv);
+                if ($pending > 0) {
+                    $sku = $pi->sku;
+                    if (!isset($poInboundBySku[$sku])) {
+                        $poInboundBySku[$sku] = ['total' => 0.0, 'by_wh' => []];
+                        $openPosBySku[$sku] = [];
+                    }
+                    $poInboundBySku[$sku]['total'] += $pending;
+                    $poInboundBySku[$sku]['by_wh'][$poWhId] = ($poInboundBySku[$sku]['by_wh'][$poWhId] ?? 0.0) + $pending;
+
+                    $openPosBySku[$sku][] = [
+                        'po_number' => $po->po_number,
+                        'vendor_name' => $po->vendor_name,
+                        'order_date' => $po->order_date ? (is_string($po->order_date) ? $po->order_date : $po->order_date->format('Y-m-d')) : null,
+                        'expected_delivery' => $po->expected_delivery ? (is_string($po->expected_delivery) ? $po->expected_delivery : $po->expected_delivery->format('Y-m-d')) : null,
+                        'warehouse_id' => $poWhId,
+                        'pending_qty' => $pending,
+                    ];
+                }
+            }
+        }
+
+        // 2. Ledger balances aggregated per SKU and per Storage Location
+        $ledgerLocationSums = StockLedger::selectRaw('sku, storage_location, SUM(quantity_change) as net_qty')
+            ->groupBy('sku', 'storage_location')
+            ->get()
+            ->groupBy('sku');
+
+        $locationToWhMap = [];
+        foreach ($storageAreas as $area) {
+            $locationToWhMap[strtolower(trim($area['name']))] = $area['warehouse_id'];
+        }
+
+        // 3. Production and Waste/Expiry movements aggregated per SKU
         $productionIn = StockLedger::where('transaction_type', 'PRODUCTION_IN')
             ->selectRaw('sku, SUM(quantity_change) as total_produced')
             ->groupBy('sku')
@@ -56,7 +166,6 @@ class InventoryController extends Controller
             ->groupBy('sku')
             ->pluck('total_consumed', 'sku');
 
-        // Waste & Expiry movements aggregated per SKU
         $wasteAggregates = WasteRecordItem::whereHas('wasteRecord', function ($q) {
                 $q->where('status', '!=', 'CANCELLED');
             })
@@ -69,26 +178,120 @@ class InventoryController extends Controller
             ->get()
             ->keyBy('sku');
 
-        $products = $products->map(function ($p) use ($productionIn, $productionOut, $wasteAggregates) {
-            $produced = (float) ($productionIn[$p->sku] ?? 0);
-            $consumed = (float) ($productionOut[$p->sku] ?? 0);
+        // 4. Enrich each product
+        $products = $products->map(function ($p) use ($poInboundBySku, $openPosBySku, $ledgerLocationSums, $locationToWhMap, $warehouses, $productionIn, $productionOut, $wasteAggregates) {
+            $sku = $p->sku;
+            $currentStock = (float) $p->current_stock;
+
+            $produced = (float) ($productionIn[$sku] ?? 0);
+            $consumed = (float) ($productionOut[$sku] ?? 0);
             $p->production_produced = $produced;
             $p->production_consumed = $consumed;
             $p->production_net = $produced - $consumed;
 
-            $wasteInfo = $wasteAggregates[$p->sku] ?? null;
+            $wasteInfo = $wasteAggregates[$sku] ?? null;
             $p->waste_total = (float) ($wasteInfo->total_waste ?? 0);
             $p->waste_expired = (float) ($wasteInfo->total_expired ?? 0);
             $p->waste_damaged = (float) ($wasteInfo->total_damaged ?? 0);
             $p->waste_cost = (float) ($wasteInfo->total_cost ?? 0);
+
+            $inboundInfo = $poInboundBySku[$sku] ?? ['total' => 0.0, 'by_wh' => []];
+            $p->inbound_po_qty = (float) $inboundInfo['total'];
+            $p->open_pos = $openPosBySku[$sku] ?? [];
+
+            $whBreakdown = [];
+            foreach ($warehouses as $wh) {
+                $whBreakdown[$wh['id']] = [
+                    'warehouse_id' => $wh['id'],
+                    'code' => $wh['code'],
+                    'name' => $wh['name'],
+                    'on_hand' => 0.0,
+                    'inbound_po' => (float) ($inboundInfo['by_wh'][$wh['id']] ?? 0.0),
+                    'locations' => [],
+                ];
+            }
+
+            $hasLedgerEntries = false;
+            if (isset($ledgerLocationSums[$sku])) {
+                foreach ($ledgerLocationSums[$sku] as $locSum) {
+                    $locName = trim($locSum->storage_location ?? '');
+                    if (empty($locName)) continue;
+                    $qty = (float) $locSum->net_qty;
+                    if ($qty <= 0) continue;
+                    $hasLedgerEntries = true;
+
+                    $whId = $locationToWhMap[strtolower($locName)] ?? null;
+                    if (!$whId) {
+                        $locLower = strtolower($locName);
+                        if (str_contains($locLower, 'cold') || str_contains($locLower, 'freezer') || str_contains($locLower, 'meat')) {
+                            $whId = 'WH-COLD';
+                        } elseif (str_contains($locLower, 'bgc') || str_contains($locLower, 'pantry') || str_contains($locLower, 'boh')) {
+                            $whId = 'WH-BGC';
+                        } else {
+                            $whId = 'WH-MAIN';
+                        }
+                    }
+
+                    if (isset($whBreakdown[$whId])) {
+                        $whBreakdown[$whId]['on_hand'] += $qty;
+                        $whBreakdown[$whId]['locations'][] = [
+                            'location_name' => $locName,
+                            'qty' => $qty,
+                        ];
+                    }
+                }
+            }
+
+            $allocatedTotal = array_sum(array_column($whBreakdown, 'on_hand'));
+            if ($currentStock > $allocatedTotal || !$hasLedgerEntries) {
+                $unallocated = max(0, $currentStock - $allocatedTotal);
+                $defLoc = $p->storage_location ?: 'Central Commissary - Dock 1';
+                $defWh = 'WH-MAIN';
+                $defLower = strtolower($defLoc);
+                if (str_contains($defLower, 'cold') || str_contains($defLower, 'freezer') || str_contains($defLower, 'meat') || str_contains(strtolower($p->category ?? ''), 'chilled') || str_contains(strtolower($p->category ?? ''), 'frozen')) {
+                    $defWh = 'WH-COLD';
+                } elseif (str_contains($defLower, 'bgc') || str_contains($defLower, 'pantry')) {
+                    $defWh = 'WH-BGC';
+                }
+
+                if (isset($whBreakdown[$defWh])) {
+                    $whBreakdown[$defWh]['on_hand'] += $unallocated;
+                    $whBreakdown[$defWh]['locations'][] = [
+                        'location_name' => $p->storage_location ?: 'Stock Zone A (Dry Goods)',
+                        'qty' => $unallocated,
+                    ];
+                }
+            }
+
+            $primaryWh = 'WH-MAIN';
+            $maxStockWh = -1;
+            $primaryLoc = $p->storage_location ?: 'Stock Zone A';
+
+            foreach ($whBreakdown as $wId => $wData) {
+                if ($wData['on_hand'] > $maxStockWh) {
+                    $maxStockWh = $wData['on_hand'];
+                    $primaryWh = $wId;
+                    if (!empty($wData['locations'])) {
+                        $primaryLoc = $wData['locations'][0]['location_name'];
+                    }
+                }
+            }
+
+            $p->warehouse_breakdown = $whBreakdown;
+            $p->primary_warehouse = $primaryWh;
+            $p->primary_location = $primaryLoc;
+            $p->available_to_promise = max(0, $currentStock + (float) $p->inbound_po_qty);
+
             return $p;
         });
 
-        return view('inventory.stocks-overview', [
-            'initialProducts' => $products,
-            'initialCategories' => $categories,
-            'initialLedger' => $ledger,
-        ]);
+        return [
+            'products' => $products,
+            'categories' => $categories,
+            'ledger' => $ledger,
+            'warehouses' => $warehouses,
+            'storageAreas' => $storageAreas,
+        ];
     }
 
     /**
@@ -101,11 +304,26 @@ class InventoryController extends Controller
         $products = InventoryItem::where('is_active', true)->orderBy('name')->get();
         $recentReceipts = GoodsReceipt::with('items')->orderByDesc('id')->take(200)->get();
 
+        // Active company name for the printable GRN header (falls back to app name)
+        $companyName = config('app.name', 'RMS');
+        try {
+            $activeCompany = app(\App\Services\CompanyBranchContext::class)->getActiveCompany();
+            if ($activeCompany) {
+                $companyName = $activeCompany->company_trade_name ?: ($activeCompany->company_legal_name ?: $companyName);
+            }
+        } catch (\Throwable $e) {
+            // Context unavailable (e.g. no session) — keep fallback
+        }
+
         return view('inventory.stock-in', [
+            'companyName' => $companyName,
             'initialPurchaseOrders' => $purchaseOrders,
             'initialVendors' => $vendors,
             'initialProducts' => $products,
             'initialReceipts' => $recentReceipts,
+            'initialWarehouses' => self::getDefaultWarehousesPayload(),
+            'initialStorageAreas' => self::getDefaultStorageAreasPayload(),
+            'initialMovementTypes' => self::getDefaultMovementTypesPayload(),
         ]);
     }
 
@@ -126,91 +344,13 @@ class InventoryController extends Controller
                 'vendors' => $vendors,
                 'products' => $products,
                 'goodsReceipts' => $recentReceipts,
+                'warehouses' => self::getDefaultWarehousesPayload(),
+                'storageAreas' => self::getDefaultStorageAreasPayload(),
+                'movementTypes' => self::getDefaultMovementTypesPayload(),
             ],
         ]);
     }
 
-    /**
-     * API: Stocks Overview Live Payload
-     */
-    public function apiGetStocksOverviewData(): JsonResponse
-    {
-        $products = InventoryItem::where('is_active', true)->orderBy('name')->get();
-        $categories = \Illuminate\Support\Facades\Cache::remember('active_inventory_categories', 3600, function () {
-            return InventoryCategory::where('is_active', true)->orderBy('name')->get();
-        });
-        $ledger = StockLedger::orderByDesc('id')->take(100)->get();
-
-        // Production movements aggregated per SKU
-        $productionIn = StockLedger::where('transaction_type', 'PRODUCTION_IN')
-            ->selectRaw('sku, SUM(quantity_change) as total_produced')
-            ->groupBy('sku')
-            ->pluck('total_produced', 'sku');
-
-        $productionOut = StockLedger::where('transaction_type', 'PRODUCTION_OUT')
-            ->selectRaw('sku, SUM(ABS(quantity_change)) as total_consumed')
-            ->groupBy('sku')
-            ->pluck('total_consumed', 'sku');
-
-        // Waste & Expiry movements aggregated per SKU
-        $wasteAggregates = WasteRecordItem::whereHas('wasteRecord', function ($q) {
-                $q->where('status', '!=', 'CANCELLED');
-            })
-            ->selectRaw("sku,
-                SUM(quantity) as total_waste,
-                SUM(CASE WHEN reason_code LIKE '%Expire%' OR reason_code LIKE '%Shelf%' THEN quantity ELSE 0 END) as total_expired,
-                SUM(CASE WHEN reason_code NOT LIKE '%Expire%' AND reason_code NOT LIKE '%Shelf%' THEN quantity ELSE 0 END) as total_damaged,
-                SUM(total_cost) as total_cost")
-            ->groupBy('sku')
-            ->get()
-            ->keyBy('sku');
-
-        $products = $products->map(function ($p) use ($productionIn, $productionOut, $wasteAggregates) {
-            $produced = (float) ($productionIn[$p->sku] ?? 0);
-            $consumed = (float) ($productionOut[$p->sku] ?? 0);
-            $p->production_produced = $produced;
-            $p->production_consumed = $consumed;
-            $p->production_net = $produced - $consumed;
-
-            $wasteInfo = $wasteAggregates[$p->sku] ?? null;
-            $p->waste_total = (float) ($wasteInfo->total_waste ?? 0);
-            $p->waste_expired = (float) ($wasteInfo->total_expired ?? 0);
-            $p->waste_damaged = (float) ($wasteInfo->total_damaged ?? 0);
-            $p->waste_cost = (float) ($wasteInfo->total_cost ?? 0);
-            return $p;
-        });
-
-        // Calculate summary KPI figures
-        $totalItems = $products->count();
-        $totalValuation = $products->sum(function ($p) {
-            return (float) $p->current_stock * (float) $p->cost_price;
-        });
-        $lowStockCount = $products->filter(function ($p) {
-            return (float) $p->current_stock <= (float) $p->min_stock;
-        })->count();
-        $outOfStockCount = $products->filter(function ($p) {
-            return (float) $p->current_stock <= 0;
-        })->count();
-
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'products' => $products,
-                'categories' => $categories,
-                'stocksLedger' => $ledger,
-                'productionSummary' => [
-                    'produced' => $productionIn,
-                    'consumed' => $productionOut,
-                ],
-                'stats' => [
-                    'totalItems' => $totalItems,
-                    'totalValuation' => $totalValuation,
-                    'lowStockCount' => $lowStockCount,
-                    'outOfStockCount' => $outOfStockCount,
-                ],
-            ],
-        ]);
-    }
 
     /**
      * API: Receive Stock (PO fulfillment or Direct Receiving)
@@ -228,32 +368,37 @@ class InventoryController extends Controller
             'vendor_id' => 'nullable|string|max:100',
             'vendor_name' => 'required|string|max:255',
             'vendor_trade_name' => 'nullable|string|max:255',
+            'warehouse_id' => 'nullable|string|max:50',
+            'movement_type_id' => 'nullable|string|max:50',
             'delivery_slip' => 'nullable|string|max:100',
             'carrier' => 'nullable|string|max:255',
             'reason_code' => 'nullable|string|max:100',
             'delivery_location' => 'required|string|max:255',
-            'settlement_mode' => 'nullable|string|max:100',
-            'payment_method' => 'nullable|string|max:100',
-            'payment_ref' => 'nullable|string|max:100',
-            'amount_paid' => 'nullable|numeric|min:0',
-            'payment_date' => 'nullable|date',
-            'fund_source' => 'nullable|string|max:255',
-            'payment_remarks' => 'nullable|string|max:500',
-            'freight' => 'nullable|numeric|min:0',
-            'customs' => 'nullable|numeric|min:0',
-            'handling' => 'nullable|numeric|min:0',
+            'backorder_policy' => 'nullable|string|in:CREATE_BACKORDER,SHORT_CLOSE',
+            'intake_uuid' => 'nullable|string|max:100',
             'items' => 'required|array|min:1',
             'items.*.sku' => 'required|string|max:100',
             'items.*.name' => 'required|string|max:255',
             'items.*.unit' => 'nullable|string|max:50',
-            'items.*.purchasing_unit' => 'nullable|string|max:50',
             'items.*.uom_multiplier' => 'nullable|numeric|min:0.01',
             'items.*.received_qty' => 'required|numeric|min:0.001',
-            'items.*.unit_cost' => 'required|numeric|min:0',
+            'items.*.unit_cost' => 'nullable|numeric|min:0',
+            'items.*.storage_location' => 'nullable|string|max:255',
             'items.*.lot_number' => 'nullable|string|max:100',
             'items.*.expiry_date' => 'nullable|date',
             'items.*.notes' => 'nullable|string|max:500',
         ]);
+
+        // Idempotency Shield (Pillar 3 Rule 10)
+        if (!empty($validated['intake_uuid'])) {
+            $idempotencyKey = 'rms_intake_tx_' . $validated['intake_uuid'];
+            if (!\Illuminate\Support\Facades\Cache::add($idempotencyKey, true, 60)) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Intake already received and recorded (idempotent replay prevented).',
+                ]);
+            }
+        }
 
         return DB::transaction(function () use ($validated, $request) {
             $year = date('Y');
@@ -261,31 +406,14 @@ class InventoryController extends Controller
             $prefix = !empty($validated['po_number']) ? 'GRN' : 'DIR-REC';
             $grnNumber = sprintf('%s-%s-%04d', $prefix, $year, $count);
 
-            $freight = (float) ($validated['freight'] ?? 0);
-            $customs = (float) ($validated['customs'] ?? 0);
-            $handling = (float) ($validated['handling'] ?? 0);
-            $landedCosts = $freight + $customs + $handling;
-
-            $itemsSubtotal = 0.00;
-            foreach ($validated['items'] as $it) {
-                $qty = (float) $it['received_qty'];
-                $cost = (float) $it['unit_cost'];
-                $itemsSubtotal += ($qty * $cost);
-            }
-            $grossTotal = $itemsSubtotal + $landedCosts;
-
-            $amountPaid = (float) ($validated['amount_paid'] ?? 0);
-            $paymentStatus = ($amountPaid >= $grossTotal && $grossTotal > 0) ? 'Paid in Full / Cash Out' : ($amountPaid > 0 ? 'Partial Payment' : 'Unpaid / Credit');
-            $payRef = !empty($validated['payment_ref']) ? " (Ref: {$validated['payment_ref']})" : '';
-            $userRemarks = !empty($validated['payment_remarks']) ? " | Remarks: {$validated['payment_remarks']}" : '';
-
             $po = null;
             if (!empty($validated['po_number'])) {
                 $po = PurchaseOrder::where('po_number', $validated['po_number'])->lockForUpdate()->first();
             }
 
-            // Stamped native user identity
+            // Stamped native user identity (Pillar 4 Rule 15)
             $performedBy = auth()->user()->name ?? auth()->user()->email ?? 'Warehouse Logistics Supervisor';
+            $now = now();
 
             // Create Goods Receipt Header
             $receipt = GoodsReceipt::create([
@@ -297,77 +425,105 @@ class InventoryController extends Controller
                 'vendor_trade_name' => $validated['vendor_trade_name'] ?? null,
                 'delivery_slip_no' => $validated['delivery_slip'] ?? null,
                 'carrier_name' => $validated['carrier'] ?? null,
-                'reason_code' => $validated['reason_code'] ?? 'Standard PO Delivery',
+                'reason_code' => $validated['reason_code'] ?? ($po ? 'Standard PO Delivery' : 'Direct Inbound Intake'),
                 'delivery_location' => $validated['delivery_location'],
-                'settlement_mode' => $validated['settlement_mode'] ?? ($po ? 'PURCHASE_ORDER' : 'IMMEDIATE_COD'),
-                'payment_method' => $validated['payment_method'] ?? 'Trade Credit (Net 30/15)',
-                'payment_ref' => $validated['payment_ref'] ?? null,
-                'freight_cost' => $freight,
-                'customs_cost' => $customs,
-                'handling_cost' => $handling,
-                'total_landed_costs' => $landedCosts,
-                'items_subtotal' => $itemsSubtotal,
-                'gross_total' => $grossTotal,
-                'received_at' => now(),
+                'settlement_mode' => $po ? 'PURCHASE_ORDER' : 'IMMEDIATE_COD',
+                'payment_method' => 'Trade Credit (Net 30/15)',
+                'payment_ref' => null,
+                'freight_cost' => 0.00,
+                'customs_cost' => 0.00,
+                'handling_cost' => 0.00,
+                'total_landed_costs' => 0.00,
+                'items_subtotal' => 0.00,
+                'gross_total' => 0.00,
+                'received_at' => $now,
                 'received_by' => $performedBy,
                 'status' => 'COMPLETED',
-                'notes' => ($po ? "Fulfillment for PO {$po->po_number}" : "Direct inbound stock receiving") . $userRemarks,
+                'notes' => $po ? "Fulfillment for PO {$po->po_number}" : "Direct inbound stock receiving",
             ]);
 
-            // Process line items & update inventory / ledger atomically
+            // High-Performance Vectorized Batching (Pillar 2 Rule 5)
+            $skus = collect($validated['items'])->pluck('sku')->unique()->toArray();
+
+            // Pre-fetch all relevant inventory items with locks in 1 query
+            $inventoryItems = InventoryItem::whereIn('sku', $skus)->lockForUpdate()->get()->keyBy('sku');
+
+            // Pre-fetch all relevant PO lines with locks in 1 query
+            $poItems = collect();
+            if ($po) {
+                $poItems = PurchaseOrderItem::where('purchase_order_id', $po->id)
+                    ->whereIn('sku', $skus)
+                    ->lockForUpdate()
+                    ->get()
+                    ->keyBy('sku');
+            }
+
+            $receiptItemsToInsert = [];
+            $ledgerEntriesToInsert = [];
+            $itemsToSave = [];
+            $poItemsToSave = [];
+            $itemsSubtotal = 0.00;
+
             foreach ($validated['items'] as $itemData) {
                 $sku = trim($itemData['sku']);
                 $receivedQty = (float) $itemData['received_qty'];
+                if ($receivedQty <= 0) continue;
+
                 $multiplier = (float) ($itemData['uom_multiplier'] ?? 1.0);
                 if ($multiplier <= 0) $multiplier = 1.0;
                 $baseQty = $receivedQty * $multiplier;
-                $unitCost = (float) $itemData['unit_cost'];
-                $totalCost = $receivedQty * $unitCost;
 
-                // Lock the inventory item for atomic update
-                $inventoryItem = InventoryItem::where('sku', $sku)->lockForUpdate()->first();
-                if (!$inventoryItem) {
-                    $inventoryItem = InventoryItem::create([
+                // Resolve Inventory Item
+                $invItem = $inventoryItems->get($sku);
+                if (!$invItem) {
+                    $invItem = InventoryItem::create([
                         'sku' => $sku,
                         'name' => $itemData['name'],
                         'category' => 'Raw Ingredients',
                         'uom' => $itemData['unit'] ?? 'Kg',
-                        'cost_price' => $unitCost,
+                        'cost_price' => 0.00,
                         'selling_price' => 0.00,
                         'current_stock' => 0.00,
                         'min_stock' => 10.00,
                         'max_stock' => 100.00,
-                        'storage_location' => $validated['delivery_location'],
+                        'storage_location' => $itemData['storage_location'] ?? $validated['delivery_location'],
                         'is_active' => true,
                     ]);
+                    $inventoryItems->put($sku, $invItem);
                 }
 
-                $poItem = null;
-                if ($po) {
-                    $poItem = PurchaseOrderItem::where('purchase_order_id', $po->id)
-                        ->where('sku', $sku)
-                        ->lockForUpdate()
-                        ->first();
+                $unitCost = (float) ($invItem->cost_price ?? 0);
+                if (isset($itemData['unit_cost']) && is_numeric($itemData['unit_cost']) && (float) $itemData['unit_cost'] > 0) {
+                    $unitCost = (float) $itemData['unit_cost'];
+                    $invItem->cost_price = $unitCost;
+                }
+                $poItem = $poItems->get($sku);
+                if ($poItem && $poItem->unit_price > 0) {
+                    $unitCost = (float) $poItem->unit_price;
+                }
 
-                    if ($poItem) {
-                        $poItem->received_quantity += $receivedQty;
-                        if ($poItem->received_quantity >= $poItem->quantity) {
-                            $poItem->status = 'FULFILLED';
-                        } else {
-                            $poItem->status = 'PARTIAL';
-                        }
-                        $poItem->save();
+                $totalCost = round($receivedQty * $unitCost, 2);
+                $itemsSubtotal += $totalCost;
+
+                // Update PO Item in memory
+                if ($poItem) {
+                    $poItem->received_quantity = (float) $poItem->received_quantity + $receivedQty;
+                    if ($poItem->received_quantity >= (float) $poItem->quantity) {
+                        $poItem->status = 'FULFILLED';
+                    } else {
+                        $poItem->status = 'PARTIAL';
                     }
+                    $poItemsToSave[$poItem->id] = $poItem;
                 }
 
-                // 1. Create Goods Receipt Item
-                GoodsReceiptItem::create([
+                // Prepare Receipt Item row
+                $receiptItemsToInsert[] = [
                     'goods_receipt_id' => $receipt->id,
                     'purchase_order_item_id' => $poItem ? $poItem->id : null,
                     'sku' => $sku,
                     'item_name' => $itemData['name'],
-                    'uom' => $itemData['unit'] ?? $inventoryItem->uom,
-                    'purchasing_uom' => $itemData['purchasing_unit'] ?? $itemData['unit'] ?? $inventoryItem->uom,
+                    'uom' => $itemData['unit'] ?? $invItem->uom,
+                    'purchasing_uom' => $itemData['unit'] ?? $invItem->uom,
                     'uom_multiplier' => $multiplier,
                     'received_qty' => $receivedQty,
                     'base_qty' => $baseQty,
@@ -376,17 +532,23 @@ class InventoryController extends Controller
                     'lot_number' => $itemData['lot_number'] ?? null,
                     'expiry_date' => $itemData['expiry_date'] ?? null,
                     'notes' => $itemData['notes'] ?? null,
-                ]);
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
 
-                // 2. Master Ledger System (SYS_LEDGER) - Append-Only Immutable Record
-                $beforeQty = (float) $inventoryItem->current_stock;
+                // Prepare Master Ledger (SYS_LEDGER) immutable row
+                $beforeQty = (float) $invItem->current_stock;
                 $afterQty = $beforeQty + $baseQty;
+                $invItem->current_stock = $afterQty;
+                $itemsToSave[$invItem->id] = $invItem;
 
-                StockLedger::create([
+                $targetLocation = !empty($itemData['storage_location']) ? $itemData['storage_location'] : $validated['delivery_location'];
+
+                $ledgerEntriesToInsert[] = [
                     'transaction_uuid' => (string) Str::uuid(),
                     'sku' => $sku,
-                    'inventory_item_id' => $inventoryItem->id,
-                    'item_name' => $inventoryItem->name,
+                    'inventory_item_id' => $invItem->id,
+                    'item_name' => $invItem->name,
                     'transaction_type' => $po ? 'PURCHASE_RECEIPT' : 'DIRECT_RECEIVING',
                     'reference_type' => 'goods_receipts',
                     'reference_id' => $receipt->id,
@@ -398,21 +560,35 @@ class InventoryController extends Controller
                     'total_value' => round($baseQty * $unitCost, 2),
                     'batch_lot_no' => $itemData['lot_number'] ?? null,
                     'expiry_date' => $itemData['expiry_date'] ?? null,
-                    'storage_location' => $validated['delivery_location'],
+                    'storage_location' => $targetLocation,
                     'performed_by' => $performedBy,
-                    'notes' => "Dock intake under {$receipt->grn_number}" . ($po ? " (PO: {$po->po_number})" : ""),
-                    'created_at' => now(),
-                ]);
-
-                // 3. Update Current Physical Stock & Cost
-                $inventoryItem->current_stock = $afterQty;
-                if ($unitCost > 0) {
-                    $inventoryItem->cost_price = $unitCost;
-                }
-                $inventoryItem->save();
+                    'notes' => "Dock intake under {$receipt->grn_number}" . ($po ? " (PO: {$po->po_number})" : "") . " | Target: {$targetLocation}",
+                    'created_at' => $now,
+                ];
             }
 
-            // Update Purchase Order overall fulfillment status
+            // 1-Shot Batch Inserts
+            if (!empty($receiptItemsToInsert)) {
+                GoodsReceiptItem::insert($receiptItemsToInsert);
+            }
+            if (!empty($ledgerEntriesToInsert)) {
+                StockLedger::insert($ledgerEntriesToInsert);
+            }
+
+            // Bulk Save In-Memory Updated Models
+            foreach ($itemsToSave as $itSave) {
+                $itSave->save();
+            }
+            foreach ($poItemsToSave as $piSave) {
+                $piSave->save();
+            }
+
+            // Update receipt financials
+            $receipt->items_subtotal = $itemsSubtotal;
+            $receipt->gross_total = $itemsSubtotal;
+            $receipt->save();
+
+            // Update Purchase Order overall status with Backorder Policy
             if ($po) {
                 $allPoItems = PurchaseOrderItem::where('purchase_order_id', $po->id)->get();
                 $allFulfilled = $allPoItems->every(function ($it) {
@@ -422,7 +598,9 @@ class InventoryController extends Controller
                     return (float) $it->received_quantity > 0;
                 });
 
-                if ($allFulfilled) {
+                $policy = $validated['backorder_policy'] ?? 'CREATE_BACKORDER';
+
+                if ($allFulfilled || $policy === 'SHORT_CLOSE') {
                     $po->status = 'Fully Received';
                 } elseif ($anyReceived) {
                     $po->status = 'Partially Received';
@@ -433,16 +611,10 @@ class InventoryController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => "Successfully received into inventory. Voucher {$receipt->grn_number} created and posted to Stock Ledger.",
-                'data' => [
-                    'grn_number' => $receipt->grn_number,
-                    'po_number' => $receipt->po_number,
-                    'received_at' => $receipt->received_at->toIso8601String(),
-                    'gross_total' => $receipt->gross_total,
-                    'amount_paid' => $amountPaid,
-                    'balance_due' => max(0, $grossTotal - $amountPaid),
-                    'payment_status' => $paymentStatus,
-                    'items_count' => count($validated['items']),
-                ],
+                'grn_number' => $receipt->grn_number,
+                'po_number' => $receipt->po_number,
+                'received_at' => $receipt->received_at->toIso8601String(),
+                'items_count' => count($receiptItemsToInsert),
             ]);
         });
     }
@@ -2133,5 +2305,548 @@ class InventoryController extends Controller
                 'data' => ['wasteRecord' => $record],
             ]);
         });
+    }
+
+    /**
+     * Configuration Module 1: Warehouse & Storage Area
+     */
+    public function warehouseStorageAreas(): View
+    {
+        return view('inventory.warehouse-storage', [
+            'initialWarehouses' => $this->getDefaultWarehousesPayload(),
+            'initialStorageAreas' => $this->getDefaultStorageAreasPayload(),
+            'initialBoundaryAreas' => $this->getDefaultBoundaryAreasPayload(),
+        ]);
+    }
+
+    /**
+     * Configuration Module 2: Movement Type & Supply Flows
+     */
+    public function movementSupplyFlows(): View
+    {
+        $categories = InventoryCategory::orderBy('name')->pluck('name')->values()->toArray();
+        if (empty($categories)) {
+            $categories = ['Dry Goods & Grains', 'Chilled & Dairy', 'Frozen Proteins', 'Beverages & Syrups', 'Packaging & Disposables'];
+        }
+
+        $products = InventoryItem::orderBy('name')
+            ->limit(50)
+            ->get(['sku', 'name', 'category'])
+            ->toArray();
+
+        return view('inventory.movement-supply-flows', [
+            'initialWarehouses' => $this->getDefaultWarehousesPayload(),
+            'initialStorageAreas' => $this->getDefaultStorageAreasPayload(),
+            'initialBoundaryAreas' => $this->getDefaultBoundaryAreasPayload(),
+            'initialMovementTypes' => $this->getDefaultMovementTypesPayload(),
+            'initialSupplyFlows' => $this->getDefaultSupplyFlowsPayload(),
+            'initialFlowRules' => $this->getDefaultFlowRulesPayload(),
+            'initialCategories' => $categories,
+            'initialProducts' => $products,
+        ]);
+    }
+
+    /**
+     * JSON API: Get Warehouses, Physical Storage Areas & Boundary Areas
+     */
+    public function apiGetWarehousesAndAreas(): JsonResponse
+    {
+        return response()->json([
+            'success' => true,
+            'warehouses' => $this->getDefaultWarehousesPayload(),
+            'storageAreas' => $this->getDefaultStorageAreasPayload(),
+            'boundaryAreas' => $this->getDefaultBoundaryAreasPayload(),
+        ]);
+    }
+
+    /**
+     * JSON API: Get Movement Types, Supply Flows & Flow Rules
+     */
+    public function apiGetMovementSupplyFlows(): JsonResponse
+    {
+        return response()->json([
+            'success' => true,
+            'movementTypes' => $this->getDefaultMovementTypesPayload(),
+            'supplyFlows' => $this->getDefaultSupplyFlowsPayload(),
+            'flowRules' => $this->getDefaultFlowRulesPayload(),
+        ]);
+    }
+
+    public static function getDefaultBoundaryAreasPayload(): array
+    {
+        return [
+            [
+                'id' => 'BND-SUPPLIER',
+                'name' => 'Supplier / Vendor Origin',
+                'code' => 'PARTNER-SUPPLIER',
+                'barcode' => 'BND-SUPPLIER-00',
+                'kind' => 'Boundary',
+                'behavior' => 'Boundary',
+                'description' => 'Virtual origin for vendor purchase receipts. Ledger-tracked only; holds no physical balance.',
+            ],
+            [
+                'id' => 'BND-CUSTOMER',
+                'name' => 'Customer / Branch Destination',
+                'code' => 'PARTNER-CUSTOMER',
+                'barcode' => 'BND-CUSTOMER-00',
+                'kind' => 'Boundary',
+                'behavior' => 'Boundary',
+                'description' => 'Virtual destination for outbound dispatches & kitchen requisitions. Ledger-tracked only.',
+            ],
+            [
+                'id' => 'BND-SCRAP',
+                'name' => 'Scrap / Spoilage & Write-Off',
+                'code' => 'VIRTUAL-SCRAP',
+                'barcode' => 'BND-SCRAP-00',
+                'kind' => 'Boundary',
+                'behavior' => 'Boundary',
+                'description' => 'Virtual sink for damaged, expired, or failed-QC inventory write-offs.',
+            ],
+            [
+                'id' => 'BND-ADJUSTMENT',
+                'name' => 'Inventory Cycle Adjustment',
+                'code' => 'VIRTUAL-ADJUST',
+                'barcode' => 'BND-ADJUST-00',
+                'kind' => 'Boundary',
+                'behavior' => 'Boundary',
+                'description' => 'Virtual counterpart for physical count variances and opening balances.',
+            ],
+        ];
+    }
+
+    public static function getDefaultWarehousesPayload(): array
+    {
+        return [
+            [
+                'id' => 'WH-MAIN',
+                'code' => 'WH-MAIN',
+                'name' => 'Central Commissary & Dry Warehouse',
+                'address' => 'Bldg 4 Industrial Logistics Park, Pasig Blvd, Metro Manila',
+                'is_active' => true,
+                'created_at' => '2026-01-10',
+            ],
+            [
+                'id' => 'WH-COLD',
+                'code' => 'WH-COLD',
+                'name' => 'North Cold-Chain & Perishables Hub',
+                'address' => 'Cold Storage Complex C-2, Mindanao Ave, Quezon City',
+                'is_active' => true,
+                'created_at' => '2026-02-04',
+            ],
+            [
+                'id' => 'WH-BGC',
+                'code' => 'WH-BGC',
+                'name' => 'BGC Flagship Back-of-House Storeroom',
+                'address' => 'High Street South Block, Bonifacio Global City, Taguig',
+                'is_active' => true,
+                'created_at' => '2026-03-15',
+            ],
+        ];
+    }
+
+    public static function getDefaultStorageAreasPayload(): array
+    {
+        return [
+            // WH-MAIN Default & Nested Areas
+            ['id' => 'AREA-MAIN-RCV', 'warehouse_id' => 'WH-MAIN', 'parent_id' => null, 'name' => 'Receiving Dock', 'code' => 'RCV-DOCK', 'area_type' => 'Dock Door', 'behavior' => 'Dock', 'barcode' => 'WH-MAIN-RCV-DOCK', 'stock_qty' => 0, 'is_active' => true, 'is_default' => true],
+            ['id' => 'AREA-MAIN-QC', 'warehouse_id' => 'WH-MAIN', 'parent_id' => 'AREA-MAIN-RCV', 'name' => 'Inbound QA & Inspection Bench', 'code' => 'QA-BENCH-01', 'area_type' => 'Packing Table', 'behavior' => 'Staging', 'barcode' => 'WH-MAIN-QA-B01', 'stock_qty' => 15, 'is_active' => true, 'is_default' => false],
+            ['id' => 'AREA-MAIN-STK', 'warehouse_id' => 'WH-MAIN', 'parent_id' => null, 'name' => 'Stock Zone A (Dry Goods)', 'code' => 'ZONE-A', 'area_type' => 'Zone', 'behavior' => 'Storage', 'barcode' => 'WH-MAIN-ZONE-A', 'stock_qty' => 0, 'is_active' => true, 'is_default' => true],
+            ['id' => 'AREA-MAIN-AA', 'warehouse_id' => 'WH-MAIN', 'parent_id' => 'AREA-MAIN-STK', 'name' => 'Aisle A — Bulk Staples & Coffee', 'code' => 'AISLE-A', 'area_type' => 'Aisle', 'behavior' => 'Storage', 'barcode' => 'WH-MAIN-ZA-AA', 'stock_qty' => 0, 'is_active' => true, 'is_default' => false],
+            ['id' => 'AREA-MAIN-RA', 'warehouse_id' => 'WH-MAIN', 'parent_id' => 'AREA-MAIN-AA', 'name' => 'Rack A1 (Upper & Lower Tiers)', 'code' => 'RACK-A1', 'area_type' => 'Rack', 'behavior' => 'Storage', 'barcode' => 'WH-MAIN-ZA-AA-RA1', 'stock_qty' => 0, 'is_active' => true, 'is_default' => false],
+            ['id' => 'AREA-MAIN-B01', 'warehouse_id' => 'WH-MAIN', 'parent_id' => 'AREA-MAIN-RA', 'name' => 'Bin A1-01 (Arabica Beans)', 'code' => 'BIN-A1-01', 'area_type' => 'Bin', 'behavior' => 'Storage', 'barcode' => 'WH-MAIN-ZA-RA1-B01', 'stock_qty' => 140, 'is_active' => true, 'is_default' => false],
+            ['id' => 'AREA-MAIN-B02', 'warehouse_id' => 'WH-MAIN', 'parent_id' => 'AREA-MAIN-RA', 'name' => 'Bin A1-02 (Specialty Syrups)', 'code' => 'BIN-A1-02', 'area_type' => 'Bin', 'behavior' => 'Storage', 'barcode' => 'WH-MAIN-ZA-RA1-B02', 'stock_qty' => 85, 'is_active' => true, 'is_default' => false],
+            ['id' => 'AREA-MAIN-B03', 'warehouse_id' => 'WH-MAIN', 'parent_id' => 'AREA-MAIN-RA', 'name' => 'Bin A1-03 (Spare Dry Bin)', 'code' => 'BIN-A1-03', 'area_type' => 'Bin', 'behavior' => 'Storage', 'barcode' => 'WH-MAIN-ZA-RA1-B03', 'stock_qty' => 0, 'is_active' => true, 'is_default' => false],
+            ['id' => 'AREA-MAIN-PACK', 'warehouse_id' => 'WH-MAIN', 'parent_id' => null, 'name' => 'Outbound Packing & Kitting Table', 'code' => 'PACK-TBL-01', 'area_type' => 'Packing Table', 'behavior' => 'Staging', 'barcode' => 'WH-MAIN-PACK-01', 'stock_qty' => 24, 'is_active' => true, 'is_default' => false],
+            ['id' => 'AREA-MAIN-SHP', 'warehouse_id' => 'WH-MAIN', 'parent_id' => null, 'name' => 'Shipping Dock', 'code' => 'SHP-DOCK', 'area_type' => 'Dock Door', 'behavior' => 'Dock', 'barcode' => 'WH-MAIN-SHP-DOCK', 'stock_qty' => 0, 'is_active' => true, 'is_default' => true],
+
+            // WH-COLD Default & Nested Areas
+            ['id' => 'AREA-COLD-RCV', 'warehouse_id' => 'WH-COLD', 'parent_id' => null, 'name' => 'Receiving Dock (Chilled Airlock)', 'code' => 'RCV-DOCK', 'area_type' => 'Dock Door', 'behavior' => 'Dock', 'barcode' => 'WH-COLD-RCV-DOCK', 'stock_qty' => 0, 'is_active' => true, 'is_default' => true],
+            ['id' => 'AREA-COLD-STK', 'warehouse_id' => 'WH-COLD', 'parent_id' => null, 'name' => 'Stock Zone (Walk-In Freezer -18°C)', 'code' => 'ZONE-FREEZE', 'area_type' => 'Zone', 'behavior' => 'Storage', 'barcode' => 'WH-COLD-STK-ZONE', 'stock_qty' => 0, 'is_active' => true, 'is_default' => true],
+            ['id' => 'AREA-COLD-R1', 'warehouse_id' => 'WH-COLD', 'parent_id' => 'AREA-COLD-STK', 'name' => 'Stainless Rack F1', 'code' => 'RACK-F1', 'area_type' => 'Rack', 'behavior' => 'Storage', 'barcode' => 'WH-COLD-ZF-RF1', 'stock_qty' => 0, 'is_active' => true, 'is_default' => false],
+            ['id' => 'AREA-COLD-B01', 'warehouse_id' => 'WH-COLD', 'parent_id' => 'AREA-COLD-R1', 'name' => 'Bin F1-01 (Prime Beef Cuts)', 'code' => 'BIN-F1-01', 'area_type' => 'Bin', 'behavior' => 'Storage', 'barcode' => 'WH-COLD-ZF-RF1-B01', 'stock_qty' => 62, 'is_active' => true, 'is_default' => false],
+            ['id' => 'AREA-COLD-SHP', 'warehouse_id' => 'WH-COLD', 'parent_id' => null, 'name' => 'Shipping Dock (Reefer Bay)', 'code' => 'SHP-DOCK', 'area_type' => 'Dock Door', 'behavior' => 'Dock', 'barcode' => 'WH-COLD-SHP-DOCK', 'stock_qty' => 0, 'is_active' => true, 'is_default' => true],
+
+            // WH-BGC Default Areas
+            ['id' => 'AREA-BGC-RCV', 'warehouse_id' => 'WH-BGC', 'parent_id' => null, 'name' => 'Receiving Dock (Service Elevator)', 'code' => 'RCV-DOCK', 'area_type' => 'Dock Door', 'behavior' => 'Dock', 'barcode' => 'WH-BGC-RCV-DOCK', 'stock_qty' => 0, 'is_active' => true, 'is_default' => true],
+            ['id' => 'AREA-BGC-STK', 'warehouse_id' => 'WH-BGC', 'parent_id' => null, 'name' => 'Stock Zone (BOH Dry & Line Pantry)', 'code' => 'ZONE-BOH', 'area_type' => 'Zone', 'behavior' => 'Storage', 'barcode' => 'WH-BGC-STK-ZONE', 'stock_qty' => 95, 'is_active' => true, 'is_default' => true],
+            ['id' => 'AREA-BGC-SHP', 'warehouse_id' => 'WH-BGC', 'parent_id' => null, 'name' => 'Shipping Dock (Kitchen Pass)', 'code' => 'SHP-DOCK', 'area_type' => 'Dock Door', 'behavior' => 'Dock', 'barcode' => 'WH-BGC-SHP-DOCK', 'stock_qty' => 0, 'is_active' => true, 'is_default' => true],
+        ];
+    }
+
+    public static function getDefaultMovementTypesPayload(): array
+    {
+        return [
+            [
+                'id' => 'MT-MAIN-RCV',
+                'code' => 'WH-MAIN-IN',
+                'name' => 'Vendor Goods Receipt (Dry Goods)',
+                'warehouse_id' => 'WH-MAIN',
+                'operation_kind' => 'Inbound Receipt',
+                'stock_effect' => 'Receipt',
+                'route_preset' => '2-Step Staged',
+                'is_active' => true,
+                'steps' => [
+                    [
+                        'step_no' => 1,
+                        'name' => 'Receive at Dock',
+                        'from_area' => 'Supplier / Vendor Origin (Boundary)',
+                        'to_area' => 'Receiving Dock',
+                        'scan_source' => false,
+                        'scan_product' => true,
+                        'scan_destination' => true,
+                        'auto_print_label' => true,
+                    ],
+                    [
+                        'step_no' => 2,
+                        'name' => 'Put Away to Storage',
+                        'from_area' => 'Receiving Dock',
+                        'to_area' => 'Stock Zone A (Dry Goods)',
+                        'scan_source' => true,
+                        'scan_product' => true,
+                        'scan_destination' => true,
+                        'auto_print_label' => false,
+                    ],
+                ],
+            ],
+            [
+                'id' => 'MT-COLD-QA-RCV',
+                'code' => 'WH-COLD-QA',
+                'name' => 'Cold-Chain Meat & Dairy Inbound with QA',
+                'warehouse_id' => 'WH-COLD',
+                'operation_kind' => 'Inbound Receipt',
+                'stock_effect' => 'Receipt',
+                'route_preset' => '3-Step Quality Check',
+                'is_active' => true,
+                'steps' => [
+                    [
+                        'step_no' => 1,
+                        'name' => 'Receive at Airlock',
+                        'from_area' => 'Supplier / Vendor Origin (Boundary)',
+                        'to_area' => 'Receiving Dock (Chilled Airlock)',
+                        'scan_source' => false,
+                        'scan_product' => true,
+                        'scan_destination' => true,
+                        'auto_print_label' => true,
+                    ],
+                    [
+                        'step_no' => 2,
+                        'name' => 'Quality Check & Temp Probe',
+                        'from_area' => 'Receiving Dock (Chilled Airlock)',
+                        'to_area' => 'Inbound QA & Inspection Bench',
+                        'scan_source' => true,
+                        'scan_product' => true,
+                        'scan_destination' => true,
+                        'auto_print_label' => true,
+                    ],
+                    [
+                        'step_no' => 3,
+                        'name' => 'Put Away to Freezer',
+                        'from_area' => 'Inbound QA & Inspection Bench',
+                        'to_area' => 'Stock Zone (Walk-In Freezer -18°C)',
+                        'scan_source' => true,
+                        'scan_product' => true,
+                        'scan_destination' => true,
+                        'auto_print_label' => false,
+                    ],
+                ],
+            ],
+            [
+                'id' => 'MT-BGC-DIRECT-RCV',
+                'code' => 'WH-BGC-DIR',
+                'name' => 'BGC Store Direct Pantry Delivery',
+                'warehouse_id' => 'WH-BGC',
+                'operation_kind' => 'Inbound Receipt',
+                'stock_effect' => 'Receipt',
+                'route_preset' => '1-Step Direct',
+                'is_active' => true,
+                'steps' => [
+                    [
+                        'step_no' => 1,
+                        'name' => 'Direct Kitchen Delivery',
+                        'from_area' => 'Supplier / Vendor Origin (Boundary)',
+                        'to_area' => 'Stock Zone (BOH Dry & Line Pantry)',
+                        'scan_source' => false,
+                        'scan_product' => true,
+                        'scan_destination' => true,
+                        'auto_print_label' => true,
+                    ],
+                ],
+            ],
+            [
+                'id' => 'MT-MAIN-DISPATCH',
+                'code' => 'WH-MAIN-OUT',
+                'name' => 'Branch Store Daily Delivery Dispatch',
+                'warehouse_id' => 'WH-MAIN',
+                'operation_kind' => 'Outbound Dispatch',
+                'stock_effect' => 'Dispatch',
+                'route_preset' => '2-Step Staged',
+                'is_active' => true,
+                'steps' => [
+                    [
+                        'step_no' => 1,
+                        'name' => 'Pick from Bins to Packing Table',
+                        'from_area' => 'Stock Zone A (Dry Goods)',
+                        'to_area' => 'Outbound Packing & Kitting Table',
+                        'scan_source' => true,
+                        'scan_product' => true,
+                        'scan_destination' => true,
+                        'auto_print_label' => false,
+                    ],
+                    [
+                        'step_no' => 2,
+                        'name' => 'Dispatch to Branch Logistics',
+                        'from_area' => 'Outbound Packing & Kitting Table',
+                        'to_area' => 'Customer / Branch Destination (Boundary)',
+                        'scan_source' => true,
+                        'scan_product' => true,
+                        'scan_destination' => false,
+                        'auto_print_label' => true,
+                    ],
+                ],
+            ],
+            [
+                'id' => 'MT-MAIN-INTERNAL-TRF',
+                'code' => 'WH-MAIN-TRF',
+                'name' => 'Internal Warehouse Relocation (Bin to Bin)',
+                'warehouse_id' => 'WH-MAIN',
+                'operation_kind' => 'Internal Transfer',
+                'stock_effect' => 'Transfer',
+                'route_preset' => '1-Step Direct',
+                'is_active' => true,
+                'steps' => [
+                    [
+                        'step_no' => 1,
+                        'name' => 'Relocate Stock Between Bins',
+                        'from_area' => 'Stock Zone A (Dry Goods)',
+                        'to_area' => 'Outbound Packing & Kitting Table',
+                        'scan_source' => true,
+                        'scan_product' => true,
+                        'scan_destination' => true,
+                        'auto_print_label' => false,
+                    ],
+                ],
+            ],
+            [
+                'id' => 'MT-MAIN-SCRAP',
+                'code' => 'WH-MAIN-SCRAP',
+                'name' => 'Waste, Spoilage & Scrap Write-Off',
+                'warehouse_id' => 'WH-MAIN',
+                'operation_kind' => 'Stock Adjustment',
+                'stock_effect' => 'Adjustment',
+                'route_preset' => '1-Step Direct',
+                'is_active' => true,
+                'steps' => [
+                    [
+                        'step_no' => 1,
+                        'name' => 'Dispose to Scrap Sink',
+                        'from_area' => 'Stock Zone A (Dry Goods)',
+                        'to_area' => 'Scrap / Spoilage & Write-Off (Boundary)',
+                        'scan_source' => true,
+                        'scan_product' => true,
+                        'scan_destination' => false,
+                        'auto_print_label' => false,
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    private function getDefaultSupplyFlowsPayload(): array
+    {
+        return [
+            [
+                'id' => 'FLOW-OUT-2STEP',
+                'code' => 'SF-OUT-2S',
+                'name' => 'Standard 2-Step Outbound (Pick → Dispatch)',
+                'warehouse_id' => 'WH-MAIN',
+                'direction' => 'Outbound',
+                'allocation_strategy' => 'FEFO (Earliest Expiry First)',
+                'is_default' => true,
+                'is_active' => true,
+                'steps' => [
+                    [
+                        'step_no' => 1,
+                        'movement_type_id' => 'MT-PICK',
+                        'movement_name' => 'Pick',
+                        'from_area' => 'Stock Zone A (Dry Goods)',
+                        'to_area' => 'Outbound Packing & Kitting Table',
+                        'release_when' => 'Immediately',
+                        'qty_source' => 'Original Order Demand',
+                        'shortage_policy' => 'Create Backorder',
+                        'branching' => null,
+                    ],
+                    [
+                        'step_no' => 2,
+                        'movement_type_id' => 'MT-DISPATCH',
+                        'movement_name' => 'Dispatch',
+                        'from_area' => 'Outbound Packing & Kitting Table',
+                        'to_area' => 'Shipping Dock → Customer (Boundary)',
+                        'release_when' => 'After Previous Fully Done',
+                        'qty_source' => 'Actual Completed Qty from Previous Step',
+                        'shortage_policy' => 'Create Backorder',
+                        'branching' => null,
+                    ],
+                ],
+            ],
+            [
+                'id' => 'FLOW-IN-2STEP',
+                'code' => 'SF-IN-2S',
+                'name' => 'Standard 2-Step Inbound (Receive → Put Away)',
+                'warehouse_id' => 'WH-MAIN',
+                'direction' => 'Inbound',
+                'allocation_strategy' => 'FIFO (Oldest Receipt First)',
+                'is_default' => true,
+                'is_active' => true,
+                'steps' => [
+                    [
+                        'step_no' => 1,
+                        'movement_type_id' => 'MT-RECEIVE',
+                        'movement_name' => 'Receive',
+                        'from_area' => 'Supplier / Vendor Origin (Boundary)',
+                        'to_area' => 'Receiving Dock',
+                        'release_when' => 'Immediately',
+                        'qty_source' => 'Original Order Demand',
+                        'shortage_policy' => 'Create Backorder',
+                        'branching' => null,
+                    ],
+                    [
+                        'step_no' => 2,
+                        'movement_type_id' => 'MT-PUTAWAY',
+                        'movement_name' => 'Put Away',
+                        'from_area' => 'Receiving Dock',
+                        'to_area' => 'Stock Zone A (Dry Goods)',
+                        'release_when' => 'After Previous Partly Done',
+                        'qty_source' => 'Actual Completed Qty from Previous Step',
+                        'shortage_policy' => 'Cancel Remainder',
+                        'branching' => null,
+                    ],
+                ],
+            ],
+            [
+                'id' => 'FLOW-IN-3STEP-QC',
+                'code' => 'SF-IN-3QC',
+                'name' => 'Perishables 3-Step QA Inbound (Receive → QC → Put Away)',
+                'warehouse_id' => 'WH-COLD',
+                'direction' => 'Inbound',
+                'allocation_strategy' => 'FEFO (Earliest Expiry First)',
+                'is_default' => false,
+                'is_active' => true,
+                'steps' => [
+                    [
+                        'step_no' => 1,
+                        'movement_type_id' => 'MT-RECEIVE',
+                        'movement_name' => 'Receive',
+                        'from_area' => 'Supplier / Vendor Origin (Boundary)',
+                        'to_area' => 'Receiving Dock (Chilled Airlock)',
+                        'release_when' => 'Immediately',
+                        'qty_source' => 'Original Order Demand',
+                        'shortage_policy' => 'Create Backorder',
+                        'branching' => null,
+                    ],
+                    [
+                        'step_no' => 2,
+                        'movement_type_id' => 'MT-QC',
+                        'movement_name' => 'Quality Check',
+                        'from_area' => 'Receiving Dock (Chilled Airlock)',
+                        'to_area' => 'Inbound QA & Inspection Bench',
+                        'release_when' => 'After Previous Partly Done',
+                        'qty_source' => 'Actual Completed Qty from Previous Step',
+                        'shortage_policy' => 'Cancel Remainder',
+                        'branching' => [
+                            'pass_exit' => 'Step 3: Put Away → Stock Zone (Walk-In Freezer -18°C)',
+                            'fail_exit' => 'Exit to Scrap / Vendor Return Dock',
+                        ],
+                    ],
+                    [
+                        'step_no' => 3,
+                        'movement_type_id' => 'MT-PUTAWAY',
+                        'movement_name' => 'Put Away',
+                        'from_area' => 'Inbound QA & Inspection Bench',
+                        'to_area' => 'Stock Zone (Walk-In Freezer -18°C)',
+                        'release_when' => 'After Previous Fully Done',
+                        'qty_source' => 'Actual Completed Qty from Previous Step',
+                        'shortage_policy' => 'Cancel Remainder',
+                        'branching' => null,
+                    ],
+                ],
+            ],
+            [
+                'id' => 'FLOW-IN-1STEP-DIRECT',
+                'code' => 'SF-IN-1D',
+                'name' => 'Express 1-Step BOH Direct Receipt',
+                'warehouse_id' => 'WH-BGC',
+                'direction' => 'Inbound',
+                'allocation_strategy' => 'FEFO (Earliest Expiry First)',
+                'is_default' => false,
+                'is_active' => true,
+                'steps' => [
+                    [
+                        'step_no' => 1,
+                        'movement_type_id' => 'MT-RECEIVE',
+                        'movement_name' => 'Receive',
+                        'from_area' => 'Supplier / Vendor Origin (Boundary)',
+                        'to_area' => 'Stock Zone (BOH Dry & Line Pantry)',
+                        'release_when' => 'Immediately',
+                        'qty_source' => 'Original Order Demand',
+                        'shortage_policy' => 'Create Backorder',
+                        'branching' => null,
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    private function getDefaultFlowRulesPayload(): array
+    {
+        return [
+            [
+                'id' => 'RULE-01',
+                'priority' => 10,
+                'name' => 'Cold-Chain Proteins & Dairy Mandatory QA Gate',
+                'warehouse_id' => 'WH-COLD',
+                'order_type' => 'PO Inbound',
+                'category' => 'Frozen Proteins',
+                'product_sku' => '*',
+                'partner' => '*',
+                'flow_id' => 'FLOW-IN-3STEP-QC',
+                'is_active' => true,
+            ],
+            [
+                'id' => 'RULE-02',
+                'priority' => 20,
+                'name' => 'BGC Store Express Direct Pantry Receipt',
+                'warehouse_id' => 'WH-BGC',
+                'order_type' => 'PO Inbound',
+                'category' => '*',
+                'product_sku' => '*',
+                'partner' => '*',
+                'flow_id' => 'FLOW-IN-1STEP-DIRECT',
+                'is_active' => true,
+            ],
+            [
+                'id' => 'RULE-03',
+                'priority' => 30,
+                'name' => 'Central Commissary Standard 2-Step Inbound',
+                'warehouse_id' => 'WH-MAIN',
+                'order_type' => 'PO Inbound',
+                'category' => '*',
+                'product_sku' => '*',
+                'partner' => '*',
+                'flow_id' => 'FLOW-IN-2STEP',
+                'is_active' => true,
+            ],
+            [
+                'id' => 'RULE-04',
+                'priority' => 40,
+                'name' => 'Central Commissary 2-Step Pick & Dispatch Outbound',
+                'warehouse_id' => 'WH-MAIN',
+                'order_type' => 'Customer / Branch Outbound',
+                'category' => '*',
+                'product_sku' => '*',
+                'partner' => '*',
+                'flow_id' => 'FLOW-OUT-2STEP',
+                'is_active' => true,
+            ],
+        ];
     }
 }

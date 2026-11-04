@@ -372,8 +372,12 @@ Route::middleware('auth')->group(function () {
         Route::get('/product-categories', [InventoryController::class, 'productCategories'])->name('product-categories');
         Route::get('/recipe-management', [InventoryController::class, 'recipeManagement'])->name('recipe-management');
 
-        // Configuration Submodule: Unit of Measure (UOM)
+        // Configuration Submodules: Warehouse & Storage Area, Movement Type & Supply Flows, and UOM
+        Route::get('/configuration/warehouses', [InventoryController::class, 'warehouseStorageAreas'])->name('warehouses');
+        Route::get('/configuration/movement-flows', [InventoryController::class, 'movementSupplyFlows'])->name('movement-flows');
         Route::get('/configuration/uom', [InventoryController::class, 'uomConfiguration'])->name('uom');
+        Route::get('/api/warehouses', [InventoryController::class, 'apiGetWarehousesAndAreas'])->name('api.warehouses');
+        Route::get('/api/movement-flows', [InventoryController::class, 'apiGetMovementSupplyFlows'])->name('api.movement-flows');
         Route::get('/api/uoms', [InventoryController::class, 'apiGetUoms'])->name('api.uoms');
         Route::post('/api/uoms/store', [InventoryController::class, 'apiSaveUom'])->name('api.uoms.store');
         Route::put('/api/uoms/{id}', [InventoryController::class, 'apiUpdateUom'])->name('api.uoms.update');

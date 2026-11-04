@@ -54,10 +54,10 @@ class PeopleController extends Controller
         // Summary Statistics Cards (Consolidated into a single SQL query)
         $rawCounts = (clone $baseQuery)->selectRaw("
             COUNT(*) as total,
-            SUM(CASE WHEN employee_employment_status = 'Active' THEN 1 ELSE 0 END) as active,
-            SUM(CASE WHEN employee_employment_status = 'Probationary' THEN 1 ELSE 0 END) as probationary,
-            SUM(CASE WHEN employee_employment_status = 'On Leave' THEN 1 ELSE 0 END) as on_leave,
-            SUM(CASE WHEN employee_employment_status IN ('Resigned', 'Terminated', 'Retired') THEN 1 ELSE 0 END) as separated
+            SUM(CASE WHEN employment_status = 'Active' THEN 1 ELSE 0 END) as active,
+            SUM(CASE WHEN employment_status = 'Probationary' THEN 1 ELSE 0 END) as probationary,
+            SUM(CASE WHEN employment_status = 'On Leave' THEN 1 ELSE 0 END) as on_leave,
+            SUM(CASE WHEN employment_status IN ('Resigned', 'Terminated', 'Retired') THEN 1 ELSE 0 END) as separated
         ")->first();
 
         $counts = [
@@ -140,12 +140,12 @@ class PeopleController extends Controller
 
         $perPage = (int) $request->get('per_page', 25);
         $employees = $query->orderBy('created_at', 'desc')->paginate($perPage)->withQueryString();
-        $branches = Branch::where('is_active', true)->orderBy('name')->get();
-        $departments = Department::orderBy('name')->get();
-        $positions = Position::orderBy('name')->get();
-        $companies = Company::where('type', 'Company')->where('is_active', true)->orderBy('name')->get();
-        $agencies = Company::where('type', 'Agency')->where('is_active', true)->orderBy('name')->get();
-        $users = User::orderBy('full_name')->get();
+        $branches = Branch::select(['id', 'name', 'code'])->where('is_active', true)->orderBy('name')->get();
+        $departments = Department::select(['id', 'name', 'code'])->orderBy('name')->get();
+        $positions = Position::select(['id', 'name', 'code', 'department_id'])->orderBy('name')->get();
+        $companies = Company::select(['id', 'name', 'code', 'type'])->where('type', 'Company')->where('is_active', true)->orderBy('name')->get();
+        $agencies = Company::select(['id', 'name', 'code', 'type'])->where('type', 'Agency')->where('is_active', true)->orderBy('name')->get();
+        $users = User::select(['id', 'full_name', 'username', 'email'])->orderBy('full_name')->get();
         $supervisors = Employee::activeWorkforce()->orderBy('first_name')->get(['id', 'first_name', 'last_name', 'employee_id']);
         $nextEmployeeId = Employee::generateNextEmployeeId();
 

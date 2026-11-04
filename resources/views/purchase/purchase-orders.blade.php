@@ -28,6 +28,7 @@
             initialPurchaseOrders: @json($initialPurchaseOrders ?? []),
             initialVendors: @json($initialVendors ?? []),
             initialItems: @json($initialItems ?? []),
+            initialWarehouses: @json($initialWarehouses ?? []),
         }
     });
 </script>
@@ -328,8 +329,12 @@
                         </button>
                     </div>
 
-                    <!-- Interactive Linked RFQ Continuation Pill -->
-                    <span id="poLinkedRfqPill" onclick="if(window.PoStore?.activePo?.rfqReference) openLinkedRfqModal(window.PoStore.activePo.rfqReference)" style="display: none; cursor: pointer; font-size: 11.5px; padding: 3px 9px; background: rgba(168, 85, 247, 0.12); color: #7e22ce; border: 1px solid rgba(168, 85, 247, 0.28); border-radius: 6px; font-family: monospace; font-weight: 700;" title="Click to inspect source Awarded RFQ"></span>
+                    <!-- Interactive Referenced RFQ Continuation Pill -->
+                    <div id="poRfqRefContainer" style="display: inline-flex; align-items: center; gap: 6px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 4px 10px; border-radius: 8px;">
+                        <i class="ph ph-link-simple-bold" style="color: #7c3aed; font-size: 14px;"></i>
+                        <span style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">RFQ Ref:</span>
+                        <span id="poLinkedRfqPill" onclick="handlePoRfqReferencePillClick()" style="cursor: pointer; font-size: 11.5px; padding: 1px 7px; background: rgba(168, 85, 247, 0.12); color: #7e22ce; border: 1px solid rgba(168, 85, 247, 0.28); border-radius: 6px; font-family: monospace; font-weight: 700;" title="Click to inspect Referenced RFQ or Link an Awarded RFQ">None (Click to Link RFQ)</span>
+                    </div>
 
                     <!-- PO Lifecycle Status Badge -->
                     <span class="status-pill draft" id="poStatusBadge" style="font-size: 11px; padding: 3px 9px;">
@@ -406,12 +411,14 @@
                         <span class="po-label-badge rfq-label-badge">Receiving</span>
                     </label>
                     <select class="po-select rfq-select" id="poDeliveryLocation" onchange="syncPoFormInputsToState(); updatePoLiveDocumentMockup();">
-                        <option value="Central Commissary - Receiving Dock 1">Central Commissary - Dock 1</option>
-                        <option value="Central Commissary - Receiving Dock A">Central Commissary - Dock A</option>
-                        <option value="Branch 1 - Makati Flagship">Branch 1 - Makati Flagship</option>
-                        <option value="Branch 2 - BGC Bistro">Branch 2 - BGC Bistro</option>
-                        <option value="Branch 3 - Ortigas Kitchen">Branch 3 - Ortigas Kitchen</option>
-                        <option value="Central Warehouse - Cold Storage">Central Warehouse - Cold Storage</option>
+                        @foreach($initialWarehouses ?? [] as $wh)
+                            <option value="{{ $wh['name'] }}" data-wh-id="{{ $wh['id'] }}">{{ $wh['code'] }} — {{ $wh['name'] }}</option>
+                        @endforeach
+                        @if(empty($initialWarehouses))
+                            <option value="Central Commissary & Dry Warehouse">WH-MAIN — Central Commissary & Dry Warehouse</option>
+                            <option value="North Cold-Chain & Perishables Hub">WH-COLD — North Cold-Chain & Perishables Hub</option>
+                            <option value="BGC Flagship Back-of-House Storeroom">WH-BGC — BGC Flagship Back-of-House Storeroom</option>
+                        @endif
                     </select>
                 </div>
 
@@ -522,25 +529,52 @@
                         </table>
                     </div>
 
-                    <!-- Items Table Footer Metric Summary -->
-                    <div class="po-summary-bar rfq-summary-bar">
-                        <div class="po-metrics-cluster rfq-metrics-cluster">
-                            <div class="po-metric-unit rfq-metric-unit">
-                                <span class="po-metric-label rfq-metric-label">Lines</span>
-                                <span class="po-metric-val rfq-metric-val" id="summaryPoLines" style="font-size: 1.05rem;">0</span>
+                    <!-- Items Table Footer Metric Summary & Adaptive Financial Breakdown -->
+                    <div class="po-summary-bar rfq-summary-bar po-summary-bar-clean">
+                        <div class="po-footer-left-meta">
+                            <div class="po-metrics-cluster rfq-metrics-cluster">
+                                <div class="po-metric-unit rfq-metric-unit">
+                                    <span class="po-metric-label rfq-metric-label">Lines</span>
+                                    <span class="po-metric-val rfq-metric-val" id="summaryPoLines" style="font-size: 1.05rem;">0</span>
+                                </div>
+                                <div class="po-metric-unit rfq-metric-unit">
+                                    <span class="po-metric-label rfq-metric-label">Ordered Units</span>
+                                    <span class="po-metric-val rfq-metric-val" id="summaryPoUnits" style="font-size: 1.05rem;">0.00</span>
+                                </div>
                             </div>
-                            <div class="po-metric-unit rfq-metric-unit">
-                                <span class="po-metric-label rfq-metric-label">Ordered Units</span>
-                                <span class="po-metric-val rfq-metric-val" id="summaryPoUnits" style="font-size: 1.05rem;">0.00</span>
-                            </div>
-                            <div class="po-metric-unit rfq-metric-unit">
-                                <span class="po-metric-label rfq-metric-label">Order Gross Total</span>
-                                <span class="po-metric-val highlight rfq-metric-val" id="summaryPoGross" style="font-size: 1.12rem;">₱0.00</span>
+                            <div class="rfq-table-hint" style="display: flex; align-items: center; gap: 6px; font-size: 0.75rem; color: #64748b;">
+                                <i class="ph ph-broadcast" style="color: #059669;"></i> Live synced with PO Mockup
                             </div>
                         </div>
 
-                        <div class="rfq-table-hint" style="display: flex; align-items: center; gap: 6px; font-size: 0.76rem; color: #64748b;">
-                            <i class="ph ph-broadcast" style="color: #059669;"></i> Live synced with PO Mockup
+                        <!-- Right Side: Clean Adaptive Financial & Payment Breakdown -->
+                        <div class="po-fin-breakdown-panel" id="poFinBreakdownPanel">
+                            <div class="po-fin-row">
+                                <span class="po-fin-label">Untaxed Amount:</span>
+                                <span class="po-fin-value strong" id="summaryPoUntaxed">₱ 0.00</span>
+                            </div>
+                            <div class="po-fin-row" id="summaryPoVatableRow">
+                                <span class="po-fin-label">VATable:</span>
+                                <span class="po-fin-value" id="summaryPoVatable">₱ 0.00</span>
+                            </div>
+                            <div class="po-fin-row" id="summaryPoWithholdingRow">
+                                <span class="po-fin-label">Withholding Tax:</span>
+                                <span class="po-fin-value" id="summaryPoWithholding">₱ 0.00</span>
+                            </div>
+                            <div class="po-fin-divider"></div>
+                            <div class="po-fin-row total-row">
+                                <span class="po-fin-label total-label">Total:</span>
+                                <span class="po-fin-value total-value" id="summaryPoGross">₱ 0.00</span>
+                            </div>
+
+                            <!-- Amount Due Row -->
+                            <div class="po-fin-row balance-row">
+                                <span class="po-fin-label balance-label">Amount Due:</span>
+                                <span class="po-fin-value balance-value" id="summaryPoBalanceDue">₱ 0.00</span>
+                            </div>
+
+                            <!-- Adaptive Payment Rows AFTER Amount Due (Continues until nothing left to settle) -->
+                            <div id="summaryPoPaymentsList" class="po-fin-payments-after-due"></div>
                         </div>
                     </div>
                 </div><!-- /.po-items-panel -->
@@ -758,166 +792,262 @@
      MODAL: FINANCIAL TRACKING & PAYMENT SETTLEMENT
      ========================================================================== -->
 <div class="po-modal-backdrop" id="poPaymentSettlementModal" role="dialog" aria-modal="true" aria-labelledby="payModalTitle">
-    <div class="po-modal-card" style="max-width: 880px; width: 100%;">
-        <div class="po-modal-header" style="background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <div style="width: 36px; height: 36px; border-radius: 9px; background: linear-gradient(135deg, #0284c7, #0d9488); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 18px; box-shadow: 0 3px 10px rgba(2, 132, 199, 0.25);">
-                    <i class="ph ph-bank"></i>
+    <div class="po-modal-card po-pay-modal-card">
+        <!-- Clean Enterprise Header -->
+        <div class="po-modal-header po-pay-modal-header">
+            <div class="po-pay-header-brand">
+                <div class="po-pay-header-icon">
+                    <i class="ph ph-receipt"></i>
                 </div>
                 <div>
-                    <div style="font-weight: 800; font-size: 1.12rem; color: #0f172a;" id="payModalTitle">Financial Tracking & Payment Settlement</div>
-                    <div style="font-size: 0.76rem; color: #64748b;">Disbursement schedule, installments & trade credit tracking by reference</div>
+                    <div class="po-pay-header-title" id="payModalTitle">Financial Tracking & Payment Settlement</div>
+                    <div class="po-pay-header-subtitle">Multi-tranche disbursements, tax breakdown & progressive balance settlement</div>
                 </div>
             </div>
-            <button type="button" class="inv-table-filter-btn" onclick="closePaymentSettlementModal()" aria-label="Close Modal">
-                <i class="ph ph-x"></i>
-            </button>
-        </div>
-
-        <div class="po-modal-body" style="padding: 16px; display: flex; flex-direction: column; gap: 14px; max-height: 75vh; overflow-y: auto;">
-            <!-- Reference Filter & Context Bar -->
-            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 10px 14px;">
-                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                    <span style="font-size: 0.74rem; font-weight: 800; color: #64748b; text-transform: uppercase;">Active Target Reference:</span>
-                    <span id="payModalActiveRef" style="font-family: monospace; font-size: 1.05rem; font-weight: 800; color: var(--po-primary-dark); background: var(--po-primary-subtle); padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(2, 132, 199, 0.25);">PO-2026-0105</span>
-                    <span id="payModalLinkedRfqBadge" style="display: none; font-size: 11px; padding: 2px 7px; background: rgba(168, 85, 247, 0.12); color: #7e22ce; border: 1px solid rgba(168, 85, 247, 0.25); border-radius: 5px; font-family: monospace; font-weight: 700;"></span>
-                </div>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <label for="payModalRefSelect" style="font-size: 0.76rem; color: #64748b; font-weight: 600;">Filter by Reference:</label>
-                    <select id="payModalRefSelect" class="po-select" style="max-width: 200px; padding: 4px 8px; font-size: 12px; height: 30px;" onchange="filterPaymentsByReference(this.value)">
+            <div class="po-pay-header-controls">
+                <div class="po-pay-ref-switcher">
+                    <label for="payModalRefSelect" class="po-pay-ref-label">PO Reference:</label>
+                    <select id="payModalRefSelect" class="po-select po-pay-ref-select" onchange="filterPaymentsByReference(this.value)">
                         <!-- Populated dynamically -->
                     </select>
-                    <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="resetPaymentViewToActivePo()" title="View Current Active PO" style="height: 30px; font-size: 11.5px; padding: 0 8px;">
+                    <button type="button" class="po-pay-reset-btn" onclick="resetPaymentViewToActivePo()" title="View Current Active PO">
                         <i class="ph ph-arrow-counter-clockwise"></i> Active PO
                     </button>
                 </div>
+                <button type="button" class="inv-table-filter-btn" onclick="closePaymentSettlementModal()" aria-label="Close Modal">
+                    <i class="ph ph-x"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Context & Reference Bar -->
+        <div class="po-pay-context-bar">
+            <div class="po-pay-context-left">
+                <span class="po-pay-ctx-caption">Target Order</span>
+                <span id="payModalActiveRef" class="po-pay-active-ref-pill">PO-2026-0105</span>
+                <span id="payModalVendorBadge" class="po-pay-ctx-pill"><i class="ph ph-buildings"></i> <span>Unassigned Vendor</span></span>
+                <span id="payModalTermsBadge" class="po-pay-ctx-pill"><i class="ph ph-calendar-blank"></i> <span>Net 30 Days</span></span>
+                <span id="payModalLinkedRfqBadge" class="po-pay-rfq-pill" style="display: none;"></span>
+            </div>
+            <div class="po-pay-context-right">
+                <span class="po-pay-ctx-caption">Settlement Status</span>
+                <span id="payModalStatusBadge" class="pay-badge unpaid">Unpaid / Credit</span>
+            </div>
+        </div>
+
+        <div class="po-modal-body po-pay-modal-body">
+            <!-- Top Financial Summary & Progress Strip -->
+            <div class="po-pay-kpi-strip">
+                <div class="po-pay-kpi-card">
+                    <div class="po-pay-kpi-top">
+                        <span class="po-pay-kpi-label">Taxed Order Total</span>
+                        <span class="po-pay-kpi-icon purple"><i class="ph ph-calculator"></i></span>
+                    </div>
+                    <div id="payModalGross" class="po-pay-kpi-val">₱0.00</div>
+                    <div id="payModalTaxSubtext" class="po-pay-kpi-sub">Untaxed: ₱0.00 • VAT: ₱0.00 • WHT: ₱0.00</div>
+                </div>
+
+                <div class="po-pay-kpi-card">
+                    <div class="po-pay-kpi-top">
+                        <span class="po-pay-kpi-label">Total Disbursed</span>
+                        <span class="po-pay-kpi-icon emerald"><i class="ph ph-check-circle"></i></span>
+                    </div>
+                    <div id="payModalPaid" class="po-pay-kpi-val emerald">₱0.00</div>
+                    <div id="payModalPaidSubtext" class="po-pay-kpi-sub emerald">0 payment tranches recorded</div>
+                </div>
+
+                <div class="po-pay-kpi-card" id="payModalBalanceCard">
+                    <div class="po-pay-kpi-top">
+                        <span class="po-pay-kpi-label">Remaining Balance Due</span>
+                        <span class="po-pay-kpi-icon rose" id="payModalBalanceIcon"><i class="ph ph-scales"></i></span>
+                    </div>
+                    <div id="payModalBalance" class="po-pay-kpi-val rose">₱0.00</div>
+                    <div id="payModalBalanceSubtext" class="po-pay-kpi-sub">Target: ₱0.00 when fully settled</div>
+                </div>
+
+                <div class="po-pay-kpi-card">
+                    <div class="po-pay-kpi-top">
+                        <span class="po-pay-kpi-label">Settlement Progress</span>
+                        <span class="po-pay-kpi-icon indigo"><i class="ph ph-chart-line-up"></i></span>
+                    </div>
+                    <div id="payModalPercentPaid" class="po-pay-kpi-val">0% Settled</div>
+                    <div class="po-pay-progress-track" aria-hidden="true">
+                        <div id="payModalProgressFill" class="po-pay-progress-fill" style="width: 0%;"></div>
+                    </div>
+                </div>
             </div>
 
-            <!-- Financial Calculation KPI Cards -->
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px;">
-                <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 10px 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
-                    <div style="font-size: 0.72rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Total Commitment (Gross)</div>
-                    <div id="payModalGross" style="font-size: 1.25rem; font-weight: 800; color: #0f172a; margin-top: 3px;">₱0.00</div>
-                    <div style="font-size: 0.68rem; color: #94a3b8;">Contracted item lines</div>
-                </div>
-                <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 10px 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
-                    <div style="font-size: 0.72rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Total Amount Paid</div>
-                    <div id="payModalPaid" style="font-size: 1.25rem; font-weight: 800; color: #059669; margin-top: 3px;">₱0.00</div>
-                    <div style="font-size: 0.68rem; color: #059669;">Recorded disbursements</div>
-                </div>
-                <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 10px 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
-                    <div style="font-size: 0.72rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Remaining Balance Due</div>
-                    <div id="payModalBalance" style="font-size: 1.25rem; font-weight: 800; color: #dc2626; margin-top: 3px;">₱0.00</div>
-                    <div style="font-size: 0.68rem; color: #dc2626;">Net unsettled liability</div>
-                </div>
-                <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 10px 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; flex-direction: column; justify-content: space-between;">
-                    <div style="font-size: 0.72rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Settlement Status</div>
-                    <div>
-                        <span id="payModalStatusBadge" class="pay-badge unpaid" style="font-size: 12px; padding: 3px 10px;">Unpaid / Credit</span>
+            <!-- 2-Column Split Financial Workspace -->
+            <div class="po-pay-workspace-grid">
+                <!-- LEFT COLUMN: Payment Tranche Ledger & Adaptive Statement Breakdown -->
+                <div class="po-pay-ledger-col">
+                    <!-- Recorded Tranches Table -->
+                    <div class="po-pay-panel">
+                        <div class="po-pay-panel-head">
+                            <div class="po-pay-panel-title">
+                                <i class="ph ph-list-numbers"></i>
+                                <span>Disbursement Tranches for <span id="payLedgerRefLabel" class="po-pay-mono">--</span></span>
+                            </div>
+                            <span id="payLedgerCountBadge" class="po-pay-count-pill">0 Entries</span>
+                        </div>
+                        <div class="po-pay-table-wrap">
+                            <table class="po-pay-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 34px; text-align: center;">#</th>
+                                        <th style="width: 88px;">Date</th>
+                                        <th style="width: 130px;">Tranche / Bill</th>
+                                        <th>Method & Reference</th>
+                                        <th style="text-align: right; width: 108px;">Paid (₱)</th>
+                                        <th style="text-align: right; width: 112px;">Balance After</th>
+                                        <th style="text-align: center; width: 46px;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="payModalLedgerTbody">
+                                    <!-- Populated dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                    <div id="payModalPercentPaid" style="font-size: 0.68rem; color: #64748b;">0% settled</div>
-                </div>
-            </div>
 
-            <!-- Payments Ledger History Table -->
-            <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 10px; overflow: hidden;">
-                <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 14px; background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
-                    <div style="font-weight: 800; font-size: 0.86rem; color: #0f172a; display: flex; align-items: center; gap: 6px;">
-                        <i class="ph ph-list-dashes" style="color: var(--po-primary);"></i>
-                        <span>Disbursement History for <span id="payLedgerRefLabel" style="font-family: monospace;">--</span></span>
-                    </div>
-                    <span id="payLedgerCountBadge" style="font-size: 11px; background: #e2e8f0; color: #475569; padding: 1px 7px; border-radius: 8px; font-weight: 700;">0 Entries</span>
-                </div>
-                <div style="max-height: 180px; overflow-y: auto;">
-                    <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
-                        <thead>
-                            <tr style="background: #f1f5f9; text-align: left; color: #475569;">
-                                <th style="padding: 7px 10px; width: 40px; text-align: center;">#</th>
-                                <th style="padding: 7px 10px; width: 95px;">Date</th>
-                                <th style="padding: 7px 10px; width: 130px;">Method</th>
-                                <th style="padding: 7px 10px;">Reference / OR #</th>
-                                <th style="padding: 7px 10px; width: 140px;">Fund Source</th>
-                                <th style="padding: 7px 10px; text-align: right; width: 110px;">Amount (₱)</th>
-                                <th style="padding: 7px 10px; text-align: center; width: 60px;">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="payModalLedgerTbody">
-                            <!-- Populated dynamically -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Record New Payment Disbursement Card -->
-            <div style="background: #ffffff; border: 1.5px solid var(--po-primary); border-radius: 10px; padding: 12px 14px;">
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
-                    <div style="font-weight: 800; font-size: 0.88rem; color: #0f172a; display: flex; align-items: center; gap: 6px;">
-                        <i class="ph ph-plus-circle" style="color: var(--po-primary);"></i>
-                        <span>Record Payment Disbursement against Reference</span>
-                    </div>
-                    <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="fillFullRemainingBalance()" style="font-size: 11px; padding: 2px 8px; height: 24px; color: #059669; border-color: #a7f3d0; background: #ecfdf5;">
-                        <i class="ph ph-lightning"></i> Pay Full Balance
-                    </button>
-                </div>
-
-                <div class="po-form-row">
-                    <div class="po-field">
-                        <label class="po-label" for="newPayAmount">Amount to Disburse (₱) *</label>
-                        <input type="number" step="0.01" min="0.01" class="po-input" id="newPayAmount" placeholder="0.00" style="font-weight: 700; font-size: 0.95rem;">
-                    </div>
-                    <div class="po-field">
-                        <label class="po-label" for="newPayMethod">Disbursement Method *</label>
-                        <select class="po-select" id="newPayMethod">
-                            <option value="Cash / Petty Cash">Cash / Petty Cash (Direct Run)</option>
-                            <option value="Trade Credit (Net 30/15)">Trade Credit (Net 30/15 Days Invoice)</option>
-                            <option value="Company Check">Company Check (Spot / Post-Dated)</option>
-                            <option value="Bank Transfer / Electronic">Bank Transfer / Electronic (PESONet / InstaPay)</option>
-                            <option value="GCash / Maya">GCash / Maya (Mobile e-Wallet)</option>
-                            <option value="Corporate Credit Card">Corporate Credit Card</option>
-                        </select>
+                    <!-- Adaptive Statement & Progressive Balance Breakdown -->
+                    <div class="po-pay-statement-card">
+                        <div class="po-pay-statement-head">
+                            <span><i class="ph ph-receipt"></i> Progressive Settlement Statement</span>
+                            <span class="po-pay-statement-tag">Adapts per Tranche until ₱0.00</span>
+                        </div>
+                        <div class="po-pay-statement-body">
+                            <div class="po-pay-stmt-row">
+                                <span class="po-pay-stmt-label">Untaxed Amount:</span>
+                                <span class="po-pay-stmt-val" id="payStmtUntaxed">₱ 0.00</span>
+                            </div>
+                            <div class="po-pay-stmt-row">
+                                <span class="po-pay-stmt-label">VATable:</span>
+                                <span class="po-pay-stmt-val muted" id="payStmtVat">₱ 0.00</span>
+                            </div>
+                            <div class="po-pay-stmt-row">
+                                <span class="po-pay-stmt-label">Withholding Tax:</span>
+                                <span class="po-pay-stmt-val muted" id="payStmtWht">₱ 0.00</span>
+                            </div>
+                            <div class="po-pay-stmt-divider"></div>
+                            <div class="po-pay-stmt-row total">
+                                <span class="po-pay-stmt-label">Total:</span>
+                                <span class="po-pay-stmt-val" id="payStmtTotal">₱ 0.00</span>
+                            </div>
+                            <div class="po-pay-stmt-divider dashed"></div>
+                            <div class="po-pay-stmt-row due">
+                                <span class="po-pay-stmt-label">Amount Due:</span>
+                                <span class="po-pay-stmt-val" id="payStmtAmountDue">₱ 0.00</span>
+                            </div>
+                            <!-- Dynamic Payment Rows After Amount Due -->
+                            <div id="payStmtPaymentsContainer" class="po-pay-stmt-payments"></div>
+                            <div class="po-pay-stmt-row final-balance" id="payStmtFinalBalanceRow" style="display: none;">
+                                <span class="po-pay-stmt-label">Remaining Balance to Settle:</span>
+                                <span class="po-pay-stmt-val" id="payStmtFinalBalanceVal">₱ 0.00</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="po-form-row" style="margin-top: 6px;">
-                    <div class="po-field">
-                        <label class="po-label" for="newPayRef">OR # / Check # / Receipt Ref</label>
-                        <input type="text" class="po-input" id="newPayRef" placeholder="e.g. Cash Slip #4912, Check #00412, GCash 88214">
-                    </div>
-                    <div class="po-field">
-                        <label class="po-label" for="newPayDate">Payment Date</label>
-                        <input type="date" class="po-input" id="newPayDate">
-                    </div>
-                </div>
+                <!-- RIGHT COLUMN: Record Payment Tranche / Vendor Bill Form -->
+                <div class="po-pay-form-col">
+                    <div class="po-pay-form-card">
+                        <div class="po-pay-form-head">
+                            <div class="po-pay-panel-title">
+                                <i class="ph ph-plus-circle"></i>
+                                <span>Record Payment / Bill Tranche</span>
+                            </div>
+                            <div class="po-pay-preset-group">
+                                <button type="button" class="po-pay-preset-pill" onclick="fillPercentageRemainingBalance(0.30, 'Downpayment (30%)')">
+                                    30% Down
+                                </button>
+                                <button type="button" class="po-pay-preset-pill" onclick="fillPercentageRemainingBalance(0.50, 'Downpayment (50%)')">
+                                    50% Down
+                                </button>
+                                <button type="button" class="po-pay-preset-pill emerald" onclick="fillFullRemainingBalance()">
+                                    <i class="ph ph-lightning"></i> Full Balance
+                                </button>
+                            </div>
+                        </div>
 
-                <div class="po-form-row" style="margin-top: 6px;">
-                    <div class="po-field">
-                        <label class="po-label" for="newPayFundSource">Disbursing Fund Source</label>
-                        <select class="po-select" id="newPayFundSource">
-                            <option value="Main Commissary Checking Acct">Main Commissary Checking Account</option>
-                            <option value="Branch Petty Cash Fund">Branch Petty Cash Fund</option>
-                            <option value="Purchaser Cash Advance">Purchaser Cash Advance Fund</option>
-                            <option value="Corporate Card Account">Corporate Card Account</option>
-                        </select>
-                    </div>
-                    <div class="po-field">
-                        <label class="po-label" for="newPayRemarks">Financial Remarks</label>
-                        <input type="text" class="po-input" id="newPayRemarks" placeholder="e.g. 50% initial downpayment for batch production">
-                    </div>
-                </div>
+                        <div id="payModalSettledBanner" class="po-pay-settled-notice" style="display: none;">
+                            <i class="ph ph-check-circle"></i>
+                            <div>
+                                <div class="po-pay-settled-title">Order Fully Settled (₱0.00 Balance Due)</div>
+                                <div class="po-pay-settled-sub">All billed obligations for this Purchase Order have been satisfied.</div>
+                            </div>
+                        </div>
 
-                <div style="display: flex; justify-content: flex-end; margin-top: 10px;">
-                    <button type="button" class="hr-btn hr-btn-primary" onclick="addPaymentDisbursement()" style="padding: 6px 16px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
-                        <i class="ph ph-plus-circle"></i> Add Disbursement Entry
-                    </button>
+                        <div class="po-pay-form-grid">
+                            <div class="po-field">
+                                <label class="po-label" for="newPayTrancheType">Payment Tranche / Bill Type *</label>
+                                <select class="po-select" id="newPayTrancheType">
+                                    <option value="Downpayment / Deposit">Downpayment / Advance Deposit</option>
+                                    <option value="Partial / Progress Billing">Partial / Progress Billing</option>
+                                    <option value="Final Settlement">Final Balance Settlement</option>
+                                    <option value="Full Spot Payment">Full Spot Payment</option>
+                                </select>
+                            </div>
+                            <div class="po-field">
+                                <label class="po-label" for="newPayAmount">Amount to Disburse (₱) *</label>
+                                <input type="number" step="0.01" min="0.01" class="po-input po-pay-amount-input" id="newPayAmount" placeholder="0.00">
+                            </div>
+
+                            <div class="po-field">
+                                <label class="po-label" for="newPayMethod">Disbursement Method *</label>
+                                <select class="po-select" id="newPayMethod">
+                                    <option value="Bank Transfer / Electronic">Bank Transfer / Electronic (PESONet / InstaPay)</option>
+                                    <option value="Company Check">Company Check (Spot / Post-Dated)</option>
+                                    <option value="Cash / Petty Cash">Cash / Petty Cash (Direct Run)</option>
+                                    <option value="GCash / Maya">GCash / Maya (Mobile e-Wallet)</option>
+                                    <option value="Corporate Credit Card">Corporate Credit Card</option>
+                                    <option value="Trade Credit (Net 30/15)">Trade Credit (Net 30/15 Days Invoice)</option>
+                                </select>
+                            </div>
+                            <div class="po-field">
+                                <label class="po-label" for="newPayFundSource">Disbursing Fund Source</label>
+                                <select class="po-select" id="newPayFundSource">
+                                    <option value="Main Commissary Checking Acct">Main Commissary Checking Account</option>
+                                    <option value="Branch Petty Cash Fund">Branch Petty Cash Fund</option>
+                                    <option value="Purchaser Cash Advance">Purchaser Cash Advance Fund</option>
+                                    <option value="Corporate Card Account">Corporate Card Account</option>
+                                </select>
+                            </div>
+
+                            <div class="po-field">
+                                <label class="po-label" for="newPayBillRef">Vendor Bill # / Sales Invoice #</label>
+                                <input type="text" class="po-input" id="newPayBillRef" placeholder="e.g. BILL-2026-0041, SI-9921">
+                            </div>
+                            <div class="po-field">
+                                <label class="po-label" for="newPayRef">OR # / Check # / Receipt Ref</label>
+                                <input type="text" class="po-input" id="newPayRef" placeholder="e.g. OR #4912, Check #00412">
+                            </div>
+
+                            <div class="po-field">
+                                <label class="po-label" for="newPayDate">Payment Date</label>
+                                <input type="date" class="po-input" id="newPayDate">
+                            </div>
+                            <div class="po-field">
+                                <label class="po-label" for="newPayRemarks">Financial Remarks</label>
+                                <input type="text" class="po-input" id="newPayRemarks" placeholder="e.g. 50% initial downpayment">
+                            </div>
+                        </div>
+
+                        <div class="po-pay-form-actions">
+                            <button type="button" class="po-btn po-btn-primary po-pay-submit-btn" id="newPaySubmitBtn" onclick="addPaymentDisbursement()">
+                                <i class="ph ph-plus-circle"></i> Record Payment Tranche
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="po-modal-footer" style="padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; background: #f8fafc; border-top: 1px solid #e2e8f0;">
-            <div style="font-size: 11.5px; color: #64748b;">
-                <i class="ph ph-info"></i> Recorded disbursements are automatically synchronized with the active Purchase Order.
+        <div class="po-modal-footer po-pay-modal-footer">
+            <div class="po-pay-footer-note">
+                <i class="ph ph-shield-check"></i> Disbursements synchronize in real time with the PO Builder statement & live document mockup.
             </div>
-            <button type="button" class="po-btn po-btn-primary" onclick="closePaymentSettlementModal()" style="padding: 6px 18px; font-size: 12px;">
+            <button type="button" class="po-btn po-btn-primary" onclick="closePaymentSettlementModal()">
                 Done
             </button>
         </div>
@@ -949,6 +1079,7 @@
                     <div style="text-align: right;">
                         <div style="font-size: 1.4rem; font-weight: 900; color: var(--po-primary-dark); text-transform: uppercase;">PURCHASE ORDER</div>
                         <div style="font-size: 0.85rem; margin-top: 4px;">PO #: <strong id="docPoNumber">PO-2026-0105</strong></div>
+                        <div style="font-size: 0.83rem; color: #7e22ce;" id="docPoRfqRefWrap">Referenced RFQ: <strong id="docPoRfqRef">--</strong></div>
                         <div style="font-size: 0.85rem;">Date Issued: <strong id="docPoDate">--</strong></div>
                         <div style="font-size: 0.85rem;">Delivery Due: <strong id="docPoDeliveryDue" style="color: var(--po-teal-dark);">--</strong></div>
                     </div>
@@ -961,8 +1092,7 @@
                         </div>
                         <div style="font-size: 1.05rem; font-weight: 800; color: #0f172a;" id="docPoVendor">--</div>
                         <div style="font-size: 0.82rem; color: #475569; margin-top: 4px;" id="docPoVendorDetails">
-                            Attn: -- • Phone: --<br>
-                            Location: --
+                            Attn: -- • Phone: --
                         </div>
                     </div>
 
@@ -981,13 +1111,14 @@
                 <table class="po-doc-table">
                     <thead>
                         <tr>
-                            <th style="width: 40px; text-align: center;">#</th>
-                            <th style="width: 100px;">SKU</th>
+                            <th style="width: 38px; text-align: center;">#</th>
+                            <th style="width: 95px;">SKU</th>
                             <th>Description & Specifications</th>
-                            <th style="width: 70px; text-align: center;">UOM</th>
-                            <th style="width: 90px; text-align: right;">Quantity</th>
-                            <th style="width: 120px; text-align: right;">Unit Price (₱)</th>
-                            <th style="width: 130px; text-align: right;">Amount (₱)</th>
+                            <th style="width: 65px; text-align: center;">UOM</th>
+                            <th style="width: 85px; text-align: right;">Quantity</th>
+                            <th style="width: 110px; text-align: right;">Unit Price (₱)</th>
+                            <th style="width: 120px; text-align: center;">Taxes</th>
+                            <th style="width: 120px; text-align: right;">Amount (₱)</th>
                         </tr>
                     </thead>
                     <tbody id="docPoItemsTbody">
@@ -996,18 +1127,31 @@
                 </table>
 
                 <div style="display: flex; justify-content: flex-end; margin-bottom: 24px;">
-                    <div style="width: 280px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px 16px;">
-                        <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 6px;">
-                            <span>Gross Total:</span>
-                            <strong id="docPoGross">₱0.00</strong>
+                    <div style="width: 340px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 10px; padding: 14px 18px;">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 5px; color: #334155;">
+                            <span>Untaxed Amount:</span>
+                            <strong id="docPoUntaxed">₱ 0.00</strong>
                         </div>
-                        <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 6px; color: #059669;">
-                            <span>Amount Paid:</span>
-                            <strong id="docPoPaid">₱0.00</strong>
+                        <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 5px; color: #475569;">
+                            <span>VATable:</span>
+                            <span id="docPoVatable">₱ 0.00</span>
                         </div>
-                        <div style="display: flex; justify-content: space-between; font-size: 1rem; font-weight: 900; border-top: 1.5px solid #cbd5e1; padding-top: 6px;">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 8px; color: #475569;">
+                            <span>Withholding Tax:</span>
+                            <span id="docPoWithholding">₱ 0.00</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 1.05rem; font-weight: 900; border-top: 1.5px solid #cbd5e1; padding-top: 6px; margin-bottom: 8px; color: #0f172a;">
+                            <span>Total:</span>
+                            <strong id="docPoGross">₱ 0.00</strong>
+                        </div>
+                        <div id="docPoPaymentsBreakdownList" style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 6px;"></div>
+                        <div style="display: flex; justify-content: space-between; font-size: 0.84rem; margin-bottom: 6px; color: #059669;">
+                            <span>Total Amount Paid:</span>
+                            <strong id="docPoPaid">₱ 0.00</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 0.98rem; font-weight: 900; border-top: 1.5px dashed #cbd5e1; padding-top: 6px;">
                             <span>Balance Due:</span>
-                            <strong style="color: #dc2626;" id="docPoBalance">₱0.00</strong>
+                            <strong style="color: #dc2626;" id="docPoBalance">₱ 0.00</strong>
                         </div>
                     </div>
                 </div>
@@ -1146,6 +1290,117 @@
         </div>
         <div class="po-modal-footer">
             <button type="button" class="po-btn po-btn-outline" onclick="closePoAttachedFilesModal()">Done</button>
+        </div>
+    </div>
+</div>
+
+<!-- ==========================================================================
+     MODAL 5: PARTIAL RECEIPT / BACKORDER DECISION NOTICE MODAL
+     ========================================================================== -->
+<div class="po-modal-backdrop" id="poBackorderModal" role="dialog" aria-modal="true" aria-labelledby="poBackorderModalTitle">
+    <div class="po-modal-card" style="max-width: 600px;">
+        <div class="po-modal-header" style="background: linear-gradient(135deg, #fffbeb, #fef3c7); border-bottom: 1px solid #fde68a;">
+            <div class="po-modal-title" id="poBackorderModalTitle" style="display: flex; align-items: center; gap: 8px; font-weight: 800; color: #92400e;">
+                <i class="ph ph-warning-octagon" style="color: #d97706; font-size: 20px;"></i>
+                <span>Partial Delivery Detected — Create Backorder?</span>
+            </div>
+            <button type="button" class="inv-table-filter-btn" onclick="closePoBackorderModal()">
+                <i class="ph ph-x"></i>
+            </button>
+        </div>
+        <div class="po-modal-body" style="display: flex; flex-direction: column; gap: 12px;">
+            <div style="font-size: 0.86rem; color: #334155; line-height: 1.45;">
+                You have processed <strong>less items than the initial demand</strong> on <strong id="poBackorderRefLabel" style="font-family: monospace; color: #7e22ce;">PO-2026-XXXX</strong>.
+                Create a <strong>Backorder</strong> if you expect to receive the remaining products later. Do not create a backorder if the vendor will not supply the remaining quantities.
+            </div>
+            <div style="border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                    <thead>
+                        <tr style="background: #f8fafc; color: #475569; text-align: left; border-bottom: 1px solid #e2e8f0;">
+                            <th style="padding: 7px 10px;">Item Description</th>
+                            <th style="padding: 7px 10px; text-align: right;">Ordered</th>
+                            <th style="padding: 7px 10px; text-align: right;">Received</th>
+                            <th style="padding: 7px 10px; text-align: right; color: #d97706;">Backorder Qty</th>
+                        </tr>
+                    </thead>
+                    <tbody id="poBackorderShortfallTbody"></tbody>
+                </table>
+            </div>
+        </div>
+        <div class="po-modal-footer" style="display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap;">
+            <button type="button" class="hr-btn hr-btn-primary" onclick="confirmPoBackorderDecision('create_backorder')" style="background: #7c3aed; border-color: #7c3aed;">
+                <i class="ph ph-git-branch"></i> Create Backorder
+            </button>
+            <button type="button" class="hr-btn hr-btn-secondary" onclick="confirmPoBackorderDecision('no_backorder')" style="color: #b45309; border-color: #fcd34d; background: #fffbeb;">
+                <i class="ph ph-prohibit"></i> No Backorder
+            </button>
+            <button type="button" class="hr-btn hr-btn-secondary" onclick="closePoBackorderModal()">
+                Discard
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ==========================================================================
+     MODAL 6: RETURN TO VENDOR (REVERSE GRN / REJECTION) MODAL
+     ========================================================================== -->
+<div class="po-modal-backdrop" id="poReturnToVendorModal" role="dialog" aria-modal="true" aria-labelledby="poReturnModalTitle">
+    <div class="po-modal-card" style="max-width: 680px;">
+        <div class="po-modal-header" style="background: linear-gradient(135deg, #fef2f2, #fee2e2); border-bottom: 1px solid #fecaca;">
+            <div class="po-modal-title" id="poReturnModalTitle" style="display: flex; align-items: center; gap: 8px; font-weight: 800; color: #991b1b;">
+                <i class="ph ph-arrow-u-up-left" style="color: #dc2626; font-size: 20px;"></i>
+                <span>Return Goods to Vendor — <span id="poReturnRefLabel" style="font-family: monospace;">PO-2026-XXXX</span></span>
+            </div>
+            <button type="button" class="inv-table-filter-btn" onclick="closePoReturnToVendorModal()">
+                <i class="ph ph-x"></i>
+            </button>
+        </div>
+        <div class="po-modal-body" style="display: flex; flex-direction: column; gap: 12px;">
+            <div style="font-size: 0.83rem; color: #475569;">
+                Specify the quantities being returned to the vendor due to quality rejection, spoilage, or wrong delivery specification.
+            </div>
+            <div style="border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; max-height: 240px; overflow-y: auto;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                    <thead>
+                        <tr style="background: #f8fafc; color: #475569; text-align: left; border-bottom: 1px solid #e2e8f0;">
+                            <th style="padding: 7px 10px;">Item / SKU</th>
+                            <th style="padding: 7px 10px; text-align: center;">UOM</th>
+                            <th style="padding: 7px 10px; text-align: right;">Received Qty</th>
+                            <th style="padding: 7px 10px; text-align: right; width: 130px;">Return Qty *</th>
+                        </tr>
+                    </thead>
+                    <tbody id="poReturnItemsTbody"></tbody>
+                </table>
+            </div>
+            <div class="po-form-row">
+                <div class="po-field">
+                    <label class="po-label" for="poReturnReasonSelect">Return Reason *</label>
+                    <select class="po-select" id="poReturnReasonSelect">
+                        <option value="Damaged / Spoiled Goods">Damaged / Spoiled Goods on Arrival</option>
+                        <option value="Wrong Specification / SKU">Wrong Specification / Incorrect SKU Delivered</option>
+                        <option value="Quality / Cold-Chain Rejection">Quality / Cold-Chain Temperature Rejection</option>
+                        <option value="Expired / Near-Expiry Batch">Expired / Near-Expiry Batch</option>
+                        <option value="Over-Delivery Return">Over-Delivery Return</option>
+                    </select>
+                </div>
+                <div class="po-field">
+                    <label class="po-label" for="poReturnResolutionSelect">Vendor Resolution *</label>
+                    <select class="po-select" id="poReturnResolutionSelect">
+                        <option value="Credit Memo / Deduct from Bill">Credit Memo (Deduct from Vendor Bill)</option>
+                        <option value="Replacement Delivery">Request Replacement Delivery (Keep Open)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="po-field">
+                <label class="po-label" for="poReturnRemarksInput">Return Notes / RTV Slip Reference</label>
+                <input type="text" class="po-input" id="poReturnRemarksInput" placeholder="e.g. RTV-2026-0014 • Driver signed acknowledgement">
+            </div>
+        </div>
+        <div class="po-modal-footer" style="display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
+            <button type="button" class="hr-btn hr-btn-secondary" onclick="closePoReturnToVendorModal()">Cancel</button>
+            <button type="button" class="hr-btn hr-btn-primary" onclick="submitPoReturnToVendor()" style="background: #dc2626; border-color: #dc2626;">
+                <i class="ph ph-arrow-u-up-left"></i> Confirm Return to Vendor
+            </button>
         </div>
     </div>
 </div>

@@ -2256,6 +2256,7 @@
 }
 
 /* 3. PO Lifecycle Header Bar & 4-Step Chevron Pipeline (Harmonized with RFQ Chevron UI) */
+.po-lifecycle-bar-container,
 .rfq-lifecycle-bar-container.stage-theme-issued {
     border-left: 4px solid #2563eb;
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(239, 246, 255, 0.65));
@@ -2322,21 +2323,57 @@
 }
 
 /* 5. Main Body Split (70% Items Table Panel / 30% Sticky Live Document Mockup) */
-.po-builder-split-body {
+.po-builder-split-body,
+.po-builder-split-body.rfq-builder-split-body {
     display: grid;
     grid-template-columns: minmax(0, 7fr) minmax(340px, 3fr);
     gap: 14px;
-    align-items: start;
+    align-items: start !important;
 }
 
 @media (max-width: 1200px) {
-    .po-builder-split-body {
+    .po-builder-split-body,
+    .po-builder-split-body.rfq-builder-split-body {
         grid-template-columns: 1fr;
     }
 }
 
-.po-items-panel-col {
+.po-items-panel-col,
+.po-items-panel-col.rfq-items-panel-col {
     min-width: 0;
+    height: auto !important;
+}
+
+/* Outer Items Panel: Auto-expands downward based on Settlement Summary (NOT item rows) */
+.po-items-panel-col .po-items-panel,
+.po-items-panel-col .po-items-panel.rfq-items-panel {
+    display: flex;
+    flex-direction: column;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: hidden;
+}
+
+/* Line Items Table Viewport: Fixed/Capped height window (260px–320px) independent of item row count */
+#poTableContainer,
+.po-items-panel-col .po-table-responsive,
+.po-items-panel-col .po-table-responsive.rfq-table-responsive {
+    flex: 0 0 auto !important;
+    min-height: 260px !important;
+    max-height: 320px !important;
+    height: auto !important;
+    overflow-y: auto !important;
+    overflow-x: auto !important;
+    padding-bottom: 4px;
+}
+
+/* Pin table headers inside the scrollable Line Items viewport */
+#poItemsTable thead th {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 12 !important;
+    background: #f8fafc !important;
+    box-shadow: 0 1px 0 #cbd5e1;
 }
 
 .po-mockup-panel-col {
@@ -2383,4 +2420,1145 @@
 .po-field-error-glow {
     border-color: #dc2626 !important;
     box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.18) !important;
+}
+
+/* ==========================================================================
+   6. TAXES COLUMN & ADAPTIVE FINANCIAL / PAYMENT BREAKDOWN
+   ========================================================================== */
+.po-tax-pill-group {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    flex-wrap: nowrap;
+}
+
+.po-tax-select {
+    height: 28px !important;
+    padding: 2px 22px 2px 8px !important;
+    background-position: right 6px center !important;
+    background-size: 10px !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    line-height: 1.2 !important;
+    border-radius: 6px !important;
+    cursor: pointer;
+    width: auto !important;
+    min-width: 82px;
+}
+
+.po-tax-select.vat {
+    background: #f5f3ff !important;
+    color: #6d28d9 !important;
+    border: 1px solid #ddd6fe !important;
+}
+
+.po-tax-select.wht {
+    background: #f0fdf4 !important;
+    color: #047857 !important;
+    border: 1px solid #bbf7d0 !important;
+}
+
+.po-tax-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 7px;
+    border-radius: 999px;
+    font-size: 10.5px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.po-tax-badge.vat {
+    background: #f5f3ff;
+    color: #6d28d9;
+    border: 1px solid #ddd6fe;
+}
+
+.po-tax-badge.wht {
+    background: #f0fdf4;
+    color: #047857;
+    border: 1px solid #bbf7d0;
+}
+
+.po-summary-bar-clean {
+    display: flex !important;
+    align-items: flex-start !important;
+    justify-content: space-between !important;
+    gap: 24px !important;
+    padding: 16px 22px !important;
+    background: #ffffff !important;
+    border-top: 1px solid #e2e8f0 !important;
+    flex-wrap: wrap;
+}
+
+.po-footer-left-meta {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.po-fin-breakdown-panel {
+    min-width: 310px;
+    max-width: 420px;
+    width: auto;
+    margin-left: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.po-fin-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: flex-end;
+    gap: 24px;
+    padding: 2px 0;
+    font-size: 0.92rem;
+    color: #1e293b;
+}
+
+.po-fin-label {
+    text-align: right;
+    color: #334155;
+    font-weight: 500;
+}
+
+.po-fin-value {
+    min-width: 115px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    color: #0f172a;
+    font-weight: 500;
+}
+
+.po-fin-value.strong {
+    font-weight: 800;
+}
+
+.po-fin-divider {
+    height: 1px;
+    background: #cbd5e1;
+    margin: 5px 0 5px auto;
+    width: 130px;
+}
+
+.po-fin-row.total-row {
+    padding-top: 2px;
+}
+
+.po-fin-label.total-label {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.po-fin-value.total-value {
+    font-size: 1.22rem;
+    font-weight: 900;
+    color: #0f172a;
+}
+
+.po-fin-row.balance-row {
+    padding-top: 4px;
+    border-top: 1px dashed #e2e8f0;
+    margin-top: 4px;
+}
+
+.po-fin-label.balance-label {
+    font-size: 0.92rem;
+    font-weight: 800;
+    color: #334155;
+}
+
+.po-fin-value.balance-value {
+    font-size: 1.02rem;
+    font-weight: 800;
+}
+
+/* Adaptive Payment Rows AFTER Amount Due */
+.po-fin-payments-after-due {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-top: 6px;
+}
+
+.po-fin-payment-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 5px 10px;
+    border-radius: 7px;
+    background: #f0fdf4;
+    border: 1px solid #dcfce7;
+    font-size: 0.78rem;
+    color: #065f46;
+}
+
+.po-fin-payment-meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.po-fin-tranche-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 800;
+    background: #dcfce7;
+    color: #047857;
+    border: 1px solid #86efac;
+}
+
+.po-fin-ref-code {
+    font-family: monospace;
+    font-weight: 700;
+    color: #0284c7;
+}
+
+.po-fin-payment-right {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.po-fin-payment-amt {
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    color: #059669;
+}
+
+.po-fin-payment-del {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    border: none;
+    background: rgba(239, 68, 68, 0.12);
+    color: #dc2626;
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.po-fin-payment-del:hover {
+    background: #fee2e2;
+}
+
+.po-fin-remaining-subrow {
+    display: flex;
+    justify-content: flex-end;
+    gap: 14px;
+    font-size: 0.78rem;
+    color: #64748b;
+    padding: 0 4px 2px 0;
+    font-variant-numeric: tabular-nums;
+}
+
+.po-fin-adaptive-input-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+    margin-top: 6px;
+    padding: 7px 10px;
+    background: #f8fafc;
+    border: 1px dashed #cbd5e1;
+    border-radius: 8px;
+}
+
+.po-fin-inline-select {
+    height: 34px !important;
+    min-width: 148px;
+    padding: 4px 28px 4px 10px !important;
+    background-position: right 8px center !important;
+    background-size: 11px !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    line-height: 1.25 !important;
+    color: #334155 !important;
+    background-color: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 7px !important;
+}
+
+.po-fin-inline-ref {
+    height: 34px !important;
+    width: 104px;
+    padding: 4px 8px !important;
+    font-size: 11.5px !important;
+    font-family: monospace;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 7px;
+}
+
+.po-fin-inline-amt {
+    height: 34px !important;
+    width: 106px;
+    padding: 4px 8px !important;
+    font-size: 12px !important;
+    font-weight: 800;
+    text-align: right;
+    color: #0f172a;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 7px;
+    font-variant-numeric: tabular-nums;
+}
+
+.po-fin-inline-btn {
+    height: 34px !important;
+    padding: 0 12px !important;
+    border-radius: 7px;
+    border: none;
+    background: #7c3aed;
+    color: #ffffff;
+    font-size: 11.5px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    white-space: nowrap;
+}
+
+.po-fin-inline-btn:hover {
+    background: #6d28d9;
+}
+
+.po-fin-settled-banner {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: 6px;
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    color: #047857;
+    font-size: 0.78rem;
+    font-weight: 800;
+    margin-top: 2px;
+}
+
+/* ==========================================================================
+   FINANCIAL TRACKING & PAYMENT SETTLEMENT MODAL (2-COLUMN WORKSPACE)
+   ========================================================================== */
+.po-pay-modal-card {
+    max-width: 1120px !important;
+    width: 96% !important;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+}
+
+.po-pay-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 14px 20px;
+    background: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+    flex-wrap: wrap;
+}
+
+.po-pay-header-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.po-pay-header-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: #f3e8ff;
+    color: #7c3aed;
+    border: 1px solid #e9d5ff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.po-pay-header-title {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+}
+
+.po-pay-header-subtitle {
+    font-size: 0.75rem;
+    color: #64748b;
+    margin-top: 1px;
+}
+
+.po-pay-header-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.po-pay-ref-switcher {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    padding: 4px 8px;
+    border-radius: 8px;
+}
+
+.po-pay-ref-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.po-pay-ref-select {
+    height: 28px !important;
+    min-width: 145px;
+    padding: 2px 8px !important;
+    font-size: 12px !important;
+    font-family: monospace;
+    font-weight: 700;
+}
+
+.po-pay-reset-btn {
+    height: 28px;
+    padding: 0 9px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #334155;
+    font-size: 11px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    transition: all 0.12s ease;
+}
+
+.po-pay-reset-btn:hover {
+    border-color: #9333ea;
+    color: #7c3aed;
+    background: #faf5ff;
+}
+
+.po-pay-context-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 9px 20px;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    flex-wrap: wrap;
+}
+
+.po-pay-context-left,
+.po-pay-context-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.po-pay-ctx-caption {
+    font-size: 0.68rem;
+    font-weight: 800;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.po-pay-active-ref-pill {
+    font-family: monospace;
+    font-size: 0.86rem;
+    font-weight: 800;
+    color: #6b21a8;
+    background: #f3e8ff;
+    border: 1px solid #d8b4fe;
+    padding: 2px 9px;
+    border-radius: 6px;
+}
+
+.po-pay-ctx-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #334155;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    padding: 2px 9px;
+    border-radius: 6px;
+}
+
+.po-pay-ctx-pill i {
+    color: #7c3aed;
+    font-size: 13px;
+}
+
+.po-pay-rfq-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: monospace;
+    font-size: 0.74rem;
+    font-weight: 700;
+    color: #0369a1;
+    background: #e0f2fe;
+    border: 1px solid #bae6fd;
+    padding: 2px 8px;
+    border-radius: 6px;
+}
+
+.po-pay-modal-body {
+    padding: 16px 20px !important;
+    max-height: 78vh;
+    overflow-y: auto;
+    background: #f8fafc;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+/* KPI Strip */
+.po-pay-kpi-strip {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.po-pay-kpi-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 11px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.po-pay-kpi-card.is-settled {
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+}
+
+.po-pay-kpi-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+}
+
+.po-pay-kpi-label {
+    font-size: 0.69rem;
+    font-weight: 800;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.po-pay-kpi-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+}
+
+.po-pay-kpi-icon.purple {
+    background: #f3e8ff;
+    color: #7c3aed;
+}
+
+.po-pay-kpi-icon.emerald {
+    background: #ecfdf5;
+    color: #059669;
+}
+
+.po-pay-kpi-icon.rose {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+.po-pay-kpi-icon.indigo {
+    background: #eef2ff;
+    color: #4f46e5;
+}
+
+.po-pay-kpi-val {
+    font-size: 1.22rem;
+    font-weight: 800;
+    color: #0f172a;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.2;
+}
+
+.po-pay-kpi-val.emerald {
+    color: #059669;
+}
+
+.po-pay-kpi-val.rose {
+    color: #dc2626;
+}
+
+.po-pay-kpi-sub {
+    font-size: 0.69rem;
+    color: #64748b;
+    font-variant-numeric: tabular-nums;
+}
+
+.po-pay-kpi-sub.emerald {
+    color: #047857;
+    font-weight: 600;
+}
+
+.po-pay-progress-track {
+    width: 100%;
+    height: 6px;
+    background: #e2e8f0;
+    border-radius: 999px;
+    overflow: hidden;
+    margin-top: 4px;
+}
+
+.po-pay-progress-fill {
+    height: 100%;
+    background: #7c3aed;
+    border-radius: 999px;
+    transition: width 0.2s ease;
+}
+
+.po-pay-progress-fill.is-complete {
+    background: #10b981;
+}
+
+/* 2-Column Workspace Grid */
+.po-pay-workspace-grid {
+    display: grid;
+    grid-template-columns: 1.25fr 1fr;
+    gap: 14px;
+    align-items: start;
+}
+
+.po-pay-ledger-col {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.po-pay-panel,
+.po-pay-statement-card,
+.po-pay-form-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.po-pay-panel-head,
+.po-pay-form-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 10px 14px;
+    background: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+    flex-wrap: wrap;
+}
+
+.po-pay-panel-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.82rem;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.po-pay-panel-title i {
+    color: #7c3aed;
+    font-size: 16px;
+}
+
+.po-pay-mono {
+    font-family: monospace;
+    color: #6b21a8;
+}
+
+.po-pay-count-pill {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #475569;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    padding: 2px 8px;
+    border-radius: 999px;
+}
+
+.po-pay-table-wrap {
+    max-height: 220px;
+    overflow-y: auto;
+    overflow-x: auto;
+}
+
+.po-pay-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11.5px;
+}
+
+.po-pay-table thead tr {
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.po-pay-table th {
+    padding: 8px 10px;
+    text-align: left;
+    font-size: 0.67rem;
+    font-weight: 800;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+}
+
+.po-pay-table tbody tr {
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.po-pay-table tbody tr:hover {
+    background: #faf5ff;
+}
+
+.po-pay-table td {
+    padding: 8px 10px;
+    vertical-align: middle;
+}
+
+.po-pay-td-idx {
+    text-align: center;
+    color: #64748b;
+    font-weight: 700;
+}
+
+.po-pay-td-date {
+    font-weight: 600;
+    color: #1e293b;
+    white-space: nowrap;
+}
+
+.po-pay-method-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.po-pay-ref-code {
+    font-family: monospace;
+    font-weight: 700;
+    color: #0369a1;
+    font-size: 11px;
+}
+
+.po-pay-method-sub {
+    font-size: 10.5px;
+    color: #64748b;
+}
+
+.po-pay-td-paid {
+    text-align: right;
+    font-weight: 800;
+    color: #059669;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.po-pay-td-bal {
+    text-align: right;
+    font-weight: 800;
+    color: #0f172a;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.po-pay-td-bal.is-zero {
+    color: #059669;
+}
+
+.po-pay-del-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: #94a3b8;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.12s ease;
+}
+
+.po-pay-del-btn:hover {
+    background: #fef2f2;
+    border-color: #fecaca;
+    color: #ef4444;
+}
+
+.po-pay-empty-cell {
+    padding: 26px 16px !important;
+    text-align: center;
+}
+
+.po-pay-empty-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    color: #64748b;
+}
+
+.po-pay-empty-box i {
+    font-size: 26px;
+    color: #cbd5e1;
+}
+
+.po-pay-empty-title {
+    font-weight: 700;
+    color: #334155;
+    font-size: 12px;
+}
+
+.po-pay-empty-sub {
+    font-size: 11px;
+    color: #64748b;
+    max-width: 380px;
+}
+
+/* Progressive Statement Breakdown Card */
+.po-pay-statement-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 14px;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    font-size: 0.76rem;
+    font-weight: 800;
+    color: #334155;
+}
+
+.po-pay-statement-head i {
+    color: #7c3aed;
+    margin-right: 4px;
+}
+
+.po-pay-statement-tag {
+    font-size: 0.67rem;
+    font-weight: 700;
+    color: #6b21a8;
+    background: #f3e8ff;
+    padding: 2px 7px;
+    border-radius: 999px;
+}
+
+.po-pay-statement-body {
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.po-pay-stmt-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.78rem;
+}
+
+.po-pay-stmt-label {
+    color: #475569;
+    font-weight: 600;
+}
+
+.po-pay-stmt-val {
+    font-weight: 800;
+    color: #0f172a;
+    font-variant-numeric: tabular-nums;
+}
+
+.po-pay-stmt-val.muted {
+    font-weight: 600;
+    color: #334155;
+}
+
+.po-pay-stmt-row.total .po-pay-stmt-label,
+.po-pay-stmt-row.total .po-pay-stmt-val {
+    font-size: 0.88rem;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.po-pay-stmt-row.due .po-pay-stmt-label,
+.po-pay-stmt-row.due .po-pay-stmt-val {
+    font-size: 0.84rem;
+    font-weight: 800;
+}
+
+.po-pay-stmt-divider {
+    height: 1px;
+    background: #e2e8f0;
+    margin: 3px 0;
+}
+
+.po-pay-stmt-divider.dashed {
+    background: none;
+    border-top: 1px dashed #cbd5e1;
+}
+
+.po-pay-stmt-payments {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 4px;
+}
+
+.po-pay-stmt-payment-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 4px 8px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 0.74rem;
+}
+
+.po-pay-stmt-pay-meta {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-wrap: wrap;
+    color: #334155;
+}
+
+.po-pay-stmt-pay-meta i {
+    color: #10b981;
+}
+
+.po-pay-stmt-pay-tranche {
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.po-pay-stmt-pay-date {
+    color: #64748b;
+    font-style: italic;
+}
+
+.po-pay-stmt-pay-ref {
+    font-family: monospace;
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: #6b21a8;
+    background: #f3e8ff;
+    padding: 1px 5px;
+    border-radius: 4px;
+}
+
+.po-pay-stmt-pay-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.po-pay-stmt-pay-deduct {
+    font-weight: 800;
+    color: #059669;
+}
+
+.po-pay-stmt-pay-after {
+    font-size: 0.69rem;
+    color: #64748b;
+    font-weight: 600;
+}
+
+.po-pay-stmt-row.final-balance {
+    margin-top: 4px;
+    padding-top: 6px;
+    border-top: 1px solid #e2e8f0;
+    font-weight: 800;
+    color: #dc2626;
+}
+
+.po-pay-stmt-row.final-balance.is-settled {
+    color: #059669;
+}
+
+.po-pay-stmt-row.final-balance.is-settled .po-pay-stmt-label,
+.po-pay-stmt-row.final-balance.is-settled .po-pay-stmt-val {
+    color: #059669;
+}
+
+/* Right Column: Payment Entry Form */
+.po-pay-preset-group {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-wrap: wrap;
+}
+
+.po-pay-preset-pill {
+    height: 24px;
+    padding: 0 8px;
+    border-radius: 6px;
+    border: 1px solid #ddd6fe;
+    background: #f5f3ff;
+    color: #6d28d9;
+    font-size: 11px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    transition: all 0.12s ease;
+}
+
+.po-pay-preset-pill:hover {
+    background: #ede9fe;
+    border-color: #c4b5fd;
+}
+
+.po-pay-preset-pill.emerald {
+    background: #ecfdf5;
+    border-color: #a7f3d0;
+    color: #047857;
+}
+
+.po-pay-preset-pill.emerald:hover {
+    background: #d1fae5;
+}
+
+.po-pay-settled-notice {
+    margin: 10px 14px 0;
+    padding: 9px 12px;
+    border-radius: 8px;
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    color: #065f46;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.po-pay-settled-notice i {
+    font-size: 20px;
+    color: #059669;
+    flex-shrink: 0;
+}
+
+.po-pay-settled-title {
+    font-size: 0.78rem;
+    font-weight: 800;
+}
+
+.po-pay-settled-sub {
+    font-size: 0.7rem;
+    color: #047857;
+}
+
+.po-pay-form-grid {
+    padding: 12px 14px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.po-pay-amount-input {
+    font-weight: 800 !important;
+    font-size: 0.92rem !important;
+    color: #0f172a !important;
+    font-variant-numeric: tabular-nums;
+}
+
+.po-pay-form-actions {
+    padding: 10px 14px 12px;
+    border-top: 1px solid #f1f5f9;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.po-pay-submit-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 8px 16px !important;
+    font-size: 12.5px !important;
+}
+
+.po-pay-modal-footer {
+    padding: 10px 20px !important;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #ffffff !important;
+    border-top: 1px solid #e2e8f0 !important;
+}
+
+.po-pay-footer-note {
+    font-size: 0.74rem;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.po-pay-footer-note i {
+    color: #7c3aed;
+    font-size: 15px;
+}
+
+@media (max-width: 920px) {
+    .po-pay-kpi-strip {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .po-pay-workspace-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 560px) {
+    .po-pay-kpi-strip,
+    .po-pay-form-grid {
+        grid-template-columns: 1fr;
+    }
 }

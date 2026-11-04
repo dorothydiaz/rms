@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Stocks Overview - Inventory Operations')
+@section('title', 'Stocks Overview - Multi-Warehouse Inventory')
 
 @push('styles')
     @vite('resources/css/modules/stocks-overview.css')
@@ -11,11 +11,16 @@
     window.StocksOverviewConfig = Object.freeze({
         routes: {
             stocksOverviewData: @json(route('inventory.api.stocks-overview-data')),
+            stockIn: @json(route('inventory.stock-in')),
+            internalTransfer: @json(route('inventory.internal-transfer')),
+            stockOut: @json(route('inventory.stock-out')),
         },
         data: {
             initialProducts: @json($initialProducts ?? []),
             initialCategories: @json($initialCategories ?? []),
             initialLedger: @json($initialLedger ?? []),
+            initialWarehouses: @json($initialWarehouses ?? []),
+            initialStorageAreas: @json($initialStorageAreas ?? []),
         }
     });
 </script>
@@ -26,462 +31,435 @@
 @endpush
 
 @section('content')
+<div class="stk-workspace">
 
-<div class="stk-page-container">
-
-    <!-- 1. Page Header Section -->
-    <header class="stk-header-bar">
-        <div class="stk-header-title-box">
-            <div class="stk-header-icon">
-                <i class="ph ph-squares-four"></i>
+    <!-- 1. Enterprise Header Bar -->
+    <header class="stk-header-card">
+        <div class="stk-header-left">
+            <div class="stk-brand-badge">
+                <i class="ph ph-warehouse"></i>
             </div>
             <div>
-                <h1>Stocks Overview</h1>
-                <p>Real-time inventory ledger tracking beginning balances, operational movements, cycle count audits, in-transit shipments, and projected availability.</p>
+                <div class="stk-title-row">
+                    <h1 class="stk-title">Stocks Overview</h1>
+                    <span class="stk-status-pill"><span class="stk-pulse-dot"></span> Multi-Warehouse Live</span>
+                </div>
+                <p class="stk-subtitle">
+                    Real-time physical stock across facilities, specific storage bins, inbound PO pipeline, and event-sourced ledger balances.
+                </p>
             </div>
         </div>
         <div class="stk-header-actions">
-            <!-- Item Master -->
-            <a href="{{ route('inventory.product-categories') }}" class="stk-btn-secondary" title="View Item Master Catalog">
-                <i class="ph ph-folder-simple"></i>
-                <span>Item Master</span>
+            <a href="{{ route('inventory.stock-in') }}" class="hr-btn hr-btn-primary hr-btn-sm" title="Receive Inbound Purchase Orders or Spot Stock">
+                <i class="ph ph-arrow-down-left"></i>
+                <span>Stock In Intake</span>
             </a>
-            <!-- Bill of Materials -->
-            <a href="{{ route('inventory.recipe-management') }}" class="stk-btn-secondary" title="View Bill of Materials (BOM)">
-                <i class="ph ph-cooking-pot"></i>
-                <span>BOM Recipes</span>
+            <a href="{{ route('inventory.stock-out') }}" class="hr-btn hr-btn-secondary hr-btn-sm" title="Dispatch Outbound Shipments">
+                <i class="ph ph-arrow-up-right"></i>
+                <span>Stock Out</span>
             </a>
-            <!-- Sync / Refresh -->
-            <button type="button" class="stk-btn-secondary" onclick="refreshStocksData()" title="Recompute Live Inventory Movements">
+            <a href="{{ route('inventory.internal-transfer') }}" class="hr-btn hr-btn-secondary hr-btn-sm" title="Warehouse to Warehouse Requisition">
+                <i class="ph ph-arrows-left-right"></i>
+                <span>Transfer</span>
+            </a>
+            <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="refreshStocksData()" title="Recompute Live Inventory Movements">
                 <i class="ph ph-arrows-clockwise"></i>
-                <span>Refresh</span>
+                <span>Sync</span>
             </button>
-            <!-- Print Report -->
-            <button type="button" class="stk-btn-secondary" onclick="window.print()" title="Print Stocks Overview Report">
-                <i class="ph ph-printer"></i>
-                <span>Print</span>
-            </button>
-            <!-- Export CSV -->
-            <button type="button" class="stk-btn-primary" onclick="exportStocksCSV()" title="Export 10-Column Ledger to CSV">
+            <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="exportStocksCSV()" title="Export Filtered Inventory to CSV">
                 <i class="ph ph-file-arrow-down"></i>
-                <span>Export CSV</span>
+                <span>Export</span>
             </button>
         </div>
     </header>
 
-    <!-- 2. KPI Summary Bar (5 Stat Cards) -->
+    <!-- 2. KPI Summary Bar (4 High-Signal Cards) -->
     <section class="stk-metrics-grid">
         <!-- Metric 1: Physical On-Hand -->
-        <div class="stk-metric-card">
-            <div class="stk-metric-icon-wrap is-onhand">
+        <div class="stk-kpi-card">
+            <div class="stk-kpi-icon-wrap is-onhand">
                 <i class="ph ph-package"></i>
             </div>
-            <div class="stk-metric-data">
-                <span class="stk-metric-label">Physical On-Hand</span>
-                <span class="stk-metric-value" id="kpiTotalOnHand">0 units</span>
-                <span class="stk-metric-subtext" id="kpiOnHandValuation">Valuation: ₱0.00</span>
+            <div class="stk-kpi-content">
+                <span class="stk-kpi-label">Physical On-Hand</span>
+                <span class="stk-kpi-value" id="kpiTotalOnHand">0 units</span>
+                <span class="stk-kpi-subtext" id="kpiActiveFacilities">Facilities: WH-MAIN &bull; WH-COLD &bull; WH-BGC</span>
             </div>
         </div>
 
-        <!-- Metric 2: Stock In Flow -->
-        <div class="stk-metric-card">
-            <div class="stk-metric-icon-wrap is-in">
-                <i class="ph ph-arrow-circle-down-right"></i>
-            </div>
-            <div class="stk-metric-data">
-                <span class="stk-metric-label">Period Inflow (+)</span>
-                <span class="stk-metric-value" id="kpiTotalStockIn">+0 units</span>
-                <span class="stk-metric-subtext" id="kpiStockInBreakdown">Purchases & Transfers In</span>
-            </div>
-        </div>
-
-        <!-- Metric 3: Stock Out Flow -->
-        <div class="stk-metric-card">
-            <div class="stk-metric-icon-wrap is-out">
-                <i class="ph ph-arrow-circle-up-right"></i>
-            </div>
-            <div class="stk-metric-data">
-                <span class="stk-metric-label">Period Outflow (-)</span>
-                <span class="stk-metric-value" id="kpiTotalStockOut">-0 units</span>
-                <span class="stk-metric-subtext" id="kpiStockOutBreakdown">POS Sales & Recipe Usage</span>
-            </div>
-        </div>
-
-        <!-- Metric 4: In-Transit Pipeline -->
-        <div class="stk-metric-card">
-            <div class="stk-metric-icon-wrap is-transit">
+        <!-- Metric 2: Inbound Supply Demand (Open POs) -->
+        <div class="stk-kpi-card">
+            <div class="stk-kpi-icon-wrap is-inbound">
                 <i class="ph ph-truck"></i>
             </div>
-            <div class="stk-metric-data">
-                <span class="stk-metric-label">In-Transit Pipeline</span>
-                <span class="stk-metric-value" id="kpiTotalInTransit">0 net</span>
-                <span class="stk-metric-subtext" id="kpiInTransitBreakdown">Incoming vs Outgoing</span>
+            <div class="stk-kpi-content">
+                <span class="stk-kpi-label">Inbound PO Pipeline</span>
+                <span class="stk-kpi-value is-inbound" id="kpiInboundPO">+0 units</span>
+                <span class="stk-kpi-subtext" id="kpiInboundSub">Awaiting Dock Check-In</span>
             </div>
         </div>
 
-        <!-- Metric 5: Low Stock & Reorder Alerts -->
-        <div class="stk-metric-card">
-            <div class="stk-metric-icon-wrap is-alert">
+        <!-- Metric 3: Portfolio Inventory Valuation -->
+        <div class="stk-kpi-card">
+            <div class="stk-kpi-icon-wrap is-valuation">
+                <i class="ph ph-coins"></i>
+            </div>
+            <div class="stk-kpi-content">
+                <span class="stk-kpi-label">Inventory Valuation</span>
+                <span class="stk-kpi-value" id="kpiTotalValuation">₱0.00</span>
+                <span class="stk-kpi-subtext">Weighted Unit Cost Basis</span>
+            </div>
+        </div>
+
+        <!-- Metric 4: Reorder & Shortage Alerts -->
+        <div class="stk-kpi-card">
+            <div class="stk-kpi-icon-wrap is-alert">
                 <i class="ph ph-warning-circle"></i>
             </div>
-            <div class="stk-metric-data">
-                <span class="stk-metric-label">Stock Status Alerts</span>
-                <span class="stk-metric-value" id="kpiLowStockCount">0 Items</span>
-                <span class="stk-metric-subtext" id="kpiLowStockSub">At or below reorder threshold</span>
+            <div class="stk-kpi-content">
+                <span class="stk-kpi-label">Replenishment Alerts</span>
+                <span class="stk-kpi-value is-alert" id="kpiAlertCount">0 Items</span>
+                <span class="stk-kpi-subtext" id="kpiAlertSub">At or Below Safety Threshold</span>
             </div>
         </div>
     </section>
 
-    <!-- 3. Redesigned Filter Ribbon with Single Date Range Picker -->
-    <section class="stk-filter-ribbon-card">
-        <div class="stk-filter-ribbon-row">
+    <!-- 3. Modern Multi-Warehouse Filter Ribbon -->
+    <section class="stk-filter-card">
+        <div class="stk-filter-row">
             <!-- Search Bar -->
             <div class="stk-search-box">
                 <i class="ph ph-magnifying-glass stk-search-icon"></i>
-                <input type="text" id="stkSearchInput" class="stk-search-input" placeholder="Search item name, SKU code, or barcode..." autocomplete="off">
+                <input type="text" id="stkSearchInput" class="stk-search-input" placeholder="Search item name, SKU, or barcode..." aria-label="Search inventory by item name, SKU, or barcode" autocomplete="off">
                 <span class="stk-search-shortcut">/</span>
             </div>
 
-            <!-- Redesigned Unified Single Date Range Picker Component -->
-            <div class="stk-daterange-picker-wrapper" id="stkDateRangePickerWrap">
-                <button type="button" class="stk-daterange-trigger" id="stkDateRangeTrigger" onclick="toggleDateRangePopover(event)" aria-haspopup="true" aria-expanded="false" title="Click to modify operational date window">
-                    <div class="stk-daterange-trigger-icon">
-                        <i class="ph ph-calendar"></i>
-                    </div>
-                    <div class="stk-daterange-trigger-content">
-                        <span class="stk-daterange-tag">Operational Period</span>
-                        <span class="stk-daterange-label" id="stkDateRangeDisplay">This Month (Sep 01 - Sep 29, 2026)</span>
-                    </div>
-                    <i class="ph ph-caret-down stk-daterange-caret" id="stkDateRangeCaret"></i>
-                </button>
-
-                <!-- Popover Dropdown -->
-                <div class="stk-daterange-popover" id="stkDateRangePopover">
-                    <div class="stk-popover-header">
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <i class="ph ph-calendar-blank" style="color: var(--stk-primary); font-size: 16px;"></i>
-                            <span class="stk-popover-title">Select Date Interval</span>
-                        </div>
-                        <button type="button" class="stk-popover-close-btn" onclick="closeDateRangePopover()" title="Close (Esc)">
-                            <i class="ph ph-x"></i>
-                        </button>
-                    </div>
-                    <div class="stk-popover-body">
-                        <!-- Left: Presets List -->
-                        <div class="stk-popover-presets">
-                            <span class="stk-popover-col-header">Quick Presets</span>
-                            <button type="button" class="stk-popover-preset-btn" data-preset="today" onclick="selectDatePreset('today')">
-                                <span>Today</span>
-                                <span class="stk-preset-shortcut">1D</span>
-                            </button>
-                            <button type="button" class="stk-popover-preset-btn" data-preset="yesterday" onclick="selectDatePreset('yesterday')">
-                                <span>Yesterday</span>
-                                <span class="stk-preset-shortcut">Yday</span>
-                            </button>
-                            <button type="button" class="stk-popover-preset-btn" data-preset="last_7_days" onclick="selectDatePreset('last_7_days')">
-                                <span>Last 7 Days</span>
-                                <span class="stk-preset-shortcut">7D</span>
-                            </button>
-                            <button type="button" class="stk-popover-preset-btn active" data-preset="this_month" onclick="selectDatePreset('this_month')">
-                                <span>This Month</span>
-                                <span class="stk-preset-shortcut">MTD</span>
-                            </button>
-                            <button type="button" class="stk-popover-preset-btn" data-preset="last_30_days" onclick="selectDatePreset('last_30_days')">
-                                <span>Last 30 Days</span>
-                                <span class="stk-preset-shortcut">30D</span>
-                            </button>
-                            <button type="button" class="stk-popover-preset-btn" data-preset="this_quarter" onclick="selectDatePreset('this_quarter')">
-                                <span>This Quarter</span>
-                                <span class="stk-preset-shortcut">Q3</span>
-                            </button>
-                        </div>
-
-                        <!-- Right: Custom Date Range Form -->
-                        <div class="stk-popover-custom">
-                            <span class="stk-popover-col-header">Custom Range Interval</span>
-                            <div class="stk-dual-input-row">
-                                <div class="stk-popover-field">
-                                    <label for="stkStartDate">Start Date</label>
-                                    <div class="stk-input-with-icon">
-                                        <i class="ph ph-calendar-plus"></i>
-                                        <input type="date" id="stkStartDate" class="stk-popover-date-input" onchange="handleManualDateChange()">
-                                    </div>
-                                </div>
-                                <div class="stk-dual-arrow">
-                                    <i class="ph ph-arrow-right"></i>
-                                </div>
-                                <div class="stk-popover-field">
-                                    <label for="stkEndDate">End Date</label>
-                                    <div class="stk-input-with-icon">
-                                        <i class="ph ph-calendar-check"></i>
-                                        <input type="date" id="stkEndDate" class="stk-popover-date-input" onchange="handleManualDateChange()">
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="stk-popover-footer-actions">
-                                <button type="button" class="stk-btn-secondary" onclick="resetToThisMonth()" style="padding: 6px 12px; font-size: 0.74rem;">Reset to Month</button>
-                                <button type="button" class="stk-btn-primary" onclick="applyCustomDateRange()" style="padding: 6px 16px; font-size: 0.74rem;">
-                                    <i class="ph ph-check"></i> Apply Range
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <!-- Warehouse Facility Filter -->
+            <div class="stk-select-wrapper">
+                <i class="ph ph-buildings stk-select-icon"></i>
+                <select id="stkWarehouseFilter" class="stk-select-dropdown" aria-label="Filter by warehouse facility" onchange="handleWarehouseFilter(this.value)">
+                    <option value="ALL">All Facilities (Consolidated)</option>
+                    @foreach($initialWarehouses as $wh)
+                        <option value="{{ $wh['id'] }}">{{ $wh['code'] }} — {{ $wh['name'] }}</option>
+                    @endforeach
+                </select>
             </div>
 
-            <!-- Category Selector -->
-            <select id="stkCategoryFilter" class="stk-select-dropdown" onchange="handleCategoryFilter(this.value)">
-                <option value="ALL">All Categories</option>
-            </select>
+            <!-- Storage Area / Specific Bin Filter (Dynamically Cascaded) -->
+            <div class="stk-select-wrapper">
+                <i class="ph ph-map-pin stk-select-icon"></i>
+                <select id="stkLocationFilter" class="stk-select-dropdown" aria-label="Filter by storage bin location" onchange="handleLocationFilter(this.value)">
+                    <option value="ALL">All Storage Bins & Zones</option>
+                    @foreach($initialStorageAreas as $area)
+                        <option value="{{ $area['name'] }}" data-warehouse="{{ $area['warehouse_id'] }}">{{ $area['warehouse_id'] }} &bull; {{ $area['name'] }}</option>
+                    @endforeach
+                </select>
+            </div>
 
-            <!-- Branch Selector -->
-            <select id="stkBranchFilter" class="stk-select-dropdown" onchange="handleBranchFilter(this.value)">
-                <option value="ALL">All Branches</option>
-                <option value="Power Mac Center - Main HQ">Power Mac Center - Main HQ</option>
-                <option value="Makati Greenbelt Kiosk">Makati Greenbelt Kiosk</option>
-                <option value="BGC High Street Branch">BGC High Street Branch</option>
-            </select>
+            <!-- Category Filter -->
+            <div class="stk-select-wrapper">
+                <i class="ph ph-tag stk-select-icon"></i>
+                <select id="stkCategoryFilter" class="stk-select-dropdown" aria-label="Filter by product category" onchange="handleCategoryFilter(this.value)">
+                    <option value="ALL">All Categories</option>
+                    @foreach($initialCategories as $cat)
+                        <option value="{{ $cat->name }}">{{ $cat->name }}</option>
+                    @endforeach
+                </select>
+            </div>
 
-            <!-- Stock Status Selector -->
-            <select id="stkStatusFilter" class="stk-select-dropdown" onchange="handleStatusFilter(this.value)">
-                <option value="ALL">All Stock Statuses</option>
-                <option value="LOW_STOCK">Low Stock (Reorder Needed)</option>
-                <option value="OUT_OF_STOCK">Out of Stock (Zero Units)</option>
-                <option value="HEALTHY">Healthy Stock Levels</option>
-                <option value="HAS_TRANSIT">Has Active In-Transit</option>
-            </select>
+            <!-- Stock Health Status Filter -->
+            <div class="stk-select-wrapper">
+                <i class="ph ph-activity stk-select-icon"></i>
+                <select id="stkStatusFilter" class="stk-select-dropdown" aria-label="Filter by stock health status" onchange="handleStatusFilter(this.value)">
+                    <option value="ALL">All Stock Statuses</option>
+                    <option value="LOW_STOCK">Low Stock (Reorder Needed)</option>
+                    <option value="OUT_OF_STOCK">Out of Stock (Zero Units)</option>
+                    <option value="HEALTHY">Healthy Stock Levels</option>
+                    <option value="HAS_INBOUND">Has Inbound Open POs</option>
+                </select>
+            </div>
 
             <!-- Reset Filters -->
-            <button type="button" class="stk-btn-secondary" onclick="resetAllFilters()" title="Reset All Filters">
+            <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="resetAllFilters()" title="Reset All Filters">
                 <i class="ph ph-arrow-counter-clockwise"></i>
                 <span>Reset</span>
             </button>
         </div>
 
-        <!-- Filter Chips & Row Counter -->
-        <div class="stk-active-chips-bar">
-            <div class="stk-chips-list" id="activeFilterChips">
-                <!-- Dynamically generated active filter tags -->
+        <!-- Active Filter Indicator & Item Count -->
+        <div class="stk-filter-meta">
+            <div class="stk-meta-tags" id="activeFilterChips">
+                <!-- Dynamically populated filter chips -->
             </div>
-            <div class="stk-results-counter">
-                Showing <strong id="visibleRowCount">0</strong> of <strong id="totalRowCount">0</strong> items
+            <div class="stk-meta-count">
+                Showing <strong id="visibleRowCount">{{ count($initialProducts) }}</strong> of <strong id="totalRowCount">{{ count($initialProducts) }}</strong> items
             </div>
         </div>
     </section>
 
-    <!-- 4. Advanced 10-Column Data Table -->
+    <!-- 4. Modern High-Signal 6-Column Inventory Table -->
     <section class="stk-table-card">
-        <div class="stk-table-responsive-wrapper">
+        <div class="stk-table-scroll">
             <table class="stk-table" id="stocksOverviewTable">
                 <thead>
                     <tr>
-                        <!-- Col 1: Item / SKU -->
-                        <th style="width: 19%; min-width: 170px;">
-                            <div class="stk-th-header-box">
-                                <span class="stk-th-title"><i class="ph ph-package" style="color: var(--stk-primary);"></i> Item / SKU</span>
-                                <span class="stk-th-sub">Item Name &bull; SKU / Barcode</span>
+                        <th class="stk-col-item">
+                            <div class="stk-th-box">
+                                <span class="stk-th-title"><i class="ph ph-package"></i> Item & Category</span>
+                                <span class="stk-th-sub">Item Name &bull; SKU &bull; Base UOM</span>
                             </div>
                         </th>
-
-                        <!-- Col 2: Category -->
-                        <th style="width: 11%; min-width: 105px;">
-                            <div class="stk-th-header-box">
-                                <span class="stk-th-title"><i class="ph ph-tag" style="color: #64748b;"></i> Category</span>
-                                <span class="stk-th-sub">Category &bull; Sub-category</span>
+                        <th class="stk-col-wh">
+                            <div class="stk-th-box">
+                                <span class="stk-th-title"><i class="ph ph-map-pin"></i> Primary Facility & Storage Bin</span>
+                                <span class="stk-th-sub">Assigned Warehouse & Location</span>
                             </div>
                         </th>
-
-                        <!-- Col 3: Beginning -->
-                        <th style="width: 7%; min-width: 70px;">
-                            <div class="stk-th-header-box">
-                                <span class="stk-th-title"><i class="ph ph-hourglass-high" style="color: #64748b;"></i> Beginning</span>
-                                <span class="stk-th-sub">Starting Qty &bull; UOM</span>
+                        <th class="stk-col-onhand">
+                            <div class="stk-th-box is-right">
+                                <span class="stk-th-title"><i class="ph ph-stack"></i> Physical On-Hand</span>
+                                <span class="stk-th-sub">Current Count &bull; Valuation</span>
                             </div>
                         </th>
-
-                        <!-- Col 4: Stock In (+) -->
-                        <th style="width: 9%; min-width: 85px;">
-                            <div class="stk-th-header-box">
-                                <span class="stk-th-title" style="color: var(--stk-success-dark);"><i class="ph ph-arrow-circle-down-right"></i> Stock In (+)</span>
-                                <span class="stk-th-sub">Received &bull; Purchases / Transfers</span>
+                        <th class="stk-col-inbound">
+                            <div class="stk-th-box is-right">
+                                <span class="stk-th-title is-inbound"><i class="ph ph-truck"></i> Inbound Supply</span>
+                                <span class="stk-th-sub">Open POs &bull; Available-to-Promise</span>
                             </div>
                         </th>
-
-                        <!-- Col 5: Stock Out (-) -->
-                        <th style="width: 9%; min-width: 85px;">
-                            <div class="stk-th-header-box">
-                                <span class="stk-th-title" style="color: var(--stk-info-dark);"><i class="ph ph-arrow-circle-up-right"></i> Stock Out (-)</span>
-                                <span class="stk-th-sub">Sales &bull; POS / Recipe Usage</span>
+                        <th class="stk-col-health">
+                            <div class="stk-th-box">
+                                <span class="stk-th-title"><i class="ph ph-gauge"></i> Replenishment Health</span>
+                                <span class="stk-th-sub">Safety Level vs Reorder Point</span>
                             </div>
                         </th>
-
-                        <!-- Col 6: Waste / Loss (-) -->
-                        <th style="width: 8%; min-width: 80px;">
-                            <div class="stk-th-header-box">
-                                <span class="stk-th-title" style="color: var(--stk-danger-dark);"><i class="ph ph-trash"></i> Waste / Loss (-)</span>
-                                <span class="stk-th-sub">Spoilage &bull; Damaged / Expired</span>
-                            </div>
-                        </th>
-
-                        <!-- Col 7: Adjustments (±) -->
-                        <th style="width: 8%; min-width: 80px;">
-                            <div class="stk-th-header-box">
-                                <span class="stk-th-title"><i class="ph ph-scales" style="color: #d97706;"></i> Adjustments (&plusmn;)</span>
-                                <span class="stk-th-sub">Audit Count &bull; Variance</span>
-                            </div>
-                        </th>
-
-                        <!-- Col 8: Production (±) -->
-                        <th style="width: 8%; min-width: 85px;">
-                            <div class="stk-th-header-box">
-                                <span class="stk-th-title" style="color: #9333ea;"><i class="ph ph-factory"></i> Production (&plusmn;)</span>
-                                <span class="stk-th-sub">Yield (+) &bull; Consumed (-)</span>
-                            </div>
-                        </th>
-
-                        <!-- Col 8: Physical On-Hand -->
-                        <th style="width: 10%; min-width: 95px;">
-                            <div class="stk-th-header-box">
-                                <span class="stk-th-title"><i class="ph ph-warehouse" style="color: var(--stk-text-strong);"></i> Physical On-Hand</span>
-                                <span class="stk-th-sub">Ending Stock &bull; Shelf Stock</span>
-                            </div>
-                        </th>
-
-                        <!-- Col 9: In-Transit Pipeline (Both in 1 column!) -->
-                        <th style="width: 9%; min-width: 95px;">
-                            <div class="stk-th-header-box">
-                                <span class="stk-th-title"><i class="ph ph-truck" style="color: #2563eb;"></i> In-Transit Pipeline</span>
-                                <span class="stk-th-sub">Incoming (+) &bull; Outgoing (-)</span>
-                            </div>
-                        </th>
-
-                        <!-- Col 10: Projected Total -->
-                        <th style="width: 10%; min-width: 95px;" class="stk-projected-cell">
-                            <div class="stk-th-header-box">
-                                <span class="stk-th-title" style="color: var(--stk-primary-dark);"><i class="ph ph-sparkle"></i> Projected Total</span>
-                                <span class="stk-th-sub">Available &bull; Net Expected</span>
+                        <th class="stk-col-action">
+                            <div class="stk-th-box is-center">
+                                <span class="stk-th-title"><i class="ph ph-dots-three-circle"></i> Breakdown</span>
+                                <span class="stk-th-sub">Facility Bins</span>
                             </div>
                         </th>
                     </tr>
                 </thead>
                 <tbody id="stocksTableTbody">
-                    <!-- Populated dynamically via JS renderTable() -->
+                    @forelse($initialProducts as $item)
+                        @php
+                            $onHand = (float) $item->current_stock;
+                            $minStock = (float) ($item->min_stock ?? 10);
+                            $maxStock = (float) ($item->max_stock ?? 50);
+                            $inboundQty = (float) ($item->inbound_po_qty ?? 0);
+                            $atp = max(0, $onHand + $inboundQty);
+                            $primaryWh = $item->primary_warehouse ?? 'WH-MAIN';
+                            $primaryLoc = $item->primary_location ?? ($item->storage_location ?? 'Stock Zone A');
+
+                            $statusClass = 'is-healthy';
+                            $statusLabel = 'In Stock';
+                            if ($onHand <= 0) {
+                                $statusClass = 'is-danger';
+                                $statusLabel = 'Out of Stock';
+                            } elseif ($onHand <= $minStock) {
+                                $statusClass = 'is-warning';
+                                $statusLabel = 'Low Stock';
+                            }
+
+                            $healthPct = $maxStock > 0 ? min(100, max(5, round(($onHand / $maxStock) * 100))) : 50;
+                        @endphp
+                        <tr class="stk-row" data-sku="{{ $item->sku }}" data-category="{{ $item->category }}" data-warehouse="{{ $primaryWh }}" data-status="{{ $statusClass }}">
+                            <!-- Col 1: Item & Category -->
+                            <td>
+                                <div class="stk-item-cell">
+                                    <div class="stk-item-name-wrap">
+                                        <button type="button" class="stk-item-name-link" onclick="openLocationBreakdownModal('{{ $item->sku }}')">
+                                            {{ $item->name }}
+                                        </button>
+                                        <div class="stk-item-badges">
+                                            <span class="stk-sku-pill">{{ $item->sku }}</span>
+                                            <span class="stk-cat-pill">{{ $item->category }}</span>
+                                            <span class="stk-uom-pill">{{ $item->uom }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <!-- Col 2: Primary Facility & Bin -->
+                            <td>
+                                <div class="stk-wh-cell">
+                                    <div class="stk-facility-tag {{ $primaryWh === 'WH-COLD' ? 'wh-cold' : ($primaryWh === 'WH-BGC' ? 'wh-bgc' : 'wh-main') }}">
+                                        <i class="ph ph-buildings"></i>
+                                        <span>{{ $primaryWh }}</span>
+                                    </div>
+                                    <div class="stk-loc-text" title="{{ $primaryLoc }}">
+                                        <i class="ph ph-map-pin"></i>
+                                        <span>{{ $primaryLoc }}</span>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <!-- Col 3: Physical On-Hand -->
+                            <td class="text-right">
+                                <div class="stk-qty-cell">
+                                    <div class="stk-qty-val">{{ number_format($onHand, 2) }} <span class="stk-qty-unit">{{ $item->uom }}</span></div>
+                                    <div class="stk-stock-tag {{ $statusClass }}">
+                                        <span class="stk-dot"></span>
+                                        <span>{{ $statusLabel }}</span>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <!-- Col 4: Inbound Supply (Open POs) -->
+                            <td class="text-right">
+                                <div class="stk-inbound-cell">
+                                    @if($inboundQty > 0)
+                                        <button type="button" class="stk-inbound-badge" onclick="openLocationBreakdownModal('{{ $item->sku }}')" title="Click to view inbound PO details">
+                                            <i class="ph ph-arrow-down-left"></i>
+                                            <span>+{{ number_format($inboundQty, 2) }}</span>
+                                        </button>
+                                        <div class="stk-atp-sub">ATP: {{ number_format($atp, 2) }}</div>
+                                    @else
+                                        <span class="stk-inbound-none">—</span>
+                                    @endif
+                                </div>
+                            </td>
+
+                            <!-- Col 5: Replenishment Health Bar -->
+                            <td>
+                                <div class="stk-health-cell">
+                                    <div class="stk-health-bar-track">
+                                        <div class="stk-health-bar-fill {{ $statusClass }}" style="width: {{ $healthPct }}%;"></div>
+                                    </div>
+                                    <div class="stk-health-limits">
+                                        <span>Min: {{ number_format($minStock, 0) }}</span>
+                                        <span>Max: {{ number_format($maxStock, 0) }}</span>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <!-- Col 6: Action -->
+                            <td class="text-center">
+                                <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm stk-drill-btn" onclick="openLocationBreakdownModal('{{ $item->sku }}')" title="View Facility Bins & Inbound Orders">
+                                    <i class="ph ph-magnifying-glass-plus"></i>
+                                    <span>Bins</span>
+                                </button>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="6" class="stk-empty-state">
+                                <i class="ph ph-package-x"></i>
+                                <p>No inventory records found in the database.</p>
+                            </td>
+                        </tr>
+                    @endforelse
                 </tbody>
-                <tfoot id="stocksTableTfoot">
-                    <tr>
-                        <td colspan="2">
-                            <div class="stk-tfoot-title"><i class="ph ph-chart-line-up" style="color: var(--stk-primary); font-size: 15px;"></i> Portfolio Grand Totals</div>
-                            <div class="stk-tfoot-sub">Active Filtered Inventory Records</div>
-                        </td>
-                        <td id="footBegQty" class="stk-val-tabular" style="font-weight: 700; color: var(--stk-text-strong);">0</td>
-                        <td id="footStockIn" class="stk-val-tabular" style="font-weight: 700; color: #15803d;">+0</td>
-                        <td id="footStockOut" class="stk-val-tabular" style="font-weight: 700; color: #1d4ed8;">-0</td>
-                        <td id="footWaste" class="stk-val-tabular" style="font-weight: 700; color: #b91c1c;">0</td>
-                        <td id="footAdj" class="stk-val-tabular" style="font-weight: 700; color: #d97706;">0</td>
-                        <td id="footOnHand" class="stk-val-tabular" style="font-weight: 800; color: var(--stk-text-strong);">0</td>
-                        <td id="footInTransit" class="stk-val-tabular" style="font-weight: 700; color: #2563eb;">Net 0</td>
-                        <td id="footProjected" class="stk-val-tabular" style="font-weight: 800; color: #7c3aed;">0</td>
-                    </tr>
-                </tfoot>
             </table>
         </div>
 
-        <!-- Table Pagination and Page Size Controls -->
-        <div class="stk-table-footer-controls">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <label for="stkPageSizeSelect" style="font-size: 0.75rem; color: var(--stk-text-muted); font-weight: 500;">Rows per page:</label>
-                <select id="stkPageSizeSelect" class="stk-select-dropdown" style="height: 32px; padding: 0 28px 0 10px; font-size: 0.75rem;" onchange="handlePageSizeChange(this.value)">
-                    <option value="10">10</option>
+        <!-- Table Footer Controls (Pagination & Count) -->
+        <div class="stk-table-footer">
+            <div class="stk-page-size-wrap">
+                <label for="stkPageSizeSelect">Rows per page:</label>
+                <select id="stkPageSizeSelect" class="stk-select-dropdown" aria-label="Select number of rows per page" onchange="handlePageSizeChange(this.value)">
+                    <option value="15">15</option>
                     <option value="25" selected>25</option>
                     <option value="50">50</option>
                     <option value="100">100</option>
                     <option value="ALL">All Items</option>
                 </select>
             </div>
-            <div class="stk-pagination-group" id="stkPaginationGroup">
-                <!-- Dynamically generated pagination buttons -->
+            <div class="stk-pagination-wrap" id="stkPaginationGroup">
+                <!-- Dynamically managed pagination controls -->
             </div>
         </div>
     </section>
 
 </div>
 
-<!-- 5. Slide-Out Detail Drawer for Row Audit Breakdown -->
-<div class="stk-drawer-backdrop" id="stkDrawerBackdrop" onclick="closeItemDetailDrawer()"></div>
-<aside class="stk-drawer-container" id="stkDetailDrawer" role="dialog" aria-modal="true" aria-labelledby="drawerItemTitle">
-    <header class="stk-drawer-header">
-        <div class="stk-drawer-title-box">
-            <div class="stk-drawer-icon" id="drawerItemIcon">
-                <i class="ph ph-package"></i>
+<!-- 5. Interactive Warehouse & Bin Location Drill-Down Modal -->
+<div class="stk-modal-backdrop" id="stkLocationModalBackdrop" aria-hidden="true"></div>
+<div class="stk-modal-dialog" id="stkLocationModal" role="dialog" aria-modal="true" aria-labelledby="stkModalItemTitle">
+    <div class="stk-modal-content">
+        <header class="stk-modal-header">
+            <div class="stk-modal-title-box">
+                <div class="stk-modal-icon">
+                    <i class="ph ph-buildings"></i>
+                </div>
+                <div>
+                    <h2 class="stk-modal-title" id="stkModalItemTitle">Item Stock Breakdown</h2>
+                    <div class="stk-modal-badges">
+                        <span class="stk-sku-pill" id="stkModalSku">SKU: ---</span>
+                        <span class="stk-cat-pill" id="stkModalCategory">Category: ---</span>
+                        <span class="stk-uom-pill" id="stkModalUom">Base UOM: ---</span>
+                    </div>
+                </div>
             </div>
-            <div>
-                <h3 class="stk-drawer-title" id="drawerItemTitle">Item Stock Breakdown</h3>
-                <p class="stk-drawer-subtitle" id="drawerItemSubtitle">SKU: --- &bull; Category: ---</p>
-            </div>
-        </div>
-        <button type="button" class="stk-drawer-close-btn" onclick="closeItemDetailDrawer()" title="Close Drawer (Esc)">
-            <i class="ph ph-x"></i>
-        </button>
-    </header>
+            <button type="button" class="stk-modal-close-btn" onclick="closeLocationBreakdownModal()" title="Close (Esc)">
+                <i class="ph ph-x"></i>
+            </button>
+        </header>
 
-    <div class="stk-drawer-body">
-        
-        <!-- Formula Decomposition Box -->
-        <div class="stk-formula-card">
-            <div class="stk-formula-title">
-                <i class="ph ph-calculator"></i>
-                <span>Inventory Ledger Identity</span>
+        <div class="stk-modal-body">
+            <!-- Facility Distribution Breakdown -->
+            <div class="stk-modal-section">
+                <div class="stk-section-title">
+                    <i class="ph ph-warehouse"></i>
+                    <span>Multi-Facility Distribution & Bin Locations</span>
+                </div>
+                <div class="stk-wh-cards-grid" id="stkModalWhCards">
+                    <!-- Populated dynamically via JS -->
+                </div>
             </div>
-            <div class="stk-formula-eq" id="drawerFormulaEquation">
-                Beg (0) + In (0) - Out (0) - Waste (0) ± Adj (0) = <strong>Physical On-Hand (0)</strong><br>
-                On-Hand (0) + Incoming (0) - Outgoing (0) = <strong>Projected Total (0)</strong>
-            </div>
-        </div>
 
-        <!-- Quick Operational Actions -->
-        <div>
-            <span style="font-size: 0.72rem; font-weight: 700; color: var(--stk-text-muted); text-transform: uppercase; letter-spacing: 0.04em;">Operational Quick Actions</span>
-            <div class="stk-quick-actions-bar" style="margin-top: 8px;">
-                <a href="{{ route('inventory.stock-in') }}" class="stk-quick-btn btn-stock-in" title="Receive New Stock In">
-                    <i class="ph ph-arrow-down-left" style="font-size: 16px;"></i>
-                    <span>Stock In</span>
-                </a>
-                <a href="{{ route('inventory.stock-out') }}" class="stk-quick-btn btn-stock-out" title="Dispatch / Transfer Out">
-                    <i class="ph ph-arrow-up-right" style="font-size: 16px;"></i>
-                    <span>Stock Out</span>
-                </a>
-                <a href="{{ route('inventory.internal-transfer') }}" class="stk-quick-btn btn-transfer" title="Branch Transfer / Requisition">
-                    <i class="ph ph-arrows-left-right" style="font-size: 16px;"></i>
-                    <span>Transfer</span>
-                </a>
-                <a href="{{ route('inventory.production') }}" class="stk-quick-btn btn-production" title="Batch Assembly & Recipe Run">
-                    <i class="ph ph-factory" style="font-size: 16px;"></i>
-                    <span>Produce</span>
-                </a>
-                <a href="{{ route('inventory.waste-expiry') }}" class="stk-quick-btn btn-waste" title="Log Spoilage / Damage">
-                    <i class="ph ph-trash" style="font-size: 16px;"></i>
-                    <span>Log Waste</span>
-                </a>
-                <a href="{{ route('inventory.stock-adjustment') }}" class="stk-quick-btn btn-adjust" title="Cycle Count Adjustment">
-                    <i class="ph ph-scales" style="font-size: 16px;"></i>
-                    <span>Audit Count</span>
-                </a>
+            <!-- Inbound Open Purchase Orders -->
+            <div class="stk-modal-section">
+                <div class="stk-section-title">
+                    <i class="ph ph-truck"></i>
+                    <span>Inbound Purchase Orders Pipeline (Open POs)</span>
+                </div>
+                <div class="stk-modal-table-wrap">
+                    <table class="stk-subtable">
+                        <thead>
+                            <tr>
+                                <th>PO Number</th>
+                                <th>Vendor / Supplier</th>
+                                <th>Target Warehouse</th>
+                                <th>Expected Delivery</th>
+                                <th class="text-right">Pending Qty</th>
+                            </tr>
+                        </thead>
+                        <tbody id="stkModalOpenPoTbody">
+                            <!-- Populated dynamically via JS -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
-        </div>
 
-        <!-- Detailed Ledger Breakdown -->
-        <div style="display: flex; flex-direction: column; gap: 10px;">
-            <div style="display: flex; align-items: center; justify-content: space-between;">
-                <span style="font-size: 0.78rem; font-weight: 700; color: var(--stk-text-strong);">Period Movement History</span>
-                <span id="drawerPeriodLabel" style="font-size: 0.70rem; color: var(--stk-text-muted); font-weight: 500;">This Month</span>
-            </div>
-            <div class="stk-timeline-wrap" id="drawerMovementList">
-                <!-- Dynamically populated movement ledger items -->
+            <!-- Recent Stock Movement History -->
+            <div class="stk-modal-section">
+                <div class="stk-section-title">
+                    <i class="ph ph-clock-counter-clockwise"></i>
+                    <span>Recent Master Ledger Movements (SYS_LEDGER)</span>
+                </div>
+                <div class="stk-ledger-timeline" id="stkModalLedgerList">
+                    <!-- Populated dynamically via JS -->
+                </div>
             </div>
         </div>
 
+        <footer class="stk-modal-footer">
+            <div class="stk-modal-footer-actions">
+                <a href="{{ route('inventory.stock-in') }}" class="hr-btn hr-btn-primary hr-btn-sm">
+                    <i class="ph ph-arrow-down-left"></i>
+                    <span>Receive Intake (GRN)</span>
+                </a>
+                <a href="{{ route('inventory.internal-transfer') }}" class="hr-btn hr-btn-secondary hr-btn-sm">
+                    <i class="ph ph-arrows-left-right"></i>
+                    <span>Transfer to Warehouse</span>
+                </a>
+                <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="closeLocationBreakdownModal()">
+                    <span>Close</span>
+                </button>
+            </div>
+        </footer>
     </div>
-</aside>
+</div>
 @endsection
-

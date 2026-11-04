@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\InventoryController;
 use App\Models\Inventory\InventoryItem;
 use App\Models\Purchase\ProcurementVendor;
 use App\Models\Purchase\PurchaseOrder;
@@ -44,11 +45,14 @@ class PurchaseController extends Controller
             ->pluck('po_number', 'rfq_reference')
             ->toArray();
 
+        $warehouses = InventoryController::getDefaultWarehousesPayload();
+
         return view('purchase.request-quotations', [
             'initialRfqs' => $rfqs,
             'initialVendors' => $vendors,
             'initialItems' => $items,
             'linkedPoMap' => $linkedPoMap,
+            'initialWarehouses' => $warehouses,
         ]);
     }
 
@@ -97,10 +101,13 @@ class PurchaseController extends Controller
             return InventoryItem::where('is_active', true)->orderBy('name')->get();
         });
 
+        $warehouses = InventoryController::getDefaultWarehousesPayload();
+
         return view('purchase.purchase-orders', [
             'initialPurchaseOrders' => $purchaseOrders,
             'initialVendors' => $vendors,
             'initialItems' => $items,
+            'initialWarehouses' => $warehouses,
         ]);
     }
 

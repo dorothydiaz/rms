@@ -254,7 +254,7 @@
                 </div>
             </div>
             <div class="nav-section">
-                @php $configActive = request()->routeIs('inventory.uom*'); @endphp
+                @php $configActive = request()->routeIs('inventory.warehouses*', 'inventory.movement-flows*', 'inventory.uom*'); @endphp
                 <div class="nav-item-group" data-group-id="inv-config">
                     <a href="#" class="nav-item">
                         <i class="ph ph-gear-six"></i>
@@ -263,6 +263,8 @@
                     <button class="add-btn"><i class="ph {{ $configActive ? 'ph-minus' : 'ph-plus' }}"></i></button>
                 </div>
                 <div class="sub-nav{{ $configActive ? ' expanded' : '' }}">
+                    <a href="{{ route('inventory.warehouses') }}" class="sub-nav-item{{ request()->routeIs('inventory.warehouses*') ? ' active' : '' }}" title="Manage physical warehouses, nested storage areas (zones, aisles, racks, bins), handheld scanner barcodes, and bulk bin generation."><span>Warehouse & Storage Area</span></a>
+                    <a href="{{ route('inventory.movement-flows') }}" class="sub-nav-item{{ request()->routeIs('inventory.movement-flows*') ? ' active' : '' }}" title="Configure movement job templates, scanner verification rules, multi-step supply flows, and priority routing selectors."><span>Movement Type & Supply Flows</span></a>
                     <a href="{{ route('inventory.uom') }}" class="sub-nav-item{{ request()->routeIs('inventory.uom*') ? ' active' : '' }}" title="Centralized Unit of Measurement (UOM) directory, categories, ratios, and cross-module configuration."><span>Unit Of Measurement (Uom)</span></a>
                 </div>
             </div>

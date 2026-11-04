@@ -205,9 +205,11 @@
                 ],
                 'configuration' => [
                     'title' => 'Configuration',
-                    'url' => route('inventory.uom'),
+                    'url' => route('inventory.warehouses'),
                     'icon' => 'ph-gear-six',
                     'items' => [
+                        ['title' => 'Warehouse & Storage Area', 'url' => route('inventory.warehouses'), 'icon' => 'ph-warehouse', 'route' => 'inventory.warehouses'],
+                        ['title' => 'Movement Type & Supply Flows', 'url' => route('inventory.movement-flows'), 'icon' => 'ph-git-branch', 'route' => 'inventory.movement-flows'],
                         ['title' => 'Unit Of Measurement (Uom)', 'url' => route('inventory.uom'), 'icon' => 'ph-scales', 'route' => 'inventory.uom']
                     ]
                 ]

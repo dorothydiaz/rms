@@ -246,7 +246,20 @@ document.addEventListener('DOMContentLoaded', () => {
         if (dropdown && dropdown.style.display !== 'none' && !dropdown.contains(e.target) && (!btn || !btn.contains(e.target)) && (!actionBtn || !actionBtn.contains(e.target))) {
             dropdown.style.display = 'none';
         }
+
+        const builderDd = document.getElementById('poBuilderSettingsDropdown');
+        const builderBtn = document.getElementById('btnPoBuilderSettings');
+        if (builderDd && builderDd.style.display !== 'none' && !builderDd.contains(e.target) && (!builderBtn || !builderBtn.contains(e.target))) {
+            builderDd.style.display = 'none';
+        }
     });
+
+    window.addEventListener('scroll', () => {
+        const builderDd = document.getElementById('poBuilderSettingsDropdown');
+        if (builderDd && builderDd.style.display === 'block') {
+            positionPoBuilderSettingsDropdown();
+        }
+    }, true);
 });
 
 function getNextUniquePoNumber() {
@@ -608,7 +621,8 @@ function updatePoVendorSummaryCard(vendor) {
         document.getElementById('poVendorTradeName').textContent = tradeName;
         document.getElementById('poVendorCategoryTag').textContent = vendor.category || 'General';
         document.getElementById('poVendorTinDisplay').textContent = vendor.tin || '000-000-000-000';
-        document.getElementById('poVendorLocationDisplay').textContent = vendor.address || vendor.city || 'Metro Manila, Philippines';
+        const locEl = document.getElementById('poVendorLocationDisplay');
+        if (locEl) locEl.textContent = '';
         document.getElementById('poVendorAvatarText').textContent = tradeName.substring(0, 2).toUpperCase();
     }
 }
@@ -835,9 +849,145 @@ function calculateBalanceDue() {
     }
 }
 
-function calculatePoGrossTotal() {
-    const items = window.PoStore.activePo.items || [];
-    return items.reduce((acc, it) => acc + ((parseFloat(it.quantity) || 0) * (parseFloat(it.unitPrice) || 0)), 0);
+function hasValidRfqReference(ref) {
+    if (!ref) return false;
+    const clean = String(ref).trim();
+    return clean.length > 0 && !/^none/i.test(clean);
+}
+
+function syncPoRfqReferenceUI(rfqRef) {
+    const cleanRef = hasValidRfqReference(rfqRef) ? String(rfqRef).trim() : '';
+    const rfqPill = document.getElementById('poLinkedRfqPill');
+    const rfqContainer = document.getElementById('poRfqRefContainer');
+    if (!rfqPill) return;
+
+    if (cleanRef) {
+        rfqPill.style.display = 'inline-flex';
+        rfqPill.style.background = 'rgba(168, 85, 247, 0.14)';
+        rfqPill.style.color = '#7e22ce';
+        rfqPill.style.borderColor = 'rgba(168, 85, 247, 0.35)';
+        rfqPill.innerHTML = `<i class="ph ph-check-circle-fill" style="margin-right: 4px; color: #9333ea;"></i>${escapeHtml(cleanRef)}`;
+        rfqPill.title = `Click to inspect Referenced RFQ ${cleanRef}`;
+        if (rfqContainer) {
+            rfqContainer.style.background = '#faf5ff';
+            rfqContainer.style.borderColor = '#e9d5ff';
+        }
+    } else {
+        rfqPill.style.display = 'inline-flex';
+        rfqPill.style.background = '#f1f5f9';
+        rfqPill.style.color = '#64748b';
+        rfqPill.style.borderColor = '#cbd5e1';
+        rfqPill.innerHTML = `None (Click to Link RFQ)`;
+        rfqPill.title = 'No RFQ linked yet — Click to import or link an Awarded RFQ';
+        if (rfqContainer) {
+            rfqContainer.style.background = '#f8fafc';
+            rfqContainer.style.borderColor = '#e2e8f0';
+        }
+    }
+}
+
+function handlePoRfqReferencePillClick() {
+    const ref = window.PoStore?.activePo?.rfqReference;
+    if (hasValidRfqReference(ref)) {
+        openLinkedRfqModal(ref);
+    } else {
+        openImportRfqModal();
+    }
+}
+
+function viewPoLinkedRfqByNumber(poNumber) {
+    const po = (window.PoStore?.purchaseOrders || []).find(p => p.poNumber === poNumber);
+    if (po && hasValidRfqReference(po.rfqReference)) {
+        openLinkedRfqModal(po.rfqReference);
+    }
+}
+
+function computePoLineTaxes(it) {
+    const qty = parseFloat(it?.quantity) || 0;
+    const unitPrice = parseFloat(it?.unitPrice) || 0;
+    const rawAmount = qty * unitPrice;
+    const vatType = it?.vatType || 'vat_12_incl_1';
+    const whtRateNum = it?.whtRate !== undefined && it?.whtRate !== null && it?.whtRate !== ''
+        ? parseFloat(it.whtRate)
+        : 1;
+    const whtPct = isNaN(whtRateNum) ? 1 : Math.max(0, whtRateNum);
+
+    let untaxed = rawAmount;
+    let vatable = 0;
+    let withholding = 0;
+
+    if (vatType === 'vat_12_incl_1') {
+        // Inclusive base divisor (e.g. ₱500 / 1.01 = ₱495.05 untaxed, 12% VAT = ₱59.41, 1% WHT = ₱4.95, Total = ₱559.41)
+        const divisor = 1 + (whtPct > 0 ? (whtPct / 100) : 0.01);
+        untaxed = rawAmount / divisor;
+        vatable = untaxed * 0.12;
+        withholding = untaxed * (whtPct / 100);
+    } else if (vatType === 'vat_12_excl') {
+        untaxed = rawAmount;
+        vatable = untaxed * 0.12;
+        withholding = untaxed * (whtPct / 100);
+    } else if (vatType === 'vat_12_incl') {
+        untaxed = rawAmount / 1.12;
+        vatable = rawAmount - untaxed;
+        withholding = untaxed * (whtPct / 100);
+    } else {
+        untaxed = rawAmount;
+        vatable = 0;
+        withholding = untaxed * (whtPct / 100);
+    }
+
+    const untaxedRounded = Math.round((untaxed + Number.EPSILON) * 100) / 100;
+    const vatableRounded = Math.round((vatable + Number.EPSILON) * 100) / 100;
+    const withholdingRounded = Math.round((withholding + Number.EPSILON) * 100) / 100;
+    const totalWithTax = Math.round((untaxedRounded + vatableRounded + withholdingRounded + Number.EPSILON) * 100) / 100;
+
+    const vatLabel = vatType === 'vat_0' ? '0% VAT' : (vatType === 'vat_12_incl' ? '12% VAT (Incl)' : '12% VAT');
+    const whtLabel = whtPct > 0 ? `${whtPct}% WHT` : 'No WHT';
+
+    return {
+        rawAmount,
+        untaxed: untaxedRounded,
+        vatable: vatableRounded,
+        withholding: withholdingRounded,
+        totalWithTax,
+        vatType,
+        whtRate: String(whtPct),
+        vatLabel,
+        whtLabel
+    };
+}
+
+function computePoTaxBreakdown(itemsOrPo) {
+    const items = Array.isArray(itemsOrPo)
+        ? itemsOrPo
+        : (itemsOrPo?.items || window.PoStore?.activePo?.items || []);
+
+    let rawSubtotal = 0;
+    let untaxedAmount = 0;
+    let vatableAmount = 0;
+    let withholdingTaxAmount = 0;
+    let totalWithTax = 0;
+
+    items.forEach(it => {
+        const line = computePoLineTaxes(it);
+        rawSubtotal += line.rawAmount;
+        untaxedAmount += line.untaxed;
+        vatableAmount += line.vatable;
+        withholdingTaxAmount += line.withholding;
+        totalWithTax += line.totalWithTax;
+    });
+
+    return {
+        rawSubtotal: Math.round((rawSubtotal + Number.EPSILON) * 100) / 100,
+        untaxedAmount: Math.round((untaxedAmount + Number.EPSILON) * 100) / 100,
+        vatableAmount: Math.round((vatableAmount + Number.EPSILON) * 100) / 100,
+        withholdingTaxAmount: Math.round((withholdingTaxAmount + Number.EPSILON) * 100) / 100,
+        totalWithTax: Math.round((totalWithTax + Number.EPSILON) * 100) / 100
+    };
+}
+
+function calculatePoGrossTotal(itemsOrPo) {
+    return computePoTaxBreakdown(itemsOrPo).totalWithTax;
 }
 
 /**
@@ -856,8 +1006,9 @@ const PO_ALL_COLUMNS = [
     { id: 'sku', label: 'Item ID / SKU', category: 'Base Order', default: true, align: 'left', width: '120px', lockVisible: true },
     { id: 'item_name', label: 'Item Description', category: 'Base Order', default: true, align: 'left', minWidth: '185px', lockVisible: true },
     { id: 'uom', label: 'Purchase UOM', category: 'Base Order', default: true, align: 'center', width: '130px' },
-    { id: 'quantity', label: 'Ordered Qty', category: 'Base Order', default: true, align: 'right', width: '115px' },
-    { id: 'unit_price', label: 'Unit Price (₱)', category: 'Base Order', default: true, align: 'right', width: '125px' },
+    { id: 'quantity', label: 'Ordered Qty', category: 'Base Order', default: true, align: 'right', width: '110px' },
+    { id: 'unit_price', label: 'Unit Price (₱)', category: 'Base Order', default: true, align: 'right', width: '120px' },
+    { id: 'taxes', label: 'Taxes', category: 'Base Order', default: true, align: 'center', width: '175px' },
     { id: 'line_total', label: 'Line Total (₱)', category: 'Base Order', default: true, align: 'right', width: '130px' },
     { id: 'specs', label: 'Specifications / Notes', category: 'Base Order', default: false, align: 'left', minWidth: '150px' },
 
@@ -875,16 +1026,16 @@ const PO_ALL_COLUMNS = [
 ];
 
 const PO_DRAFT_STAGE_DEFAULT_COLUMNS = [
-    'index', 'sku', 'item_name', 'uom', 'quantity', 'unit_price', 'line_total'
+    'index', 'sku', 'item_name', 'uom', 'quantity', 'unit_price', 'taxes', 'line_total'
 ];
 
 const PO_APPROVAL_STAGE_DEFAULT_COLUMNS = [
-    'index', 'sku', 'item_name', 'uom', 'quantity', 'unit_price', 'line_total',
+    'index', 'sku', 'item_name', 'uom', 'quantity', 'unit_price', 'taxes', 'line_total',
     'rfq_target_price', 'price_variance_pct', 'is_within_budget'
 ];
 
 const PO_ISSUED_STAGE_DEFAULT_COLUMNS = [
-    'index', 'sku', 'item_name', 'uom', 'quantity', 'unit_price', 'line_total',
+    'index', 'sku', 'item_name', 'uom', 'quantity', 'unit_price', 'taxes', 'line_total',
     'received_quantity', 'remaining_quantity', 'fulfillment_status'
 ];
 
@@ -912,10 +1063,37 @@ function applyPoStageDefaultColumns(stage) {
     }
 }
 
+function positionPoBuilderSettingsDropdown() {
+    const dd = document.getElementById('poBuilderSettingsDropdown');
+    const btn = document.getElementById('btnPoBuilderSettings');
+    if (!dd || !btn) return;
+
+    const rect = btn.getBoundingClientRect();
+    const dropdownWidth = 310;
+    const viewportW = window.innerWidth || document.documentElement.clientWidth || 1280;
+    const viewportH = window.innerHeight || document.documentElement.clientHeight || 800;
+
+    let left = rect.right - dropdownWidth;
+    if (left < 12) left = 12;
+    if (left + dropdownWidth > viewportW - 12) left = Math.max(12, viewportW - dropdownWidth - 12);
+
+    let top = rect.bottom + 6;
+    const maxDropdownH = 350;
+    if (top + maxDropdownH > viewportH - 12 && rect.top > maxDropdownH) {
+        top = Math.max(12, rect.top - maxDropdownH - 6);
+    }
+
+    dd.style.position = 'fixed';
+    dd.style.top = `${Math.round(top)}px`;
+    dd.style.left = `${Math.round(left)}px`;
+    dd.style.right = 'auto';
+}
+
 function renderPoBuilderTableHeader() {
     const theadRow = document.getElementById('poItemsTheadRow');
     if (!theadRow) return;
 
+    const wasOpen = document.getElementById('poBuilderSettingsDropdown')?.style.display === 'block';
     const visibleCols = PO_ALL_COLUMNS.filter(c => c.lockVisible || activePoBuilderCols.includes(c.id));
     let html = visibleCols.map(col => {
         const alignClass = col.align === 'right' ? 'th-num' : (col.align === 'center' ? 'th-center' : '');
@@ -925,13 +1103,13 @@ function renderPoBuilderTableHeader() {
 
     html += `
         <th class="th-center" style="width: 72px; position: relative;">
-            <div style="display: inline-flex; align-items: center; justify-content: center; gap: 4px;">
+            <div style="display: inline-flex; align-items: center; justify-content: center; gap: 4px; position: relative;">
                 <span>Action</span>
                 <button type="button" class="inv-table-filter-btn" id="btnPoBuilderSettings" onclick="togglePoBuilderSettingsDropdown(event)" title="Customize PO Builder Columns" style="width: 22px; height: 22px; font-size: 12px; border-radius: 5px; color: #9333ea; background: #faf5ff; border: 1px solid #e9d5ff;">
                     <i class="ph ph-gear-six"></i>
                 </button>
             </div>
-            <div id="poBuilderSettingsDropdown" class="po-builder-settings-dropdown rfq-builder-settings-dropdown" style="display: none; text-align: left; right: 0; top: 36px;" onclick="event.stopPropagation()">
+            <div id="poBuilderSettingsDropdown" class="po-builder-settings-dropdown rfq-builder-settings-dropdown" style="display: ${wasOpen ? 'block' : 'none'}; text-align: left;" onclick="event.stopPropagation()">
                 <div style="padding: 10px 14px; border-bottom: 1px solid #f1f5f9; background: #f8fafc; display: flex; align-items: center; justify-content: space-between;">
                     <span style="font-weight: 800; font-size: 12px; color: #0f172a;"><i class="ph ph-columns" style="color: #9333ea;"></i> Builder Columns</span>
                     <span style="font-size: 10.5px; font-weight: 700; color: #7e22ce; background: #f3e8ff; padding: 2px 7px; border-radius: 8px;">${visibleCols.length} of ${PO_ALL_COLUMNS.length}</span>
@@ -959,13 +1137,22 @@ function renderPoBuilderTableHeader() {
     `;
 
     theadRow.innerHTML = html;
+    if (wasOpen) {
+        requestAnimationFrame(() => positionPoBuilderSettingsDropdown());
+    }
 }
 
 function togglePoBuilderSettingsDropdown(event) {
     if (event) event.stopPropagation();
     const dd = document.getElementById('poBuilderSettingsDropdown');
     if (!dd) return;
-    dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+    const isHidden = dd.style.display === 'none' || !dd.style.display;
+    if (isHidden) {
+        dd.style.display = 'block';
+        positionPoBuilderSettingsDropdown();
+    } else {
+        dd.style.display = 'none';
+    }
 }
 
 function togglePoBuilderColumn(colId, isVisible) {
@@ -1044,7 +1231,7 @@ function renderPoItemsTable() {
             if (col.id === 'uom') {
                 return `
                     <td class="td-center" style="min-width: 135px;">
-                        <select data-uom-select ${isLocked ? 'disabled' : ''} onchange="updatePoItemField(${idx}, 'unit', this.value)" style="text-align: center;">
+                        <select data-uom-select data-uom-placeholder="Select UOM" data-uom-current="${escapeHtml(it.unit || 'PCS')}" ${isLocked ? 'disabled' : ''} onchange="updatePoItemField(${idx}, 'unit', this.value)" style="text-align: center;">
                             ${(() => {
                                 if (window.UomRegistry && window.UomRegistry.isLoaded) {
                                     const units = window.UomRegistry.getUnits();
@@ -1075,8 +1262,45 @@ function renderPoItemsTable() {
                     </td>
                 `;
             }
+            if (col.id === 'taxes') {
+                const taxInfo = computePoLineTaxes(it);
+                if (isLocked) {
+                    return `
+                        <td class="td-center">
+                            <div class="po-tax-pill-group">
+                                <span class="po-tax-badge vat">${escapeHtml(taxInfo.vatLabel)}</span>
+                                <span class="po-tax-badge wht">${escapeHtml(taxInfo.whtLabel)}</span>
+                            </div>
+                        </td>
+                    `;
+                }
+                return `
+                    <td class="td-center">
+                        <div class="po-tax-pill-group">
+                            <select class="po-tax-select vat" onchange="updatePoItemField(${idx}, 'vatType', this.value)" title="Select VAT Rule for Line #${idx + 1}">
+                                <option value="vat_12_incl_1" ${taxInfo.vatType === 'vat_12_incl_1' ? 'selected' : ''}>12% VAT (Base)</option>
+                                <option value="vat_12_excl" ${taxInfo.vatType === 'vat_12_excl' ? 'selected' : ''}>12% VAT (Excl)</option>
+                                <option value="vat_12_incl" ${taxInfo.vatType === 'vat_12_incl' ? 'selected' : ''}>12% VAT (Incl)</option>
+                                <option value="vat_0" ${taxInfo.vatType === 'vat_0' ? 'selected' : ''}>0% VAT-Exempt</option>
+                            </select>
+                            <select class="po-tax-select wht" onchange="updatePoItemField(${idx}, 'whtRate', this.value)" title="Select Withholding Tax (EWT) for Line #${idx + 1}">
+                                <option value="1" ${taxInfo.whtRate === '1' ? 'selected' : ''}>1% WHT</option>
+                                <option value="2" ${taxInfo.whtRate === '2' ? 'selected' : ''}>2% WHT</option>
+                                <option value="5" ${taxInfo.whtRate === '5' ? 'selected' : ''}>5% WHT</option>
+                                <option value="0" ${taxInfo.whtRate === '0' ? 'selected' : ''}>0% WHT</option>
+                            </select>
+                        </div>
+                    </td>
+                `;
+            }
             if (col.id === 'line_total') {
-                return `<td class="td-num" style="font-weight: 800; color: var(--po-text-strong);">₱${formatMoney(lineTotal)}</td>`;
+                const taxInfo = computePoLineTaxes(it);
+                return `
+                    <td class="td-num" style="font-weight: 800; color: var(--po-text-strong);">
+                        <div>₱${formatMoney(lineTotal)}</div>
+                        <div style="font-size: 9.5px; font-weight: 600; color: #64748b;">Untaxed: ₱${formatMoney(taxInfo.untaxed)}</div>
+                    </td>
+                `;
             }
             if (col.id === 'specs') {
                 return `
@@ -1209,15 +1433,283 @@ async function updatePoReceivedQty(idx, val) {
     showToast(`✓ Updated GRN Qty for ${item.name || item.sku}: ${rec.toFixed(2)} ${item.unit || 'PCS'}`, 'success');
 }
 
-async function receiveAllPoItems() {
+async function validatePoGoodsReceipt() {
     const po = window.PoStore?.activePo;
     if (!po || !Array.isArray(po.items) || po.items.length === 0) return;
 
-    po.items.forEach(it => {
-        it.receivedQuantity = parseFloat(it.quantity) || 0;
+    const totalOrdered = po.items.reduce((acc, it) => acc + (parseFloat(it.quantity) || 0), 0);
+    const totalReceived = po.items.reduce((acc, it) => acc + (parseFloat(it.receivedQuantity) || 0), 0);
+
+    // If user hasn't typed any received quantities yet (0 across all rows), default to 100% received and complete
+    if (totalReceived <= 0) {
+        po.items.forEach(it => {
+            it.receivedQuantity = parseFloat(it.quantity) || 0;
+        });
+        await finalizePoReceiptWithoutOverride('Fully Received');
+        return;
+    }
+
+    // Check if any line has received less than ordered
+    const shortfallItems = po.items.filter(it => {
+        const ord = parseFloat(it.quantity) || 0;
+        const rec = parseFloat(it.receivedQuantity) || 0;
+        return rec < ord - 0.0001;
     });
 
-    await transitionActivePoStage('Approved');
+    if (shortfallItems.length > 0) {
+        openPoBackorderModal(shortfallItems);
+        return;
+    }
+
+    // All lines received >= ordered
+    await finalizePoReceiptWithoutOverride('Fully Received');
+}
+
+function openPoBackorderModal(shortfallItems) {
+    const modal = document.getElementById('poBackorderModal');
+    if (!modal) return;
+    const po = window.PoStore?.activePo;
+    const refLabel = document.getElementById('poBackorderRefLabel');
+    if (refLabel && po) refLabel.textContent = po.poNumber;
+
+    const tbody = document.getElementById('poBackorderShortfallTbody');
+    if (tbody) {
+        tbody.innerHTML = (shortfallItems || []).map(it => {
+            const ord = parseFloat(it.quantity) || 0;
+            const rec = parseFloat(it.receivedQuantity) || 0;
+            const diff = Math.max(0, ord - rec);
+            return `
+                <tr style="border-bottom: 1px solid #f1f5f9;">
+                    <td style="padding: 7px 10px; font-weight: 700; color: #0f172a;">
+                        ${escapeHtml(it.name || it.sku || 'Item')}
+                        <span style="font-size: 10.5px; color: #64748b; font-weight: 500;">(${escapeHtml(it.unit || 'PCS')})</span>
+                    </td>
+                    <td style="padding: 7px 10px; text-align: right; font-variant-numeric: tabular-nums;">${ord.toFixed(2)}</td>
+                    <td style="padding: 7px 10px; text-align: right; font-weight: 700; color: #059669; font-variant-numeric: tabular-nums;">${rec.toFixed(2)}</td>
+                    <td style="padding: 7px 10px; text-align: right; font-weight: 800; color: #d97706; font-variant-numeric: tabular-nums;">${diff.toFixed(2)}</td>
+                </tr>
+            `;
+        }).join('');
+    }
+    modal.classList.add('is-open');
+}
+
+function closePoBackorderModal() {
+    const modal = document.getElementById('poBackorderModal');
+    if (modal) modal.classList.remove('is-open');
+}
+
+async function confirmPoBackorderDecision(decision) {
+    closePoBackorderModal();
+    const po = window.PoStore?.activePo;
+    if (!po || !Array.isArray(po.items)) return;
+
+    if (decision === 'create_backorder') {
+        // 1. Build backorder items from unreceived quantities
+        const backorderItems = [];
+        po.items.forEach(it => {
+            const ord = parseFloat(it.quantity) || 0;
+            const rec = parseFloat(it.receivedQuantity) || 0;
+            const rem = Math.max(0, Math.round((ord - rec + Number.EPSILON) * 100) / 100);
+            if (rem > 0) {
+                backorderItems.push({
+                    ...JSON.parse(JSON.stringify(it)),
+                    quantity: rem,
+                    receivedQuantity: 0
+                });
+            }
+            // Adjust current PO ordered quantity to match what was actually delivered on this receipt
+            it.quantity = rec;
+        });
+
+        const boNumber = `${po.poNumber}-BO1`;
+        const backorderPo = {
+            ...JSON.parse(JSON.stringify(po)),
+            poNumber: boNumber,
+            orderTitle: `Backorder of ${po.poNumber}${po.orderTitle ? ' — ' + po.orderTitle : ''}`,
+            status: 'Approved / Issued',
+            amountPaid: 0,
+            balanceDue: computePoTaxBreakdown(backorderItems).totalWithTax,
+            paymentStatus: 'Unpaid / Credit',
+            items: backorderItems
+        };
+
+        window.PoStore.purchaseOrders = window.PoStore.purchaseOrders || [];
+        window.PoStore.purchaseOrders.unshift(backorderPo);
+        localStorage.setItem('rms_purchase_orders', JSON.stringify(window.PoStore.purchaseOrders));
+
+        logProcurementAudit(
+            'PO',
+            po.poNumber,
+            'BACKORDER_CREATED',
+            'Backorder PO Generated',
+            `Created Backorder ${boNumber} for remaining ${backorderItems.length} item line(s) from ${po.poNumber}.`,
+            [{ label: 'Backorder Ref', value: boNumber }, { label: 'Lines', value: `${backorderItems.length}` }]
+        );
+
+        await finalizePoReceiptWithoutOverride('Fully Received');
+        showToast(`✓ Receipt validated & Backorder ${boNumber} created for remaining items!`, 'success');
+    } else if (decision === 'no_backorder') {
+        logProcurementAudit(
+            'PO',
+            po.poNumber,
+            'NO_BACKORDER_CLOSED',
+            'Partial Receipt Closed (No Backorder)',
+            `Validated partial receipt on ${po.poNumber} with No Backorder for remaining shortfall.`,
+            []
+        );
+        await finalizePoReceiptWithoutOverride('Fully Received');
+        showToast(`✓ ${po.poNumber} marked as Received (No Backorder created for remaining shortfall).`, 'info');
+    }
+}
+
+async function finalizePoReceiptWithoutOverride(targetStatus = 'Fully Received') {
+    const po = window.PoStore?.activePo;
+    if (!po) return;
+    po.status = targetStatus;
+
+    const existingIdx = (window.PoStore.purchaseOrders || []).findIndex(p => p.poNumber === po.poNumber);
+    if (existingIdx >= 0) {
+        window.PoStore.purchaseOrders[existingIdx] = JSON.parse(JSON.stringify(po));
+    } else {
+        window.PoStore.purchaseOrders.unshift(JSON.parse(JSON.stringify(po)));
+    }
+    localStorage.setItem('rms_purchase_orders', JSON.stringify(window.PoStore.purchaseOrders));
+
+    try {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+        const route = window.PurchaseOrderConfig?.routes?.transitionStatus || '/purchase/api/orders/transition-status';
+        await fetch(route, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+            body: JSON.stringify({
+                po_number: po.poNumber,
+                target_status: targetStatus,
+                rfq_reference: po.rfqReference || null,
+                vendor_id: po.vendorId ? String(po.vendorId) : null,
+                vendor_name: po.vendorName || po.vendorTradeName || 'Approved Vendor',
+                vendor_trade_name: po.vendorTradeName || po.vendorName || 'Approved Vendor',
+                items: po.items
+            })
+        });
+    } catch (e) {
+        console.warn('finalizePoReceiptWithoutOverride sync fallback:', e);
+    }
+
+    applyPoStageDefaultColumns(po.status);
+    updatePoLifecycleProgressBar(po.status);
+    renderPoBuilderTableHeader();
+    renderPoItemsTable();
+    renderPoDirectory();
+    updatePoLiveDocumentMockup();
+}
+
+function openPoReturnToVendorModal() {
+    const modal = document.getElementById('poReturnToVendorModal');
+    const po = window.PoStore?.activePo;
+    if (!modal || !po) return;
+
+    const refLabel = document.getElementById('poReturnRefLabel');
+    if (refLabel) refLabel.textContent = po.poNumber;
+
+    const tbody = document.getElementById('poReturnItemsTbody');
+    if (tbody) {
+        const items = po.items || [];
+        if (items.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 18px; color: #94a3b8;">No items available to return.</td></tr>`;
+        } else {
+            tbody.innerHTML = items.map((it, idx) => {
+                const rec = parseFloat(it.receivedQuantity) || parseFloat(it.quantity) || 0;
+                return `
+                    <tr style="border-bottom: 1px solid #f1f5f9;">
+                        <td style="padding: 7px 10px;">
+                            <div style="font-weight: 700; color: #0f172a;">${escapeHtml(it.name || 'Item')}</div>
+                            <div style="font-size: 10.5px; font-family: monospace; color: #64748b;">${escapeHtml(it.sku || '--')}</div>
+                        </td>
+                        <td style="padding: 7px 10px; text-align: center;">${escapeHtml(it.unit || 'PCS')}</td>
+                        <td style="padding: 7px 10px; text-align: right; font-weight: 700; color: #059669;">${rec.toFixed(2)}</td>
+                        <td style="padding: 7px 10px; text-align: right;">
+                            <input type="number" step="0.01" min="0" max="${rec}" value="0.00" data-return-idx="${idx}" class="po-input po-return-qty-input" style="text-align: right; font-weight: 800; color: #dc2626; height: 30px; padding: 4px 8px;">
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+    }
+
+    const remarksIn = document.getElementById('poReturnRemarksInput');
+    if (remarksIn) remarksIn.value = '';
+    modal.classList.add('is-open');
+}
+
+function closePoReturnToVendorModal() {
+    const modal = document.getElementById('poReturnToVendorModal');
+    if (modal) modal.classList.remove('is-open');
+}
+
+async function submitPoReturnToVendor() {
+    const po = window.PoStore?.activePo;
+    if (!po || !Array.isArray(po.items)) return;
+
+    const inputs = document.querySelectorAll('.po-return-qty-input');
+    const reason = document.getElementById('poReturnReasonSelect')?.value || 'Damaged / Spoiled Goods';
+    const resolution = document.getElementById('poReturnResolutionSelect')?.value || 'Credit Memo / Deduct from Bill';
+    const remarks = document.getElementById('poReturnRemarksInput')?.value?.trim() || '';
+
+    let totalReturnedUnits = 0;
+    const returnedSummary = [];
+
+    inputs.forEach(input => {
+        const idx = parseInt(input.getAttribute('data-return-idx'), 10);
+        const retQty = Math.max(0, parseFloat(input.value) || 0);
+        if (retQty > 0 && po.items[idx]) {
+            const item = po.items[idx];
+            const currentRec = parseFloat(item.receivedQuantity) || parseFloat(item.quantity) || 0;
+            const validRet = Math.min(currentRec, retQty);
+            item.receivedQuantity = Math.max(0, Math.round((currentRec - validRet + Number.EPSILON) * 100) / 100);
+            item.returnedQuantity = (parseFloat(item.returnedQuantity) || 0) + validRet;
+            if (resolution.includes('Credit Memo')) {
+                item.quantity = Math.max(0, Math.round(((parseFloat(item.quantity) || 0) - validRet + Number.EPSILON) * 100) / 100);
+            }
+            totalReturnedUnits += validRet;
+            returnedSummary.push(`${item.name || item.sku}: ${validRet.toFixed(2)} ${item.unit || 'PCS'}`);
+        }
+    });
+
+    if (totalReturnedUnits <= 0) {
+        showToast('Please enter a Return Qty greater than 0 for at least one item.', 'warning');
+        return;
+    }
+
+    closePoReturnToVendorModal();
+
+    logProcurementAudit(
+        'PO',
+        po.poNumber,
+        'RETURN_TO_VENDOR',
+        `Returned to Vendor (${reason})`,
+        `Returned ${totalReturnedUnits.toFixed(2)} units to vendor (${returnedSummary.join(', ')}). Resolution: ${resolution}. ${remarks}`,
+        [
+            { label: 'Reason', value: reason },
+            { label: 'Resolution', value: resolution },
+            { label: 'Returned Items', value: returnedSummary.join('; ') }
+        ]
+    );
+
+    const existingIdx = (window.PoStore.purchaseOrders || []).findIndex(p => p.poNumber === po.poNumber);
+    if (existingIdx >= 0) {
+        window.PoStore.purchaseOrders[existingIdx] = JSON.parse(JSON.stringify(po));
+    }
+    localStorage.setItem('rms_purchase_orders', JSON.stringify(window.PoStore.purchaseOrders));
+
+    renderPoItemsTable();
+    renderPoDirectory();
+    updatePoLiveDocumentMockup();
+    showToast(`✓ Returned ${totalReturnedUnits.toFixed(2)} units to vendor (${resolution})`, 'success');
+}
+
+async function receiveAllPoItems() {
+    await validatePoGoodsReceipt();
 }
 
 function addNewBlankPoItemRow() {
@@ -1247,30 +1739,172 @@ function clearAllPoItems() {
 }
 
 function updatePoTotals() {
-    const items = window.PoStore.activePo.items || [];
+    const po = window.PoStore.activePo || {};
+    const items = po.items || [];
     const totalLines = items.length;
     let totalUnits = 0;
-    let totalGross = 0;
 
     items.forEach(it => {
         const q = parseFloat(it.quantity) || 0;
-        const p = parseFloat(it.unitPrice) || 0;
         totalUnits += q;
-        totalGross += (q * p);
     });
+
+    const taxBreakdown = computePoTaxBreakdown(items);
+    const totalGross = taxBreakdown.totalWithTax;
 
     const elLines = document.getElementById('summaryPoLines');
     const elUnits = document.getElementById('summaryPoUnits');
+    const elUntaxed = document.getElementById('summaryPoUntaxed');
+    const elVatable = document.getElementById('summaryPoVatable');
+    const elWithholding = document.getElementById('summaryPoWithholding');
     const elGross = document.getElementById('summaryPoGross');
     const elBadge = document.getElementById('poItemCountBadge');
+    const elPaymentsList = document.getElementById('summaryPoPaymentsList');
+    const elBalanceDue = document.getElementById('summaryPoBalanceDue');
 
     if (elLines) elLines.textContent = totalLines;
     if (elUnits) elUnits.textContent = totalUnits.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    if (elGross) elGross.textContent = `₱${formatMoney(totalGross)}`;
+    if (elUntaxed) elUntaxed.textContent = `₱ ${formatMoney(taxBreakdown.untaxedAmount)}`;
+    if (elVatable) elVatable.textContent = `₱ ${formatMoney(taxBreakdown.vatableAmount)}`;
+    if (elWithholding) elWithholding.textContent = `₱ ${formatMoney(taxBreakdown.withholdingTaxAmount)}`;
+    if (elGross) elGross.textContent = `₱ ${formatMoney(totalGross)}`;
     if (elBadge) elBadge.textContent = `${totalLines} Line Item${totalLines === 1 ? '' : 's'}`;
+
+    const payments = getStoredPayments().filter(p => p.poNumber === po.poNumber);
+    const totalPaidFromLedger = payments.reduce((acc, p) => acc + (parseFloat(p.amount) || 0), 0);
+    const effectivePaid = payments.length > 0 ? totalPaidFromLedger : (parseFloat(po.amountPaid) || 0);
+    const balanceDue = Math.max(0, Math.round((totalGross - effectivePaid + Number.EPSILON) * 100) / 100);
+
+    // Amount Due displays the initial / remaining obligation
+    if (elBalanceDue) {
+        elBalanceDue.textContent = `₱ ${formatMoney(totalGross > 0 && payments.length === 0 ? totalGross : balanceDue)}`;
+        elBalanceDue.style.color = (balanceDue <= 0.009 && totalGross > 0) ? '#059669' : '#0f172a';
+    }
+
+    // Adaptive Payment Rows AFTER Amount Due (continues adding rows until balanceDue reaches 0)
+    if (elPaymentsList) {
+        if (totalGross <= 0 && payments.length === 0) {
+            elPaymentsList.innerHTML = '';
+        } else {
+            let runningBalance = totalGross;
+            const recordedRowsHtml = payments.map((p, idx) => {
+                const amt = parseFloat(p.amount) || 0;
+                runningBalance = Math.max(0, Math.round((runningBalance - amt + Number.EPSILON) * 100) / 100);
+                const trancheLabel = p.trancheType || (idx === 0 && runningBalance > 0 ? 'Downpayment' : `Payment #${idx + 1}`);
+                const billOrRef = [p.billRef, p.reference].filter(Boolean).join(' • ');
+                return `
+                    <div class="po-fin-payment-row">
+                        <div class="po-fin-payment-meta">
+                            <i class="ph ph-check-circle-fill" style="color: #059669; font-size: 13px;"></i>
+                            <span class="po-fin-tranche-tag">${escapeHtml(trancheLabel)}</span>
+                            <span>${escapeHtml(formatDateDisplay(p.paymentDate))}</span>
+                            ${billOrRef ? `<span class="po-fin-ref-code">(${escapeHtml(billOrRef)})</span>` : ''}
+                        </div>
+                        <div class="po-fin-payment-right">
+                            <span class="po-fin-payment-amt">- ₱ ${formatMoney(amt)}</span>
+                            <button type="button" class="po-fin-payment-del" onclick="deletePaymentDisbursement('${p.id}')" title="Remove payment entry">
+                                <i class="ph ph-x"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="po-fin-remaining-subrow">
+                        <span>Remaining Balance:</span>
+                        <strong style="color: ${runningBalance <= 0.009 ? '#059669' : '#d97706'};">₱ ${formatMoney(runningBalance)}</strong>
+                    </div>
+                `;
+            }).join('');
+
+            // If there is still an amount to settle, render an adaptive next-payment row right below
+            const nextTrancheDefault = payments.length === 0 ? 'Downpayment' : 'Partial Payment';
+            const settleRowHtml = balanceDue > 0.009 ? `
+                <div class="po-fin-adaptive-input-row">
+                    <select id="inlinePoPayType" class="po-fin-inline-select" title="Payment Type">
+                        <option value="Downpayment" ${nextTrancheDefault === 'Downpayment' ? 'selected' : ''}>Downpayment</option>
+                        <option value="Partial Payment" ${nextTrancheDefault === 'Partial Payment' ? 'selected' : ''}>Partial Payment</option>
+                        <option value="Final Settlement">Final Settlement</option>
+                    </select>
+                    <input type="text" id="inlinePoPayRef" class="po-fin-inline-ref" placeholder="OR / Bill Ref">
+                    <input type="number" step="0.01" min="0.01" max="${balanceDue.toFixed(2)}" id="inlinePoPayAmt" class="po-fin-inline-amt" value="${balanceDue.toFixed(2)}" placeholder="0.00" title="Enter payment amount (up to ₱${formatMoney(balanceDue)})">
+                    <button type="button" class="po-fin-inline-btn" onclick="submitInlinePoPaymentRow()" title="Record payment row">
+                        <i class="ph ph-plus"></i> Pay
+                    </button>
+                </div>
+            ` : `
+                <div class="po-fin-settled-banner">
+                    <i class="ph ph-seal-check-fill"></i>
+                    <span>Nothing left to settle • Fully Paid (₱ 0.00)</span>
+                </div>
+            `;
+
+            elPaymentsList.innerHTML = recordedRowsHtml + settleRowHtml;
+        }
+    }
 
     calculateBalanceDue();
     updatePoSummaryPayBadge();
+}
+
+function submitInlinePoPaymentRow() {
+    const po = window.PoStore?.activePo;
+    if (!po) return;
+
+    const amtInput = document.getElementById('inlinePoPayAmt');
+    const typeSelect = document.getElementById('inlinePoPayType');
+    const refInput = document.getElementById('inlinePoPayRef');
+
+    const amountVal = parseFloat(amtInput?.value) || 0;
+    if (amountVal <= 0) {
+        showToast('Enter a valid payment amount greater than 0.', 'warning');
+        return;
+    }
+
+    const gross = calculatePoGrossTotal(po.items || []);
+    const allPayments = getStoredPayments();
+    const existing = allPayments.filter(p => p.poNumber === po.poNumber);
+    const totalPaid = existing.reduce((acc, p) => acc + (parseFloat(p.amount) || 0), 0);
+    const remaining = Math.max(0, Math.round((gross - totalPaid + Number.EPSILON) * 100) / 100);
+
+    const appliedAmt = Math.min(remaining > 0 ? remaining : amountVal, amountVal);
+    const trancheType = (appliedAmt >= remaining - 0.009 && existing.length > 0)
+        ? 'Final Settlement'
+        : (typeSelect?.value || 'Downpayment');
+    const refStr = refInput?.value?.trim() || `OR-${Date.now().toString().slice(-4)}`;
+
+    const paymentEntry = {
+        id: `PAY-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        poNumber: po.poNumber,
+        trancheType: trancheType,
+        billRef: '',
+        amount: appliedAmt,
+        method: po.paymentMethod || 'Bank Transfer / Electronic',
+        reference: refStr,
+        paymentDate: new Date().toISOString().split('T')[0],
+        fundSource: po.fundSource || 'Main Commissary Checking Acct',
+        remarks: `${trancheType} recorded inline`,
+        recordedAt: new Date().toISOString(),
+        actor: window.PurchaseOrderConfig?.user?.name || 'Procurement Specialist'
+    };
+
+    allPayments.push(paymentEntry);
+    saveStoredPayments(allPayments);
+
+    const newTotalPaid = totalPaid + appliedAmt;
+    po.amountPaid = newTotalPaid;
+    po.balanceDue = Math.max(0, Math.round((gross - newTotalPaid + Number.EPSILON) * 100) / 100);
+    po.paymentStatus = (po.balanceDue <= 0.009) ? 'Paid in Full / Cash Out' : 'Partial Payment';
+
+    const existingIdx = (window.PoStore.purchaseOrders || []).findIndex(item => item.poNumber === po.poNumber);
+    if (existingIdx >= 0) {
+        window.PoStore.purchaseOrders[existingIdx].amountPaid = po.amountPaid;
+        window.PoStore.purchaseOrders[existingIdx].balanceDue = po.balanceDue;
+        window.PoStore.purchaseOrders[existingIdx].paymentStatus = po.paymentStatus;
+        localStorage.setItem('rms_purchase_orders', JSON.stringify(window.PoStore.purchaseOrders));
+    }
+
+    updatePoTotals();
+    updatePoLiveDocumentMockup();
+    renderPoDirectory();
+    showToast(`✓ Recorded ${trancheType}: ₱${formatMoney(appliedAmt)} (Remaining: ₱${formatMoney(po.balanceDue)})`, 'success');
 }
 
 /**
@@ -1543,13 +2177,14 @@ async function issuePurchaseOrderSubmit() {
  * --------------------------------------------------------------------------
  */
 const PO_DIRECTORY_COLUMNS = [
-    { id: 'ref', label: 'PO Info', subLabel: 'PO # / Source RFQ', default: true, lockVisible: true, defaultWidth: '160px', align: 'left' },
+    { id: 'ref', label: 'PO Info', subLabel: 'PO # / Referenced RFQ', default: true, lockVisible: true, defaultWidth: '170px', align: 'left' },
     { id: 'vendor', label: 'Vendor & Contact', subLabel: 'Supplier / Contact Person', default: true, lockVisible: true, defaultWidth: '215px', align: 'left' },
     { id: 'dates', label: 'Order / Delivery Date', subLabel: 'Issued / Expected Arrival', default: true, lockVisible: false, defaultWidth: '155px', align: 'left' },
     { id: 'destination', label: 'Branch & Warehouse', subLabel: 'Ship-To / Receiving Dock', default: true, lockVisible: false, defaultWidth: '175px', align: 'left' },
-    { id: 'items', label: 'Order Valuation', subLabel: 'Gross Total (₱) / Items', default: true, lockVisible: false, defaultWidth: '145px', align: 'right' },
+    { id: 'taxes', label: 'Taxes', subLabel: 'VATable / WHT (₱)', default: true, lockVisible: false, defaultWidth: '145px', align: 'right' },
+    { id: 'items', label: 'Order Valuation', subLabel: 'Total w/ Tax (₱) / Items', default: true, lockVisible: false, defaultWidth: '150px', align: 'right' },
     { id: 'fulfillment', label: 'Fulfillment (GRN)', subLabel: 'Dock Status / Units', default: true, lockVisible: false, defaultWidth: '145px', align: 'left' },
-    { id: 'payment', label: 'Payment / Terms', subLabel: 'Settlement / Credit Terms', default: true, lockVisible: false, defaultWidth: '150px', align: 'left' },
+    { id: 'payment', label: 'Payment / Bills', subLabel: 'Settlement / Balance Due', default: true, lockVisible: false, defaultWidth: '165px', align: 'left' },
     { id: 'status', label: 'PO Status', subLabel: 'Lifecycle / Approval State', default: true, lockVisible: false, defaultWidth: '155px', align: 'left' },
     { id: 'company', label: 'Company', subLabel: 'Buying Legal Entity', default: false, lockVisible: false, defaultWidth: '155px', align: 'left' },
     { id: 'currency_incoterms', label: 'Currency & Incoterms', subLabel: 'ISO 4217 / Trade Terms', default: false, lockVisible: false, defaultWidth: '140px', align: 'left' },
@@ -1566,7 +2201,7 @@ let poDirectoryColSearchTerm = '';
 
 let activePoColIds = (() => {
     try {
-        const saved = localStorage.getItem('rms_po_directory_cols_v4');
+        const saved = localStorage.getItem('rms_po_directory_cols_v5');
         if (saved) {
             const parsed = JSON.parse(saved);
             const validIds = PO_DIRECTORY_COLUMNS.map(c => c.id);
@@ -1915,13 +2550,19 @@ function renderPoDirectory() {
     renderPoPaginationControls(totalPages);
 
     tbody.innerHTML = pageItems.map(p => {
-        const gross = (p.items || []).reduce((acc, it) => acc + ((parseFloat(it.quantity) || 0) * (parseFloat(it.unitPrice) || 0)), 0);
+        const taxBreakdown = computePoTaxBreakdown(p.items || []);
+        const gross = taxBreakdown.totalWithTax;
+        const poPayments = getStoredPayments().filter(pay => pay.poNumber === p.poNumber);
+        const totalPaid = poPayments.length > 0
+            ? poPayments.reduce((acc, pay) => acc + (parseFloat(pay.amount) || 0), 0)
+            : (parseFloat(p.amountPaid) || 0);
+        const balanceDue = Math.max(0, Math.round((gross - totalPaid + Number.EPSILON) * 100) / 100);
         const totalOrderedUnits = (p.items || []).reduce((acc, it) => acc + (parseFloat(it.quantity) || 0), 0);
         const totalReceivedUnits = (p.items || []).reduce((acc, it) => acc + (parseFloat(it.receivedQuantity || 0)), 0);
         const isMarket = p.poType === 'wet_market';
         let payBadgeClass = 'unpaid';
-        if (p.paymentStatus === 'Paid in Full / Cash Out') payBadgeClass = 'paid';
-        else if (p.paymentStatus === 'Partial Payment') payBadgeClass = 'partial';
+        if (totalPaid >= gross && gross > 0) payBadgeClass = 'paid';
+        else if (totalPaid > 0 || p.paymentStatus === 'Partial Payment') payBadgeClass = 'partial';
 
         let poStatusClass = 'draft';
         if (p.status === 'Approved / Issued' || p.status === 'Partially Received') poStatusClass = 'approved';
@@ -1929,6 +2570,7 @@ function renderPoDirectory() {
         else if (p.status === 'Pending Approval') poStatusClass = 'approval';
 
         const isChecked = selectedPoNumbers.has(p.poNumber);
+        const validRfqRef = hasValidRfqReference(p.rfqReference) ? String(p.rfqReference).trim() : '';
 
         let cellsHtml = `
             <td style="text-align: center;">
@@ -1948,8 +2590,8 @@ function renderPoDirectory() {
                                     ${escapeHtml(p.poNumber)}
                                 </a>
                             </div>
-                            <div class="rms-cell-sub" title="RFQ: ${escapeHtml(p.rfqReference || 'Direct Buy')}">
-                                ${p.rfqReference ? `<button type="button" class="po-linked-rfq-sublink" onclick="openLinkedRfqModal('${escapeHtml(p.rfqReference)}')"><i class="ph ph-link"></i> ${escapeHtml(p.rfqReference)} <i class="ph ph-arrow-up-right" style="font-size: 9px;"></i></button>` : `<span style="color: #94a3b8; font-family: monospace;">Direct Order</span>`}
+                            <div class="rms-cell-sub" title="Referenced RFQ: ${escapeHtml(validRfqRef || 'Direct Order')}">
+                                ${validRfqRef ? `<button type="button" class="po-linked-rfq-sublink" onclick="openLinkedRfqModal('${escapeHtml(validRfqRef)}')" title="Inspect Referenced RFQ ${escapeHtml(validRfqRef)}"><i class="ph ph-link-simple-bold"></i> RFQ: ${escapeHtml(validRfqRef)} <i class="ph ph-arrow-up-right" style="font-size: 9px;"></i></button>` : `<span style="color: #94a3b8; font-family: monospace;">Direct Order</span>`}
                             </div>
                         </div>
                     </td>
@@ -1994,13 +2636,22 @@ function renderPoDirectory() {
                         </div>
                     </td>
                 `;
+            } else if (col.id === 'taxes') {
+                cellsHtml += `
+                    <td class="td-num">
+                        <div class="rms-cell-stack rms-stack-right">
+                            <div class="rms-cell-title" style="color: #7e22ce; font-weight: 700; font-size: 11.5px; font-variant-numeric: tabular-nums;">VAT: ₱${formatMoney(taxBreakdown.vatableAmount)}</div>
+                            <div class="rms-cell-sub" style="justify-content: flex-end; font-variant-numeric: tabular-nums;">WHT: ₱${formatMoney(taxBreakdown.withholdingTaxAmount)}</div>
+                        </div>
+                    </td>
+                `;
             } else if (col.id === 'items') {
                 const lineCount = (p.items || []).length;
                 cellsHtml += `
                     <td class="td-num">
                         <div class="rms-cell-stack rms-stack-right">
                             <div class="rms-cell-title" style="color: #0f172a; font-weight: 800; font-variant-numeric: tabular-nums;">₱${formatMoney(gross)}</div>
-                            <div class="rms-cell-sub" style="justify-content: flex-end;">${lineCount} line item${lineCount === 1 ? '' : 's'}</div>
+                            <div class="rms-cell-sub" style="justify-content: flex-end;">Untaxed: ₱${formatMoney(taxBreakdown.untaxedAmount)} (${lineCount})</div>
                         </div>
                     </td>
                 `;
@@ -2018,14 +2669,15 @@ function renderPoDirectory() {
                     </td>
                 `;
             } else if (col.id === 'payment') {
+                const displayPayStatus = (totalPaid >= gross && gross > 0) ? 'Paid in Full' : (totalPaid > 0 ? `Partial (${poPayments.length || 1}x)` : 'Unpaid');
                 cellsHtml += `
                     <td class="td-left">
                         <div class="rms-cell-stack" style="align-items: flex-start; gap: 3px;">
-                            <span class="pay-badge ${payBadgeClass}" style="cursor: pointer; padding: 2px 8px; font-size: 0.70rem; border-radius: 6px;" onclick="openPaymentSettlementModal('${escapeHtml(p.poNumber)}')" title="View Financial Settlement">
-                                ${escapeHtml(p.paymentStatus || 'Unpaid')}
+                            <span class="pay-badge ${payBadgeClass}" style="cursor: pointer; padding: 2px 8px; font-size: 0.70rem; border-radius: 6px;" onclick="openPaymentSettlementModal('${escapeHtml(p.poNumber)}')" title="View Bills & Multi-Payment Settlement">
+                                ${escapeHtml(displayPayStatus)}
                             </span>
-                            <div class="rms-cell-sub" title="${escapeHtml(p.paymentMethod || p.paymentRemarks || 'Standard Terms')}">
-                                ${escapeHtml(p.paymentTerms || p.paymentMethod || 'Net 30 Days')}
+                            <div class="rms-cell-sub" style="font-variant-numeric: tabular-nums; color: ${balanceDue <= 0.009 && gross > 0 ? '#059669' : '#64748b'}; font-weight: 600;">
+                                Bal: ₱${formatMoney(balanceDue)}
                             </div>
                         </div>
                     </td>
@@ -2506,15 +3158,7 @@ function editPoFromDirectory(poNumber) {
         titleIn.value = po.orderTitle || po.purpose || '';
     }
 
-    const rfqBadge = document.getElementById('poLinkedRfqPill');
-    if (rfqBadge) {
-        if (po.rfqReference) {
-            rfqBadge.style.display = 'inline-flex';
-            rfqBadge.innerHTML = `<i class="ph ph-link"></i> Source RFQ: ${escapeHtml(po.rfqReference)}`;
-        } else {
-            rfqBadge.style.display = 'none';
-        }
-    }
+    syncPoRfqReferenceUI(po.rfqReference);
 
     setPoMode(po.poType || 'vendor');
 
@@ -2675,8 +3319,7 @@ function resetPoForm() {
     const refDisp = document.getElementById('poRefDisplay');
     if (refDisp) refDisp.textContent = poNum;
     setVal('poOrderTitle', '');
-    const rfqBadge = document.getElementById('poLinkedRfqPill');
-    if (rfqBadge) { rfqBadge.style.display = 'none'; rfqBadge.textContent = ''; }
+    syncPoRfqReferenceUI('');
     setVal('poVendorSelect', '');
     updatePoVendorSummaryCard(null);
     renderPoVendorComboboxList();
@@ -2709,13 +3352,22 @@ function resetPoForm() {
 function openPoDocumentPreview() {
     const po = window.PoStore.activePo;
     const isMarket = po.poType === 'wet_market';
-    const gross = calculatePoGrossTotal();
+    const taxBreakdown = computePoTaxBreakdown(po.items || []);
+    const gross = taxBreakdown.totalWithTax;
     const getVal = id => document.getElementById(id)?.value || '';
     const setTxt = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
-    const paid = parseFloat(getVal('poAmountPaid')) || (po.amountPaid || 0);
-    const balance = Math.max(0, gross - paid);
+    const payments = getStoredPayments().filter(p => p.poNumber === po.poNumber);
+    const paidFromLedger = payments.reduce((acc, p) => acc + (parseFloat(p.amount) || 0), 0);
+    const paid = payments.length > 0 ? paidFromLedger : (parseFloat(getVal('poAmountPaid')) || (po.amountPaid || 0));
+    const balance = Math.max(0, Math.round((gross - paid + Number.EPSILON) * 100) / 100);
 
     setTxt('docPoNumber', po.poNumber);
+    const validRfqRef = hasValidRfqReference(po.rfqReference) ? String(po.rfqReference).trim() : '';
+    const rfqWrap = document.getElementById('docPoRfqRefWrap');
+    if (rfqWrap) {
+        rfqWrap.style.display = validRfqRef ? 'block' : 'none';
+        setTxt('docPoRfqRef', validRfqRef || '--');
+    }
     setTxt('docPoDate', formatDateDisplay(getVal('poOrderDate') || po.orderDate));
     setTxt('docPoDeliveryDue', formatDateDisplay(getVal('poExpectedDelivery') || po.expectedDelivery));
 
@@ -2727,14 +3379,12 @@ function openPoDocumentPreview() {
     const detailsEl = document.getElementById('docPoVendorDetails');
     if (detailsEl) {
         detailsEl.innerHTML = `
-            <strong>Attn:</strong> ${escapeHtml(getVal('poContactPerson') || po.vendorContactPerson || 'Representative')}<br>
-            <strong>Phone:</strong> ${escapeHtml(getVal('poContactPhone') || po.vendorPhone || 'N/A')}<br>
-            <strong>Address / Market:</strong> ${escapeHtml(getVal('poFullAddress') || po.vendorAddress || 'Metro Manila')}
+            <strong>Attn:</strong> ${escapeHtml(getVal('poContactPerson') || po.vendorContactPerson || 'Representative')} • <strong>Phone:</strong> ${escapeHtml(getVal('poContactPhone') || po.vendorPhone || 'N/A')}
         `;
     }
 
     setTxt('docPoDeliveryDest', getVal('poDeliveryLocation') || po.deliveryLocation);
-    setTxt('docPoPaymentStatus', getVal('poPaymentStatus') || po.paymentStatus);
+    setTxt('docPoPaymentStatus', (paid >= gross && gross > 0) ? 'Paid in Full' : (paid > 0 ? 'Partial Payment' : (getVal('poPaymentStatus') || po.paymentStatus)));
     setTxt('docPoPaymentMethod', getVal('poPaymentMethod') || po.paymentMethod);
     setTxt('docPoPaymentRef', getVal('poPaymentRef') || po.paymentReference || 'N/A');
 
@@ -2742,9 +3392,10 @@ function openPoDocumentPreview() {
     const tbody = document.getElementById('docPoItemsTbody');
     if (tbody) {
         if (po.items.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 20px; color: #94a3b8;">No items in purchase order</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 20px; color: #94a3b8;">No items in purchase order</td></tr>`;
         } else {
             tbody.innerHTML = po.items.map((it, idx) => {
+                const taxInfo = computePoLineTaxes(it);
                 const total = (parseFloat(it.quantity) || 0) * (parseFloat(it.unitPrice) || 0);
                 return `
                     <tr>
@@ -2757,6 +3408,7 @@ function openPoDocumentPreview() {
                         <td style="text-align: center;">${escapeHtml(it.unit || 'Kg')}</td>
                         <td class="num" style="font-weight: 700;">${parseFloat(it.quantity || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
                         <td class="num">₱${formatMoney(it.unitPrice || 0)}</td>
+                        <td style="text-align: center; font-size: 0.76rem; font-weight: 700; color: #6d28d9;">${escapeHtml(taxInfo.vatLabel)} • ${escapeHtml(taxInfo.whtLabel)}</td>
                         <td class="num" style="font-weight: 800;">₱${formatMoney(total)}</td>
                     </tr>
                 `;
@@ -2764,9 +3416,22 @@ function openPoDocumentPreview() {
         }
     }
 
-    setTxt('docPoGross', `₱${formatMoney(gross)}`);
-    setTxt('docPoPaid', `₱${formatMoney(paid)}`);
-    setTxt('docPoBalance', `₱${formatMoney(balance)}`);
+    setTxt('docPoUntaxed', `₱ ${formatMoney(taxBreakdown.untaxedAmount)}`);
+    setTxt('docPoVatable', `₱ ${formatMoney(taxBreakdown.vatableAmount)}`);
+    setTxt('docPoWithholding', `₱ ${formatMoney(taxBreakdown.withholdingTaxAmount)}`);
+    setTxt('docPoGross', `₱ ${formatMoney(gross)}`);
+    setTxt('docPoPaid', `₱ ${formatMoney(paid)}`);
+    setTxt('docPoBalance', `₱ ${formatMoney(balance)}`);
+
+    const docPayList = document.getElementById('docPoPaymentsBreakdownList');
+    if (docPayList) {
+        docPayList.innerHTML = payments.map(p => `
+            <div style="display: flex; justify-content: space-between; font-size: 0.78rem; color: #047857; font-style: italic;">
+                <span>Paid on ${escapeHtml(formatDateDisplay(p.paymentDate))} (${escapeHtml(p.trancheType || 'Payment')}):</span>
+                <strong>- ₱ ${formatMoney(p.amount)}</strong>
+            </div>
+        `).join('');
+    }
 
     const modal = document.getElementById('poDocumentModal');
     if (modal) modal.classList.add('is-open');
@@ -3400,11 +4065,7 @@ function importApprovedRfqToBuilder(rfqNum) {
     setElVal('poDeliveryLocation', window.PoStore.activePo.deliveryLocation);
     setElVal('poSpecialNotes', window.PoStore.activePo.specialNotes);
 
-    const rfqBadge = document.getElementById('poLinkedRfqPill');
-    if (rfqBadge) {
-        rfqBadge.style.display = 'inline-flex';
-        rfqBadge.textContent = `Tender: ${rfq.rfqNumber}`;
-    }
+    syncPoRfqReferenceUI(rfq.rfqNumber);
 
     const vendor = window.PoStore.vendors.find(v => (v.id === rfq.vendorId || v.code === rfq.vendorId)) || {
         code: rfq.vendorId || 'VND-AWD',
@@ -3482,7 +4143,6 @@ function openLinkedRfqModal(rfqNum) {
                     <div>
                         <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #64748b;">Selected Vendor</div>
                         <div style="font-size: 14px; font-weight: 800; color: #0f172a;">${escapeHtml(rfq.vendorTradeName || rfq.vendorName)}</div>
-                        <div style="font-size: 12px; color: #64748b;">${escapeHtml(rfq.vendorAddress || 'Metro Manila')}</div>
                     </div>
                     <div style="text-align: right;">
                         <span class="status-pill approved" style="font-size: 11px; padding: 3px 9px;"><i class="ph ph-check-circle"></i> Awarded Tender</span>
@@ -3633,21 +4293,27 @@ function renderPaymentSettlementData() {
     const ref = currentSettlementRef || window.PoStore.activePo.poNumber;
     const isActivePo = (ref === window.PoStore.activePo.poNumber);
 
-    // Resolve Gross and Linked RFQ
+    // Resolve Tax Breakdown, Gross, Terms, Vendor and Linked RFQ
+    let taxBreakdown = { untaxedAmount: 0, vatableAmount: 0, withholdingTaxAmount: 0, totalWithTax: 0 };
     let gross = 0;
     let linkedRfq = '';
     let vendorName = '';
+    let paymentTerms = 'Net 30 Days';
 
     if (isActivePo) {
-        gross = calculatePoGrossTotal();
-        linkedRfq = window.PoStore.activePo.rfqReference || '';
-        vendorName = window.PoStore.activePo.vendorTradeName || window.PoStore.activePo.vendorName || '';
+        taxBreakdown = computePoTaxBreakdown(window.PoStore.activePo.items || []);
+        gross = taxBreakdown.totalWithTax;
+        linkedRfq = hasValidRfqReference(window.PoStore.activePo.rfqReference) ? window.PoStore.activePo.rfqReference : '';
+        vendorName = window.PoStore.activePo.vendorTradeName || window.PoStore.activePo.vendorName || 'Unassigned Vendor';
+        paymentTerms = window.PoStore.activePo.paymentTerms || 'Net 30 Days';
     } else {
         const po = (window.PoStore.purchaseOrders || []).find(p => p.poNumber === ref);
         if (po) {
-            gross = (po.items || []).reduce((acc, it) => acc + ((parseFloat(it.quantity) || 0) * (parseFloat(it.unitPrice) || 0)), 0);
-            linkedRfq = po.rfqReference || '';
-            vendorName = po.vendorTradeName || po.vendorName || '';
+            taxBreakdown = computePoTaxBreakdown(po.items || []);
+            gross = taxBreakdown.totalWithTax;
+            linkedRfq = hasValidRfqReference(po.rfqReference) ? po.rfqReference : '';
+            vendorName = po.vendorTradeName || po.vendorName || 'Unassigned Vendor';
+            paymentTerms = po.paymentTerms || 'Net 30 Days';
         }
     }
 
@@ -3655,21 +4321,70 @@ function renderPaymentSettlementData() {
     const allPayments = getStoredPayments();
     const payments = allPayments.filter(p => p.poNumber === ref);
     const totalPaid = payments.reduce((acc, p) => acc + (parseFloat(p.amount) || 0), 0);
-    const balanceDue = Math.max(0, gross - totalPaid);
+    const balanceDue = Math.max(0, Math.round((gross - totalPaid + Number.EPSILON) * 100) / 100);
+    const isFullySettled = (balanceDue <= 0.009 && gross > 0);
 
-    // DOM Updates
+    // Context Bar Updates
     document.getElementById('payModalActiveRef').textContent = ref;
     document.getElementById('payLedgerRefLabel').textContent = ref;
+
+    const vendorBadge = document.getElementById('payModalVendorBadge');
+    if (vendorBadge) {
+        vendorBadge.innerHTML = `<i class="ph ph-buildings"></i> <span>${escapeHtml(vendorName || 'Unassigned Vendor')}</span>`;
+    }
+    const termsBadge = document.getElementById('payModalTermsBadge');
+    if (termsBadge) {
+        termsBadge.innerHTML = `<i class="ph ph-calendar-blank"></i> <span>${escapeHtml(paymentTerms)}</span>`;
+    }
+
+    // KPI Cards Updates
     document.getElementById('payModalGross').textContent = `₱${formatMoney(gross)}`;
+    const taxSubtext = document.getElementById('payModalTaxSubtext');
+    if (taxSubtext) {
+        taxSubtext.textContent = `Untaxed: ₱${formatMoney(taxBreakdown.untaxedAmount)} • VAT: ₱${formatMoney(taxBreakdown.vatableAmount)} • WHT: ₱${formatMoney(taxBreakdown.withholdingTaxAmount)}`;
+    }
     document.getElementById('payModalPaid').textContent = `₱${formatMoney(totalPaid)}`;
-    document.getElementById('payModalBalance').textContent = `₱${formatMoney(balanceDue)}`;
+    const paidSubtext = document.getElementById('payModalPaidSubtext');
+    if (paidSubtext) {
+        paidSubtext.textContent = payments.length > 0
+            ? `${payments.length} payment tranche${payments.length === 1 ? '' : 's'} recorded`
+            : 'No tranches recorded yet';
+    }
+
+    const balanceEl = document.getElementById('payModalBalance');
+    const balanceSubEl = document.getElementById('payModalBalanceSubtext');
+    const balanceCard = document.getElementById('payModalBalanceCard');
+    const balanceIcon = document.getElementById('payModalBalanceIcon');
+    if (balanceEl) {
+        balanceEl.textContent = `₱${formatMoney(balanceDue)}`;
+        balanceEl.className = isFullySettled ? 'po-pay-kpi-val emerald' : 'po-pay-kpi-val rose';
+    }
+    if (balanceSubEl) {
+        balanceSubEl.textContent = isFullySettled
+            ? '✓ All billed obligations settled (₱0.00)'
+            : (payments.length > 0 ? `After ${payments.length} tranche${payments.length === 1 ? '' : 's'} deducted` : 'Target: ₱0.00 when fully settled');
+        balanceSubEl.className = isFullySettled ? 'po-pay-kpi-sub emerald' : 'po-pay-kpi-sub';
+    }
+    if (balanceCard) {
+        balanceCard.classList.toggle('is-settled', isFullySettled);
+    }
+    if (balanceIcon) {
+        balanceIcon.className = isFullySettled ? 'po-pay-kpi-icon emerald' : 'po-pay-kpi-icon rose';
+    }
+
     document.getElementById('payLedgerCountBadge').textContent = `${payments.length} Entr${payments.length === 1 ? 'y' : 'ies'}`;
 
-    const pct = gross > 0 ? ((totalPaid / gross) * 100) : (totalPaid > 0 ? 100 : 0);
-    document.getElementById('payModalPercentPaid').textContent = `${pct.toFixed(1)}% settled${vendorName ? ' • ' + vendorName : ''}`;
+    const rawPct = gross > 0 ? ((totalPaid / gross) * 100) : (totalPaid > 0 ? 100 : 0);
+    const clampedPct = Math.min(100, Math.max(0, rawPct));
+    document.getElementById('payModalPercentPaid').textContent = `${clampedPct.toFixed(1)}% Settled`;
+    const progressFill = document.getElementById('payModalProgressFill');
+    if (progressFill) {
+        progressFill.style.width = `${clampedPct}%`;
+        progressFill.classList.toggle('is-complete', isFullySettled);
+    }
 
     const statusBadge = document.getElementById('payModalStatusBadge');
-    if (totalPaid >= gross && gross > 0) {
+    if (isFullySettled) {
         statusBadge.className = 'pay-badge paid';
         statusBadge.textContent = 'Paid in Full';
     } else if (totalPaid > 0) {
@@ -3685,47 +4400,157 @@ function renderPaymentSettlementData() {
     if (linkedBadge) {
         if (linkedRfq) {
             linkedBadge.style.display = 'inline-flex';
-            linkedBadge.textContent = `Tender: ${linkedRfq}`;
+            linkedBadge.innerHTML = `<i class="ph ph-link"></i> RFQ Ref: ${escapeHtml(linkedRfq)}`;
         } else {
             linkedBadge.style.display = 'none';
         }
     }
 
-    // Render Ledger Table
+    // Settled Banner in Form Panel
+    const settledBanner = document.getElementById('payModalSettledBanner');
+    if (settledBanner) {
+        settledBanner.style.display = isFullySettled ? 'flex' : 'none';
+    }
+
+    // Render Ledger Table with Progressive Running Balance ("Balance After")
     const tbody = document.getElementById('payModalLedgerTbody');
     if (tbody) {
         if (payments.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="7" style="text-align: center; padding: 28px 14px; color: #94a3b8;">
-                        <i class="ph ph-receipt" style="font-size: 28px; color: #cbd5e1; display: block; margin-bottom: 6px;"></i>
-                        <div style="font-weight: 700; color: #475569;">No Payment Disbursements Recorded</div>
-                        <div style="font-size: 11.5px; margin-top: 2px;">Record an advance, downpayment, or full payment for reference <strong>${escapeHtml(ref)}</strong> using the form below.</div>
+                    <td colspan="7" class="po-pay-empty-cell">
+                        <div class="po-pay-empty-box">
+                            <i class="ph ph-receipt"></i>
+                            <div class="po-pay-empty-title">No Payment Tranches Recorded Yet</div>
+                            <div class="po-pay-empty-sub">Record a downpayment, progress billing, or final settlement for <strong>${escapeHtml(ref)}</strong> until Balance Due reaches <strong>₱0.00</strong>.</div>
+                        </div>
                     </td>
                 </tr>
             `;
         } else {
-            tbody.innerHTML = payments.map((p, idx) => `
-                <tr style="border-bottom: 1px solid #f1f5f9;">
-                    <td style="padding: 7px 10px; text-align: center; color: #64748b; font-weight: 700;">${idx + 1}</td>
-                    <td style="padding: 7px 10px; font-weight: 600; color: #1e293b;">${formatDateDisplay(p.paymentDate)}</td>
-                    <td style="padding: 7px 10px; color: #475569;"><span class="po-label-badge">${escapeHtml(p.method || 'Cash')}</span></td>
-                    <td style="padding: 7px 10px; font-family: monospace; font-weight: 700; color: #0284c7;">${escapeHtml(p.reference || '--')}</td>
-                    <td style="padding: 7px 10px; color: #475569; font-size: 11px;">${escapeHtml(p.fundSource || 'Petty Cash')}</td>
-                    <td style="padding: 7px 10px; text-align: right; font-weight: 800; color: #059669;">₱${formatMoney(p.amount)}</td>
-                    <td style="padding: 7px 10px; text-align: center;">
-                        <button type="button" class="inv-table-filter-btn" onclick="deletePaymentDisbursement('${p.id}')" title="Delete payment entry" style="color: #ef4444; width: 24px; height: 24px; font-size: 13px;">
-                            <i class="ph ph-trash"></i>
-                        </button>
-                    </td>
-                </tr>
-            `).join('');
+            let cumulativePaid = 0;
+            tbody.innerHTML = payments.map((p, idx) => {
+                const amt = parseFloat(p.amount) || 0;
+                cumulativePaid += amt;
+                const runningBal = Math.max(0, Math.round((gross - cumulativePaid + Number.EPSILON) * 100) / 100);
+                const tranche = p.trancheType || (idx === 0 && payments.length > 1 ? 'Downpayment' : 'Payment');
+                const billAndOr = [p.billRef ? `Bill: ${p.billRef}` : '', p.reference || ''].filter(Boolean).join(' • ') || '--';
+                const methodLabel = p.method || 'Bank Transfer';
+                const fundLabel = p.fundSource || 'Main Checking';
+                return `
+                    <tr>
+                        <td class="po-pay-td-idx">${idx + 1}</td>
+                        <td class="po-pay-td-date">${formatDateDisplay(p.paymentDate)}</td>
+                        <td><span class="po-fin-tranche-tag">${escapeHtml(tranche)}</span></td>
+                        <td>
+                            <div class="po-pay-method-stack">
+                                <span class="po-pay-ref-code">${escapeHtml(billAndOr)}</span>
+                                <span class="po-pay-method-sub">${escapeHtml(methodLabel)} • ${escapeHtml(fundLabel)}</span>
+                            </div>
+                        </td>
+                        <td class="po-pay-td-paid">-₱${formatMoney(amt)}</td>
+                        <td class="po-pay-td-bal ${runningBal <= 0.009 ? 'is-zero' : ''}">₱${formatMoney(runningBal)}</td>
+                        <td style="text-align: center;">
+                            <button type="button" class="po-pay-del-btn" onclick="deletePaymentDisbursement('${p.id}')" title="Remove payment tranche">
+                                <i class="ph ph-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+    }
+
+    // Render Progressive Settlement Statement (Untaxed, VAT, WHT, Total, Amount Due + Payments After Amount Due)
+    const stmtUntaxed = document.getElementById('payStmtUntaxed');
+    const stmtVat = document.getElementById('payStmtVat');
+    const stmtWht = document.getElementById('payStmtWht');
+    const stmtTotal = document.getElementById('payStmtTotal');
+    const stmtAmountDue = document.getElementById('payStmtAmountDue');
+    const stmtPaymentsContainer = document.getElementById('payStmtPaymentsContainer');
+    const stmtFinalRow = document.getElementById('payStmtFinalBalanceRow');
+    const stmtFinalVal = document.getElementById('payStmtFinalBalanceVal');
+
+    if (stmtUntaxed) stmtUntaxed.textContent = `₱ ${formatMoney(taxBreakdown.untaxedAmount)}`;
+    if (stmtVat) stmtVat.textContent = `₱ ${formatMoney(taxBreakdown.vatableAmount)}`;
+    if (stmtWht) stmtWht.textContent = `₱ ${formatMoney(taxBreakdown.withholdingTaxAmount)}`;
+    if (stmtTotal) stmtTotal.textContent = `₱ ${formatMoney(gross)}`;
+    if (stmtAmountDue) {
+        stmtAmountDue.textContent = `₱ ${formatMoney(balanceDue)}`;
+        stmtAmountDue.style.color = isFullySettled ? '#059669' : '#0f172a';
+    }
+
+    if (stmtPaymentsContainer) {
+        if (payments.length === 0) {
+            stmtPaymentsContainer.innerHTML = '';
+            if (stmtFinalRow) stmtFinalRow.style.display = 'none';
+        } else {
+            let runBal = gross;
+            stmtPaymentsContainer.innerHTML = payments.map((p, idx) => {
+                const amt = parseFloat(p.amount) || 0;
+                runBal = Math.max(0, Math.round((runBal - amt + Number.EPSILON) * 100) / 100);
+                const trancheLabel = p.trancheType || (idx === 0 && payments.length > 1 ? 'Downpayment' : 'Payment');
+                const dateLabel = p.paymentDate ? formatDateDisplay(p.paymentDate) : 'Recorded';
+                const refBadge = p.billRef || p.reference || `TR-${idx + 1}`;
+                return `
+                    <div class="po-pay-stmt-payment-row">
+                        <div class="po-pay-stmt-pay-meta">
+                            <i class="ph ph-check-circle"></i>
+                            <span class="po-pay-stmt-pay-tranche">${escapeHtml(trancheLabel)}</span>
+                            <span class="po-pay-stmt-pay-date">on ${escapeHtml(dateLabel)}</span>
+                            <span class="po-pay-stmt-pay-ref">${escapeHtml(refBadge)}</span>
+                        </div>
+                        <div class="po-pay-stmt-pay-right">
+                            <span class="po-pay-stmt-pay-deduct">-₱ ${formatMoney(amt)}</span>
+                            <span class="po-pay-stmt-pay-after">(Bal: ₱${formatMoney(runBal)})</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            if (stmtFinalRow && stmtFinalVal) {
+                stmtFinalRow.style.display = 'flex';
+                stmtFinalRow.classList.toggle('is-settled', isFullySettled);
+                stmtFinalVal.textContent = isFullySettled ? '₱ 0.00 (Settled)' : `₱ ${formatMoney(balanceDue)}`;
+            }
         }
     }
 
     // Synchronize to Active PO if editing current active PO
     if (isActivePo) {
-        updatePoSummaryPayBadge();
+        updatePoTotals();
+        updatePoLiveDocumentMockup();
+    }
+}
+
+function fillPercentageRemainingBalance(ratio = 0.50, trancheLabel = 'Downpayment / Deposit') {
+    const ref = currentSettlementRef || window.PoStore.activePo.poNumber;
+    const isActivePo = (ref === window.PoStore.activePo.poNumber);
+
+    let gross = 0;
+    if (isActivePo) {
+        gross = calculatePoGrossTotal();
+    } else {
+        const po = (window.PoStore.purchaseOrders || []).find(p => p.poNumber === ref);
+        if (po) {
+            gross = computePoTaxBreakdown(po.items || []).totalWithTax;
+        }
+    }
+
+    const allPayments = getStoredPayments();
+    const payments = allPayments.filter(p => p.poNumber === ref);
+    const totalPaid = payments.reduce((acc, p) => acc + (parseFloat(p.amount) || 0), 0);
+    const balanceDue = Math.max(0, Math.round((gross - totalPaid + Number.EPSILON) * 100) / 100);
+    const targetAmt = Math.min(balanceDue, Math.round(((gross * ratio) + Number.EPSILON) * 100) / 100);
+
+    const trancheSelect = document.getElementById('newPayTrancheType');
+    if (trancheSelect && trancheLabel) {
+        trancheSelect.value = ratio < 1 ? 'Downpayment / Deposit' : 'Final Settlement';
+    }
+    const amountInput = document.getElementById('newPayAmount');
+    if (amountInput) {
+        amountInput.value = (targetAmt > 0 ? targetAmt : balanceDue).toFixed(2);
+        amountInput.focus();
     }
 }
 
@@ -3739,15 +4564,19 @@ function fillFullRemainingBalance() {
     } else {
         const po = (window.PoStore.purchaseOrders || []).find(p => p.poNumber === ref);
         if (po) {
-            gross = (po.items || []).reduce((acc, it) => acc + ((parseFloat(it.quantity) || 0) * (parseFloat(it.unitPrice) || 0)), 0);
+            gross = computePoTaxBreakdown(po.items || []).totalWithTax;
         }
     }
 
     const allPayments = getStoredPayments();
     const payments = allPayments.filter(p => p.poNumber === ref);
     const totalPaid = payments.reduce((acc, p) => acc + (parseFloat(p.amount) || 0), 0);
-    const balanceDue = Math.max(0, gross - totalPaid);
+    const balanceDue = Math.max(0, Math.round((gross - totalPaid + Number.EPSILON) * 100) / 100);
 
+    const trancheSelect = document.getElementById('newPayTrancheType');
+    if (trancheSelect) {
+        trancheSelect.value = payments.length > 0 ? 'Final Settlement' : 'Full Spot Payment';
+    }
     const amountInput = document.getElementById('newPayAmount');
     if (amountInput) {
         amountInput.value = balanceDue.toFixed(2);
@@ -3760,6 +4589,71 @@ function fillFullRemainingBalance() {
     }
 }
 
+function quickRecordPoPaymentTranche(ratio = 0.50, trancheLabel = 'Downpayment') {
+    const po = window.PoStore?.activePo;
+    if (!po) return;
+    const gross = calculatePoGrossTotal(po.items || []);
+    if (gross <= 0) {
+        showToast('Add at least one line item with a price before recording a payment or downpayment.', 'warning');
+        return;
+    }
+
+    const allPayments = getStoredPayments();
+    const existing = allPayments.filter(p => p.poNumber === po.poNumber);
+    const totalPaid = existing.reduce((acc, p) => acc + (parseFloat(p.amount) || 0), 0);
+    const balanceDue = Math.max(0, Math.round((gross - totalPaid + Number.EPSILON) * 100) / 100);
+
+    if (balanceDue <= 0.009) {
+        showToast(`✓ ${po.poNumber} is already Paid in Full (₱0.00 Balance Due).`, 'info');
+        return;
+    }
+
+    let amountVal = balanceDue;
+    if (ratio < 1.0) {
+        const trancheCalc = Math.round(((gross * ratio) + Number.EPSILON) * 100) / 100;
+        amountVal = Math.min(balanceDue, trancheCalc);
+    }
+    if (amountVal <= 0) return;
+
+    const seq = existing.length + 1;
+    const todayStr = new Date().toISOString().split('T')[0];
+    const paymentEntry = {
+        id: `PAY-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        poNumber: po.poNumber,
+        trancheType: ratio >= 1.0 ? (existing.length > 0 ? 'Final Settlement' : 'Full Payment') : trancheLabel,
+        billRef: `BILL-${po.poNumber.split('-').pop()}-${seq}`,
+        amount: amountVal,
+        method: po.paymentMethod || 'Bank Transfer / Electronic',
+        reference: `OR-${Date.now().toString().slice(-4)}`,
+        paymentDate: todayStr,
+        fundSource: po.fundSource || 'Main Commissary Checking Acct',
+        remarks: `${trancheLabel} recorded against ${po.poNumber}`,
+        recordedAt: new Date().toISOString(),
+        actor: window.PurchaseOrderConfig?.user?.name || 'Procurement Specialist'
+    };
+
+    allPayments.push(paymentEntry);
+    saveStoredPayments(allPayments);
+
+    const newTotalPaid = totalPaid + amountVal;
+    po.amountPaid = newTotalPaid;
+    po.balanceDue = Math.max(0, Math.round((gross - newTotalPaid + Number.EPSILON) * 100) / 100);
+    po.paymentStatus = (po.balanceDue <= 0.009) ? 'Paid in Full / Cash Out' : 'Partial Payment';
+
+    const existingIdx = (window.PoStore.purchaseOrders || []).findIndex(item => item.poNumber === po.poNumber);
+    if (existingIdx >= 0) {
+        window.PoStore.purchaseOrders[existingIdx].amountPaid = po.amountPaid;
+        window.PoStore.purchaseOrders[existingIdx].balanceDue = po.balanceDue;
+        window.PoStore.purchaseOrders[existingIdx].paymentStatus = po.paymentStatus;
+        localStorage.setItem('rms_purchase_orders', JSON.stringify(window.PoStore.purchaseOrders));
+    }
+
+    updatePoTotals();
+    updatePoLiveDocumentMockup();
+    renderPoDirectory();
+    showToast(`✓ Recorded ${paymentEntry.trancheType}: ₱${formatMoney(amountVal)} (Balance Due: ₱${formatMoney(po.balanceDue)})`, 'success');
+}
+
 function addPaymentDisbursement() {
     const ref = currentSettlementRef || window.PoStore.activePo.poNumber;
     const amountVal = parseFloat(document.getElementById('newPayAmount').value) || 0;
@@ -3769,8 +4663,10 @@ function addPaymentDisbursement() {
         return;
     }
 
+    const trancheType = document.getElementById('newPayTrancheType')?.value || 'Downpayment / Deposit';
+    const billRef = document.getElementById('newPayBillRef')?.value?.trim() || '';
     const method = document.getElementById('newPayMethod').value;
-    const paymentRef = document.getElementById('newPayRef').value.trim() || `DISB-${Date.now().toString().slice(-4)}`;
+    const paymentRef = document.getElementById('newPayRef').value.trim() || `OR-${Date.now().toString().slice(-4)}`;
     const paymentDate = document.getElementById('newPayDate').value || new Date().toISOString().split('T')[0];
     const fundSource = document.getElementById('newPayFundSource').value;
     const remarks = document.getElementById('newPayRemarks').value.trim();
@@ -3778,6 +4674,8 @@ function addPaymentDisbursement() {
     const paymentEntry = {
         id: `PAY-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
         poNumber: ref,
+        trancheType: trancheType,
+        billRef: billRef,
         amount: amountVal,
         method: method,
         reference: paymentRef,
@@ -3797,40 +4695,42 @@ function addPaymentDisbursement() {
         'PO',
         ref,
         'PAYMENT_RECORDED',
-        'Payment Disbursement Added',
-        `Disbursed ₱${formatMoney(amountVal)} via ${method} for ${ref} (${paymentRef}).`,
+        `${trancheType} Recorded`,
+        `Disbursed ₱${formatMoney(amountVal)} (${trancheType}) via ${method} for ${ref} (${paymentRef}).`,
         [
+            { label: 'Tranche Type', value: trancheType },
             { label: 'Amount Paid', value: `₱${formatMoney(amountVal)}` },
             { label: 'Method', value: method },
-            { label: 'Receipt / Check #', value: paymentRef },
+            { label: 'Vendor Bill / OR #', value: [billRef, paymentRef].filter(Boolean).join(' • ') },
             { label: 'Fund Source', value: fundSource }
         ]
     );
 
     // Update in-memory PO state
     if (ref === window.PoStore.activePo.poNumber) {
-        updatePoSummaryPayBadge();
-    } else {
-        const po = (window.PoStore.purchaseOrders || []).find(p => p.poNumber === ref);
-        if (po) {
-            const poPayments = payments.filter(p => p.poNumber === ref);
-            const totalPaid = poPayments.reduce((acc, p) => acc + (parseFloat(p.amount) || 0), 0);
-            const gross = (po.items || []).reduce((acc, it) => acc + ((parseFloat(it.quantity) || 0) * (parseFloat(it.unitPrice) || 0)), 0);
-            po.amountPaid = totalPaid;
-            po.balanceDue = Math.max(0, gross - totalPaid);
-            po.paymentStatus = (totalPaid >= gross && gross > 0) ? 'Paid in Full / Cash Out' : (totalPaid > 0 ? 'Partial Payment' : 'Unpaid / Credit');
-            localStorage.setItem('rms_purchase_orders', JSON.stringify(window.PoStore.purchaseOrders));
-        }
+        updatePoTotals();
+        updatePoLiveDocumentMockup();
+    }
+    const po = (window.PoStore.purchaseOrders || []).find(p => p.poNumber === ref);
+    if (po) {
+        const poPayments = payments.filter(p => p.poNumber === ref);
+        const totalPaid = poPayments.reduce((acc, p) => acc + (parseFloat(p.amount) || 0), 0);
+        const gross = computePoTaxBreakdown(po.items || []).totalWithTax;
+        po.amountPaid = totalPaid;
+        po.balanceDue = Math.max(0, Math.round((gross - totalPaid + Number.EPSILON) * 100) / 100);
+        po.paymentStatus = (totalPaid >= gross && gross > 0) ? 'Paid in Full / Cash Out' : (totalPaid > 0 ? 'Partial Payment' : 'Unpaid / Credit');
+        localStorage.setItem('rms_purchase_orders', JSON.stringify(window.PoStore.purchaseOrders));
     }
 
     // Reset inputs
     document.getElementById('newPayAmount').value = '';
     document.getElementById('newPayRef').value = '';
+    if (document.getElementById('newPayBillRef')) document.getElementById('newPayBillRef').value = '';
     document.getElementById('newPayRemarks').value = '';
 
     renderPaymentSettlementData();
     renderPoDirectory();
-    showToast(`✓ Recorded ₱${formatMoney(amountVal)} disbursement for ${ref}`, 'success');
+    showToast(`✓ Recorded ₱${formatMoney(amountVal)} (${trancheType}) for ${ref}`, 'success');
 }
 
 function deletePaymentDisbursement(id) {
@@ -3852,20 +4752,22 @@ function deletePaymentDisbursement(id) {
         );
     }
 
-    const ref = currentSettlementRef || window.PoStore.activePo.poNumber;
+    const ref = deleted?.poNumber || currentSettlementRef || window.PoStore.activePo.poNumber;
     if (ref === window.PoStore.activePo.poNumber) {
-        updatePoSummaryPayBadge();
-    } else {
-        const po = (window.PoStore.purchaseOrders || []).find(p => p.poNumber === ref);
-        if (po) {
-            const poPayments = payments.filter(p => p.poNumber === ref);
-            const totalPaid = poPayments.reduce((acc, p) => acc + (parseFloat(p.amount) || 0), 0);
-            const gross = (po.items || []).reduce((acc, it) => acc + ((parseFloat(it.quantity) || 0) * (parseFloat(it.unitPrice) || 0)), 0);
-            po.amountPaid = totalPaid;
-            po.balanceDue = Math.max(0, gross - totalPaid);
-            po.paymentStatus = (totalPaid >= gross && gross > 0) ? 'Paid in Full / Cash Out' : (totalPaid > 0 ? 'Partial Payment' : 'Unpaid / Credit');
-            localStorage.setItem('rms_purchase_orders', JSON.stringify(window.PoStore.purchaseOrders));
-        }
+        const activePayments = payments.filter(p => p.poNumber === ref);
+        window.PoStore.activePo.amountPaid = activePayments.reduce((acc, p) => acc + (parseFloat(p.amount) || 0), 0);
+        updatePoTotals();
+        updatePoLiveDocumentMockup();
+    }
+    const po = (window.PoStore.purchaseOrders || []).find(p => p.poNumber === ref);
+    if (po) {
+        const poPayments = payments.filter(p => p.poNumber === ref);
+        const totalPaid = poPayments.reduce((acc, p) => acc + (parseFloat(p.amount) || 0), 0);
+        const gross = computePoTaxBreakdown(po.items || []).totalWithTax;
+        po.amountPaid = totalPaid;
+        po.balanceDue = Math.max(0, Math.round((gross - totalPaid + Number.EPSILON) * 100) / 100);
+        po.paymentStatus = (totalPaid >= gross && gross > 0) ? 'Paid in Full / Cash Out' : (totalPaid > 0 ? 'Partial Payment' : 'Unpaid / Credit');
+        localStorage.setItem('rms_purchase_orders', JSON.stringify(window.PoStore.purchaseOrders));
     }
 
     renderPaymentSettlementData();
@@ -4025,21 +4927,21 @@ function updatePoLifecycleProgressBar(status) {
         const stockInUrl = `${window.PurchaseOrderConfig?.routes?.inventoryStockIn || '/inventory/stock-in'}?po=${encodeURIComponent(poNum)}`;
         if (stageActionsGroup) {
             stageActionsGroup.innerHTML = `
-                <button type="button" class="rfq-stage-action-btn rfq-btn-stage-success" onclick="receiveAllPoItems()" title="Receive 100% of Ordered Quantities & Mark Fulfilled">
+                <button type="button" class="rfq-stage-action-btn rfq-btn-stage-success" onclick="validatePoGoodsReceipt()" title="Validate Received Quantities (Prompts for Backorder / No Backorder if partial)">
                     <i class="ph ph-checks"></i>
-                    <span>Receive All (100%)</span>
+                    <span>Validate Receipt (GRN)</span>
                 </button>
                 <a href="${stockInUrl}" class="rfq-stage-action-btn rfq-btn-stage-outline" style="text-decoration: none;" title="Open Stock-In Receiving Dock to log Goods Receipt (GRN)">
                     <i class="ph ph-tray-arrow-down"></i>
                     <span>Receive in Stock-In (GRN)</span>
                 </a>
+                <button type="button" class="rfq-stage-action-btn rfq-btn-stage-danger" onclick="openPoReturnToVendorModal()" title="Return Damaged or Rejected Items to Vendor">
+                    <i class="ph ph-arrow-u-up-left"></i>
+                    <span>Return to Vendor</span>
+                </button>
                 <button type="button" class="rfq-stage-action-btn rfq-btn-stage-primary" onclick="openPaymentSettlementModal('${escapeHtml(poNum)}')" title="Record Disbursement & Financial Settlement">
                     <i class="ph ph-bank"></i>
                     <span>Payment Settlement</span>
-                </button>
-                <button type="button" class="rfq-stage-action-btn rfq-btn-stage-outline" onclick="transitionActivePoStage('Approved')" title="Mark PO as 100% Fulfilled / Received">
-                    <i class="ph ph-seal-check"></i>
-                    <span>Mark Fulfilled</span>
                 </button>
                 <button type="button" class="rfq-stage-action-btn rfq-btn-stage-attach" onclick="openPoAttachedFilesModal()" title="View Attached Documents">
                     <i class="ph ph-paperclip"></i>
@@ -4056,7 +4958,7 @@ function updatePoLifecycleProgressBar(status) {
         if (statusDesc) statusDesc.textContent = '100% Received';
         if (bannerIcon) bannerIcon.innerHTML = '<i class="ph ph-seal-check"></i>';
         if (bannerTitle) bannerTitle.textContent = 'Stage 4: Status (Fully Received)';
-        if (bannerSub) bannerSub.textContent = 'All ordered items have been received into inventory. Manage final AP payment settlement below.';
+        if (bannerSub) bannerSub.textContent = 'Ordered items have been received into inventory. Manage AP payment settlement or vendor returns below.';
         if (bannerActions) {
             bannerActions.innerHTML = `<span class="rfq-stage-indicator-pill approved" style="color: #059669;"><i class="ph ph-check-circle-fill"></i> Fully Received</span>`;
         }
@@ -4065,6 +4967,10 @@ function updatePoLifecycleProgressBar(status) {
                 <button type="button" class="rfq-stage-action-btn rfq-btn-stage-success" onclick="openPaymentSettlementModal('${escapeHtml(poNum)}')" title="Manage Payment Settlement">
                     <i class="ph ph-bank"></i>
                     <span>Payment Settlement</span>
+                </button>
+                <button type="button" class="rfq-stage-action-btn rfq-btn-stage-danger" onclick="openPoReturnToVendorModal()" title="Return Damaged or Rejected Items to Vendor">
+                    <i class="ph ph-arrow-u-up-left"></i>
+                    <span>Return to Vendor</span>
                 </button>
                 <button type="button" class="rfq-stage-action-btn rfq-btn-stage-outline" onclick="openPoDocumentPreview()" title="Print / Export Completed PO">
                     <i class="ph ph-printer"></i>
@@ -4287,9 +5193,15 @@ function updatePoLiveDocumentMockup() {
 
     const po = window.PoStore.activePo;
     const items = po.items || [];
-    const gross = items.reduce((acc, it) => acc + ((parseFloat(it.quantity) || 0) * (parseFloat(it.unitPrice) || 0)), 0);
-    const paid = parseFloat(po.amountPaid || 0);
-    const balance = Math.max(0, gross - paid);
+    const taxBreakdown = computePoTaxBreakdown(items);
+    const gross = taxBreakdown.totalWithTax;
+    const payments = getStoredPayments().filter(p => p.poNumber === po.poNumber);
+    const paidFromLedger = payments.reduce((acc, p) => acc + (parseFloat(p.amount) || 0), 0);
+    const paid = payments.length > 0 ? paidFromLedger : parseFloat(po.amountPaid || 0);
+    const balance = Math.max(0, Math.round((gross - paid + Number.EPSILON) * 100) / 100);
+    const validRfqRef = hasValidRfqReference(po.rfqReference) ? String(po.rfqReference).trim() : '';
+
+    syncPoRfqReferenceUI(po.rfqReference);
 
     const directLink = document.getElementById('poVendorDirectLink');
     if (directLink) {
@@ -4308,6 +5220,16 @@ function updatePoLiveDocumentMockup() {
         pageBadge.textContent = `${pages} Page${pages > 1 ? 's' : ''}`;
     }
 
+    const paymentLinesHtml = payments.map((p, idx) => {
+        const trancheLabel = p.trancheType || (idx === 0 && payments.length > 1 ? 'Downpayment' : 'Payment');
+        return `
+            <div style="display: flex; justify-content: space-between; font-size: 9.8px; color: #059669; font-style: italic;">
+                <span>ⓘ Paid ${escapeHtml(formatDateDisplay(p.paymentDate))} (${escapeHtml(trancheLabel)}):</span>
+                <span style="font-variant-numeric: tabular-nums; font-weight: 700;">- ₱ ${formatMoney(p.amount)}</span>
+            </div>
+        `;
+    }).join('');
+
     sheet.innerHTML = `
         <div style="border-bottom: 2px solid #0f172a; padding-bottom: 10px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: flex-start;">
             <div>
@@ -4317,7 +5239,7 @@ function updatePoLiveDocumentMockup() {
             <div style="text-align: right;">
                 <div style="font-weight: 900; font-size: 12px; color: #7e22ce; text-transform: uppercase;">PURCHASE ORDER</div>
                 <div style="font-family: monospace; font-weight: 800; font-size: 11px; color: #0f172a;">${escapeHtml(po.poNumber || 'PO-2026-XXXX')}</div>
-                ${po.rfqReference ? `<div style="font-family: monospace; font-size: 9.5px; color: #7e22ce; font-weight: 700;">Ref: ${escapeHtml(po.rfqReference)}</div>` : ''}
+                ${validRfqRef ? `<div style="font-family: monospace; font-size: 9.5px; color: #7e22ce; font-weight: 700;">RFQ Ref: ${escapeHtml(validRfqRef)}</div>` : ''}
             </div>
         </div>
 
@@ -4331,6 +5253,7 @@ function updatePoLiveDocumentMockup() {
                 <div style="font-weight: 800; font-size: 9px; color: #64748b; text-transform: uppercase; margin-bottom: 3px;">Delivery & Terms</div>
                 <div style="font-weight: 700; color: #0f172a;">${escapeHtml(po.deliveryLocation || 'Central Commissary')}</div>
                 <div style="color: #475569; font-size: 9.5px; margin-top: 2px;">Due: <strong>${formatDateDisplay(po.expectedDelivery) || 'TBD'}</strong> • ${escapeHtml(po.paymentTerms || 'Net 30 Days')}</div>
+                ${validRfqRef ? `<div style="color: #7e22ce; font-size: 9px; font-weight: 700; margin-top: 2px;">Referenced RFQ: ${escapeHtml(validRfqRef)}</div>` : ''}
             </div>
         </div>
 
@@ -4339,44 +5262,56 @@ function updatePoLiveDocumentMockup() {
         <table style="width: 100%; border-collapse: collapse; font-size: 10px; margin-bottom: 12px;">
             <thead>
                 <tr style="background: #f1f5f9; border-bottom: 1.5px solid #cbd5e1; text-align: left;">
-                    <th style="padding: 4px 6px;">#</th>
-                    <th style="padding: 4px 6px;">Item / SKU</th>
-                    <th style="padding: 4px 6px; text-align: center;">UOM</th>
-                    <th style="padding: 4px 6px; text-align: right;">Qty</th>
-                    <th style="padding: 4px 6px; text-align: right;">Total</th>
+                    <th style="padding: 4px 5px;">#</th>
+                    <th style="padding: 4px 5px;">Item / SKU</th>
+                    <th style="padding: 4px 5px; text-align: center;">UOM</th>
+                    <th style="padding: 4px 5px; text-align: right;">Qty</th>
+                    <th style="padding: 4px 5px; text-align: center;">Taxes</th>
+                    <th style="padding: 4px 5px; text-align: right;">Total</th>
                 </tr>
             </thead>
             <tbody>
                 ${items.length === 0 ? `
-                    <tr><td colspan="5" style="text-align: center; padding: 16px; color: #94a3b8; font-style: italic;">No items added yet</td></tr>
+                    <tr><td colspan="6" style="text-align: center; padding: 16px; color: #94a3b8; font-style: italic;">No items added yet</td></tr>
                 ` : items.map((it, i) => {
                     const q = parseFloat(it.quantity) || 0;
                     const p = parseFloat(it.unitPrice) || 0;
+                    const taxInfo = computePoLineTaxes(it);
                     return `
                         <tr style="border-bottom: 1px solid #f1f5f9;">
-                            <td style="padding: 4px 6px; color: #64748b;">${i + 1}</td>
-                            <td style="padding: 4px 6px; font-weight: 700; color: #0f172a;">${escapeHtml(it.name || it.sku || 'Item')}</td>
-                            <td style="padding: 4px 6px; text-align: center; font-family: monospace;">${escapeHtml(it.unit || 'PCS')}</td>
-                            <td style="padding: 4px 6px; text-align: right; font-variant-numeric: tabular-nums;">${q.toFixed(2)}</td>
-                            <td style="padding: 4px 6px; text-align: right; font-weight: 700; font-variant-numeric: tabular-nums;">₱${formatMoney(q * p)}</td>
+                            <td style="padding: 4px 5px; color: #64748b;">${i + 1}</td>
+                            <td style="padding: 4px 5px; font-weight: 700; color: #0f172a;">${escapeHtml(it.name || it.sku || 'Item')}</td>
+                            <td style="padding: 4px 5px; text-align: center; font-family: monospace;">${escapeHtml(it.unit || 'PCS')}</td>
+                            <td style="padding: 4px 5px; text-align: right; font-variant-numeric: tabular-nums;">${q.toFixed(2)}</td>
+                            <td style="padding: 4px 5px; text-align: center; font-size: 8.8px; color: #6d28d9; font-weight: 700;">${escapeHtml(taxInfo.vatLabel)} • ${escapeHtml(taxInfo.whtLabel)}</td>
+                            <td style="padding: 4px 5px; text-align: right; font-weight: 700; font-variant-numeric: tabular-nums;">₱${formatMoney(q * p)}</td>
                         </tr>
                     `;
                 }).join('')}
             </tbody>
         </table>
 
-        <div style="border-top: 1.5px solid #0f172a; padding-top: 8px; display: flex; flex-direction: column; gap: 4px; font-size: 10.5px;">
-            <div style="display: flex; justify-content: space-between; font-weight: 900; font-size: 11.5px; color: #0f172a;">
-                <span>GROSS ORDER TOTAL:</span>
-                <span style="color: #7e22ce; font-variant-numeric: tabular-nums;">₱${formatMoney(gross)}</span>
+        <div style="border-top: 1.5px solid #cbd5e1; padding-top: 8px; display: flex; flex-direction: column; gap: 4px; font-size: 10.5px;">
+            <div style="display: flex; justify-content: space-between; color: #334155;">
+                <span>Untaxed Amount:</span>
+                <strong style="font-variant-numeric: tabular-nums; color: #0f172a;">₱ ${formatMoney(taxBreakdown.untaxedAmount)}</strong>
             </div>
-            <div style="display: flex; justify-content: space-between; font-size: 10px; color: #059669;">
-                <span>Amount Paid / Disbursed:</span>
-                <span style="font-variant-numeric: tabular-nums;">₱${formatMoney(paid)}</span>
+            <div style="display: flex; justify-content: space-between; color: #475569;">
+                <span>VATable:</span>
+                <span style="font-variant-numeric: tabular-nums;">₱ ${formatMoney(taxBreakdown.vatableAmount)}</span>
             </div>
-            <div style="display: flex; justify-content: space-between; font-size: 10px; font-weight: 700; color: ${balance > 0 ? '#dc2626' : '#64748b'};">
-                <span>Balance Due:</span>
-                <span style="font-variant-numeric: tabular-nums;">₱${formatMoney(balance)}</span>
+            <div style="display: flex; justify-content: space-between; color: #475569;">
+                <span>Withholding Tax:</span>
+                <span style="font-variant-numeric: tabular-nums;">₱ ${formatMoney(taxBreakdown.withholdingTaxAmount)}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-weight: 900; font-size: 12px; color: #0f172a; border-top: 1.5px solid #cbd5e1; padding-top: 5px; margin-top: 2px;">
+                <span>Total:</span>
+                <span style="color: #0f172a; font-variant-numeric: tabular-nums;">₱ ${formatMoney(gross)}</span>
+            </div>
+            ${paymentLinesHtml}
+            <div style="display: flex; justify-content: space-between; font-size: 10.5px; font-weight: 800; color: ${balance <= 0.009 && gross > 0 ? '#059669' : '#dc2626'}; border-top: 1px dashed #cbd5e1; padding-top: 4px; margin-top: 2px;">
+                <span>Amount Due / Balance:</span>
+                <span style="font-variant-numeric: tabular-nums;">₱ ${formatMoney(balance)}${balance <= 0.009 && gross > 0 ? ' (PAID)' : ''}</span>
             </div>
         </div>
     `;
@@ -4686,11 +5621,19 @@ Object.assign(window, {
   renderPoItemsTable,
   updatePoItemField,
   updatePoReceivedQty,
+  validatePoGoodsReceipt,
+  openPoBackorderModal,
+  closePoBackorderModal,
+  confirmPoBackorderDecision,
+  openPoReturnToVendorModal,
+  closePoReturnToVendorModal,
+  submitPoReturnToVendor,
   receiveAllPoItems,
   addNewBlankPoItemRow,
   deletePoItemRow,
   clearAllPoItems,
   updatePoTotals,
+  submitInlinePoPaymentRow,
   openItemMasterQuickPicker,
   closeItemMasterQuickPicker,
   filterPoItemMaster,
@@ -4765,6 +5708,13 @@ Object.assign(window, {
   importApprovedRfqToBuilder,
   openLinkedRfqModal,
   closeLinkedRfqModal,
+  hasValidRfqReference,
+  syncPoRfqReferenceUI,
+  handlePoRfqReferencePillClick,
+  viewPoLinkedRfqByNumber,
+  computePoLineTaxes,
+  computePoTaxBreakdown,
+  positionPoBuilderSettingsDropdown,
   getStoredPayments,
   saveStoredPayments,
   handlePaymentTermsChange,
@@ -4774,7 +5724,9 @@ Object.assign(window, {
   filterPaymentsByReference,
   resetPaymentViewToActivePo,
   renderPaymentSettlementData,
+  fillPercentageRemainingBalance,
   fillFullRemainingBalance,
+  quickRecordPoPaymentTranche,
   addPaymentDisbursement,
   deletePaymentDisbursement,
   updatePoLifecycleProgressBar,

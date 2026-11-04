@@ -23,6 +23,7 @@
             initialVendors: @json($initialVendors ?? []),
             initialItems: @json($initialItems ?? []),
             linkedPoMap: @json($linkedPoMap ?? []),
+            initialWarehouses: @json($initialWarehouses ?? []),
         }
     });
 </script>
@@ -416,12 +417,14 @@
                     <span class="rfq-label-badge">Logistics</span>
                 </label>
                 <select class="rfq-select" id="rfqDeliveryLocation" onchange="syncFormInputsToState(); updateLiveDocumentMockup();">
-                    <option value="Central Commissary - Main Dock">Central Commissary - Dock A</option>
-                    <option value="Central Commissary - Main Cold Dock">Central Commissary - Main Cold Dock</option>
-                    <option value="Central Warehouse - Dry Storage">Central Warehouse - Dry Storage</option>
-                    <option value="Branch 1 - Makati Flagship">Branch 1 - Makati Flagship</option>
-                    <option value="Branch 2 - BGC Bistro">Branch 2 - BGC Bistro</option>
-                    <option value="Branch 3 - Ortigas Kitchen">Branch 3 - Ortigas Kitchen</option>
+                    @foreach($initialWarehouses ?? [] as $wh)
+                        <option value="{{ $wh['name'] }}" data-wh-id="{{ $wh['id'] }}">{{ $wh['code'] }} — {{ $wh['name'] }}</option>
+                    @endforeach
+                    @if(empty($initialWarehouses))
+                        <option value="Central Commissary & Dry Warehouse">WH-MAIN — Central Commissary & Dry Warehouse</option>
+                        <option value="North Cold-Chain & Perishables Hub">WH-COLD — North Cold-Chain & Perishables Hub</option>
+                        <option value="BGC Flagship Back-of-House Storeroom">WH-BGC — BGC Flagship Back-of-House Storeroom</option>
+                    @endif
                 </select>
             </div>
 
@@ -1001,7 +1004,14 @@
                     </div>
                     <div class="rfq-field">
                         <label class="rfq-label" for="approvalDestination">Receiving Facility / Dock</label>
-                        <input type="text" class="rfq-input" id="approvalDestination" value="Central Commissary - Main Dock">
+                        <select class="rfq-select" id="approvalDestination">
+                            @foreach($initialWarehouses ?? [] as $wh)
+                                <option value="{{ $wh['name'] }}">{{ $wh['code'] }} — {{ $wh['name'] }}</option>
+                            @endforeach
+                            @if(empty($initialWarehouses))
+                                <option value="Central Commissary & Dry Warehouse">WH-MAIN — Central Commissary & Dry Warehouse</option>
+                            @endif
+                        </select>
                     </div>
                 </div>
 
