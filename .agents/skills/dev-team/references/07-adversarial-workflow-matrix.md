@@ -1,121 +1,71 @@
-# [Workflow] — The Adversarial Value Stream & Conflict Matrix
+# [Workflow] — The Simultaneous Co-Execution & Conflict Matrix
 
-**Mantra**: *"High-quality software is not born from polite consensus; it is forged through constructive friction, rigorous debate, and adversarial verification."*
+**Mantra**: *"Personas never wait in a single-file waterfall. `[The Librarian]` streams live coordinates and Eloquent DNA simultaneously while the Backend Master and Frontend Duo build inside a locked Blast-Radius File Jail."*
 
 ---
 
-## 1. Operational Overview
+## 1. Simultaneous Co-Execution Architecture
 
-The Adversarial Value Stream rejects passive, waterfall handoffs and superficial peer reviews. It organizes the 7 personas into a dialectical gauntlet where software architecture, code quality, accessibility, and security are aggressively pressure-tested before entering production.
+The Adversarial Engineering Collective (AEC) eliminates sequential waterfall bottlenecks by running **`[The Librarian]` as a continuous, concurrent co-processor** alongside the active personas across every wave, and by routing requests into **Efficiency Tiers (Tier 0 – Tier 4)**:
 
 ```mermaid
 flowchart TD
-    subgraph S0["STAGE 0: Librarian Context & Memory Gate"]
-        LIB["[The Librarian]<br>O(1) Symbol Map + AgentMemory Recall"] --> S1
-    end
+    REQ["Incoming User Request"] --> LIB_LOCK["[The Librarian] (Concurrent Warden)<br>1. Exact Teleport / backend-packet<br>2. Lock ALLOWED FILES<br>3. Select Tier & Mute Unneeded Personas"]
 
-    subgraph S1["STAGE 1: Discovery & Invariant Gate"]
-        BA["[Senior BA]<br>Superpowers Brainstorming & FSM"] --> QA_AUD["[Lead QA] & [Auditor]<br>Boundary & Scale Attack"]
-        QA_AUD --> G1{"Invariant Matrix Signed?"}
-        G1 -- No --> BA
-    end
+    LIB_LOCK -- "Tier 0: UI / CSS / Resize" --> T0["Tier 0 UI Surgical Fast-Path<br>[Librarian] + [Frontend Dev 1 & 2]<br>1 grep -> 1 slice read -> 1 edit -> [Auditor] 1-line sign-off"]
+    LIB_LOCK -- "Tier 1: Single-Endpoint / Query / Validation Fix" --> T1["Tier 1 Backend Surgical Fast-Path<br>[Librarian] x [Backend Master (Dev 1 & 2)]<br>1 backend-packet + 1 method slice read -> 1 edit -> php -l"]
+    LIB_LOCK -- "Tiers 2-4: Feature / Multi-File / Schema" --> W1
 
-    subgraph S2["STAGE 2: Architectural & Design Duel"]
-        G1 -- Yes --> B_DUEL["Track A: Backend Duel<br>[Dev 1] (Pure FSM) vs [Dev 2] (ACID Pragmatism)"]
-        G1 -- Yes --> F_DUEL["Track B: Frontend Duel<br>[FE 1] (OKLCH Luxury) vs [FE 2] (WCAG Ergonomics)"]
-        B_DUEL & F_DUEL --> CONTRACT["Locked Shared Schema<br>(Zod / TypeSpec)"]
-    end
-
-    subgraph S3["STAGE 3: Concrete Implementation (Superpowers TDD)"]
-        CONTRACT --> TDD_RED["[Dev 1] Write Failing Tests (RED)"]
-        TDD_RED --> TDD_GREEN["[Dev 2] Write Minimal Code (GREEN)"]
-        TDD_GREEN --> TDD_REF["Pair Refactoring & Verification"]
-    end
-
-    subgraph S4["STAGE 4: Chaos Crucible & Systematic Debugging"]
-        TDD_REF --> CHAOS["[Lead QA]<br>Concurrency, Boundary Fuzzing,<br>Network Throttling"]
-        CHAOS --> BUGS{"Blocker (P1) Found?"}
-        BUGS -- Yes --> SYS_DEBUG["[Superpowers] Systematic Debugging<br>(Reproduce -> Characterize -> Fix & Verify)"]
-        SYS_DEBUG --> S3
-    end
-
-    subgraph S5["STAGE 5: Auditor's Guillotine & Memory Persistence"]
-        BUGS -- No --> AUDIT["[Auditor]<br>Code Review Checklist,<br>Verification Before Completion"]
-        AUDIT --> PASS{"Release Candidate Approved?"}
-        PASS -- No --> S3
-        PASS -- Yes --> MEM_SAVE["[AgentMemory] Commit Lessons Learned<br>(agentmemory:lesson)"]
-        MEM_SAVE --> SHIP["Production Deployment"]
+    subgraph SWARM["Tiers 2–4: Simultaneous Co-Execution Waves (With Live Librarian Co-Pilot)"]
+        W1["WAVE 1: Simultaneous Discovery & Invariants<br>[Librarian] (backend-packet + Model DNA) || [Senior BA] (Invariant Matrix) || [Lead QA]"]
+        W2["WAVE 2: Fused Architecture & Symbol Binding<br>[Librarian] (Live Imports/Routes) || [Backend Dev 1 & 2] (FSM + DB::transaction) || [Frontend Dev 1 & 2]"]
+        W3["WAVE 3: Co-Piloted Implementation (TDD)<br>[Backend Master] + [Frontend Duo] + [Librarian] (1-Shot Surgical Edits inside ALLOWED FILES)"]
+        W4["WAVE 4: Parallel Verification<br>[Lead QA] + [Devs] + [Librarian] (php -l + targeted php artisan test --filter)"]
+        W5["WAVE 5: Auditor's Guillotine & Memory Sync<br>[Auditor] + [Librarian] (Scope-Lock Check + Security Audit + agentmemory:lesson)"]
+        W1 --> W2 --> W3 --> W4 --> W5
     end
 ```
 
 ---
 
-## 2. Gate Entry & Exit Criteria
+## 2. Efficiency Tiers & Simultaneous Pairing Protocols
 
-### Stage 0: The Librarian Context & Memory Gate
-- **Actors**: The Librarian (Persona 0).
-- **Actions**:
-  - Intercepts incoming prompt and inspects active file buffer, cursor scope, and working tree git diff.
-  - Queries `agentmemory` (`recall`) for historical architectural lessons and previous bug post-mortems.
-  - Resolves pre-matched symbols against `librarian_index.json` in O(1) time.
-- **Exit Artifact**: **Librarian Cartography & Memory Header** with exact symbol lines and historical lessons.
+### Tier 0: UI / Resize / CSS / Blade Fast-Path (Max 3 Tool Calls)
+- **Active Personas**: `[Librarian]`, `[Frontend Dev 1 & 2]`, `[Auditor]`
+- **Muted Personas**: `[Senior BA]`, `[Backend Dev 1]`, `[Backend Dev 2]`, `[Lead QA]`
+- **Simultaneous Execution**:
+  1. `[The Librarian]` runs **1 `grep_search`** (`MatchPerLine: true`) to teleport to the exact `<style>` rule and HTML container line, locks `ALLOWED FILES`, and extracts `REUSE DNA`.
+  2. `[Frontend Dev 1 & 2]` read **1 slice (≤ 50 lines)** and apply **1 `multi_replace_file_content`** edit across the 3 geometric layers.
+  3. `[Auditor]` gives a 1-line sign-off. Zero backend tests or PHP scripts are run.
 
-### Stage 1: Discovery & The Invariant Gate
-- **Actors**: Senior BA, Lead QA, External Auditor.
-- **Entry Trigger**: Raw user request, feature ticket, or product requirement.
-- **Actions**:
-  - Senior BA executes the 10-Step Translation Engine using `superpowers:brainstorming` and `superpowers:writing-plans`.
-  - Lead QA probes with extreme boundary values (negative integers, max safe ints, unicode).
-  - Auditor inspects data sources of truth and RBAC entitlements.
-- **Exit Artifact**: Signed **Data Invariant & Boundary Matrix** and **Failure & Constraint Profile**. No ticket enters development without QA and Auditor sign-off.
+### Tier 1: Backend Surgical Fast-Path (`[Librarian]` × `[Backend Master]` Lockstep)
+- **When to Use**: Single-controller/endpoint bugfixes, query optimizations, adding a validation field, fixing an Eloquent relationship/column mismatch, or wrapping a mutation in `DB::transaction()`.
+- **Active Personas**: `[Librarian]`, `[Backend Dev 1]`, `[Backend Dev 2]`, `[Auditor]`
+- **Muted Personas**: `[Senior BA]`, `[Frontend Dev 1 & 2]`, `[Lead QA]`
+- **Simultaneous Execution (Max 4 Tool Calls)**:
+  1. **Parallel Turn 1 (Recon + Slice)**: `[The Librarian]` runs `backend-packet <ControllerOrMethod>` (resolving exact method `L:start–end` + imported Eloquent Model `$fillable`, `$casts`, and `Relationships` in one shot). If the file/line is already known, batch the `view_file(StartLine, EndLine)` slice in the **same turn**.
+  2. **Fused Backend Master Synthesis**: `[Backend Dev 1]` (validation bounds, state guard) and `[Backend Dev 2]` (`DB::transaction`, `lockForUpdate`, verified `$fillable` columns, N+1 prevention) apply the fix in **1 `multi_replace_file_content` call**.
+  3. **Instant CLI Verification**: Run `php -l <modified_file.php>` (plus targeted test if applicable), followed by `[Auditor]` sign-off.
 
-### Stage 2: Architectural & Design Duel
-- **Track A (Backend Clash)**:
-  - Backend Dev 1 (Logic Master) proposes pure Hexagonal domain model and FSM statecharts.
-  - Backend Dev 2 (Pragmatic Builder) challenges operational complexity, proposing single-instance PostgreSQL transactions with `SKIP LOCKED`.
-  - *Compromise*: Clean architecture domain logic coupled with boring, rock-solid Postgres primitives.
-- **Track B (Frontend Duel)**:
-  - Frontend Dev 1 (Modern UI) drafts custom tokens, OKLCH colors, spring motion, and spatial depth.
-  - Frontend Dev 2 (Modern UX) audits against Fitts's Law, WCAG 2.2 AAA contrast, keyboard navigation, and mobile GPU compositing budgets.
-- **Exit Artifact**: Immutable shared API Contract Schema (Zod / TypeSpec) locked between backend and frontend.
-
-### Stage 3: Concrete Implementation (Superpowers TDD Iron Law)
-- **The Iron Rule**: NO production code without a failing test first.
-  - **RED**: Backend Dev 1 writes automated tests and verifies they fail for the expected reason.
-  - **GREEN**: Backend Dev 2 writes the minimal production code, queries, and migrations to turn the tests green.
-  - **REFACTOR**: Code is optimized for clarity, speed, and maintainability without altering public behavior.
-- **Frontend Implementation**:
-  - Frontend Dev 1 & 2 pair-program: Frontend Dev 2 structures semantic HTML, ARIA landmarks, and focus rings; Frontend Dev 1 layers in micro-borders, inset shadows, and physics-based springs.
-- **Exit Artifact**: Fully integrated, runnable feature code with verified green test suite and zero `TODO` comments.
-
-### Stage 4: The Chaos Crucible & Systematic Debugging
-- **Actors**: Lead QA.
-- **Actions**:
-  - Launches 50–100 simultaneous concurrent mutation requests to detect race conditions and double-debits.
-  - Throttles network to Slow 3G with 2% packet loss and measures INP / LCP / CLS.
-  - Executes keyboard-only navigation end-to-end and tests 200% system font scaling.
-- **Systematic Debugging Protocol**: When defects arise, follow `superpowers:systematic-debugging` (Reproduce -> Characterize -> Hypothesize -> Fix & Verify). Shotgun fixes and speculative edits are barred.
-- **Exit Artifact**: Clean verification report. If a P1 blocker is logged, feature work stops immediately until resolved.
-
-### Stage 5: The Auditor's Guillotine & Memory Persistence
-- **Actors**: External Systems Auditor.
-- **Actions**:
-  - Conducts line-by-line inspection of all modified files using `superpowers:requesting-code-review` and `receiving-code-review` checklists.
-  - Enforces `superpowers:verification-before-completion`: Evidence of test suite execution is mandatory.
-  - Checks for parameter pollution, unvalidated DTO perimeters, infinite money glitches (`balance - (-amount)`), database-level unique indexes, and fake interactive HTML elements.
-  - **Persistent Memory Commitment**: Stumps verified domain lessons and invariant post-mortems into `agentmemory:lesson`.
-- **Exit Artifact**: Production sign-off and persisted architectural memory record.
+### Tiers 2–4: Multi-File Full-Stack Features & Complex Domain Flows
+- **Wave 1 (Discovery & Cartography)**: `[The Librarian]` runs `backend-packet` + `grep_search` in parallel while `[Senior BA]` authors the **Data Invariant & Boundary Matrix** grounded in the real Eloquent `$fillable` and `$casts` columns.
+- **Wave 2 (Fused Backend & Frontend Duel)**:
+  - **Backend Track (`[Librarian]` + `[Backend Dev 1 & 2]`)**: `[Backend Dev 1]` defines the `FormRequest` / `BackedEnum` FSM contract while `[Backend Dev 2]` designs the `DB::transaction()` + `lockForUpdate()` query plan using `[The Librarian]`'s Model DNA packet.
+  - **Frontend Track (`[Librarian]` + `[Frontend Dev 1 & 2]`)**: Co-design the Blade/JS module reusing existing design tokens and `<x-uom-dropdown>` / component standards.
+- **Wave 3 (Co-Piloted TDD Implementation)**: Write failing test / assertion (RED) -> minimal Eloquent/Controller/Blade implementation (GREEN) inside `ALLOWED FILES`.
+- **Wave 4 & Wave 5 (Chaos Crucible & Auditor Sign-Off)**: Run combined `php -l` + `php artisan test --filter=...`, verify zero out-of-jail file access, and commit architectural lessons to `agentmemory:lesson`.
 
 ---
 
 ## 3. Conflict Resolution Matrix (The Hierarchy of Values)
 
-When technical or design debates stall, the team strictly enforces this 5-tier resolution hierarchy:
+When technical or design debates arise, resolve deadlocks immediately using this 6-tier hierarchy:
 
 | Priority | Value Domain | Deciding Personas | Loses To / Yields |
 | :---: | :--- | :--- | :--- |
-| **1** | **Data Integrity & Security** | `[Auditor]` & `[Backend Dev 1]` | Wins over speed, convenience, and feature velocity |
-| **2** | **System Stability & Operational Simplicity** | `[Backend Dev 2]` & `[Lead QA]` | Wins over theoretical microservice or distributed complexity |
-| **3** | **Usability & Deep Accessibility** | `[Frontend Dev 2]` | Wins over aesthetic flair and decorative animations |
-| **4** | **Visual Distinction & Brand Luxury** | `[Frontend Dev 1]` | Wins over generic bootstrap/framework templates |
-| **5** | **Theoretical Architectural Purity** | `[Backend Dev 1]` yields | Yields to pragmatic maintenance and operational MTTR |
+| **1** | **Blast-Radius & Schema Reality** | `[Librarian]` | Supreme authority on `ALLOWED FILES`, line spans, and real `$fillable`/route names |
+| **2** | **Data Integrity & Security** | `[Auditor]` & `[Backend Dev 1]` | Wins over speed, convenience, and feature velocity |
+| **3** | **System Stability & Eloquent Simplicity** | `[Backend Dev 2]` & `[Lead QA]` | Wins over over-abstracted repositories or unindexed queries |
+| **4** | **Usability & Deep Accessibility** | `[Frontend Dev 2]` | Wins over decorative flair that hurts ergonomics |
+| **5** | **Visual Distinction & Craft** | `[Frontend Dev 1]` | Wins over generic unstyled HTML |
+| **6** | **Theoretical Architectural Purity** | `[Backend Dev 1]` yields | Yields to pragmatic Laravel conventions and operational MTTR |

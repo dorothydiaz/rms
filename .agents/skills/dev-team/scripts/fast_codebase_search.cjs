@@ -248,13 +248,16 @@ Usage:
   node .agents/skills/dev-team/scripts/fast_codebase_search.cjs ctx-index <dir>   Index directory into Context-Mode FTS5
   node .agents/skills/dev-team/scripts/fast_codebase_search.cjs ctx-doctor        Run Context-Mode environment diagnostics
   node .agents/skills/dev-team/scripts/fast_codebase_search.cjs symbol <name>     Instant O(1) Librarian symbol lookup
+  node .agents/skills/dev-team/scripts/fast_codebase_search.cjs packet <target>   Simultaneous Librarian x Backend Master packet
+  node .agents/skills/dev-team/scripts/fast_codebase_search.cjs model <Model>     Inspect Eloquent Model $fillable/$casts/relations
   node .agents/skills/dev-team/scripts/fast_codebase_search.cjs index             Rebuild Librarian global symbol index
   node .agents/skills/dev-team/scripts/fast_codebase_search.cjs map               Print top-level repository file count map
 `);
   process.exit(0);
 }
 
-const CTX_CLI = 'C:/Users/JABIGUERO/.gemini/config/plugins/context-mode/cli.bundle.mjs';
+const os = require('os');
+const CTX_CLI = path.join(os.homedir(), '.gemini', 'config', 'plugins', 'context-mode', 'cli.bundle.mjs');
 
 switch (command) {
   case 'bm25':
@@ -297,9 +300,19 @@ switch (command) {
   }
   case 'symbol':
   case 'lookup': {
-    const { execSync } = require('child_process');
     const routerScript = path.join(__dirname, 'librarian_router.cjs');
     execSync(`node "${routerScript}" symbol "${args[1]}"`, { stdio: 'inherit' });
+    break;
+  }
+  case 'packet':
+  case 'backend-packet': {
+    const routerScript = path.join(__dirname, 'librarian_router.cjs');
+    execSync(`node "${routerScript}" backend-packet "${args.slice(1).join(' ')}"`, { stdio: 'inherit' });
+    break;
+  }
+  case 'model': {
+    const routerScript = path.join(__dirname, 'librarian_router.cjs');
+    execSync(`node "${routerScript}" model "${args[1]}"`, { stdio: 'inherit' });
     break;
   }
   case 'index': {

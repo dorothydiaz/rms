@@ -20,8 +20,28 @@
 |---|---|---|
 | **Exact CSS Class / HTML ID / Blade Text** (e.g., `.rfq-panel`, `#editModal`) | **Native `grep_search`** (`MatchPerLine: true`, `Includes: ["*.blade.php", "*.css"]`) | `librarian_index.json` does not index CSS/HTML. Native `grep_search` returns every matching line `L` in <15ms. |
 | **Known File + CSS Class / Element Inside It** | **Native `grep_search`** scoped to `SearchPath: "<that_file>"` | Instantly finds both the `<style>` definition line AND the HTML `<div>` usage line inside a 2,000-line Blade file without scanning. |
-| **PHP Controller / Model / Method / Route** (e.g., `employeeUpdate`, `Employee`) | `librarian_router.cjs symbol <name>` or `grep_search` (`Includes: ["*.php"]`) | O(1) lookup of PHP class, method, and route coordinates. |
+| **PHP Controller / Method / Model / Route** (e.g., `PurchaseController`, `apiSaveRfqDraft`, `RfqHeader`) | `node .agents/skills/dev-team/scripts/librarian_router.cjs backend-packet <target>` | **1-Shot Simultaneous Backend Packet**: Returns exact method `L:start–end` spans, bound routes, AND every imported Eloquent Model's `$table`, `$fillable`, `$casts`, and `Relationships` in ~15ms! |
+| **Single Eloquent Model Schema Inspection** (e.g., `PurchaseOrder`) | `node .agents/skills/dev-team/scripts/librarian_router.cjs model <ModelName>` | Dumps `$table`, `$fillable`, `$casts`, and relationship methods with line spans without opening the Model file. |
 | **Vague Feature Concept** (e.g., "how does overtime approval work?") | `fast_codebase_search.cjs bm25 "<query>"` + `agentmemory` (`recall`) | Maps domain concepts to candidate PHP and Blade files. |
+
+---
+
+## 0.5 SIMULTANEOUS LOCKSTEP WITH THE BACKEND MASTER (`[BACKEND DEV 1 & 2]`)
+
+> **HOW `[THE LIBRARIAN]` & `[BACKEND MASTER]` WORK TOGETHER SIMULTANEOUSLY**:
+> Historically, backend tasks wasted 4–6 tool calls because Backend Devs had to: (1) find the Controller, (2) guess how many lines to read, (3) read again when a long method got cut off, and (4) open 3–5 Eloquent Model files just to check `$fillable` columns and relationship names.
+>
+> **Now, `[The Librarian]` and `[Backend Dev 1 & 2]` operate as a single fused unit**:
+> 1. **One-Shot `backend-packet` Injection**:
+>    Run `node .agents/skills/dev-team/scripts/librarian_router.cjs backend-packet <Controller|Method|Model>` (in parallel with `grep_search` or `view_file` when target coordinates are known).
+>    In **one command**, `[The Librarian]` hands `[Backend Dev 1 & 2]`:
+>    - **Exact Method Line Spans (`L:start–end`)**: e.g., `apiConvertRfqToPo(Request $request): JsonResponse [L:565–786]` so `view_file` reads the exact method body without guessing or scanning.
+>    - **Bound Laravel Routes**: e.g., `POST /api/orders/save-draft -> PurchaseController@apiSavePoDraft [name: "api.orders.save-draft"]`.
+>    - **Complete Eloquent Model Schema DNA**: Automatically inspects every Eloquent Model imported by that Controller and prints its `$table`, every `$fillable` column, `$casts`, and `Relationships` (`hasMany`, `belongsTo`, etc.).
+> 2. **Zero Unnecessary Model Reads**:
+>    Because `[The Librarian]` streams the exact `$fillable` columns and relationship names in the packet, `[Backend Dev 1 & 2]` **never need to call `view_file` on Eloquent Models** unless they are actively editing a Model file!
+> 3. **Fused Backend Master Execution**:
+>    While `[The Librarian]` enforces the `ALLOWED FILES` lock and verifies `use` imports, `[Backend Dev 1]` (validation bounds, state transitions) and `[Backend Dev 2]` (`DB::transaction()`, `lockForUpdate()`, eager-loaded Eloquent queries) co-author the surgical edit in **one single pass**.
 
 ---
 
@@ -174,13 +194,16 @@ The PHP symbol index is persisted at `.agents/artifacts/librarian_index.json` wi
 | Priority | Scenario | Tool to Execute | Speed |
 |---|---|---|---|
 | **1 (Highest)** | User gives an **exact CSS class, HTML ID, Blade tag, or text string** | Native `grep_search` (`Query: "exact_token"`, `MatchPerLine: true`, `Includes: ["*.blade.php", "*.css", "*.js"]`) | ~10ms |
-| **2** | Target file is already known; need exact line numbers of CSS/HTML/JS/PHP inside it | Native `grep_search` (`SearchPath: "<file_path>"`, `Query: "tokenA|tokenB"`, `IsRegex: true`, `MatchPerLine: true`) | ~5ms |
-| **3** | Instant O(1) lookup of a PHP Class, Controller Method, or Route Name | `node .agents/skills/dev-team/scripts/librarian_router.cjs symbol <name>` (or native `grep_search` on `*.php`) | ~5ms |
-| **4** | Inspecting all PHP `use` imports and dependencies of a Controller/Model | `node .agents/skills/dev-team/scripts/librarian_router.cjs imports <path>` | ~5ms |
-| **5** | Discovering candidate files from a conceptual feature description | `node .agents/skills/dev-team/scripts/fast_codebase_search.cjs bm25 "<query>"` | ~20ms |
-| **6** | Extracting structural skeleton of a 100+ line PHP/JS file | `node .agents/skills/dev-team/scripts/fast_codebase_search.cjs ast <filepath>` | ~25ms |
-| **7** | Searching sandboxed verbose test/log outputs (>100 lines) | `node .agents/skills/dev-team/scripts/fast_codebase_search.cjs ctx "<query>"` | ~15ms |
-| **8** | Rebuilding the global PHP symbol index after major file additions | `node .agents/skills/dev-team/scripts/librarian_indexer.cjs` | ~400ms |
+| **2 (Backend Master)** | Backend / Controller / Endpoint / Model task (`[Librarian]` × `[Backend Dev 1 & 2]`) | `node .agents/skills/dev-team/scripts/librarian_router.cjs backend-packet <Controller\|Method\|Model>` | ~15ms |
+| **3 (Frontend Duo)** | UI / UX / Form / Modal / Theme task (`[Librarian]` × `[Frontend Dev 1 & 2]`) | `node .agents/skills/dev-team/scripts/librarian_router.cjs ui-packet <ModuleSlug\|BladeView>` | ~15ms |
+| **4** | Target file is already known; need exact line numbers of CSS/HTML/JS/PHP inside it | Native `grep_search` (`SearchPath: "<file_path>"`, `Query: "tokenA|tokenB"`, `IsRegex: true`, `MatchPerLine: true`) | ~5ms |
+| **4** | Inspecting a single Eloquent Model's `$table`, `$fillable`, `$casts`, & `Relationships` | `node .agents/skills/dev-team/scripts/librarian_router.cjs model <ModelName>` | ~5ms |
+| **5** | Instant O(1) lookup of a PHP Class, Controller Method (`L:start–end`), or Route Name | `node .agents/skills/dev-team/scripts/librarian_router.cjs symbol <name>` (or native `grep_search` on `*.php`) | ~5ms |
+| **6** | Inspecting all PHP `use` imports and linked Eloquent Models of a Controller | `node .agents/skills/dev-team/scripts/librarian_router.cjs imports <path>` | ~5ms |
+| **7** | Discovering candidate files from a conceptual feature description | `node .agents/skills/dev-team/scripts/fast_codebase_search.cjs bm25 "<query>"` | ~20ms |
+| **8** | Extracting structural skeleton of a 100+ line PHP/JS file | `node .agents/skills/dev-team/scripts/fast_codebase_search.cjs ast <filepath>` | ~25ms |
+| **9** | Searching sandboxed verbose test/log outputs (>100 lines) | `node .agents/skills/dev-team/scripts/fast_codebase_search.cjs ctx "<query>"` | ~15ms |
+| **10** | Rebuilding the global PHP + Eloquent DNA index after major file additions | `node .agents/skills/dev-team/scripts/librarian_indexer.cjs` | ~900ms |
 
 *(Fallback Rule: If any `.cjs` script or `librarian_index.json` is unavailable in the current workspace, immediately execute native `grep_search` or `find_by_name` without retrying or stalling.)*
 
