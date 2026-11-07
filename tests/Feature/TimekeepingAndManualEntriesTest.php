@@ -8,12 +8,11 @@ use App\Models\Hr\Department;
 use App\Models\Hr\Employee;
 use App\Models\Hr\Position;
 use App\Models\User;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 class TimekeepingAndManualEntriesTest extends TestCase
 {
-    use DatabaseTransactions;
+    protected $seed = true;
 
     protected User $adminUser;
     protected Employee $employee;

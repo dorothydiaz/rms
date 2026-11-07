@@ -6,12 +6,11 @@ use App\Models\Hr\Employee;
 use App\Models\Hr\Permission;
 use App\Models\Hr\Role;
 use App\Models\User;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 class EmployeePermissionsTest extends TestCase
 {
-    use DatabaseTransactions;
+    protected $seed = true;
 
     public function test_admin_can_view_employee_permissions_in_roles_tab(): void
     {

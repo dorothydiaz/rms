@@ -54,10 +54,10 @@ class PeopleController extends Controller
         // Summary Statistics Cards (Consolidated into a single SQL query)
         $rawCounts = (clone $baseQuery)->selectRaw("
             COUNT(*) as total,
-            SUM(CASE WHEN employment_status = 'Active' THEN 1 ELSE 0 END) as active,
-            SUM(CASE WHEN employment_status = 'Probationary' THEN 1 ELSE 0 END) as probationary,
-            SUM(CASE WHEN employment_status = 'On Leave' THEN 1 ELSE 0 END) as on_leave,
-            SUM(CASE WHEN employment_status IN ('Resigned', 'Terminated', 'Retired') THEN 1 ELSE 0 END) as separated
+            SUM(CASE WHEN employee_employment_status = 'Active' THEN 1 ELSE 0 END) as active,
+            SUM(CASE WHEN employee_employment_status = 'Probationary' THEN 1 ELSE 0 END) as probationary,
+            SUM(CASE WHEN employee_employment_status = 'On Leave' THEN 1 ELSE 0 END) as on_leave,
+            SUM(CASE WHEN employee_employment_status IN ('Resigned', 'Terminated', 'Retired') THEN 1 ELSE 0 END) as separated
         ")->first();
 
         $counts = [

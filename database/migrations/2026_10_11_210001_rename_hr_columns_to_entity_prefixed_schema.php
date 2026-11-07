@@ -870,6 +870,16 @@ return new class extends Migration
                         $this->changeColumn($tableName, $oldCol, $newCol);
                     }
                 }
+
+                // Add virtual column 'id' for backward compatibility if 'id' was renamed
+                if (isset($columns['id']) && !Schema::hasColumn($tableName, 'id')) {
+                    $pkCol = $columns['id'];
+                    if (\Illuminate\Support\Facades\DB::getDriverName() === 'sqlite') {
+                        \Illuminate\Support\Facades\DB::statement("ALTER TABLE \"{$tableName}\" ADD COLUMN id INTEGER GENERATED ALWAYS AS ({$pkCol}) VIRTUAL");
+                    } else {
+                        \Illuminate\Support\Facades\DB::statement("ALTER TABLE `{$tableName}` ADD COLUMN `id` BIGINT UNSIGNED GENERATED ALWAYS AS (`{$pkCol}`) VIRTUAL");
+                    }
+                }
             }
         } finally {
             Schema::enableForeignKeyConstraints();
@@ -887,6 +897,18 @@ return new class extends Migration
             foreach ($this->renames as $tableName => $columns) {
                 if (!Schema::hasTable($tableName)) {
                     continue;
+                }
+
+                if (isset($columns['id']) && Schema::hasColumn($tableName, 'id')) {
+                    if (\Illuminate\Support\Facades\DB::getDriverName() === 'sqlite') {
+                        try {
+                            \Illuminate\Support\Facades\DB::statement("ALTER TABLE \"{$tableName}\" DROP COLUMN id");
+                        } catch (\Throwable $e) {
+                            // SQLite versions older than 3.35.0 do not support DROP COLUMN
+                        }
+                    } else {
+                        \Illuminate\Support\Facades\DB::statement("ALTER TABLE `{$tableName}` DROP COLUMN `id`");
+                    }
                 }
 
                 foreach (array_reverse($columns) as $oldCol => $newCol) {

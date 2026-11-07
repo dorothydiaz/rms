@@ -10,12 +10,11 @@ use App\Models\Hr\Interview;
 use App\Models\Hr\JobVacancy;
 use App\Models\Hr\Position;
 use App\Models\User;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 class TalentAcquisitionModuleTest extends TestCase
 {
-    use DatabaseTransactions;
+    protected $seed = true;
 
     protected function getAdminUser(): User
     {

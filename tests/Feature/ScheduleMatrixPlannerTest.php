@@ -7,17 +7,29 @@ use App\Models\Hr\Employee;
 use App\Models\Hr\EmployeeSchedule;
 use App\Models\Hr\ShiftTemplate;
 use App\Models\User;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 class ScheduleMatrixPlannerTest extends TestCase
 {
-    use DatabaseTransactions;
+    protected $seed = true;
 
     public function test_schedule_planner_table_fits_screen_and_renders_colored_cards_with_details(): void
     {
         $admin = User::where('username', 'peter')->first();
         $this->actingAs($admin);
+
+        $emp = Employee::first();
+        $shiftOpening = ShiftTemplate::whereIn('code', ['0600', '0700', '0800', '0900'])->first() ?? ShiftTemplate::first();
+        EmployeeSchedule::updateOrCreate(
+            ['employee_id' => $emp->id, 'schedule_date' => '2026-09-28'],
+            [
+                'branch_id' => $emp->branch_id,
+                'shift_template_id' => $shiftOpening->id,
+                'custom_start_time' => $shiftOpening->start_time,
+                'custom_end_time' => $shiftOpening->end_time,
+                'is_rest_day' => false,
+            ]
+        );
 
         $response = $this->get(route('hr.attendance.schedules', ['week_start' => '2026-09-28']));
 
