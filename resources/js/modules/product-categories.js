@@ -3336,7 +3336,7 @@
 
         setTimeout(() => {
             if (formName) {
-                formName.focus();
+                formName.focus({ preventScroll: true });
                 formName.select();
             }
         }, 120);
