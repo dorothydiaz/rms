@@ -2,10 +2,6 @@
 
 @section('title', 'User Accounts - Administration')
 
-@push('styles')
-    @vite(['resources/css/modules/hr-users.css'])
-@endpush
-
 @push('scripts')
     @vite(['resources/js/modules/hr-users.js'])
 @endpush

@@ -2,10 +2,6 @@
 
 @section('title', 'Undertime Records & Authorization - Attendance Management')
 
-@push('styles')
-    @vite('resources/css/modules/hr-undertime.css')
-@endpush
-
 @push('blade-data')
 <script>
     window.HrUndertimeConfig = Object.freeze({

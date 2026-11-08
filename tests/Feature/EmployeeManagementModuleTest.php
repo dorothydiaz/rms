@@ -45,7 +45,17 @@ class EmployeeManagementModuleTest extends TestCase
             'is_active' => true,
         ]);
 
-        $this->adminUser = User::where('username', 'peter')->first() ?? User::where('role', 'hr_admin')->first() ?? User::first();
+        $this->adminUser = User::where('username', 'peter')->first()
+            ?? User::where('role', 'hr_admin')->first()
+            ?? User::first()
+            ?? User::create([
+                'username' => 'peter',
+                'full_name' => 'Peter Admin',
+                'email' => 'peter@test.com',
+                'password' => bcrypt('password123'),
+                'role' => 'hr_admin',
+                'status' => 'Active',
+            ]);
 
         $existingIds = Employee::withTrashed()->where('employee_id', 'like', 'EMP-TEST-%')->pluck('id');
         if ($existingIds->isNotEmpty()) {

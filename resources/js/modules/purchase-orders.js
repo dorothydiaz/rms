@@ -1365,8 +1365,8 @@ function renderPoItemsTable() {
     }).join('');
 
     updatePoTotals();
-    updatePoLiveDocumentMockup();
-    window.UomRegistry?.autoHydrate();
+    window.requestAnimationFrame(updatePoLiveDocumentMockup);
+    window.UomRegistry?.autoHydrate(tbody);
 }
 
 function updatePoItemField(idx, field, val) {
@@ -2417,16 +2417,23 @@ function initPoColResize(e, colId) {
     document.addEventListener('mouseup', handlePoColMouseUp);
 }
 
+let poColResizeRaf = null;
 function handlePoColMouseMove(e) {
     if (!poResizingColId) return;
-    const diff = e.pageX - poStartX;
-    const newWidth = Math.max(60, poStartW + diff);
-    savedPoColWidths[poResizingColId] = `${newWidth}px`;
+    const pageX = e.pageX;
+    if (poColResizeRaf) return;
+    poColResizeRaf = window.requestAnimationFrame(() => {
+        poColResizeRaf = null;
+        if (!poResizingColId) return;
+        const diff = pageX - poStartX;
+        const newWidth = Math.max(60, poStartW + diff);
+        savedPoColWidths[poResizingColId] = `${newWidth}px`;
 
-    const thEl = document.querySelector(`#poDirectoryTheadRow th[data-col-id="${poResizingColId}"]`);
-    if (thEl) {
-        thEl.style.width = `${newWidth}px`;
-    }
+        const thEl = document.querySelector(`#poDirectoryTheadRow th[data-col-id="${poResizingColId}"]`);
+        if (thEl) {
+            thEl.style.width = `${newWidth}px`;
+        }
+    });
 }
 
 function handlePoColMouseUp() {
@@ -3130,10 +3137,14 @@ function renderPoActiveFilterChips() {
     container.innerHTML = chipsHtml;
 }
 
+let poSearchDebounce = null;
 function handlePoSearch(q) {
     poSearchTerm = q;
     poCurrentPage = 1;
-    renderPoDirectory();
+    clearTimeout(poSearchDebounce);
+    poSearchDebounce = setTimeout(() => {
+        window.requestAnimationFrame(renderPoDirectory);
+    }, 140);
 }
 
 function startNewPoFromDirectory() {

@@ -2,10 +2,6 @@
 
 @section('title', 'Overtime Records & Approvals - Attendance Management')
 
-@push('styles')
-    @vite('resources/css/modules/hr-overtime.css')
-@endpush
-
 @push('blade-data')
 <script>
     window.HrOvertimeConfig = Object.freeze({

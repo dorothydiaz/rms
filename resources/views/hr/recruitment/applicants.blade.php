@@ -2,10 +2,6 @@
 
 @section('title', 'Talent Acquisition - Applicants Pipeline')
 
-@push('styles')
-    @vite(['resources/css/modules/hr-applicants.css'])
-@endpush
-
 @push('scripts')
     @vite(['resources/js/modules/hr-applicants.js'])
 @endpush

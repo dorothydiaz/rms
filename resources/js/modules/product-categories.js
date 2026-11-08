@@ -5,13 +5,16 @@
 (function() {
     'use strict';
 
-    // 1. Column Definition Matrix - All aligned to Left for crisp visual scanning
-    const ALL_COLUMNS = [
+    // 1. Dynamic Column Definition Matrix (Prefix + Dynamic Cat 1, Cat 2, ... + Suffix)
+    const BASE_PREFIX_COLUMNS = [
         { id: 'sku', label: 'SKU', default: true, align: 'left', width: '120px' },
         { id: 'product', label: 'Barcode / Product Name', default: true, align: 'left', minWidth: '220px' },
-        { id: 'description', label: 'Product Description', default: true, align: 'left', minWidth: '180px' },
-        { id: 'category', label: 'Category', default: true, align: 'left', width: '130px' },
-        { id: 'subcategory', label: 'Sub-category', default: true, align: 'left', width: '130px' },
+        { id: 'description', label: 'Product Description', default: true, align: 'left', minWidth: '180px' }
+    ];
+
+    const BASE_SUFFIX_COLUMNS = [
+        { id: 'variants', label: 'Variants & Prices', default: true, align: 'left', minWidth: '175px' },
+        { id: 'tracking_by', label: 'Track in Inventory', default: true, align: 'left', width: '140px' },
         { id: 'uom', label: 'Unit of Measure (UOM) / Pack Size', default: true, align: 'left', width: '160px' },
         { id: 'cost_price', label: 'Cost Price', default: true, align: 'left', width: '120px' },
         { id: 'selling_price', label: 'Selling Price', default: true, align: 'left', width: '120px' },
@@ -22,8 +25,120 @@
         { id: 'status', label: 'Status (Active/Inactive)', default: true, align: 'left', width: '140px' }
     ];
 
+    function getMaxCategoryDepth() {
+        let maxLvl = 2; // Baseline default for standard ERP (Cat 1 & Cat 2)
+        if (window.AppStore) {
+            let detectedMax = 1;
+            if (Array.isArray(window.AppStore.categoryNodes)) {
+                window.AppStore.categoryNodes.forEach(n => {
+                    if (n.level && n.level > detectedMax) detectedMax = n.level;
+                });
+            }
+            if (window.AppStore.categoryLevelNames) {
+                Object.keys(window.AppStore.categoryLevelNames).forEach(k => {
+                    const num = Number(k);
+                    if (num > detectedMax) detectedMax = num;
+                });
+            }
+            if (Array.isArray(window.AppStore.products)) {
+                window.AppStore.products.forEach(p => {
+                    if (Array.isArray(p.categoryPath) && p.categoryPath.length > detectedMax) {
+                        detectedMax = p.categoryPath.length;
+                    }
+                });
+            }
+            maxLvl = Math.max(1, detectedMax);
+        }
+        return maxLvl;
+    }
+
+    function getCategoryLevelLabel(level) {
+        if (window.AppStore && window.AppStore.categoryLevelNames && window.AppStore.categoryLevelNames[level]) {
+            return window.AppStore.categoryLevelNames[level];
+        }
+        return `Cat ${level}`;
+    }
+
+    function getDynamicCategoryColumns() {
+        const depth = getMaxCategoryDepth();
+        const cols = [];
+        for (let lvl = 1; lvl <= depth; lvl++) {
+            cols.push({
+                id: `cat_level_${lvl}`,
+                label: getCategoryLevelLabel(lvl),
+                catLevel: lvl,
+                default: true,
+                align: 'left',
+                width: '145px',
+                minWidth: '120px'
+            });
+        }
+        return cols;
+    }
+
+    function getAllColumns() {
+        return [
+            ...BASE_PREFIX_COLUMNS,
+            ...getDynamicCategoryColumns(),
+            ...BASE_SUFFIX_COLUMNS
+        ];
+    }
+
     // Saved Column Visibility Settings
-    let activeColumnIds = JSON.parse(localStorage.getItem('rms_product_columns')) || ALL_COLUMNS.map(c => c.id);
+    let activeColumnIds = JSON.parse(localStorage.getItem('rms_product_columns')) || null;
+
+    function syncActiveColumnIdsWithDynamicLevels() {
+        const allCols = getAllColumns();
+        if (!Array.isArray(activeColumnIds) || activeColumnIds.length === 0) {
+            activeColumnIds = allCols.map(c => c.id);
+        } else {
+            // Migrate legacy 'category' / 'subcategory' IDs and auto-include newly created cat_level_N columns
+            if (activeColumnIds.includes('category') && !activeColumnIds.includes('cat_level_1')) {
+                activeColumnIds.push('cat_level_1');
+            }
+            if (activeColumnIds.includes('subcategory') && !activeColumnIds.includes('cat_level_2')) {
+                activeColumnIds.push('cat_level_2');
+            }
+            activeColumnIds = activeColumnIds.filter(id => id !== 'category' && id !== 'subcategory');
+            let knownCatCols = JSON.parse(localStorage.getItem('rms_known_cat_cols')) || [];
+            getDynamicCategoryColumns().forEach(catCol => {
+                if (!knownCatCols.includes(catCol.id)) {
+                    knownCatCols.push(catCol.id);
+                    if (!activeColumnIds.includes(catCol.id)) {
+                        activeColumnIds.push(catCol.id);
+                    }
+                }
+            });
+            ['variants', 'tracking_by'].forEach(newColId => {
+                if (!knownCatCols.includes(newColId)) {
+                    knownCatCols.push(newColId);
+                    if (!activeColumnIds.includes(newColId)) {
+                        activeColumnIds.push(newColId);
+                    }
+                }
+            });
+            // Prune any deleted cat_level_N from knownCatCols
+            const currentMax = getMaxCategoryDepth();
+            knownCatCols = knownCatCols.filter(id => {
+                if (id.startsWith('cat_level_')) {
+                    const l = Number(id.replace('cat_level_', ''));
+                    return l <= currentMax;
+                }
+                return true;
+            });
+            localStorage.setItem('rms_known_cat_cols', JSON.stringify(knownCatCols));
+        }
+        // Ensure any cat_level_N columns from deleted levels are pruned from activeColumnIds
+        const activeMax = getMaxCategoryDepth();
+        activeColumnIds = activeColumnIds.filter(id => {
+            if (id.startsWith('cat_level_')) {
+                const l = Number(id.replace('cat_level_', ''));
+                return l <= activeMax;
+            }
+            return true;
+        });
+        localStorage.setItem('rms_product_columns', JSON.stringify(activeColumnIds));
+    }
 
     // Saved Modular Column Widths Settings (Persisted in localStorage)
     let savedColumnWidths = JSON.parse(localStorage.getItem('rms_product_column_widths')) || {};
@@ -422,11 +537,19 @@
     ];
 
     // Reactive State Store
+    const DEFAULT_LEVEL_NAMES = {
+        1: 'Cat 1',
+        2: 'Cat 2'
+    };
+
     window.AppStore = {
         categories: JSON.parse(localStorage.getItem('rms_product_categories')) || INITIAL_CATEGORIES,
         categoryInfo: JSON.parse(localStorage.getItem('rms_category_info')) || {},
         categoryMeta: Object.assign({}, DEFAULT_CATEGORY_META, JSON.parse(localStorage.getItem('rms_category_meta')) || {}),
+        categoryNodes: JSON.parse(localStorage.getItem('rms_category_nodes')) || null,
+        categoryLevelNames: Object.assign({}, DEFAULT_LEVEL_NAMES, JSON.parse(localStorage.getItem('rms_category_level_names')) || {}),
         products: JSON.parse(localStorage.getItem('rms_inventory_products')) || INITIAL_PRODUCTS,
+        activeWorkspaceTab: 'catalog',
         activeCategory: 'ALL',
         searchQuery: '',
         selectedProductId: null,
@@ -438,8 +561,161 @@
         activePriceChart: null
     };
 
-    // Auto-seed baseline audit logs for existing products if not present
+    // Helper: Find category node by name (case-insensitive)
+    function getCategoryNode(name) {
+        if (!name || !Array.isArray(window.AppStore.categoryNodes)) return null;
+        const target = String(name).trim().toLowerCase();
+        return window.AppStore.categoryNodes.find(n => n.name.toLowerCase() === target) || null;
+    }
+
+    // Helper: Build full ancestor path ['Beverages', 'Espresso Based', ...] for any category name
+    function getCategoryAncestryPath(catName) {
+        if (!catName) return [];
+        const path = [];
+        let curr = getCategoryNode(catName);
+        const visited = new Set();
+        while (curr && !visited.has(curr.name.toLowerCase())) {
+            visited.add(curr.name.toLowerCase());
+            path.unshift(curr.name);
+            curr = curr.parentName ? getCategoryNode(curr.parentName) : null;
+        }
+        if (path.length === 0) path.push(catName);
+        return path;
+    }
+
+    // Helper: Return array of category names [Cat1, Cat2, Cat3, ...] for a product
+    function getProductCategoryPath(product) {
+        if (!product) return [];
+        if (Array.isArray(product.categoryPath) && product.categoryPath.filter(Boolean).length > 0) {
+            return product.categoryPath.filter(Boolean);
+        }
+        const path = [];
+        if (product.category) path.push(product.category);
+        if (product.subcategory && product.subcategory !== 'Standard') path.push(product.subcategory);
+        return path;
+    }
+
+    function getProductCategoryAtLevel(product, level) {
+        const path = getProductCategoryPath(product);
+        return path[level - 1] || '';
+    }
+
+    // Initialize / Migrate Hierarchical Category Nodes from existing Categories & Product Subcategories
+    function initializeCategoryHierarchy() {
+        if (!Array.isArray(window.AppStore.categoryNodes) || window.AppStore.categoryNodes.length === 0) {
+            const nodes = [];
+            const seen = new Set();
+
+            // 1. Seed root categories (Level 1)
+            (window.AppStore.categories || INITIAL_CATEGORIES).forEach(catName => {
+                const clean = String(catName || '').trim();
+                if (!clean || seen.has(clean.toLowerCase())) return;
+                seen.add(clean.toLowerCase());
+                const meta = getCategoryMeta(clean);
+                nodes.push({
+                    name: clean,
+                    parentName: null,
+                    level: 1,
+                    icon: meta.icon || 'ph-tag',
+                    color: meta.color || 'purple',
+                    description: window.AppStore.categoryInfo[clean] || ''
+                });
+            });
+
+            // 2. Seed child categories (Level 2+) from products
+            (window.AppStore.products || []).forEach(p => {
+                const path = getProductCategoryPath(p);
+                p.categoryPath = path;
+                for (let i = 0; i < path.length; i++) {
+                    const cName = String(path[i] || '').trim();
+                    if (!cName) continue;
+                    const parentName = i > 0 ? String(path[i - 1] || '').trim() : null;
+                    if (!seen.has(cName.toLowerCase())) {
+                        seen.add(cName.toLowerCase());
+                        const parentMeta = parentName ? getCategoryMeta(parentName) : getCategoryMeta(cName);
+                        nodes.push({
+                            name: cName,
+                            parentName: parentName,
+                            level: i + 1,
+                            icon: parentMeta.icon || 'ph-tag',
+                            color: parentMeta.color || 'purple',
+                            description: window.AppStore.categoryInfo[cName] || ''
+                        });
+                    }
+                }
+            });
+
+            window.AppStore.categoryNodes = nodes;
+        }
+
+        // Ensure all products have normalized categoryPath
+        (window.AppStore.products || []).forEach(p => {
+            p.categoryPath = getProductCategoryPath(p);
+            if (p.categoryPath[0]) p.category = p.categoryPath[0];
+            p.subcategory = p.categoryPath[1] || 'Standard';
+        });
+
+        // Ensure level names exist for every depth
+        const maxDepth = getMaxCategoryDepth();
+        for (let lvl = 1; lvl <= maxDepth; lvl++) {
+            if (!window.AppStore.categoryLevelNames[lvl]) {
+                window.AppStore.categoryLevelNames[lvl] = `Cat ${lvl}`;
+            }
+        }
+
+        persistCategoryHierarchy();
+        syncActiveColumnIdsWithDynamicLevels();
+    }
+
+    function persistCategoryHierarchy() {
+        // Keep root categories & meta synced for cross-module Stocks Overview compatibility
+        const allNames = window.AppStore.categoryNodes.map(n => n.name);
+        window.AppStore.categories = allNames;
+        window.AppStore.categoryNodes.forEach(n => {
+            window.AppStore.categoryMeta[n.name] = { icon: n.icon || 'ph-tag', color: n.color || 'purple' };
+            if (n.description) window.AppStore.categoryInfo[n.name] = n.description;
+        });
+
+        localStorage.setItem('rms_category_nodes', JSON.stringify(window.AppStore.categoryNodes));
+        localStorage.setItem('rms_category_level_names', JSON.stringify(window.AppStore.categoryLevelNames));
+        localStorage.setItem('rms_product_categories', JSON.stringify(window.AppStore.categories));
+        localStorage.setItem('rms_category_info', JSON.stringify(window.AppStore.categoryInfo));
+        localStorage.setItem('rms_category_meta', JSON.stringify(window.AppStore.categoryMeta));
+    }
+
+    initializeCategoryHierarchy();
+
+    // Auto-seed baseline audit logs, trackingBy (lots/quantity/serial), and variants for existing products
     window.AppStore.products.forEach(p => {
+        if (!p.trackingBy) {
+            const catLower = (p.category || '').toLowerCase();
+            if (catLower.includes('packaging') || (p.sku && p.sku.startsWith('PKG-'))) {
+                p.trackingBy = 'quantity';
+            } else if (catLower.includes('equipment') || (p.sku && p.sku.startsWith('EQP-'))) {
+                p.trackingBy = 'serial';
+            } else {
+                p.trackingBy = 'lots';
+            }
+        }
+        if (!Array.isArray(p.variants)) {
+            if (p.sku === 'BEV-101') {
+                p.variants = [
+                    { id: 'v-101-1', group: 'Size', name: '12oz Regular (Hot)', sku: 'BEV-101-12H', costPrice: 52.00, sellingPrice: 135.00 },
+                    { id: 'v-101-2', group: 'Size', name: '16oz Large (Iced)', sku: 'BEV-101-16I', costPrice: 58.50, sellingPrice: 145.00 },
+                    { id: 'v-101-3', group: 'Size', name: '22oz Venti (Iced)', sku: 'BEV-101-22I', costPrice: 68.00, sellingPrice: 170.00 }
+                ];
+            } else if (p.sku === 'BEV-102') {
+                p.variants = [
+                    { id: 'v-102-1', group: 'Size', name: '16oz Regular Frappe', sku: 'BEV-102-16R', costPrice: 68.00, sellingPrice: 165.00 },
+                    { id: 'v-102-2', group: 'Size', name: '22oz Upsize Frappe', sku: 'BEV-102-22U', costPrice: 79.00, sellingPrice: 195.00 }
+                ];
+            } else {
+                p.variants = [];
+            }
+        }
+        if (p.imageUrl === undefined) {
+            p.imageUrl = '';
+        }
         if (!p.auditLogs || p.auditLogs.length === 0) {
             p.createdAt = p.createdAt || 'Sep 15, 2026 • 09:30 AM';
             p.createdBy = p.createdBy || 'Dorothy Diaz (System Admin)';
@@ -455,12 +731,13 @@
                         { field: 'Category', oldValue: '—', newValue: p.category },
                         { field: 'Cost Price', oldValue: '—', newValue: formatPHP(p.costPrice) },
                         { field: 'Selling Price', oldValue: '—', newValue: formatPHP(p.sellingPrice) },
-                        { field: 'Has BOM', oldValue: '—', newValue: p.hasBom ? 'Yes (Recipe Active)' : 'No' }
+                        { field: 'Track in Inventory', oldValue: '—', newValue: `Tracked by ${p.trackingBy}` }
                     ]
                 }
             ];
         }
     });
+    localStorage.setItem('rms_inventory_products', JSON.stringify(window.AppStore.products));
 
     // DOM Caches
     const masterColgroup = document.getElementById('masterTableColgroup');
@@ -543,77 +820,295 @@
     formSellingPrice.addEventListener('input', updateMarginCalculation);
 
     // =========================================================================
-    // CATEGORY & SUBCATEGORY DROPDOWNS SYNCHRONIZATION
+    // SKU UNIQUENESS VALIDATION (REAL-TIME & PREVENTION)
     // =========================================================================
-    function syncCategoryControls() {
-        if (formCategory) {
-            const currentCat = formCategory.value;
-            formCategory.innerHTML = window.AppStore.categories.map(c => `<option value="${c}">${c}</option>`).join('');
-            if (window.AppStore.categories.includes(currentCat)) {
-                formCategory.value = currentCat;
-            }
+    function validateSkuUniqueness() {
+        if (!formSku) return true;
+        const skuVal = (formSku.value || '').trim();
+        const currentId = formId && formId.value ? Number(formId.value) : null;
+        const errEl = document.getElementById('formSkuError');
+        const badgeEl = document.getElementById('formSkuStatusBadge');
+
+        if (!skuVal) {
+            formSku.classList.remove('inv-input-error');
+            if (errEl) errEl.style.display = 'none';
+            if (badgeEl) badgeEl.style.display = 'none';
+            return true;
         }
-        syncSubcategoryDropdown(formCategory ? formCategory.value : null);
+
+        const normalized = skuVal.toLowerCase();
+        const duplicate = (window.AppStore.products || []).find(p =>
+            p.id !== currentId &&
+            p.sku &&
+            p.sku.trim().toLowerCase() === normalized
+        );
+
+        if (duplicate) {
+            formSku.classList.add('inv-input-error');
+            if (errEl) {
+                errEl.style.display = 'flex';
+                const span = errEl.querySelector('span');
+                if (span) span.textContent = `SKU "${skuVal}" is already used by "${duplicate.name}"`;
+            }
+            if (badgeEl) {
+                badgeEl.style.display = 'inline-block';
+                badgeEl.style.color = '#ef4444';
+                badgeEl.textContent = 'Duplicate SKU';
+            }
+            return false;
+        } else {
+            formSku.classList.remove('inv-input-error');
+            if (errEl) errEl.style.display = 'none';
+            if (badgeEl) {
+                badgeEl.style.display = 'inline-block';
+                badgeEl.style.color = '#10b981';
+                badgeEl.textContent = 'Unique SKU ✓';
+            }
+            return true;
+        }
     }
 
-    function syncSubcategoryDropdown(categoryFilter) {
-        if (!formSubcategorySelect) return;
-        const subcatSet = new Set();
-        window.AppStore.products.forEach(p => {
-            if (!categoryFilter || p.category === categoryFilter) {
-                if (p.subcategory && p.subcategory.trim()) {
-                    subcatSet.add(p.subcategory.trim());
-                }
+    if (formSku) {
+        formSku.addEventListener('input', validateSkuUniqueness);
+        formSku.addEventListener('blur', validateSkuUniqueness);
+    }
+
+    // =========================================================================
+    // HIERARCHICAL CATEGORY & CASCADING SELECTORS SYNCHRONIZATION
+    // =========================================================================
+    let currentFormCategoryPath = [];
+
+    function getOrderedCategoryTreeNodes() {
+        const nodes = window.AppStore.categoryNodes || [];
+        const result = [];
+        const visited = new Set();
+
+        function visitChildren(parentName, depth) {
+            nodes
+                .filter(n => {
+                    const pName = n.parentName ? n.parentName.toLowerCase() : '';
+                    const targetP = parentName ? parentName.toLowerCase() : '';
+                    return pName === targetP;
+                })
+                .forEach(n => {
+                    if (visited.has(n.name.toLowerCase())) return;
+                    visited.add(n.name.toLowerCase());
+                    n.level = depth;
+                    result.push(n);
+                    visitChildren(n.name, depth + 1);
+                });
+        }
+
+        visitChildren(null, 1);
+
+        // Append any orphan nodes whose parent wasn't found
+        nodes.forEach(n => {
+            if (!visited.has(n.name.toLowerCase())) {
+                visited.add(n.name.toLowerCase());
+                result.push(n);
             }
         });
 
-        // Add defaults if set is small
-        if (subcatSet.size === 0) {
-            subcatSet.add('Standard');
-            subcatSet.add('Specialty');
+        return result;
+    }
+
+    function updateWorkspaceBadges() {
+        const products = window.AppStore.products || [];
+        const prodCountBadge = document.getElementById('tabBadgeProductCount');
+        if (prodCountBadge) {
+            prodCountBadge.textContent = products.length;
         }
 
-        const currentVal = formSubcategory ? formSubcategory.value : '';
-        let optsHtml = Array.from(subcatSet).map(s => `<option value="${s}">${s}</option>`).join('');
-        optsHtml += `<option value="__custom__">+ Enter Custom Subcategory...</option>`;
-        formSubcategorySelect.innerHTML = optsHtml;
+        const maxDepth = getMaxCategoryDepth();
+        const labels = [];
+        for (let i = 1; i <= Math.min(maxDepth, 3); i++) {
+            labels.push(getCategoryLevelLabel(i));
+        }
+        const levelSummaryText = maxDepth > 3 ? `${labels.join(' • ')} +${maxDepth - 3}` : labels.join(' • ');
 
-        if (currentVal && subcatSet.has(currentVal)) {
-            formSubcategorySelect.value = currentVal;
-            if (formSubcategory) formSubcategory.style.display = 'none';
-            formSubcategorySelect.style.display = 'block';
+        const catCountBadge = document.getElementById('tabBadgeCategoryCount');
+        if (catCountBadge) {
+            catCountBadge.textContent = levelSummaryText;
+        }
+
+        // Hydrate 4-Card KPI Summary Bar in Product Catalog
+        const activeCount = products.filter(p => p.isActive !== false).length;
+        const sellableList = products.filter(p => p.canBeSold !== false);
+        const bomList = products.filter(p => (p.explodeBomOnSale !== undefined ? p.explodeBomOnSale : p.hasBom) === true);
+
+        let avgMargin = 0;
+        if (sellableList.length > 0) {
+            const sumMargin = sellableList.reduce((acc, p) => {
+                const s = Number(p.sellingPrice) || 0;
+                const c = Number(p.costPrice) || 0;
+                return acc + (s > 0 ? ((s - c) / s) * 100 : 0);
+            }, 0);
+            avgMargin = sumMargin / sellableList.length;
+        }
+
+        const elTotal = document.getElementById('kpiTotalItems');
+        const elTotalSub = document.getElementById('kpiTotalItemsSub');
+        const elSellable = document.getElementById('kpiSellableItems');
+        const elSellableSub = document.getElementById('kpiSellableSub');
+        const elBom = document.getElementById('kpiBomItems');
+        const elBomSub = document.getElementById('kpiBomSub');
+        const elCatLevels = document.getElementById('kpiCategoryLevels');
+        const elCatSub = document.getElementById('kpiCategorySub');
+
+        if (elTotal) elTotal.textContent = products.length;
+        if (elTotalSub) elTotalSub.textContent = `${activeCount} Active SKUs in Masterlist`;
+        if (elSellable) elSellable.textContent = sellableList.length;
+        if (elSellableSub) elSellableSub.textContent = `Avg Gross Margin: ${avgMargin.toFixed(1)}%`;
+        if (elBom) elBom.textContent = bomList.length;
+        if (elBomSub) elBomSub.textContent = `${(window.AppStore.categoryNodes || []).length} total parent/child categories`;
+        if (elCatLevels) elCatLevels.textContent = `${maxDepth} ${maxDepth === 1 ? 'Level' : 'Levels'}`;
+        if (elCatSub) elCatSub.textContent = `${levelSummaryText} active columns`;
+    }
+
+    window.handleCatalogKpiFilter = function(segmentMode) {
+        window.AppStore.catalogSegment = segmentMode || 'ALL';
+
+        document.querySelectorAll('#workspace-catalog .rfq-kpi-card[data-kpi-mode]').forEach(card => {
+            card.classList.toggle('is-active-filter', card.getAttribute('data-kpi-mode') === window.AppStore.catalogSegment);
+        });
+
+        document.querySelectorAll('#catalogQuickSegmentPills .rfq-popover-chip').forEach(chip => {
+            chip.classList.toggle('is-active', chip.getAttribute('data-seg') === window.AppStore.catalogSegment);
+        });
+
+        renderMasterList();
+    };
+
+    function syncCategoryControls() {
+        syncActiveColumnIdsWithDynamicLevels();
+        updateWorkspaceBadges();
+
+        // 1. Sync Catalog Filter Select (#invCategoryFilterSelect)
+        const filterSelect = document.getElementById('invCategoryFilterSelect');
+        if (filterSelect) {
+            const ordered = getOrderedCategoryTreeNodes();
+            const prevVal = window.AppStore.activeCategory || 'ALL';
+            let filterHtml = `<option value="ALL">All Categories (${ordered.length})</option>`;
+            ordered.forEach(node => {
+                const indent = node.level > 1 ? '— '.repeat(node.level - 1) : '';
+                const lvlLabel = getCategoryLevelLabel(node.level);
+                filterHtml += `<option value="${node.name}">${indent}${node.name} [${lvlLabel}]</option>`;
+            });
+            filterSelect.innerHTML = filterHtml;
+            if (prevVal === 'ALL' || ordered.some(n => n.name === prevVal)) {
+                filterSelect.value = prevVal;
+            } else {
+                window.AppStore.activeCategory = 'ALL';
+                filterSelect.value = 'ALL';
+            }
+        }
+
+        // 2. Sync legacy hidden #formCategory
+        if (formCategory) {
+            const rootNodes = (window.AppStore.categoryNodes || []).filter(n => !n.parentName || n.level === 1);
+            formCategory.innerHTML = rootNodes.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+        }
+
+        // 3. Render cascading category selectors in Product Details tab
+        renderProductCategorySelectors(currentFormCategoryPath);
+
+        // 4. Refresh Category Settings Tab if present
+        if (typeof renderCategorySettingsTab === 'function') {
+            renderCategorySettingsTab();
         }
     }
 
+    window.handleCatalogCategoryFilter = function(val) {
+        window.AppStore.activeCategory = val || 'ALL';
+        renderMasterList();
+    };
+
+    function renderProductCategorySelectors(selectedPath) {
+        const container = document.getElementById('dynamicCategorySelectorsContainer');
+        if (!container) return;
+
+        const maxDepth = getMaxCategoryDepth();
+        currentFormCategoryPath = Array.isArray(selectedPath) ? [...selectedPath] : [];
+
+        let html = '';
+        for (let lvl = 1; lvl <= maxDepth; lvl++) {
+            const lvlLabel = getCategoryLevelLabel(lvl);
+            const parentSelected = lvl === 1 ? null : (currentFormCategoryPath[lvl - 2] || '');
+            const currentVal = currentFormCategoryPath[lvl - 1] || '';
+
+            // Candidate categories at this level
+            let optionsNodes = (window.AppStore.categoryNodes || []).filter(n => {
+                if (lvl === 1) return !n.parentName || n.level === 1;
+                if (!parentSelected) return false;
+                return n.parentName && n.parentName.toLowerCase() === parentSelected.toLowerCase();
+            });
+
+            // If user had a custom value saved at this level that isn't in optionsNodes yet, include it
+            const optionNames = optionsNodes.map(n => n.name);
+            if (currentVal && !optionNames.some(name => name.toLowerCase() === currentVal.toLowerCase())) {
+                optionNames.unshift(currentVal);
+            }
+
+            const isDisabled = (lvl > 1 && !parentSelected);
+            const placeholder = lvl === 1
+                ? `— Select ${lvlLabel} —`
+                : (parentSelected ? `— Optional ${lvlLabel} —` : `Select ${getCategoryLevelLabel(lvl - 1)} first`);
+
+            html += `
+                <div class="inv-form-group" style="margin: 0;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+                        <label for="formCatLevel_${lvl}" style="margin: 0; font-size: 0.76rem; font-weight: 700;">
+                            ${lvlLabel} ${lvl === 1 ? '*' : ''}
+                            <span style="font-weight: 500; color: var(--inv-text-muted); font-size: 0.68rem;">(Level ${lvl})</span>
+                        </label>
+                        ${(lvl === 1 || parentSelected) ? `
+                            <button type="button" class="inv-col-quick-link" onclick="openNewCategoryModal('${parentSelected ? parentSelected.replace(/'/g, "\\'") : ''}')" style="font-size: 0.68rem; padding: 1px 6px;" title="Add category under ${parentSelected || 'Root'}">
+                                <i class="ph ph-plus"></i> Add
+                            </button>
+                        ` : ''}
+                    </div>
+                    <select id="formCatLevel_${lvl}" class="inv-form-select" data-cat-level="${lvl}" ${lvl === 1 ? 'required' : ''} ${isDisabled ? 'disabled' : ''} onchange="handleCascadingCategoryChange(${lvl}, this.value)">
+                        <option value="">${placeholder}</option>
+                        ${optionNames.map(name => `<option value="${name}" ${name.toLowerCase() === currentVal.toLowerCase() ? 'selected' : ''}>${name}</option>`).join('')}
+                    </select>
+                </div>
+            `;
+        }
+
+        container.innerHTML = html;
+
+        // Keep legacy hidden fields synced
+        if (formCategory) formCategory.value = currentFormCategoryPath[0] || '';
+        if (formSubcategory) formSubcategory.value = currentFormCategoryPath[1] || 'Standard';
+    }
+
+    window.handleCascadingCategoryChange = function(level, value) {
+        const maxDepth = getMaxCategoryDepth();
+        currentFormCategoryPath[level - 1] = value || '';
+        // Clear child selections deeper than the changed level
+        for (let i = level; i < maxDepth; i++) {
+            currentFormCategoryPath[i] = '';
+        }
+        // Auto-select first child if available? Keep optional so user can choose or leave blank
+        renderProductCategorySelectors(currentFormCategoryPath);
+    };
+
+    function syncSubcategoryDropdown(categoryFilter) {
+        renderProductCategorySelectors(currentFormCategoryPath);
+    }
+
     window.handleDrawerCategoryChange = function(selectedCategory) {
-        syncSubcategoryDropdown(selectedCategory);
+        currentFormCategoryPath = [selectedCategory];
+        renderProductCategorySelectors(currentFormCategoryPath);
     };
 
     window.handleSubcategorySelectChange = function(val) {
-        if (val === '__custom__') {
-            formSubcategorySelect.style.display = 'none';
-            formSubcategory.style.display = 'block';
-            formSubcategory.value = '';
-            formSubcategory.focus();
-        } else {
-            formSubcategory.value = val;
-            formSubcategory.style.display = 'none';
-            formSubcategorySelect.style.display = 'block';
-        }
+        currentFormCategoryPath[1] = val;
+        renderProductCategorySelectors(currentFormCategoryPath);
     };
 
     window.toggleCustomSubcategoryInput = function() {
-        if (formSubcategory.style.display === 'none') {
-            formSubcategorySelect.style.display = 'none';
-            formSubcategory.style.display = 'block';
-            formSubcategory.focus();
-        } else {
-            formSubcategory.style.display = 'none';
-            formSubcategorySelect.style.display = 'block';
-            if (formSubcategorySelect.value !== '__custom__') {
-                formSubcategory.value = formSubcategorySelect.value;
-            }
-        }
+        openNewCategoryModal(currentFormCategoryPath[0] || '');
     };
 
     // =========================================================================
@@ -640,8 +1135,9 @@
         const counterEl = document.getElementById('tableColumnsActiveCounter');
         if (!listEl) return;
 
+        const allCols = getAllColumns();
         let listHtml = '';
-        ALL_COLUMNS.forEach(col => {
+        allCols.forEach(col => {
             const isChecked = activeColumnIds.includes(col.id);
             listHtml += `
                 <div class="inv-col-dropdown-item ${isChecked ? 'is-checked' : ''}" onclick="window.handleColumnToggle('${col.id}', ${!isChecked})">
@@ -660,7 +1156,7 @@
 
         listEl.innerHTML = listHtml;
         if (counterEl) {
-            counterEl.textContent = `${activeColumnIds.length} of ${ALL_COLUMNS.length} visible`;
+            counterEl.textContent = `${activeColumnIds.length} of ${allCols.length} visible`;
         }
     }
 
@@ -681,7 +1177,7 @@
     };
 
     window.showAllColumns = function() {
-        activeColumnIds = ALL_COLUMNS.map(c => c.id);
+        activeColumnIds = getAllColumns().map(c => c.id);
         localStorage.setItem('rms_product_columns', JSON.stringify(activeColumnIds));
         renderTableHeaders();
         renderMasterList();
@@ -689,7 +1185,7 @@
     };
 
     window.resetColumnDefaults = function() {
-        activeColumnIds = ALL_COLUMNS.map(c => c.id);
+        activeColumnIds = getAllColumns().map(c => c.id);
         localStorage.setItem('rms_product_columns', JSON.stringify(activeColumnIds));
         renderTableHeaders();
         renderMasterList();
@@ -697,11 +1193,12 @@
     };
 
     window.showCompactColumns = function() {
-        activeColumnIds = ['sku', 'product', 'category', 'selling_price', 'status'];
+        const catColIds = getDynamicCategoryColumns().map(c => c.id);
+        activeColumnIds = ['sku', 'product', ...catColIds, 'selling_price', 'status'];
         localStorage.setItem('rms_product_columns', JSON.stringify(activeColumnIds));
         renderTableHeaders();
         renderMasterList();
-        showToast('Compact View: 5 essential columns shown');
+        showToast('Compact View applied');
     };
 
     // Reset Modular Column Widths to system defaults
@@ -727,7 +1224,7 @@
 
         const startX = e.pageX;
         const startWidth = th.offsetWidth;
-        const colDef = ALL_COLUMNS.find(c => c.id === colId);
+        const colDef = getAllColumns().find(c => c.id === colId);
         const minW = parseInt(colDef?.minWidth || '80', 10);
         const maxW = 600;
 
@@ -790,13 +1287,14 @@
     });
 
     // =========================================================================
-    // DYNAMIC TABLE HEADERS & ROWS RENDERING (WITH MODULAR COLUMN RESIZING)
+    // DYNAMIC TABLE HEADERS & FLAT ROWS RENDERING (WITH CAT 1, CAT 2... COLUMNS)
     // =========================================================================
     function renderTableHeaders() {
         let thHtml = '';
         let colHtml = '';
+        const allCols = getAllColumns();
 
-        ALL_COLUMNS.forEach(col => {
+        allCols.forEach(col => {
             if (!activeColumnIds.includes(col.id)) return;
             const alignClass = col.align === 'right' ? 'th-right' : (col.align === 'center' ? 'th-center' : '');
             const colWidth = getColumnWidth(col);
@@ -856,7 +1354,7 @@
                         </div>
 
                         <div class="inv-col-dropdown-footer">
-                            <span id="tableColumnsActiveCounter">${activeColumnIds.length} of ${ALL_COLUMNS.length} visible</span>
+                            <span id="tableColumnsActiveCounter">${activeColumnIds.length} of ${allCols.length} visible</span>
                             <span>Drag headers to resize</span>
                         </div>
                     </div>
@@ -883,27 +1381,38 @@
 
     function renderMasterList() {
         const query = (window.AppStore.searchQuery || '').trim().toLowerCase();
-        const activeCat = window.AppStore.activeCategory;
+        const activeCat = window.AppStore.activeCategory || 'ALL';
+        const segment = window.AppStore.catalogSegment || 'ALL';
+        const allCols = getAllColumns();
 
         const filtered = window.AppStore.products.filter(item => {
-            const matchesCat = (activeCat === 'ALL') || (item.category === activeCat);
+            const catPath = getProductCategoryPath(item);
+            const matchesCat = (activeCat === 'ALL') || catPath.some(c => c.toLowerCase() === activeCat.toLowerCase());
             if (!matchesCat) return false;
+
+            if (segment === 'ACTIVE' && item.isActive === false) return false;
+            if (segment === 'SELLABLE' && item.canBeSold === false) return false;
+            if (segment === 'BOM' && !(item.explodeBomOnSale !== undefined ? item.explodeBomOnSale : item.hasBom)) return false;
 
             if (!query) return true;
             return (
                 item.name.toLowerCase().includes(query) ||
                 item.sku.toLowerCase().includes(query) ||
                 (item.barcode && item.barcode.toLowerCase().includes(query)) ||
-                (item.subcategory && item.subcategory.toLowerCase().includes(query)) ||
+                catPath.some(c => c.toLowerCase().includes(query)) ||
                 (item.supplier && item.supplier.toLowerCase().includes(query)) ||
                 (item.unit && item.unit.toLowerCase().includes(query)) ||
                 (item.allergens && item.allergens.some(a => a.toLowerCase().includes(query)))
             );
         });
 
-        filteredCountEl.textContent = `${filtered.length} Product${filtered.length === 1 ? '' : 's'}`;
+        if (filteredCountEl) {
+            filteredCountEl.textContent = `${filtered.length} Product${filtered.length === 1 ? '' : 's'}`;
+        }
+        updateWorkspaceBadges();
 
-        const totalVisibleCols = activeColumnIds.length + 1; // + 1 for action column
+        const visibleCols = allCols.filter(c => activeColumnIds.includes(c.id));
+        const totalVisibleCols = visibleCols.length + 1; // + 1 for action column
 
         if (filtered.length === 0) {
             masterTbody.innerHTML = `
@@ -912,7 +1421,7 @@
                         <div class="inv-empty-state">
                             <i class="ph ph-package-x inv-empty-icon"></i>
                             <div style="font-weight: 600; font-size: 0.95rem; color: var(--inv-text-strong); margin-bottom: 4px;">No products match your criteria</div>
-                            <div>Try adjusting your search terms or category selection.</div>
+                            <div>Try adjusting your search terms or category filter.</div>
                         </div>
                     </td>
                 </tr>
@@ -920,184 +1429,186 @@
             return;
         }
 
-        const grouped = {};
-        window.AppStore.categories.forEach(cat => { grouped[cat] = []; });
-        filtered.forEach(prod => {
-            if (!grouped[prod.category]) grouped[prod.category] = [];
-            grouped[prod.category].push(prod);
-        });
-
         let html = '';
 
-        Object.keys(grouped).forEach(categoryName => {
-            const items = grouped[categoryName];
-            if (activeCat !== 'ALL' && activeCat !== categoryName) return;
-            if (items.length === 0 && query) return;
-
-            const isCollapsed = !!window.AppStore.collapsedCategories[categoryName];
-
-            // 1. Accordion Group Header Row
-            const isUncategorized = (categoryName === 'Uncategorized');
-            const catMeta = getCategoryMeta(categoryName);
-            const catPal = getCategoryPalette(catMeta.color);
+        // Flat product rows (Category Group Header rows removed in favor of dynamic Cat 1, Cat 2... columns)
+        filtered.forEach(item => {
+            const isSelected = (window.AppStore.selectedProductId === item.id);
+            const cost = Number(item.costPrice) || 0;
+            const selling = Number(item.sellingPrice) || 0;
+            const profit = selling - cost;
+            const marginPct = selling > 0 ? ((profit / selling) * 100).toFixed(1) : '0.0';
+            const catPath = getProductCategoryPath(item);
 
             html += `
-                <tr class="inv-group-row ${isCollapsed ? 'collapsed' : ''}" onclick="toggleAccordionCategory('${categoryName}')">
-                    <td colspan="${totalVisibleCols}" class="inv-group-header-cell">
-                        <div class="inv-group-header-content">
-                            <div class="inv-group-left-box">
-                                <div class="inv-accordion-chevron">
-                                    <i class="ph ph-caret-down"></i>
+                <tr class="inv-item-row ${isSelected ? 'is-selected' : ''}" onclick="openProductDrawer(${item.id})">
+            `;
+
+            allCols.forEach(col => {
+                if (!activeColumnIds.includes(col.id)) return;
+                const colId = col.id;
+                const colWidth = getColumnWidth(col);
+                const style = `width: ${colWidth}; min-width: ${col.minWidth || '80px'};`;
+
+                if (col.catLevel) {
+                    const catVal = catPath[col.catLevel - 1] || '';
+                    if (!catVal) {
+                        html += `<td style="${style}"><span style="color: var(--inv-text-subtle);">—</span></td>`;
+                    } else if (col.catLevel === 1) {
+                        const itemCatMeta = getCategoryMeta(catVal);
+                        const itemCatPal = getCategoryPalette(itemCatMeta.color);
+                        html += `
+                            <td style="${style}">
+                                <span class="inv-category-pill" style="background: ${itemCatPal.bg}; color: ${itemCatPal.text}; border: 1px solid ${itemCatPal.border};">
+                                    <i class="ph ${itemCatMeta.icon}"></i>
+                                    <span>${catVal}</span>
+                                </span>
+                            </td>
+                        `;
+                    } else {
+                        const node = getCategoryNode(catVal);
+                        if (node && node.color) {
+                            const pal = getCategoryPalette(node.color);
+                            html += `
+                                <td style="${style}">
+                                    <span class="inv-category-pill" style="background: ${pal.bg}; color: ${pal.text}; border: 1px solid ${pal.border}; font-weight: 600;">
+                                        <i class="ph ${node.icon || 'ph-tag'}"></i>
+                                        <span>${catVal}</span>
+                                    </span>
+                                </td>
+                            `;
+                        } else {
+                            html += `<td style="${style}"><span class="inv-badge-subcat">${catVal}</span></td>`;
+                        }
+                    }
+                    return;
+                }
+
+                switch (colId) {
+                    case 'sku':
+                        html += `<td style="${style}"><span class="inv-sku-badge">${item.sku}</span></td>`;
+                        break;
+                    case 'product': {
+                        const vCount = Array.isArray(item.variants) ? item.variants.length : 0;
+                        const thumbHtml = item.imageUrl
+                            ? `<img src="${item.imageUrl}" alt="" class="inv-prod-thumb-avatar">`
+                            : '';
+                        html += `
+                            <td style="${style}">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    ${thumbHtml}
+                                    <div class="inv-prod-title-group">
+                                        <div style="display: flex; align-items: center; gap: 6px;">
+                                            <span class="inv-product-name">${item.name}</span>
+                                            ${vCount > 0 ? `<span class="inv-variant-pill" title="${vCount} product variant(s)"><i class="ph ph-stack"></i> ${vCount}</span>` : ''}
+                                        </div>
+                                        <span class="inv-barcode-tag"><i class="ph ph-barcode"></i> ${item.barcode || '—'}</span>
+                                    </div>
                                 </div>
-                                <div class="inv-cat-avatar-icon" style="background: ${catPal.bg}; color: ${catPal.text}; border: 1px solid ${catPal.border};">
-                                    <i class="ph ${catMeta.icon}"></i>
+                            </td>
+                        `;
+                        break;
+                    }
+                    case 'description':
+                        html += `
+                            <td style="${style}">
+                                <div class="inv-desc-cell" title="${item.description || ''}">
+                                    ${item.description || '—'}
                                 </div>
-                                <span class="inv-group-title">${categoryName}</span>
-                                <span class="inv-group-count-badge" style="background: ${catPal.bg}; color: ${catPal.text}; border: 1px solid ${catPal.border};">${items.length} ${items.length === 1 ? 'item' : 'items'}</span>
-                            </div>
-                            <div class="inv-group-actions-box" onclick="event.stopPropagation()">
-                                <button type="button" class="inv-group-action-btn" title="Edit Category Details & Visuals" onclick="openEditCategoryModal('${categoryName}')">
-                                    <i class="ph ph-pencil-simple"></i>
-                                </button>
-                                ${!isUncategorized ? `
-                                <button type="button" class="inv-group-action-btn is-delete" title="Delete Category & Move items to Uncategorized" onclick="confirmDeleteCategory('${categoryName}', ${items.length})">
-                                    <i class="ph ph-trash"></i>
-                                </button>
-                                ` : ''}
-                            </div>
-                        </div>
+                            </td>
+                        `;
+                        break;
+                    case 'variants': {
+                        const vars = Array.isArray(item.variants) ? item.variants : [];
+                        if (vars.length === 0) {
+                            html += `<td style="${style}"><span style="color: var(--inv-text-subtle); font-size: 0.74rem;">Standard (Single)</span></td>`;
+                        } else {
+                            const prices = vars.map(v => Number(v.sellingPrice) || Number(item.sellingPrice) || 0);
+                            const minP = Math.min(...prices);
+                            const maxP = Math.max(...prices);
+                            const priceRange = minP === maxP ? formatPHP(minP) : `${formatPHP(minP)} – ${formatPHP(maxP)}`;
+                            const namesPreview = vars.slice(0, 2).map(v => v.name).join(', ') + (vars.length > 2 ? ` +${vars.length - 2}` : '');
+                            html += `
+                                <td style="${style}">
+                                    <div style="display: flex; flex-direction: column; gap: 2px;">
+                                        <span class="inv-variant-pill" style="width: fit-content;"><i class="ph ph-stack"></i> ${vars.length} Variant${vars.length > 1 ? 's' : ''} (${priceRange})</span>
+                                        <span style="font-size: 0.69rem; color: var(--inv-text-muted); max-width: 170px; overflow: hidden; text-overflow: ellipsis;">${namesPreview}</span>
+                                    </div>
+                                </td>
+                            `;
+                        }
+                        break;
+                    }
+                    case 'tracking_by': {
+                        const tracksStock = item.trackPhysicalStock !== undefined ? item.trackPhysicalStock : (item.trackStock !== false);
+                        const tMode = tracksStock ? (item.trackingBy || 'lots') : 'none';
+                        if (tMode === 'lots') {
+                            html += `<td style="${style}"><span class="inv-track-badge lots" title="Lot & Expiry enabled in Stock-In"><i class="ph ph-calendar-check"></i> By Lots</span></td>`;
+                        } else if (tMode === 'serial') {
+                            html += `<td style="${style}"><span class="inv-track-badge serial" title="Tracked by Serial Number"><i class="ph ph-qr-code"></i> Serial #</span></td>`;
+                        } else if (tMode === 'quantity') {
+                            html += `<td style="${style}"><span class="inv-track-badge quantity" title="Tracked by Quantity Only"><i class="ph ph-hash"></i> By Quantity</span></td>`;
+                        } else {
+                            html += `<td style="${style}"><span class="inv-track-badge none"><i class="ph ph-prohibit"></i> Untracked</span></td>`;
+                        }
+                        break;
+                    }
+                    case 'uom':
+                        html += `
+                            <td style="${style}">
+                                <span style="font-weight: 600;">${item.unit}</span>
+                                <span style="color: var(--inv-text-muted); font-size: 0.72rem;">(${item.packSize || '1 pc'})</span>
+                            </td>
+                        `;
+                        break;
+                    case 'cost_price':
+                        html += `<td style="${style}"><span style="color: var(--inv-text-muted); font-variant-numeric: tabular-nums;">${formatPHP(item.costPrice)}</span></td>`;
+                        break;
+                    case 'selling_price':
+                        html += `<td style="${style}"><span style="font-weight: 700; color: var(--inv-text-strong); font-variant-numeric: tabular-nums;">${formatPHP(item.sellingPrice)}</span></td>`;
+                        break;
+                    case 'margin':
+                        html += `<td style="${style}"><span style="font-weight: 600; color: var(--inv-success); font-variant-numeric: tabular-nums;">${marginPct}%</span></td>`;
+                        break;
+                    case 'tax_rate':
+                        html += `<td style="${style}"><span style="font-size: 0.76rem;">${item.taxRate || '12% VAT'}</span></td>`;
+                        break;
+                    case 'supplier':
+                        html += `<td style="${style}"><span style="font-size: 0.77rem; color: var(--inv-text-medium);">${item.supplier || '—'}</span></td>`;
+                        break;
+                    case 'allergens':
+                        html += `
+                            <td style="${style}">
+                                ${(item.allergens && item.allergens.length > 0) ? item.allergens.map(a => `<span class="inv-badge-allergen">${a}</span>`).join('') : '<span style="color:var(--inv-text-subtle);">None</span>'}
+                            </td>
+                        `;
+                        break;
+                    case 'status':
+                        html += `
+                            <td style="${style}; text-align: left;">
+                                <span class="inv-status-pill ${item.isActive ? 'active' : 'inactive'}">
+                                    <span class="inv-status-dot"></span>
+                                    ${item.isActive ? 'Active' : 'Inactive'}
+                                </span>
+                            </td>
+                        `;
+                        break;
+                }
+            });
+
+            html += `
+                    <td class="td-right td-action">
+                        <button type="button" class="inv-view-btn" onclick="event.stopPropagation(); openProductDrawer(${item.id});">
+                            <i class="ph ph-sliders-horizontal"></i>
+                            <span>Details</span>
+                        </button>
                     </td>
                 </tr>
             `;
-
-            // 2. Standard linear rows nested under each group header
-            items.forEach(item => {
-                const isSelected = (window.AppStore.selectedProductId === item.id);
-                const cost = Number(item.costPrice) || 0;
-                const selling = Number(item.sellingPrice) || 0;
-                const profit = selling - cost;
-                const marginPct = selling > 0 ? ((profit / selling) * 100).toFixed(1) : '0.0';
-
-                html += `
-                    <tr class="inv-item-row ${isCollapsed ? 'is-hidden' : ''} ${isSelected ? 'is-selected' : ''}" data-category-group="${categoryName}" onclick="openProductDrawer(${item.id})">
-                `;
-
-                ALL_COLUMNS.forEach(col => {
-                    if (!activeColumnIds.includes(col.id)) return;
-                    const colId = col.id;
-                    const colWidth = getColumnWidth(col);
-                    const style = `width: ${colWidth}; min-width: ${col.minWidth || '80px'};`;
-                    switch (colId) {
-                        case 'sku':
-                            html += `<td style="${style}"><span class="inv-sku-badge">${item.sku}</span></td>`;
-                            break;
-                        case 'product':
-                            html += `
-                                <td style="${style}">
-                                    <div class="inv-prod-title-group">
-                                        <span class="inv-product-name">${item.name}</span>
-                                        <span class="inv-barcode-tag"><i class="ph ph-barcode"></i> ${item.barcode || '—'}</span>
-                                    </div>
-                                </td>
-                            `;
-                            break;
-                        case 'description':
-                            html += `
-                                <td style="${style}">
-                                    <div class="inv-desc-cell" title="${item.description || ''}">
-                                        ${item.description || '—'}
-                                    </div>
-                                </td>
-                            `;
-                            break;
-                        case 'category':
-                            const itemCatMeta = getCategoryMeta(item.category);
-                            const itemCatPal = getCategoryPalette(itemCatMeta.color);
-                            html += `
-                                <td style="${style}">
-                                    <span class="inv-category-pill" style="background: ${itemCatPal.bg}; color: ${itemCatPal.text}; border: 1px solid ${itemCatPal.border};">
-                                        <i class="ph ${itemCatMeta.icon}"></i>
-                                        <span>${item.category}</span>
-                                    </span>
-                                </td>
-                            `;
-                            break;
-                        case 'subcategory':
-                            html += `<td style="${style}"><span class="inv-badge-subcat">${item.subcategory || 'Standard'}</span></td>`;
-                            break;
-                        case 'uom':
-                            html += `
-                                <td style="${style}">
-                                    <span style="font-weight: 600;">${item.unit}</span>
-                                    <span style="color: var(--inv-text-muted); font-size: 0.72rem;">(${item.packSize || '1 pc'})</span>
-                                </td>
-                            `;
-                            break;
-                        case 'cost_price':
-                            html += `<td style="${style}"><span style="color: var(--inv-text-muted); font-variant-numeric: tabular-nums;">${formatPHP(item.costPrice)}</span></td>`;
-                            break;
-                        case 'selling_price':
-                            html += `<td style="${style}"><span style="font-weight: 700; color: var(--inv-text-strong); font-variant-numeric: tabular-nums;">${formatPHP(item.sellingPrice)}</span></td>`;
-                            break;
-                        case 'margin':
-                            html += `<td style="${style}"><span style="font-weight: 600; color: var(--inv-success); font-variant-numeric: tabular-nums;">${marginPct}%</span></td>`;
-                            break;
-                        case 'tax_rate':
-                            html += `<td style="${style}"><span style="font-size: 0.76rem;">${item.taxRate || '12% VAT'}</span></td>`;
-                            break;
-                        case 'supplier':
-                            html += `<td style="${style}"><span style="font-size: 0.77rem; color: var(--inv-text-medium);">${item.supplier || '—'}</span></td>`;
-                            break;
-                        case 'allergens':
-                            html += `
-                                <td style="${style}">
-                                    ${(item.allergens && item.allergens.length > 0) ? item.allergens.map(a => `<span class="inv-badge-allergen">${a}</span>`).join('') : '<span style="color:var(--inv-text-subtle);">None</span>'}
-                                </td>
-                            `;
-                            break;
-                        case 'status':
-                            html += `
-                                <td style="${style}; text-align: left;">
-                                    <span class="inv-status-pill ${item.isActive ? 'active' : 'inactive'}">
-                                        <span class="inv-status-dot"></span>
-                                        ${item.isActive ? 'Active' : 'Inactive'}
-                                    </span>
-                                </td>
-                            `;
-                            break;
-                    }
-                });
-
-                html += `
-                        <td class="td-right td-action">
-                            <button type="button" class="inv-view-btn" onclick="event.stopPropagation(); openProductDrawer(${item.id});">
-                                <i class="ph ph-arrow-square-out"></i>
-                                <span>View</span>
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            });
         });
 
         masterTbody.innerHTML = html;
     }
-
-    window.toggleAccordionCategory = function(categoryName) {
-        window.AppStore.collapsedCategories[categoryName] = !window.AppStore.collapsedCategories[categoryName];
-        renderMasterList();
-    };
-
-    window.toggleAllAccordions = function() {
-        const anyExpanded = window.AppStore.categories.some(c => !window.AppStore.collapsedCategories[c]);
-        window.AppStore.categories.forEach(c => {
-            window.AppStore.collapsedCategories[c] = anyExpanded;
-        });
-
-        document.getElementById('textToggleAll').textContent = anyExpanded ? 'Expand All' : 'Collapse All';
-        document.getElementById('iconToggleAll').className = anyExpanded ? 'ph ph-arrows-out-line-vertical' : 'ph ph-arrows-in-line-vertical';
-        renderMasterList();
-    };
 
     // =========================================================================
     // NEW / EDIT CATEGORY MODAL LOGIC & VISUAL CUSTOMIZATION
@@ -1177,17 +1688,61 @@
         updateCategoryLivePreview();
     };
 
-    window.openNewCategoryModal = function() {
+    function populateModalParentSelect(selectedParentName, excludeCategoryName) {
+        const parentSelect = document.getElementById('modalCategoryParent');
+        if (!parentSelect) return;
+
+        const ordered = getOrderedCategoryTreeNodes();
+        const excludeLower = excludeCategoryName ? excludeCategoryName.toLowerCase() : '';
+
+        let html = `<option value="">— Top-Level Parent (${getCategoryLevelLabel(1)}) —</option>`;
+        ordered.forEach(node => {
+            if (excludeLower && node.name.toLowerCase() === excludeLower) return;
+            const indent = node.level > 1 ? '— '.repeat(node.level - 1) : '';
+            const lvlLabel = getCategoryLevelLabel(node.level);
+            html += `<option value="${node.name}">${indent}${node.name} (${lvlLabel})</option>`;
+        });
+
+        parentSelect.innerHTML = html;
+        parentSelect.value = selectedParentName || '';
+        handleModalParentCategoryChange(parentSelect.value);
+    }
+
+    window.handleModalParentCategoryChange = function(parentName) {
+        const hintEl = document.getElementById('modalCategoryLevelHint');
+        if (!hintEl) return;
+
+        if (!parentName) {
+            hintEl.textContent = `Column: ${getCategoryLevelLabel(1)} (Level 1)`;
+            return;
+        }
+        const pNode = getCategoryNode(parentName);
+        const childLevel = pNode ? (pNode.level + 1) : 2;
+        const currentMax = getMaxCategoryDepth();
+        const colLabel = getCategoryLevelLabel(childLevel);
+        if (childLevel > currentMax) {
+            hintEl.textContent = `Auto-creates new column: ${colLabel} (Level ${childLevel})`;
+        } else {
+            hintEl.textContent = `Column: ${colLabel} (Level ${childLevel} under ${parentName})`;
+        }
+    };
+
+    window.openNewCategoryModal = function(defaultParentName) {
         document.getElementById('modalCategoryOriginalName').value = '';
-        document.getElementById('modalCategoryTitle').textContent = 'Add Product Category';
+        document.getElementById('modalCategoryTitle').textContent = defaultParentName
+            ? `Add Child Category under "${defaultParentName}"`
+            : 'Add Product Category';
         document.getElementById('btnSaveCategoryText').textContent = 'Create Category';
         document.getElementById('modalCategoryHeaderIcon').className = 'ph ph-folder-plus';
         document.getElementById('modalCategoryName').value = '';
         document.getElementById('modalCategoryDesc').value = '';
 
-        // Initialize default icon and color
-        const defaultIcon = 'ph-tag';
-        const defaultColor = 'purple';
+        populateModalParentSelect(defaultParentName || '', '');
+
+        // Initialize default icon and color (inherit parent's color/icon if adding child)
+        const pNode = defaultParentName ? getCategoryNode(defaultParentName) : null;
+        const defaultIcon = pNode ? (pNode.icon || 'ph-tag') : 'ph-tag';
+        const defaultColor = pNode ? (pNode.color || 'purple') : 'purple';
         document.getElementById('modalCategoryIcon').value = defaultIcon;
         document.getElementById('modalCategoryColor').value = defaultColor;
         renderCategoryIconGrid(defaultIcon);
@@ -1204,12 +1759,15 @@
         if (!catName) {
             catName = window.AppStore.categories[0] || 'Beverages';
         }
+        const existingNode = getCategoryNode(catName);
         document.getElementById('modalCategoryOriginalName').value = catName;
         document.getElementById('modalCategoryTitle').textContent = `Edit Category: ${catName}`;
         document.getElementById('btnSaveCategoryText').textContent = 'Update Category';
         document.getElementById('modalCategoryHeaderIcon').className = 'ph ph-pencil-simple';
         document.getElementById('modalCategoryName').value = catName;
-        document.getElementById('modalCategoryDesc').value = window.AppStore.categoryInfo[catName] || '';
+        document.getElementById('modalCategoryDesc').value = (existingNode && existingNode.description) || window.AppStore.categoryInfo[catName] || '';
+
+        populateModalParentSelect(existingNode ? (existingNode.parentName || '') : '', catName);
 
         // Hydrate existing metadata
         const meta = getCategoryMeta(catName);
@@ -1295,13 +1853,15 @@
         const catDesc = document.getElementById('modalCategoryDesc').value.trim();
         const catIcon = document.getElementById('modalCategoryIcon').value.trim() || 'ph-tag';
         const catColor = document.getElementById('modalCategoryColor').value.trim() || 'purple';
+        const parentSelect = document.getElementById('modalCategoryParent');
+        const parentName = (parentSelect && parentSelect.value.trim()) ? parentSelect.value.trim() : null;
         const originalName = document.getElementById('modalCategoryOriginalName').value;
 
         if (!catName) return;
 
         // Check duplicate
-        const isDuplicate = window.AppStore.categories.some(c => 
-            c.toLowerCase() === catName.toLowerCase() && c.toLowerCase() !== originalName.toLowerCase()
+        const isDuplicate = (window.AppStore.categoryNodes || []).some(n =>
+            n.name.toLowerCase() === catName.toLowerCase() && n.name.toLowerCase() !== originalName.toLowerCase()
         );
 
         if (isDuplicate) {
@@ -1311,48 +1871,83 @@
             return;
         }
 
+        const parentNode = parentName ? getCategoryNode(parentName) : null;
+        const newLevel = parentNode ? (parentNode.level + 1) : 1;
+
+        if (!window.AppStore.categoryLevelNames[newLevel]) {
+            window.AppStore.categoryLevelNames[newLevel] = `Cat ${newLevel}`;
+        }
+
         if (originalName) {
             // Edit Mode
-            const idx = window.AppStore.categories.indexOf(originalName);
-            if (idx !== -1) {
-                window.AppStore.categories[idx] = catName;
+            const existingNode = getCategoryNode(originalName);
+            if (existingNode) {
+                existingNode.name = catName;
+                existingNode.parentName = parentName;
+                existingNode.level = newLevel;
+                existingNode.icon = catIcon;
+                existingNode.color = catColor;
+                existingNode.description = catDesc;
             }
-            // Migrate products with the old category name
-            window.AppStore.products.forEach(p => {
-                if (p.category === originalName) {
-                    p.category = catName;
+            // Update children pointing to originalName
+            (window.AppStore.categoryNodes || []).forEach(n => {
+                if (n.parentName && n.parentName.toLowerCase() === originalName.toLowerCase()) {
+                    n.parentName = catName;
                 }
             });
-            // Update description and meta stores
+            // Migrate products containing originalName in categoryPath / category / subcategory
+            window.AppStore.products.forEach(p => {
+                const path = getProductCategoryPath(p);
+                const updatedPath = path.map(c => (c.toLowerCase() === originalName.toLowerCase() ? catName : c));
+                p.categoryPath = updatedPath;
+                p.category = updatedPath[0] || 'Uncategorized';
+                p.subcategory = updatedPath[1] || 'Standard';
+            });
+
             if (originalName !== catName) {
                 delete window.AppStore.categoryInfo[originalName];
                 delete window.AppStore.categoryMeta[originalName];
             }
-            window.AppStore.categoryInfo[catName] = catDesc;
-            window.AppStore.categoryMeta[catName] = { icon: catIcon, color: catColor };
-
-            localStorage.setItem('rms_product_categories', JSON.stringify(window.AppStore.categories));
-            localStorage.setItem('rms_category_info', JSON.stringify(window.AppStore.categoryInfo));
-            localStorage.setItem('rms_category_meta', JSON.stringify(window.AppStore.categoryMeta));
-            localStorage.setItem('rms_inventory_products', JSON.stringify(window.AppStore.products));
-            localStorage.removeItem('rms_stocks_ledger'); // Invalidate cached stocks ledger so stocks overview picks up new category/meta
-
-            showToast(`Category "${catName}" updated successfully!`);
+            showToast(`Category "${catName}" (${getCategoryLevelLabel(newLevel)}) updated!`);
         } else {
             // Add Mode
-            window.AppStore.categories.push(catName);
-            window.AppStore.categoryInfo[catName] = catDesc;
-            window.AppStore.categoryMeta[catName] = { icon: catIcon, color: catColor };
+            window.AppStore.categoryNodes.push({
+                name: catName,
+                parentName: parentName,
+                level: newLevel,
+                icon: catIcon,
+                color: catColor,
+                description: catDesc
+            });
 
-            localStorage.setItem('rms_product_categories', JSON.stringify(window.AppStore.categories));
-            localStorage.setItem('rms_category_info', JSON.stringify(window.AppStore.categoryInfo));
-            localStorage.setItem('rms_category_meta', JSON.stringify(window.AppStore.categoryMeta));
-            localStorage.removeItem('rms_stocks_ledger'); // Invalidate cached stocks ledger
+            // Ensure new level column is visible in table
+            const colId = `cat_level_${newLevel}`;
+            if (!activeColumnIds.includes(colId)) {
+                activeColumnIds.push(colId);
+                localStorage.setItem('rms_product_columns', JSON.stringify(activeColumnIds));
+            }
 
-            showToast(`Category "${catName}" created successfully!`);
+            // If we are inside the Product Details tab, auto-select the newly created category at its level
+            if (parentName && currentFormCategoryPath[newLevel - 2] && currentFormCategoryPath[newLevel - 2].toLowerCase() === parentName.toLowerCase()) {
+                currentFormCategoryPath[newLevel - 1] = catName;
+            } else if (!parentName && !currentFormCategoryPath[0]) {
+                currentFormCategoryPath[0] = catName;
+            }
+
+            showToast(`Category "${catName}" created in ${getCategoryLevelLabel(newLevel)}!`);
         }
 
+        // Recompute tree levels cleanly
+        getOrderedCategoryTreeNodes();
+        window.AppStore.categoryInfo[catName] = catDesc;
+        window.AppStore.categoryMeta[catName] = { icon: catIcon, color: catColor };
+
+        persistCategoryHierarchy();
+        localStorage.setItem('rms_inventory_products', JSON.stringify(window.AppStore.products));
+        localStorage.removeItem('rms_stocks_ledger');
+
         syncCategoryControls();
+        renderTableHeaders();
         renderMasterList();
         closeNewCategoryModal();
     };
@@ -1363,38 +1958,387 @@
             return;
         }
 
-        const confirmText = itemCount > 0 
-            ? `Are you sure you want to delete category "${catName}"? ${itemCount} ${itemCount === 1 ? 'item' : 'items'} under it will be moved to the "Uncategorized" section.`
+        const affectedCount = typeof itemCount === 'number'
+            ? itemCount
+            : window.AppStore.products.filter(p => getProductCategoryPath(p).some(c => c.toLowerCase() === catName.toLowerCase())).length;
+
+        const confirmText = affectedCount > 0 
+            ? `Are you sure you want to delete category "${catName}"? ${affectedCount} ${affectedCount === 1 ? 'product' : 'products'} using it will be updated.`
             : `Are you sure you want to delete category "${catName}"?`;
 
         if (!confirm(confirmText)) return;
 
-        // Ensure 'Uncategorized' exists in categories
-        if (!window.AppStore.categories.includes('Uncategorized')) {
-            window.AppStore.categories.push('Uncategorized');
-        }
+        const nodeToDelete = getCategoryNode(catName);
+        const parentOfDeleted = nodeToDelete ? nodeToDelete.parentName : null;
 
-        // Reassign products
-        window.AppStore.products.forEach(p => {
-            if (p.category === catName) {
-                p.category = 'Uncategorized';
+        // Re-parent any child categories up one level
+        (window.AppStore.categoryNodes || []).forEach(n => {
+            if (n.parentName && n.parentName.toLowerCase() === catName.toLowerCase()) {
+                n.parentName = parentOfDeleted || null;
             }
         });
 
-        // Remove category from array
-        window.AppStore.categories = window.AppStore.categories.filter(c => c !== catName);
+        // Remove node
+        window.AppStore.categoryNodes = (window.AppStore.categoryNodes || []).filter(
+            n => n.name.toLowerCase() !== catName.toLowerCase()
+        );
+
+        // Update products
+        window.AppStore.products.forEach(p => {
+            const path = getProductCategoryPath(p).filter(c => c.toLowerCase() !== catName.toLowerCase());
+            if (path.length === 0) {
+                path.push('Uncategorized');
+                if (!getCategoryNode('Uncategorized')) {
+                    window.AppStore.categoryNodes.push({
+                        name: 'Uncategorized',
+                        parentName: null,
+                        level: 1,
+                        icon: 'ph-tag',
+                        color: 'slate',
+                        description: 'Default fallback category'
+                    });
+                }
+            }
+            p.categoryPath = path;
+            p.category = path[0];
+            p.subcategory = path[1] || 'Standard';
+        });
+
         delete window.AppStore.categoryInfo[catName];
         delete window.AppStore.categoryMeta[catName];
 
-        localStorage.setItem('rms_product_categories', JSON.stringify(window.AppStore.categories));
-        localStorage.setItem('rms_category_info', JSON.stringify(window.AppStore.categoryInfo));
-        localStorage.setItem('rms_category_meta', JSON.stringify(window.AppStore.categoryMeta));
+        getOrderedCategoryTreeNodes();
+        persistCategoryHierarchy();
         localStorage.setItem('rms_inventory_products', JSON.stringify(window.AppStore.products));
         localStorage.removeItem('rms_stocks_ledger');
 
         syncCategoryControls();
+        renderTableHeaders();
         renderMasterList();
-        showToast(`Category "${catName}" deleted. Items moved to Uncategorized.`);
+        showToast(`Category "${catName}" removed.`);
+    };
+
+    // =========================================================================
+    // CATEGORY SETTINGS TAB CONTROLLER (COLUMN RENAMER & HIERARCHY TREE)
+    // =========================================================================
+    function renderCategorySettingsTab() {
+        const levelListEl = document.getElementById('categoryLevelNamesList');
+        const treeBodyEl = document.getElementById('categoryHierarchyTreeBody');
+        const depthBadgeEl = document.getElementById('catLevelDepthBadge');
+        const maxDepth = getMaxCategoryDepth();
+
+        if (depthBadgeEl) {
+            depthBadgeEl.textContent = `${maxDepth} ${maxDepth === 1 ? 'Level' : 'Levels'}`;
+        }
+
+        // 1. Render Category Level Column Cards (Spacious Industrial Redesign)
+        if (levelListEl) {
+            let lvlHtml = '';
+            for (let lvl = 1; lvl <= maxDepth; lvl++) {
+                const currentLabel = getCategoryLevelLabel(lvl);
+                const countAtLevel = (window.AppStore.categoryNodes || []).filter(n => n.level === lvl).length;
+                const prodCountAtLevel = (window.AppStore.products || []).filter(p => {
+                    const path = getProductCategoryPath(p);
+                    return path && path.length >= lvl && Boolean(path[lvl - 1]);
+                }).length;
+
+                // Deletion rule:
+                // Can delete if:
+                // 1. It is higher than Level 1 (Level 1 is the mandatory root category column)
+                // 2. 0 categories exist at this level (countAtLevel === 0)
+                // 3. 0 products have this level in their path (prodCountAtLevel === 0)
+                // 4. It is the outermost level (lvl === maxDepth)
+                const isTopLevel = (lvl === maxDepth && maxDepth > 1);
+                const canDelete = (isTopLevel && countAtLevel === 0 && prodCountAtLevel === 0);
+                const lvlRole = lvl === 1 ? 'Root Category' : (lvl === 2 ? 'Subcategory' : `Level ${lvl} Child`);
+                const lvlPillClass = lvl <= 5 ? `lvl-${lvl}` : 'lvl-5';
+
+                lvlHtml += `
+                    <div class="inv-level-card ${canDelete ? 'is-deletable' : ''}" data-level="${lvl}">
+                        <div class="inv-level-card-header">
+                            <div class="inv-level-card-left">
+                                <span class="inv-level-pill ${lvlPillClass}">
+                                    <i class="ph ${lvl === 1 ? 'ph-tree-view' : (lvl === 2 ? 'ph-git-fork' : 'ph-folder-notch-open')}"></i>
+                                    <span>Level ${lvl}</span>
+                                </span>
+                                <span class="inv-level-type-label">${lvlRole}</span>
+                            </div>
+                            <div class="inv-level-card-actions">
+                                <span class="inv-level-usage-pill ${countAtLevel > 0 ? 'is-active' : 'is-empty'}" title="${countAtLevel} categories, ${prodCountAtLevel} products at Level ${lvl}">
+                                    <i class="ph ${countAtLevel > 0 ? 'ph-check-circle' : 'ph-circle'}"></i>
+                                    <span>${countAtLevel} ${countAtLevel === 1 ? 'cat' : 'cats'}</span>
+                                    <span class="inv-level-usage-dot">&bull;</span>
+                                    <span>${prodCountAtLevel} ${prodCountAtLevel === 1 ? 'item' : 'items'}</span>
+                                </span>
+                                ${canDelete ? `
+                                    <button type="button" class="inv-level-del-btn" onclick="deleteCategoryLevelColumn(${lvl})" title="Delete Level ${lvl} Column (Unused by any categories or items)">
+                                        <i class="ph ph-trash"></i>
+                                        <span>Delete Level</span>
+                                    </button>
+                                ` : (lvl === 1 ? `
+                                    <span class="inv-level-lock-pill" title="Level 1 is the mandatory primary category column">
+                                        <i class="ph ph-lock-key"></i>
+                                        <span>Base</span>
+                                    </span>
+                                ` : `
+                                    <span class="inv-level-lock-pill" title="${countAtLevel > 0 ? `In use by ${countAtLevel} categories` : `Delete Level ${maxDepth} first`}">
+                                        <i class="ph ph-lock-key"></i>
+                                        <span>In Use</span>
+                                    </span>
+                                `)}
+                            </div>
+                        </div>
+                        <div class="inv-level-card-body">
+                            <label class="inv-level-input-label" for="catLevelInput_${lvl}">
+                                <span>Catalog Table Header</span>
+                                <span class="inv-level-col-target">Column ID: <code>cat_level_${lvl}</code></span>
+                            </label>
+                            <div class="inv-level-input-wrap">
+                                <i class="ph ph-text-t inv-level-input-icon"></i>
+                                <input type="text"
+                                    id="catLevelInput_${lvl}"
+                                    class="inv-form-input cat-level-rename-input"
+                                    data-level="${lvl}"
+                                    value="${currentLabel.replace(/"/g, '&quot;')}"
+                                    placeholder="e.g. Cat ${lvl}, Department, Type..."
+                                    onchange="handleInlineLevelRename(${lvl}, this.value)"
+                                    autocomplete="off">
+                                <span class="inv-level-save-indicator" id="levelSaveInd_${lvl}" title="Saved">
+                                    <i class="ph ph-check"></i>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            levelListEl.innerHTML = lvlHtml;
+        }
+
+        // 2. Render Parent & Child Category Tree Table
+        if (treeBodyEl) {
+            const ordered = getOrderedCategoryTreeNodes();
+            const searchInputEl = document.getElementById('catTreeSearchInput');
+            const filterText = (searchInputEl && searchInputEl.value || '').trim().toLowerCase();
+
+            const filteredNodes = ordered.filter(node => {
+                if (!filterText) return true;
+                return (
+                    node.name.toLowerCase().includes(filterText) ||
+                    (node.parentName && node.parentName.toLowerCase().includes(filterText)) ||
+                    getCategoryLevelLabel(node.level).toLowerCase().includes(filterText)
+                );
+            });
+
+            if (filteredNodes.length === 0) {
+                treeBodyEl.innerHTML = `
+                    <tr>
+                        <td colspan="5" style="text-align: center; padding: 24px; color: var(--inv-text-muted);">
+                            No categories match your filter. Click <strong>Add Root Category</strong> to create one.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            treeBodyEl.innerHTML = filteredNodes.map(node => {
+                const pal = getCategoryPalette(node.color || 'purple');
+                const lvlLabel = getCategoryLevelLabel(node.level);
+                const lvlClass = node.level <= 3 ? `lvl-${node.level}` : '';
+                const indentPx = (node.level - 1) * 24;
+                const connector = node.level > 1 ? `<span class="inv-cat-tree-connector">└─</span>` : '';
+                const prodCount = (window.AppStore.products || []).filter(p =>
+                    getProductCategoryPath(p).some(c => c.toLowerCase() === node.name.toLowerCase())
+                ).length;
+                const safeName = node.name.replace(/'/g, "\\'");
+                const isUncat = node.name === 'Uncategorized';
+
+                return `
+                    <tr class="inv-cat-tree-row">
+                        <td>
+                            <div class="inv-cat-tree-branch" style="padding-left: ${indentPx}px;">
+                                ${connector}
+                                <span class="inv-category-pill" style="background: ${pal.bg}; color: ${pal.text}; border: 1px solid ${pal.border};">
+                                    <i class="ph ${node.icon || 'ph-tag'}"></i>
+                                    <span>${node.name}</span>
+                                </span>
+                                ${node.description ? `<span style="font-size: 0.72rem; color: var(--inv-text-muted); max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${node.description}">${node.description}</span>` : ''}
+                            </div>
+                        </td>
+                        <td>
+                            <span class="inv-cat-level-pill ${lvlClass}">
+                                ${lvlLabel} &bull; Level ${node.level}
+                            </span>
+                        </td>
+                        <td>
+                            ${node.parentName
+                                ? `<span class="inv-badge-subcat">${node.parentName}</span>`
+                                : `<span style="font-size: 0.73rem; color: var(--inv-text-muted); font-weight: 600;">Root (Top-Level)</span>`
+                            }
+                        </td>
+                        <td>
+                            <span style="font-weight: 700; font-variant-numeric: tabular-nums;">${prodCount}</span>
+                            <span style="font-size: 0.72rem; color: var(--inv-text-muted);">${prodCount === 1 ? 'item' : 'items'}</span>
+                        </td>
+                        <td style="text-align: right; white-space: nowrap;">
+                            <div style="display: inline-flex; align-items: center; gap: 6px;">
+                                <button type="button" class="inv-btn-quick-create" onclick="openNewCategoryModal('${safeName}')" title="Add Child Category under ${node.name} (Level ${node.level + 1})">
+                                    <i class="ph ph-plus"></i>
+                                    <span>Add Child</span>
+                                </button>
+                                <button type="button" class="inv-group-action-btn" onclick="openEditCategoryModal('${safeName}')" title="Edit ${node.name}">
+                                    <i class="ph ph-pencil-simple"></i>
+                                </button>
+                                ${!isUncat ? `
+                                    <button type="button" class="inv-group-action-btn is-delete" onclick="confirmDeleteCategory('${safeName}', ${prodCount})" title="Delete ${node.name}">
+                                        <i class="ph ph-trash"></i>
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+    }
+
+    window.handleInlineLevelRename = function(level, newLabel) {
+        const cleaned = String(newLabel || '').trim() || `Cat ${level}`;
+        window.AppStore.categoryLevelNames[level] = cleaned;
+        persistCategoryHierarchy();
+        syncCategoryControls();
+        renderTableHeaders();
+        renderMasterList();
+
+        const ind = document.getElementById(`levelSaveInd_${level}`);
+        if (ind) {
+            ind.classList.add('is-saved');
+            setTimeout(() => ind.classList.remove('is-saved'), 1500);
+        }
+
+        showToast(`Level ${level} column renamed to "${cleaned}"`);
+    };
+
+    window.deleteCategoryLevelColumn = function(lvl) {
+        lvl = Number(lvl);
+        if (lvl <= 1) {
+            showToast('Level 1 is the primary category column and cannot be deleted.', 'error');
+            return;
+        }
+
+        const nodesAtLevel = (window.AppStore.categoryNodes || []).filter(n => n.level === lvl);
+        if (nodesAtLevel.length > 0) {
+            showToast(`Cannot delete Level ${lvl}: ${nodesAtLevel.length} categories exist at this level. Delete them first in the hierarchy tree.`, 'error');
+            return;
+        }
+
+        const productsAtLevel = (window.AppStore.products || []).filter(p => {
+            const path = getProductCategoryPath(p);
+            return path && path.length >= lvl && Boolean(path[lvl - 1]);
+        });
+        if (productsAtLevel.length > 0) {
+            showToast(`Cannot delete Level ${lvl}: ${productsAtLevel.length} products currently belong to this level.`, 'error');
+            return;
+        }
+
+        const colName = getCategoryLevelLabel(lvl);
+        if (!confirm(`Are you sure you want to remove the Level ${lvl} ("${colName}") column? This will remove the column from the catalog table.`)) {
+            return;
+        }
+
+        // 1. Remove from categoryLevelNames
+        delete window.AppStore.categoryLevelNames[lvl];
+
+        // 2. Remove from activeColumnIds
+        const colId = `cat_level_${lvl}`;
+        if (Array.isArray(activeColumnIds)) {
+            activeColumnIds = activeColumnIds.filter(id => id !== colId);
+            localStorage.setItem('rms_product_columns', JSON.stringify(activeColumnIds));
+        }
+
+        // 3. Remove from knownCatCols
+        let knownCatCols = JSON.parse(localStorage.getItem('rms_known_cat_cols')) || [];
+        knownCatCols = knownCatCols.filter(id => id !== colId);
+        localStorage.setItem('rms_known_cat_cols', JSON.stringify(knownCatCols));
+
+        // 4. Persist and refresh all UI surfaces
+        persistCategoryHierarchy();
+        syncCategoryControls();
+        renderTableHeaders();
+        renderMasterList();
+        renderCategorySettingsTab();
+
+        showToast(`Level ${lvl} column ("${colName}") removed successfully.`, 'success');
+    };
+
+    window.saveCategoryLevelNamesFromUI = function() {
+        const inputs = document.querySelectorAll('.cat-level-rename-input');
+        inputs.forEach(input => {
+            const lvl = Number(input.getAttribute('data-level'));
+            if (lvl) {
+                window.AppStore.categoryLevelNames[lvl] = input.value.trim() || `Cat ${lvl}`;
+            }
+        });
+        persistCategoryHierarchy();
+        syncCategoryControls();
+        renderTableHeaders();
+        renderMasterList();
+        renderCategorySettingsTab();
+        showToast('Category column names saved & updated across table!');
+    };
+
+    window.addCategoryLevelColumn = function() {
+        const nextLevel = getMaxCategoryDepth() + 1;
+        window.AppStore.categoryLevelNames[nextLevel] = `Cat ${nextLevel}`;
+        const colId = `cat_level_${nextLevel}`;
+        if (!activeColumnIds.includes(colId)) {
+            activeColumnIds.push(colId);
+            localStorage.setItem('rms_product_columns', JSON.stringify(activeColumnIds));
+        }
+        persistCategoryHierarchy();
+        syncCategoryControls();
+        renderTableHeaders();
+        renderMasterList();
+        renderCategorySettingsTab();
+        showToast(`Added new column "${getCategoryLevelLabel(nextLevel)}" (Level ${nextLevel})`);
+    };
+
+    window.resetCategoryLevelNames = function() {
+        // Prune empty unused trailing levels down to actual deepest category node or product path (min 2)
+        let actualMax = 2;
+        if (window.AppStore) {
+            if (Array.isArray(window.AppStore.categoryNodes)) {
+                window.AppStore.categoryNodes.forEach(n => {
+                    if (n.level && n.level > actualMax) actualMax = n.level;
+                });
+            }
+            if (Array.isArray(window.AppStore.products)) {
+                window.AppStore.products.forEach(p => {
+                    const path = getProductCategoryPath(p);
+                    if (path && path.length > actualMax) actualMax = path.length;
+                });
+            }
+        }
+        window.AppStore.categoryLevelNames = {};
+        for (let lvl = 1; lvl <= actualMax; lvl++) {
+            window.AppStore.categoryLevelNames[lvl] = `Cat ${lvl}`;
+        }
+        // Clean up any orphan cat_level_N from activeColumnIds
+        if (Array.isArray(activeColumnIds)) {
+            activeColumnIds = activeColumnIds.filter(id => {
+                if (id.startsWith('cat_level_')) {
+                    const num = Number(id.replace('cat_level_', ''));
+                    return num <= actualMax;
+                }
+                return true;
+            });
+            localStorage.setItem('rms_product_columns', JSON.stringify(activeColumnIds));
+        }
+        persistCategoryHierarchy();
+        syncCategoryControls();
+        renderTableHeaders();
+        renderMasterList();
+        renderCategorySettingsTab();
+        showToast('Category columns reset to default Cat 1, Cat 2...');
     };
 
     searchInput.addEventListener('input', function(e) {
@@ -1406,20 +2350,27 @@
     // SLIDE-OUT DETAIL DRAWER: PAGINATION & SUBTABLE CONTROLLERS
     // =========================================================================
     let currentDrawerBranches = [];
+    let currentDrawerLocations = [];
     let currentDrawerLedgers = [];
 
+    const locationSubtableBody = document.getElementById('locationStockSubtableBody');
+
     function renderBranchSubtablePage() {
-        const page = window.AppStore.branchPage;
-        const size = window.AppStore.branchPageSize;
+        const page = window.AppStore.branchPage || 1;
+        const size = window.AppStore.branchPageSize || 4;
         const total = currentDrawerBranches.length;
         const totalPages = Math.max(1, Math.ceil(total / size));
         const start = (page - 1) * size;
         const pageItems = currentDrawerBranches.slice(start, start + size);
 
-        document.getElementById('branchStockPageInfo').textContent = `Page ${page} of ${totalPages} (${total} total)`;
-        document.getElementById('btnBranchPrev').disabled = (page <= 1);
-        document.getElementById('btnBranchNext').disabled = (page >= totalPages);
+        const pageInfoEl = document.getElementById('branchStockPageInfo');
+        const prevBtn = document.getElementById('btnBranchPrev');
+        const nextBtn = document.getElementById('btnBranchNext');
+        if (pageInfoEl) pageInfoEl.textContent = `Page ${page} of ${totalPages} (${total} total)`;
+        if (prevBtn) prevBtn.disabled = (page <= 1);
+        if (nextBtn) nextBtn.disabled = (page >= totalPages);
 
+        if (!branchSubtableBody) return;
         if (pageItems.length > 0) {
             branchSubtableBody.innerHTML = pageItems.map(b => {
                 const isLow = b.onHand <= b.reorder;
@@ -1442,43 +2393,128 @@
     }
 
     window.navigateBranchPage = function(delta) {
-        const totalPages = Math.max(1, Math.ceil(currentDrawerBranches.length / window.AppStore.branchPageSize));
-        const newPage = window.AppStore.branchPage + delta;
+        const totalPages = Math.max(1, Math.ceil(currentDrawerBranches.length / (window.AppStore.branchPageSize || 4)));
+        const newPage = (window.AppStore.branchPage || 1) + delta;
         if (newPage >= 1 && newPage <= totalPages) {
             window.AppStore.branchPage = newPage;
             renderBranchSubtablePage();
         }
     };
 
+    function renderLocationSubtablePage() {
+        const page = window.AppStore.locationPage || 1;
+        const size = window.AppStore.locationPageSize || 4;
+        const total = currentDrawerLocations.length;
+        const totalPages = Math.max(1, Math.ceil(total / size));
+        const start = (page - 1) * size;
+        const pageItems = currentDrawerLocations.slice(start, start + size);
+
+        const pageInfoEl = document.getElementById('locationStockPageInfo');
+        const prevBtn = document.getElementById('btnLocationPrev');
+        const nextBtn = document.getElementById('btnLocationNext');
+        if (pageInfoEl) pageInfoEl.textContent = `Page ${page} of ${totalPages} (${total} total)`;
+        if (prevBtn) prevBtn.disabled = (page <= 1);
+        if (nextBtn) nextBtn.disabled = (page >= totalPages);
+
+        if (!locationSubtableBody) return;
+        if (pageItems.length > 0) {
+            locationSubtableBody.innerHTML = pageItems.map(loc => `
+                <tr>
+                    <td><strong>${loc.facility}</strong></td>
+                    <td>
+                        <span style="font-weight: 600; color: var(--inv-text-strong);">${loc.zone}</span>
+                    </td>
+                    <td>${loc.rack}</td>
+                    <td>
+                        <span class="inv-bin-chip" title="Physical Storage Barcode">
+                            <i class="ph ph-barcode"></i>
+                            <span>${loc.bin}</span>
+                        </span>
+                    </td>
+                    <td>
+                        <span style="font-size: 0.70rem; font-weight: 600; padding: 2px 7px; border-radius: 4px; background: #f1f5f9; color: #475569;">
+                            ${loc.behavior || 'Storage'}
+                        </span>
+                    </td>
+                    <td class="td-right" style="font-weight: 700; color: var(--inv-text-strong);">${loc.onHand}</td>
+                    <td class="td-right" style="color: var(--inv-text-muted);">${loc.reserved || 0}</td>
+                    <td class="td-right" style="font-weight: 700; color: var(--inv-success);">${loc.available || (loc.onHand - (loc.reserved || 0))}</td>
+                </tr>
+            `).join('');
+        } else {
+            locationSubtableBody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding: 16px; color: var(--inv-text-muted);">No specific storage zones or bin locations allocated.</td></tr>`;
+        }
+    }
+
+    window.navigateLocationPage = function(delta) {
+        const totalPages = Math.max(1, Math.ceil(currentDrawerLocations.length / (window.AppStore.locationPageSize || 4)));
+        const newPage = (window.AppStore.locationPage || 1) + delta;
+        if (newPage >= 1 && newPage <= totalPages) {
+            window.AppStore.locationPage = newPage;
+            renderLocationSubtablePage();
+        }
+    };
+
     function renderLedgerSubtablePage() {
-        const page = window.AppStore.ledgerPage;
-        const size = window.AppStore.ledgerPageSize;
+        const page = window.AppStore.ledgerPage || 1;
+        const size = window.AppStore.ledgerPageSize || 4;
         const total = currentDrawerLedgers.length;
         const totalPages = Math.max(1, Math.ceil(total / size));
         const start = (page - 1) * size;
         const pageItems = currentDrawerLedgers.slice(start, start + size);
 
-        document.getElementById('ledgerLogPageInfo').textContent = `Page ${page} of ${totalPages} (${total} total)`;
-        document.getElementById('btnLedgerPrev').disabled = (page <= 1);
-        document.getElementById('btnLedgerNext').disabled = (page >= totalPages);
+        const pageInfoEl = document.getElementById('ledgerLogPageInfo');
+        const prevBtn = document.getElementById('btnLedgerPrev');
+        const nextBtn = document.getElementById('btnLedgerNext');
+        if (pageInfoEl) pageInfoEl.textContent = `Page ${page} of ${totalPages} (${total} total)`;
+        if (prevBtn) prevBtn.disabled = (page <= 1);
+        if (nextBtn) nextBtn.disabled = (page >= totalPages);
 
+        if (!ledgerSubtableBody) return;
         if (pageItems.length > 0) {
-            ledgerSubtableBody.innerHTML = pageItems.map(l => `
-                <tr>
-                    <td><strong>${l.ref}</strong></td>
-                    <td>${l.type}</td>
-                    <td class="td-right" style="font-weight: 600; color: ${String(l.qty).startsWith('+') ? 'var(--inv-success)' : 'var(--inv-danger)'};">${l.qty}</td>
-                    <td class="td-right" style="font-weight: 700;">${l.balance}</td>
-                </tr>
-            `).join('');
+            ledgerSubtableBody.innerHTML = pageItems.map(l => {
+                const isPositive = String(l.qty).startsWith('+');
+                let badgeClass = 'adj';
+                const typeLower = (l.type || '').toLowerCase();
+                if (typeLower.includes('stock in') || typeLower.includes('grn') || typeLower.includes('receive')) badgeClass = 'in';
+                else if (typeLower.includes('transfer') || typeLower.includes('trf')) badgeClass = 'trf';
+                else if (typeLower.includes('sale') || typeLower.includes('pos')) badgeClass = 'pos';
+                else if (typeLower.includes('bom') || typeLower.includes('recipe') || typeLower.includes('production')) badgeClass = 'bom';
+
+                return `
+                    <tr>
+                        <td>
+                            <strong>${l.ref}</strong>
+                            <div style="font-size: 0.69rem; color: var(--inv-text-muted);">${l.date || 'Today'}</div>
+                        </td>
+                        <td>
+                            <span class="inv-ledger-type-badge ${badgeClass}">${l.type}</span>
+                        </td>
+                        <td>
+                            <span class="inv-ledger-route-pill src" title="Origin Source: ${l.source || 'Vendor'}">
+                                <i class="ph ph-arrow-up-right"></i>
+                                <span>${l.source || 'Vendor Supply'}</span>
+                            </span>
+                        </td>
+                        <td>
+                            <span class="inv-ledger-route-pill dst" title="Target Destination: ${l.destination || 'Storage'}">
+                                <i class="ph ph-arrow-down-right"></i>
+                                <span>${l.destination || 'Main Warehouse'}</span>
+                            </span>
+                        </td>
+                        <td class="td-right" style="font-weight: 700; color: ${isPositive ? 'var(--inv-success)' : 'var(--inv-danger)'};">${l.qty}</td>
+                        <td class="td-right" style="font-weight: 800; color: var(--inv-text-strong);">${l.balance}</td>
+                    </tr>
+                `;
+            }).join('');
         } else {
-            ledgerSubtableBody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 16px; color: var(--inv-text-muted);">No recent ledger activity recorded.</td></tr>`;
+            ledgerSubtableBody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 16px; color: var(--inv-text-muted);">No recent ledger activity recorded.</td></tr>`;
         }
     }
 
     window.navigateLedgerPage = function(delta) {
-        const totalPages = Math.max(1, Math.ceil(currentDrawerLedgers.length / window.AppStore.ledgerPageSize));
-        const newPage = window.AppStore.ledgerPage + delta;
+        const totalPages = Math.max(1, Math.ceil(currentDrawerLedgers.length / (window.AppStore.ledgerPageSize || 4)));
+        const newPage = (window.AppStore.ledgerPage || 1) + delta;
         if (newPage >= 1 && newPage <= totalPages) {
             window.AppStore.ledgerPage = newPage;
             renderLedgerSubtablePage();
@@ -1509,7 +2545,10 @@
         }
 
         const months = getMonthLabels3Mos();
-        document.getElementById('chartMonthsBadge').textContent = `${months[0]} - ${months[2]}`;
+        const badgeEl = document.getElementById('chartMonthsBadge');
+        if (badgeEl) badgeEl.textContent = `${months[0]} - ${months[2]}`;
+
+        if (typeof Chart === 'undefined') return;
 
         // Compute realistic monthly trend points for past 3 months
         const cVal = Number(baseCost) || 50;
@@ -1638,35 +2677,545 @@
     }
 
     // =========================================================================
-    // SLIDE-OUT DETAIL DRAWER LOGIC
+    // TOP-LEVEL WORKSPACE TABS & INLINE PRODUCT DETAILS TAB LOGIC
     // =========================================================================
+    window.syncDetailStatusPill = function(isActive) {
+        const pill = document.getElementById('detailHeaderStatusPill');
+        const text = document.getElementById('detailHeaderStatusText');
+        if (!pill || !text) return;
+        pill.className = `inv-status-pill ${isActive ? 'active' : 'inactive'}`;
+        text.textContent = isActive ? 'Active' : 'Inactive';
+    };
+
+    window.switchMasterWorkspaceTab = function(workspaceKey, skipDefaultHydration) {
+        window.AppStore.activeWorkspaceTab = workspaceKey;
+
+        document.querySelectorAll('#itemMasterWorkspaceTabs .rfq-tab-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.getAttribute('data-workspace') === workspaceKey);
+        });
+
+        const paneCatalog = document.getElementById('workspace-catalog');
+        const paneDetails = document.getElementById('workspace-details');
+        const paneCategories = document.getElementById('workspace-categories');
+
+        if (paneCatalog) paneCatalog.classList.toggle('active', workspaceKey === 'catalog');
+        if (paneDetails) paneDetails.classList.toggle('active', workspaceKey === 'details');
+        if (paneCategories) paneCategories.classList.toggle('active', workspaceKey === 'categories');
+
+        if (workspaceKey === 'details' && !skipDefaultHydration && (!formSku || !formSku.value)) {
+            const firstProd = (window.AppStore.products || [])[0];
+            if (firstProd) {
+                window.openProductDrawer(firstProd.id);
+            } else {
+                window.openProductDrawer('new');
+            }
+            return;
+        }
+
+        if (workspaceKey === 'categories') {
+            renderCategorySettingsTab();
+        }
+    };
+
+    // =========================================================================
+    // PRODUCT IMAGE UPLOAD, TRACKING METHOD (LOTS/QTY/SERIAL) & VARIANTS ENGINE
+    // =========================================================================
+    let currentDrawerVariants = [];
+
+    function renderProductImageState(dataUrl) {
+        const hiddenInput = document.getElementById('formProductImageData');
+        const previewImg = document.getElementById('productImagePreview');
+        const placeholder = document.getElementById('productImagePlaceholder');
+        const removeBtn = document.getElementById('btnRemoveProductImage');
+        const fileInput = document.getElementById('formProductImageInput');
+
+        const cleanUrl = dataUrl || '';
+        if (hiddenInput) hiddenInput.value = cleanUrl;
+        if (! cleanUrl && fileInput) fileInput.value = '';
+
+        if (cleanUrl) {
+            if (previewImg) {
+                previewImg.src = cleanUrl;
+                previewImg.style.display = 'block';
+            }
+            if (placeholder) placeholder.style.display = 'none';
+            if (removeBtn) removeBtn.style.display = 'inline-flex';
+        } else {
+            if (previewImg) {
+                previewImg.src = '';
+                previewImg.style.display = 'none';
+            }
+            if (placeholder) placeholder.style.display = 'flex';
+            if (removeBtn) removeBtn.style.display = 'none';
+        }
+    }
+
+    window.handleProductImageUpload = function(event) {
+        const file = event && event.target && event.target.files ? event.target.files[0] : null;
+        if (!file) return;
+        if (!file.type.startsWith('image/')) {
+            showToast('Please select a valid image file (PNG, JPG, WEBP).');
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+            renderProductImageState(evt.target.result);
+            showToast('Product image uploaded and staged.');
+        };
+        reader.readAsDataURL(file);
+    };
+
+    window.clearProductImage = function(event) {
+        if (event) event.stopPropagation();
+        renderProductImageState('');
+        showToast('Product image removed.');
+    };
+
+    window.selectTrackingByMethod = function(mode) {
+        const validMode = ['lots', 'quantity', 'serial'].includes(mode) ? mode : 'lots';
+        const hiddenInput = document.getElementById('formTrackingBy');
+        if (hiddenInput) hiddenInput.value = validMode;
+
+        document.querySelectorAll('#trackByOptionsGroup .inv-track-mode-card').forEach(btn => {
+            btn.classList.toggle('active', btn.getAttribute('data-track-mode') === validMode);
+        });
+
+        const invBadge = document.getElementById('inventoryTabTrackingBadge');
+        const footerHint = document.getElementById('detailFooterTrackingHint');
+        const isTrackChecked = formTrackStock ? formTrackStock.checked : true;
+
+        const labelMap = {
+            lots: 'By Lots (Shows Lot & Expiry in Stock-In)',
+            quantity: 'By Quantity (Unit count only)',
+            serial: 'By Serial Number (Unique unit ID)'
+        };
+        if (invBadge) {
+            invBadge.textContent = isTrackChecked ? `Tracked: ${labelMap[validMode]}` : 'Untracked Item';
+        }
+        if (footerHint) {
+            footerHint.textContent = isTrackChecked
+                ? `Inventory Tracking: ${labelMap[validMode]}`
+                : 'Non-physical / untracked item';
+        }
+    };
+
+    window.handleTrackStockToggle = function(checked) {
+        const panel = document.getElementById('trackByOptionsGroup');
+        if (panel) {
+            panel.classList.toggle('is-disabled', !checked);
+        }
+        const currentMode = (document.getElementById('formTrackingBy') || {}).value || 'lots';
+        window.selectTrackingByMethod(currentMode);
+    };
+
+    window.selectProductItemType = function(type) {
+        const validType = ['goods', 'service', 'both'].includes(type) ? type : 'goods';
+        const hiddenInput = document.getElementById('formItemType');
+        if (hiddenInput) hiddenInput.value = validType;
+
+        document.querySelectorAll('.inv-item-type-card').forEach(btn => {
+            btn.classList.toggle('active', btn.getAttribute('data-item-type') === validType);
+        });
+
+        const badge = document.getElementById('itemTypeBadge');
+        const typeLabels = {
+            goods: 'Physical Goods',
+            service: 'Service / Labor',
+            both: 'Both (Hybrid Bundle)'
+        };
+        if (badge) badge.textContent = typeLabels[validType] || 'Physical Goods';
+
+        if (validType === 'service') {
+            const trackStockCheckbox = document.getElementById('formTrackStock');
+            if (trackStockCheckbox && trackStockCheckbox.checked) {
+                showToast('Service item selected: physical warehouse receiving is bypassed.');
+            }
+        }
+    };
+
+    window.openReorderRulesModal = function() {
+        const modal = document.getElementById('reorderRulesModal');
+        if (!modal) return;
+        const sku = (formSku && formSku.value) ? formSku.value.trim() : 'PRD';
+        const name = (formName && formName.value) ? formName.value.trim() : 'Product';
+        const sub = document.getElementById('reorderModalSubtitle');
+        if (sub) sub.textContent = `Item: ${sku} • ${name}`;
+
+        const reorderVal = document.getElementById('formReorderPoint')?.value || 15;
+        const targetVal = document.getElementById('formTargetStock')?.value || 50;
+        const minStockInput = document.getElementById('ruleMinStock');
+        const maxStockInput = document.getElementById('ruleMaxStock');
+        if (minStockInput) minStockInput.value = reorderVal;
+        if (maxStockInput) maxStockInput.value = targetVal;
+
+        modal.style.display = 'flex';
+    };
+
+    window.closeReorderRulesModal = function() {
+        const modal = document.getElementById('reorderRulesModal');
+        if (modal) modal.style.display = 'none';
+    };
+
+    window.selectReorderStrategy = function(strat) {
+        ['btnRuleMinMax', 'btnRuleCommissary', 'btnRuleJit'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.classList.remove('active');
+        });
+        if (strat === 'min_max') document.getElementById('btnRuleMinMax')?.classList.add('active');
+        else if (strat === 'commissary_push') document.getElementById('btnRuleCommissary')?.classList.add('active');
+        else if (strat === 'jit_order') document.getElementById('btnRuleJit')?.classList.add('active');
+    };
+
+    window.saveReorderRulesModal = function() {
+        const minVal = document.getElementById('ruleMinStock')?.value || 15;
+        const maxVal = document.getElementById('ruleMaxStock')?.value || 50;
+        if (formReorderPoint) formReorderPoint.value = minVal;
+        if (formTargetStock) formTargetStock.value = maxVal;
+
+        const ruleDisp = document.getElementById('ruleDisplayReorderPoint');
+        if (ruleDisp) ruleDisp.textContent = `${minVal} units`;
+
+        window.closeReorderRulesModal();
+        showToast('Replenishment rule policy updated and saved to item.');
+    };
+
+    function getMockLocationsForProduct(product) {
+        const cat = (product && product.category) || 'General';
+        const isCold = cat.toLowerCase().includes('bev') || cat.toLowerCase().includes('dairy') || cat.toLowerCase().includes('meat') || cat.toLowerCase().includes('syrup');
+        const zoneName = isCold ? 'Zone A: Cold Storage / Chiller' : 'Zone B: Dry Goods & Grains';
+        const zoneCode = isCold ? 'ZA' : 'ZB';
+
+        return [
+            {
+                facility: 'Power Mac Center - Main HQ',
+                zone: zoneName,
+                rack: 'Aisle 1 • Rack 02',
+                bin: `WH-MAIN-${zoneCode}-R02-B01`,
+                behavior: 'Storage',
+                onHand: 24,
+                reserved: 2,
+                available: 22
+            },
+            {
+                facility: 'Power Mac Center - Main HQ',
+                zone: 'Zone S: Inbound Staging & QA',
+                rack: 'QA Bench 01',
+                bin: 'WH-MAIN-ZS-QA-B01',
+                behavior: 'Staging',
+                onHand: 6,
+                reserved: 0,
+                available: 6
+            },
+            {
+                facility: 'Makati Greenbelt Kiosk',
+                zone: 'Front Bar / Station B',
+                rack: 'Under-counter Shelf 1',
+                bin: 'WH-MKT-BAR-S01-B03',
+                behavior: 'Storage',
+                onHand: 18,
+                reserved: 1,
+                available: 17
+            },
+            {
+                facility: 'BGC High Street Branch',
+                zone: 'Pantry Stockroom',
+                rack: 'Shelving Unit 04',
+                bin: 'WH-BGC-PN-S04-B02',
+                behavior: 'Storage',
+                onHand: 35,
+                reserved: 4,
+                available: 31
+            }
+        ];
+    }
+
+    function getMockLedgerForProduct(product) {
+        const supplierName = (product && product.supplier) ? product.supplier : 'Accredited Vendor Supply';
+        return [
+            {
+                date: 'Sep 21, 2026',
+                ref: 'PO-2026-0041',
+                type: 'Stock In (GRN)',
+                source: supplierName,
+                destination: 'Central Commissary • Dock Receiving',
+                qty: '+50',
+                balance: 95
+            },
+            {
+                date: 'Sep 20, 2026',
+                ref: 'TRF-2026-0018',
+                type: 'Internal Transfer',
+                source: 'Central Commissary (WH-MAIN)',
+                destination: 'Makati Greenbelt Kiosk (WH-MKT)',
+                qty: '-12',
+                balance: 45
+            },
+            {
+                date: 'Sep 19, 2026',
+                ref: 'POS-2026-9182',
+                type: 'POS Sale (Deduction)',
+                source: 'Makati Kiosk • Front Bar',
+                destination: 'Customer Order #9182 (Walk-in)',
+                qty: '-2',
+                balance: 57
+            },
+            {
+                date: 'Sep 18, 2026',
+                ref: 'BOM-2026-005',
+                type: 'Recipe Batch Production',
+                source: 'Central Commissary Cold Storage',
+                destination: 'Kitchen Prep Batch Kettle #2',
+                qty: '-8',
+                balance: 59
+            },
+            {
+                date: 'Sep 15, 2026',
+                ref: 'ADJ-2026-002',
+                type: 'Cycle Count Audit',
+                source: 'Physical Warehouse Audit',
+                destination: 'Inventory Variance Reconciliation',
+                qty: '+2',
+                balance: 67
+            }
+        ];
+    }
+
+    window.renderProductVariantsEditor = function() {
+        const container = document.getElementById('productVariantsListContainer');
+        const badge = document.getElementById('productVariantsCountBadge');
+        const tabBadge = document.getElementById('tabVariantsCountBadge');
+        const vKpiCount = document.getElementById('variantKpiCount');
+        const vKpiPrice = document.getElementById('variantKpiPriceRange');
+        const vKpiCost = document.getElementById('variantKpiCostRange');
+        const vKpiMargin = document.getElementById('variantKpiAvgMargin');
+
+        if (badge) {
+            badge.textContent = `${currentDrawerVariants.length} Variant${currentDrawerVariants.length === 1 ? '' : 's'}`;
+        }
+        if (tabBadge) {
+            tabBadge.textContent = String(currentDrawerVariants.length);
+        }
+
+        if (currentDrawerVariants.length > 0) {
+            const prices = currentDrawerVariants.map(v => Number(v.sellingPrice) || 0);
+            const costs = currentDrawerVariants.map(v => Number(v.costPrice) || 0);
+            const minP = Math.min(...prices);
+            const maxP = Math.max(...prices);
+            const minC = Math.min(...costs);
+            const maxC = Math.max(...costs);
+
+            const totalSell = prices.reduce((a, b) => a + b, 0);
+            const totalCost = costs.reduce((a, b) => a + b, 0);
+            const avgMargin = totalSell > 0 ? (((totalSell - totalCost) / totalSell) * 100).toFixed(1) : '0.0';
+
+            if (vKpiCount) vKpiCount.textContent = `${currentDrawerVariants.length} Option${currentDrawerVariants.length === 1 ? '' : 's'}`;
+            if (vKpiPrice) vKpiPrice.textContent = minP === maxP ? formatPHP(minP) : `${formatPHP(minP)} – ${formatPHP(maxP)}`;
+            if (vKpiCost) vKpiCost.textContent = minC === maxC ? formatPHP(minC) : `${formatPHP(minC)} – ${formatPHP(maxC)}`;
+            if (vKpiMargin) vKpiMargin.textContent = `${avgMargin}%`;
+        } else {
+            const baseC = parseFloat(formCostPrice?.value) || 0;
+            const baseS = parseFloat(formSellingPrice?.value) || 0;
+            const singleMargin = baseS > 0 ? (((baseS - baseC) / baseS) * 100).toFixed(1) : '0.0';
+            if (vKpiCount) vKpiCount.textContent = '0 Options (Single)';
+            if (vKpiPrice) vKpiPrice.textContent = formatPHP(baseS);
+            if (vKpiCost) vKpiCost.textContent = formatPHP(baseC);
+            if (vKpiMargin) vKpiMargin.textContent = `${singleMargin}%`;
+        }
+
+        if (!container) return;
+
+        if (currentDrawerVariants.length === 0) {
+            container.innerHTML = `
+                <div class="inv-variants-empty">
+                    <i class="ph ph-stack" style="font-size: 26px; color: var(--inv-primary-dark);"></i>
+                    <div style="font-weight: 700; color: var(--inv-text-strong); font-size: 0.88rem;">No Product Variants Configured Yet</div>
+                    <div style="font-size: 0.76rem; max-width: 520px; line-height: 1.4;">
+                        Add product variations like different beverage sizes (12oz, 16oz, 22oz), temperatures (Hot, Iced), or custom bundles with individual selling prices, SKUs, and margin tracking.
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px; margin-top: 6px;">
+                        <button type="button" class="inv-btn-quick-create" onclick="addVariantPreset('size')">
+                            <i class="ph ph-magic-wand"></i> + Quick Add Size Set
+                        </button>
+                        <button type="button" class="inv-action-btn-primary" onclick="addProductVariantRow()" style="padding: 5px 12px; font-size: 0.74rem;">
+                            <i class="ph ph-plus-bold"></i> + Custom Option
+                        </button>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
+        let rowsHtml = currentDrawerVariants.map((v, idx) => {
+            const cost = parseFloat(v.costPrice) || 0;
+            const selling = parseFloat(v.sellingPrice) || 0;
+            const profit = selling - cost;
+            const margin = selling > 0 ? ((profit / selling) * 100).toFixed(1) : '0.0';
+
+            return `
+                <tr>
+                    <td style="width: 130px;">
+                        <input type="text" class="inv-form-input" value="${(v.group || 'Option').replace(/"/g, '&quot;')}"
+                            placeholder="e.g. Size / Flavor"
+                            oninput="updateProductVariantField(${idx}, 'group', this.value)">
+                    </td>
+                    <td>
+                        <input type="text" class="inv-form-input" value="${(v.name || '').replace(/"/g, '&quot;')}"
+                            placeholder="e.g. 16oz Large (Iced)" style="font-weight: 600;"
+                            oninput="updateProductVariantField(${idx}, 'name', this.value)">
+                    </td>
+                    <td style="width: 145px;">
+                        <input type="text" class="inv-form-input" value="${(v.sku || '').replace(/"/g, '&quot;')}"
+                            placeholder="Variant SKU" style="font-family: monospace;"
+                            oninput="updateProductVariantField(${idx}, 'sku', this.value)">
+                    </td>
+                    <td style="width: 125px;">
+                        <input type="number" step="0.01" min="0" class="inv-form-input" value="${cost.toFixed(2)}"
+                            placeholder="0.00" style="text-align: right; font-variant-numeric: tabular-nums;"
+                            onchange="updateProductVariantField(${idx}, 'costPrice', this.value)">
+                    </td>
+                    <td style="width: 135px;">
+                        <input type="number" step="0.01" min="0" class="inv-form-input" value="${selling.toFixed(2)}"
+                            placeholder="0.00" style="text-align: right; font-weight: 700; color: var(--inv-primary-dark); font-variant-numeric: tabular-nums;"
+                            onchange="updateProductVariantField(${idx}, 'sellingPrice', this.value)">
+                    </td>
+                    <td style="width: 105px; text-align: right;">
+                        <span style="font-weight: 700; font-size: 0.74rem; color: ${profit >= 0 ? 'var(--inv-success)' : 'var(--inv-danger)'}; font-variant-numeric: tabular-nums;">
+                            ${margin}%
+                        </span>
+                    </td>
+                    <td style="width: 44px; text-align: center;">
+                        <button type="button" class="inv-group-action-btn is-delete" onclick="removeProductVariantRow(${idx})" title="Remove variant">
+                            <i class="ph ph-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+
+        container.innerHTML = `
+            <div style="overflow-x: auto; border: 1px solid var(--inv-border-subtle); border-radius: 10px;">
+                <table class="inv-variants-table">
+                    <thead>
+                        <tr>
+                            <th>Attribute / Group</th>
+                            <th>Variant Option Name *</th>
+                            <th>Variant SKU</th>
+                            <th style="text-align: right;">Cost (₱)</th>
+                            <th style="text-align: right;">Selling Price (₱) *</th>
+                            <th style="text-align: right;">Margin %</th>
+                            <th style="text-align: center;"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rowsHtml}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    };
+
+    window.addProductVariantRow = function(customVariant) {
+        const baseSku = (formSku && formSku.value ? formSku.value.trim() : 'PRD') || 'PRD';
+        const baseCost = parseFloat(formCostPrice && formCostPrice.value ? formCostPrice.value : 0) || 0;
+        const baseSell = parseFloat(formSellingPrice && formSellingPrice.value ? formSellingPrice.value : 0) || 0;
+        const nextNum = currentDrawerVariants.length + 1;
+
+        currentDrawerVariants.push(customVariant || {
+            id: 'var-' + Date.now() + '-' + nextNum,
+            group: 'Size / Option',
+            name: `Variant ${nextNum}`,
+            sku: `${baseSku}-V${nextNum}`,
+            costPrice: baseCost,
+            sellingPrice: baseSell
+        });
+        window.renderProductVariantsEditor();
+    };
+
+    window.addVariantPreset = function(presetType) {
+        const baseSku = (formSku && formSku.value ? formSku.value.trim() : 'PRD') || 'PRD';
+        const baseCost = parseFloat(formCostPrice && formCostPrice.value ? formCostPrice.value : 45) || 45;
+        const baseSell = parseFloat(formSellingPrice && formSellingPrice.value ? formSellingPrice.value : 120) || 120;
+
+        if (presetType === 'size') {
+            currentDrawerVariants.push(
+                { id: 'var-sz-1-' + Date.now(), group: 'Size', name: '12oz Regular', sku: `${baseSku}-12OZ`, costPrice: baseCost, sellingPrice: baseSell },
+                { id: 'var-sz-2-' + Date.now(), group: 'Size', name: '16oz Large', sku: `${baseSku}-16OZ`, costPrice: +(baseCost * 1.15).toFixed(2), sellingPrice: +(baseSell + 20).toFixed(2) },
+                { id: 'var-sz-3-' + Date.now(), group: 'Size', name: '22oz Venti', sku: `${baseSku}-22OZ`, costPrice: +(baseCost * 1.30).toFixed(2), sellingPrice: +(baseSell + 40).toFixed(2) }
+            );
+        } else if (presetType === 'temp') {
+            currentDrawerVariants.push(
+                { id: 'var-tp-1-' + Date.now(), group: 'Temperature', name: 'Hot Serve', sku: `${baseSku}-HOT`, costPrice: baseCost, sellingPrice: baseSell },
+                { id: 'var-tp-2-' + Date.now(), group: 'Temperature', name: 'Over Ice (Iced)', sku: `${baseSku}-ICED`, costPrice: +(baseCost + 5).toFixed(2), sellingPrice: +(baseSell + 15).toFixed(2) }
+            );
+        } else if (presetType === 'flavor') {
+            currentDrawerVariants.push(
+                { id: 'var-fl-1-' + Date.now(), group: 'Flavor', name: 'French Vanilla Syrup', sku: `${baseSku}-VAN`, costPrice: +(baseCost + 8).toFixed(2), sellingPrice: +(baseSell + 20).toFixed(2) },
+                { id: 'var-fl-2-' + Date.now(), group: 'Flavor', name: 'Salted Caramel Drizzle', sku: `${baseSku}-CAR`, costPrice: +(baseCost + 10).toFixed(2), sellingPrice: +(baseSell + 25).toFixed(2) },
+                { id: 'var-fl-3-' + Date.now(), group: 'Flavor', name: 'Roasted Hazelnut', sku: `${baseSku}-HAZ`, costPrice: +(baseCost + 10).toFixed(2), sellingPrice: +(baseSell + 25).toFixed(2) }
+            );
+        }
+        window.renderProductVariantsEditor();
+        showToast('Variant preset options added — customize prices below.');
+    };
+
+    window.updateProductVariantField = function(idx, field, val) {
+        if (!currentDrawerVariants[idx]) return;
+        if (field === 'costPrice' || field === 'sellingPrice') {
+            currentDrawerVariants[idx][field] = parseFloat(val) || 0;
+        } else {
+            currentDrawerVariants[idx][field] = val;
+        }
+        window.renderProductVariantsEditor();
+    };
+
+    window.removeProductVariantRow = function(idx) {
+        currentDrawerVariants.splice(idx, 1);
+        window.renderProductVariantsEditor();
+    };
+
     window.openProductDrawer = function(idOrMode, defaultCategory) {
         switchPrimaryTab('tab-general');
         switchSubTab('sub-branch');
 
         window.AppStore.branchPage = 1;
+        window.AppStore.locationPage = 1;
         window.AppStore.ledgerPage = 1;
+
+        const errEl = document.getElementById('formSkuError');
+        const badgeEl = document.getElementById('formSkuStatusBadge');
+        if (errEl) errEl.style.display = 'none';
+        if (badgeEl) badgeEl.style.display = 'none';
+        if (formSku) formSku.classList.remove('inv-input-error');
+
+        const btnSaveTextTop = document.getElementById('btnSaveTextTop');
+        const tabBadgeDetailMode = document.getElementById('tabBadgeDetailMode');
+        const tabLabelProductDetails = document.getElementById('tabLabelProductDetails');
 
         if (idOrMode === 'new') {
             window.AppStore.selectedProductId = null;
             drawerTitle.textContent = 'Add New Product';
-            drawerSubtitle.textContent = 'Create master catalog record with barcodes & pricing';
+            drawerSubtitle.textContent = 'Create master catalog record with barcodes, hierarchy & pricing';
             drawerIcon.innerHTML = '<i class="ph ph-plus-circle"></i>';
             btnSaveText.textContent = 'Create Product';
+            if (btnSaveTextTop) btnSaveTextTop.textContent = 'Create Product';
+            if (tabBadgeDetailMode) tabBadgeDetailMode.textContent = 'New Item';
+            if (tabLabelProductDetails) tabLabelProductDetails.textContent = 'New Product';
 
             formId.value = '';
-            formSku.value = 'PRD-' + Math.floor(1000 + Math.random() * 9000);
+            let newSku = 'PRD-' + Math.floor(1000 + Math.random() * 9000);
+            while ((window.AppStore.products || []).some(p => p.sku && p.sku.toLowerCase() === newSku.toLowerCase())) {
+                newSku = 'PRD-' + Math.floor(1000 + Math.random() * 9000);
+            }
+            formSku.value = newSku;
             formBarcode.value = '4800' + Math.floor(100000000 + Math.random() * 900000000);
             formName.value = '';
+            renderProductImageState('');
+            window.selectProductItemType('goods');
             
-            const defCat = defaultCategory || (window.AppStore.categories[0] || 'Beverages');
-            formCategory.value = defCat;
-            syncSubcategoryDropdown(defCat);
-            if (formSubcategorySelect && formSubcategorySelect.options.length > 0) {
-                formSubcategory.value = formSubcategorySelect.options[0].value;
-            } else {
-                formSubcategory.value = 'Standard';
-            }
+            const rootNodes = (window.AppStore.categoryNodes || []).filter(n => !n.parentName || n.level === 1);
+            const defCat = defaultCategory || (rootNodes[0] ? rootNodes[0].name : 'Beverages');
+            currentFormCategoryPath = [defCat];
+            renderProductCategorySelectors(currentFormCategoryPath);
 
             if (window.UomRegistry && window.UomRegistry.isLoaded) {
                 window.UomRegistry.populateSelect(formUnit, 'PCS');
@@ -1682,8 +3231,17 @@
             formHasBom.checked = false;
             formIsActive.checked = true;
             formTrackStock.checked = true;
+            window.selectTrackingByMethod('lots');
+            window.handleTrackStockToggle(true);
+            currentDrawerVariants = [];
+            window.renderProductVariantsEditor();
+
             formReorderPoint.value = 15;
             formTargetStock.value = 50;
+            const ruleDisp = document.getElementById('ruleDisplayReorderPoint');
+            if (ruleDisp) ruleDisp.textContent = '15 units';
+
+            formCostPrice.value = '45.00';
             formSellingPrice.value = '';
             formTaxRate.value = '12% VAT';
             formSupplier.value = '';
@@ -1692,9 +3250,11 @@
             currentDrawerBranches = [
                 { name: 'Power Mac Center - Main HQ', onHand: 0, reserved: 0, reorder: 15 }
             ];
+            currentDrawerLocations = getMockLocationsForProduct(null);
             currentDrawerLedgers = [];
 
             renderBranchSubtablePage();
+            renderLocationSubtablePage();
             renderLedgerSubtablePage();
             renderSupplierPriceSection(null, true);
             renderPriceHistoryChart(parseFloat(formCostPrice.value) || 45, 120);
@@ -1703,31 +3263,25 @@
             const product = window.AppStore.products.find(p => p.id === Number(idOrMode));
             if (!product) return;
 
+            const prodPath = getProductCategoryPath(product);
             window.AppStore.selectedProductId = product.id;
             drawerTitle.textContent = product.name;
-            drawerSubtitle.textContent = `SKU: ${product.sku} • Category: ${product.category}`;
+            drawerSubtitle.textContent = `SKU: ${product.sku} • ${prodPath.join(' › ')}`;
             drawerIcon.innerHTML = '<i class="ph ph-tag"></i>';
             btnSaveText.textContent = 'Save Changes';
+            if (btnSaveTextTop) btnSaveTextTop.textContent = 'Save Changes';
+            if (tabBadgeDetailMode) tabBadgeDetailMode.textContent = product.sku;
+            if (tabLabelProductDetails) tabLabelProductDetails.textContent = 'Product Details';
 
             formId.value = product.id;
             formSku.value = product.sku;
             formBarcode.value = product.barcode || '';
             formName.value = product.name;
-            formCategory.value = product.category;
+            renderProductImageState(product.imageUrl || '');
+            window.selectProductItemType(product.itemType || 'goods');
             
-            syncSubcategoryDropdown(product.category);
-            formSubcategory.value = product.subcategory || 'Standard';
-            if (formSubcategorySelect) {
-                const hasOpt = Array.from(formSubcategorySelect.options).some(o => o.value === product.subcategory);
-                if (hasOpt) {
-                    formSubcategorySelect.value = product.subcategory;
-                    formSubcategory.style.display = 'none';
-                    formSubcategorySelect.style.display = 'block';
-                } else {
-                    formSubcategorySelect.style.display = 'none';
-                    formSubcategory.style.display = 'block';
-                }
-            }
+            currentFormCategoryPath = [...prodPath];
+            renderProductCategorySelectors(currentFormCategoryPath);
 
             if (window.UomRegistry && window.UomRegistry.isLoaded) {
                 window.UomRegistry.populateSelect(formUnit, product.unit);
@@ -1735,7 +3289,6 @@
                 formUnit.value = product.unit;
             }
             formUnit.dispatchEvent(new Event('change'));
-            // Extract numeric value from pack size if string had units
             const numericPackSize = parseFloat(String(product.packSize || '1').replace(/[^0-9.]/g, '')) || 1;
             formPackSize.value = numericPackSize;
 
@@ -1746,8 +3299,18 @@
             formHasBom.checked = product.explodeBomOnSale !== undefined ? product.explodeBomOnSale : (product.hasBom === true);
             formIsActive.checked = product.isActive !== false;
             formTrackStock.checked = product.trackPhysicalStock !== undefined ? product.trackPhysicalStock : (product.trackStock !== false);
+            window.selectTrackingByMethod(product.trackingBy || 'lots');
+            window.handleTrackStockToggle(formTrackStock.checked);
+            currentDrawerVariants = Array.isArray(product.variants)
+                ? product.variants.map(v => Object.assign({}, v))
+                : [];
+            window.renderProductVariantsEditor();
+
             formReorderPoint.value = product.reorderPoint || 10;
             formTargetStock.value = product.targetStock || 50;
+            const ruleDisp = document.getElementById('ruleDisplayReorderPoint');
+            if (ruleDisp) ruleDisp.textContent = `${formReorderPoint.value} units`;
+
             formCostPrice.value = Number(product.costPrice).toFixed(2);
             formSellingPrice.value = Number(product.sellingPrice).toFixed(2);
             formTaxRate.value = product.taxRate || '12% VAT';
@@ -1757,37 +3320,41 @@
             currentDrawerBranches = product.branches || [
                 { name: 'Power Mac Center - Main HQ', onHand: 24, reserved: 0, reorder: product.reorderPoint || 15 }
             ];
-            currentDrawerLedgers = product.ledger || [
-                { ref: 'PO-2026-0041', type: 'Stock In', qty: '+50', balance: 95 }
-            ];
+            currentDrawerLocations = product.locations || getMockLocationsForProduct(product);
+            currentDrawerLedgers = (product.ledger && product.ledger[0]?.source) ? product.ledger : getMockLedgerForProduct(product);
 
             renderBranchSubtablePage();
+            renderLocationSubtablePage();
             renderLedgerSubtablePage();
             renderSupplierPriceSection(product, false);
             renderPriceHistoryChart(product.costPrice, product.sellingPrice);
         }
 
-        drawerBackdrop.classList.add('is-open');
-        drawerContainer.classList.add('is-open');
+        // Switch to the inline Product Details workspace tab instead of opening a slide-out popup drawer
+        window.syncDetailStatusPill(formIsActive ? formIsActive.checked : true);
+        window.switchMasterWorkspaceTab('details', true);
 
         setTimeout(() => {
-            formName.focus();
-            formName.select();
-        }, 180);
+            if (formName) {
+                formName.focus();
+                formName.select();
+            }
+        }, 120);
 
         renderMasterList();
     };
 
     window.closeProductDrawer = function() {
-        drawerBackdrop.classList.remove('is-open');
-        drawerContainer.classList.remove('is-open');
         window.AppStore.selectedProductId = null;
         if (window.AppStore.activePriceChart) {
             window.AppStore.activePriceChart.destroy();
             window.AppStore.activePriceChart = null;
         }
+        window.switchMasterWorkspaceTab('catalog', true);
         renderMasterList();
-        setTimeout(() => searchInput.focus(), 150);
+        setTimeout(() => {
+            if (searchInput) searchInput.focus();
+        }, 120);
     };
 
     function switchPrimaryTab(tabId) {
@@ -1996,8 +3563,10 @@
         });
 
         const branchPagination = document.getElementById('branchStockPagination');
+        const locationPagination = document.getElementById('locationStockPagination');
         const ledgerPagination = document.getElementById('ledgerLogPagination');
         if (branchPagination) branchPagination.style.display = (subtabId === 'sub-branch') ? 'flex' : 'none';
+        if (locationPagination) locationPagination.style.display = (subtabId === 'sub-locations') ? 'flex' : 'none';
         if (ledgerPagination) ledgerPagination.style.display = (subtabId === 'sub-movements') ? 'flex' : 'none';
     }
 
@@ -2023,13 +3592,125 @@
 
         const allergenArray = formAllergens.value.split(',').map(s => s.trim()).filter(Boolean);
 
+        // Collect selected multi-level category path from cascading selectors
+        const maxDepth = getMaxCategoryDepth();
+        const selectedPath = [];
+        for (let lvl = 1; lvl <= maxDepth; lvl++) {
+            const selEl = document.getElementById(`formCatLevel_${lvl}`);
+            const val = selEl ? selEl.value.trim() : (currentFormCategoryPath[lvl - 1] || '');
+            if (val) {
+                selectedPath.push(val);
+            } else {
+                break;
+            }
+        }
+        if (selectedPath.length === 0) {
+            selectedPath.push(formCategory && formCategory.value ? formCategory.value : 'Uncategorized');
+        }
+
+        const trackingByEl = document.getElementById('formTrackingBy');
+        const imageDataEl = document.getElementById('formProductImageData');
+        const itemTypeEl = document.getElementById('formItemType');
+        const itemType = itemTypeEl ? itemTypeEl.value : 'goods';
+
+        const skuVal = (formSku.value || '').trim();
+        if (!skuVal) {
+            showToast('SKU Code is required.', 'error');
+            switchPrimaryTab('tab-general');
+            formSku.focus();
+            return;
+        }
+
+        const normalizedSku = skuVal.toLowerCase();
+
+        // 1. Strict SKU Uniqueness Check across all other products
+        const duplicateProduct = (window.AppStore.products || []).find(p => 
+            p.id !== newId && 
+            p.sku && 
+            p.sku.trim().toLowerCase() === normalizedSku
+        );
+
+        if (duplicateProduct) {
+            showToast(`SKU "${skuVal}" is already in use by "${duplicateProduct.name}". Each SKU must be unique across all products.`, 'error');
+            switchPrimaryTab('tab-general');
+            formSku.classList.add('inv-input-error');
+            const errEl = document.getElementById('formSkuError');
+            if (errEl) {
+                errEl.style.display = 'flex';
+                const span = errEl.querySelector('span');
+                if (span) span.textContent = `SKU "${skuVal}" is already used by "${duplicateProduct.name}"`;
+            }
+            formSku.focus();
+            return;
+        }
+
+        // 2. Strict SKU Uniqueness Check against all existing variant SKUs in other products
+        const duplicateFromOtherVariant = (window.AppStore.products || []).find(p => 
+            p.id !== newId && 
+            Array.isArray(p.variants) && 
+            p.variants.some(v => v.sku && v.sku.trim().toLowerCase() === normalizedSku)
+        );
+        if (duplicateFromOtherVariant) {
+            showToast(`SKU "${skuVal}" is already in use as a variant SKU in "${duplicateFromOtherVariant.name}".`, 'error');
+            switchPrimaryTab('tab-general');
+            formSku.classList.add('inv-input-error');
+            formSku.focus();
+            return;
+        }
+
+        const cleanedVariants = (currentDrawerVariants || [])
+            .filter(v => v && String(v.name || '').trim() !== '')
+            .map((v, i) => ({
+                id: v.id || `var-${newId}-${i + 1}`,
+                group: String(v.group || 'Option').trim(),
+                name: String(v.name || '').trim(),
+                sku: String(v.sku || `${skuVal}-V${i + 1}`).trim(),
+                costPrice: parseFloat(v.costPrice) || 0,
+                sellingPrice: parseFloat(v.sellingPrice) || 0
+            }));
+
+        // 3. Variant SKU Uniqueness Checks
+        for (let i = 0; i < cleanedVariants.length; i++) {
+            const v = cleanedVariants[i];
+            const vSkuNorm = (v.sku || '').trim().toLowerCase();
+            if (!vSkuNorm) continue;
+
+            if (vSkuNorm === normalizedSku) {
+                showToast(`Variant "${v.name}" cannot have the same SKU "${v.sku}" as the parent product.`, 'error');
+                switchPrimaryTab('tab-variants');
+                return;
+            }
+
+            const duplicateVariantSelf = cleanedVariants.find((ov, oidx) => oidx !== i && (ov.sku || '').trim().toLowerCase() === vSkuNorm);
+            if (duplicateVariantSelf) {
+                showToast(`Duplicate SKU "${v.sku}" detected between variants "${v.name}" and "${duplicateVariantSelf.name}". Each variant must have a unique SKU.`, 'error');
+                switchPrimaryTab('tab-variants');
+                return;
+            }
+
+            const duplicateVariantExternal = (window.AppStore.products || []).find(p => 
+                p.id !== newId && (
+                    (p.sku && p.sku.trim().toLowerCase() === vSkuNorm) ||
+                    (Array.isArray(p.variants) && p.variants.some(ov => ov.sku && ov.sku.trim().toLowerCase() === vSkuNorm))
+                )
+            );
+            if (duplicateVariantExternal) {
+                showToast(`Variant SKU "${v.sku}" is already in use by product "${duplicateVariantExternal.name}".`, 'error');
+                switchPrimaryTab('tab-variants');
+                return;
+            }
+        }
+
         const updatedRecord = {
             id: newId,
             sku: formSku.value.trim(),
             barcode: formBarcode.value.trim(),
             name: formName.value.trim(),
-            category: formCategory.value,
-            subcategory: formSubcategory.value.trim() || 'Standard',
+            imageUrl: imageDataEl ? imageDataEl.value : '',
+            itemType: itemType,
+            categoryPath: selectedPath,
+            category: selectedPath[0] || 'Uncategorized',
+            subcategory: selectedPath[1] || 'Standard',
             unit: formUnit.value,
             packSize: formPackSize.value.trim() || '1',
             description: formDescription.value.trim(),
@@ -2038,6 +3719,8 @@
             canBePurchased: formCanBePurchased.checked,
             trackPhysicalStock: formTrackStock.checked,
             trackStock: formTrackStock.checked,
+            trackingBy: trackingByEl ? trackingByEl.value : 'lots',
+            variants: cleanedVariants,
             explodeBomOnSale: formHasBom.checked,
             hasBom: formHasBom.checked,
             isActive: formIsActive.checked,
@@ -2047,6 +3730,7 @@
             sellingPrice: parseFloat(formSellingPrice.value) || 0,
             taxRate: formTaxRate.value,
             supplier: formSupplier.value.trim() || 'Direct Supply',
+            locations: getMockLocationsForProduct(newId, formSku.value.trim()),
             branches: [
                 { name: 'Power Mac Center - Main HQ', onHand: 42, reserved: 2, reorder: Number(formReorderPoint.value) || 20 },
                 { name: 'Makati Greenbelt Kiosk', onHand: 18, reserved: 0, reorder: 15 },
@@ -2067,6 +3751,7 @@
             const initialLog = createAuditEntry(currentUser, 'CREATED', `Initial catalog registration for "${updatedRecord.name}"`, [
                 { field: 'SKU Code', oldValue: '—', newValue: updatedRecord.sku },
                 { field: 'Product Name', oldValue: '—', newValue: updatedRecord.name },
+                { field: 'Offering Type', oldValue: '—', newValue: updatedRecord.itemType === 'service' ? 'Service / Labor' : (updatedRecord.itemType === 'both' ? 'Both (Hybrid Bundle)' : 'Physical Goods') },
                 { field: 'Category', oldValue: '—', newValue: updatedRecord.category },
                 { field: 'Unit of Measure', oldValue: '—', newValue: `${updatedRecord.unit} (${updatedRecord.packSize})` },
                 { field: 'Cost Price', oldValue: '—', newValue: formatPHP(updatedRecord.costPrice) },
@@ -2084,6 +3769,7 @@
             if (index !== -1) {
                 const existingProd = window.AppStore.products[index];
                 updatedRecord.branches = existingProd.branches || updatedRecord.branches;
+                updatedRecord.locations = existingProd.locations || updatedRecord.locations;
                 updatedRecord.ledger = existingProd.ledger || updatedRecord.ledger;
                 updatedRecord.createdAt = existingProd.createdAt || 'Sep 15, 2026 • 09:30 AM';
                 updatedRecord.createdBy = existingProd.createdBy || 'Dorothy Diaz (System Admin)';
@@ -2091,6 +3777,13 @@
                 const changes = [];
                 if (existingProd.name !== updatedRecord.name) changes.push({ field: 'Product Name', oldValue: existingProd.name, newValue: updatedRecord.name });
                 if (existingProd.sku !== updatedRecord.sku) changes.push({ field: 'SKU Code', oldValue: existingProd.sku, newValue: updatedRecord.sku });
+                if ((existingProd.itemType || 'goods') !== updatedRecord.itemType) {
+                    changes.push({
+                        field: 'Offering Type',
+                        oldValue: existingProd.itemType || 'goods',
+                        newValue: updatedRecord.itemType
+                    });
+                }
                 if (existingProd.category !== updatedRecord.category) changes.push({ field: 'Category', oldValue: existingProd.category, newValue: updatedRecord.category });
                 if (existingProd.subcategory !== updatedRecord.subcategory) changes.push({ field: 'Subcategory', oldValue: existingProd.subcategory || 'Standard', newValue: updatedRecord.subcategory || 'Standard' });
                 if (existingProd.unit !== updatedRecord.unit) changes.push({ field: 'Unit of Measure', oldValue: existingProd.unit, newValue: updatedRecord.unit });
@@ -2100,6 +3793,8 @@
                 if (existingProd.canBeSold !== updatedRecord.canBeSold) changes.push({ field: 'Can be Sold', oldValue: existingProd.canBeSold ? 'Yes' : 'No', newValue: updatedRecord.canBeSold ? 'Yes' : 'No' });
                 if (existingProd.canBePurchased !== updatedRecord.canBePurchased) changes.push({ field: 'Can be Purchased', oldValue: existingProd.canBePurchased ? 'Yes' : 'No', newValue: updatedRecord.canBePurchased ? 'Yes' : 'No' });
                 if ((existingProd.trackPhysicalStock ?? existingProd.trackStock) !== updatedRecord.trackPhysicalStock) changes.push({ field: 'Track Physical Stock', oldValue: (existingProd.trackPhysicalStock ?? existingProd.trackStock) ? 'Yes' : 'No', newValue: updatedRecord.trackPhysicalStock ? 'Yes' : 'No' });
+                if ((existingProd.trackingBy || 'lots') !== updatedRecord.trackingBy) changes.push({ field: 'Track Inventory By', oldValue: existingProd.trackingBy || 'lots', newValue: updatedRecord.trackingBy });
+                if ((existingProd.variants || []).length !== (updatedRecord.variants || []).length) changes.push({ field: 'Product Variants', oldValue: `${(existingProd.variants || []).length} variant(s)`, newValue: `${(updatedRecord.variants || []).length} variant(s)` });
                 if ((existingProd.explodeBomOnSale ?? existingProd.hasBom) !== updatedRecord.explodeBomOnSale) changes.push({ field: 'Explode Recipe on Sale', oldValue: (existingProd.explodeBomOnSale ?? existingProd.hasBom) ? 'Yes' : 'No', newValue: updatedRecord.explodeBomOnSale ? 'Yes' : 'No' });
                 if (existingProd.isActive !== updatedRecord.isActive) changes.push({ field: 'Status', oldValue: existingProd.isActive ? 'Active' : 'Inactive', newValue: updatedRecord.isActive ? 'Active' : 'Inactive' });
 
@@ -2464,7 +4159,7 @@
                 closeNewCategoryModal();
                 return;
             }
-            if (drawerContainer.classList.contains('is-open')) {
+            if (window.AppStore.activeWorkspaceTab === 'details') {
                 e.preventDefault();
                 closeProductDrawer();
                 return;
@@ -2479,6 +4174,9 @@
 
         if (e.key === '/' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
             e.preventDefault();
+            if (window.AppStore.activeWorkspaceTab !== 'catalog') {
+                window.switchMasterWorkspaceTab('catalog');
+            }
             searchInput.focus();
             searchInput.select();
         }
@@ -2488,6 +4186,7 @@
     syncCategoryControls();
     renderTableHeaders();
     renderMasterList();
+    renderCategorySettingsTab();
 
 
     // Expose internal functions to window for inline HTML event handlers & ERP cross-module compatibility
@@ -2500,12 +4199,19 @@
         syncSubcategoryDropdown,
         renderTableHeaders,
         renderMasterList,
+        renderCategorySettingsTab,
         renderProductAuditLogs,
         renderCategoryIconGrid,
         renderCategoryColorGrid,
         updateCategoryLivePreview,
         hideCategoryDuplicateWarning,
         hideCategoryAutocomplete,
+        selectProductItemType,
+        openReorderRulesModal,
+        closeReorderRulesModal,
+        selectReorderStrategy,
+        saveReorderRulesModal,
+        navigateLocationPage,
     });
 
 })();

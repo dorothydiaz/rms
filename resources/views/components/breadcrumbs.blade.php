@@ -200,7 +200,8 @@
                     'icon' => 'ph-pizza',
                     'items' => [
                         ['title' => 'Item Master', 'url' => route('inventory.product-categories'), 'icon' => 'ph-folder-simple', 'route' => 'inventory.product-categories'],
-                        ['title' => 'Bill of Materials (BOM)', 'url' => route('inventory.recipe-management'), 'icon' => 'ph-book-open', 'route' => 'inventory.recipe-management']
+                        ['title' => 'Bill of Materials (BOM)', 'url' => route('inventory.recipe-management'), 'icon' => 'ph-book-open', 'route' => 'inventory.recipe-management'],
+                        ['title' => 'Reordering Rules', 'url' => route('inventory.reorder-rules'), 'icon' => 'ph-arrows-clockwise', 'route' => 'inventory.reorder-rules']
                     ]
                 ],
                 'configuration' => [

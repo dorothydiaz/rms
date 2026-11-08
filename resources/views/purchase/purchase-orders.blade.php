@@ -3,7 +3,7 @@
 @section('title', 'Purchase Orders (PO) - Restaurant Management System')
 
 @push('styles')
-    @vite(['resources/css/modules/request-quotations.css', 'resources/css/modules/purchase-orders.css'])
+    @vite('resources/css/modules/purchase-orders.css')
 @endpush
 
 @push('blade-data')

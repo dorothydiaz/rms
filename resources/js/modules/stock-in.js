@@ -136,6 +136,70 @@ const GRN_BUILDER_COLUMNS = [
 const GRN_DEFAULT_STAGE_COLUMNS = GRN_BUILDER_COLUMNS.filter(c => c.default).map(c => c.id);
 let activeGrnBuilderCols = [...GRN_DEFAULT_STAGE_COLUMNS];
 
+// Helper: Sync Item Master products (including trackingBy: 'lots' | 'quantity' | 'serial' & variants) from localStorage
+function getSyncedItemMasterCatalog() {
+    let localProds = [];
+    try {
+        localProds = JSON.parse(localStorage.getItem('rms_inventory_products') || '[]') || [];
+    } catch (e) {
+        localProds = [];
+    }
+    const baseProds = (window.StockInStore && Array.isArray(window.StockInStore.products)) ? window.StockInStore.products : [];
+    const mergedMap = new Map();
+
+    baseProds.forEach(p => {
+        const key = String(p.sku || p.item_code || p.id || '').toUpperCase();
+        if (key) mergedMap.set(key, Object.assign({}, p));
+    });
+
+    localProds.forEach(lp => {
+        const key = String(lp.sku || lp.id || '').toUpperCase();
+        const existing = key ? mergedMap.get(key) : null;
+        mergedMap.set(key || `LOCAL-${lp.id}`, Object.assign({}, existing || {}, {
+            id: lp.id,
+            sku: lp.sku,
+            item_code: lp.sku,
+            barcode: lp.barcode || (existing && existing.barcode) || '',
+            name: lp.name,
+            description: lp.description || '',
+            uom: lp.unit || (existing && existing.uom) || 'PCS',
+            cost_price: Number(lp.costPrice ?? (existing && existing.cost_price) ?? 0),
+            trackingBy: lp.trackingBy || 'lots',
+            trackPhysicalStock: lp.trackPhysicalStock !== undefined ? lp.trackPhysicalStock : (lp.trackStock !== false),
+            variants: Array.isArray(lp.variants) ? lp.variants : []
+        }));
+    });
+
+    return Array.from(mergedMap.values());
+}
+
+window.getItemMasterTrackingMode = function(itemOrProd) {
+    if (!itemOrProd) return 'lots';
+    const skuKey = String(itemOrProd.sku || itemOrProd.item_code || '').trim().toUpperCase();
+    const nameKey = String(itemOrProd.name || itemOrProd.item_name || '').trim().toUpperCase();
+
+    const catalog = getSyncedItemMasterCatalog();
+    const matched = catalog.find(p =>
+        (skuKey && String(p.sku || p.item_code || '').trim().toUpperCase() === skuKey) ||
+        (nameKey && String(p.name || '').trim().toUpperCase() === nameKey)
+    );
+
+    if (matched) {
+        if (matched.trackPhysicalStock === false) return 'none';
+        return matched.trackingBy || matched.tracking_by || 'lots';
+    }
+    if (itemOrProd.trackingBy || itemOrProd.tracking_by) {
+        return itemOrProd.trackingBy || itemOrProd.tracking_by;
+    }
+    // Check heuristic for packaging/disposables if not explicitly in localStorage yet
+    if (skuKey.startsWith('PKG-')) return 'quantity';
+    return 'lots';
+};
+
+window.isLotTrackingEnabledForItem = function(itemOrProd) {
+    return window.getItemMasterTrackingMode(itemOrProd) === 'lots';
+};
+
 // 1. Initial State Hydration
 function initStockInModule() {
     const cfg = window.StockInConfig || {};
@@ -144,6 +208,7 @@ function initStockInModule() {
     window.StockInStore.purchaseOrders = d.initialPurchaseOrders || [];
     window.StockInStore.vendors = d.initialVendors || [];
     window.StockInStore.products = d.initialProducts || [];
+    window.StockInStore.products = getSyncedItemMasterCatalog();
     window.StockInStore.goodsReceipts = d.initialReceipts || [];
     window.StockInStore.warehouses = d.initialWarehouses || [];
     window.StockInStore.storageAreas = d.initialStorageAreas || [];
@@ -499,9 +564,13 @@ window.handleQueueColDrop = function(e, targetColId) {
     renderOrdersQueue();
 };
 
+let queueSearchDebounce = null;
 window.onQueueSearchInput = function(query) {
     window.StockInStore.queueSearchQuery = (query || '').toLowerCase().trim();
-    renderOrdersQueue();
+    clearTimeout(queueSearchDebounce);
+    queueSearchDebounce = setTimeout(() => {
+        window.requestAnimationFrame(renderOrdersQueue);
+    }, 140);
 };
 
 window.onQueueWarehouseFilterChange = function(wh) {
@@ -998,6 +1067,8 @@ window.onGrnScanKeydown = function(e) {
         if (matchedProd) {
             const dateStr = new Date().toISOString().slice(2, 10).replace(/-/g, '');
             const nextIdx = window.StockInStore.intakeItems.length + 1;
+            const trackingMode = window.getItemMasterTrackingMode(matchedProd);
+            const lotEnabled = trackingMode === 'lots';
             window.StockInStore.intakeItems.push({
                 sku: matchedProd.sku || matchedProd.item_code || `SPOT-${nextIdx}`,
                 name: matchedProd.name,
@@ -1009,7 +1080,8 @@ window.onGrnScanKeydown = function(e) {
                 balance: 0,
                 unit_cost: Number(matchedProd.cost_price || 0),
                 vat_type: '12% VAT',
-                lot_number: `LOT-${dateStr}-${nextIdx.toString().padStart(2, '0')}`,
+                trackingBy: trackingMode,
+                lot_number: lotEnabled ? `LOT-${dateStr}-${nextIdx.toString().padStart(2, '0')}` : '',
                 expiry_date: '',
                 mfg_date: '',
                 notes: '',
@@ -1047,7 +1119,7 @@ function flashTableRow(idx) {
 // Timeliness Badge & Header Change Listener
 window.onIntakeHeaderChanged = function() {
     updateTimelinessBadge();
-    updateLiveMockup();
+    scheduleLiveMockupUpdate();
     scheduleDraftSave();
 };
 
@@ -1143,6 +1215,8 @@ window.openPoInIntakeBuilder = function(poNumber) {
             ? it.item_name 
             : (matchedProd?.name || it.item_name || it.sku);
         const cleanSpecs = it.specs || matchedProd?.description || matchedProd?.specs || '';
+        const trackingMode = window.getItemMasterTrackingMode(matchedProd || { sku: it.sku, name: cleanName });
+        const lotEnabled = trackingMode === 'lots';
 
         return {
             sku: it.sku || `SKU-${idx + 1}`,
@@ -1155,7 +1229,8 @@ window.openPoInIntakeBuilder = function(poNumber) {
             balance: 0,
             unit_cost: unitCost,
             vat_type: '12% VAT',
-            lot_number: `LOT-${new Date().toISOString().slice(2, 10).replace(/-/g, '')}-${(idx + 1).toString().padStart(2, '0')}`,
+            trackingBy: trackingMode,
+            lot_number: lotEnabled ? `LOT-${new Date().toISOString().slice(2, 10).replace(/-/g, '')}-${(idx + 1).toString().padStart(2, '0')}` : '',
             expiry_date: '',
             mfg_date: '',
             notes: '',
@@ -1564,6 +1639,7 @@ function renderIntakeTable() {
                 return `<td class="td-center" style="font-weight: 700; color: var(--grn-on-surface-subtle);">${idx + 1}</td>`;
             }
             if (col.id === 'item_name') {
+                const lotAllowed = window.isLotTrackingEnabledForItem(it);
                 if (it.is_adhoc) {
                     return `
                         <td>
@@ -1573,7 +1649,7 @@ function renderIntakeTable() {
                                     <input type="text" class="grn-adhoc-input is-sku" value="${escapeHtml(it.sku || '')}" onchange="onAdhocFieldChange(${idx}, 'sku', this.value)" placeholder="SKU">
                                     <input type="text" class="grn-adhoc-input" style="flex: 1;" value="${escapeHtml(it.specs || '')}" onchange="onAdhocFieldChange(${idx}, 'specs', this.value)" placeholder="Specs / Brand">
                                 </div>
-                                ${it.lot_number || it.expiry_date ? `
+                                ${lotAllowed && (it.lot_number || it.expiry_date) ? `
                                     <div class="grn-trace-line">
                                         <span class="grn-mono"><i class="ph ph-barcode" style="color: var(--grn-primary); margin-right: 2px;"></i>${escapeHtml(it.lot_number || 'No Lot')}</span>
                                         ${renderExpiryChip(it.expiry_date)}
@@ -1591,7 +1667,7 @@ function renderIntakeTable() {
                                 <span class="grn-sku-badge">${escapeHtml(it.sku)}</span>
                                 ${it.specs ? `<span class="grn-specs">${escapeHtml(it.specs)}</span>` : ''}
                             </div>
-                            ${it.lot_number || it.expiry_date ? `
+                            ${lotAllowed && (it.lot_number || it.expiry_date) ? `
                                 <div class="grn-trace-line">
                                     <span class="grn-mono"><i class="ph ph-barcode" style="color: var(--grn-primary); margin-right: 2px;"></i>${escapeHtml(it.lot_number || 'No Lot')}</span>
                                     ${renderExpiryChip(it.expiry_date)}
@@ -1691,16 +1767,26 @@ function renderIntakeTable() {
             return `<td>—</td>`;
         }).join('');
 
+        const trackMode = window.getItemMasterTrackingMode(it);
+        const lotEnabledForRow = trackMode === 'lots';
+
         return `
             <tr data-row-idx="${idx}" class="${isOver ? 'is-over-receipt' : ''}">
                 ${cells}
                 <td class="td-center" style="white-space: nowrap;">
                     <div style="display: inline-flex; align-items: center; justify-content: center; gap: 4px;">
-                        <button type="button" class="grn-lot-btn ${it.lot_number ? 'has-lot' : ''}" onclick="openLotExpiryModal(${idx})" title="Configure Batch / Lot # & Expiry">
-                            <span class="grn-state-dot" aria-hidden="true"></span>
-                            <i class="ph ${it.lot_number ? 'ph-barcode' : 'ph-calendar-plus'}" aria-hidden="true"></i>
-                            <span>${it.lot_number ? 'Lot Set' : 'Add Lot'}</span>
-                        </button>
+                        ${lotEnabledForRow ? `
+                            <button type="button" class="grn-lot-btn ${it.lot_number ? 'has-lot' : ''}" onclick="openLotExpiryModal(${idx})" title="Configure Batch / Lot # & Expiry">
+                                <span class="grn-state-dot" aria-hidden="true"></span>
+                                <i class="ph ${it.lot_number ? 'ph-barcode' : 'ph-calendar-plus'}" aria-hidden="true"></i>
+                                <span>${it.lot_number ? 'Lot Set' : 'Add Lot'}</span>
+                            </button>
+                        ` : `
+                            <span style="font-size: 11px; font-weight: 600; color: #64748b; background: #f1f5f9; border: 1px solid #e2e8f0; padding: 3px 8px; border-radius: 6px;" title="Lot tracking is disabled for this item in Item Master (${trackMode === 'serial' ? 'Tracked by Serial #' : 'Tracked by Quantity'})">
+                                <i class="ph ${trackMode === 'serial' ? 'ph-qr-code' : 'ph-hash'}"></i>
+                                ${trackMode === 'serial' ? 'Serial' : 'Qty Only'}
+                            </span>
+                        `}
                         ${it.is_adhoc ? `
                             <button type="button" class="grn-row-remove" onclick="removeAdHocRow(${idx})" title="Remove item" aria-label="Remove item">
                                 <i class="ph ph-trash" aria-hidden="true"></i>
@@ -1712,7 +1798,15 @@ function renderIntakeTable() {
         `;
     }).join('');
 
-    window.UomRegistry?.autoHydrate();
+    window.UomRegistry?.autoHydrate(tbody);
+}
+
+let liveMockupDebounce = null;
+function scheduleLiveMockupUpdate() {
+    clearTimeout(liveMockupDebounce);
+    liveMockupDebounce = setTimeout(() => {
+        window.requestAnimationFrame(() => updateLiveMockup());
+    }, 120);
 }
 
 window.adjustRowQty = function(idx, delta) {
@@ -1733,7 +1827,7 @@ window.onAdhocFieldChange = function(idx, field, val) {
     }
     renderIntakeTable();
     updateFulfillmentProgress();
-    updateLiveMockup();
+    scheduleLiveMockupUpdate();
     scheduleDraftSave();
 };
 
@@ -1806,7 +1900,7 @@ window.onReceiveQtyInput = function(idx, val) {
     }
 
     updateFulfillmentProgress();
-    updateLiveMockup();
+    scheduleLiveMockupUpdate();
     scheduleDraftSave();
 };
 
@@ -1814,17 +1908,24 @@ window.setRowReceiveQty = function(idx, qty) {
     const item = window.StockInStore.intakeItems[idx];
     if (!item) return;
 
-    item.receive_now = qty;
-    renderIntakeTable();
-    updateFulfillmentProgress();
-    updateLiveMockup();
-    scheduleDraftSave();
+    const row = document.querySelector(`tr[data-row-idx="${idx}"]`);
+    const input = row ? row.querySelector('.grn-stepper-input') : null;
+    if (input) {
+        input.value = qty;
+        onReceiveQtyInput(idx, qty);
+    } else {
+        item.receive_now = qty;
+        renderIntakeTable();
+        updateFulfillmentProgress();
+        scheduleLiveMockupUpdate();
+        scheduleDraftSave();
+    }
 };
 
 window.onRowLotChange = function(idx, lot) {
     if (window.StockInStore.intakeItems[idx]) {
         window.StockInStore.intakeItems[idx].lot_number = lot;
-        updateLiveMockup();
+        scheduleLiveMockupUpdate();
         scheduleDraftSave();
     }
 };
@@ -1832,7 +1933,7 @@ window.onRowLotChange = function(idx, lot) {
 window.onRowExpiryChange = function(idx, date) {
     if (window.StockInStore.intakeItems[idx]) {
         window.StockInStore.intakeItems[idx].expiry_date = date;
-        updateLiveMockup();
+        scheduleLiveMockupUpdate();
         scheduleDraftSave();
     }
 };

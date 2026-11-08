@@ -21,11 +21,18 @@ use Tests\TestCase;
 
 class HrOperationsTest extends TestCase
 {
-    use DatabaseTransactions;
-
     protected function getSuperAdmin(): User
     {
-        return User::where('username', 'peter')->first();
+        return User::firstOrCreate(
+            ['username' => 'peter'],
+            [
+                'full_name' => 'Peter Admin',
+                'email' => 'peter@test.com',
+                'password' => bcrypt('password123'),
+                'role' => 'Admin',
+                'status' => 'Active',
+            ]
+        );
     }
 
     protected function getBranchManager(): User

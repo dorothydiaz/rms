@@ -2,10 +2,6 @@
 
 @section('title', 'Training Records - HR Operations')
 
-@push('styles')
-    @vite(['resources/css/modules/hr-training.css'])
-@endpush
-
 @push('scripts')
     @vite(['resources/js/modules/hr-training.js'])
 @endpush

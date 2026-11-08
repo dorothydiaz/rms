@@ -2,10 +2,6 @@
 
 @section('title', 'Philippine Statutory Rules - Payroll')
 
-@push('styles')
-    @vite(['resources/css/modules/hr-statutory-rules.css'])
-@endpush
-
 @push('scripts')
     @vite(['resources/js/modules/hr-statutory-rules.js'])
 @endpush

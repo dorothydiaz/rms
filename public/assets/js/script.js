@@ -2028,10 +2028,16 @@ function getCellSortValue(cell) {
         initUniversalFilterBarScrollers();
     }
 
-    // Re-check on window resize
+    // Re-check on window resize (rAF-throttled for low-end CPU smooth resizing)
+    let filterResizeRaf = false;
     window.addEventListener('resize', () => {
-        if (window.initUniversalFilterBarScrollers) {
-            window.initUniversalFilterBarScrollers();
-        }
-    });
+        if (filterResizeRaf) return;
+        filterResizeRaf = true;
+        window.requestAnimationFrame(() => {
+            filterResizeRaf = false;
+            if (window.initUniversalFilterBarScrollers) {
+                window.initUniversalFilterBarScrollers();
+            }
+        });
+    }, { passive: true });
 })();

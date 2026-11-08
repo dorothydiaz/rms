@@ -2,10 +2,6 @@
 
 @section('title', 'Evaluation Criteria - Performance Management')
 
-@push('styles')
-    @vite(['resources/css/modules/hr-performance.css'])
-@endpush
-
 @push('scripts')
     @vite(['resources/js/modules/hr-performance.js'])
 @endpush

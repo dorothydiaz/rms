@@ -17,10 +17,6 @@
 </script>
 @endpush
 
-@push('styles')
-    @vite(['resources/css/modules/hr-dashboard.css'])
-@endpush
-
 @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
     @vite(['resources/js/modules/hr-dashboard.js'])

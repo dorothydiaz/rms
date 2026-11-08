@@ -2,10 +2,6 @@
 
 @section('title', 'Daily Time Record (DTR) - Attendance Management')
 
-@push('styles')
-    @vite('resources/css/modules/hr-dtr.css')
-@endpush
-
 @push('blade-data')
 <script>
     window.HrDtrConfig = Object.freeze({

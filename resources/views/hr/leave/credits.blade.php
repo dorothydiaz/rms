@@ -10,10 +10,6 @@
 </script>
 @endpush
 
-@push('styles')
-    @vite(['resources/css/modules/hr-leave.css'])
-@endpush
-
 @push('scripts')
     @vite(['resources/js/modules/hr-leave.js'])
 @endpush

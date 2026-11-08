@@ -1622,16 +1622,20 @@ function initColumnResize(e, colId) {
     document.addEventListener('mouseup', handleColumnMouseUp);
 }
 
+let rfqColResizeRaf = null;
 function handleColumnMouseMove(e) {
     if (!resizingColId) return;
-    const diff = e.pageX - startX;
-    const newWidth = Math.max(50, startW + diff);
-    savedColumnWidths[resizingColId] = `${newWidth}px`;
-
-    const colEl = document.querySelector(`col[data-col-id="${resizingColId}"]`);
-    if (colEl) {
-        colEl.style.width = `${newWidth}px`;
-    }
+    const pageX = e.pageX;
+    if (rfqColResizeRaf) return;
+    rfqColResizeRaf = window.requestAnimationFrame(() => {
+        rfqColResizeRaf = null;
+        if (!resizingColId) return;
+        const diff = pageX - startX;
+        const newWidth = Math.max(50, startW + diff);
+        savedColumnWidths[resizingColId] = `${newWidth}px`;
+        const colEl = document.querySelector(`col[data-col-id="${resizingColId}"]`);
+        if (colEl) colEl.style.width = `${newWidth}px`;
+    });
 }
 
 function handleColumnMouseUp() {
@@ -2729,9 +2733,9 @@ function renderItemsTable() {
 
     tbody.innerHTML = rowsHtml;
     updateMetricsSummary();
-    window.UomRegistry?.autoHydrate();
+    window.UomRegistry?.autoHydrate(tbody);
     if (typeof updateLiveDocumentMockup === 'function') {
-        updateLiveDocumentMockup();
+        window.requestAnimationFrame(updateLiveDocumentMockup);
     }
 }
 
@@ -4902,16 +4906,20 @@ function initDirectoryColResize(e, colId) {
     document.addEventListener('mouseup', handleDirectoryColMouseUp);
 }
 
+let rfqDirResizeRaf = null;
 function handleDirectoryColMouseMove(e) {
     if (!dirResizingColId) return;
-    const diff = e.pageX - dirStartX;
-    const newWidth = Math.max(70, dirStartW + diff);
-    savedDirectoryColWidths[dirResizingColId] = `${newWidth}px`;
-
-    const thEl = document.querySelector(`#rfqDirectoryThead th[data-col-id="${dirResizingColId}"]`);
-    if (thEl) {
-        thEl.style.width = `${newWidth}px`;
-    }
+    const pageX = e.pageX;
+    if (rfqDirResizeRaf) return;
+    rfqDirResizeRaf = window.requestAnimationFrame(() => {
+        rfqDirResizeRaf = null;
+        if (!dirResizingColId) return;
+        const diff = pageX - dirStartX;
+        const newWidth = Math.max(70, dirStartW + diff);
+        savedDirectoryColWidths[dirResizingColId] = `${newWidth}px`;
+        const thEl = document.querySelector(`#rfqDirectoryThead th[data-col-id="${dirResizingColId}"]`);
+        if (thEl) thEl.style.width = `${newWidth}px`;
+    });
 }
 
 function handleDirectoryColMouseUp() {
@@ -5876,10 +5884,14 @@ document.addEventListener('pointerdown', function(e) {
     }
 });
 
+let rfqSearchDebounce = null;
 function handleRfqDirectorySearch(query) {
     rfqSearchTerm = query;
     directoryCurrentPage = 1;
-    renderRfqDirectory();
+    clearTimeout(rfqSearchDebounce);
+    rfqSearchDebounce = setTimeout(() => {
+        window.requestAnimationFrame(renderRfqDirectory);
+    }, 140);
 }
 
 function startNewRfqFromDirectory() {
