@@ -38,6 +38,7 @@ export default defineConfig({
                 'resources/css/app.css',
                 'resources/css/erp-rfq-core.css',
                 'resources/js/app.js',
+                'resources/js/table-standard.js',
                 'resources/css/modules/purchase-orders.css',
                 'resources/js/modules/purchase-orders.js',
                 'resources/css/modules/request-quotations.css',

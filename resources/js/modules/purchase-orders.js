@@ -2193,7 +2193,7 @@ const PO_DIRECTORY_COLUMNS = [
     { id: 'po_notes', label: 'PO Notes & Purpose', subLabel: 'Title / Receiving Instructions', default: false, lockVisible: false, defaultWidth: '180px', align: 'left' },
     { id: 'approval_details', label: 'Approval Details', subLabel: 'Approver / Remarks', default: false, lockVisible: false, defaultWidth: '155px', align: 'left' },
     { id: 'created_by', label: 'Created By', subLabel: 'Buyer / Created Date', default: false, lockVisible: false, defaultWidth: '145px', align: 'left' },
-    { id: 'actions', label: 'Actions', subLabel: 'Edit / Preview / Del', default: true, lockVisible: true, defaultWidth: '165px', align: 'right' }
+    { id: 'actions', label: 'Actions', subLabel: 'Edit / Preview / Del', default: true, lockVisible: true, defaultWidth: '250px', align: 'right' }
 ];
 
 let selectedPoNumbers = new Set();

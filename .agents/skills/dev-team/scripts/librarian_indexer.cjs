@@ -29,8 +29,79 @@ const IGNORED_DIRS = new Set([
 
 const INDEXED_EXTENSIONS = new Set([
   '.php', '.js', '.ts', '.jsx', '.tsx', '.mjs', '.cjs', '.vue',
-  '.blade.php', '.py', '.go', '.json'
+  '.blade.php', '.css', '.py', '.go', '.json'
 ]);
+
+const JS_CONTROL_KEYWORDS = new Set([
+  'if', 'for', 'while', 'switch', 'catch', 'function', 'return', 'typeof',
+  'instanceof', 'delete', 'void', 'throw', 'new', 'super', 'import', 'export', 'else'
+]);
+
+const PHP_IGNORE_CALLS = new Set([
+  'if', 'for', 'foreach', 'while', 'switch', 'catch', 'return', 'isset', 'empty',
+  'unset', 'array', 'list', 'echo', 'print', 'die', 'exit', 'match', 'fn', 'function',
+  'compact', 'dd', 'dump', 'now', 'collect', 'response', 'view', 'redirect', 'back',
+  'abort', 'auth', 'config', 'env', 'session', 'request', 'trans', '__', 'app'
+]);
+
+/**
+ * Extracts 1-level-down function/method/route calls from a logical block's lines.
+ */
+function extractBlockCalls(blockLines, ext) {
+  const calls = new Set();
+  for (const rawLine of blockLines) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith('//') || line.startsWith('*') || line.startsWith('#')) continue;
+
+    if (ext === '.php') {
+      // $this->methodName(
+      const thisCalls = line.matchAll(/\$this->([A-Za-z0-9_]+)\s*\(/g);
+      for (const m of thisCalls) {
+        if (!PHP_IGNORE_CALLS.has(m[1])) calls.add(`$this->${m[1]}`);
+      }
+      // Static or Model/Service calls: ClassName::methodName(
+      const staticCalls = line.matchAll(/\b([A-Za-z0-9_]+)::([A-Za-z0-9_]+)\s*\(/g);
+      for (const m of staticCalls) {
+        if (!['self', 'static', 'parent'].includes(m[1])) {
+          calls.add(`${m[1]}::${m[2]}`);
+        } else {
+          calls.add(`$this->${m[2]}`);
+        }
+      }
+      // Action / Service variable calls: $service->methodName( (excluding common $request/$query/$table)
+      const varCalls = line.matchAll(/\$([A-Za-z0-9_]+)->([A-Za-z0-9_]+)\s*\(/g);
+      for (const m of varCalls) {
+        const v = m[1];
+        const fn = m[2];
+        if (!['this', 'request', 'query', 'q', 'table', 'blueprint', 'validator'].includes(v) &&
+            !['where', 'orWhere', 'whereIn', 'select', 'orderBy', 'get', 'first', 'pluck', 'count', 'find', 'findOrFail', 'with', 'load', 'toArray', 'input', 'validated', 'boolean', 'integer', 'string', 'all', 'has', 'filled'].includes(fn)) {
+          calls.add(`$${v}->${fn}`);
+        }
+      }
+    } else {
+      // JS / Blade: this.methodName(
+      const jsThisCalls = line.matchAll(/\bthis\.([A-Za-z0-9_]+)\s*\(/g);
+      for (const m of jsThisCalls) {
+        if (!JS_CONTROL_KEYWORDS.has(m[1])) calls.add(`this.${m[1]}`);
+      }
+      // Laravel route('name') references
+      const routeRefs = line.matchAll(/\broute\(\s*['"]([^'"]+)['"]/g);
+      for (const m of routeRefs) {
+        calls.add(`route:${m[1]}`);
+      }
+      // fetch(...) or axios.(get|post|put|patch|delete)(...)
+      const fetchRefs = line.matchAll(/\bfetch\(\s*[`'"]([^`'"]+)[`'"]/g);
+      for (const m of fetchRefs) {
+        calls.add(`fetch:${m[1]}`);
+      }
+      const axiosRefs = line.matchAll(/\baxios\.(get|post|put|patch|delete)\(\s*[`'"]([^`'"]+)[`'"]/g);
+      for (const m of axiosRefs) {
+        calls.add(`axios.${m[1]}:${m[2]}`);
+      }
+    }
+  }
+  return Array.from(calls).slice(0, 25);
+}
 
 function collectFiles(dir = ROOT_DIR, fileList = []) {
   let entries = [];
@@ -319,6 +390,31 @@ function parseFile(fileObj, index) {
         fileImports.push({ source, line: lineNum, raw: trimmed });
       }
 
+      const alpineMatch = trimmed.match(/\bAlpine\.data\(\s*['"]([^'"]+)['"]/);
+      if (alpineMatch) {
+        const compName = alpineMatch[1];
+        currentClass = compName;
+        addSymbol(index.symbols, compName, { file: relPath, line: lineNum, type: 'alpine_component' });
+        fileSymbols.push({ name: compName, line: lineNum, type: 'alpine_component' });
+      }
+
+      const windowFnMatch = trimmed.match(/\bwindow\.([A-Za-z0-9_]+)\s*=\s*(?:async\s+)?function\s*\(([^)]*)\)/);
+      if (windowFnMatch) {
+        const fnName = windowFnMatch[1];
+        const params = (windowFnMatch[2] || '').trim();
+        const signature = `${fnName}(${params})`;
+        const record = { file: relPath, line: lineNum, end_line: lineNum, type: 'function', signature };
+        const fileSym = { name: fnName, line: lineNum, end_line: lineNum, type: 'function', signature };
+        addSymbol(index.symbols, fnName, record);
+        fileSymbols.push(fileSym);
+        const { open, delta } = countBraces(line);
+        activeMethodRecord = record;
+        activeMethodFileSymbol = fileSym;
+        methodBraceDepth = delta;
+        methodOpenedBrace = open > 0;
+        continue;
+      }
+
       const classMatch = trimmed.match(/\b(?:export\s+)?(?:default\s+)?class\s+([A-Za-z0-9_]+)/);
       if (classMatch) {
         const className = classMatch[1];
@@ -328,11 +424,13 @@ function parseFile(fileObj, index) {
         continue;
       }
 
-      const fnMatch = trimmed.match(/\b(?:export\s+)?(?:async\s+)?function\s+([A-Za-z0-9_]+)\s*\(/);
+      const fnMatch = trimmed.match(/\b(?:export\s+)?(?:async\s+)?function\s+([A-Za-z0-9_]+)\s*\(([^)]*)\)/);
       if (fnMatch) {
         const fnName = fnMatch[1];
-        const record = { file: relPath, line: lineNum, end_line: lineNum, type: 'function' };
-        const fileSym = { name: fnName, line: lineNum, end_line: lineNum, type: 'function' };
+        const params = (fnMatch[2] || '').trim();
+        const signature = `${fnName}(${params})`;
+        const record = { file: relPath, line: lineNum, end_line: lineNum, type: 'function', signature, class: currentClass };
+        const fileSym = { name: fnName, line: lineNum, end_line: lineNum, type: 'function', signature, class: currentClass };
         addSymbol(index.symbols, fnName, record);
         fileSymbols.push(fileSym);
 
@@ -344,23 +442,133 @@ function parseFile(fileObj, index) {
         continue;
       }
 
-      const arrowMatch = trimmed.match(/\b(?:export\s+)?(?:const|let|var)\s+([A-Za-z0-9_]+)\s*=\s*(?:async\s*)?\([^)]*\)\s*=>/);
+      const arrowMatch = trimmed.match(/\b(?:export\s+)?(?:const|let|var)\s+([A-Za-z0-9_]+)\s*=\s*(?:async\s*)?\(([^)]*)\)\s*=>/);
       if (arrowMatch) {
         const fnName = arrowMatch[1];
-        addSymbol(index.symbols, fnName, { file: relPath, line: lineNum, type: 'function' });
-        fileSymbols.push({ name: fnName, line: lineNum, type: 'function' });
+        const signature = `${fnName}(${(arrowMatch[2] || '').trim()})`;
+        const record = { file: relPath, line: lineNum, end_line: lineNum, type: 'function', signature, class: currentClass };
+        const fileSym = { name: fnName, line: lineNum, end_line: lineNum, type: 'function', signature, class: currentClass };
+        addSymbol(index.symbols, fnName, record);
+        fileSymbols.push(fileSym);
+        const { open, delta } = countBraces(line);
+        if (open > 0 && delta > 0) {
+          activeMethodRecord = record;
+          activeMethodFileSymbol = fileSym;
+          methodBraceDepth = delta;
+          methodOpenedBrace = true;
+        }
+        continue;
+      }
+
+      // Object / Alpine / Class method shorthand: methodName(args) {
+      const objMethodMatch = trimmed.match(/^(?:async\s+)?([A-Za-z_$][A-Za-z0-9_$]*)\s*\(([^)]*)\)\s*\{$/);
+      if (objMethodMatch && !JS_CONTROL_KEYWORDS.has(objMethodMatch[1])) {
+        const fnName = objMethodMatch[1];
+        const signature = `${fnName}(${(objMethodMatch[2] || '').trim()})`;
+        const record = { file: relPath, line: lineNum, end_line: lineNum, type: 'method', signature, class: currentClass };
+        const fileSym = { name: fnName, line: lineNum, end_line: lineNum, type: 'method', signature, class: currentClass };
+        addSymbol(index.symbols, fnName, record);
+        fileSymbols.push(fileSym);
+        if (!activeMethodRecord) {
+          const { open, delta } = countBraces(line);
+          activeMethodRecord = record;
+          activeMethodFileSymbol = fileSym;
+          methodBraceDepth = delta;
+          methodOpenedBrace = open > 0;
+        }
         continue;
       }
     }
 
     // ==========================================
-    // Blade Template Parsing
+    // Blade Template Parsing (Directives, x-data, Modals, Routes, Inline JS)
     // ==========================================
     else if (ext === '.blade.php') {
-      const sectionMatch = trimmed.match(/@(section|push|component)\(\s*['"]([^'"]+)['"]/);
+      const sectionMatch = trimmed.match(/@(section|push|component|include|extends)\(\s*['"]([^'"]+)['"]/);
       if (sectionMatch) {
+        const directive = sectionMatch[1];
         const name = sectionMatch[2];
-        addSymbol(index.symbols, name, { file: relPath, line: lineNum, type: 'blade_directive' });
+        if (directive === 'include' || directive === 'extends' || directive === 'component') {
+          fileImports.push({ source: `view:${name}`, line: lineNum, raw: `@${directive}('${name}')` });
+        } else {
+          addSymbol(index.symbols, name, { file: relPath, line: lineNum, type: 'blade_directive' });
+        }
+      }
+
+      const xDataMatch = trimmed.match(/\bx-data=["']\s*([A-Za-z0-9_]+)\s*\(/);
+      if (xDataMatch && xDataMatch[1] !== 'true' && xDataMatch[1] !== 'false') {
+        const comp = xDataMatch[1];
+        currentClass = comp;
+        addSymbol(index.symbols, comp, { file: relPath, line: lineNum, type: 'alpine_xdata' });
+        fileSymbols.push({ name: comp, line: lineNum, type: 'alpine_xdata' });
+      }
+
+      const modalMatch = trimmed.match(/\bid=["']([^"']*(?:Modal|Drawer|Form|Table|Container|Panel)[^"']*)["']/i);
+      if (modalMatch && !/(?:Title|Label|Body|Footer|Close|Btn|Button|Text|Icon)$/i.test(modalMatch[1])) {
+        const domId = `#${modalMatch[1]}`;
+        addSymbol(index.symbols, domId, { file: relPath, line: lineNum, type: 'dom_id' });
+        fileSymbols.push({ name: domId, line: lineNum, type: 'dom_id' });
+      }
+
+      const bladeFnMatch = trimmed.match(/^(?:async\s+)?function\s+([A-Za-z0-9_]+)\s*\(([^)]*)\)/);
+      if (bladeFnMatch) {
+        const fnName = bladeFnMatch[1];
+        const signature = `${fnName}(${(bladeFnMatch[2] || '').trim()})`;
+        const record = { file: relPath, line: lineNum, end_line: lineNum, type: 'function', signature, class: currentClass };
+        const fileSym = { name: fnName, line: lineNum, end_line: lineNum, type: 'function', signature, class: currentClass };
+        addSymbol(index.symbols, fnName, record);
+        fileSymbols.push(fileSym);
+        const { open, delta } = countBraces(line);
+        activeMethodRecord = record;
+        activeMethodFileSymbol = fileSym;
+        methodBraceDepth = delta;
+        methodOpenedBrace = open > 0;
+      }
+
+      const bladeMethodMatch = trimmed.match(/^(?:async\s+)?([A-Za-z_$][A-Za-z0-9_$]*)\s*\(([^)]*)\)\s*\{$/);
+      if (bladeMethodMatch && !JS_CONTROL_KEYWORDS.has(bladeMethodMatch[1])) {
+        const fnName = bladeMethodMatch[1];
+        const signature = `${fnName}(${(bladeMethodMatch[2] || '').trim()})`;
+        const record = { file: relPath, line: lineNum, end_line: lineNum, type: 'method', signature, class: currentClass };
+        const fileSym = { name: fnName, line: lineNum, end_line: lineNum, type: 'method', signature, class: currentClass };
+        addSymbol(index.symbols, fnName, record);
+        fileSymbols.push(fileSym);
+        if (!activeMethodRecord) {
+          const { open, delta } = countBraces(line);
+          activeMethodRecord = record;
+          activeMethodFileSymbol = fileSym;
+          methodBraceDepth = delta;
+          methodOpenedBrace = open > 0;
+        }
+      }
+    }
+
+    // ==========================================
+    // CSS Stylesheet Parsing (Selectors & Tokens)
+    // ==========================================
+    else if (ext === '.css') {
+      const tokenMatch = trimmed.match(/^(--[A-Za-z0-9_-]+)\s*:/);
+      if (tokenMatch) {
+        const tokenName = tokenMatch[1];
+        addSymbol(index.symbols, tokenName, { file: relPath, line: lineNum, type: 'css_token' });
+        fileSymbols.push({ name: tokenName, line: lineNum, type: 'css_token' });
+        continue;
+      }
+
+      const selectorMatch = trimmed.match(/^([.#][A-Za-z0-9_-]+)(?:\s*[,{:]|\s+[.#A-Za-z])/);
+      if (selectorMatch && trimmed.includes('{')) {
+        const sel = selectorMatch[1];
+        const record = { file: relPath, line: lineNum, end_line: lineNum, type: 'css_selector' };
+        const fileSym = { name: sel, line: lineNum, end_line: lineNum, type: 'css_selector' };
+        addSymbol(index.symbols, sel, record);
+        fileSymbols.push(fileSym);
+        if (!activeMethodRecord) {
+          const { open, delta } = countBraces(line);
+          activeMethodRecord = record;
+          activeMethodFileSymbol = fileSym;
+          methodBraceDepth = delta;
+          methodOpenedBrace = open > 0;
+        }
       }
     }
 
@@ -386,12 +594,65 @@ function parseFile(fileObj, index) {
     }
   }
 
+  // Extract 1-level-down calls for each method/function in this file
+  for (const sym of fileSymbols) {
+    if ((sym.type === 'method' || sym.type === 'function') && sym.line) {
+      const endLine = sym.end_line && sym.end_line >= sym.line ? sym.end_line : Math.min(lines.length, sym.line + 35);
+      const blockCalls = extractBlockCalls(lines.slice(sym.line - 1, endLine), ext);
+      if (blockCalls.length > 0) {
+        sym.calls = blockCalls;
+        const symList = index.symbols[sym.name] || [];
+        for (const rec of symList) {
+          if (rec.file === relPath && rec.line === sym.line) {
+            rec.calls = blockCalls;
+          }
+        }
+      }
+    }
+  }
+
+  // Also capture file-level route('...') references in Blade/JS files
+  if (ext === '.blade.php' || ext === '.js') {
+    const fileRouteCalls = extractBlockCalls(lines, ext).filter(c => c.startsWith('route:') || c.startsWith('fetch:') || c.startsWith('axios.'));
+    if (fileRouteCalls.length > 0) {
+      fileRouteCalls.forEach(rc => fileImports.push({ source: rc, line: 1 }));
+    }
+  }
+
   // Extract Eloquent Model DNA if PHP Model
   if (ext === '.php' && currentClass) {
     const modelMeta = extractEloquentModelMeta(content, relPath, currentClass, currentNamespace, fileSymbols);
     if (modelMeta) {
       index.models[currentClass] = modelMeta;
     }
+  }
+
+  // Compute 1-line file role description for fast Code-Navigation Hypothesize & Output
+  const methodCount = fileSymbols.filter(s => s.type === 'method' || s.type === 'function').length;
+  if (relPath.startsWith('app/Http/Controllers/')) {
+    index.file_roles[relPath] = `Laravel Controller (${currentClass || path.basename(relPath, '.php')}: ${methodCount} action/helper methods)`;
+  } else if (relPath.startsWith('app/Models/') || (currentClass && index.models[currentClass])) {
+    const m = index.models[currentClass];
+    index.file_roles[relPath] = `Eloquent Model (${currentClass}, table: ${m && m.table ? m.table : 'default'}, ${m ? m.relationships.length : 0} relations)`;
+  } else if (relPath.startsWith('app/Services/') || relPath.startsWith('app/Actions/')) {
+    index.file_roles[relPath] = `Domain Service/Action (${currentClass || path.basename(relPath, '.php')}: ${methodCount} methods)`;
+  } else if (relPath.startsWith('routes/')) {
+    index.file_roles[relPath] = `Laravel Route Definitions (${path.basename(relPath)})`;
+  } else if (ext === '.blade.php') {
+    const modals = fileSymbols.filter(s => s.type === 'dom_id').length;
+    index.file_roles[relPath] = `Blade View Template (${methodCount} inline JS handlers, ${modals} modal/container IDs)`;
+  } else if (['.js', '.ts', '.mjs', '.cjs'].includes(ext)) {
+    index.file_roles[relPath] = `Frontend JS Module (${currentClass ? `Alpine/Class ${currentClass}, ` : ''}${methodCount} functions/methods)`;
+  } else if (ext === '.css') {
+    const selCount = fileSymbols.filter(s => s.type === 'css_selector').length;
+    const tokCount = fileSymbols.filter(s => s.type === 'css_token').length;
+    index.file_roles[relPath] = `CSS Stylesheet (${selCount} selectors, ${tokCount} CSS custom properties)`;
+  } else if (relPath.startsWith('database/migrations/')) {
+    index.file_roles[relPath] = `Database Schema Migration (${path.basename(relPath)})`;
+  } else if (relPath.startsWith('tests/')) {
+    index.file_roles[relPath] = `Automated Test Suite (${currentClass || path.basename(relPath)}: ${methodCount} tests)`;
+  } else {
+    index.file_roles[relPath] = `Source Module (${ext} file, ${fileSymbols.length} indexed symbols)`;
   }
 
   if (fileImports.length > 0) {
@@ -409,15 +670,88 @@ function addSymbol(symbolMap, name, record) {
   symbolMap[name].push(record);
 }
 
+/**
+ * Post-processes 1-level-up caller graph (`called_by`) and reverse import map (`imported_by`).
+ */
+function buildDependencyGraphs(index) {
+  const calledBy = {};
+  const importedBy = {};
+
+  const addCaller = (targetSym, entry) => {
+    if (!targetSym) return;
+    if (!calledBy[targetSym]) calledBy[targetSym] = [];
+    if (calledBy[targetSym].length < 25) {
+      const exists = calledBy[targetSym].some(
+        e => e.file === entry.file && e.caller === entry.caller && e.line === entry.line
+      );
+      if (!exists) calledBy[targetSym].push(entry);
+    }
+  };
+
+  // 1. Reverse file_imports -> imported_by
+  for (const [file, imports] of Object.entries(index.file_imports)) {
+    for (const imp of imports) {
+      const key = imp.alias || (imp.full ? imp.full.split('\\').pop() : imp.source);
+      if (!key) continue;
+      if (!importedBy[key]) importedBy[key] = [];
+      if (importedBy[key].length < 30 && !importedBy[key].includes(file)) {
+        importedBy[key].push(file);
+      }
+      if (imp.source && imp.source.startsWith('route:')) {
+        const routeName = imp.source.slice(6);
+        addCaller(routeName, { caller: 'Blade/JS View Reference', file, line: imp.line || 1, via: `route('${routeName}')` });
+      }
+    }
+  }
+
+  // 2. Routes -> Controller@action (1-level-up HTTP entrypoint)
+  for (const r of index.routes) {
+    if (r.action) {
+      addCaller(r.action, {
+        caller: `${r.method} /${r.uri.replace(/^\//, '')}`,
+        file: r.file,
+        line: r.line,
+        via: r.name ? `route('${r.name}') -> ${r.controller}@${r.action}` : `${r.controller}@${r.action}`
+      });
+    }
+  }
+
+  // 3. Method/Function 1-level-down `calls` -> invert into 1-level-up `called_by`
+  for (const [file, syms] of Object.entries(index.file_symbols)) {
+    for (const sym of syms) {
+      if (!sym.calls || sym.calls.length === 0) continue;
+      const callerLabel = sym.class ? `${sym.class}::${sym.name}` : sym.name;
+      for (const rawCall of sym.calls) {
+        let targetName = rawCall;
+        if (rawCall.startsWith('$this->')) targetName = rawCall.slice(7);
+        else if (rawCall.startsWith('this.')) targetName = rawCall.slice(5);
+        else if (rawCall.includes('::')) targetName = rawCall.split('::').pop();
+        else if (rawCall.includes('->')) targetName = rawCall.split('->').pop();
+        else if (rawCall.startsWith('route:')) targetName = rawCall.slice(6);
+
+        addCaller(targetName, {
+          caller: callerLabel,
+          file,
+          line: sym.line,
+          via: rawCall
+        });
+      }
+    }
+  }
+
+  index.imported_by = importedBy;
+  index.call_graph = { called_by: calledBy };
+}
+
 function buildIndex(outputPath = DEFAULT_OUTPUT) {
   const startTime = Date.now();
-  console.log('📖 [The Librarian] Scanning repository and building global symbol + Eloquent DNA index...');
+  console.log('📖 [The Librarian] Building Advance Index v3.0 (Symbols + Call Graph + Eloquent DNA + UI/CSS)...');
 
   const index = {
     metadata: {
       generated_at: new Date().toISOString(),
       root_dir: ROOT_DIR,
-      version: '2.0.0',
+      version: '3.0.0',
       total_symbols: 0,
       total_unique_symbols: 0,
       total_files_indexed: 0,
@@ -428,14 +762,19 @@ function buildIndex(outputPath = DEFAULT_OUTPUT) {
     symbols: {},
     models: {},
     routes: [],
+    file_roles: {},
     file_imports: {},
-    file_symbols: {}
+    imported_by: {},
+    file_symbols: {},
+    call_graph: { called_by: {} }
   };
 
   const files = collectFiles();
   for (const f of files) {
     parseFile(f, index);
   }
+
+  buildDependencyGraphs(index);
 
   const duration = Date.now() - startTime;
   const uniqueSymbols = Object.keys(index.symbols).length;
@@ -459,11 +798,12 @@ function buildIndex(outputPath = DEFAULT_OUTPUT) {
 
   fs.writeFileSync(outputPath, JSON.stringify(index, null, 2), 'utf8');
 
-  console.log(`✅ [The Librarian] Symbol + Eloquent DNA index v2.0 built in ${duration}ms!`);
-  console.log(`   - Indexed Files    : ${files.length}`);
-  console.log(`   - Unique Symbols   : ${uniqueSymbols} (${totalSymbolEntries} total refs)`);
+  console.log(`✅ [The Librarian] Advance Index v3.0 built in ${duration}ms!`);
+  console.log(`   - Indexed Files    : ${files.length} (with 1-line roles)`);
+  console.log(`   - Unique Symbols   : ${uniqueSymbols} (${totalSymbolEntries} total refs: PHP, JS/Alpine, Blade, CSS)`);
   console.log(`   - Eloquent Models  : ${totalModels} (with $fillable, $casts & relationships)`);
   console.log(`   - Laravel Routes   : ${index.routes.length}`);
+  console.log(`   - Call Graph Nodes : ${Object.keys(index.call_graph.called_by).length} 1-level-up caller targets`);
   console.log(`   - Artifact Output  : ${outputPath}\n`);
 
   return index;

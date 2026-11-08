@@ -53,6 +53,7 @@
     
     <!-- Layer 2: Canonical RFQ/ERP Design System Core -->
     @vite('resources/css/erp-rfq-core.css')
+    @vite('resources/js/table-standard.js')
     @stack('styles')
 </head>
 <body class="{{ request()->routeIs('account-settings*') ? 'page-account-settings' : '' }}">

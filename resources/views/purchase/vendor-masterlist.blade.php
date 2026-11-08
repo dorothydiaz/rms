@@ -29,18 +29,16 @@
 <div class="vendor-page-container">
 
     <!-- 1. Header Bar -->
-    <header class="vendor-header-bar" id="vendorHeaderBar">
-        <div class="vendor-header-title-box">
-            <div class="vendor-header-icon">
-                <i class="ph ph-truck"></i>
-            </div>
+    <div class="hr-parent-header" id="vendorHeaderBar">
+        <div class="hr-parent-title-row">
             <div>
-                <h1>Vendor Masterlist & Partner Directory</h1>
-                <p>Manage supplier agreements, logistics terms, and connect wholesale packaging to Item Master pricing</p>
+                <h1 class="hr-parent-title">
+                    <i class="ph ph-truck"></i>
+                    <span>Vendor Masterlist &amp; Partner Directory</span>
+                </h1>
+                <p class="hr-parent-subtitle">Manage supplier agreements, logistics terms, and connect wholesale packaging to Item Master pricing.</p>
             </div>
-        </div>
-
-        <div class="vendor-header-actions">
+            <div class="vendor-header-actions">
             <button type="button" class="vendor-btn-secondary" onclick="resetVendorDatabaseToDefaults()" title="Reset mock data to system defaults">
                 <i class="ph ph-arrow-counter-clockwise"></i>
                 <span>Reset Defaults</span>
@@ -54,7 +52,8 @@
                 <span>New Vendor Partner</span>
             </button>
         </div>
-    </header>
+        </div>
+    </div>
 
     <!-- =====================================================================
          KANBAN GRID DIRECTORY (Default Main View matching user screenshot)

@@ -1,9 +1,24 @@
-# Token Efficiency & Fast Codebase Search Directives
+# Token Efficiency, Advance Index v3.0 & Code-Navigation Agent Directives
 
-## 1. Core Mandate: Zero Line-by-Line Scanning
-Every tool call incurs cognitive and token overhead. Under no circumstances should an agent browse, scan, or read files line by line without pinpoint reconnaissance. Sequential scrolling through codebases is strictly forbidden.
+## 1. Core Mandate: Zero Line-by-Line Scanning (Code-Navigation Agent Protocol)
+Every tool call incurs cognitive and token overhead. Under no circumstances should an agent browse, scan, or read files line by line without pinpoint reconnaissance. Do not guess file paths or contents; if a file is not visible, query the Advance Index or ask for it.
+
 The search and modification pipeline is strictly directional:
-**4-Pillar Fast Search (Ripgrep / BM25 / AST / RAG) -> Targeted `view_file` (≤ 80 lines) -> `multi_replace_file_content` -> Inline Verification Script**
+**Advance Index `navigate` (`librarian_router.cjs navigate`) / 4-Pillar Search -> Targeted `read_file` Slice (≤ 80 lines) -> Surgical `edit_file` -> Inline Verification Script**
+
+### Required 5-Step Code-Navigation Process (Follow in Order)
+1. **Hypothesize**: From the task and keywords, run `node .agents/skills/dev-team/scripts/librarian_router.cjs navigate "<keywords>" [--entry <file>]` to list the **3–5 most likely files or modules** involved, with **one line of reasoning/role** for each (`index.file_roles`).
+2. **Locate**: Identify the **core logical block** (function, method, class, Alpine handler, or CSS selector) that owns the behavior. Quote its exact symbol name, file path, and `[L:start..L:end]` span.
+3. **Trace Dependencies (1 Level Up & 1 Level Down)**: Map what that block imports (`file_imports`), what it calls (`calls` — 1 level down), and what calls/triggers it (`called_by` / routes / Blade views — 1 level up). Stop once you reach code that does not affect the behavior.
+4. **Confirm**: Read only the bounded slice (`StartLine..EndLine`, ≤ 80 lines) of the core logical block. Explicitly state which files were **actually read** versus **inferred from the index**, and flag any assumptions.
+5. **Fix**: Propose and apply the **smallest change** that solves the task.
+   - **Constraints**: Touch only the core logical block and what is strictly needed to make it work. Do not refactor, rename, or reformat unrelated code. Do not rewrite whole files.
+   - **Standard Navigation Output Format**:
+     1. **Files examined** (path + one-line role each)
+     2. **Dependency map** (short tree or arrow list: 1-level up -> core block -> 1-level down)
+     3. **Root cause** in 2–3 sentences
+     4. **The fix** as a unified diff (or surgical edit summary)
+     5. **Risks or things to test**
 
 ---
 

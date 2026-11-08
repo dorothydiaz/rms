@@ -4464,7 +4464,7 @@ const DIRECTORY_COLUMNS = [
         subLabel: 'Edit / View / Del',
         default: true,
         lockVisible: true,
-        defaultWidth: '175px',
+        defaultWidth: '250px',
         align: 'right',
         topField: '',
         bottomField: '',

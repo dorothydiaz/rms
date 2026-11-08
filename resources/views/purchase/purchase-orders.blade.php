@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Purchase Orders (PO) - Restaurant Management System')
+@section('title', 'Purchase Orders (PO) - Restauran                </div>
+t Management System')
 
 @push('styles')
     @vite('resources/css/modules/purchase-orders.css')
@@ -55,15 +56,15 @@
     <!-- Toast Notifications Root -->
     <div class="rfq-toast-container" id="poToastContainer"></div>
 
-    <!-- 1. Page Header — HR-Style Flat Title Row (RFQ Parity) -->
-    <div class="hr-parent-title" style="margin-bottom: 2px;">
-        <div style="display: flex; align-items: center; gap: 12px;">
-            <div style="width: 38px; height: 38px; border-radius: 10px; background: linear-gradient(135deg, rgba(236, 72, 153, 0.14), rgba(168, 85, 247, 0.20)); border: 1px solid rgba(168, 85, 247, 0.32); color: #9333ea; display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 4px 14px rgba(168, 85, 247, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.8); flex-shrink: 0;">
-                <i class="ph ph-receipt"></i>
-            </div>
+    <!-- 1. Page Header - Universal Title Row (RFQ Parity) -->
+    <div class="hr-parent-header">
+        <div class="hr-parent-title-row">
             <div>
-                <h1 style="font-size: 1.25rem; font-weight: 700; color: #0f172a; margin: 0; line-height: 1.2;">Purchase Orders (PO)</h1>
-                <p style="font-size: 0.8rem; color: #64748b; margin: 2px 0 0 0;">Official procurement commitments, RFQ award continuation, receiving dock tracking & vendor settlement</p>
+                <h1 class="hr-parent-title">
+                    <i class="ph ph-receipt"></i>
+                    <span>Purchase Orders (PO)</span>
+                </h1>
+                <p class="hr-parent-subtitle">Official procurement commitments, RFQ award continuation, receiving dock tracking &amp; vendor settlement.</p>
             </div>
         </div>
     </div>
@@ -135,7 +136,7 @@
         </div>
 
         <!-- Filter, Search & Batch Action Toolbar -->
-        <div class="po-panel-card rfq-panel-card" style="overflow: visible;">
+        <div class="po-panel-card rfq-panel-card" id="poDirectoryPanel" style="overflow: visible;">
             <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid var(--po-border-subtle); flex-wrap: nowrap; gap: 10px; overflow-x: auto; scrollbar-width: none;">
                 <div style="display: flex; align-items: center; gap: 10px; flex: 1; flex-wrap: nowrap; min-width: 0;">
                     <div style="position: relative; flex: 1; min-width: 220px; max-width: 340px;">
@@ -230,20 +231,20 @@
 
             <!-- Table Pagination Bar -->
             <div class="po-table-pagination-bar rfq-pagination-bar" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 16px; border-top: 1px solid #f1f5f9; background: rgba(248, 250, 252, 0.65); flex-wrap: wrap; gap: 10px; font-size: 12px; color: #64748b;">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <span>Showing <strong id="poPaginationStart" style="color: #0f172a;">0</strong> to <strong id="poPaginationEnd" style="color: #0f172a;">0</strong> of <strong id="poPaginationTotal" style="color: #0f172a;">0</strong> purchase orders</span>
-                    <span>•</span>
-                    <label for="poPageSizeSelect" style="display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px;">
-                        <span>Rows per page:</span>
-                        <select class="po-select hr-select" id="poPageSizeSelect" onchange="changePoPageSize(this.value)" style="height: 26px; padding: 2px 8px; font-size: 11.5px; width: auto; border-radius: 6px;">
+                <div style="font-size: 12px; color: #64748b;"><span>Showing <strong id="poPaginationStart" style="color: #0f172a;">0</strong> to <strong id="poPaginationEnd" style="color: #0f172a;">0</strong> of <strong id="poPaginationTotal" style="color: #0f172a;">0</strong> purchase orders</span></div>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #64748b;">
+                        <span>Show</span>
+                        <select class="po-select hr-select" id="poPageSizeSelect" onchange="changePoPageSize(this.value)" style="padding: 3px 8px; font-size: 11.5px; border-radius: 6px; width: auto;">
                             <option value="10">10</option>
                             <option value="25">25</option>
                             <option value="50">50</option>
                         </select>
-                    </label>
-                </div>
-                <div class="po-pagination-controls rfq-pagination-controls" id="poPaginationButtons" style="display: flex; align-items: center; gap: 4px;">
-                    <!-- Rendered by JS -->
+                        <span>rows</span>
+                    </div>
+                    <div class="po-pagination-controls rfq-pagination-controls" id="poPaginationButtons" style="display: flex; align-items: center; gap: 4px;">
+                        <!-- Rendered by JS -->
+                    </div>
                 </div>
             </div>
         </div>

@@ -56,8 +56,8 @@ function loadIndex() {
   try {
     const indexStat = fs.statSync(INDEX_PATH);
     const parsed = JSON.parse(fs.readFileSync(INDEX_PATH, 'utf8'));
-    // Auto-rebuild if v1 index or if any modified source file is newer than index
-    if (!parsed.models || isIndexStale(indexStat.mtimeMs)) {
+    // Auto-rebuild if older index version or if any modified source file is newer than index
+    if (!parsed.models || !parsed.call_graph || !parsed.file_roles || isIndexStale(indexStat.mtimeMs)) {
       const { buildIndex } = require('./librarian_indexer.cjs');
       return buildIndex(INDEX_PATH);
     }
@@ -498,14 +498,228 @@ function inspectImports(filePath) {
   console.log('========================================================================\n');
 }
 
+/**
+ * Code-Navigation Agent Engine (Advance Index v3.0)
+ * Executes Steps 1 (Hypothesize), 2 (Locate Core Block), 3 (Trace 1-Level Up & Down),
+ * and 4 (Bounded Slice Coordinates) without scanning files line-by-line.
+ */
+function runCodeNavigation(rawQuery, entryFile = null) {
+  const index = loadIndex();
+  const qTokens = tokenize(rawQuery);
+  const rawTerms = rawQuery
+    .split(/[\s,|]+/)
+    .map(t => t.trim())
+    .filter(Boolean);
+
+  const lowerSymbolMap = new Map();
+  Object.keys(index.symbols).forEach(k => lowerSymbolMap.set(k.toLowerCase(), k));
+
+  const fileScores = new Map(); // file -> { score, reasons: Set, subHits: number }
+  const matchedBlocks = [];     // candidate core logical blocks
+  const isCssQuery = /[.#]|--|css|style|theme|token|modal/i.test(rawQuery);
+
+  const addFileScore = (file, pts, reason, isSubHit = false) => {
+    if (!file) return;
+    if (!fileScores.has(file)) {
+      fileScores.set(file, { score: 0, reasons: new Set(), subHits: 0 });
+    }
+    const entry = fileScores.get(file);
+    if (isSubHit) {
+      if (entry.subHits >= 4) return; // cap substring accumulation per file
+      entry.subHits++;
+    }
+    entry.score += pts;
+    if (reason && entry.reasons.size < 4) entry.reasons.add(reason);
+  };
+
+  if (entryFile) {
+    const cleanEntry = entryFile.replace(/^@/, '').replace(/\\/g, '/');
+    for (const knownFile of Object.keys(index.file_roles || {})) {
+      if (knownFile === cleanEntry || knownFile.endsWith(cleanEntry)) {
+        addFileScore(knownFile, 120, 'Explicit entry file starting point');
+      }
+    }
+  }
+
+  // 1. Direct Symbol Lookup (Highest Priority)
+  const seenSyms = new Set();
+  for (const term of [...rawTerms, ...qTokens]) {
+    const cleanTerm = term.replace(/^[@]/, '');
+    if (cleanTerm.length < 2) continue;
+    const exactKey = index.symbols[cleanTerm] ? cleanTerm : lowerSymbolMap.get(cleanTerm.toLowerCase());
+    if (exactKey && index.symbols[exactKey] && !seenSyms.has(exactKey)) {
+      seenSyms.add(exactKey);
+      const isCompoundTerm = cleanTerm.length >= 6 || /[A-Z_.-]/.test(term);
+      const basePts = isCompoundTerm ? 250 : 90;
+      for (const rec of index.symbols[exactKey]) {
+        addFileScore(rec.file, basePts, `Defines exact symbol \`${exactKey}\` (${rec.type} at ${formatLineSpan(rec)})`);
+        matchedBlocks.push({ name: exactKey, ...rec, matchScore: isCompoundTerm ? 1000 : 300 });
+      }
+    }
+  }
+
+  // 2. Substring symbol match (capped per file so large CSS/JS files don't drown exact matches)
+  for (const [symName, locs] of Object.entries(index.symbols)) {
+    if (seenSyms.has(symName)) continue;
+    if ((symName.startsWith('.') || symName.startsWith('--')) && !isCssQuery) continue;
+    const lowerSym = symName.toLowerCase();
+    let hitCount = 0;
+    for (const tok of qTokens) {
+      if (tok.length >= 3 && lowerSym.includes(tok)) hitCount++;
+    }
+    if (hitCount > 0) {
+      const pts = hitCount >= 2 ? hitCount * 25 : 10;
+      for (const rec of locs.slice(0, 2)) {
+        addFileScore(rec.file, pts, `Contains ${rec.type} \`${symName}\` (${formatLineSpan(rec)})`, true);
+        matchedBlocks.push({ name: symName, ...rec, matchScore: hitCount * 40 });
+      }
+    }
+  }
+
+  // 3. File path BM25-style token scoring
+  for (const file of Object.keys(index.file_roles || {})) {
+    const pathTokens = tokenize(file);
+    let overlap = 0;
+    for (const qt of qTokens) {
+      if (pathTokens.includes(qt)) overlap++;
+    }
+    if (overlap > 0) {
+      addFileScore(file, overlap * 25, `File path matches ${overlap} query token(s)`);
+    }
+  }
+
+  // Sort top 5 hypothesized files
+  const topFiles = Array.from(fileScores.entries())
+    .sort((a, b) => b[1].score - a[1].score)
+    .slice(0, 5);
+
+  // Sort candidate Core Logical Blocks (exact symbol match + method/function priority)
+  const dedupedBlocks = [];
+  const blockKeys = new Set();
+  matchedBlocks
+    .sort((a, b) => {
+      const fileA = Math.min(200, (fileScores.get(a.file) || { score: 0 }).score);
+      const fileB = Math.min(200, (fileScores.get(b.file) || { score: 0 }).score);
+      const typeBoostA = (a.type === 'method' || a.type === 'function' || a.type === 'class') ? 80 : 0;
+      const typeBoostB = (b.type === 'method' || b.type === 'function' || b.type === 'class') ? 80 : 0;
+      return (b.matchScore + fileB + typeBoostB) - (a.matchScore + fileA + typeBoostA);
+    })
+    .forEach(b => {
+      const k = `${b.file}::${b.name}`;
+      if (!blockKeys.has(k)) {
+        blockKeys.add(k);
+        dedupedBlocks.push(b);
+      }
+    });
+
+  const primaryBlock = dedupedBlocks[0] || null;
+
+  console.log('\n========================================================================');
+  console.log(`🧭 CODE-NAVIGATION AGENT PACKET (ADVANCE INDEX v3.0): "${rawQuery}"`);
+  console.log('========================================================================');
+
+  // STEP 1: HYPOTHESIZE
+  console.log('\n1️⃣ HYPOTHESIZE (Top 3–5 Most Likely Files + 1-Line Role & Reasoning):');
+  if (topFiles.length === 0) {
+    console.log('   • No indexed files matched. Try broader domain keywords or `fast_codebase_search.cjs rg`.');
+  } else {
+    topFiles.forEach(([file, info], idx) => {
+      const role = (index.file_roles && index.file_roles[file]) || 'Source file';
+      const why = Array.from(info.reasons).join('; ');
+      console.log(`   ${idx + 1}. ${file}`);
+      console.log(`      • Role      : ${role}`);
+      console.log(`      • Reasoning : ${why} [score: ${info.score}]`);
+    });
+  }
+
+  // STEP 2: LOCATE CORE LOGICAL BLOCK
+  console.log('\n2️⃣ LOCATE (Core Logical Block Owning Behavior):');
+  if (!primaryBlock) {
+    console.log('   • No specific function/method symbol matched directly. Inspect top hypothesized file AST.');
+  } else {
+    const span = formatLineSpan(primaryBlock);
+    const owner = primaryBlock.class ? `${primaryBlock.class}::${primaryBlock.name}` : primaryBlock.name;
+    const sig = primaryBlock.signature ? ` — \`${primaryBlock.signature}\`` : '';
+    console.log(`   • Core Block : \`${owner}\` [${primaryBlock.type}]${sig}`);
+    console.log(`   • File Path  : ${primaryBlock.file} (${span})`);
+    if (dedupedBlocks.length > 1) {
+      console.log('   • Secondary Blocks:');
+      dedupedBlocks.slice(1, 5).forEach(b => {
+        const bOwner = b.class ? `${b.class}::${b.name}` : b.name;
+        console.log(`     ↳ \`${bOwner}\` in ${b.file} (${formatLineSpan(b)}) [${b.type}]`);
+      });
+    }
+  }
+
+  // STEP 3: TRACE DEPENDENCIES (1-LEVEL UP & 1-LEVEL DOWN)
+  console.log('\n3️⃣ TRACE DEPENDENCIES (1-Level Up Callers ↑ | File Imports ↔ | 1-Level Down Callees ↓):');
+  if (primaryBlock) {
+    const symName = primaryBlock.name;
+    const callers = (index.call_graph && index.call_graph.called_by && index.call_graph.called_by[symName]) || [];
+    const classDependents = primaryBlock.class && index.imported_by ? (index.imported_by[primaryBlock.class] || []) : [];
+
+    console.log(`   ↑ [1-Level Up — What Calls / Triggers \`${symName}\`]:`);
+    if (callers.length === 0 && classDependents.length === 0) {
+      console.log('     • Entrypoint / UI Event Handler (no direct indexed internal callers)');
+    } else {
+      callers.slice(0, 8).forEach(c => {
+        console.log(`     • ${c.caller} in ${c.file} (L:${c.line}) via \`${c.via}\``);
+      });
+      if (classDependents.length > 0) {
+        console.log(`     • Class \`${primaryBlock.class}\` imported by: ${classDependents.slice(0, 6).join(', ')}`);
+      }
+    }
+
+    const fileImports = (index.file_imports && index.file_imports[primaryBlock.file]) || [];
+    console.log(`   ↔ [Imports in ${primaryBlock.file}]:`);
+    if (fileImports.length === 0) {
+      console.log('     • None');
+    } else {
+      console.log(`     • ${fileImports.slice(0, 10).map(i => i.full || i.source).join(', ')}`);
+    }
+
+    const callees = primaryBlock.calls || [];
+    console.log(`   ↓ [1-Level Down — What \`${symName}\` Calls Inside ${formatLineSpan(primaryBlock)}]:`);
+    if (callees.length === 0) {
+      console.log('     • Leaf block (no external method/service/route calls detected)');
+    } else {
+      callees.forEach(callee => {
+        const cleanTarget = callee.replace(/^\$this->|^this\.|^route:|^fetch:/, '').split('::').pop().split('->').pop();
+        const targetLocs = index.symbols[cleanTarget] || [];
+        const locHint = targetLocs.length > 0 ? ` -> ${targetLocs[0].file} (${formatLineSpan(targetLocs[0])})` : '';
+        console.log(`     • \`${callee}\`${locHint}`);
+      });
+    }
+  } else if (topFiles.length > 0) {
+    const topFile = topFiles[0][0];
+    const fileImports = (index.file_imports && index.file_imports[topFile]) || [];
+    console.log(`   ↔ [Imports in ${topFile}]: ${fileImports.map(i => i.full || i.source).join(', ') || 'None'}`);
+  }
+
+  // STEP 4: BOUNDED SLICE CONFIRMATION TARGET (<= 80 LINES)
+  console.log('\n4️⃣ CONFIRMATION TARGET (Bounded Slice Read ≤ 80 Lines — DO NOT SCAN LINE-BY-LINE):');
+  if (primaryBlock && primaryBlock.line) {
+    const startLine = Math.max(1, primaryBlock.line - 3);
+    const rawEnd = primaryBlock.end_line && primaryBlock.end_line >= primaryBlock.line
+      ? primaryBlock.end_line + 3
+      : primaryBlock.line + 45;
+    const endLine = Math.min(startLine + 79, rawEnd);
+    console.log(`   • Read Exact Slice: read_file(Path: "${primaryBlock.file}", StartLine: ${startLine}, EndLine: ${endLine})`);
+  } else if (topFiles.length > 0) {
+    console.log(`   • Inspect AST first: node .agents/skills/dev-team/scripts/fast_codebase_search.cjs ast ${topFiles[0][0]}`);
+  }
+  console.log('========================================================================\n');
+}
+
 // CLI Dispatcher
 const args = process.argv.slice(2);
 const command = args[0];
 
 if (!command || command === '--help' || command === '-h') {
   console.log(`
-The Librarian: Simultaneous Co-Pilot & Backend/UI Context Router (v2.0)
+The Librarian: Simultaneous Co-Pilot & Code-Navigation Router (v3.0)
 Usage:
+  node librarian_router.cjs navigate "<keywords|symbol>" [--entry <filepath>]
   node librarian_router.cjs backend-packet <Controller|Method|Model|Route>
   node librarian_router.cjs ui-packet <ModuleSlug|BladeView>
   node librarian_router.cjs model <ModelName>
@@ -517,6 +731,23 @@ Usage:
 }
 
 switch (command) {
+  case 'navigate':
+  case 'nav':
+  case 'trace': {
+    const entryIdx = args.indexOf('--entry');
+    let entryFile = null;
+    const queryParts = [];
+    for (let i = 1; i < args.length; i++) {
+      if (i === entryIdx) {
+        entryFile = args[i + 1] || null;
+        i++;
+      } else {
+        queryParts.push(args[i]);
+      }
+    }
+    runCodeNavigation(queryParts.join(' '), entryFile);
+    break;
+  }
   case 'backend-packet':
   case 'packet':
     buildBackendPacket(args.slice(1).join(' '));
