@@ -740,11 +740,14 @@ class AttendanceController extends Controller
             $dates[] = $start->copy()->addDays($i)->toDateString();
         }
 
-        $empQuery = Employee::activeWorkforce()->with(['branch', 'department', 'position']);
+        $empQuery = Employee::activeWorkforce()->with(['branch', 'department', 'position', 'defaultShiftTemplate']);
+        $isBranchFiltered = false;
         if (!$user->isSuperAdmin() && !$user->isHrAdmin() && $user->branch_id) {
             $empQuery->where('branch_id', $user->branch_id);
+            $isBranchFiltered = true;
         } elseif ($request->filled('branch_id')) {
             $empQuery->where('branch_id', $request->branch_id);
+            $isBranchFiltered = true;
         }
 
         $employees = $empQuery->orderBy('first_name')->get();
@@ -765,7 +768,9 @@ class AttendanceController extends Controller
 
         $branches = Branch::where('is_active', true)->get();
         $departments = Department::where('is_active', true)->orderBy('name')->get();
-        $allEmployees = Employee::activeWorkforce()->with(['branch', 'department', 'position'])->orderBy('first_name')->get();
+        $allEmployees = $isBranchFiltered
+            ? Employee::activeWorkforce()->with(['branch', 'department', 'position'])->orderBy('first_name')->get()
+            : $employees;
 
         return view('hr.attendance.schedules', compact('employees', 'dates', 'schedules', 'attendanceRecords', 'shiftTemplates', 'weekStart', 'branches', 'departments', 'allEmployees'));
     }

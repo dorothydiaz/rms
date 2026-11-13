@@ -6,13 +6,24 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@hasSection('title'){{ Str::contains($__env->yieldContent('title'), 'Restaurant Management System') ? $__env->yieldContent('title') : $__env->yieldContent('title') . ' - Restaurant Management System' }}@else Restaurant Management System @endif</title>
 
-    <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="{{ asset('assets/img/logo-tab.svg') }}?v={{ file_exists(public_path('assets/img/logo-tab.svg')) ? filemtime(public_path('assets/img/logo-tab.svg')) : '1.0' }}">
+    @php
+        $av = $assetVersions ?? [];
+        $faviconVer = $av['logo-tab.svg'] ?? '1.0';
+        $tokensCssVer = $av['theme-tokens.css'] ?? '1.0';
+        $stylesCssVer = $av['styles.css'] ?? '1.0';
+        $uomCssVer = $av['uom-dropdown.css'] ?? '1.0';
+        $scriptJsVer = $av['script.js'] ?? '1.0';
+        $uomJsVer = $av['uom-registry.js'] ?? '1.0';
+    @endphp
 
-    <!-- Custom RMS Stylesheet (Cached with filemtime to prevent FOUC on page refresh) -->
-    <link rel="stylesheet" href="{{ asset('assets/css/styles.css') }}?v={{ file_exists(public_path('assets/css/styles.css')) ? filemtime(public_path('assets/css/styles.css')) : '1.0' }}">
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="{{ asset('assets/img/logo-tab.svg') }}?v={{ $faviconVer }}">
+
+    <!-- Canonical Design Tokens & Global Stylesheet (Loaded in parallel without @import waterfall) -->
+    <link rel="stylesheet" href="{{ asset('assets/css/theme-tokens.css') }}?v={{ $tokensCssVer }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/styles.css') }}?v={{ $stylesCssVer }}">
     <!-- Custom UoM Dropdown Component Stylesheet -->
-    <link rel="stylesheet" href="{{ asset('assets/css/uom-dropdown.css') }}?v={{ file_exists(public_path('assets/css/uom-dropdown.css')) ? filemtime(public_path('assets/css/uom-dropdown.css')) : '1.0' }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/uom-dropdown.css') }}?v={{ $uomCssVer }}">
 
     <!-- Low-End Hardware ('Potato PC') Lite Mode Auto-Detection (Pre-Paint) -->
     <script>
@@ -49,7 +60,7 @@
     <!-- Google Typography (Pruned to essential weights for Low-Spec Performance) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@600;700&family=Outfit:wght@600&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@500;600;700;800&family=Outfit:wght@500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- Layer 2: Canonical RFQ/ERP Design System Core -->
     @vite('resources/css/erp-rfq-core.css')
@@ -109,14 +120,14 @@
     <div id="rfqDedicatedPrintSheet" class="rfq-dedicated-print-sheet"></div>
 
     <!-- Default Landing Location Modal -->
-    <x-default-landing-modal />
+    <x-default-landing-modal :nav-companies-tree="$navCompaniesTree ?? null" />
 
     <!-- SweetAlert2 (Deferred for non-blocking render; kept global for system-wide dialogs) -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
     <!-- Client Interactive JS (Cached with filemtime for instant 0ms 304 reloads) -->
-    <script src="{{ asset('assets/js/script.js') }}?v={{ file_exists(public_path('assets/js/script.js')) ? filemtime(public_path('assets/js/script.js')) : '1.0' }}"></script>
+    <script src="{{ asset('assets/js/script.js') }}?v={{ $scriptJsVer }}"></script>
     <!-- Universal UOM Registry & Cross-Module Hydration Engine -->
-    <script src="{{ asset('assets/js/uom-registry.js') }}?v={{ file_exists(public_path('assets/js/uom-registry.js')) ? filemtime(public_path('assets/js/uom-registry.js')) : '1.0' }}"></script>
+    <script src="{{ asset('assets/js/uom-registry.js') }}?v={{ $uomJsVer }}"></script>
     @stack('blade-data')
     @stack('scripts')
 </body>

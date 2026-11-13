@@ -30,7 +30,7 @@ class PeopleController extends Controller
     public function employeesIndex(Request $request): View
     {
         $user = Auth::user();
-        $query = Employee::with(['branch', 'department', 'position', 'supervisor', 'user.roles', 'company']);
+        $query = Employee::with(['branch.company', 'department', 'position', 'supervisor', 'user.roles', 'company']);
 
         // Branch scoping
         $baseQuery = Employee::query();
@@ -53,9 +53,11 @@ class PeopleController extends Controller
         }
 
         // Summary Statistics Cards (Consolidated into a single SQL query)
-        $statusCol = Schema::hasColumn('hr_employees', 'employee_employment_status')
-            ? 'employee_employment_status'
-            : 'employment_status';
+        $statusCol = \Illuminate\Support\Facades\Cache::remember('hr_emp_status_col', 3600, function () {
+            return Schema::hasColumn('hr_employees', 'employee_employment_status')
+                ? 'employee_employment_status'
+                : 'employment_status';
+        });
 
         $rawCounts = (clone $baseQuery)->selectRaw("
             COUNT(*) as total,
@@ -1106,7 +1108,7 @@ class PeopleController extends Controller
     public function organizationIndex(Request $request): View
     {
         $user = Auth::user();
-        $employees = Employee::with(['branch', 'department', 'position', 'supervisor', 'subordinates', 'company'])
+        $employees = Employee::with(['branch.company', 'department', 'position', 'supervisor', 'subordinates', 'company'])
             ->activeWorkforce()
             ->orderBy('first_name')
             ->get();

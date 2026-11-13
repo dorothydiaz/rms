@@ -1,3 +1,4 @@
+@props(['navCompaniesTree' => null])
 @php
     $authUser = auth()->user();
     $tree = $navCompaniesTree ?? \Illuminate\Support\Facades\Cache::remember('global_nav_companies_tree', 3600, function () {

@@ -11,15 +11,40 @@ use Illuminate\Support\Facades\Session;
 
 class CompanyBranchContext
 {
+    protected bool $companyResolved = false;
     protected ?Company $cachedCompany = null;
+    protected bool $branchResolved = false;
     protected ?Branch $cachedBranch = null;
+    protected ?Collection $cachedAllowedCompanies = null;
+    protected array $cachedAllowedBranches = [];
+    protected ?int $cachedForUserId = null;
+
+    protected function syncCacheUser(): void
+    {
+        $userId = Auth::id();
+        if ($this->cachedForUserId !== $userId) {
+            $this->clearCache();
+            $this->cachedForUserId = $userId;
+        }
+    }
+
+    public function clearCache(): void
+    {
+        $this->companyResolved = false;
+        $this->cachedCompany = null;
+        $this->branchResolved = false;
+        $this->cachedBranch = null;
+        $this->cachedAllowedCompanies = null;
+        $this->cachedAllowedBranches = [];
+    }
 
     /**
      * Get the active company for the current session.
      */
     public function getActiveCompany(): ?Company
     {
-        if ($this->cachedCompany) {
+        $this->syncCacheUser();
+        if ($this->companyResolved) {
             return $this->cachedCompany;
         }
 
@@ -30,6 +55,7 @@ class CompanyBranchContext
             $company = Company::find($companyId);
             if ($company && (!$user || $user->canAccessCompany($company->company_id))) {
                 $this->cachedCompany = $company;
+                $this->companyResolved = true;
                 return $company;
             }
         }
@@ -40,6 +66,7 @@ class CompanyBranchContext
             if ($company && $user->canAccessCompany($company->company_id)) {
                 $this->setActiveCompany($company->company_id);
                 $this->cachedCompany = $company;
+                $this->companyResolved = true;
                 return $company;
             }
         }
@@ -50,6 +77,7 @@ class CompanyBranchContext
             $company = $allowed->first();
             $this->setActiveCompany($company->company_id);
             $this->cachedCompany = $company;
+            $this->companyResolved = true;
             return $company;
         }
 
@@ -57,8 +85,10 @@ class CompanyBranchContext
         $company = Company::active()->first();
         if ($company) {
             $this->setActiveCompany($company->company_id);
-            $this->cachedCompany = $company;
         }
+
+        $this->cachedCompany = $company;
+        $this->companyResolved = true;
 
         return $company;
     }
@@ -68,7 +98,8 @@ class CompanyBranchContext
      */
     public function getActiveBranch(): ?Branch
     {
-        if ($this->cachedBranch) {
+        $this->syncCacheUser();
+        if ($this->branchResolved) {
             return $this->cachedBranch;
         }
 
@@ -80,6 +111,7 @@ class CompanyBranchContext
             $branch = Branch::find($branchId);
             if ($branch && (!$company || $branch->company_id == $company->company_id) && (!$user || $user->canAccessBranch($branch->branch_id))) {
                 $this->cachedBranch = $branch;
+                $this->branchResolved = true;
                 return $branch;
             }
         }
@@ -90,6 +122,7 @@ class CompanyBranchContext
             if ($branch && (!$company || $branch->company_id == $company->company_id) && $user->canAccessBranch($branch->branch_id)) {
                 $this->setActiveBranch($branch->branch_id);
                 $this->cachedBranch = $branch;
+                $this->branchResolved = true;
                 return $branch;
             }
         }
@@ -100,6 +133,7 @@ class CompanyBranchContext
             $branch = $allowed->first();
             $this->setActiveBranch($branch->branch_id);
             $this->cachedBranch = $branch;
+            $this->branchResolved = true;
             return $branch;
         }
 
@@ -109,6 +143,7 @@ class CompanyBranchContext
             if ($branch) {
                 $this->setActiveBranch($branch->branch_id);
                 $this->cachedBranch = $branch;
+                $this->branchResolved = true;
                 return $branch;
             }
         }
@@ -116,8 +151,10 @@ class CompanyBranchContext
         $branch = Branch::active()->first();
         if ($branch) {
             $this->setActiveBranch($branch->branch_id);
-            $this->cachedBranch = $branch;
         }
+
+        $this->cachedBranch = $branch;
+        $this->branchResolved = true;
 
         return $branch;
     }
@@ -135,22 +172,27 @@ class CompanyBranchContext
      */
     public function getAllowedCompanies(): Collection
     {
+        $this->syncCacheUser();
+        if ($this->cachedAllowedCompanies !== null) {
+            return $this->cachedAllowedCompanies;
+        }
+
         /** @var User|null $user */
         $user = Auth::user();
         if (!$user) {
-            return Company::active()->orderBy('company_legal_name')->get();
+            return $this->cachedAllowedCompanies = Company::active()->orderBy('company_legal_name')->get();
         }
 
         if ($user->isSuperAdmin()) {
-            return Company::active()->orderBy('company_legal_name')->get();
+            return $this->cachedAllowedCompanies = Company::active()->orderBy('company_legal_name')->get();
         }
 
         $userCompanies = $user->companies()->active()->orderBy('company_legal_name')->get();
         if ($userCompanies->isEmpty()) {
-            return Company::active()->take(1)->get();
+            return $this->cachedAllowedCompanies = Company::active()->take(1)->get();
         }
 
-        return $userCompanies;
+        return $this->cachedAllowedCompanies = $userCompanies;
     }
 
     /**
@@ -158,6 +200,12 @@ class CompanyBranchContext
      */
     public function getAllowedBranches(?int $companyId = null): Collection
     {
+        $this->syncCacheUser();
+        $cacheKey = $companyId ?? 'all';
+        if (array_key_exists($cacheKey, $this->cachedAllowedBranches)) {
+            return $this->cachedAllowedBranches[$cacheKey];
+        }
+
         /** @var User|null $user */
         $user = Auth::user();
         $query = Branch::active();
@@ -167,7 +215,7 @@ class CompanyBranchContext
         }
 
         if (!$user || $user->isSuperAdmin()) {
-            return $query->orderBy('branch_name')->get();
+            return $this->cachedAllowedBranches[$cacheKey] = $query->orderBy('branch_name')->get();
         }
 
         $userBranchIds = $user->branches()->pluck('branches.branch_id')->toArray();
@@ -175,7 +223,7 @@ class CompanyBranchContext
             $query->whereIn('branch_id', $userBranchIds);
         }
 
-        return $query->orderBy('branch_name')->get();
+        return $this->cachedAllowedBranches[$cacheKey] = $query->orderBy('branch_name')->get();
     }
 
     /**
@@ -289,8 +337,7 @@ class CompanyBranchContext
 
         $this->setCheckedEntities($currentCheckedComps, $currentCheckedBranches);
 
-        $this->cachedCompany = null;
-        $this->cachedBranch = null;
+        $this->clearCache();
 
         return true;
     }
@@ -313,10 +360,14 @@ class CompanyBranchContext
     protected function setActiveCompany(int $companyId): void
     {
         Session::put('active_company_id', $companyId);
+        $this->companyResolved = false;
+        $this->cachedCompany = null;
     }
 
     protected function setActiveBranch(int $branchId): void
     {
         Session::put('active_branch_id', $branchId);
+        $this->branchResolved = false;
+        $this->cachedBranch = null;
     }
 }

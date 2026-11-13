@@ -1,6 +1,4 @@
 /* styles.css — Consolidated & Deduplicated Global Stylesheet */
-@import url('https://fonts.googleapis.com/css2?family=League+Spartan:wght@300;400;500;600;700;800;900&family=Outfit:wght@500;600;700;800&family=Poppins:wght@300;400;500;600;700&display=swap');
-@import url('./theme-tokens.css');
 :root { --bg-main: transparent; --bg-sidebar: rgba(255, 255, 255, 0.65); --bg-rail: transparent; --bg-hover: #f1f5f9; --bg-active: rgba(255, 255, 255, 0.8); --bg-badge: #1e293b; --bg-logo: #0f172a; --text-primary: #0f172a; --text-secondary: #475569; --text-badge: #ffffff; --text-logo: #ffffff; --border-color: rgba(255, 255, 255, 0.3); --glass-border: 1px solid rgba(255, 255, 255, 0.5); --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05); --rail-width: 64px; --panel-width: 300px; --font-family: 'Poppins', sans-serif; --font-heading: 'Poppins', sans-serif; }
 * { margin: 0; padding: 0; box-sizing: border-box; scrollbar-width: thin; scrollbar-color: rgba(168, 85, 247, 0.38) rgba(241, 245, 249, 0.5); }
 .sidebar-rail, .sidebar-rail * { scrollbar-width: none !important; -ms-overflow-style: none !important; }

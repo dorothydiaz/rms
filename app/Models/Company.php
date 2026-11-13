@@ -16,9 +16,12 @@ class Company extends Model
 {
     use HasFactory;
 
+    protected static ?array $cachedHoldingParentIds = null;
+
     protected static function booted(): void
     {
         static::saved(function (Company $company) {
+            static::$cachedHoldingParentIds = null;
             if (Schema::hasTable('hr_companies')) {
                 DB::table('hr_companies')->updateOrInsert(
                     ['company_id' => $company->company_id],
@@ -42,6 +45,7 @@ class Company extends Model
         });
 
         static::deleted(function (Company $company) {
+            static::$cachedHoldingParentIds = null;
             if (Schema::hasTable('hr_companies')) {
                 DB::table('hr_companies')->where('company_id', $company->company_id)->delete();
             }
@@ -164,7 +168,24 @@ class Company extends Model
 
     public function getIsHoldingGroupAttribute(): bool
     {
-        return is_null($this->parent_company_id) && $this->childCompanies()->exists();
+        if (!is_null($this->parent_company_id)) {
+            return false;
+        }
+        if ($this->relationLoaded('childCompanies')) {
+            return $this->childCompanies->isNotEmpty();
+        }
+        if (array_key_exists('child_companies_count', $this->attributes)) {
+            return (int) $this->attributes['child_companies_count'] > 0;
+        }
+        if (static::$cachedHoldingParentIds === null) {
+            static::$cachedHoldingParentIds = static::whereNotNull('parent_company_id')
+                ->pluck('parent_company_id')
+                ->map(fn ($id) => (int) $id)
+                ->unique()
+                ->values()
+                ->all();
+        }
+        return in_array((int) $this->company_id, static::$cachedHoldingParentIds, true);
     }
 
     public function getLogoUrlAttribute(): ?string
