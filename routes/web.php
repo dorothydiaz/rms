@@ -371,6 +371,13 @@ Route::middleware('auth')->group(function () {
         Route::get('/waste-expiry', [InventoryController::class, 'wasteExpiry'])->name('waste-expiry');
         Route::get('/product-categories', [InventoryController::class, 'productCategories'])->name('product-categories');
         Route::get('/recipe-management', [InventoryController::class, 'recipeManagement'])->name('recipe-management');
+        Route::get('/reorder-rules', [InventoryController::class, 'reorderingRules'])->name('reorder-rules');
+        Route::get('/api/reorder-rules', [InventoryController::class, 'apiGetReorderRulesData'])->name('api.reorder-rules');
+        Route::post('/api/reorder-rules/save', [InventoryController::class, 'apiSaveReorderRule'])->name('api.reorder-rules.save');
+        Route::post('/api/reorder-rules/{id}/toggle', [InventoryController::class, 'apiToggleReorderRule'])->name('api.reorder-rules.toggle');
+        Route::delete('/api/reorder-rules/{id}', [InventoryController::class, 'apiDeleteReorderRule'])->name('api.reorder-rules.delete');
+        Route::post('/api/reorder-rules/simulate', [InventoryController::class, 'apiRunReplenishmentSimulation'])->name('api.reorder-rules.simulate');
+        Route::post('/api/reorder-rules/generate-drafts', [InventoryController::class, 'apiBatchGenerateDrafts'])->name('api.reorder-rules.generate-drafts');
 
         // Configuration Submodules: Warehouse & Storage Area, Movement Type & Supply Flows, and UOM
         Route::get('/configuration/warehouses', [InventoryController::class, 'warehouseStorageAreas'])->name('warehouses');

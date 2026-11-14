@@ -33,11 +33,12 @@ class HrDashboardController extends Controller
             $empQuery->where('branch_id', $branchId);
         }
 
-        $totalEmployees = (clone $empQuery)->count();
-        $activeEmployees = (clone $empQuery)->where('employment_status', 'Active')->count();
-        $probationaryEmployees = (clone $empQuery)->where('employment_status', 'Probationary')->count();
-        $onLeaveEmployees = (clone $empQuery)->where('employment_status', 'On Leave')->count();
-        $resignedEmployees = (clone $empQuery)->whereIn('employment_status', ['Resigned', 'Terminated'])->count();
+        $empStatuses = (clone $empQuery)->get(['employment_status']);
+        $totalEmployees = $empStatuses->count();
+        $activeEmployees = $empStatuses->where('employment_status', 'Active')->count();
+        $probationaryEmployees = $empStatuses->where('employment_status', 'Probationary')->count();
+        $onLeaveEmployees = $empStatuses->where('employment_status', 'On Leave')->count();
+        $resignedEmployees = $empStatuses->whereIn('employment_status', ['Resigned', 'Terminated'])->count();
 
         if ($totalEmployees === 0) {
             $totalEmployees = 10;
@@ -50,9 +51,10 @@ class HrDashboardController extends Controller
         if ($branchId) {
             $todayAttQuery->where('branch_id', $branchId);
         }
-        $todayPresent = (clone $todayAttQuery)->whereIn('status', ['Present', 'Late'])->count();
-        $todayLate = (clone $todayAttQuery)->where('status', 'Late')->count();
-        $todayAbsent = (clone $todayAttQuery)->where('status', 'Absent')->count();
+        $todayAttStatuses = $todayAttQuery->get(['status']);
+        $todayLate = $todayAttStatuses->where('status', 'Late')->count();
+        $todayPresent = $todayAttStatuses->whereIn('status', ['Present', 'Late'])->count();
+        $todayAbsent = $todayAttStatuses->where('status', 'Absent')->count();
         $attendancePercentage = $totalEmployees > 0 ? round(($todayPresent / $totalEmployees) * 100) : 0;
 
         // Pending Leave & Overtime
@@ -182,22 +184,41 @@ class HrDashboardController extends Controller
             ],
         ];
 
-        // Chart Data: Attendance Summary (past 7 days)
+        // Chart Data: Attendance Summary (past 7 days) — Single query via Eloquent column mapping
+        $startDate7d = Carbon::today()->subDays(6)->toDateString();
+        $endDate7d = Carbon::today()->toDateString();
+
+        $attRecords7d = AttendanceRecord::query()
+            ->whereBetween('date', [$startDate7d, $endDate7d])
+            ->when($branchId, fn($q) => $q->where('branch_id', $branchId))
+            ->get(['date', 'status']);
+
+        $attByDate = [];
+        foreach ($attRecords7d as $rec) {
+            $dKey = $rec->date instanceof \Carbon\CarbonInterface
+                ? $rec->date->toDateString()
+                : substr((string) $rec->date, 0, 10);
+            $status = (string) $rec->status;
+            $attByDate[$dKey][$status] = ($attByDate[$dKey][$status] ?? 0) + 1;
+        }
+
         $past7Days = [];
         $attSummaryPresent = [];
         $attSummaryLate = [];
         $attSummaryAbsent = [];
         for ($i = 6; $i >= 0; $i--) {
-            $d = Carbon::today()->subDays($i)->toDateString();
-            $label = Carbon::parse($d)->format('M d');
-            $past7Days[] = $label;
+            $dObj = Carbon::today()->subDays($i);
+            $d = $dObj->toDateString();
+            $past7Days[] = $dObj->format('M d');
 
-            $dayQ = AttendanceRecord::where('date', $d);
-            if ($branchId) $dayQ->where('branch_id', $branchId);
+            $dayMap = $attByDate[$d] ?? [];
+            $late = $dayMap['Late'] ?? 0;
+            $present = ($dayMap['Present'] ?? 0) + $late;
+            $absent = $dayMap['Absent'] ?? 0;
 
-            $attSummaryPresent[] = (clone $dayQ)->whereIn('status', ['Present', 'Late'])->count();
-            $attSummaryLate[] = (clone $dayQ)->where('status', 'Late')->count();
-            $attSummaryAbsent[] = (clone $dayQ)->where('status', 'Absent')->count();
+            $attSummaryPresent[] = $present;
+            $attSummaryLate[] = $late;
+            $attSummaryAbsent[] = $absent;
         }
 
         if (array_sum($attSummaryPresent) === 0) {
@@ -208,18 +229,19 @@ class HrDashboardController extends Controller
 
         $dateRangeLabel = Carbon::today()->subDays(6)->format('M d') . ' – ' . Carbon::today()->format('M d');
 
-        // Chart Data: Payroll Summary
+        // Chart Data: Payroll Summary — Single query via Eloquent column mapping
         $payrollSummary = null;
         if ($currentPayroll) {
             $payRecQuery = PayrollRecord::where('payroll_period_id', $currentPayroll->id);
             if ($branchId) {
                 $payRecQuery->whereHas('employee', fn($q) => $q->where('branch_id', $branchId));
             }
-            $gross = (float) (clone $payRecQuery)->sum('gross_pay');
-            $net = (float) (clone $payRecQuery)->sum('net_pay');
-            $ded = (float) (clone $payRecQuery)->sum('total_deductions');
-            $ot = (float) (clone $payRecQuery)->sum('overtime_pay');
-            $nd = (float) (clone $payRecQuery)->sum('night_diff_pay');
+            $payRows = $payRecQuery->get(['gross_pay', 'net_pay', 'total_deductions', 'overtime_pay', 'night_diff_pay']);
+            $gross = (float) $payRows->sum('gross_pay');
+            $net = (float) $payRows->sum('net_pay');
+            $ded = (float) $payRows->sum('total_deductions');
+            $ot = (float) $payRows->sum('overtime_pay');
+            $nd = (float) $payRows->sum('night_diff_pay');
 
             if ($gross <= 0) {
                 $gross = 138250.00;

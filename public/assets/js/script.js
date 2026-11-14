@@ -2028,10 +2028,142 @@ function getCellSortValue(cell) {
         initUniversalFilterBarScrollers();
     }
 
-    // Re-check on window resize
+    // Re-check on window resize (rAF-throttled for low-end CPU smooth resizing)
+    let filterResizeRaf = false;
     window.addEventListener('resize', () => {
-        if (window.initUniversalFilterBarScrollers) {
-            window.initUniversalFilterBarScrollers();
+        if (filterResizeRaf) return;
+        filterResizeRaf = true;
+        window.requestAnimationFrame(() => {
+            filterResizeRaf = false;
+            if (window.initUniversalFilterBarScrollers) {
+                window.initUniversalFilterBarScrollers();
+            }
+        });
+    }, { passive: true });
+})();
+
+/* =========================================================================
+   INSTANT TAB NAVIGATION (Hover/Mousedown Prefetch + <16ms Active Feedback)
+   ========================================================================= */
+(function () {
+    const NAV_SELECTOR = '.sidebar a[href], .hr-tabs-wrapper a[href], .breadcrumb-nav a[href]';
+    const prefetchedUrls = new Set();
+    let hoverTimer = null;
+    let progressBar = null;
+
+    function isPrefetchableUrl(anchor) {
+        if (!anchor || !anchor.href) return false;
+        const rawHref = anchor.getAttribute('href') || '';
+        if (!rawHref || rawHref.startsWith('#') || rawHref.startsWith('javascript:') || rawHref.startsWith('mailto:') || rawHref.startsWith('tel:')) {
+            return false;
         }
-    });
+        if (anchor.hasAttribute('download') || anchor.getAttribute('target') === '_blank') {
+            return false;
+        }
+        try {
+            const url = new URL(anchor.href, window.location.href);
+            if (url.origin !== window.location.origin) return false;
+            if (url.href === window.location.href) return false;
+            const pathLower = url.pathname.toLowerCase();
+            if (pathLower.includes('logout') || pathLower.includes('export') || pathLower.includes('download') || pathLower.includes('delete')) {
+                return false;
+            }
+            return url.href;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    function prefetchUrl(href) {
+        if (!href || prefetchedUrls.has(href)) return;
+        prefetchedUrls.add(href);
+        const link = document.createElement('link');
+        link.rel = 'prefetch';
+        link.as = 'document';
+        link.href = href;
+        document.head.appendChild(link);
+    }
+
+    function showNavProgress() {
+        if (!progressBar) {
+            progressBar = document.createElement('div');
+            progressBar.id = 'rms-nav-progress';
+            progressBar.style.cssText = 'position:fixed;top:0;left:0;height:2.5px;width:0;z-index:999999;pointer-events:none;background:linear-gradient(90deg,var(--brand-primary,#6d28d9),#a855f7);transition:width 0.35s cubic-bezier(0.22,1,0.36,1),opacity 0.15s ease;';
+            document.body.appendChild(progressBar);
+        }
+        progressBar.style.opacity = '1';
+        progressBar.style.width = '35%';
+        window.requestAnimationFrame(() => {
+            if (progressBar) progressBar.style.width = '78%';
+        });
+    }
+
+    function applyOptimisticActiveState(anchor) {
+        if (anchor.classList.contains('hr-tab-item')) {
+            const row = anchor.closest('.hr-tabs-bar');
+            if (row) row.querySelectorAll('.hr-tab-item.active').forEach((el) => el.classList.remove('active'));
+            anchor.classList.add('active');
+        } else if (anchor.classList.contains('hr-subtab-item')) {
+            const subRow = anchor.closest('.hr-subtabs-bar');
+            if (subRow) subRow.querySelectorAll('.hr-subtab-item.active').forEach((el) => el.classList.remove('active'));
+            anchor.classList.add('active');
+        } else if (anchor.classList.contains('submenu-item')) {
+            const panel = anchor.closest('.sidebar-panel');
+            if (panel) panel.querySelectorAll('.submenu-item.active').forEach((el) => el.classList.remove('active'));
+            anchor.classList.add('active');
+        } else if (anchor.classList.contains('rail-item')) {
+            const rail = anchor.closest('.sidebar-rail');
+            if (rail) rail.querySelectorAll('.rail-item.active').forEach((el) => el.classList.remove('active'));
+            anchor.classList.add('active');
+        }
+    }
+
+    function initInstantTabNavigation() {
+        if (window.__rmsInstantNavInitialized) return;
+        window.__rmsInstantNavInitialized = true;
+
+        document.addEventListener('mouseover', (e) => {
+            const anchor = e.target && e.target.closest ? e.target.closest(NAV_SELECTOR) : null;
+            if (!anchor) return;
+            const targetHref = isPrefetchableUrl(anchor);
+            if (!targetHref || prefetchedUrls.has(targetHref)) return;
+            if (hoverTimer) clearTimeout(hoverTimer);
+            hoverTimer = setTimeout(() => prefetchUrl(targetHref), 60);
+        }, { passive: true });
+
+        document.addEventListener('mouseout', (e) => {
+            if (hoverTimer && e.target && e.target.closest && e.target.closest(NAV_SELECTOR)) {
+                clearTimeout(hoverTimer);
+                hoverTimer = null;
+            }
+        }, { passive: true });
+
+        const primeOnPress = (e) => {
+            const anchor = e.target && e.target.closest ? e.target.closest(NAV_SELECTOR) : null;
+            if (!anchor) return;
+            const targetHref = isPrefetchableUrl(anchor);
+            if (targetHref) prefetchUrl(targetHref);
+        };
+
+        document.addEventListener('mousedown', primeOnPress, { passive: true });
+        document.addEventListener('touchstart', primeOnPress, { passive: true });
+
+        document.addEventListener('click', (e) => {
+            if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+            const anchor = e.target && e.target.closest ? e.target.closest(NAV_SELECTOR) : null;
+            if (!anchor) return;
+            const targetHref = isPrefetchableUrl(anchor);
+            if (!targetHref) return;
+            applyOptimisticActiveState(anchor);
+            showNavProgress();
+        });
+    }
+
+    window.initInstantTabNavigation = initInstantTabNavigation;
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initInstantTabNavigation);
+    } else {
+        initInstantTabNavigation();
+    }
 })();

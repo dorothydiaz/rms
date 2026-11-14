@@ -2,10 +2,6 @@
 
 @section('title', 'Positions - Organization Management')
 
-@push('styles')
-    @vite('resources/css/modules/hr-positions.css')
-@endpush
-
 @push('scripts')
     @vite('resources/js/modules/hr-positions.js')
 @endpush

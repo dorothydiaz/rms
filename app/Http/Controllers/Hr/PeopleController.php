@@ -17,6 +17,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
@@ -29,7 +30,7 @@ class PeopleController extends Controller
     public function employeesIndex(Request $request): View
     {
         $user = Auth::user();
-        $query = Employee::with(['branch', 'department', 'position', 'supervisor', 'user.roles', 'company']);
+        $query = Employee::with(['branch.company', 'department', 'position', 'supervisor', 'user.roles', 'company']);
 
         // Branch scoping
         $baseQuery = Employee::query();
@@ -52,12 +53,18 @@ class PeopleController extends Controller
         }
 
         // Summary Statistics Cards (Consolidated into a single SQL query)
+        $statusCol = \Illuminate\Support\Facades\Cache::remember('hr_emp_status_col', 3600, function () {
+            return Schema::hasColumn('hr_employees', 'employee_employment_status')
+                ? 'employee_employment_status'
+                : 'employment_status';
+        });
+
         $rawCounts = (clone $baseQuery)->selectRaw("
             COUNT(*) as total,
-            SUM(CASE WHEN employee_employment_status = 'Active' THEN 1 ELSE 0 END) as active,
-            SUM(CASE WHEN employee_employment_status = 'Probationary' THEN 1 ELSE 0 END) as probationary,
-            SUM(CASE WHEN employee_employment_status = 'On Leave' THEN 1 ELSE 0 END) as on_leave,
-            SUM(CASE WHEN employee_employment_status IN ('Resigned', 'Terminated', 'Retired') THEN 1 ELSE 0 END) as separated
+            SUM(CASE WHEN {$statusCol} = 'Active' THEN 1 ELSE 0 END) as active,
+            SUM(CASE WHEN {$statusCol} = 'Probationary' THEN 1 ELSE 0 END) as probationary,
+            SUM(CASE WHEN {$statusCol} = 'On Leave' THEN 1 ELSE 0 END) as on_leave,
+            SUM(CASE WHEN {$statusCol} IN ('Resigned', 'Terminated', 'Retired') THEN 1 ELSE 0 END) as separated
         ")->first();
 
         $counts = [
@@ -1101,7 +1108,7 @@ class PeopleController extends Controller
     public function organizationIndex(Request $request): View
     {
         $user = Auth::user();
-        $employees = Employee::with(['branch', 'department', 'position', 'supervisor', 'subordinates', 'company'])
+        $employees = Employee::with(['branch.company', 'department', 'position', 'supervisor', 'subordinates', 'company'])
             ->activeWorkforce()
             ->orderBy('first_name')
             ->get();

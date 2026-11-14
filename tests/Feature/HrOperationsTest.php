@@ -16,40 +16,28 @@ use App\Services\AttendanceCalculationService;
 use App\Services\LeaveCalculationService;
 use App\Services\PayrollCalculationService;
 use App\Services\StatutoryContributionService;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 class HrOperationsTest extends TestCase
 {
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->seed();
-    }
-
     protected function getSuperAdmin(): User
     {
-        return User::where('username', 'peter')->first()
-            ?? User::create([
-                'username' => 'peter',
+        return User::firstOrCreate(
+            ['username' => 'peter'],
+            [
                 'full_name' => 'Peter Admin',
-                'email' => 'peter@rms.local',
-                'password' => bcrypt('password'),
+                'email' => 'peter@test.com',
+                'password' => bcrypt('password123'),
                 'role' => 'Admin',
                 'status' => 'Active',
-            ]);
+            ]
+        );
     }
 
     protected function getBranchManager(): User
     {
-        return User::where('username', 'manager_makati')->first()
-            ?? User::create([
-                'username' => 'manager_makati',
-                'full_name' => 'Makati Manager',
-                'email' => 'manager_makati@rms.local',
-                'password' => bcrypt('password'),
-                'role' => 'Manager',
-                'status' => 'Active',
-            ]);
+        return User::where('username', 'manager_makati')->first();
     }
 
     /**

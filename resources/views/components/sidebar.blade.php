@@ -240,7 +240,7 @@
                 </div>
             </div>
             <div class="nav-section">
-                @php $prodMgtActive = request()->routeIs('inventory.product-categories', 'inventory.recipe-management'); @endphp
+                @php $prodMgtActive = request()->routeIs('inventory.product-categories', 'inventory.recipe-management', 'inventory.reorder-rules*'); @endphp
                 <div class="nav-item-group" data-group-id="inv-prod">
                     <a href="#" class="nav-item">
                         <i class="ph ph-pizza"></i>
@@ -251,6 +251,7 @@
                 <div class="sub-nav{{ $prodMgtActive ? ' expanded' : '' }}">
                     <a href="{{ route('inventory.product-categories') }}" class="sub-nav-item{{ request()->routeIs('inventory.product-categories') ? ' active' : '' }}" title="Centralized catalog for managing raw materials, packaging, suppliers, units of measure (UOM), and stock pricing."><span>Item Master</span></a>
                     <a href="{{ route('inventory.recipe-management') }}" class="sub-nav-item{{ request()->routeIs('inventory.recipe-management') ? ' active' : '' }}" title="Configure product recipes, component quantities, automated inventory deductions, and production costing."><span>Bill of Materials (BOM)</span></a>
+                    <a href="{{ route('inventory.reorder-rules') }}" class="sub-nav-item{{ request()->routeIs('inventory.reorder-rules*') ? ' active' : '' }}" title="Automated inventory replenishment control tower: Min-Max par levels, commissary push, and 1-click batch draft PO & transfer generator."><span>Reordering Rules</span></a>
                 </div>
             </div>
             <div class="nav-section">

@@ -23,6 +23,8 @@ use App\Models\Inventory\UnitOfMeasure;
 use App\Models\Purchase\ProcurementVendor;
 use App\Models\Purchase\PurchaseOrder;
 use App\Models\Purchase\PurchaseOrderItem;
+use App\Models\ReorderingRule;
+use App\Services\ReplenishmentEngine;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -2848,5 +2850,216 @@ class InventoryController extends Controller
                 'is_active' => true,
             ],
         ];
+    }
+
+    /**
+     * =========================================================================
+     * REORDERING RULES & REPLENISHMENT CONTROL TOWER
+     * =========================================================================
+     */
+
+    /**
+     * View: Reordering Rules Dashboard & Control Tower
+     */
+    public function reorderingRules(): View
+    {
+        $engine = new ReplenishmentEngine();
+        $simulation = $engine->simulateRules();
+
+        $branches = DB::table('hr_branches')
+            ->select('branch_id', 'branch_name', 'branch_code')
+            ->where('branch_is_active', 1)
+            ->get();
+
+        if ($branches->isEmpty()) {
+            $branches = collect([
+                (object) ['branch_id' => 1, 'branch_name' => 'Makati Flagship Branch', 'branch_code' => 'MAK-01'],
+                (object) ['branch_id' => 2, 'branch_name' => 'BGC Taguig Branch', 'branch_code' => 'BGC-02'],
+                (object) ['branch_id' => 3, 'branch_name' => 'Quezon City Branch', 'branch_code' => 'QC-03'],
+            ]);
+        }
+
+        $items = DB::table('item_master')
+            ->select('id', 'sku', 'name', 'category', 'uom', 'cost_price', 'current_stock')
+            ->where('is_active', 1)
+            ->orderBy('name')
+            ->get();
+
+        $vendors = DB::table('vendor_master')
+            ->select('id', 'vendor_code', 'legal_name')
+            ->where('is_active', 1)
+            ->orderBy('legal_name')
+            ->get();
+
+        $warehouses = DB::table('warehouses')
+            ->select('warehouse_id', 'warehouse_code', 'warehouse_name')
+            ->get();
+
+        if ($warehouses->isEmpty()) {
+            $warehouses = collect([
+                (object) ['warehouse_id' => 'WH-CENTRAL-COMM', 'warehouse_code' => 'COMM-TAGUIG', 'warehouse_name' => 'Central Commissary Taguig Hub'],
+                (object) ['warehouse_id' => 'WH-MAK-MAIN', 'warehouse_code' => 'MAK-STORAGE', 'warehouse_name' => 'Makati Main Storage & Cold Vault'],
+                (object) ['warehouse_id' => 'WH-BGC-DRY', 'warehouse_code' => 'BGC-DRY', 'warehouse_name' => 'BGC Bulk Dry Storage'],
+            ]);
+        }
+
+        return view('inventory.reorder-rules', [
+            'initialRules' => ReorderingRule::orderBy('branch_name')->orderBy('product_name')->get(),
+            'initialSimulation' => $simulation,
+            'branches' => $branches,
+            'items' => $items,
+            'vendors' => $vendors,
+            'warehouses' => $warehouses,
+        ]);
+    }
+
+    /**
+     * API: Get Reordering Rules Data & Simulator State
+     */
+    public function apiGetReorderRulesData(Request $request): JsonResponse
+    {
+        $branchId = $request->query('branch_id') ? (int) $request->query('branch_id') : null;
+        $strategy = $request->query('strategy');
+
+        $query = ReorderingRule::query();
+
+        if ($branchId) {
+            $query->where('branch_id', $branchId);
+        }
+
+        if ($strategy) {
+            $query->where('strategy', $strategy);
+        }
+
+        $rules = $query->orderBy('branch_name')->orderBy('product_name')->get();
+
+        $engine = new ReplenishmentEngine();
+        $simulation = $engine->simulateRules([], $branchId);
+
+        return response()->json([
+            'success' => true,
+            'rules' => $rules,
+            'simulation' => $simulation,
+        ]);
+    }
+
+    /**
+     * API: Save or Update Reordering Rule
+     */
+    public function apiSaveReorderRule(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'id' => 'nullable|integer',
+            'rule_code' => 'nullable|string|max:50',
+            'branch_id' => 'required|integer',
+            'branch_name' => 'required|string|max:150',
+            'product_id' => 'required|integer',
+            'product_sku' => 'required|string|max:100',
+            'product_name' => 'required|string|max:255',
+            'category' => 'nullable|string|max:100',
+            'uom' => 'required|string|max:50',
+            'strategy' => 'required|string|in:min_max,commissary_push,jit_back_to_back',
+            'min_stock' => 'required|numeric|min:0',
+            'max_stock' => 'required|numeric|gt:min_stock',
+            'reorder_point' => 'nullable|numeric|min:0',
+            'moq' => 'required|numeric|min:1',
+            'safety_buffer' => 'nullable|numeric|min:0',
+            'lead_time_days' => 'required|integer|min:0',
+            'action_route' => 'required|string|in:purchase_order,internal_transfer',
+            'preferred_vendor_id' => 'nullable|integer',
+            'preferred_vendor_name' => 'nullable|string|max:255',
+            'source_warehouse_id' => 'nullable|string|max:100',
+            'source_warehouse_name' => 'nullable|string|max:255',
+            'target_warehouse_id' => 'nullable|string|max:100',
+            'is_active' => 'nullable|boolean',
+            'auto_generate_draft' => 'nullable|boolean',
+            'notes' => 'nullable|string',
+        ]);
+
+        $id = $validated['id'] ?? null;
+
+        if (!$id && empty($validated['rule_code'])) {
+            $prefix = match ((int) $validated['branch_id']) {
+                1 => 'MAK',
+                2 => 'BGC',
+                default => 'QC',
+            };
+            $validated['rule_code'] = 'RUL-' . $prefix . '-' . str_pad((string) (ReorderingRule::count() + 1), 3, '0', STR_PAD_LEFT);
+        }
+
+        $validated['reorder_point'] = $validated['reorder_point'] ?? $validated['min_stock'];
+        $validated['is_active'] = $request->boolean('is_active', true);
+        $validated['auto_generate_draft'] = $request->boolean('auto_generate_draft', false);
+        $validated['last_evaluated_at'] = now();
+
+        $rule = ReorderingRule::updateOrCreate(['id' => $id], $validated);
+
+        return response()->json([
+            'success' => true,
+            'message' => $id ? 'Reordering rule successfully updated!' : 'Reordering rule successfully created!',
+            'rule' => $rule,
+        ]);
+    }
+
+    /**
+     * API: Toggle Rule Active State
+     */
+    public function apiToggleReorderRule(Request $request, $id): JsonResponse
+    {
+        $rule = ReorderingRule::findOrFail($id);
+        $rule->is_active = !$rule->is_active;
+        $rule->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => "Rule {$rule->rule_code} " . ($rule->is_active ? 'activated' : 'deactivated') . '.',
+            'is_active' => $rule->is_active,
+        ]);
+    }
+
+    /**
+     * API: Delete Reordering Rule
+     */
+    public function apiDeleteReorderRule(Request $request, $id): JsonResponse
+    {
+        $rule = ReorderingRule::findOrFail($id);
+        $code = $rule->rule_code;
+        $rule->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => "Reordering rule {$code} successfully deleted.",
+        ]);
+    }
+
+    /**
+     * API: Run Live Replenishment Simulation Check
+     */
+    public function apiRunReplenishmentSimulation(Request $request): JsonResponse
+    {
+        $branchId = $request->query('branch_id') ? (int) $request->query('branch_id') : null;
+        $ruleIds = $request->input('rule_ids', []);
+
+        $engine = new ReplenishmentEngine();
+        $simulation = $engine->simulateRules((array) $ruleIds, $branchId);
+
+        return response()->json([
+            'success' => true,
+            'simulation' => $simulation,
+        ]);
+    }
+
+    /**
+     * API: Batch Generate Draft Purchase Orders & Transfers
+     */
+    public function apiBatchGenerateDrafts(Request $request): JsonResponse
+    {
+        $ruleIds = (array) $request->input('rule_ids', []);
+        $performedBy = auth()->check() ? auth()->user()->name : 'Automated Replenishment Engine';
+
+        $engine = new ReplenishmentEngine();
+        $result = $engine->batchGenerateDrafts($ruleIds, $performedBy);
+
+        return response()->json($result);
     }
 }

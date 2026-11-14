@@ -2,10 +2,6 @@
 
 @section('title', 'Payroll Periods - Philippine Payroll Engine')
 
-@push('styles')
-    @vite(['resources/css/modules/hr-periods.css'])
-@endpush
-
 @push('scripts')
     @vite(['resources/js/modules/hr-periods.js'])
 @endpush

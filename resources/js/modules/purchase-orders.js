@@ -1365,8 +1365,8 @@ function renderPoItemsTable() {
     }).join('');
 
     updatePoTotals();
-    updatePoLiveDocumentMockup();
-    window.UomRegistry?.autoHydrate();
+    window.requestAnimationFrame(updatePoLiveDocumentMockup);
+    window.UomRegistry?.autoHydrate(tbody);
 }
 
 function updatePoItemField(idx, field, val) {
@@ -2193,7 +2193,7 @@ const PO_DIRECTORY_COLUMNS = [
     { id: 'po_notes', label: 'PO Notes & Purpose', subLabel: 'Title / Receiving Instructions', default: false, lockVisible: false, defaultWidth: '180px', align: 'left' },
     { id: 'approval_details', label: 'Approval Details', subLabel: 'Approver / Remarks', default: false, lockVisible: false, defaultWidth: '155px', align: 'left' },
     { id: 'created_by', label: 'Created By', subLabel: 'Buyer / Created Date', default: false, lockVisible: false, defaultWidth: '145px', align: 'left' },
-    { id: 'actions', label: 'Actions', subLabel: 'Edit / Preview / Del', default: true, lockVisible: true, defaultWidth: '165px', align: 'right' }
+    { id: 'actions', label: 'Actions', subLabel: 'Edit / Preview / Del', default: true, lockVisible: true, defaultWidth: '250px', align: 'right' }
 ];
 
 let selectedPoNumbers = new Set();
@@ -2417,16 +2417,23 @@ function initPoColResize(e, colId) {
     document.addEventListener('mouseup', handlePoColMouseUp);
 }
 
+let poColResizeRaf = null;
 function handlePoColMouseMove(e) {
     if (!poResizingColId) return;
-    const diff = e.pageX - poStartX;
-    const newWidth = Math.max(60, poStartW + diff);
-    savedPoColWidths[poResizingColId] = `${newWidth}px`;
+    const pageX = e.pageX;
+    if (poColResizeRaf) return;
+    poColResizeRaf = window.requestAnimationFrame(() => {
+        poColResizeRaf = null;
+        if (!poResizingColId) return;
+        const diff = pageX - poStartX;
+        const newWidth = Math.max(60, poStartW + diff);
+        savedPoColWidths[poResizingColId] = `${newWidth}px`;
 
-    const thEl = document.querySelector(`#poDirectoryTheadRow th[data-col-id="${poResizingColId}"]`);
-    if (thEl) {
-        thEl.style.width = `${newWidth}px`;
-    }
+        const thEl = document.querySelector(`#poDirectoryTheadRow th[data-col-id="${poResizingColId}"]`);
+        if (thEl) {
+            thEl.style.width = `${newWidth}px`;
+        }
+    });
 }
 
 function handlePoColMouseUp() {
@@ -3130,10 +3137,14 @@ function renderPoActiveFilterChips() {
     container.innerHTML = chipsHtml;
 }
 
+let poSearchDebounce = null;
 function handlePoSearch(q) {
     poSearchTerm = q;
     poCurrentPage = 1;
-    renderPoDirectory();
+    clearTimeout(poSearchDebounce);
+    poSearchDebounce = setTimeout(() => {
+        window.requestAnimationFrame(renderPoDirectory);
+    }, 140);
 }
 
 function startNewPoFromDirectory() {

@@ -9,7 +9,16 @@ class RmsNavigationAndAuthTest extends TestCase
 {
     protected function getAdminUser(): User
     {
-        return User::where('username', 'peter')->first();
+        return User::firstOrCreate(
+            ['username' => 'peter'],
+            [
+                'full_name' => 'Peter Admin',
+                'email' => 'peter@test.com',
+                'password' => bcrypt('Admin@12345'),
+                'role' => 'Admin',
+                'status' => 'Active',
+            ]
+        );
     }
 
     public function test_user_can_login_with_valid_credentials(): void

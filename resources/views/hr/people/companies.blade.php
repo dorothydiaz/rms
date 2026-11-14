@@ -2,10 +2,6 @@
 
 @section('title', 'Agency & Company Management - Organization Management')
 
-@push('styles')
-    @vite('resources/css/modules/hr-companies.css')
-@endpush
-
 @push('blade-data')
 <script>
     window.HrCompaniesConfig = Object.freeze({

@@ -34,22 +34,17 @@
 <div class="stk-workspace">
 
     <!-- 1. Enterprise Header Bar -->
-    <header class="stk-header-card">
-        <div class="stk-header-left">
-            <div class="stk-brand-badge">
-                <i class="ph ph-warehouse"></i>
-            </div>
+    <div class="hr-parent-header">
+        <div class="hr-parent-title-row">
             <div>
-                <div class="stk-title-row">
-                    <h1 class="stk-title">Stocks Overview</h1>
+                <h1 class="hr-parent-title">
+                    <i class="ph ph-warehouse"></i>
+                    <span>Stocks Overview</span>
                     <span class="stk-status-pill"><span class="stk-pulse-dot"></span> Multi-Warehouse Live</span>
-                </div>
-                <p class="stk-subtitle">
-                    Real-time physical stock across facilities, specific storage bins, inbound PO pipeline, and event-sourced ledger balances.
-                </p>
+                </h1>
+                <p class="hr-parent-subtitle">Real-time physical stock across facilities, specific storage bins, inbound PO pipeline, and event-sourced ledger balances.</p>
             </div>
-        </div>
-        <div class="stk-header-actions">
+            <div class="stk-header-actions">
             <a href="{{ route('inventory.stock-in') }}" class="hr-btn hr-btn-primary hr-btn-sm" title="Receive Inbound Purchase Orders or Spot Stock">
                 <i class="ph ph-arrow-down-left"></i>
                 <span>Stock In Intake</span>
@@ -71,7 +66,8 @@
                 <span>Export</span>
             </button>
         </div>
-    </header>
+        </div>
+    </div>
 
     <!-- 2. KPI Summary Bar (4 High-Signal Cards) -->
     <section class="stk-metrics-grid">

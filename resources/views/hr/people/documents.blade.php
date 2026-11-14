@@ -2,10 +2,6 @@
 
 @section('title', 'Employee Documents - People Administration')
 
-@push('styles')
-    @vite('resources/css/modules/hr-documents.css')
-@endpush
-
 @push('scripts')
     @vite('resources/js/modules/hr-documents.js')
 @endpush

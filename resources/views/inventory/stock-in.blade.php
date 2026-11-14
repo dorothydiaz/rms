@@ -3,11 +3,7 @@
 @section('title', 'Stock In / Receiving (GRN) - Inventory Operations')
 
 @push('styles')
-    @vite([
-        'resources/css/modules/request-quotations.css',
-        'resources/css/modules/purchase-orders.css',
-        'resources/css/modules/stock-in.css'
-    ])
+    @vite('resources/css/modules/stock-in.css')
 @endpush
 
 @push('blade-data')

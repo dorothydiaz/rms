@@ -357,6 +357,29 @@ class EnterpriseEntityBuilder extends Builder
         return parent::select($translated);
     }
 
+    public function selectRaw($expression, array $bindings = [])
+    {
+        $table = $this->model->getTable();
+        if (is_string($expression) && method_exists($this->model, 'getEntityPrefix') && str_starts_with($table, 'hr_')) {
+            $prefix = $this->model->getEntityPrefix();
+            if (!empty($prefix)) {
+                $aliases = method_exists($this->model, 'getColumnAliases') ? $this->model->getColumnAliases() : [];
+                $aliases['employment_status'] = $prefix . '_employment_status';
+                $aliases['id'] = $this->model->getKeyName();
+                $aliases['created_at'] = method_exists($this->model, 'getCreatedAtColumn') ? $this->model->getCreatedAtColumn() : ($prefix . '_created_at');
+                $aliases['updated_at'] = method_exists($this->model, 'getUpdatedAtColumn') ? $this->model->getUpdatedAtColumn() : ($prefix . '_updated_at');
+
+                foreach ($aliases as $unprefixed => $prefixed) {
+                    if ($unprefixed !== $prefixed) {
+                        $expression = preg_replace('/\b' . preg_quote($unprefixed, '/') . '\b/', $prefixed, $expression);
+                    }
+                }
+            }
+        }
+
+        return parent::selectRaw($expression, $bindings);
+    }
+
     public function distinct($column = false)
     {
         if (is_string($column)) {

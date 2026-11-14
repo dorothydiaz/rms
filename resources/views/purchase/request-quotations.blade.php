@@ -132,7 +132,7 @@
         </div>
 
         <!-- Filter & Search Toolbar -->
-        <div class="rfq-panel-card">
+        <div class="rfq-panel-card" id="rfqDirectoryPanel">
             <div class="rfq-items-toolbar" style="overflow-x: auto; scrollbar-width: none;">
                 <div class="rfq-toolbar-left" style="flex: 1; flex-wrap: nowrap; gap: 8px; min-width: 0;">
                     <div style="position: relative; flex: 1; min-width: 220px; max-width: 360px;">
@@ -173,15 +173,6 @@
                     </div>
                 </div>
                 <div class="rfq-toolbar-right" style="position: relative; display: flex; align-items: center; gap: 8px;">
-                    <!-- Column Visibility Filter Trigger -->
-                    <div style="position: relative;">
-                        <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" id="btnDirectoryColFilter" onclick="toggleRfqTableSettingsDropdown(event)" data-tooltip="Customize visible columns & order" style="padding: 5px 10px; font-size: 12px; border-radius: 8px;">
-                            <i class="ph ph-columns"></i>
-                            <span>Columns</span>
-                            <i class="ph ph-caret-down" style="font-size: 10px; margin-left: 2px;"></i>
-                        </button>
-                    </div>
-
                     <button type="button" class="rfq-btn rfq-btn-primary" onclick="startNewRfqFromDirectory()" style="padding: 6px 12px; font-size: 12px; border-radius: 8px;">
                         <i class="ph ph-plus-circle"></i> <span>Create RFQ</span>
                     </button>

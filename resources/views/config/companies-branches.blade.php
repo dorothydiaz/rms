@@ -863,7 +863,7 @@
          ==================================================================== -->
     
     <!-- 1. Modal: New Company / Agency -->
-    <div id="modalCreateCompany" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center; padding: 20px;">
+    <div id="modalCreateCompany" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); backdrop-filter: none; z-index: 1000; align-items: center; justify-content: center; padding: 20px;">
         <div style="background: #ffffff; border-radius: 16px; width: 100%; max-width: 600px; box-shadow: 0 20px 45px rgba(15, 23, 42, 0.22); overflow: hidden;">
             <div style="padding: 16px 22px; border-bottom: 1px solid #f1f5f9; background: linear-gradient(135deg, #fdf4ff 0%, #f5f3ff 100%); display: flex; align-items: center; justify-content: space-between;">
                 <div style="display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 800; color: #0f172a;">
@@ -935,7 +935,7 @@
     </div>
 
     <!-- 2. Modal: New Branch -->
-    <div id="modalCreateBranch" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center; padding: 20px;">
+    <div id="modalCreateBranch" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); backdrop-filter: none; z-index: 1000; align-items: center; justify-content: center; padding: 20px;">
         <div style="background: #ffffff; border-radius: 16px; width: 100%; max-width: 580px; box-shadow: 0 20px 45px rgba(15, 23, 42, 0.22); overflow: hidden;">
             <div style="padding: 16px 22px; border-bottom: 1px solid #f1f5f9; background: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%); display: flex; align-items: center; justify-content: space-between;">
                 <div style="display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 800; color: #0f172a;">
@@ -1002,7 +1002,7 @@
     </div>
 
     <!-- 3. Modal: Edit Branch -->
-    <div id="modalEditBranch" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center; padding: 20px;">
+    <div id="modalEditBranch" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); backdrop-filter: none; z-index: 1000; align-items: center; justify-content: center; padding: 20px;">
         <div style="background: #ffffff; border-radius: 16px; width: 100%; max-width: 580px; box-shadow: 0 20px 45px rgba(15, 23, 42, 0.22); overflow: hidden;">
             <div style="padding: 16px 22px; border-bottom: 1px solid #f1f5f9; background: linear-gradient(135deg, #fdf4ff 0%, #f5f3ff 100%); display: flex; align-items: center; justify-content: space-between;">
                 <div style="display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 800; color: #0f172a;">
@@ -1066,7 +1066,7 @@
     </div>
 
     <!-- 4. Modal: Upload Legal Document (Document Vault) -->
-    <div id="modalUploadDocument" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center; padding: 20px;">
+    <div id="modalUploadDocument" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); backdrop-filter: none; z-index: 1000; align-items: center; justify-content: center; padding: 20px;">
         <div style="background: #ffffff; border-radius: 16px; width: 100%; max-width: 580px; box-shadow: 0 20px 45px rgba(15, 23, 42, 0.22); overflow: hidden;">
             <div style="padding: 16px 22px; border-bottom: 1px solid #f1f5f9; background: linear-gradient(135deg, #fdf4ff 0%, #f5f3ff 100%); display: flex; align-items: center; justify-content: space-between;">
                 <div style="display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 800; color: #0f172a;">
@@ -1129,7 +1129,7 @@
     </div>
 
     <!-- 5. Modal: Confirm Delete Company -->
-    <div id="modalConfirmDeleteCompany" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 1050; align-items: center; justify-content: center; padding: 20px;">
+    <div id="modalConfirmDeleteCompany" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: none; z-index: 1050; align-items: center; justify-content: center; padding: 20px;">
         <div style="background: #ffffff; border-radius: 14px; width: 100%; max-width: 480px; box-shadow: 0 20px 40px rgba(0,0,0,0.25); overflow: hidden; border: 1px solid #fee2e2;">
             <div style="padding: 16px 20px; border-bottom: 1px solid #fee2e2; background: #fff5f5; display: flex; align-items: center; justify-content: space-between;">
                 <div style="display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 700; color: #991b1b;">
@@ -1159,7 +1159,7 @@
     </div>
 
     <!-- 6. Modal: Confirm Delete Branch -->
-    <div id="modalConfirmDeleteBranch" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 1050; align-items: center; justify-content: center; padding: 20px;">
+    <div id="modalConfirmDeleteBranch" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: none; z-index: 1050; align-items: center; justify-content: center; padding: 20px;">
         <div style="background: #ffffff; border-radius: 14px; width: 100%; max-width: 460px; box-shadow: 0 20px 40px rgba(0,0,0,0.25); overflow: hidden; border: 1px solid #fee2e2;">
             <div style="padding: 16px 20px; border-bottom: 1px solid #fee2e2; background: #fff5f5; display: flex; align-items: center; justify-content: space-between;">
                 <div style="display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 700; color: #991b1b;">

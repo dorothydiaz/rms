@@ -2,10 +2,6 @@
 
 @section('title', 'Branches - Organization Management')
 
-@push('styles')
-    @vite('resources/css/modules/hr-branches.css')
-@endpush
-
 @push('scripts')
     @vite('resources/js/modules/hr-branches.js')
 @endpush

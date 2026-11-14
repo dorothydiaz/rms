@@ -2004,7 +2004,7 @@ function closeVendorProfile() {
         renderKanbanCards(document.getElementById('kanbanSearchInput')?.value || '');
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-    if (headerBar) headerBar.style.display = 'flex';
+    if (headerBar) headerBar.style.display = '';
 }
 
 /**

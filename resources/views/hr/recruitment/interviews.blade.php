@@ -2,10 +2,6 @@
 
 @section('title', 'Interviews Schedule - Talent Acquisition')
 
-@push('styles')
-    @vite(['resources/css/modules/hr-interviews.css'])
-@endpush
-
 @push('scripts')
     @vite(['resources/js/modules/hr-interviews.js'])
 @endpush

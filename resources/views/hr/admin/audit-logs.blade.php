@@ -2,10 +2,6 @@
 
 @section('title', 'Audit Logs - System Security')
 
-@push('styles')
-    @vite(['resources/css/modules/hr-audit-logs.css'])
-@endpush
-
 @push('scripts')
     @vite(['resources/js/modules/hr-audit-logs.js'])
 @endpush

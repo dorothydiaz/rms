@@ -402,49 +402,14 @@
             trigger.setAttribute('aria-expanded', 'false');
             trigger.setAttribute('aria-haspopup', 'listbox');
 
-            // 2. Build Floating Menu
+            // 2. Lazy Floating Menu (built on-demand on first openMenu to save ~25 DOM nodes & 6 listeners per table row)
             const menu = document.createElement('div');
             menu.className = 'uom-dropdown-menu';
             menu.setAttribute('role', 'listbox');
 
-            // Menu Header with Search & Category Chips (Only active categories present in units)
-            const activeUnitsForChips = this.getUnits(categoryFilter);
-            const activeCategoriesPresent = Array.from(new Set(activeUnitsForChips.map(u => u.uom_category)));
-
-            let categoryChipsHtml = `<button type="button" class="uom-category-chip is-active" data-cat="ALL"><i class="ph ph-squares-four"></i> ALL</button>`;
-            activeCategoriesPresent.forEach(catCode => {
-                const meta = CATEGORY_META[catCode] || CATEGORY_META['OTHER'];
-                categoryChipsHtml += `<button type="button" class="uom-category-chip" data-cat="${escapeHtml(catCode)}"><i class="ph ${meta.icon}"></i> ${escapeHtml(catCode)}</button>`;
-            });
-
-            const header = document.createElement('div');
-            header.className = 'uom-menu-header';
-            header.innerHTML = `
-                <div class="uom-search-bar">
-                    <i class="ph ph-magnifying-glass uom-search-icon"></i>
-                    <input type="text" class="uom-search-input" placeholder="Search code, name, category (e.g. PCS, KG, Portion)..." autocomplete="off" spellcheck="false">
-                    <button type="button" class="uom-search-clear" title="Clear search"><i class="ph ph-x"></i></button>
-                </div>
-                <div class="uom-category-chips">
-                    ${categoryChipsHtml}
-                </div>
-            `;
-
-            // Options List Container
-            const optionsList = document.createElement('div');
-            optionsList.className = 'uom-options-list';
-
-            // Menu Footer Help
-            const footer = document.createElement('div');
-            footer.className = 'uom-menu-footer';
-            footer.innerHTML = `
-                <span><i class="ph ph-arrows-down-up"></i> ↑/↓ Navigate • ↵ Select</span>
-                <span>ESC to Close</span>
-            `;
-
-            menu.appendChild(header);
-            menu.appendChild(optionsList);
-            menu.appendChild(footer);
+            let menuBuilt = false;
+            let header = null;
+            let optionsList = null;
 
             container.appendChild(trigger);
             container.appendChild(menu);
@@ -668,11 +633,134 @@
                 closeMenu();
             }
 
+            function highlightFocusedOption(items) {
+                items.forEach((item, idx) => {
+                    if (idx === focusedOptionIndex) {
+                        item.classList.add('is-focused');
+                        item.scrollIntoView({ block: 'nearest' });
+                    } else {
+                        item.classList.remove('is-focused');
+                    }
+                });
+            }
+
+            /**
+             * Lazily construct floating menu DOM & bind internal listeners only when user opens dropdown
+             */
+            function ensureMenuBuilt() {
+                if (menuBuilt) return;
+                menuBuilt = true;
+
+                const activeUnitsForChips = self.getUnits(categoryFilter);
+                const activeCategoriesPresent = Array.from(new Set(activeUnitsForChips.map(u => u.uom_category)));
+
+                let categoryChipsHtml = `<button type="button" class="uom-category-chip is-active" data-cat="ALL"><i class="ph ph-squares-four"></i> ALL</button>`;
+                activeCategoriesPresent.forEach(catCode => {
+                    const meta = CATEGORY_META[catCode] || CATEGORY_META['OTHER'];
+                    categoryChipsHtml += `<button type="button" class="uom-category-chip" data-cat="${escapeHtml(catCode)}"><i class="ph ${meta.icon}"></i> ${escapeHtml(catCode)}</button>`;
+                });
+
+                header = document.createElement('div');
+                header.className = 'uom-menu-header';
+                header.innerHTML = `
+                    <div class="uom-search-bar">
+                        <i class="ph ph-magnifying-glass uom-search-icon"></i>
+                        <input type="text" class="uom-search-input" placeholder="Search code, name, category (e.g. PCS, KG, Portion)..." autocomplete="off" spellcheck="false">
+                        <button type="button" class="uom-search-clear" title="Clear search"><i class="ph ph-x"></i></button>
+                    </div>
+                    <div class="uom-category-chips">
+                        ${categoryChipsHtml}
+                    </div>
+                `;
+
+                optionsList = document.createElement('div');
+                optionsList.className = 'uom-options-list';
+
+                const footer = document.createElement('div');
+                footer.className = 'uom-menu-footer';
+                footer.innerHTML = `
+                    <span><i class="ph ph-arrows-down-up"></i> ↑/↓ Navigate • ↵ Select</span>
+                    <span>ESC to Close</span>
+                `;
+
+                menu.appendChild(header);
+                menu.appendChild(optionsList);
+                menu.appendChild(footer);
+
+                const searchInput = header.querySelector('.uom-search-input');
+                const searchClear = header.querySelector('.uom-search-clear');
+
+                searchInput.addEventListener('input', (e) => {
+                    searchQuery = e.target.value;
+                    if (searchQuery) {
+                        searchClear.classList.add('is-visible');
+                    } else {
+                        searchClear.classList.remove('is-visible');
+                    }
+                    focusedOptionIndex = 0;
+                    renderOptions();
+                });
+
+                searchClear.addEventListener('click', () => {
+                    searchInput.value = '';
+                    searchQuery = '';
+                    searchClear.classList.remove('is-visible');
+                    focusedOptionIndex = -1;
+                    renderOptions();
+                    searchInput.focus();
+                });
+
+                searchInput.addEventListener('keydown', (e) => {
+                    const items = optionsList.querySelectorAll('.uom-option-item');
+                    if (items.length === 0) return;
+
+                    if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        focusedOptionIndex = (focusedOptionIndex + 1) % items.length;
+                        highlightFocusedOption(items);
+                    } else if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        focusedOptionIndex = (focusedOptionIndex - 1 + items.length) % items.length;
+                        highlightFocusedOption(items);
+                    } else if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (focusedOptionIndex >= 0 && items[focusedOptionIndex]) {
+                            const code = items[focusedOptionIndex].getAttribute('data-uom-code');
+                            selectValue(code);
+                        }
+                    } else if (e.key === 'Escape') {
+                        e.preventDefault();
+                        closeMenu();
+                        trigger.focus();
+                    }
+                });
+
+                header.querySelectorAll('.uom-category-chip').forEach(chip => {
+                    chip.addEventListener('click', () => {
+                        header.querySelectorAll('.uom-category-chip').forEach(c => c.classList.remove('is-active'));
+                        chip.classList.add('is-active');
+                        activeCategoryChip = chip.getAttribute('data-cat') || 'ALL';
+                        focusedOptionIndex = -1;
+                        renderOptions();
+                    });
+                });
+
+                optionsList.addEventListener('click', (e) => {
+                    const item = e.target.closest('.uom-option-item');
+                    if (item) {
+                        const code = item.getAttribute('data-uom-code');
+                        selectValue(code);
+                    }
+                });
+            }
+
             /**
              * Open floating dropdown menu
              */
             function openMenu() {
                 if (isDisabled) return;
+                ensureMenuBuilt();
+
                 // Close any other open dropdowns
                 document.querySelectorAll('.uom-dropdown-wrapper.is-open').forEach(w => {
                     if (w !== container) w.classList.remove('is-open');
@@ -708,7 +796,7 @@
             }
 
             // Toggle menu on trigger click
-            trigger.addEventListener('click', (e) => {
+            trigger.addEventListener('click', () => {
                 if (container.classList.contains('is-open')) {
                     closeMenu();
                 } else {
@@ -721,87 +809,6 @@
                 if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
                     e.preventDefault();
                     openMenu();
-                }
-            });
-
-            // Search input handling
-            const searchInput = header.querySelector('.uom-search-input');
-            const searchClear = header.querySelector('.uom-search-clear');
-
-            searchInput.addEventListener('input', (e) => {
-                searchQuery = e.target.value;
-                if (searchQuery) {
-                    searchClear.classList.add('is-visible');
-                } else {
-                    searchClear.classList.remove('is-visible');
-                }
-                focusedOptionIndex = 0;
-                renderOptions();
-            });
-
-            searchClear.addEventListener('click', () => {
-                searchInput.value = '';
-                searchQuery = '';
-                searchClear.classList.remove('is-visible');
-                focusedOptionIndex = -1;
-                renderOptions();
-                searchInput.focus();
-            });
-
-            // Keyboard navigation inside search input
-            searchInput.addEventListener('keydown', (e) => {
-                const items = optionsList.querySelectorAll('.uom-option-item');
-                if (items.length === 0) return;
-
-                if (e.key === 'ArrowDown') {
-                    e.preventDefault();
-                    focusedOptionIndex = (focusedOptionIndex + 1) % items.length;
-                    highlightFocusedOption(items);
-                } else if (e.key === 'ArrowUp') {
-                    e.preventDefault();
-                    focusedOptionIndex = (focusedOptionIndex - 1 + items.length) % items.length;
-                    highlightFocusedOption(items);
-                } else if (e.key === 'Enter') {
-                    e.preventDefault();
-                    if (focusedOptionIndex >= 0 && items[focusedOptionIndex]) {
-                        const code = items[focusedOptionIndex].getAttribute('data-uom-code');
-                        selectValue(code);
-                    }
-                } else if (e.key === 'Escape') {
-                    e.preventDefault();
-                    closeMenu();
-                    trigger.focus();
-                }
-            });
-
-            function highlightFocusedOption(items) {
-                items.forEach((item, idx) => {
-                    if (idx === focusedOptionIndex) {
-                        item.classList.add('is-focused');
-                        item.scrollIntoView({ block: 'nearest' });
-                    } else {
-                        item.classList.remove('is-focused');
-                    }
-                });
-            }
-
-            // Category Filter Chips
-            header.querySelectorAll('.uom-category-chip').forEach(chip => {
-                chip.addEventListener('click', (e) => {
-                    header.querySelectorAll('.uom-category-chip').forEach(c => c.classList.remove('is-active'));
-                    chip.classList.add('is-active');
-                    activeCategoryChip = chip.getAttribute('data-cat') || 'ALL';
-                    focusedOptionIndex = -1;
-                    renderOptions();
-                });
-            });
-
-            // Option item selection via event delegation
-            optionsList.addEventListener('click', (e) => {
-                const item = e.target.closest('.uom-option-item');
-                if (item) {
-                    const code = item.getAttribute('data-uom-code');
-                    selectValue(code);
                 }
             });
 
@@ -834,17 +841,22 @@
 
         /**
          * Automatically hydrate all standard and custom UoM dropdowns across the application
+         * @param {Element|Document} [rootEl=document] - Optional container scope to avoid full-DOM scans
+         * @param {boolean} [force=false] - Force re-creation of already hydrated dropdowns
          */
-        async autoHydrate() {
+        async autoHydrate(rootEl, force = false) {
             await this.load();
+            const scope = (rootEl && typeof rootEl.querySelectorAll === 'function') ? rootEl : document;
 
             // 1. Hydrate declared custom dropdown wrappers [data-uom-dropdown]
-            document.querySelectorAll('[data-uom-dropdown]').forEach(container => {
+            scope.querySelectorAll('[data-uom-dropdown]').forEach(container => {
+                if (!force && container._uomDropdown) return;
                 this.createCustomDropdown(container);
             });
 
             // 2. Transform standard selects with [data-uom-select] into custom dropdowns if not already wrapped
-            document.querySelectorAll('select[data-uom-select]').forEach(sel => {
+            scope.querySelectorAll('select[data-uom-select]').forEach(sel => {
+                if (!force && sel._uomDropdown) return;
                 if (!sel.closest('.uom-dropdown-wrapper')) {
                     this.createCustomDropdown(sel);
                 }

@@ -2,10 +2,6 @@
 
 @section('title', 'Job Vacancies - Talent Acquisition')
 
-@push('styles')
-    @vite(['resources/css/modules/hr-vacancies.css'])
-@endpush
-
 @push('scripts')
     @vite(['resources/js/modules/hr-vacancies.js'])
 @endpush

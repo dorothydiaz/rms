@@ -196,17 +196,19 @@ class Employee extends Model
     protected static ?\Illuminate\Support\Collection $cachedDeptsById = null;
     protected static ?\Illuminate\Support\Collection $cachedBranchesById = null;
     protected static ?\Illuminate\Support\Collection $cachedPositionsById = null;
+    protected static ?\Illuminate\Support\Collection $cachedRolesBySlug = null;
 
     public static function flushLookupCache(): void
     {
         static::$cachedDeptsById = null;
         static::$cachedBranchesById = null;
         static::$cachedPositionsById = null;
+        static::$cachedRolesBySlug = null;
     }
 
     protected static function getDepartmentMap(): \Illuminate\Support\Collection
     {
-        if (static::$cachedDeptsById === null || !app()->runningInConsole() === false) {
+        if (static::$cachedDeptsById === null) {
             static::$cachedDeptsById = Department::all()->keyBy('id');
         }
         return static::$cachedDeptsById;
@@ -214,7 +216,7 @@ class Employee extends Model
 
     protected static function getBranchMap(): \Illuminate\Support\Collection
     {
-        if (static::$cachedBranchesById === null || !app()->runningInConsole() === false) {
+        if (static::$cachedBranchesById === null) {
             static::$cachedBranchesById = Branch::all()->keyBy('id');
         }
         return static::$cachedBranchesById;
@@ -222,10 +224,18 @@ class Employee extends Model
 
     protected static function getPositionMap(): \Illuminate\Support\Collection
     {
-        if (static::$cachedPositionsById === null || !app()->runningInConsole() === false) {
+        if (static::$cachedPositionsById === null) {
             static::$cachedPositionsById = Position::all()->keyBy('id');
         }
         return static::$cachedPositionsById;
+    }
+
+    protected static function getRoleMap(): \Illuminate\Support\Collection
+    {
+        if (static::$cachedRolesBySlug === null) {
+            static::$cachedRolesBySlug = Role::all()->keyBy('slug');
+        }
+        return static::$cachedRolesBySlug;
     }
 
     public function getAssignedDepartmentNamesAttribute(): array
@@ -328,7 +338,10 @@ class Employee extends Model
         if ($this->employment_source === 'Agency') {
             return $this->agency_name ?: ($this->company?->type === 'Agency' ? $this->company->name : ($this->company_agency_name ?: 'Agency'));
         }
-        return $this->company_name ?: ($this->company?->name ?: ($this->company_agency_name ?: ($this->branch?->company?->name ?? 'Company')));
+        $branchCompanyName = ($this->relationLoaded('branch') && $this->branch && $this->branch->relationLoaded('company'))
+            ? $this->branch->company?->name
+            : null;
+        return $this->company_name ?: ($this->company?->name ?: ($this->company_agency_name ?: ($branchCompanyName ?? 'Company')));
     }
 
     public function permissions(): BelongsToMany
@@ -349,17 +362,18 @@ class Employee extends Model
             return $this->user->roles->first();
         }
 
+        $roleMap = static::getRoleMap();
         $posName = strtolower($this->position?->name ?? '');
         if (str_contains($posName, 'manager')) {
-            return Role::where('slug', 'restaurant-manager')->first();
+            return $roleMap->get('restaurant-manager');
         }
         if (str_contains($posName, 'cashier')) {
-            return Role::where('slug', 'cashier')->first();
+            return $roleMap->get('cashier');
         }
         if (str_contains($posName, 'cook') || str_contains($posName, 'kitchen') || str_contains($posName, 'chef')) {
-            return Role::where('slug', 'kitchen')->first();
+            return $roleMap->get('kitchen');
         }
-        return Role::where('slug', 'staff')->first();
+        return $roleMap->get('staff');
     }
 
     public function hasDirectPermission(int|string $permission): bool
@@ -417,7 +431,10 @@ class Employee extends Model
             return false;
         }
 
-        if ($this->subordinates()->count() > 0) {
+        $subCount = $this->relationLoaded('subordinates')
+            ? $this->subordinates->count()
+            : ($this->subordinates_count ?? $this->subordinates()->count());
+        if ($subCount > 0) {
             return true;
         }
 
@@ -581,12 +598,12 @@ class Employee extends Model
         $currentYear = date('Y');
 
         $existingIds = static::withTrashed()
-            ->where('employee_id', 'like', "EMP-{$currentYear}-%")
-            ->pluck('employee_id');
+            ->where('employee_code', 'like', "EMP-{$currentYear}-%")
+            ->pluck('employee_code');
 
         $maxNum = 0;
         foreach ($existingIds as $id) {
-            if (preg_match('/EMP-\d{4}-(\d+)/', $id, $matches)) {
+            if (preg_match('/EMP-\d{4}-(\d+)/', (string) $id, $matches)) {
                 $num = (int) $matches[1];
                 if ($num < 500 && $num > $maxNum) {
                     $maxNum = $num;
@@ -594,10 +611,11 @@ class Employee extends Model
             }
         }
 
+        $existingCodes = $existingIds->flip();
         $nextNumber = $maxNum + 1;
         $candidateId = "EMP-{$currentYear}-" . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
 
-        while (static::withTrashed()->where('employee_id', $candidateId)->exists()) {
+        while ($existingCodes->has($candidateId)) {
             $nextNumber++;
             $candidateId = "EMP-{$currentYear}-" . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
         }

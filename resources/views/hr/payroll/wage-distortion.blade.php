@@ -700,7 +700,7 @@
 <!-- ======================================================== -->
 <!-- MODAL: CONFIRM APPLY WAGE ADJUSTMENTS                     -->
 <!-- ======================================================== -->
-<div class="hr-modal-overlay" id="applyModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center;">
+<div class="hr-modal-overlay" id="applyModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: none; z-index: 9999; align-items: center; justify-content: center;">
     <div style="background: #ffffff; border-radius: 18px; width: 100%; max-width: 540px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); overflow: hidden; animation: hrModalFade 0.2s ease-out; margin: 20px;">
         
         <div style="padding: 20px 24px; background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%); color: #ffffff; display: flex; align-items: center; justify-content: space-between;">
@@ -774,7 +774,7 @@
 <!-- ======================================================== -->
 <!-- MODAL: MATHEMATICAL BREAKDOWN INSPECTION                 -->
 <!-- ======================================================== -->
-<div class="hr-modal-overlay" id="breakdownModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center;">
+<div class="hr-modal-overlay" id="breakdownModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: none; z-index: 9999; align-items: center; justify-content: center;">
     <div style="background: #ffffff; border-radius: 16px; width: 100%; max-width: 480px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); overflow: hidden; animation: hrModalFade 0.2s ease-out; margin: 20px;">
         <div style="padding: 16px 20px; background: #0f172a; color: #ffffff; display: flex; align-items: center; justify-content: space-between;">
             <div style="display: flex; align-items: center; gap: 8px;">

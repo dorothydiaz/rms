@@ -14,10 +14,6 @@
 </script>
 @endpush
 
-@push('styles')
-    @vite(['resources/css/modules/hr-roles.css'])
-@endpush
-
 @push('scripts')
     @vite(['resources/js/modules/hr-roles.js'])
 @endpush

@@ -2,10 +2,6 @@
 
 @section('title', 'Internal Transfer - Restaurant Management System')
 
-@push('styles')
-    @vite('resources/css/modules/internal-transfer.css')
-@endpush
-
 @push('blade-data')
 <script>
     window.InternalTransferConfig = Object.freeze({
