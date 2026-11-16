@@ -6,13 +6,12 @@ use App\Models\Hr\Department;
 use App\Models\Hr\Employee;
 use App\Models\User;
 use App\Services\ApprovalHierarchyService;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 class ApprovalHierarchyServiceTest extends TestCase
 {
-    use DatabaseTransactions;
+    protected $seed = true;
 
     protected ApprovalHierarchyService $service;
 

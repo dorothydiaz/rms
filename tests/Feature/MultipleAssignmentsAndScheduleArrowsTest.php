@@ -8,12 +8,11 @@ use App\Models\Hr\Department;
 use App\Models\Hr\Employee;
 use App\Models\Hr\Position;
 use App\Models\User;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 class MultipleAssignmentsAndScheduleArrowsTest extends TestCase
 {
-    use DatabaseTransactions;
+    protected $seed = true;
 
     public function test_employee_can_be_assigned_multiple_branches_departments_and_positions_on_create_and_update(): void
     {

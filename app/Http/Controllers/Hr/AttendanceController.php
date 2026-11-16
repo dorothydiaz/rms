@@ -225,7 +225,7 @@ class AttendanceController extends Controller
         $employees = Employee::activeWorkforce()->get();
 
         // Consolidated Totals (Single high-performance query aggregate)
-        $aggregateQuery = clone $query;
+        $aggregateQuery = (clone $query)->reorder();
         $aggregated = $aggregateQuery->selectRaw('
             COALESCE(SUM(attendance_record_total_hours), 0) as hours,
             COALESCE(SUM(attendance_record_late_minutes), 0) as late_min,

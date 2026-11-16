@@ -36,7 +36,9 @@ use App\Services\PayrollCalculationService;
 use App\Services\StatutoryContributionService;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 
 class HrDatabaseSeeder extends Seeder
 {
@@ -1507,5 +1509,25 @@ class HrDatabaseSeeder extends Seeder
             'details' => 'Initialized restaurant HR operations structure, branches, roles, statutory rules, and initial workforce.',
             'created_at' => now(),
         ]);
+
+        // 22. Organizational Hierarchy & Department Heads
+        $empSupCol = Schema::hasColumn('hr_employees', 'employee_supervisor_id') ? 'employee_supervisor_id' : 'supervisor_id';
+        $empPkCol = Schema::hasColumn('hr_employees', 'employee_id') ? 'employee_id' : 'id';
+
+        DB::table('hr_employees')->where($empPkCol, 1)->update([$empSupCol => null]);
+        DB::table('hr_employees')->whereIn($empPkCol, [2, 3, 4, 5, 11, 14])->update([$empSupCol => 1]);
+        DB::table('hr_employees')->where($empPkCol, 6)->update([$empSupCol => 4]);
+        DB::table('hr_employees')->whereIn($empPkCol, [7, 8, 10, 13, 15])->update([$empSupCol => 6]);
+        DB::table('hr_employees')->whereIn($empPkCol, [9, 12, 16])->update([$empSupCol => 5]);
+
+        $deptHeadCol = Schema::hasColumn('hr_departments', 'department_head_employee_id') ? 'department_head_employee_id' : (Schema::hasColumn('hr_departments', 'head_employee_id') ? 'head_employee_id' : null);
+        $deptNameCol = Schema::hasColumn('hr_departments', 'department_name') ? 'department_name' : 'name';
+
+        if ($deptHeadCol) {
+            DB::table('hr_departments')->where($deptNameCol, 'Management')->update([$deptHeadCol => 1]);
+            DB::table('hr_departments')->where($deptNameCol, 'Finance & Admin')->update([$deptHeadCol => 3]);
+            DB::table('hr_departments')->where($deptNameCol, 'Front of House')->update([$deptHeadCol => 4]);
+            DB::table('hr_departments')->where($deptNameCol, 'Back of House')->update([$deptHeadCol => 5]);
+        }
     }
 }

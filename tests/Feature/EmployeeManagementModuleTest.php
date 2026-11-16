@@ -49,11 +49,11 @@ class EmployeeManagementModuleTest extends TestCase
             ?? User::where('role', 'hr_admin')->first()
             ?? User::first()
             ?? User::create([
-                'username' => 'peter',
-                'full_name' => 'Peter Admin',
-                'email' => 'peter@test.com',
-                'password' => bcrypt('password123'),
-                'role' => 'hr_admin',
+                'username' => 'test_admin',
+                'full_name' => 'Test Admin',
+                'email' => 'admin@test.com',
+                'password' => bcrypt('password'),
+                'role' => 'Admin',
                 'status' => 'Active',
             ]);
 

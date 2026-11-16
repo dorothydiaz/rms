@@ -6,12 +6,11 @@ use App\Models\Hr\Department;
 use App\Models\Hr\Employee;
 use App\Models\User;
 use App\Services\ApprovalHierarchyService;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 class OrgStructureTest extends TestCase
 {
-    use DatabaseTransactions;
+    protected $seed = true;
 
     protected function getAdminUser(): User
     {

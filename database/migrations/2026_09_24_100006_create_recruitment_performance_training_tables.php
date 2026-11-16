@@ -43,9 +43,7 @@ return new class extends Migration
                 $table->string('applied_position', 100);
                 $table->string('source', 50)->default('Walk-in'); // Walk-in, Online, Referral, Job Fair
                 $table->date('application_date');
-                $table->enum('status', [
-                    'New', 'Screening', 'Interview', 'Assessment', 'Shortlisted', 'Job Offer', 'Hired', 'Rejected'
-                ])->default('New');
+                $table->string('status', 50)->default('New');
                 $table->foreignId('hired_as_employee_id')->nullable()->constrained('employees')->nullOnDelete();
                 $table->timestamps();
             });
@@ -59,11 +57,11 @@ return new class extends Migration
                 $table->dateTime('interview_date');
                 $table->foreignId('interviewer_id')->nullable()->constrained('users')->nullOnDelete();
                 $table->string('interviewer_name', 100)->nullable();
-                $table->enum('interview_type', ['Initial Screening', 'Technical / Practical', 'Managerial', 'Final HR'])->default('Initial Screening');
+                $table->string('interview_type', 50)->default('Initial Screening');
                 $table->text('notes')->nullable();
                 $table->unsignedTinyInteger('rating')->nullable(); // 1 to 5
                 $table->text('recommendation')->nullable(); // Proceed, Re-evaluate, Reject, Offer
-                $table->enum('status', ['Scheduled', 'Completed', 'Cancelled'])->default('Scheduled');
+                $table->string('status', 50)->default('Scheduled');
                 $table->timestamps();
             });
         }
