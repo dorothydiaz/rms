@@ -15,12 +15,14 @@ t Management System')
             ordersCreate: @json(route('purchase.api.orders.create')),
             saveDraft: @json(route('purchase.api.orders.save-draft')),
             transitionStatus: @json(route('purchase.api.orders.transition-status')),
+            recordPayment: @json(route('purchase.api.orders.record-payment')),
             batchDelete: @json(route('purchase.api.orders.batch-delete')),
             batchArchive: @json(route('purchase.api.orders.batch-archive')),
             rfqConvertPo: @json(route('purchase.api.rfq.convert-po')),
             requestQuotations: @json(route('purchase.request-quotations')),
             vendorMasterlist: @json(route('purchase.vendor-masterlist')),
             inventoryStockIn: @json(route('inventory.stock-in')),
+            accountingAp: @json(route('accounting.ap')),
         },
         user: {
             name: @json(auth()->user()->name ?? 'Procurement Specialist'),
@@ -30,6 +32,11 @@ t Management System')
             initialVendors: @json($initialVendors ?? []),
             initialItems: @json($initialItems ?? []),
             initialWarehouses: @json($initialWarehouses ?? []),
+            initialVendorCredits: @json($initialVendorCredits ?? []),
+            initialPoApPayments: @json($initialPoApPayments ?? []),
+            initialBankAccounts: @json($initialBankAccounts ?? []),
+            initialDisbursementAccounts: @json($initialDisbursementAccounts ?? []),
+            initialTaxCodes: @json($initialTaxCodes ?? []),
         }
     });
 </script>
@@ -180,9 +187,6 @@ t Management System')
                         <div id="poColChecklist"></div>
                     </div>
 
-                    <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="openImportRfqModal()" title="Convert Awarded RFQ to Purchase Order" style="padding: 5px 10px; font-size: 12px; border-radius: 8px;">
-                        <i class="ph ph-link"></i> Import Awarded RFQ
-                    </button>
                     <button type="button" class="hr-btn hr-btn-primary hr-btn-sm" onclick="startNewPoFromDirectory()" style="padding: 5px 12px; font-size: 12px; border-radius: 8px;">
                         <i class="ph ph-plus-circle"></i> + Create PO
                     </button>
@@ -498,9 +502,6 @@ t Management System')
                         </div>
 
                         <div class="po-toolbar-right rfq-toolbar-right" style="display: flex; align-items: center; gap: 6px;">
-                            <button type="button" class="po-btn po-btn-outline rfq-btn rfq-btn-outline" onclick="openImportRfqModal()" title="Import Awarded RFQ lines into this PO" style="padding: 5px 10px; font-size: 11.5px;">
-                                <i class="ph ph-link"></i> Import RFQ
-                            </button>
                             <button type="button" class="po-btn po-btn-outline rfq-btn rfq-btn-outline" onclick="openItemMasterQuickPicker()" title="Quick add items from Item Master (F2)" style="padding: 5px 10px; font-size: 11.5px;">
                                 <i class="ph ph-magnifying-glass"></i> Select Master <span class="po-hotkey-badge rfq-hotkey-badge">F2</span>
                             </button>
@@ -529,56 +530,70 @@ t Management System')
                             </tbody>
                         </table>
                     </div>
+                </div><!-- /.po-items-panel -->
 
-                    <!-- Items Table Footer Metric Summary & Adaptive Financial Breakdown -->
-                    <div class="po-summary-bar rfq-summary-bar po-summary-bar-clean">
-                        <div class="po-footer-left-meta">
-                            <div class="po-metrics-cluster rfq-metrics-cluster">
-                                <div class="po-metric-unit rfq-metric-unit">
-                                    <span class="po-metric-label rfq-metric-label">Lines</span>
-                                    <span class="po-metric-val rfq-metric-val" id="summaryPoLines" style="font-size: 1.05rem;">0</span>
-                                </div>
-                                <div class="po-metric-unit rfq-metric-unit">
-                                    <span class="po-metric-label rfq-metric-label">Ordered Units</span>
-                                    <span class="po-metric-val rfq-metric-val" id="summaryPoUnits" style="font-size: 1.05rem;">0.00</span>
-                                </div>
+                <!-- Separate Financial Summary & Payment Breakdown Card -->
+                <div class="po-summary-bar rfq-summary-bar po-summary-bar-clean">
+                    <div class="po-footer-left-meta">
+                        <div class="po-metrics-cluster rfq-metrics-cluster">
+                            <div class="po-metric-unit rfq-metric-unit">
+                                <span class="po-metric-label rfq-metric-label">Lines</span>
+                                <span class="po-metric-val rfq-metric-val" id="summaryPoLines" style="font-size: 1rem;">0</span>
                             </div>
-                            <div class="rfq-table-hint" style="display: flex; align-items: center; gap: 6px; font-size: 0.75rem; color: #64748b;">
-                                <i class="ph ph-broadcast" style="color: #059669;"></i> Live synced with PO Mockup
+                            <div class="po-metric-unit rfq-metric-unit">
+                                <span class="po-metric-label rfq-metric-label">Ordered Units</span>
+                                <span class="po-metric-val rfq-metric-val" id="summaryPoUnits" style="font-size: 1rem;">0.00</span>
                             </div>
                         </div>
-
-                        <!-- Right Side: Clean Adaptive Financial & Payment Breakdown -->
-                        <div class="po-fin-breakdown-panel" id="poFinBreakdownPanel">
-                            <div class="po-fin-row">
-                                <span class="po-fin-label">Untaxed Amount:</span>
-                                <span class="po-fin-value strong" id="summaryPoUntaxed">₱ 0.00</span>
-                            </div>
-                            <div class="po-fin-row" id="summaryPoVatableRow">
-                                <span class="po-fin-label">VATable:</span>
-                                <span class="po-fin-value" id="summaryPoVatable">₱ 0.00</span>
-                            </div>
-                            <div class="po-fin-row" id="summaryPoWithholdingRow">
-                                <span class="po-fin-label">Withholding Tax:</span>
-                                <span class="po-fin-value" id="summaryPoWithholding">₱ 0.00</span>
-                            </div>
-                            <div class="po-fin-divider"></div>
-                            <div class="po-fin-row total-row">
-                                <span class="po-fin-label total-label">Total:</span>
-                                <span class="po-fin-value total-value" id="summaryPoGross">₱ 0.00</span>
-                            </div>
-
-                            <!-- Amount Due Row -->
-                            <div class="po-fin-row balance-row">
-                                <span class="po-fin-label balance-label">Amount Due:</span>
-                                <span class="po-fin-value balance-value" id="summaryPoBalanceDue">₱ 0.00</span>
-                            </div>
-
-                            <!-- Adaptive Payment Rows AFTER Amount Due (Continues until nothing left to settle) -->
-                            <div id="summaryPoPaymentsList" class="po-fin-payments-after-due"></div>
+                        <div class="rfq-table-hint" style="display: flex; align-items: center; gap: 6px; font-size: 0.72rem; color: #64748b;">
+                            <i class="ph ph-broadcast" style="color: #059669;"></i> Live synced with PO Mockup
                         </div>
                     </div>
-                </div><!-- /.po-items-panel -->
+
+                    <!-- Right Side: Clean Adaptive Financial & Payment Breakdown -->
+                    <div class="po-fin-breakdown-panel" id="poFinBreakdownPanel">
+                        <div class="po-fin-row">
+                            <span class="po-fin-label">Untaxed Amount:</span>
+                            <span class="po-fin-value strong" id="summaryPoUntaxed">₱ 0.00</span>
+                        </div>
+                        <div class="po-fin-row" id="summaryPoVatableRow">
+                            <span class="po-fin-label">VATable:</span>
+                            <span class="po-fin-value" id="summaryPoVatable">₱ 0.00</span>
+                        </div>
+                        <div class="po-fin-row" id="summaryPoWithholdingRow">
+                            <span class="po-fin-label">Withholding Tax:</span>
+                            <span class="po-fin-value" id="summaryPoWithholding">₱ 0.00</span>
+                        </div>
+                        <div class="po-fin-divider"></div>
+                        <div class="po-fin-row total-row">
+                            <span class="po-fin-label total-label">Total:</span>
+                            <span class="po-fin-value total-value" id="summaryPoGross">₱ 0.00</span>
+                        </div>
+
+                        <!-- Amount Due Row -->
+                        <div class="po-fin-row balance-row">
+                            <span class="po-fin-label balance-label">Amount Due:</span>
+                            <span class="po-fin-value balance-value" id="summaryPoBalanceDue">₱ 0.00</span>
+                        </div>
+
+                        <!-- Available AP Vendor Credit Balance Row (Connected to Accounting AP) -->
+                        <div class="po-fin-row" id="summaryPoVendorCreditRow" style="display: none; margin-top: 4px; padding: 5px 8px; border-radius: 7px; background: #f0fdf4; border: 1px dashed #86efac; align-items: center; justify-content: space-between; gap: 10px;">
+                            <span class="po-fin-label" style="display: inline-flex; align-items: center; gap: 5px; font-size: 0.76rem; font-weight: 700; color: #047857; text-align: left;">
+                                <i class="ph ph-wallet" style="font-size: 14px;"></i>
+                                <span>AP Credit Balance:</span>
+                            </span>
+                            <span style="display: inline-flex; align-items: center; gap: 8px;">
+                                <span class="po-fin-value" id="summaryPoVendorCreditBal" style="min-width: auto; font-size: 0.82rem; font-weight: 800; color: #059669;">₱ 0.00</span>
+                                <button type="button" id="btnApplyPoSummaryCredit" onclick="applyVendorCreditInline()" style="padding: 2px 8px; border-radius: 5px; border: 1px solid #10b981; background: #059669; color: #ffffff; font-size: 0.70rem; font-weight: 700; cursor: pointer; white-space: nowrap;">
+                                    + Apply Credit
+                                </button>
+                            </span>
+                        </div>
+
+                        <!-- Adaptive Payment Rows AFTER Amount Due (Continues until nothing left to settle) -->
+                        <div id="summaryPoPaymentsList" class="po-fin-payments-after-due"></div>
+                    </div>
+                </div>
             </div><!-- /.po-items-panel-col -->
 
             <!-- Right Side (30% Width): Sticky Live Purchase Order Mockup & Accessible Action Buttons -->
@@ -968,7 +983,20 @@ t Management System')
                                 <button type="button" class="po-pay-preset-pill emerald" onclick="fillFullRemainingBalance()">
                                     <i class="ph ph-lightning"></i> Full Balance
                                 </button>
+                                <button type="button" class="po-pay-preset-pill" id="payModalCreditBtn" style="display: none; background: #ecfdf5; color: #047857; border-color: #6ee7b7;" onclick="fillVendorCreditBalance()" title="Apply Vendor AP Credit Memo Balance">
+                                    <i class="ph ph-wallet"></i> Use Credit (<span id="payModalCreditBtnAmt">₱0.00</span>)
+                                </button>
                             </div>
+                        </div>
+
+                        <div id="payModalCreditBanner" style="display: none; margin-bottom: 10px; padding: 8px 12px; border-radius: 8px; background: #f0fdf4; border: 1px solid #86efac; align-items: center; justify-content: space-between; gap: 10px; font-size: 12px; color: #065f46;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <i class="ph ph-wallet" style="font-size: 16px; color: #059669;"></i>
+                                <span>Available Accounting AP Credit Balance: <strong id="payModalAvailCreditVal">₱0.00</strong></span>
+                            </div>
+                            <button type="button" onclick="fillVendorCreditBalance()" style="padding: 3px 9px; border-radius: 6px; border: 1px solid #059669; background: #059669; color: #ffffff; font-size: 11px; font-weight: 700; cursor: pointer;">
+                                Apply to Payment
+                            </button>
                         </div>
 
                         <div id="payModalSettledBanner" class="po-pay-settled-notice" style="display: none;">
@@ -987,11 +1015,12 @@ t Management System')
                                     <option value="Partial / Progress Billing">Partial / Progress Billing</option>
                                     <option value="Final Settlement">Final Balance Settlement</option>
                                     <option value="Full Spot Payment">Full Spot Payment</option>
+                                    <option value="Vendor Credit Application">Apply Vendor Credit Balance</option>
                                 </select>
                             </div>
                             <div class="po-field">
                                 <label class="po-label" for="newPayAmount">Amount to Disburse (₱) *</label>
-                                <input type="number" step="0.01" min="0.01" class="po-input po-pay-amount-input" id="newPayAmount" placeholder="0.00">
+                                <input type="number" step="0.01" min="0.01" class="po-input po-pay-amount-input" id="newPayAmount" placeholder="0.00" oninput="updatePayModalExcessAndEwtPreview()">
                             </div>
 
                             <div class="po-field">
@@ -1006,13 +1035,57 @@ t Management System')
                                 </select>
                             </div>
                             <div class="po-field">
-                                <label class="po-label" for="newPayFundSource">Disbursing Fund Source</label>
+                                <label class="po-label" for="newPayFundSource">Disbursing Bank / GL Account *</label>
                                 <select class="po-select" id="newPayFundSource">
-                                    <option value="Main Commissary Checking Acct">Main Commissary Checking Account</option>
-                                    <option value="Branch Petty Cash Fund">Branch Petty Cash Fund</option>
-                                    <option value="Purchaser Cash Advance">Purchaser Cash Advance Fund</option>
-                                    <option value="Corporate Card Account">Corporate Card Account</option>
+                                    @if(!empty($initialBankAccounts))
+                                        <optgroup label="Accounting Bank Accounts">
+                                            @foreach($initialBankAccounts as $ba)
+                                                @php
+                                                    $baId = is_array($ba) ? ($ba['bank_account_id'] ?? '') : ($ba->bank_account_id ?? '');
+                                                    $baName = is_array($ba) ? ($ba['account_name'] ?? '') : ($ba->account_name ?? '');
+                                                    $baBank = is_array($ba) ? ($ba['bank_name'] ?? '') : ($ba->bank_name ?? '');
+                                                    $baNum = is_array($ba) ? ($ba['account_number'] ?? '') : ($ba->account_number ?? '');
+                                                    $baGl = is_array($ba) ? ($ba['gl_account_id'] ?? '') : ($ba->gl_account_id ?? '');
+                                                @endphp
+                                                <option value="{{ $baName }} ({{ $baNum }})" data-bank-account-id="{{ $baId }}" data-gl-account-id="{{ $baGl }}">
+                                                    {{ $baName }} — {{ $baBank }} ({{ $baNum }})
+                                                </option>
+                                            @endforeach
+                                        </optgroup>
+                                    @endif
+                                    @if(!empty($initialDisbursementAccounts))
+                                        <optgroup label="GL Cash &amp; Disbursement Accounts">
+                                            @foreach($initialDisbursementAccounts as $ga)
+                                                @php
+                                                    $gaId = is_array($ga) ? ($ga['account_id'] ?? '') : ($ga->account_id ?? '');
+                                                    $gaCode = is_array($ga) ? ($ga['account_code'] ?? '') : ($ga->account_code ?? '');
+                                                    $gaName = is_array($ga) ? ($ga['account_name'] ?? '') : ($ga->account_name ?? '');
+                                                @endphp
+                                                <option value="{{ $gaCode }} — {{ $gaName }}" data-gl-account-id="{{ $gaId }}">
+                                                    {{ $gaCode }} — {{ $gaName }}
+                                                </option>
+                                            @endforeach
+                                        </optgroup>
+                                    @endif
+                                    @if(empty($initialBankAccounts) && empty($initialDisbursementAccounts))
+                                        <option value="Main Commissary Checking Acct">Main Commissary Checking Account</option>
+                                        <option value="Branch Petty Cash Fund">Branch Petty Cash Fund</option>
+                                        <option value="Purchaser Cash Advance">Purchaser Cash Advance Fund</option>
+                                        <option value="Corporate Card Account">Corporate Card Account</option>
+                                    @endif
                                 </select>
+                            </div>
+
+                            <div class="po-field">
+                                <label class="po-label" for="newPayEwtRule">Withholding Tax / EWT (BIR 2307)</label>
+                                <select class="po-select" id="newPayEwtRule" onchange="updatePayModalExcessAndEwtPreview()">
+                                    <option value="0" data-atc="NONE">No EWT (0%)</option>
+                                    <option value="1" data-atc="WC158">WC158 — Goods Supplier (1%)</option>
+                                    <option value="2" data-atc="WC160">WC160 — Services Contractor (2%)</option>
+                                </select>
+                                <div id="newPayEwtPreviewChip" style="margin-top:4px;font-size:11px;color:#64748b;display:none;">
+                                    EWT: <strong id="newPayEwtPreviewAmt" style="color:#9333ea;">₱0.00</strong> • Net Cash Outflow: <strong id="newPayNetPreviewAmt" style="color:#0f172a;">₱0.00</strong>
+                                </div>
                             </div>
 
                             <div class="po-field">
@@ -1028,10 +1101,15 @@ t Management System')
                                 <label class="po-label" for="newPayDate">Payment Date</label>
                                 <input type="date" class="po-input" id="newPayDate">
                             </div>
-                            <div class="po-field">
+                            <div class="po-field" style="grid-column: span 2;">
                                 <label class="po-label" for="newPayRemarks">Financial Remarks</label>
                                 <input type="text" class="po-input" id="newPayRemarks" placeholder="e.g. 50% initial downpayment">
                             </div>
+                        </div>
+
+                        <div id="newPayExcessCreditBanner" style="display: none; margin: 10px 0; padding: 9px 12px; border-radius: 8px; background: #ecfdf5; border: 1px solid #6ee7b7; align-items: center; gap: 8px; font-size: 12px; color: #065f46;">
+                            <i class="ph ph-sparkle" style="font-size: 16px; color: #059669;"></i>
+                            <span>Excess Overpayment of <strong id="newPayExcessCreditVal">₱0.00</strong> will automatically be recorded as a <strong>Vendor AP Credit Balance</strong> in Accounting.</span>
                         </div>
 
                         <div class="po-pay-form-actions">

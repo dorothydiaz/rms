@@ -165,9 +165,98 @@ class RfqLifecycleApiTest extends TestCase
         $this->assertDatabaseHas('purchase_orders', [
             'po_number' => $poNumber,
             'rfq_reference' => $rfq->rfq_number,
+            'status' => 'Draft PO',
         ]);
+        $this->assertEquals('Draft PO', $response->json('data.po.status'));
 
         $this->assertEquals('AWARDED', $rfq->fresh()->rfq_status);
+    }
+
+    public function test_submitted_rfq_allows_zero_quoted_quantity_and_price_and_excludes_from_draft_po()
+    {
+        $rfqNum = 'RFQ-ZERO-' . strtoupper(Str::random(8));
+        $rfq = RfqHeader::create([
+            'rfq_id' => (string) Str::uuid(),
+            'rfq_number' => $rfqNum,
+            'rfq_date' => now()->toDateString(),
+            'rfq_status' => 'SUBMITTED',
+            'rfq_payment_terms_code' => 'Net 30 Days',
+        ]);
+
+        $lineA = RfqLine::create([
+            'rfq_line_id' => (string) Str::uuid(),
+            'rfq_id' => $rfq->rfq_id,
+            'line_number' => 1,
+            'item_id' => 'RAW-301',
+            'requested_quantity' => 20,
+            'purchase_uom_code' => 'L',
+            'target_unit_price' => 100,
+        ]);
+
+        $lineB = RfqLine::create([
+            'rfq_line_id' => (string) Str::uuid(),
+            'rfq_id' => $rfq->rfq_id,
+            'line_number' => 2,
+            'item_id' => 'RAW-302',
+            'requested_quantity' => 10,
+            'purchase_uom_code' => 'KG',
+            'target_unit_price' => 50,
+        ]);
+
+        // Transition SUBMITTED -> APPROVAL with line B zeroed out (vendor excluded)
+        $resApproval = $this->actingAs($this->user)->postJson('/purchase/api/rfq/transition-status', [
+            'rfq_number' => $rfqNum,
+            'target_status' => 'APPROVAL',
+            'items' => [
+                [
+                    'line_id' => $lineA->rfq_line_id,
+                    'item_id' => 'RAW-301',
+                    'requested_quantity' => 20,
+                    'target_unit_price' => 100,
+                    'quoted_quantity' => 20,
+                    'quoted_unit_price' => 95,
+                    'purchase_uom_code' => 'L',
+                ],
+                [
+                    'line_id' => $lineB->rfq_line_id,
+                    'item_id' => 'RAW-302',
+                    'requested_quantity' => 10,
+                    'target_unit_price' => 50,
+                    'quoted_quantity' => 0,
+                    'quoted_unit_price' => 0,
+                    'purchase_uom_code' => 'KG',
+                ],
+            ],
+        ]);
+
+        $resApproval->assertStatus(200);
+        $this->assertEquals(0.0, (float) $lineB->fresh()->quoted_quantity);
+        $this->assertEquals(0.0, (float) $lineB->fresh()->quoted_unit_price);
+        $this->assertEquals(0.0, (float) $lineB->fresh()->quoted_line_total);
+        $this->assertEquals(1900.0, (float) $rfq->fresh()->rfq_quoted_total_amount);
+
+        // Transition APPROVAL -> APPROVED
+        $this->actingAs($this->user)->postJson('/purchase/api/rfq/transition-status', [
+            'rfq_number' => $rfqNum,
+            'target_status' => 'APPROVED',
+        ])->assertStatus(200);
+
+        // Convert to PO -> should create Draft PO with only non-zero line A
+        $resPo = $this->actingAs($this->user)->postJson('/purchase/api/rfq/convert-po', [
+            'rfq_number' => $rfqNum,
+            'vendor_name' => 'San Miguel Pure Foods Company Inc.',
+            'delivery_location' => 'Central Commissary',
+        ]);
+
+        $resPo->assertStatus(200);
+        $poNumber = $resPo->json('data.po_number');
+        $this->assertEquals('Draft PO', $resPo->json('data.po.status'));
+        $this->assertEquals(1900.0, (float) $resPo->json('data.gross_total'));
+
+        $po = PurchaseOrder::with('items')->where('po_number', $poNumber)->firstOrFail();
+        $this->assertEquals('Draft PO', $po->status);
+        $this->assertCount(1, $po->items);
+        $this->assertEquals('RAW-301', $po->items->first()->sku);
     }
 
     public function test_transition_unpersisted_rfq_auto_creates_header_and_succeeds_without_404()

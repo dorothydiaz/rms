@@ -633,11 +633,25 @@ class InventoryController extends Controller
         $vendors = ProcurementVendor::where('is_active', true)->orderBy('legal_name')->get();
         $categories = InventoryCategory::where('is_active', true)->orderBy('name')->get();
 
+        $companyName = config('app.name', 'RMS');
+        try {
+            $activeCompany = app(\App\Services\CompanyBranchContext::class)->getActiveCompany();
+            if ($activeCompany) {
+                $companyName = $activeCompany->company_trade_name ?: ($activeCompany->company_legal_name ?: $companyName);
+            }
+        } catch (\Throwable $e) {
+            // Context unavailable — keep fallback
+        }
+
         return view('inventory.stock-out', [
+            'companyName' => $companyName,
             'initialOrders' => $orders,
             'initialProducts' => $products,
             'initialVendors' => $vendors,
             'initialCategories' => $categories,
+            'initialWarehouses' => self::getDefaultWarehousesPayload(),
+            'initialStorageAreas' => self::getDefaultStorageAreasPayload(),
+            'initialMovementTypes' => self::getDefaultMovementTypesPayload(),
         ]);
     }
 
@@ -666,6 +680,9 @@ class InventoryController extends Controller
                 'products' => $products,
                 'vendors' => $vendors,
                 'categories' => $categories,
+                'warehouses' => self::getDefaultWarehousesPayload(),
+                'storageAreas' => self::getDefaultStorageAreasPayload(),
+                'movementTypes' => self::getDefaultMovementTypesPayload(),
                 'stats' => $stats,
             ],
         ]);
@@ -695,6 +712,8 @@ class InventoryController extends Controller
             'items.*.category' => 'nullable|string|max:100',
             'items.*.uom' => 'nullable|string|max:50',
             'items.*.requested_qty' => 'required|numeric|min:0.001',
+            'items.*.packed_qty' => 'nullable|numeric|min:0',
+            'items.*.batch_lot_no' => 'nullable|string|max:100',
             'items.*.unit_cost' => 'required|numeric|min:0',
             'items.*.storage_location' => 'nullable|string|max:255',
             'items.*.notes' => 'nullable|string|max:500',
@@ -702,17 +721,23 @@ class InventoryController extends Controller
 
         return DB::transaction(function () use ($validated) {
             $year = date('Y');
-            $count = StockOutOrder::whereYear('created_at', $year)->count() + 1;
-            $orderNumber = sprintf('SO-%s-%04d', $year, $count);
+            $seq = StockOutOrder::whereYear('created_at', $year)->count() + 1;
+            do {
+                $orderNumber = sprintf('SO-%s-%04d', $year, $seq);
+                $seq++;
+            } while (StockOutOrder::where('order_number', $orderNumber)->exists());
 
             $totalItemsCount = count($validated['items']);
             $totalRequestedQty = 0.00;
+            $totalPackedQty = 0.00;
             $totalCostValue = 0.00;
 
             foreach ($validated['items'] as $item) {
                 $qty = (float) $item['requested_qty'];
+                $packed = (float) ($item['packed_qty'] ?? 0.00);
                 $cost = (float) $item['unit_cost'];
                 $totalRequestedQty += $qty;
+                $totalPackedQty += $packed;
                 $totalCostValue += ($qty * $cost);
             }
 
@@ -731,21 +756,25 @@ class InventoryController extends Controller
                 'required_at' => $validated['required_at'] ?? null,
                 'total_items_count' => $totalItemsCount,
                 'total_requested_qty' => $totalRequestedQty,
-                'total_packed_qty' => 0.00,
+                'total_packed_qty' => $totalPackedQty,
                 'total_cost_value' => $totalCostValue,
                 'notes' => $validated['notes'] ?? null,
             ]);
 
+            // Vectorized pre-fetch to avoid N+1 queries inside loop
+            $skus = collect($validated['items'])->pluck('sku')->filter()->unique()->values()->all();
+            $itemIds = collect($validated['items'])->pluck('inventory_item_id')->filter()->unique()->values()->all();
+            $invItemsBySku = InventoryItem::whereIn('sku', $skus)->get()->keyBy('sku');
+            $invItemsById = !empty($itemIds) ? InventoryItem::whereIn('id', $itemIds)->get()->keyBy('id') : collect();
+
             foreach ($validated['items'] as $item) {
-                $invItem = null;
-                if (!empty($item['inventory_item_id'])) {
-                    $invItem = InventoryItem::find($item['inventory_item_id']);
-                } elseif (!empty($item['sku'])) {
-                    $invItem = InventoryItem::where('sku', $item['sku'])->first();
-                }
+                $invItem = !empty($item['inventory_item_id'])
+                    ? ($invItemsById->get($item['inventory_item_id']) ?? $invItemsBySku->get($item['sku']))
+                    : $invItemsBySku->get($item['sku']);
 
                 $availableStock = $invItem ? (float) $invItem->current_stock : 0.00;
                 $qty = (float) $item['requested_qty'];
+                $packedQty = (float) ($item['packed_qty'] ?? 0.00);
                 $unitCost = (float) $item['unit_cost'];
 
                 StockOutOrderItem::create([
@@ -757,9 +786,10 @@ class InventoryController extends Controller
                     'uom' => $item['uom'] ?? ($invItem ? $invItem->uom : 'Unit'),
                     'available_stock' => $availableStock,
                     'requested_qty' => $qty,
-                    'packed_qty' => 0.00,
+                    'packed_qty' => $packedQty,
                     'unit_cost' => $unitCost,
                     'total_cost' => $qty * $unitCost,
+                    'batch_lot_no' => $item['batch_lot_no'] ?? null,
                     'storage_location' => $item['storage_location'] ?? ($invItem ? $invItem->storage_location : null),
                     'notes' => $item['notes'] ?? null,
                 ]);
@@ -867,11 +897,27 @@ class InventoryController extends Controller
             'picker_name' => 'nullable|string|max:255',
             'carrier_name' => 'nullable|string|max:255',
             'tracking_waybill' => 'nullable|string|max:100',
+            'idempotency_key' => 'nullable|string|max:120',
             'items' => 'nullable|array',
             'items.*.sku' => 'required_with:items|string|max:100',
             'items.*.packed_qty' => 'required_with:items|numeric|min:0',
             'items.*.batch_lot_no' => 'nullable|string|max:100',
         ]);
+
+        if (!empty($validated['idempotency_key'])) {
+            $cachedDispatch = \Illuminate\Support\Facades\Cache::get('stock_out_idem_' . $validated['idempotency_key']);
+            if ($cachedDispatch) {
+                $existingOrder = StockOutOrder::with(['items', 'vendor'])->find($cachedDispatch['order_id'] ?? $validated['order_id']);
+                return response()->json([
+                    'success' => true,
+                    'idempotent' => true,
+                    'message' => 'Dispatch already recorded (idempotent replay prevented).',
+                    'data' => [
+                        'order' => $existingOrder,
+                    ],
+                ]);
+            }
+        }
 
         return DB::transaction(function () use ($validated, $request) {
             $order = StockOutOrder::where('id', $validated['order_id'])->lockForUpdate()->firstOrFail();
@@ -902,6 +948,10 @@ class InventoryController extends Controller
             $order->load('items');
             $performedBy = auth()->user()->full_name ?? auth()->user()->name ?? auth()->user()->username ?? 'Warehouse Lead';
 
+            // Pre-fetch & lock all referenced SKUs in a single vectorized query
+            $skus = $order->items->pluck('sku')->filter()->unique()->values()->all();
+            $inventoryItems = InventoryItem::whereIn('sku', $skus)->lockForUpdate()->get()->keyBy('sku');
+
             $totalShippedQty = 0.00;
             $totalActualCost = 0.00;
 
@@ -911,7 +961,7 @@ class InventoryController extends Controller
                     continue; // Skip items not packed
                 }
 
-                $inventoryItem = InventoryItem::where('sku', $item->sku)->lockForUpdate()->first();
+                $inventoryItem = $inventoryItems->get($item->sku);
                 if (!$inventoryItem) {
                     throw new \RuntimeException("Inventory item with SKU {$item->sku} not found in Item Master.");
                 }
@@ -955,16 +1005,23 @@ class InventoryController extends Controller
                 ], 422);
             }
 
-            // Update order status to SHIPPED
+            // Update order status to SHIPPED with server-verified approved_by
             $order->update([
                 'status' => 'SHIPPED',
                 'dispatched_at' => now(),
+                'approved_by' => $performedBy,
                 'picker_name' => $validated['picker_name'] ?? $order->picker_name ?? $performedBy,
                 'carrier_name' => $validated['carrier_name'] ?? $order->carrier_name,
                 'tracking_waybill' => $validated['tracking_waybill'] ?? $order->tracking_waybill,
                 'total_packed_qty' => $totalShippedQty,
                 'total_cost_value' => $totalActualCost,
             ]);
+
+            if (!empty($validated['idempotency_key'])) {
+                \Illuminate\Support\Facades\Cache::put('stock_out_idem_' . $validated['idempotency_key'], [
+                    'order_id' => $order->id,
+                ], 60);
+            }
 
             $order->load(['items', 'vendor']);
 
@@ -2449,29 +2506,27 @@ class InventoryController extends Controller
     public static function getDefaultStorageAreasPayload(): array
     {
         return [
-            // WH-MAIN Default & Nested Areas
-            ['id' => 'AREA-MAIN-RCV', 'warehouse_id' => 'WH-MAIN', 'parent_id' => null, 'name' => 'Receiving Dock', 'code' => 'RCV-DOCK', 'area_type' => 'Dock Door', 'behavior' => 'Dock', 'barcode' => 'WH-MAIN-RCV-DOCK', 'stock_qty' => 0, 'is_active' => true, 'is_default' => true],
-            ['id' => 'AREA-MAIN-QC', 'warehouse_id' => 'WH-MAIN', 'parent_id' => 'AREA-MAIN-RCV', 'name' => 'Inbound QA & Inspection Bench', 'code' => 'QA-BENCH-01', 'area_type' => 'Packing Table', 'behavior' => 'Staging', 'barcode' => 'WH-MAIN-QA-B01', 'stock_qty' => 15, 'is_active' => true, 'is_default' => false],
-            ['id' => 'AREA-MAIN-STK', 'warehouse_id' => 'WH-MAIN', 'parent_id' => null, 'name' => 'Stock Zone A (Dry Goods)', 'code' => 'ZONE-A', 'area_type' => 'Zone', 'behavior' => 'Storage', 'barcode' => 'WH-MAIN-ZONE-A', 'stock_qty' => 0, 'is_active' => true, 'is_default' => true],
-            ['id' => 'AREA-MAIN-AA', 'warehouse_id' => 'WH-MAIN', 'parent_id' => 'AREA-MAIN-STK', 'name' => 'Aisle A — Bulk Staples & Coffee', 'code' => 'AISLE-A', 'area_type' => 'Aisle', 'behavior' => 'Storage', 'barcode' => 'WH-MAIN-ZA-AA', 'stock_qty' => 0, 'is_active' => true, 'is_default' => false],
-            ['id' => 'AREA-MAIN-RA', 'warehouse_id' => 'WH-MAIN', 'parent_id' => 'AREA-MAIN-AA', 'name' => 'Rack A1 (Upper & Lower Tiers)', 'code' => 'RACK-A1', 'area_type' => 'Rack', 'behavior' => 'Storage', 'barcode' => 'WH-MAIN-ZA-AA-RA1', 'stock_qty' => 0, 'is_active' => true, 'is_default' => false],
-            ['id' => 'AREA-MAIN-B01', 'warehouse_id' => 'WH-MAIN', 'parent_id' => 'AREA-MAIN-RA', 'name' => 'Bin A1-01 (Arabica Beans)', 'code' => 'BIN-A1-01', 'area_type' => 'Bin', 'behavior' => 'Storage', 'barcode' => 'WH-MAIN-ZA-RA1-B01', 'stock_qty' => 140, 'is_active' => true, 'is_default' => false],
-            ['id' => 'AREA-MAIN-B02', 'warehouse_id' => 'WH-MAIN', 'parent_id' => 'AREA-MAIN-RA', 'name' => 'Bin A1-02 (Specialty Syrups)', 'code' => 'BIN-A1-02', 'area_type' => 'Bin', 'behavior' => 'Storage', 'barcode' => 'WH-MAIN-ZA-RA1-B02', 'stock_qty' => 85, 'is_active' => true, 'is_default' => false],
-            ['id' => 'AREA-MAIN-B03', 'warehouse_id' => 'WH-MAIN', 'parent_id' => 'AREA-MAIN-RA', 'name' => 'Bin A1-03 (Spare Dry Bin)', 'code' => 'BIN-A1-03', 'area_type' => 'Bin', 'behavior' => 'Storage', 'barcode' => 'WH-MAIN-ZA-RA1-B03', 'stock_qty' => 0, 'is_active' => true, 'is_default' => false],
-            ['id' => 'AREA-MAIN-PACK', 'warehouse_id' => 'WH-MAIN', 'parent_id' => null, 'name' => 'Outbound Packing & Kitting Table', 'code' => 'PACK-TBL-01', 'area_type' => 'Packing Table', 'behavior' => 'Staging', 'barcode' => 'WH-MAIN-PACK-01', 'stock_qty' => 24, 'is_active' => true, 'is_default' => false],
-            ['id' => 'AREA-MAIN-SHP', 'warehouse_id' => 'WH-MAIN', 'parent_id' => null, 'name' => 'Shipping Dock', 'code' => 'SHP-DOCK', 'area_type' => 'Dock Door', 'behavior' => 'Dock', 'barcode' => 'WH-MAIN-SHP-DOCK', 'stock_qty' => 0, 'is_active' => true, 'is_default' => true],
+            // WH-MAIN Default Stock (Physical + Virtual) & Nested Storage Areas
+            ['id' => 'AREA-MAIN-STK', 'warehouse_id' => 'WH-MAIN', 'parent_id' => null, 'location_kind' => 'Physical', 'name' => 'Stock Zone A (Dry Goods)', 'code' => 'ZONE-A', 'area_type' => 'Zone', 'behavior' => 'Storage', 'barcode' => 'WH-MAIN-ZONE-A', 'stock_qty' => 0, 'is_active' => true, 'is_default' => true],
+            ['id' => 'AREA-MAIN-AA', 'warehouse_id' => 'WH-MAIN', 'parent_id' => 'AREA-MAIN-STK', 'location_kind' => 'Physical', 'name' => 'Aisle A — Bulk Staples & Coffee', 'code' => 'AISLE-A', 'area_type' => 'Aisle', 'behavior' => 'Storage', 'barcode' => 'WH-MAIN-ZA-AA', 'stock_qty' => 0, 'is_active' => true, 'is_default' => false],
+            ['id' => 'AREA-MAIN-RA', 'warehouse_id' => 'WH-MAIN', 'parent_id' => 'AREA-MAIN-AA', 'location_kind' => 'Physical', 'name' => 'Rack A1 (Upper & Lower Tiers)', 'code' => 'RACK-A1', 'area_type' => 'Rack', 'behavior' => 'Storage', 'barcode' => 'WH-MAIN-ZA-AA-RA1', 'stock_qty' => 0, 'is_active' => true, 'is_default' => false],
+            ['id' => 'AREA-MAIN-B01', 'warehouse_id' => 'WH-MAIN', 'parent_id' => 'AREA-MAIN-RA', 'location_kind' => 'Physical', 'name' => 'Bin A1-01 (Arabica Beans)', 'code' => 'BIN-A1-01', 'area_type' => 'Bin', 'behavior' => 'Storage', 'barcode' => 'WH-MAIN-ZA-RA1-B01', 'stock_qty' => 140, 'is_active' => true, 'is_default' => false],
+            ['id' => 'AREA-MAIN-B02', 'warehouse_id' => 'WH-MAIN', 'parent_id' => 'AREA-MAIN-RA', 'location_kind' => 'Physical', 'name' => 'Bin A1-02 (Specialty Syrups)', 'code' => 'BIN-A1-02', 'area_type' => 'Bin', 'behavior' => 'Storage', 'barcode' => 'WH-MAIN-ZA-RA1-B02', 'stock_qty' => 85, 'is_active' => true, 'is_default' => false],
+            ['id' => 'AREA-MAIN-B03', 'warehouse_id' => 'WH-MAIN', 'parent_id' => 'AREA-MAIN-RA', 'location_kind' => 'Physical', 'name' => 'Bin A1-03 (Spare Dry Bin)', 'code' => 'BIN-A1-03', 'area_type' => 'Bin', 'behavior' => 'Storage', 'barcode' => 'WH-MAIN-ZA-RA1-B03', 'stock_qty' => 0, 'is_active' => true, 'is_default' => false],
+            ['id' => 'AREA-MAIN-QC', 'warehouse_id' => 'WH-MAIN', 'parent_id' => null, 'location_kind' => 'Physical', 'name' => 'Inbound QA & Inspection Bench', 'code' => 'QA-BENCH-01', 'area_type' => 'Packing Table', 'behavior' => 'Staging', 'barcode' => 'WH-MAIN-QA-B01', 'stock_qty' => 15, 'is_active' => true, 'is_default' => false],
+            ['id' => 'AREA-MAIN-PACK', 'warehouse_id' => 'WH-MAIN', 'parent_id' => null, 'location_kind' => 'Physical', 'name' => 'Outbound Packing & Kitting Table', 'code' => 'PACK-TBL-01', 'area_type' => 'Packing Table', 'behavior' => 'Staging', 'barcode' => 'WH-MAIN-PACK-01', 'stock_qty' => 24, 'is_active' => true, 'is_default' => false],
+            ['id' => 'AREA-MAIN-VSTK', 'warehouse_id' => 'WH-MAIN', 'parent_id' => null, 'location_kind' => 'Virtual', 'name' => 'Virtual Stock Location (Main Ledger)', 'code' => 'VRT-STOCK', 'area_type' => 'Virtual Location', 'behavior' => 'Virtual', 'barcode' => 'WH-MAIN-VRT-STK', 'stock_qty' => 0, 'is_active' => true, 'is_default' => true],
+            ['id' => 'AREA-MAIN-VADJ', 'warehouse_id' => 'WH-MAIN', 'parent_id' => null, 'location_kind' => 'Virtual', 'name' => 'Virtual Inventory Adjustment / Scrap', 'code' => 'VRT-ADJ', 'area_type' => 'Virtual Loss / Adj', 'behavior' => 'Virtual', 'barcode' => 'WH-MAIN-VRT-ADJ', 'stock_qty' => 0, 'is_active' => true, 'is_default' => false],
 
-            // WH-COLD Default & Nested Areas
-            ['id' => 'AREA-COLD-RCV', 'warehouse_id' => 'WH-COLD', 'parent_id' => null, 'name' => 'Receiving Dock (Chilled Airlock)', 'code' => 'RCV-DOCK', 'area_type' => 'Dock Door', 'behavior' => 'Dock', 'barcode' => 'WH-COLD-RCV-DOCK', 'stock_qty' => 0, 'is_active' => true, 'is_default' => true],
-            ['id' => 'AREA-COLD-STK', 'warehouse_id' => 'WH-COLD', 'parent_id' => null, 'name' => 'Stock Zone (Walk-In Freezer -18°C)', 'code' => 'ZONE-FREEZE', 'area_type' => 'Zone', 'behavior' => 'Storage', 'barcode' => 'WH-COLD-STK-ZONE', 'stock_qty' => 0, 'is_active' => true, 'is_default' => true],
-            ['id' => 'AREA-COLD-R1', 'warehouse_id' => 'WH-COLD', 'parent_id' => 'AREA-COLD-STK', 'name' => 'Stainless Rack F1', 'code' => 'RACK-F1', 'area_type' => 'Rack', 'behavior' => 'Storage', 'barcode' => 'WH-COLD-ZF-RF1', 'stock_qty' => 0, 'is_active' => true, 'is_default' => false],
-            ['id' => 'AREA-COLD-B01', 'warehouse_id' => 'WH-COLD', 'parent_id' => 'AREA-COLD-R1', 'name' => 'Bin F1-01 (Prime Beef Cuts)', 'code' => 'BIN-F1-01', 'area_type' => 'Bin', 'behavior' => 'Storage', 'barcode' => 'WH-COLD-ZF-RF1-B01', 'stock_qty' => 62, 'is_active' => true, 'is_default' => false],
-            ['id' => 'AREA-COLD-SHP', 'warehouse_id' => 'WH-COLD', 'parent_id' => null, 'name' => 'Shipping Dock (Reefer Bay)', 'code' => 'SHP-DOCK', 'area_type' => 'Dock Door', 'behavior' => 'Dock', 'barcode' => 'WH-COLD-SHP-DOCK', 'stock_qty' => 0, 'is_active' => true, 'is_default' => true],
+            // WH-COLD Default Stock (Physical + Virtual) & Nested Areas
+            ['id' => 'AREA-COLD-STK', 'warehouse_id' => 'WH-COLD', 'parent_id' => null, 'location_kind' => 'Physical', 'name' => 'Stock Zone (Walk-In Freezer -18°C)', 'code' => 'ZONE-FREEZE', 'area_type' => 'Zone', 'behavior' => 'Storage', 'barcode' => 'WH-COLD-STK-ZONE', 'stock_qty' => 0, 'is_active' => true, 'is_default' => true],
+            ['id' => 'AREA-COLD-R1', 'warehouse_id' => 'WH-COLD', 'parent_id' => 'AREA-COLD-STK', 'location_kind' => 'Physical', 'name' => 'Stainless Rack F1', 'code' => 'RACK-F1', 'area_type' => 'Rack', 'behavior' => 'Storage', 'barcode' => 'WH-COLD-ZF-RF1', 'stock_qty' => 0, 'is_active' => true, 'is_default' => false],
+            ['id' => 'AREA-COLD-B01', 'warehouse_id' => 'WH-COLD', 'parent_id' => 'AREA-COLD-R1', 'location_kind' => 'Physical', 'name' => 'Bin F1-01 (Prime Beef Cuts)', 'code' => 'BIN-F1-01', 'area_type' => 'Bin', 'behavior' => 'Storage', 'barcode' => 'WH-COLD-ZF-RF1-B01', 'stock_qty' => 62, 'is_active' => true, 'is_default' => false],
+            ['id' => 'AREA-COLD-VSTK', 'warehouse_id' => 'WH-COLD', 'parent_id' => null, 'location_kind' => 'Virtual', 'name' => 'Virtual Cold Stock Location', 'code' => 'VRT-STOCK', 'area_type' => 'Virtual Location', 'behavior' => 'Virtual', 'barcode' => 'WH-COLD-VRT-STK', 'stock_qty' => 0, 'is_active' => true, 'is_default' => true],
 
-            // WH-BGC Default Areas
-            ['id' => 'AREA-BGC-RCV', 'warehouse_id' => 'WH-BGC', 'parent_id' => null, 'name' => 'Receiving Dock (Service Elevator)', 'code' => 'RCV-DOCK', 'area_type' => 'Dock Door', 'behavior' => 'Dock', 'barcode' => 'WH-BGC-RCV-DOCK', 'stock_qty' => 0, 'is_active' => true, 'is_default' => true],
-            ['id' => 'AREA-BGC-STK', 'warehouse_id' => 'WH-BGC', 'parent_id' => null, 'name' => 'Stock Zone (BOH Dry & Line Pantry)', 'code' => 'ZONE-BOH', 'area_type' => 'Zone', 'behavior' => 'Storage', 'barcode' => 'WH-BGC-STK-ZONE', 'stock_qty' => 95, 'is_active' => true, 'is_default' => true],
-            ['id' => 'AREA-BGC-SHP', 'warehouse_id' => 'WH-BGC', 'parent_id' => null, 'name' => 'Shipping Dock (Kitchen Pass)', 'code' => 'SHP-DOCK', 'area_type' => 'Dock Door', 'behavior' => 'Dock', 'barcode' => 'WH-BGC-SHP-DOCK', 'stock_qty' => 0, 'is_active' => true, 'is_default' => true],
+            // WH-BGC Default Stock (Physical + Virtual)
+            ['id' => 'AREA-BGC-STK', 'warehouse_id' => 'WH-BGC', 'parent_id' => null, 'location_kind' => 'Physical', 'name' => 'Stock Zone (BOH Dry & Line Pantry)', 'code' => 'ZONE-BOH', 'area_type' => 'Zone', 'behavior' => 'Storage', 'barcode' => 'WH-BGC-STK-ZONE', 'stock_qty' => 95, 'is_active' => true, 'is_default' => true],
+            ['id' => 'AREA-BGC-VSTK', 'warehouse_id' => 'WH-BGC', 'parent_id' => null, 'location_kind' => 'Virtual', 'name' => 'Virtual BGC Stock Location', 'code' => 'VRT-STOCK', 'area_type' => 'Virtual Location', 'behavior' => 'Virtual', 'barcode' => 'WH-BGC-VRT-STK', 'stock_qty' => 0, 'is_active' => true, 'is_default' => true],
         ];
     }
 
@@ -2575,6 +2630,28 @@ class InventoryController extends Controller
                 ],
             ],
             [
+                'id' => 'MT-KITCHEN-DIRECT',
+                'code' => 'WH-KITCHEN-OUT',
+                'name' => 'Direct Kitchen Line Issue (1-Step)',
+                'warehouse_id' => 'WH-MAIN',
+                'operation_kind' => 'Outbound Dispatch',
+                'stock_effect' => 'Dispatch',
+                'route_preset' => '1-Step Direct',
+                'is_active' => true,
+                'steps' => [
+                    [
+                        'step_no' => 1,
+                        'name' => 'Issue from Storage to Kitchen Line',
+                        'from_area' => 'Stock Zone A (Dry Goods)',
+                        'to_area' => 'Main Kitchen - Hot Line (Saute & Grill)',
+                        'scan_source' => true,
+                        'scan_product' => true,
+                        'scan_destination' => false,
+                        'auto_print_label' => false,
+                    ],
+                ],
+            ],
+            [
                 'id' => 'MT-MAIN-DISPATCH',
                 'code' => 'WH-MAIN-OUT',
                 'name' => 'Branch Store Daily Delivery Dispatch',
@@ -2597,6 +2674,48 @@ class InventoryController extends Controller
                     [
                         'step_no' => 2,
                         'name' => 'Dispatch to Branch Logistics',
+                        'from_area' => 'Outbound Packing & Kitting Table',
+                        'to_area' => 'Customer / Branch Destination (Boundary)',
+                        'scan_source' => true,
+                        'scan_product' => true,
+                        'scan_destination' => false,
+                        'auto_print_label' => true,
+                    ],
+                ],
+            ],
+            [
+                'id' => 'MT-MAIN-PPS',
+                'code' => 'WH-MAIN-PPS',
+                'name' => 'Full Pick, Pack & Ship Fulfillment (3-Step)',
+                'warehouse_id' => 'WH-MAIN',
+                'operation_kind' => 'Outbound Dispatch',
+                'stock_effect' => 'Dispatch',
+                'route_preset' => '3-Step Pick-Pack-Ship',
+                'is_active' => true,
+                'steps' => [
+                    [
+                        'step_no' => 1,
+                        'name' => 'Pick from Storage Bins',
+                        'from_area' => 'Stock Zone A (Dry Goods)',
+                        'to_area' => 'Picking Staging Cage',
+                        'scan_source' => true,
+                        'scan_product' => true,
+                        'scan_destination' => true,
+                        'auto_print_label' => false,
+                    ],
+                    [
+                        'step_no' => 2,
+                        'name' => 'Pack & Kitting Verification',
+                        'from_area' => 'Picking Staging Cage',
+                        'to_area' => 'Outbound Packing & Kitting Table',
+                        'scan_source' => true,
+                        'scan_product' => true,
+                        'scan_destination' => true,
+                        'auto_print_label' => true,
+                    ],
+                    [
+                        'step_no' => 3,
+                        'name' => 'Ship & Dispatch at Loading Bay',
                         'from_area' => 'Outbound Packing & Kitting Table',
                         'to_area' => 'Customer / Branch Destination (Boundary)',
                         'scan_source' => true,
@@ -2896,10 +3015,10 @@ class InventoryController extends Controller
             ->get();
 
         if ($warehouses->isEmpty()) {
-            $warehouses = collect([
-                (object) ['warehouse_id' => 'WH-CENTRAL-COMM', 'warehouse_code' => 'COMM-TAGUIG', 'warehouse_name' => 'Central Commissary Taguig Hub'],
-                (object) ['warehouse_id' => 'WH-MAK-MAIN', 'warehouse_code' => 'MAK-STORAGE', 'warehouse_name' => 'Makati Main Storage & Cold Vault'],
-                (object) ['warehouse_id' => 'WH-BGC-DRY', 'warehouse_code' => 'BGC-DRY', 'warehouse_name' => 'BGC Bulk Dry Storage'],
+            $warehouses = collect(self::getDefaultWarehousesPayload())->map(fn ($wh) => (object) [
+                'warehouse_id' => $wh['id'],
+                'warehouse_code' => $wh['code'],
+                'warehouse_name' => $wh['name'],
             ]);
         }
 
@@ -2944,7 +3063,7 @@ class InventoryController extends Controller
     }
 
     /**
-     * API: Save or Update Reordering Rule
+     * API: Save or Update Reordering Rule (Supports Single Rule OR Multi-SKU / Category Batch)
      */
     public function apiSaveReorderRule(Request $request): JsonResponse
     {
@@ -2953,11 +3072,17 @@ class InventoryController extends Controller
             'rule_code' => 'nullable|string|max:50',
             'branch_id' => 'required|integer',
             'branch_name' => 'required|string|max:150',
-            'product_id' => 'required|integer',
-            'product_sku' => 'required|string|max:100',
-            'product_name' => 'required|string|max:255',
+            'product_id' => 'required_without:items_batch|nullable|integer',
+            'product_sku' => 'required_without:items_batch|nullable|string|max:100',
+            'product_name' => 'required_without:items_batch|nullable|string|max:255',
             'category' => 'nullable|string|max:100',
-            'uom' => 'required|string|max:50',
+            'uom' => 'required_without:items_batch|nullable|string|max:50',
+            'items_batch' => 'nullable|array|min:1',
+            'items_batch.*.product_id' => 'required_with:items_batch|integer',
+            'items_batch.*.product_sku' => 'required_with:items_batch|string|max:100',
+            'items_batch.*.product_name' => 'required_with:items_batch|string|max:255',
+            'items_batch.*.category' => 'nullable|string|max:100',
+            'items_batch.*.uom' => 'required_with:items_batch|string|max:50',
             'strategy' => 'required|string|in:min_max,commissary_push,jit_back_to_back',
             'min_stock' => 'required|numeric|min:0',
             'max_stock' => 'required|numeric|gt:min_stock',
@@ -2977,27 +3102,101 @@ class InventoryController extends Controller
         ]);
 
         $id = $validated['id'] ?? null;
+        $batchItems = $validated['items_batch'] ?? null;
 
-        if (!$id && empty($validated['rule_code'])) {
-            $prefix = match ((int) $validated['branch_id']) {
-                1 => 'MAK',
-                2 => 'BGC',
-                default => 'QC',
-            };
-            $validated['rule_code'] = 'RUL-' . $prefix . '-' . str_pad((string) (ReorderingRule::count() + 1), 3, '0', STR_PAD_LEFT);
-        }
+        $prefix = match ((int) $validated['branch_id']) {
+            1 => 'MAK',
+            2 => 'BGC',
+            default => 'QC',
+        };
 
-        $validated['reorder_point'] = $validated['reorder_point'] ?? $validated['min_stock'];
-        $validated['is_active'] = $request->boolean('is_active', true);
-        $validated['auto_generate_draft'] = $request->boolean('auto_generate_draft', false);
-        $validated['last_evaluated_at'] = now();
+        $generateUniqueRuleCode = function () use ($prefix): string {
+            $seq = ReorderingRule::count() + 1;
+            do {
+                $candidate = 'RUL-' . $prefix . '-' . str_pad((string) $seq, 3, '0', STR_PAD_LEFT);
+                $exists = ReorderingRule::where('rule_code', $candidate)->exists();
+                $seq++;
+            } while ($exists);
+            return $candidate;
+        };
 
-        $rule = ReorderingRule::updateOrCreate(['id' => $id], $validated);
+        $sharedAttrs = [
+            'branch_id' => (int) $validated['branch_id'],
+            'branch_name' => $validated['branch_name'],
+            'strategy' => $validated['strategy'],
+            'min_stock' => $validated['min_stock'],
+            'max_stock' => $validated['max_stock'],
+            'reorder_point' => $validated['reorder_point'] ?? $validated['min_stock'],
+            'moq' => $validated['moq'],
+            'safety_buffer' => $validated['safety_buffer'] ?? 0,
+            'lead_time_days' => $validated['lead_time_days'],
+            'action_route' => $validated['action_route'],
+            'preferred_vendor_id' => $validated['preferred_vendor_id'] ?? null,
+            'preferred_vendor_name' => $validated['preferred_vendor_name'] ?? null,
+            'source_warehouse_id' => $validated['source_warehouse_id'] ?? null,
+            'source_warehouse_name' => $validated['source_warehouse_name'] ?? null,
+            'target_warehouse_id' => $validated['target_warehouse_id'] ?? null,
+            'is_active' => $request->boolean('is_active', true),
+            'auto_generate_draft' => $request->boolean('auto_generate_draft', false),
+            'notes' => $validated['notes'] ?? null,
+            'last_evaluated_at' => now(),
+        ];
+
+        $savedRules = DB::transaction(function () use ($id, $batchItems, $validated, $sharedAttrs, $generateUniqueRuleCode) {
+            if (!empty($batchItems) && !$id) {
+                $results = [];
+                foreach ($batchItems as $item) {
+                    $existing = ReorderingRule::where('branch_id', $sharedAttrs['branch_id'])
+                        ->where('product_id', $item['product_id'])
+                        ->first();
+
+                    $attrs = array_merge($sharedAttrs, [
+                        'product_id' => (int) $item['product_id'],
+                        'product_sku' => $item['product_sku'],
+                        'product_name' => $item['product_name'],
+                        'category' => $item['category'] ?? 'General',
+                        'uom' => $item['uom'],
+                    ]);
+
+                    if (!$existing) {
+                        $attrs['rule_code'] = $generateUniqueRuleCode();
+                    }
+
+                    $results[] = ReorderingRule::updateOrCreate(
+                        ['branch_id' => $sharedAttrs['branch_id'], 'product_id' => (int) $item['product_id']],
+                        $attrs
+                    );
+                }
+                return $results;
+            }
+
+            $attrs = array_merge($sharedAttrs, [
+                'product_id' => (int) $validated['product_id'],
+                'product_sku' => $validated['product_sku'],
+                'product_name' => $validated['product_name'],
+                'category' => $validated['category'] ?? 'General',
+                'uom' => $validated['uom'],
+            ]);
+
+            if (!$id && empty($validated['rule_code'])) {
+                $attrs['rule_code'] = $generateUniqueRuleCode();
+            } elseif (!empty($validated['rule_code'])) {
+                $attrs['rule_code'] = $validated['rule_code'];
+            }
+
+            return [ReorderingRule::updateOrCreate(['id' => $id], $attrs)];
+        });
+
+        $count = count($savedRules);
+        $message = $count > 1
+            ? "{$count} reordering rules applied across selected SKUs!"
+            : ($id ? 'Reordering rule successfully updated!' : 'Reordering rule successfully created!');
 
         return response()->json([
             'success' => true,
-            'message' => $id ? 'Reordering rule successfully updated!' : 'Reordering rule successfully created!',
-            'rule' => $rule,
+            'message' => $message,
+            'rule' => $savedRules[0] ?? null,
+            'rules' => $savedRules,
         ]);
     }
 

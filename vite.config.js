@@ -119,6 +119,8 @@ export default defineConfig({
                 'resources/js/modules/companies-branches.js',
                 'resources/css/modules/account-settings.css',
                 'resources/js/modules/account-settings.js',
+                'resources/css/modules/accounting.css',
+                'resources/js/modules/accounting.js',
                 'resources/js/modules/auth-login.js',
             ],
             refresh: true,

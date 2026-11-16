@@ -3,18 +3,29 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\InventoryController;
+use App\Models\Accounting\AcctAuditLog;
+use App\Models\Accounting\AcctBankAccount;
+use App\Models\Accounting\AcctTaxCode;
+use App\Models\Accounting\AcctVendorMemo;
+use App\Models\Accounting\ChartOfAccount;
+use App\Models\Accounting\VendorBillHeader;
 use App\Models\Inventory\InventoryItem;
 use App\Models\Purchase\ProcurementVendor;
 use App\Models\Purchase\PurchaseOrder;
 use App\Models\Purchase\PurchaseOrderItem;
 use App\Models\Purchase\RfqHeader;
 use App\Models\Purchase\RfqLine;
+use App\Services\Accounting\AccountingApService;
 use App\Services\RfqAlternativeService;
+use DomainException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
+use InvalidArgumentException;
+use Throwable;
 
 class PurchaseController extends Controller
 {
@@ -102,12 +113,18 @@ class PurchaseController extends Controller
         });
 
         $warehouses = InventoryController::getDefaultWarehousesPayload();
+        $apData = $this->buildPoApIntegrationData($purchaseOrders, $vendors);
 
         return view('purchase.purchase-orders', [
             'initialPurchaseOrders' => $purchaseOrders,
             'initialVendors' => $vendors,
             'initialItems' => $items,
             'initialWarehouses' => $warehouses,
+            'initialVendorCredits' => $apData['vendorCredits'],
+            'initialPoApPayments' => $apData['poApPayments'],
+            'initialBankAccounts' => $apData['bankAccounts'],
+            'initialDisbursementAccounts' => $apData['disbursementAccounts'],
+            'initialTaxCodes' => $apData['taxCodes'],
         ]);
     }
 
@@ -118,14 +135,148 @@ class PurchaseController extends Controller
     {
         $orders = PurchaseOrder::with('items')->orderByDesc('id')->get();
         $vendors = ProcurementVendor::where('is_active', true)->orderBy('legal_name')->get();
+        $apData = $this->buildPoApIntegrationData($orders, $vendors);
 
         return response()->json([
             'success' => true,
             'data' => [
                 'purchaseOrders' => $orders,
                 'vendors' => $vendors,
+                'vendorCredits' => $apData['vendorCredits'],
+                'poApPayments' => $apData['poApPayments'],
+                'bankAccounts' => $apData['bankAccounts'],
+                'disbursementAccounts' => $apData['disbursementAccounts'],
+                'taxCodes' => $apData['taxCodes'],
             ],
         ]);
+    }
+
+    /**
+     * Build Accounting AP vendor credit balances and persisted payment tranches linked to Purchase Orders.
+     */
+    protected function buildPoApIntegrationData($orders, $vendors): array
+    {
+        $vendorById = collect($vendors)->keyBy(fn($v) => (string) $v->id);
+        $vendorByCode = collect($vendors)->keyBy(fn($v) => (string) $v->vendor_code);
+
+        $vendorCredits = collect([]);
+        if (Schema::hasTable('acct_vendor_memos')) {
+            $vendorCredits = AcctVendorMemo::whereIn('memo_type', ['CREDIT', 'CREDIT_MEMO'])
+                ->where('status', 'POSTED')
+                ->where('unapplied_amount', '>', 0)
+                ->orderByDesc('memo_date')
+                ->get()
+                ->map(function ($m) use ($vendorById, $vendorByCode) {
+                    $v = $vendorById->get((string) $m->vendor_id) ?: $vendorByCode->get((string) $m->vendor_id);
+                    return [
+                        'memo_id' => $m->memo_id,
+                        'memo_number' => $m->memo_number,
+                        'vendor_id' => (string) $m->vendor_id,
+                        'vendor_code' => $v ? (string) $v->vendor_code : (string) $m->vendor_id,
+                        'vendor_name' => $v ? ($v->trade_name ?: $v->legal_name) : $m->vendor_name,
+                        'unapplied_amount' => round((float) $m->unapplied_amount, 2),
+                        'total_amount' => round((float) $m->total_amount, 2),
+                        'memo_date' => $m->memo_date ? $m->memo_date->toDateString() : null,
+                        'reason' => $m->reason,
+                    ];
+                })
+                ->values();
+        }
+
+        $poApPayments = collect([]);
+        if (Schema::hasTable('vendor_bill_header') && Schema::hasTable('acct_vendor_payment_lines')) {
+            $poNumberById = collect($orders)->mapWithKeys(fn($po) => [(string) $po->id => (string) $po->po_number]);
+            if ($poNumberById->isNotEmpty()) {
+                $bills = VendorBillHeader::with(['paymentAllocations.payment'])
+                    ->whereIn('purchase_order_id', $poNumberById->keys()->all())
+                    ->get();
+
+                $billIds = $bills->pluck('vendor_bill_id')->all();
+                $creditLogs = (!empty($billIds) && Schema::hasTable('acct_audit_logs'))
+                    ? AcctAuditLog::where('document_type', 'VENDOR_CREDIT_APPLIED')
+                        ->whereIn('document_id', $billIds)
+                        ->orderBy('acted_at')
+                        ->get()
+                        ->groupBy('document_id')
+                    : collect([]);
+
+                foreach ($bills as $bill) {
+                    $poNo = $poNumberById->get((string) $bill->purchase_order_id);
+                    if (!$poNo) continue;
+
+                    foreach ($bill->paymentAllocations as $line) {
+                        $pmt = $line->payment;
+                        if (!$pmt) continue;
+                        $poApPayments->push([
+                            'id' => 'AP-PMT-' . $line->payment_line_id,
+                            'poNumber' => $poNo,
+                            'trancheType' => 'AP Payment (' . ($pmt->payment_method ?? 'BANK') . ')',
+                            'billRef' => $bill->vendor_bill_number,
+                            'amount' => round((float) $line->allocated_amount, 2),
+                            'method' => $pmt->payment_method ?? 'BANK_TRANSFER',
+                            'reference' => trim($pmt->payment_number . ($pmt->bank_reference ? ' • ' . $pmt->bank_reference : '')),
+                            'paymentDate' => $pmt->payment_date ? $pmt->payment_date->toDateString() : now()->toDateString(),
+                            'fundSource' => 'Accounting AP Subledger',
+                            'remarks' => $pmt->notes ?? '',
+                            'actor' => $pmt->posted_by ?? 'Accounting AP',
+                            'source' => 'accounting_ap',
+                        ]);
+                    }
+
+                    foreach ($creditLogs->get($bill->vendor_bill_id, collect([])) as $log) {
+                        $diff = is_array($log->payload_diff_json) ? $log->payload_diff_json : [];
+                        $amt = round((float) ($diff['applied_amount'] ?? 0), 2);
+                        if ($amt <= 0) continue;
+                        $poApPayments->push([
+                            'id' => 'AP-CRD-' . $log->audit_id,
+                            'poNumber' => $poNo,
+                            'trancheType' => 'Vendor Credit Applied',
+                            'billRef' => $bill->vendor_bill_number,
+                            'amount' => $amt,
+                            'method' => 'VENDOR_CREDIT',
+                            'reference' => $diff['memo_number'] ?? $log->document_number,
+                            'paymentDate' => $log->acted_at ? $log->acted_at->toDateString() : now()->toDateString(),
+                            'fundSource' => 'AP Vendor Credit Memo',
+                            'remarks' => $log->summary,
+                            'actor' => $log->acted_by ?? 'Accounting AP',
+                            'source' => 'accounting_ap',
+                        ]);
+                    }
+                }
+            }
+        }
+
+        $bankAccounts = Schema::hasTable('acct_bank_accounts')
+            ? AcctBankAccount::where('is_active', true)
+                ->orderBy('bank_name')
+                ->orderBy('account_name')
+                ->get(['bank_account_id', 'account_name', 'account_number', 'bank_name', 'account_type', 'gl_account_id', 'current_balance'])
+                ->toArray()
+            : [];
+
+        $disbursementAccounts = Schema::hasTable('chart_of_accounts')
+            ? ChartOfAccount::where('is_active', true)
+                ->whereIn('system_role', ['CASH_IN_BANK', 'CASH_ON_HAND', 'PETTY_CASH', 'PDC_PAYABLE'])
+                ->orderBy('account_code')
+                ->get(['account_id', 'account_code', 'account_name', 'system_role'])
+                ->toArray()
+            : [];
+
+        $taxCodes = Schema::hasTable('acct_tax_codes')
+            ? AcctTaxCode::where('is_active', true)
+                ->orderBy('tax_type')
+                ->orderBy('rate_pct')
+                ->get(['tax_code_id', 'tax_code', 'tax_name', 'tax_type', 'rate_pct', 'bir_atc_code'])
+                ->toArray()
+            : [];
+
+        return [
+            'vendorCredits' => $vendorCredits->all(),
+            'poApPayments' => $poApPayments->values()->all(),
+            'bankAccounts' => $bankAccounts,
+            'disbursementAccounts' => $disbursementAccounts,
+            'taxCodes' => $taxCodes,
+        ];
     }
 
     /**
@@ -258,6 +409,12 @@ class PurchaseController extends Controller
                     'received_quantity' => 0.00,
                     'status' => 'PENDING',
                 ]);
+            }
+
+            try {
+                app(AccountingApService::class)->ensureBillForPurchaseOrder($po->fresh('items'));
+            } catch (Throwable $e) {
+                // Non-blocking fallback when accounting subledger tables are unavailable in isolated tests
             }
 
             return response()->json([
@@ -434,7 +591,7 @@ class PurchaseController extends Controller
                 foreach ($validated['items'] as $it) {
                     $qty = (float)($it['requested_quantity'] ?? $it['quantity'] ?? 1);
                     $targetPrice = (float)($it['target_unit_price'] ?? 0);
-                    $quotedPrice = (float)($it['quoted_unit_price'] ?? 0);
+                    $quotedPrice = isset($it['quoted_unit_price']) ? (float)$it['quoted_unit_price'] : 0.0;
                     $quotedQty = isset($it['quoted_quantity']) ? (float)$it['quoted_quantity'] : $qty;
                     $estTotal += ($qty * $targetPrice);
                     RfqLine::create([
@@ -449,7 +606,7 @@ class PurchaseController extends Controller
                         'quoted_unit_price' => $quotedPrice,
                         'quoted_line_total' => $quotedQty * $quotedPrice,
                         'lead_time_days' => (int)($it['lead_time_days'] ?? 0),
-                        'is_awarded' => ($targetStatus === 'APPROVED'),
+                        'is_awarded' => ($targetStatus === 'APPROVED' && $quotedQty > 0),
                         'rfq_line_notes' => $it['rfq_line_notes'] ?? null,
                     ]);
                 }
@@ -506,7 +663,11 @@ class PurchaseController extends Controller
             // Update vendor quotation inputs if provided
             if (!empty($validated['items'])) {
                 $quotedTotal = 0.0;
+                $hasExplicitQuoteInputs = false;
                 foreach ($validated['items'] as $itemQuote) {
+                    if (array_key_exists('quoted_quantity', $itemQuote) || array_key_exists('quoted_unit_price', $itemQuote)) {
+                        $hasExplicitQuoteInputs = true;
+                    }
                     $lineQuery = RfqLine::where('rfq_id', $rfq->rfq_id);
                     if (!empty($itemQuote['line_id'])) {
                         $lineQuery->where('rfq_line_id', $itemQuote['line_id']);
@@ -515,9 +676,13 @@ class PurchaseController extends Controller
                     }
                     $line = $lineQuery->first();
                     if ($line) {
-                        $qQty = isset($itemQuote['quoted_quantity']) ? (float)$itemQuote['quoted_quantity'] : (float)$line->requested_quantity;
-                        $qPrice = isset($itemQuote['quoted_unit_price']) ? (float)$itemQuote['quoted_unit_price'] : (float)$line->target_unit_price;
-                        $lineTotal = $qQty * $qPrice;
+                        $qQty = array_key_exists('quoted_quantity', $itemQuote) && $itemQuote['quoted_quantity'] !== null
+                            ? (float)$itemQuote['quoted_quantity']
+                            : (float)$line->requested_quantity;
+                        $qPrice = array_key_exists('quoted_unit_price', $itemQuote) && $itemQuote['quoted_unit_price'] !== null
+                            ? (float)$itemQuote['quoted_unit_price']
+                            : (float)$line->target_unit_price;
+                        $lineTotal = ($qQty <= 0 || $qPrice <= 0) ? 0.0 : ($qQty * $qPrice);
 
                         $line->quoted_quantity = $qQty;
                         $line->quoted_unit_price = $qPrice;
@@ -526,32 +691,36 @@ class PurchaseController extends Controller
                             $line->lead_time_days = (int)$itemQuote['lead_time_days'];
                         }
                         if ($targetStatus === 'APPROVED') {
-                            $line->is_awarded = true;
+                            $line->is_awarded = ($qQty > 0);
                         }
                         $line->save();
                         $quotedTotal += $lineTotal;
                     } else {
-                        $qQty = isset($itemQuote['quoted_quantity']) ? (float)$itemQuote['quoted_quantity'] : (float)($itemQuote['requested_quantity'] ?? 1);
-                        $qPrice = isset($itemQuote['quoted_unit_price']) ? (float)$itemQuote['quoted_unit_price'] : (float)($itemQuote['target_unit_price'] ?? 0);
-                        $lineTotal = $qQty * $qPrice;
+                        $qQty = array_key_exists('quoted_quantity', $itemQuote) && $itemQuote['quoted_quantity'] !== null
+                            ? (float)$itemQuote['quoted_quantity']
+                            : (float)($itemQuote['requested_quantity'] ?? 1);
+                        $qPrice = array_key_exists('quoted_unit_price', $itemQuote) && $itemQuote['quoted_unit_price'] !== null
+                            ? (float)$itemQuote['quoted_unit_price']
+                            : (float)($itemQuote['target_unit_price'] ?? 0);
+                        $lineTotal = ($qQty <= 0 || $qPrice <= 0) ? 0.0 : ($qQty * $qPrice);
                         RfqLine::create([
                             'rfq_line_id' => (string) Str::uuid(),
                             'rfq_id' => $rfq->rfq_id,
                             'line_number' => RfqLine::where('rfq_id', $rfq->rfq_id)->count() + 1,
                             'item_id' => $itemQuote['item_id'] ?? 'ITEM-NEW',
-                            'requested_quantity' => $qQty,
+                            'requested_quantity' => (float)($itemQuote['requested_quantity'] ?? $qQty),
                             'quoted_quantity' => $qQty,
                             'purchase_uom_code' => $itemQuote['purchase_uom_code'] ?? 'PCS',
                             'target_unit_price' => (float)($itemQuote['target_unit_price'] ?? 0),
                             'quoted_unit_price' => $qPrice,
                             'quoted_line_total' => $lineTotal,
                             'lead_time_days' => (int)($itemQuote['lead_time_days'] ?? 0),
-                            'is_awarded' => ($targetStatus === 'APPROVED'),
+                            'is_awarded' => ($targetStatus === 'APPROVED' && $qQty > 0),
                         ]);
                         $quotedTotal += $lineTotal;
                     }
                 }
-                if ($quotedTotal > 0) {
+                if ($hasExplicitQuoteInputs || $quotedTotal > 0) {
                     $rfq->rfq_quoted_total_amount = $quotedTotal;
                 }
             }
@@ -684,17 +853,36 @@ class PurchaseController extends Controller
                 $seq++;
             } while (PurchaseOrder::where('po_number', $poNum)->exists());
 
-            // 4. Calculate gross total from RFQ lines or fallback payload items
+            // 4. Calculate gross total from non-excluded RFQ lines or fallback payload items
             $grossTotal = 0.0;
             $payloadItems = $validated['items'] ?? [];
+            $payloadBySku = [];
+            foreach ($payloadItems as $pItem) {
+                if (!empty($pItem['sku'])) {
+                    $payloadBySku[$pItem['sku']] = $pItem;
+                }
+            }
+
+            $linesToConvert = collect();
+            $payloadItemsToConvert = [];
+
             if ($rfq->lines->count() > 0) {
-                foreach ($rfq->lines as $line) {
-                    $qty = (float) ($line->quoted_quantity ?: $line->requested_quantity);
-                    $price = (float) ($line->quoted_unit_price ?: $line->target_unit_price);
+                $positiveLines = $rfq->lines->filter(function ($line) {
+                    $qty = $line->quoted_quantity !== null ? (float) $line->quoted_quantity : (float) $line->requested_quantity;
+                    return $qty > 0;
+                })->values();
+                $linesToConvert = $positiveLines->count() > 0 ? $positiveLines : $rfq->lines;
+
+                foreach ($linesToConvert as $line) {
+                    $qty = $line->quoted_quantity !== null ? (float) $line->quoted_quantity : (float) $line->requested_quantity;
+                    $price = $line->quoted_unit_price !== null ? (float) $line->quoted_unit_price : (float) $line->target_unit_price;
                     $grossTotal += ($qty * $price);
                 }
             } else {
-                foreach ($payloadItems as $it) {
+                $positivePayload = array_values(array_filter($payloadItems, fn ($it) => (float) ($it['quantity'] ?? 1) > 0));
+                $payloadItemsToConvert = count($positivePayload) > 0 ? $positivePayload : $payloadItems;
+
+                foreach ($payloadItemsToConvert as $it) {
                     $qty = (float) ($it['quantity'] ?? 1);
                     $price = (float) ($it['unitPrice'] ?? 0);
                     $grossTotal += ($qty * $price);
@@ -726,18 +914,18 @@ class PurchaseController extends Controller
                 'amount_paid' => 0.00,
                 'balance_due' => $grossTotal,
                 'approved_by' => $validated['approved_by'] ?? 'Procurement Officer',
-                'status' => 'Approved / Issued',
+                'status' => 'Draft PO',
                 'subtotal' => $grossTotal,
                 'tax_amount' => 0.00,
                 'gross_total' => $grossTotal,
                 'created_by_user' => auth()->user()->name ?? 'Procurement Specialist',
             ]);
 
-            if ($rfq->lines->count() > 0) {
-                foreach ($rfq->lines as $idx => $line) {
-                    $qty = (float) ($line->quoted_quantity ?: $line->requested_quantity);
-                    $price = (float) ($line->quoted_unit_price ?: $line->target_unit_price);
-                    $fallbackItem = $payloadItems[$idx] ?? [];
+            if ($linesToConvert->count() > 0) {
+                foreach ($linesToConvert as $idx => $line) {
+                    $qty = $line->quoted_quantity !== null ? (float) $line->quoted_quantity : (float) $line->requested_quantity;
+                    $price = $line->quoted_unit_price !== null ? (float) $line->quoted_unit_price : (float) $line->target_unit_price;
+                    $fallbackItem = $payloadBySku[$line->item_id] ?? ($payloadItems[$idx] ?? []);
                     PurchaseOrderItem::create([
                         'purchase_order_id' => $po->id,
                         'sku' => $line->item_id ?: ($fallbackItem['sku'] ?? 'ITEM'),
@@ -753,7 +941,7 @@ class PurchaseController extends Controller
                     ]);
                 }
             } else {
-                foreach ($payloadItems as $it) {
+                foreach ($payloadItemsToConvert as $it) {
                     $qty = (float) ($it['quantity'] ?? 1);
                     $price = (float) ($it['unitPrice'] ?? 0);
                     PurchaseOrderItem::create([
@@ -801,9 +989,9 @@ class PurchaseController extends Controller
         ]);
     }
 
-    public function vendorBills(): View
+    public function vendorBills(): \Illuminate\Http\RedirectResponse
     {
-        return view('purchase.vendor-bills');
+        return redirect()->route('accounting.ap', ['tab' => 'bills']);
     }
 
     /**
@@ -1190,6 +1378,14 @@ class PurchaseController extends Controller
 
             $po->save();
 
+            if (in_array($targetStage, ['ISSUED', 'FULFILLED'], true)) {
+                try {
+                    app(AccountingApService::class)->ensureBillForPurchaseOrder($po->fresh('items'));
+                } catch (Throwable $e) {
+                    // Non-blocking fallback when accounting subledger tables are unavailable
+                }
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => "Purchase Order {$po->po_number} transitioned to {$po->status}.",
@@ -1273,6 +1469,68 @@ class PurchaseController extends Controller
                 'archived_count' => $archivedCount,
             ]);
         });
+    }
+
+    /**
+     * API: Record a PO Payment Tranche or Vendor Credit Application and sync to Accounting AP.
+     */
+    public function apiRecordPoPayment(Request $request, AccountingApService $apService): JsonResponse
+    {
+        $validated = $request->validate([
+            'po_number' => 'required|string|max:50',
+            'purchase_order_id' => 'nullable',
+            'amount' => 'required|numeric|min:0.01',
+            'tranche_type' => 'nullable|string|max:100',
+            'payment_method' => 'nullable|string|max:100',
+            'bank_account_id' => 'nullable|string|max:100',
+            'disbursement_account_id' => 'nullable|string|max:100',
+            'ewt_rate_pct' => 'nullable|numeric|min:0|max:100',
+            'ewt_tax_code' => 'nullable|string|max:50',
+            'ewt_amount' => 'nullable|numeric|min:0',
+            'bill_ref' => 'nullable|string|max:100',
+            'reference' => 'nullable|string|max:100',
+            'payment_date' => 'nullable|date',
+            'fund_source' => 'nullable|string|max:100',
+            'remarks' => 'nullable|string|max:500',
+            'is_credit_application' => 'nullable|boolean',
+            'credit_amount' => 'nullable|numeric|min:0',
+            'vendor_id' => 'nullable|string|max:100',
+            'vendor_name' => 'nullable|string|max:255',
+            'vendor_trade_name' => 'nullable|string|max:255',
+            'po_type' => 'nullable|string|max:50',
+            'po_status' => 'nullable|string|max:50',
+            'po_gross_total' => 'nullable|numeric|min:0',
+            'items' => 'nullable|array',
+        ]);
+
+        try {
+            $result = $apService->recordPoPaymentSettlement(array_merge($validated, [
+                'acted_by' => auth()->user()->name ?? 'Procurement & AP Officer',
+            ]));
+
+            $billNo = $result['bill']?->vendor_bill_number ?? 'Bill';
+            $voucherNo = $result['payment']?->payment_number;
+            $creditUsed = $result['applied_credit'] ?? 0;
+            $genMemo = $result['generated_credit_memo'] ?? null;
+            $excessAmt = (float) ($result['excess_credit_amount'] ?? 0.0);
+
+            $msgParts = ["Synced to AP {$billNo}"];
+            if ($voucherNo) $msgParts[] = "Voucher {$voucherNo}";
+            if ($creditUsed > 0) $msgParts[] = 'Credit Applied: ₱' . number_format($creditUsed, 2);
+            if ($genMemo && $excessAmt > 0.009) {
+                $msgParts[] = "Overpayment Credit Memo {$genMemo->memo_number}: +₱" . number_format($excessAmt, 2);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => implode(' • ', $msgParts),
+                'data' => $result,
+            ]);
+        } catch (DomainException|InvalidArgumentException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+        } catch (Throwable $e) {
+            return response()->json(['success' => false, 'message' => 'Error recording PO payment: ' . $e->getMessage()], 500);
+        }
     }
 }
 

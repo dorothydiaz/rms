@@ -149,6 +149,10 @@ const SEEDED_PURCHASE_ORDERS = [
 window.PoStore = {
     purchaseOrders: [],
     vendors: [],
+    vendorCredits: [],
+    bankAccounts: [],
+    disbursementAccounts: [],
+    taxCodes: [],
     itemMaster: [],
     activePo: {
         poNumber: 'PO-2026-0105',
@@ -315,7 +319,7 @@ function initPoStore() {
                 paymentRemarks: p.payment_remarks || '',
                 approvalNotes: p.approval_notes || '',
                 approvedBy: p.approved_by || 'Procurement Specialist',
-                status: p.status || 'Approved / Issued',
+                status: p.status || 'Draft PO',
                 items: (p.items || []).map(it => ({
                     id: it.id,
                     sku: it.sku || 'CAT-01',
@@ -374,6 +378,7 @@ function initPoStore() {
     if (Array.isArray(serverVendors) && serverVendors.length > 0) {
         window.PoStore.vendors = serverVendors.map(v => ({
             id: v.vendor_code || ('VEN-' + v.id),
+            dbId: v.id,
             vendorCode: v.vendor_code,
             name: v.legal_name,
             legalName: v.legal_name,
@@ -393,6 +398,29 @@ function initPoStore() {
                 window.PoStore.vendors = [];
             }
         }
+    }
+
+    // 3b. Load Accounting AP Vendor Credits & Synced PO Payments + Bank/Tax Config
+    window.PoStore.vendorCredits = Array.isArray(window.PurchaseOrderConfig?.data?.initialVendorCredits)
+        ? window.PurchaseOrderConfig.data.initialVendorCredits
+        : [];
+    window.PoStore.bankAccounts = Array.isArray(window.PurchaseOrderConfig?.data?.initialBankAccounts)
+        ? window.PurchaseOrderConfig.data.initialBankAccounts
+        : [];
+    window.PoStore.disbursementAccounts = Array.isArray(window.PurchaseOrderConfig?.data?.initialDisbursementAccounts)
+        ? window.PurchaseOrderConfig.data.initialDisbursementAccounts
+        : [];
+    window.PoStore.taxCodes = Array.isArray(window.PurchaseOrderConfig?.data?.initialTaxCodes)
+        ? window.PurchaseOrderConfig.data.initialTaxCodes
+        : [];
+
+    const serverApPayments = Array.isArray(window.PurchaseOrderConfig?.data?.initialPoApPayments)
+        ? window.PurchaseOrderConfig.data.initialPoApPayments
+        : [];
+    if (serverApPayments.length > 0) {
+        const serverPoSet = new Set(serverApPayments.map(p => p.poNumber));
+        const existingStored = getStoredPayments().filter(p => p.source !== 'accounting_ap' && !serverPoSet.has(p.poNumber));
+        saveStoredPayments([...existingStored, ...serverApPayments]);
     }
 
     // 4. Load Item Master
@@ -765,6 +793,7 @@ function handlePoVendorSelect(vendorId) {
 
     updatePoVendorSummaryCard(vendor);
     renderPoVendorComboboxList();
+    updatePoTotals();
     updatePoLiveDocumentMockup();
     showToast(`✓ Selected vendor ${vendor.tradeName || vendor.legalName}`, 'success');
 }
@@ -902,22 +931,57 @@ function viewPoLinkedRfqByNumber(poNumber) {
     }
 }
 
+const PO_TAX_OPTIONS = [
+    { key: 'none', label: 'No Tax (0%)', vatType: 'vat_0', whtRate: '0', vatLabel: 'No Tax', whtLabel: '0% WHT' },
+    { key: 'vat_12_excl', label: '12% VAT (Excl)', vatType: 'vat_12_excl', whtRate: '0', vatLabel: '12% VAT (Excl)', whtLabel: '0% WHT' },
+    { key: 'vat_12_incl', label: '12% VAT (Incl)', vatType: 'vat_12_incl', whtRate: '0', vatLabel: '12% VAT (Incl)', whtLabel: '0% WHT' },
+    { key: 'vat_12_wht_1', label: '12% VAT + 1% WHT', vatType: 'vat_12_incl_1', whtRate: '1', vatLabel: '12% VAT', whtLabel: '1% WHT' },
+    { key: 'vat_12_wht_2', label: '12% VAT + 2% WHT', vatType: 'vat_12_incl_1', whtRate: '2', vatLabel: '12% VAT', whtLabel: '2% WHT' },
+    { key: 'vat_12_wht_5', label: '12% VAT + 5% WHT', vatType: 'vat_12_incl_1', whtRate: '5', vatLabel: '12% VAT', whtLabel: '5% WHT' },
+    { key: 'wht_1', label: '1% WHT Only', vatType: 'vat_0', whtRate: '1', vatLabel: '0% VAT', whtLabel: '1% WHT' },
+    { key: 'wht_2', label: '2% WHT Only', vatType: 'vat_0', whtRate: '2', vatLabel: '0% VAT', whtLabel: '2% WHT' },
+    { key: 'wht_5', label: '5% WHT Only', vatType: 'vat_0', whtRate: '5', vatLabel: '0% VAT', whtLabel: '5% WHT' }
+];
+
+function resolvePoTaxRuleKey(it) {
+    if (it?.taxRule && PO_TAX_OPTIONS.some(o => o.key === it.taxRule)) {
+        return it.taxRule;
+    }
+    const vType = it?.vatType;
+    const wRaw = it?.whtRate;
+    const hasExplicitWht = (wRaw !== undefined && wRaw !== null && wRaw !== '');
+    const wNum = hasExplicitWht ? parseFloat(wRaw) : 0;
+
+    if (!vType && !hasExplicitWht) {
+        return 'none';
+    }
+    if (vType === 'vat_12_incl_1') {
+        if (wNum === 2) return 'vat_12_wht_2';
+        if (wNum === 5) return 'vat_12_wht_5';
+        return 'vat_12_wht_1';
+    }
+    if (vType === 'vat_12_excl') return 'vat_12_excl';
+    if (vType === 'vat_12_incl') return 'vat_12_incl';
+    if (wNum === 1) return 'wht_1';
+    if (wNum === 2) return 'wht_2';
+    if (wNum === 5) return 'wht_5';
+    return 'none';
+}
+
 function computePoLineTaxes(it) {
     const qty = parseFloat(it?.quantity) || 0;
     const unitPrice = parseFloat(it?.unitPrice) || 0;
     const rawAmount = qty * unitPrice;
-    const vatType = it?.vatType || 'vat_12_incl_1';
-    const whtRateNum = it?.whtRate !== undefined && it?.whtRate !== null && it?.whtRate !== ''
-        ? parseFloat(it.whtRate)
-        : 1;
-    const whtPct = isNaN(whtRateNum) ? 1 : Math.max(0, whtRateNum);
+    const taxRule = resolvePoTaxRuleKey(it);
+    const ruleOpt = PO_TAX_OPTIONS.find(o => o.key === taxRule) || PO_TAX_OPTIONS[0];
+    const vatType = ruleOpt.vatType;
+    const whtPct = parseFloat(ruleOpt.whtRate) || 0;
 
     let untaxed = rawAmount;
     let vatable = 0;
     let withholding = 0;
 
     if (vatType === 'vat_12_incl_1') {
-        // Inclusive base divisor (e.g. ₱500 / 1.01 = ₱495.05 untaxed, 12% VAT = ₱59.41, 1% WHT = ₱4.95, Total = ₱559.41)
         const divisor = 1 + (whtPct > 0 ? (whtPct / 100) : 0.01);
         untaxed = rawAmount / divisor;
         vatable = untaxed * 0.12;
@@ -941,19 +1005,18 @@ function computePoLineTaxes(it) {
     const withholdingRounded = Math.round((withholding + Number.EPSILON) * 100) / 100;
     const totalWithTax = Math.round((untaxedRounded + vatableRounded + withholdingRounded + Number.EPSILON) * 100) / 100;
 
-    const vatLabel = vatType === 'vat_0' ? '0% VAT' : (vatType === 'vat_12_incl' ? '12% VAT (Incl)' : '12% VAT');
-    const whtLabel = whtPct > 0 ? `${whtPct}% WHT` : 'No WHT';
-
     return {
         rawAmount,
         untaxed: untaxedRounded,
         vatable: vatableRounded,
         withholding: withholdingRounded,
         totalWithTax,
+        taxRule,
+        taxLabel: ruleOpt.label,
         vatType,
         whtRate: String(whtPct),
-        vatLabel,
-        whtLabel
+        vatLabel: ruleOpt.vatLabel,
+        whtLabel: ruleOpt.whtLabel
     };
 }
 
@@ -1003,14 +1066,14 @@ function calculatePoGrossTotal(itemsOrPo) {
 const PO_ALL_COLUMNS = [
     // 1. Base Order Fields
     { id: 'index', label: '#', category: 'Base Order', default: true, align: 'center', width: '44px', lockVisible: true },
-    { id: 'sku', label: 'Item ID / SKU', category: 'Base Order', default: true, align: 'left', width: '120px', lockVisible: true },
-    { id: 'item_name', label: 'Item Description', category: 'Base Order', default: true, align: 'left', minWidth: '185px', lockVisible: true },
-    { id: 'uom', label: 'Purchase UOM', category: 'Base Order', default: true, align: 'center', width: '130px' },
-    { id: 'quantity', label: 'Ordered Qty', category: 'Base Order', default: true, align: 'right', width: '110px' },
-    { id: 'unit_price', label: 'Unit Price (₱)', category: 'Base Order', default: true, align: 'right', width: '120px' },
-    { id: 'taxes', label: 'Taxes', category: 'Base Order', default: true, align: 'center', width: '175px' },
-    { id: 'line_total', label: 'Line Total (₱)', category: 'Base Order', default: true, align: 'right', width: '130px' },
-    { id: 'specs', label: 'Specifications / Notes', category: 'Base Order', default: false, align: 'left', minWidth: '150px' },
+    { id: 'sku', label: 'Item ID / SKU', category: 'Base Order', default: true, align: 'left', width: '115px', lockVisible: true },
+    { id: 'item_name', label: 'Item Description', category: 'Base Order', default: true, align: 'left', width: '190px', minWidth: '180px', lockVisible: true },
+    { id: 'uom', label: 'Purchase UOM', category: 'Base Order', default: true, align: 'center', width: '125px' },
+    { id: 'quantity', label: 'Ordered Qty', category: 'Base Order', default: true, align: 'right', width: '105px' },
+    { id: 'unit_price', label: 'Unit Price (₱)', category: 'Base Order', default: true, align: 'right', width: '115px' },
+    { id: 'taxes', label: 'Taxes', category: 'Base Order', default: true, align: 'center', width: '165px' },
+    { id: 'line_total', label: 'Line Total (₱)', category: 'Base Order', default: true, align: 'right', width: '125px' },
+    { id: 'specs', label: 'Specifications / Notes', category: 'Base Order', default: false, align: 'left', width: '155px', minWidth: '150px' },
 
     // 2. RFQ Benchmark & Variance Fields (Revealed in Approval Stage or RFQ-Linked PO)
     { id: 'rfq_quoted_qty', label: 'RFQ Quoted Qty', category: 'RFQ Benchmark & Variance', default: false, align: 'right', width: '115px' },
@@ -1090,11 +1153,20 @@ function positionPoBuilderSettingsDropdown() {
 }
 
 function renderPoBuilderTableHeader() {
+    const colgroup = document.getElementById('poColgroup');
     const theadRow = document.getElementById('poItemsTheadRow');
     if (!theadRow) return;
 
     const wasOpen = document.getElementById('poBuilderSettingsDropdown')?.style.display === 'block';
     const visibleCols = PO_ALL_COLUMNS.filter(c => c.lockVisible || activePoBuilderCols.includes(c.id));
+
+    if (colgroup) {
+        colgroup.innerHTML = visibleCols.map(col => {
+            const w = col.width || col.minWidth || '130px';
+            return `<col style="width: ${w};">`;
+        }).join('') + `<col style="width: 72px;">`;
+    }
+
     let html = visibleCols.map(col => {
         const alignClass = col.align === 'right' ? 'th-num' : (col.align === 'center' ? 'th-center' : '');
         const wStyle = col.width ? `width: ${col.width};` : (col.minWidth ? `min-width: ${col.minWidth};` : '');
@@ -1190,7 +1262,7 @@ function renderPoItemsTable() {
                 <td colspan="${visibleCols.length + 1}" style="text-align: center; padding: 42px; color: var(--po-text-muted);">
                     <i class="ph ph-shopping-bag-open" style="font-size: 38px; color: #cbd5e1; display: block; margin-bottom: 8px;"></i>
                     <div style="font-weight: 700; color: var(--po-text-strong);">No Line Items in Purchase Order</div>
-                    <div style="font-size: 0.8rem; margin-top: 4px;">Click <strong>"Import RFQ"</strong>, <strong>"Select Master" (F2)</strong>, or <strong>"Add Custom Row"</strong> to populate items.</div>
+                    <div style="font-size: 0.8rem; margin-top: 4px;">Click <strong>"Select Master" (F2)</strong> or <strong>"Add Custom Row"</strong> to populate items.</div>
                 </td>
             </tr>
         `;
@@ -1264,12 +1336,12 @@ function renderPoItemsTable() {
             }
             if (col.id === 'taxes') {
                 const taxInfo = computePoLineTaxes(it);
+                const taxClass = taxInfo.taxRule === 'none' ? 'is-none' : 'vat';
                 if (isLocked) {
                     return `
                         <td class="td-center">
                             <div class="po-tax-pill-group">
-                                <span class="po-tax-badge vat">${escapeHtml(taxInfo.vatLabel)}</span>
-                                <span class="po-tax-badge wht">${escapeHtml(taxInfo.whtLabel)}</span>
+                                <span class="po-tax-badge ${taxClass}" title="${escapeHtml(taxInfo.taxLabel)}">${escapeHtml(taxInfo.taxLabel)}</span>
                             </div>
                         </td>
                     `;
@@ -1277,17 +1349,8 @@ function renderPoItemsTable() {
                 return `
                     <td class="td-center">
                         <div class="po-tax-pill-group">
-                            <select class="po-tax-select vat" onchange="updatePoItemField(${idx}, 'vatType', this.value)" title="Select VAT Rule for Line #${idx + 1}">
-                                <option value="vat_12_incl_1" ${taxInfo.vatType === 'vat_12_incl_1' ? 'selected' : ''}>12% VAT (Base)</option>
-                                <option value="vat_12_excl" ${taxInfo.vatType === 'vat_12_excl' ? 'selected' : ''}>12% VAT (Excl)</option>
-                                <option value="vat_12_incl" ${taxInfo.vatType === 'vat_12_incl' ? 'selected' : ''}>12% VAT (Incl)</option>
-                                <option value="vat_0" ${taxInfo.vatType === 'vat_0' ? 'selected' : ''}>0% VAT-Exempt</option>
-                            </select>
-                            <select class="po-tax-select wht" onchange="updatePoItemField(${idx}, 'whtRate', this.value)" title="Select Withholding Tax (EWT) for Line #${idx + 1}">
-                                <option value="1" ${taxInfo.whtRate === '1' ? 'selected' : ''}>1% WHT</option>
-                                <option value="2" ${taxInfo.whtRate === '2' ? 'selected' : ''}>2% WHT</option>
-                                <option value="5" ${taxInfo.whtRate === '5' ? 'selected' : ''}>5% WHT</option>
-                                <option value="0" ${taxInfo.whtRate === '0' ? 'selected' : ''}>0% WHT</option>
+                            <select class="po-tax-select ${taxClass}" onchange="updatePoItemField(${idx}, 'taxRule', this.value)" title="Select Tax Rule for Line #${idx + 1}">
+                                ${PO_TAX_OPTIONS.map(opt => `<option value="${opt.key}" ${taxInfo.taxRule === opt.key ? 'selected' : ''}>${escapeHtml(opt.label)}</option>`).join('')}
                             </select>
                         </div>
                     </td>
@@ -1375,6 +1438,11 @@ function updatePoItemField(idx, field, val) {
 
     if (field === 'quantity' || field === 'unitPrice' || field === 'receivedQuantity') {
         item[field] = parseFloat(val) || 0;
+    } else if (field === 'taxRule') {
+        const opt = PO_TAX_OPTIONS.find(o => o.key === val) || PO_TAX_OPTIONS[0];
+        item.taxRule = opt.key;
+        item.vatType = opt.vatType;
+        item.whtRate = opt.whtRate;
     } else {
         item[field] = val;
     }
@@ -1774,6 +1842,26 @@ function updatePoTotals() {
     const totalPaidFromLedger = payments.reduce((acc, p) => acc + (parseFloat(p.amount) || 0), 0);
     const effectivePaid = payments.length > 0 ? totalPaidFromLedger : (parseFloat(po.amountPaid) || 0);
     const balanceDue = Math.max(0, Math.round((totalGross - effectivePaid + Number.EPSILON) * 100) / 100);
+    const creditInfo = getAvailableVendorCreditForPo(po);
+    const availCredit = creditInfo.totalCredit;
+
+    // Show/hide Vendor Credit Balance row inside PO Payment Summary
+    const creditRow = document.getElementById('summaryPoVendorCreditRow');
+    const creditBalEl = document.getElementById('summaryPoVendorCreditBal');
+    const applyCreditBtn = document.getElementById('btnApplyPoSummaryCredit');
+    if (creditRow) {
+        if (availCredit > 0.009) {
+            creditRow.style.display = 'flex';
+            if (creditBalEl) creditBalEl.textContent = `₱ ${formatMoney(availCredit)}`;
+            if (applyCreditBtn) {
+                applyCreditBtn.disabled = balanceDue <= 0.009;
+                applyCreditBtn.style.opacity = balanceDue <= 0.009 ? '0.5' : '1';
+                applyCreditBtn.style.cursor = balanceDue <= 0.009 ? 'not-allowed' : 'pointer';
+            }
+        } else {
+            creditRow.style.display = 'none';
+        }
+    }
 
     // Amount Due displays the initial / remaining obligation
     if (elBalanceDue) {
@@ -1816,12 +1904,16 @@ function updatePoTotals() {
 
             // If there is still an amount to settle, render an adaptive next-payment row right below
             const nextTrancheDefault = payments.length === 0 ? 'Downpayment' : 'Partial Payment';
+            const creditOptHtml = availCredit > 0.009
+                ? `<option value="Vendor Credit Application">Vendor Credit (₱${formatMoney(availCredit)})</option>`
+                : '';
             const settleRowHtml = balanceDue > 0.009 ? `
                 <div class="po-fin-adaptive-input-row">
-                    <select id="inlinePoPayType" class="po-fin-inline-select" title="Payment Type">
+                    <select id="inlinePoPayType" class="po-fin-inline-select" title="Payment Type" onchange="if(this.value==='Vendor Credit Application'){ const a=document.getElementById('inlinePoPayAmt'); if(a) a.value=Math.min(${balanceDue.toFixed(2)}, ${availCredit.toFixed(2)}).toFixed(2); }">
                         <option value="Downpayment" ${nextTrancheDefault === 'Downpayment' ? 'selected' : ''}>Downpayment</option>
                         <option value="Partial Payment" ${nextTrancheDefault === 'Partial Payment' ? 'selected' : ''}>Partial Payment</option>
                         <option value="Final Settlement">Final Settlement</option>
+                        ${creditOptHtml}
                     </select>
                     <input type="text" id="inlinePoPayRef" class="po-fin-inline-ref" placeholder="OR / Bill Ref">
                     <input type="number" step="0.01" min="0.01" max="${balanceDue.toFixed(2)}" id="inlinePoPayAmt" class="po-fin-inline-amt" value="${balanceDue.toFixed(2)}" placeholder="0.00" title="Enter payment amount (up to ₱${formatMoney(balanceDue)})">
@@ -1844,7 +1936,220 @@ function updatePoTotals() {
     updatePoSummaryPayBadge();
 }
 
-function submitInlinePoPaymentRow() {
+function getAvailableVendorCreditForPo(po) {
+    const credits = window.PoStore?.vendorCredits || [];
+    if (!po || !Array.isArray(credits) || credits.length === 0) {
+        return { totalCredit: 0, memos: [] };
+    }
+
+    const vendorObj = (window.PoStore.vendors || []).find(v =>
+        (po.vendorId && (String(v.id) === String(po.vendorId) || String(v.vendorCode) === String(po.vendorId) || String(v.dbId) === String(po.vendorId))) ||
+        (po.vendorTradeName && String(v.tradeName || '').toLowerCase() === String(po.vendorTradeName).toLowerCase()) ||
+        (po.vendorName && String(v.legalName || '').toLowerCase() === String(po.vendorName).toLowerCase())
+    );
+
+    const candidateIds = new Set(
+        [po.vendorId, vendorObj?.id, vendorObj?.vendorCode, vendorObj?.dbId]
+            .filter(v => v !== undefined && v !== null && String(v).trim() !== '')
+            .map(v => String(v).trim().toLowerCase())
+    );
+    const candidateNames = new Set(
+        [po.vendorTradeName, po.vendorName, vendorObj?.tradeName, vendorObj?.legalName]
+            .filter(v => v !== undefined && v !== null && String(v).trim() !== '')
+            .map(v => String(v).trim().toLowerCase())
+    );
+
+    const matched = credits.filter(m => {
+        const amt = parseFloat(m.unapplied_amount || 0);
+        if (amt <= 0.009) return false;
+        const mId = String(m.vendor_id || '').trim().toLowerCase();
+        const mCode = String(m.vendor_code || '').trim().toLowerCase();
+        const mName = String(m.vendor_name || '').trim().toLowerCase();
+        return (mId && candidateIds.has(mId)) || (mCode && candidateIds.has(mCode)) || (mName && candidateNames.has(mName));
+    });
+
+    const totalCredit = matched.reduce((sum, m) => sum + parseFloat(m.unapplied_amount || 0), 0);
+    return {
+        totalCredit: Math.round((totalCredit + Number.EPSILON) * 100) / 100,
+        memos: matched
+    };
+}
+
+async function persistPoPaymentToAccounting(paymentEntry, poObj, isCreditApplication = false) {
+    const route = window.PurchaseOrderConfig?.routes?.recordPayment || '/purchase/api/orders/record-payment';
+    try {
+        const res = await fetch(route, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+            },
+            body: JSON.stringify({
+                po_number: poObj.poNumber,
+                purchase_order_id: poObj.id || null,
+                amount: paymentEntry.amount,
+                tranche_type: paymentEntry.trancheType,
+                payment_method: isCreditApplication ? 'VENDOR_CREDIT' : paymentEntry.method,
+                bank_account_id: paymentEntry.bankAccountId || null,
+                disbursement_account_id: paymentEntry.disbursementAccountId || null,
+                ewt_rate_pct: parseFloat(paymentEntry.ewtRatePct || 0),
+                ewt_tax_code: paymentEntry.ewtTaxCode || 'NONE',
+                ewt_amount: parseFloat(paymentEntry.ewtAmount || 0),
+                bill_ref: paymentEntry.billRef || null,
+                reference: paymentEntry.reference || null,
+                payment_date: paymentEntry.paymentDate,
+                fund_source: paymentEntry.fundSource,
+                remarks: paymentEntry.remarks,
+                is_credit_application: !!isCreditApplication,
+                credit_amount: isCreditApplication ? paymentEntry.amount : 0,
+                vendor_id: poObj.vendorId || null,
+                vendor_name: poObj.vendorName || poObj.vendorTradeName || 'Supplier Partner',
+                vendor_trade_name: poObj.vendorTradeName || poObj.vendorName || '',
+                po_type: poObj.poType || 'vendor',
+                po_status: poObj.status || 'Approved / Issued',
+                po_gross_total: calculatePoGrossTotal(poObj.items || []),
+                items: (poObj.items || []).map(i => ({
+                    sku: i.sku || 'ITEM',
+                    name: i.name || 'Ordered Item',
+                    specs: i.specs || '',
+                    category: i.category || 'Raw Ingredients',
+                    unit: i.unit || 'PCS',
+                    quantity: Math.max(0.01, parseFloat(i.quantity) || 1),
+                    unitPrice: Math.max(0, parseFloat(i.unitPrice) || 0)
+                }))
+            })
+        });
+        const json = await res.json();
+        if (res.ok && json.success) {
+            if (json.data?.po?.id && !poObj.id) {
+                poObj.id = json.data.po.id;
+            }
+            const stored = getStoredPayments();
+            const target = stored.find(p => p.id === paymentEntry.id);
+            if (target) {
+                if (json.data?.bill?.vendor_bill_number) {
+                    target.billRef = json.data.bill.vendor_bill_number;
+                }
+                if (json.data?.payment?.payment_number) {
+                    target.reference = json.data.payment.payment_number;
+                }
+                target.source = 'accounting_ap';
+                saveStoredPayments(stored);
+            }
+            if (json.data?.applied_credit > 0) {
+                let toDeduct = parseFloat(json.data.applied_credit) || 0;
+                const creditInfo = getAvailableVendorCreditForPo(poObj);
+                creditInfo.memos.forEach(m => {
+                    if (toDeduct <= 0) return;
+                    const avail = parseFloat(m.unapplied_amount || 0);
+                    const used = Math.min(avail, toDeduct);
+                    m.unapplied_amount = Math.max(0, avail - used);
+                    toDeduct -= used;
+                });
+            }
+            if (json.data?.generated_credit_memo) {
+                const gm = json.data.generated_credit_memo;
+                const exists = (window.PoStore.vendorCredits || []).some(c => String(c.memo_id) === String(gm.memo_id));
+                if (!exists) {
+                    window.PoStore.vendorCredits = window.PoStore.vendorCredits || [];
+                    window.PoStore.vendorCredits.unshift({
+                        memo_id: gm.memo_id,
+                        memo_number: gm.memo_number,
+                        vendor_id: String(gm.vendor_id || ''),
+                        vendor_code: '',
+                        vendor_name: gm.vendor_name || poObj.vendorName || '',
+                        unapplied_amount: parseFloat(gm.unapplied_amount || 0),
+                        total_amount: parseFloat(gm.total_amount || 0),
+                        memo_date: gm.memo_date || new Date().toISOString().split('T')[0],
+                        reason: gm.reason || 'Overpayment Credit',
+                    });
+                }
+            }
+            updatePoTotals();
+            if (document.getElementById('poPaymentSettlementModal')?.classList.contains('is-open')) {
+                renderPaymentSettlementData();
+            }
+            renderPoDirectory();
+            showToast(`✓ ${json.message || 'Synchronized with Accounting AP'}`, 'success');
+        }
+    } catch (e) {
+        console.warn('Accounting AP payment sync note:', e);
+    }
+}
+
+function updatePayModalExcessAndEwtPreview() {
+    const ref = currentSettlementRef || window.PoStore?.activePo?.poNumber;
+    const poObj = (ref && ref === window.PoStore?.activePo?.poNumber)
+        ? window.PoStore.activePo
+        : ((window.PoStore?.purchaseOrders || []).find(p => p.poNumber === ref) || window.PoStore?.activePo);
+    if (!poObj) return;
+
+    const amtVal = parseFloat(document.getElementById('newPayAmount')?.value) || 0;
+    const ewtSelect = document.getElementById('newPayEwtRule');
+    const ewtRate = parseFloat(ewtSelect?.value) || 0;
+    const tranche = document.getElementById('newPayTrancheType')?.value || '';
+    const isCredit = tranche === 'Vendor Credit Application';
+
+    const gross = computePoTaxBreakdown(poObj.items || []).totalWithTax || parseFloat(poObj.grossTotal || 0);
+    const payments = getStoredPayments().filter(p => p.poNumber === ref);
+    const totalPaid = payments.reduce((acc, p) => acc + (parseFloat(p.amount) || 0), 0);
+    const remaining = Math.max(0, Math.round((gross - totalPaid + Number.EPSILON) * 100) / 100);
+
+    const excessBanner = document.getElementById('newPayExcessCreditBanner');
+    const excessVal = document.getElementById('newPayExcessCreditVal');
+    const excessAmt = !isCredit ? Math.max(0, Math.round((amtVal - remaining + Number.EPSILON) * 100) / 100) : 0;
+    if (excessBanner && excessVal) {
+        if (excessAmt > 0.009) {
+            excessVal.textContent = `₱${formatMoney(excessAmt)}`;
+            excessBanner.style.display = 'flex';
+        } else {
+            excessBanner.style.display = 'none';
+        }
+    }
+
+    const ewtChip = document.getElementById('newPayEwtPreviewChip');
+    const ewtAmtEl = document.getElementById('newPayEwtPreviewAmt');
+    const netAmtEl = document.getElementById('newPayNetPreviewAmt');
+    if (ewtChip && ewtAmtEl && netAmtEl) {
+        if (!isCredit && ewtRate > 0 && amtVal > 0) {
+            const ewtAmt = Math.round((amtVal * (ewtRate / 100) + Number.EPSILON) * 100) / 100;
+            const netAmt = Math.max(0, amtVal - ewtAmt);
+            ewtAmtEl.textContent = `₱${formatMoney(ewtAmt)}`;
+            netAmtEl.textContent = `₱${formatMoney(netAmt)}`;
+            ewtChip.style.display = 'block';
+        } else {
+            ewtChip.style.display = 'none';
+        }
+    }
+}
+
+function applyVendorCreditInline() {
+    const po = window.PoStore?.activePo;
+    if (!po) return;
+    const creditInfo = getAvailableVendorCreditForPo(po);
+    if (creditInfo.totalCredit <= 0.009) {
+        showToast('No available vendor credit balance in Accounting AP.', 'warning');
+        return;
+    }
+    const gross = calculatePoGrossTotal(po.items || []);
+    const existing = getStoredPayments().filter(p => p.poNumber === po.poNumber);
+    const totalPaid = existing.reduce((acc, p) => acc + (parseFloat(p.amount) || 0), 0);
+    const remaining = Math.max(0, Math.round((gross - totalPaid + Number.EPSILON) * 100) / 100);
+    if (remaining <= 0.009) {
+        showToast(`${po.poNumber} is already fully settled.`, 'info');
+        return;
+    }
+
+    const applyAmt = Math.min(remaining, creditInfo.totalCredit);
+    const typeSelect = document.getElementById('inlinePoPayType');
+    const amtInput = document.getElementById('inlinePoPayAmt');
+    if (typeSelect) typeSelect.value = 'Vendor Credit Application';
+    if (amtInput) amtInput.value = applyAmt.toFixed(2);
+    submitInlinePoPaymentRow(true);
+}
+
+function submitInlinePoPaymentRow(forceCredit = false) {
     const po = window.PoStore?.activePo;
     if (!po) return;
 
@@ -1864,11 +2169,23 @@ function submitInlinePoPaymentRow() {
     const totalPaid = existing.reduce((acc, p) => acc + (parseFloat(p.amount) || 0), 0);
     const remaining = Math.max(0, Math.round((gross - totalPaid + Number.EPSILON) * 100) / 100);
 
-    const appliedAmt = Math.min(remaining > 0 ? remaining : amountVal, amountVal);
-    const trancheType = (appliedAmt >= remaining - 0.009 && existing.length > 0)
-        ? 'Final Settlement'
-        : (typeSelect?.value || 'Downpayment');
-    const refStr = refInput?.value?.trim() || `OR-${Date.now().toString().slice(-4)}`;
+    const selectedType = forceCredit ? 'Vendor Credit Application' : (typeSelect?.value || 'Downpayment');
+    const isCreditApp = selectedType === 'Vendor Credit Application';
+    let appliedAmt = isCreditApp ? Math.min(remaining > 0 ? remaining : amountVal, amountVal) : amountVal;
+
+    if (isCreditApp) {
+        const creditInfo = getAvailableVendorCreditForPo(po);
+        if (creditInfo.totalCredit <= 0.009) {
+            showToast('No available vendor credit balance for this supplier.', 'warning');
+            return;
+        }
+        appliedAmt = Math.min(appliedAmt, creditInfo.totalCredit);
+    }
+
+    const trancheType = isCreditApp
+        ? 'Vendor Credit Application'
+        : ((appliedAmt >= remaining - 0.009 && existing.length > 0) ? 'Final Settlement' : selectedType);
+    const refStr = refInput?.value?.trim() || (isCreditApp ? 'AP-CREDIT' : `OR-${Date.now().toString().slice(-4)}`);
 
     const paymentEntry = {
         id: `PAY-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
@@ -1876,10 +2193,10 @@ function submitInlinePoPaymentRow() {
         trancheType: trancheType,
         billRef: '',
         amount: appliedAmt,
-        method: po.paymentMethod || 'Bank Transfer / Electronic',
+        method: isCreditApp ? 'Vendor Credit Memo' : (po.paymentMethod || 'Bank Transfer / Electronic'),
         reference: refStr,
         paymentDate: new Date().toISOString().split('T')[0],
-        fundSource: po.fundSource || 'Main Commissary Checking Acct',
+        fundSource: isCreditApp ? 'AP Vendor Credit Balance' : (po.fundSource || 'Main Commissary Checking Acct'),
         remarks: `${trancheType} recorded inline`,
         recordedAt: new Date().toISOString(),
         actor: window.PurchaseOrderConfig?.user?.name || 'Procurement Specialist'
@@ -1888,7 +2205,7 @@ function submitInlinePoPaymentRow() {
     allPayments.push(paymentEntry);
     saveStoredPayments(allPayments);
 
-    const newTotalPaid = totalPaid + appliedAmt;
+    const newTotalPaid = Math.min(gross > 0 ? gross : totalPaid + appliedAmt, totalPaid + appliedAmt);
     po.amountPaid = newTotalPaid;
     po.balanceDue = Math.max(0, Math.round((gross - newTotalPaid + Number.EPSILON) * 100) / 100);
     po.paymentStatus = (po.balanceDue <= 0.009) ? 'Paid in Full / Cash Out' : 'Partial Payment';
@@ -1905,6 +2222,7 @@ function submitInlinePoPaymentRow() {
     updatePoLiveDocumentMockup();
     renderPoDirectory();
     showToast(`✓ Recorded ${trancheType}: ₱${formatMoney(appliedAmt)} (Remaining: ₱${formatMoney(po.balanceDue)})`, 'success');
+    persistPoPaymentToAccounting(paymentEntry, po, isCreditApp);
 }
 
 /**
@@ -2575,6 +2893,7 @@ function renderPoDirectory() {
         if (p.status === 'Approved / Issued' || p.status === 'Partially Received') poStatusClass = 'approved';
         else if (p.status === 'Fully Received') poStatusClass = 'received';
         else if (p.status === 'Pending Approval') poStatusClass = 'approval';
+        else if (p.status === 'Cancelled' || p.status === 'Refused') poStatusClass = 'cancelled';
 
         const isChecked = selectedPoNumbers.has(p.poNumber);
         const validRfqRef = hasValidRfqReference(p.rfqReference) ? String(p.rfqReference).trim() : '';
@@ -3419,7 +3738,7 @@ function openPoDocumentPreview() {
                         <td style="text-align: center;">${escapeHtml(it.unit || 'Kg')}</td>
                         <td class="num" style="font-weight: 700;">${parseFloat(it.quantity || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
                         <td class="num">₱${formatMoney(it.unitPrice || 0)}</td>
-                        <td style="text-align: center; font-size: 0.76rem; font-weight: 700; color: #6d28d9;">${escapeHtml(taxInfo.vatLabel)} • ${escapeHtml(taxInfo.whtLabel)}</td>
+                        <td style="text-align: center; font-size: 0.76rem; font-weight: 700; color: ${taxInfo.taxRule === 'none' ? '#64748b' : '#6d28d9'};">${escapeHtml(taxInfo.taxLabel)}</td>
                         <td class="num" style="font-weight: 800;">₱${formatMoney(total)}</td>
                     </tr>
                 `;
@@ -4417,10 +4736,28 @@ function renderPaymentSettlementData() {
         }
     }
 
-    // Settled Banner in Form Panel
+    // Settled Banner & Vendor Credit Balance Banner in Form Panel
     const settledBanner = document.getElementById('payModalSettledBanner');
     if (settledBanner) {
         settledBanner.style.display = isFullySettled ? 'flex' : 'none';
+    }
+
+    const targetPoObj = isActivePo
+        ? window.PoStore.activePo
+        : ((window.PoStore.purchaseOrders || []).find(p => p.poNumber === ref) || { poNumber: ref, vendorName, vendorTradeName: vendorName });
+    const modalCreditInfo = getAvailableVendorCreditForPo(targetPoObj);
+    const modalCreditBtn = document.getElementById('payModalCreditBtn');
+    const modalCreditBtnAmt = document.getElementById('payModalCreditBtnAmt');
+    const modalCreditBanner = document.getElementById('payModalCreditBanner');
+    const modalCreditVal = document.getElementById('payModalAvailCreditVal');
+    if (modalCreditInfo.totalCredit > 0.009 && !isFullySettled) {
+        if (modalCreditBtn) modalCreditBtn.style.display = 'inline-flex';
+        if (modalCreditBtnAmt) modalCreditBtnAmt.textContent = `₱${formatMoney(modalCreditInfo.totalCredit)}`;
+        if (modalCreditBanner) modalCreditBanner.style.display = 'flex';
+        if (modalCreditVal) modalCreditVal.textContent = `₱${formatMoney(modalCreditInfo.totalCredit)}`;
+    } else {
+        if (modalCreditBtn) modalCreditBtn.style.display = 'none';
+        if (modalCreditBanner) modalCreditBanner.style.display = 'none';
     }
 
     // Render Ledger Table with Progressive Running Balance ("Balance After")
@@ -4563,6 +4900,7 @@ function fillPercentageRemainingBalance(ratio = 0.50, trancheLabel = 'Downpaymen
         amountInput.value = (targetAmt > 0 ? targetAmt : balanceDue).toFixed(2);
         amountInput.focus();
     }
+    updatePayModalExcessAndEwtPreview();
 }
 
 function fillFullRemainingBalance() {
@@ -4598,6 +4936,41 @@ function fillFullRemainingBalance() {
         inlineInput.value = balanceDue.toFixed(2);
         handlePoInlineAmountPaid(balanceDue);
     }
+    updatePayModalExcessAndEwtPreview();
+}
+
+function fillVendorCreditBalance() {
+    const ref = currentSettlementRef || window.PoStore.activePo.poNumber;
+    const isActivePo = (ref === window.PoStore.activePo.poNumber);
+    const poObj = isActivePo
+        ? window.PoStore.activePo
+        : ((window.PoStore.purchaseOrders || []).find(p => p.poNumber === ref) || window.PoStore.activePo);
+
+    const gross = isActivePo
+        ? calculatePoGrossTotal()
+        : computePoTaxBreakdown(poObj?.items || []).totalWithTax;
+    const payments = getStoredPayments().filter(p => p.poNumber === ref);
+    const totalPaid = payments.reduce((acc, p) => acc + (parseFloat(p.amount) || 0), 0);
+    const balanceDue = Math.max(0, Math.round((gross - totalPaid + Number.EPSILON) * 100) / 100);
+    const creditInfo = getAvailableVendorCreditForPo(poObj);
+    const applyAmt = Math.min(balanceDue, creditInfo.totalCredit);
+
+    const trancheSelect = document.getElementById('newPayTrancheType');
+    if (trancheSelect) trancheSelect.value = 'Vendor Credit Application';
+    const amountInput = document.getElementById('newPayAmount');
+    if (amountInput) {
+        amountInput.value = applyAmt.toFixed(2);
+        amountInput.focus();
+    }
+    const refInput = document.getElementById('newPayRef');
+    if (refInput && !refInput.value && creditInfo.memos[0]?.memo_number) {
+        refInput.value = creditInfo.memos[0].memo_number;
+    }
+    const remarksInput = document.getElementById('newPayRemarks');
+    if (remarksInput && !remarksInput.value) {
+        remarksInput.value = 'Applied AP Vendor Credit Balance';
+    }
+    updatePayModalExcessAndEwtPreview();
 }
 
 function quickRecordPoPaymentTranche(ratio = 0.50, trancheLabel = 'Downpayment') {
@@ -4663,11 +5036,15 @@ function quickRecordPoPaymentTranche(ratio = 0.50, trancheLabel = 'Downpayment')
     updatePoLiveDocumentMockup();
     renderPoDirectory();
     showToast(`✓ Recorded ${paymentEntry.trancheType}: ₱${formatMoney(amountVal)} (Balance Due: ₱${formatMoney(po.balanceDue)})`, 'success');
+    persistPoPaymentToAccounting(paymentEntry, po, false);
 }
 
 function addPaymentDisbursement() {
     const ref = currentSettlementRef || window.PoStore.activePo.poNumber;
-    const amountVal = parseFloat(document.getElementById('newPayAmount').value) || 0;
+    const poObj = (ref === window.PoStore.activePo.poNumber)
+        ? window.PoStore.activePo
+        : ((window.PoStore.purchaseOrders || []).find(p => p.poNumber === ref) || window.PoStore.activePo);
+    let amountVal = parseFloat(document.getElementById('newPayAmount').value) || 0;
 
     if (amountVal <= 0) {
         showToast('Please enter a valid disbursement amount greater than 0', 'danger');
@@ -4675,11 +5052,30 @@ function addPaymentDisbursement() {
     }
 
     const trancheType = document.getElementById('newPayTrancheType')?.value || 'Downpayment / Deposit';
+    const isCreditApp = trancheType === 'Vendor Credit Application';
+    if (isCreditApp) {
+        const creditInfo = getAvailableVendorCreditForPo(poObj);
+        if (creditInfo.totalCredit <= 0.009) {
+            showToast('No available vendor credit balance in Accounting AP.', 'warning');
+            return;
+        }
+        amountVal = Math.min(amountVal, creditInfo.totalCredit);
+    }
+
     const billRef = document.getElementById('newPayBillRef')?.value?.trim() || '';
-    const method = document.getElementById('newPayMethod').value;
-    const paymentRef = document.getElementById('newPayRef').value.trim() || `OR-${Date.now().toString().slice(-4)}`;
+    const method = isCreditApp ? 'Vendor Credit Memo' : document.getElementById('newPayMethod').value;
+    const paymentRef = document.getElementById('newPayRef').value.trim() || (isCreditApp ? 'AP-CREDIT' : `OR-${Date.now().toString().slice(-4)}`);
     const paymentDate = document.getElementById('newPayDate').value || new Date().toISOString().split('T')[0];
-    const fundSource = document.getElementById('newPayFundSource').value;
+    const fundSourceEl = document.getElementById('newPayFundSource');
+    const selectedFundOpt = fundSourceEl?.options[fundSourceEl.selectedIndex];
+    const bankAccountId = isCreditApp ? null : (selectedFundOpt?.getAttribute('data-bank-account-id') || null);
+    const disbursementAccountId = isCreditApp ? null : (selectedFundOpt?.getAttribute('data-gl-account-id') || null);
+    const fundSource = isCreditApp ? 'AP Vendor Credit Balance' : (fundSourceEl?.value || 'Operating Account');
+    const ewtSelect = document.getElementById('newPayEwtRule');
+    const selectedEwtOpt = ewtSelect?.options[ewtSelect.selectedIndex];
+    const ewtRatePct = isCreditApp ? 0 : (parseFloat(ewtSelect?.value) || 0);
+    const ewtTaxCode = isCreditApp ? 'NONE' : (selectedEwtOpt?.getAttribute('data-atc') || (ewtRatePct > 0 ? 'WC158' : 'NONE'));
+    const ewtAmount = ewtRatePct > 0 ? Math.round((amountVal * (ewtRatePct / 100) + Number.EPSILON) * 100) / 100 : 0;
     const remarks = document.getElementById('newPayRemarks').value.trim();
 
     const paymentEntry = {
@@ -4692,6 +5088,11 @@ function addPaymentDisbursement() {
         reference: paymentRef,
         paymentDate: paymentDate,
         fundSource: fundSource,
+        bankAccountId: bankAccountId,
+        disbursementAccountId: disbursementAccountId,
+        ewtRatePct: ewtRatePct,
+        ewtTaxCode: ewtTaxCode,
+        ewtAmount: ewtAmount,
         remarks: remarks,
         recordedAt: new Date().toISOString(),
         actor: window.PurchaseOrderConfig?.user?.name || 'Procurement Specialist'
@@ -4717,7 +5118,7 @@ function addPaymentDisbursement() {
         ]
     );
 
-    // Update in-memory PO state
+    // Update in-memory PO state (cap local paid display at PO gross; any overpayment moves to AP Credit Memo)
     if (ref === window.PoStore.activePo.poNumber) {
         updatePoTotals();
         updatePoLiveDocumentMockup();
@@ -4727,9 +5128,9 @@ function addPaymentDisbursement() {
         const poPayments = payments.filter(p => p.poNumber === ref);
         const totalPaid = poPayments.reduce((acc, p) => acc + (parseFloat(p.amount) || 0), 0);
         const gross = computePoTaxBreakdown(po.items || []).totalWithTax;
-        po.amountPaid = totalPaid;
-        po.balanceDue = Math.max(0, Math.round((gross - totalPaid + Number.EPSILON) * 100) / 100);
-        po.paymentStatus = (totalPaid >= gross && gross > 0) ? 'Paid in Full / Cash Out' : (totalPaid > 0 ? 'Partial Payment' : 'Unpaid / Credit');
+        po.amountPaid = gross > 0 ? Math.min(gross, totalPaid) : totalPaid;
+        po.balanceDue = Math.max(0, Math.round((gross - po.amountPaid + Number.EPSILON) * 100) / 100);
+        po.paymentStatus = (po.amountPaid >= gross - 0.05 && gross > 0) ? 'Paid in Full / Cash Out' : (po.amountPaid > 0 ? 'Partial Payment' : 'Unpaid / Credit');
         localStorage.setItem('rms_purchase_orders', JSON.stringify(window.PoStore.purchaseOrders));
     }
 
@@ -4737,11 +5138,14 @@ function addPaymentDisbursement() {
     document.getElementById('newPayAmount').value = '';
     document.getElementById('newPayRef').value = '';
     if (document.getElementById('newPayBillRef')) document.getElementById('newPayBillRef').value = '';
+    if (document.getElementById('newPayEwtRule')) document.getElementById('newPayEwtRule').value = '0';
     document.getElementById('newPayRemarks').value = '';
+    updatePayModalExcessAndEwtPreview();
 
     renderPaymentSettlementData();
     renderPoDirectory();
     showToast(`✓ Recorded ₱${formatMoney(amountVal)} (${trancheType}) for ${ref}`, 'success');
+    persistPoPaymentToAccounting(paymentEntry, poObj, isCreditApp);
 }
 
 function deletePaymentDisbursement(id) {
@@ -4886,7 +5290,7 @@ function updatePoLifecycleProgressBar(status) {
                     <i class="ph ph-arrow-right"></i>
                     <span>Submit for Approval</span>
                 </button>
-                <button type="button" class="rfq-stage-action-btn rfq-btn-stage-cancel" onclick="resetPoForm()" title="Reset / Clear Draft">
+                <button type="button" class="rfq-stage-action-btn rfq-btn-stage-cancel" onclick="cancelActivePo()" title="Tag Purchase Order as Cancelled">
                     <i class="ph ph-x-circle"></i>
                     <span>Cancel</span>
                 </button>
@@ -4909,7 +5313,7 @@ function updatePoLifecycleProgressBar(status) {
                     <i class="ph ph-check-circle"></i>
                     <span>Approve & Issue PO</span>
                 </button>
-                <button type="button" class="rfq-stage-action-btn rfq-btn-stage-danger" onclick="transitionActivePoStage('Refused')" title="Refuse / Cancel Purchase Order">
+                <button type="button" class="rfq-stage-action-btn rfq-btn-stage-danger" onclick="cancelActivePo()" title="Refuse / Cancel Purchase Order">
                     <i class="ph ph-x-circle"></i>
                     <span>Refuse</span>
                 </button>
@@ -4953,6 +5357,10 @@ function updatePoLifecycleProgressBar(status) {
                 <button type="button" class="rfq-stage-action-btn rfq-btn-stage-primary" onclick="openPaymentSettlementModal('${escapeHtml(poNum)}')" title="Record Disbursement & Financial Settlement">
                     <i class="ph ph-bank"></i>
                     <span>Payment Settlement</span>
+                </button>
+                <button type="button" class="rfq-stage-action-btn rfq-btn-stage-cancel" onclick="cancelActivePo()" title="Tag Purchase Order as Cancelled">
+                    <i class="ph ph-x-circle"></i>
+                    <span>Cancel PO</span>
                 </button>
                 <button type="button" class="rfq-stage-action-btn rfq-btn-stage-attach" onclick="openPoAttachedFilesModal()" title="View Attached Documents">
                     <i class="ph ph-paperclip"></i>
@@ -5001,16 +5409,16 @@ function updatePoLifecycleProgressBar(status) {
         if (statusTitle) statusTitle.textContent = 'Cancelled';
         if (statusDesc) statusDesc.textContent = 'PO Voided';
         if (bannerIcon) bannerIcon.innerHTML = '<i class="ph ph-prohibit"></i>';
-        if (bannerTitle) bannerTitle.textContent = 'Stage 4: Status (Cancelled / Refused)';
-        if (bannerSub) bannerSub.textContent = 'This Purchase Order was cancelled or refused. Click Re-open as Draft to revise.';
+        if (bannerTitle) bannerTitle.textContent = 'Stage 4: Status (Cancelled)';
+        if (bannerSub) bannerSub.textContent = 'This Purchase Order is tagged as Cancelled. Click Withdraw Cancel to restore it to Draft.';
         if (bannerActions) {
             bannerActions.innerHTML = `<span class="rfq-stage-indicator-pill refused" style="color: #dc2626;"><i class="ph ph-x-circle-fill"></i> Cancelled</span>`;
         }
         if (stageActionsGroup) {
             stageActionsGroup.innerHTML = `
-                <button type="button" class="rfq-stage-action-btn rfq-btn-stage-outline" onclick="transitionActivePoStage('Draft')" title="Re-open as Draft">
-                    <i class="ph ph-arrow-counter-clockwise"></i>
-                    <span>Back to Draft</span>
+                <button type="button" class="rfq-stage-action-btn rfq-btn-stage-outline" onclick="withdrawCancelledPo()" title="Withdraw cancellation and restore Purchase Order to Draft">
+                    <i class="ph ph-arrow-u-up-left"></i>
+                    <span>Withdraw Cancel</span>
                 </button>
             `;
         }
@@ -5160,6 +5568,39 @@ async function transitionActivePoStage(targetStage) {
     showToast(`✓ ${po.poNumber} moved to ${nextStatus}`, 'success');
 }
 
+async function cancelActivePo() {
+    const po = window.PoStore?.activePo;
+    if (!po || !po.poNumber) return;
+    po.previousStatusBeforeCancel = po.status || 'Draft PO';
+    await transitionActivePoStage('Refused');
+    if (typeof logProcurementAudit === 'function') {
+        logProcurementAudit(
+            'PO',
+            po.poNumber,
+            'CANCELLED',
+            'Purchase Order Tagged as Cancelled',
+            `Purchase Order ${po.poNumber} was cancelled from ${po.previousStatusBeforeCancel} stage.`,
+            [{ label: 'Previous Status', value: po.previousStatusBeforeCancel }]
+        );
+    }
+}
+
+async function withdrawCancelledPo() {
+    const po = window.PoStore?.activePo;
+    if (!po || !po.poNumber) return;
+    await transitionActivePoStage('Draft');
+    if (typeof logProcurementAudit === 'function') {
+        logProcurementAudit(
+            'PO',
+            po.poNumber,
+            'CANCEL_WITHDRAWN',
+            'PO Cancellation Withdrawn',
+            `Cancellation withdrawn for ${po.poNumber}; restored to Draft PO for reconfiguration.`,
+            [{ label: 'Restored Status', value: 'Draft PO' }]
+        );
+    }
+}
+
 function handlePoStepClick(targetStage) {
     const currentStage = getNormalizedPoStage(window.PoStore?.activePo?.status);
     if (targetStage === currentStage) return;
@@ -5294,7 +5735,7 @@ function updatePoLiveDocumentMockup() {
                             <td style="padding: 4px 5px; font-weight: 700; color: #0f172a;">${escapeHtml(it.name || it.sku || 'Item')}</td>
                             <td style="padding: 4px 5px; text-align: center; font-family: monospace;">${escapeHtml(it.unit || 'PCS')}</td>
                             <td style="padding: 4px 5px; text-align: right; font-variant-numeric: tabular-nums;">${q.toFixed(2)}</td>
-                            <td style="padding: 4px 5px; text-align: center; font-size: 8.8px; color: #6d28d9; font-weight: 700;">${escapeHtml(taxInfo.vatLabel)} • ${escapeHtml(taxInfo.whtLabel)}</td>
+                            <td style="padding: 4px 5px; text-align: center; font-size: 8.8px; color: ${taxInfo.taxRule === 'none' ? '#64748b' : '#6d28d9'}; font-weight: 700;">${escapeHtml(taxInfo.taxLabel)}</td>
                             <td style="padding: 4px 5px; text-align: right; font-weight: 700; font-variant-numeric: tabular-nums;">₱${formatMoney(q * p)}</td>
                         </tr>
                     `;
@@ -5563,7 +6004,7 @@ async function handlePoDeepLinkParams() {
                             amountPaid: parseFloat(p.amount_paid || 0),
                             balanceDue: parseFloat(p.balance_due || 0),
                             approvedBy: p.approved_by || 'Procurement Specialist',
-                            status: p.status || 'Approved / Issued',
+                            status: p.status || 'Draft PO',
                             items: (json.data.items || p.items || []).map(it => ({
                                 id: it.id,
                                 sku: it.sku || 'CAT-01',
@@ -5737,13 +6178,19 @@ Object.assign(window, {
   renderPaymentSettlementData,
   fillPercentageRemainingBalance,
   fillFullRemainingBalance,
+  fillVendorCreditBalance,
+  applyVendorCreditInline,
+  submitInlinePoPaymentRow,
   quickRecordPoPaymentTranche,
   addPaymentDisbursement,
+  updatePayModalExcessAndEwtPreview,
   deletePaymentDisbursement,
   updatePoLifecycleProgressBar,
   applyPoStageFormLocks,
   saveActivePoDraft,
   transitionActivePoStage,
+  cancelActivePo,
+  withdrawCancelledPo,
   handlePoStepClick,
   handlePoBuilderTabClick,
   handlePoVendorRedirectClick,

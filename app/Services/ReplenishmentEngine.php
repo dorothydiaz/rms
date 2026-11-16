@@ -39,6 +39,9 @@ class ReplenishmentEngine
             'total_suggested_transfer_units' => 0.00,
         ];
 
+        $hasPoTables = Schema::hasTable('purchase_order_lines') && Schema::hasTable('purchase_order_header');
+        $hasTransferTables = Schema::hasTable('stock_transfer_lines') && Schema::hasTable('stock_transfer_header');
+
         foreach ($rules as $rule) {
             $item = DB::table('item_master')->where('id', $rule->product_id)->first();
             $costPrice = $item ? (float) $item->cost_price : 45.00;
@@ -51,11 +54,35 @@ class ReplenishmentEngine
                 default => round($physicalStock * 0.20, 2),
             };
 
-            // Calculate pending in-transit POs
-            $inTransit = (float) DB::table('purchase_order_lines')
-                ->where('sku', $rule->product_sku)
-                ->whereIn('status', ['draft', 'pending', 'approved', 'issued'])
-                ->sum('quantity');
+            // Calculate remaining in-transit POs scoped to this branch (or unallocated)
+            $inTransitPOs = 0.00;
+            if ($hasPoTables) {
+                $inTransitPOs = (float) DB::table('purchase_order_lines as pol')
+                    ->join('purchase_order_header as poh', 'poh.id', '=', 'pol.purchase_order_id')
+                    ->where('pol.sku', $rule->product_sku)
+                    ->whereIn('pol.status', ['draft', 'pending', 'approved', 'issued'])
+                    ->where(function ($q) use ($rule) {
+                        $q->where('poh.delivery_location', $rule->branch_name)
+                          ->orWhereNull('poh.delivery_location')
+                          ->orWhere('poh.delivery_location', '');
+                    })
+                    ->selectRaw('COALESCE(SUM(CASE WHEN pol.quantity > COALESCE(pol.received_quantity, 0) THEN pol.quantity - COALESCE(pol.received_quantity, 0) ELSE 0 END), 0) as qty')
+                    ->value('qty');
+            }
+
+            // Calculate pending in-transit Commissary Transfers destined for this branch
+            $inTransitTransfers = 0.00;
+            if ($hasTransferTables) {
+                $inTransitTransfers = (float) DB::table('stock_transfer_lines as stl')
+                    ->join('stock_transfer_header as sth', 'sth.id', '=', 'stl.internal_transfer_id')
+                    ->where('stl.sku', $rule->product_sku)
+                    ->where('sth.destination_branch_id', $rule->branch_id)
+                    ->whereIn('sth.status', ['DRAFT', 'PENDING', 'APPROVED', 'IN_TRANSIT'])
+                    ->selectRaw('COALESCE(SUM(CASE WHEN stl.requested_qty > COALESCE(stl.received_qty, 0) THEN stl.requested_qty - COALESCE(stl.received_qty, 0) ELSE 0 END), 0) as qty')
+                    ->value('qty');
+            }
+
+            $inTransit = round($inTransitPOs + $inTransitTransfers, 2);
 
             // Calculate committed reservations
             $committed = 0.00;
@@ -113,6 +140,7 @@ class ReplenishmentEngine
                 'strategy_label' => $rule->strategy_label,
                 'min_stock' => $minStock,
                 'max_stock' => $maxStock,
+                'safety_buffer' => (float) ($rule->safety_buffer ?: round($minStock * 0.3, 2)),
                 'moq' => $moq,
                 'on_hand' => $onHand,
                 'in_transit' => $inTransit,
@@ -128,6 +156,7 @@ class ReplenishmentEngine
                 'preferred_vendor_name' => $rule->preferred_vendor_name ?: 'Direct Supply',
                 'source_warehouse_id' => $rule->source_warehouse_id,
                 'source_warehouse_name' => $rule->source_warehouse_name ?: 'Central Hub',
+                'target_warehouse_id' => $rule->target_warehouse_id,
                 'auto_generate_draft' => (bool) $rule->auto_generate_draft,
             ];
         }

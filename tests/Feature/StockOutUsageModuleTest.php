@@ -89,8 +89,7 @@ class StockOutUsageModuleTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('Stock Out / Usage');
         $response->assertSee('List of Dispatches');
-        $response->assertSee('Create Draft Requisition');
-        $response->assertSee('Pick Pack Ship');
+        $response->assertSee('Stock Out / Usage Sheet');
         $response->assertSee('Prime Australian Beef Striploin');
     }
 

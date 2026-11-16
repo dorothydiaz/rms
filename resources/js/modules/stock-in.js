@@ -326,9 +326,9 @@ function renderKpis() {
     const receipts = window.StockInStore.goodsReceipts;
     const warehouses = window.StockInStore.warehouses;
 
-    // Pending Orders count (Issued / Ready to receive + Partially Received)
+    // Pending Orders count (Issued / Approved / Ready to receive / Draft POs + Partially Received)
     const pendingOrders = orders.filter(po => 
-        ['Issued', 'Approved', 'Partially Received', 'Ready to Receive'].includes(po.status)
+        ['Issued', 'Approved', 'Approved / Issued', 'Partially Received', 'Ready to Receive', 'Draft', 'Draft PO', 'Pending Approval'].includes(po.status)
     );
     const kpiPending = document.getElementById('grnKpiPendingOrders');
     if (kpiPending) kpiPending.textContent = `${pendingOrders.length} Ready`;
@@ -608,7 +608,7 @@ window.renderOrdersQueue = function() {
 
         const status = po.status || 'Issued';
         if (queueStatusFilter === 'READY') {
-            if (!['Issued', 'Approved', 'Ready to Receive', 'Draft'].includes(status)) return false;
+            if (!['Issued', 'Approved', 'Approved / Issued', 'Ready to Receive', 'Draft', 'Draft PO', 'Pending Approval'].includes(status)) return false;
         } else if (queueStatusFilter === 'PARTIAL') {
             if (status !== 'Partially Received') return false;
         } else if (queueStatusFilter === 'FULFILLED') {

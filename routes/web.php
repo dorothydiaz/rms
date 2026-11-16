@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AccountingController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ConfigController;
 use App\Http\Controllers\CreditsController;
@@ -428,6 +429,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/api/orders', [PurchaseController::class, 'apiCreatePurchaseOrder'])->name('api.orders.create');
         Route::post('/api/orders/save-draft', [PurchaseController::class, 'apiSavePoDraft'])->name('api.orders.save-draft');
         Route::post('/api/orders/transition-status', [PurchaseController::class, 'apiTransitionPoStatus'])->name('api.orders.transition-status');
+        Route::post('/api/orders/record-payment', [PurchaseController::class, 'apiRecordPoPayment'])->name('api.orders.record-payment');
         Route::post('/api/orders/batch-delete', [PurchaseController::class, 'apiBatchDeletePos'])->name('api.orders.batch-delete');
         Route::post('/api/orders/batch-archive', [PurchaseController::class, 'apiBatchArchivePos'])->name('api.orders.batch-archive');
         Route::get('/api/orders/{poNumber}/items', [PurchaseController::class, 'apiGetPoItems'])->name('api.orders.items');
@@ -446,6 +448,80 @@ Route::middleware('auth')->group(function () {
 
     // Alias for root API callers
     Route::post('/api/rfq/transition-status', [PurchaseController::class, 'apiTransitionRfqStatus']);
+
+    // Enterprise Accounting & Finance Module
+    Route::prefix('accounting')->name('accounting.')->group(function () {
+        Route::get('/dashboard', [AccountingController::class, 'dashboard'])->name('dashboard');
+        Route::get('/ap', [AccountingController::class, 'accountsPayable'])->name('ap');
+        Route::get('/ar', [AccountingController::class, 'accountsReceivable'])->name('ar');
+        Route::get('/cash-bank', [AccountingController::class, 'cashAndBank'])->name('cash-bank');
+        Route::get('/general-ledger', [AccountingController::class, 'generalLedger'])->name('gl');
+        Route::get('/fixed-assets', [AccountingController::class, 'fixedAssets'])->name('fixed-assets');
+        Route::get('/loans', [AccountingController::class, 'loans'])->name('loans');
+        Route::get('/tax', [AccountingController::class, 'tax'])->name('tax');
+        Route::get('/financial-reports', [AccountingController::class, 'financialReports'])->name('reports');
+        Route::get('/configuration', [AccountingController::class, 'configuration'])->name('config');
+
+        // Chart of Accounts APIs
+        Route::post('/api/coa/save', [AccountingController::class, 'apiSaveAccount'])->name('api.coa.save');
+        Route::delete('/api/coa/{accountId}', [AccountingController::class, 'apiDeleteAccount'])->name('api.coa.delete');
+
+        // General Ledger Journal & Period Control APIs
+        Route::post('/api/journals/save', [AccountingController::class, 'apiSaveJournal'])->name('api.journals.save');
+        Route::post('/api/journals/{journalId}/transition', [AccountingController::class, 'apiTransitionJournal'])->name('api.journals.transition');
+        Route::post('/api/journals/{journalId}/reverse', [AccountingController::class, 'apiReverseJournal'])->name('api.journals.reverse');
+        Route::delete('/api/journals/{journalId}', [AccountingController::class, 'apiDeleteJournal'])->name('api.journals.delete');
+        Route::post('/api/recurring/{templateId}/execute', [AccountingController::class, 'apiExecuteRecurringTemplate'])->name('api.recurring.execute');
+        Route::post('/api/periods/{periodId}/toggle-lock', [AccountingController::class, 'apiTogglePeriodLock'])->name('api.periods.toggle-lock');
+
+        // Configuration, Approvals & Attachments APIs
+        Route::post('/api/config/save', [AccountingController::class, 'apiSaveConfiguration'])->name('api.config.save');
+        Route::post('/api/approvals/{requestId}/act', [AccountingController::class, 'apiActOnApproval'])->name('api.approvals.act');
+        Route::post('/api/attachments/store', [AccountingController::class, 'apiStoreAttachment'])->name('api.attachments.store');
+
+        // Accounts Payable (AP) APIs
+        Route::post('/api/ap/bills/save', [AccountingController::class, 'apiSaveVendorBill'])->name('api.ap.bills.save');
+        Route::post('/api/ap/payments/save', [AccountingController::class, 'apiSaveVendorPayment'])->name('api.ap.payments.save');
+        Route::post('/api/ap/memos/save', [AccountingController::class, 'apiSaveVendorMemo'])->name('api.ap.memos.save');
+        Route::get('/api/ap/vendor-ledger', [AccountingController::class, 'apiGetVendorLedger'])->name('api.ap.vendor-ledger');
+
+        // Accounts Receivable (AR) APIs
+        Route::post('/api/ar/customers/save', [AccountingController::class, 'apiSaveCustomer'])->name('api.ar.customers.save');
+        Route::post('/api/ar/invoices/save', [AccountingController::class, 'apiSaveSalesInvoice'])->name('api.ar.invoices.save');
+        Route::post('/api/ar/receipts/save', [AccountingController::class, 'apiSaveCollectionReceipt'])->name('api.ar.receipts.save');
+        Route::post('/api/ar/memos/save', [AccountingController::class, 'apiSaveCustomerMemo'])->name('api.ar.memos.save');
+        Route::post('/api/ar/checks/{checkId}/bounce', [AccountingController::class, 'apiHandleBouncedCheck'])->name('api.ar.checks.bounce');
+        Route::get('/api/ar/customer-ledger', [AccountingController::class, 'apiGetCustomerLedger'])->name('api.ar.customer-ledger');
+
+        // Cash & Bank APIs
+        Route::post('/api/cash/banks/save', [AccountingController::class, 'apiSaveBankAccount'])->name('api.cash.banks.save');
+        Route::post('/api/cash/transfers/save', [AccountingController::class, 'apiSaveFundTransfer'])->name('api.cash.transfers.save');
+        Route::post('/api/cash/advances/save', [AccountingController::class, 'apiIssueEmployeeAdvance'])->name('api.cash.advances.save');
+        Route::post('/api/cash/advances/liquidate', [AccountingController::class, 'apiLiquidateEmployeeAdvance'])->name('api.cash.advances.liquidate');
+        Route::post('/api/cash/checks/{checkId}/clear', [AccountingController::class, 'apiClearPdcCheck'])->name('api.cash.checks.clear');
+        Route::post('/api/cash/recon/save', [AccountingController::class, 'apiReconcileBankStatement'])->name('api.cash.recon.save');
+
+        // Wave 3: Fixed Assets APIs
+        Route::post('/api/fixed-assets/save', [AccountingController::class, 'apiSaveFixedAsset'])->name('api.fixed-assets.save');
+        Route::post('/api/fixed-assets/depreciate', [AccountingController::class, 'apiPostFixedAssetDepreciation'])->name('api.fixed-assets.depreciate');
+        Route::post('/api/fixed-assets/{assetId}/dispose', [AccountingController::class, 'apiDisposeFixedAsset'])->name('api.fixed-assets.dispose');
+
+        // Wave 3: Loans & Debt Facilities APIs
+        Route::post('/api/loans/save', [AccountingController::class, 'apiSaveLoan'])->name('api.loans.save');
+        Route::post('/api/loans/{loanId}/payment', [AccountingController::class, 'apiRecordLoanPayment'])->name('api.loans.payment');
+
+        // Wave 3: GL Inquiry, Recurring Templates & Period Close
+        Route::get('/api/gl/inquiry', [AccountingController::class, 'apiGetGlInquiry'])->name('api.gl.inquiry');
+        Route::post('/api/gl/recurring-templates/save', [AccountingController::class, 'apiSaveRecurringTemplate'])->name('api.gl.recurring.save');
+        Route::post('/api/gl/recurring-templates/run', [AccountingController::class, 'apiRunRecurringTemplates'])->name('api.gl.recurring.run');
+        Route::post('/api/gl/period-close/checklist', [AccountingController::class, 'apiUpdatePeriodChecklist'])->name('api.gl.period-close.checklist');
+        Route::post('/api/gl/year-end-close', [AccountingController::class, 'apiExecuteYearEndClosing'])->name('api.gl.year-end-close');
+
+        // Wave 4: Tax & Financial Reports APIs
+        Route::get('/api/reports/tax', [AccountingController::class, 'apiGetTaxReport'])->name('api.reports.tax');
+        Route::get('/api/reports/financial', [AccountingController::class, 'apiGetFinancialReport'])->name('api.reports.financial');
+        Route::post('/api/landed-cost/allocate', [AccountingController::class, 'apiAllocateLandedCost'])->name('api.landed-cost.allocate');
+    });
 
 
     // Settings (Business Configuration)

@@ -431,8 +431,16 @@ async function quickCreatePoFromDirectory(rfqNumber) {
 
 function normalizeRfqItem(r) {
     if (!r) return null;
-    const estTotal = (r.items || []).reduce((acc, it) => acc + ((parseFloat(it.requestedQuantity || it.quantity) || 0) * (parseFloat(it.targetUnitPrice || it.targetPrice) || 0)), 0);
-    const quotedTotal = (r.items || []).reduce((acc, it) => acc + (parseFloat(it.quotedLineTotal) || ((parseFloat(it.requestedQuantity || it.quantity) || 0) * (parseFloat(it.quotedUnitPrice || it.targetPrice) || 0))), 0);
+    const estTotal = (r.items || []).reduce((acc, it) => acc + ((parseFloat(it.requestedQuantity ?? it.requested_quantity ?? it.quantity ?? 0) || 0) * (parseFloat(it.targetUnitPrice ?? it.target_unit_price ?? it.targetPrice ?? 0) || 0)), 0);
+    const quotedTotal = (r.items || []).reduce((acc, it) => {
+        const rawLT = it.quotedLineTotal !== undefined ? it.quotedLineTotal : it.quoted_line_total;
+        const rawQQ = it.quotedQuantity !== undefined ? it.quotedQuantity : it.quoted_quantity;
+        const rawQP = it.quotedUnitPrice !== undefined ? it.quotedUnitPrice : (it.quoted_unit_price !== undefined ? it.quoted_unit_price : it.quotedPrice);
+        const effQ = (rawQQ !== undefined && rawQQ !== null && rawQQ !== '') ? parseFloat(rawQQ) : (parseFloat(it.requestedQuantity ?? it.requested_quantity ?? it.quantity ?? 0) || 0);
+        const effP = (rawQP !== undefined && rawQP !== null && rawQP !== '') ? parseFloat(rawQP) : (parseFloat(it.targetUnitPrice ?? it.target_unit_price ?? it.targetPrice ?? 0) || 0);
+        if (effQ === 0) return acc;
+        return acc + ((rawLT !== undefined && rawLT !== null && rawLT !== '' && parseFloat(rawLT) > 0) ? parseFloat(rawLT) : (effQ * effP));
+    }, 0);
     const rfqNumberVal = r.rfqNumber || r.rfq_number || 'RFQ-2026-0001';
     const linkedPo = getLinkedPoNumberForRfq({ ...r, rfqNumber: rfqNumberVal });
 
@@ -459,8 +467,8 @@ function normalizeRfqItem(r) {
         rfqCurrencyCode: r.rfqCurrencyCode || r.rfq_currency_code || 'PHP',
         rfqPaymentTermsCode: r.rfqPaymentTermsCode || r.rfq_payment_terms_code || r.paymentTerms || 'Net 30 Days',
         rfqIncotermsCode: r.rfqIncotermsCode || r.rfq_incoterms_code || 'FOB',
-        rfqEstimatedTotalAmount: parseFloat(r.rfqEstimatedTotalAmount || r.rfq_estimated_total_amount || estTotal || 0),
-        rfqQuotedTotalAmount: parseFloat(r.rfqQuotedTotalAmount || r.rfq_quoted_total_amount || quotedTotal || estTotal || 0),
+        rfqEstimatedTotalAmount: parseFloat(r.rfqEstimatedTotalAmount ?? r.rfq_estimated_total_amount ?? estTotal ?? 0) || 0,
+        rfqQuotedTotalAmount: parseFloat(r.rfqQuotedTotalAmount ?? r.rfq_quoted_total_amount ?? quotedTotal ?? estTotal ?? 0) || 0,
         rfqStatus: r.rfqStatus || r.rfq_status || r.status || 'Draft',
         rfqApprovalStatus: r.rfqApprovalStatus || r.rfq_approval_status || (r.isApproved ? 'APPROVED' : 'PENDING'),
         approvalRequestId: r.approvalRequestId || r.approval_request_id || (r.rfqApprovalStatus === 'APPROVED' ? 'APR-2026-0088' : ''),
@@ -479,28 +487,56 @@ function normalizeRfqItem(r) {
         specialInstructions: r.specialInstructions || r.rfqNotes || '',
         status: r.status || r.rfqStatus || 'Draft',
         isApproved: (r.rfqApprovalStatus === 'APPROVED' || r.status === 'Awarded' || r.isApproved === true),
-        items: (r.items || []).map((line, idx) => ({
-            lineNumber: line.lineNumber || line.line_number || (idx + 1),
-            itemId: line.itemId || line.item_id || line.sku || 'SKU-ITEM',
-            name: line.name || 'Quoted Product',
-            specs: line.specs || '',
-            category: line.category || 'Supplies',
-            purchaseUomCode: line.purchaseUomCode || line.purchase_uom_code || line.unit || 'Unit',
-            unit: line.unit || line.purchaseUomCode || 'Unit',
-            requestedQuantity: parseFloat(line.requestedQuantity || line.requested_quantity || line.quantity || 1),
-            quantity: parseFloat(line.quantity || line.requestedQuantity || 1),
-            targetUnitPrice: parseFloat(line.targetUnitPrice || line.target_unit_price || line.targetPrice || 0),
-            targetPrice: parseFloat(line.targetPrice || line.targetUnitPrice || 0),
-            quotedUnitPrice: parseFloat(line.quotedUnitPrice || line.quoted_unit_price || line.quotedPrice || line.targetPrice || 0),
-            quotedLineTotal: parseFloat(line.quotedLineTotal || line.quoted_line_total || ((line.quantity || 1) * (line.targetPrice || 0))),
-            leadTimeDays: parseInt(line.leadTimeDays || line.lead_time_days || 3, 10),
-            isAwarded: Boolean(line.isAwarded !== undefined ? line.isAwarded : (r.status === 'Awarded')),
-            rfqLineNotes: line.rfqLineNotes || line.rfq_line_notes || line.notes || '',
-            rfqLineCreatedBy: line.rfqLineCreatedBy || line.rfq_line_created_by || 'Buyer Officer',
-            rfqLineCreatedAt: line.rfqLineCreatedAt || line.rfq_line_created_at || '2026-09-24',
-            rfqLineUpdatedBy: line.rfqLineUpdatedBy || line.rfq_line_updated_by || 'Purchasing Lead',
-            rfqLineUpdatedAt: line.rfqLineUpdatedAt || line.rfq_line_updated_at || '2026-10-01'
-        }))
+        items: (r.items || []).map((line, idx) => {
+            const stageUpper = String(r.rfqStatus || r.rfq_status || r.status || 'Draft').toUpperCase();
+            const isDraftLike = stageUpper === 'DRAFT';
+            const reqQty = parseFloat(line.requestedQuantity ?? line.requested_quantity ?? line.quantity ?? 1) || 0;
+            const targetPrice = parseFloat(line.targetUnitPrice ?? line.target_unit_price ?? line.targetPrice ?? 0) || 0;
+
+            const rawQuotedQty = line.quotedQuantity !== undefined ? line.quotedQuantity : line.quoted_quantity;
+            const hasExplicitQuotedQty = (rawQuotedQty !== undefined && rawQuotedQty !== null && rawQuotedQty !== '' && !isNaN(parseFloat(rawQuotedQty)));
+            const resolvedQuotedQty = hasExplicitQuotedQty ? parseFloat(rawQuotedQty) : undefined;
+
+            const rawQuotedPrice = line.quotedUnitPrice !== undefined ? line.quotedUnitPrice : (line.quoted_unit_price !== undefined ? line.quoted_unit_price : line.quotedPrice);
+            const hasExplicitQuotedPrice = (rawQuotedPrice !== undefined && rawQuotedPrice !== null && rawQuotedPrice !== '' && !isNaN(parseFloat(rawQuotedPrice)))
+                && (!isDraftLike || parseFloat(rawQuotedPrice) > 0 || (hasExplicitQuotedQty && resolvedQuotedQty === 0));
+            const resolvedQuotedPrice = hasExplicitQuotedPrice ? parseFloat(rawQuotedPrice) : targetPrice;
+
+            const rawQuotedLineTotal = line.quotedLineTotal !== undefined ? line.quotedLineTotal : line.quoted_line_total;
+            const hasExplicitQuotedTotal = (rawQuotedLineTotal !== undefined && rawQuotedLineTotal !== null && rawQuotedLineTotal !== '' && !isNaN(parseFloat(rawQuotedLineTotal)));
+            const resolvedQuotedLineTotal = (hasExplicitQuotedQty && resolvedQuotedQty === 0)
+                ? 0
+                : (hasExplicitQuotedTotal && (!isDraftLike || parseFloat(rawQuotedLineTotal) > 0)
+                    ? parseFloat(rawQuotedLineTotal)
+                    : ((hasExplicitQuotedQty ? resolvedQuotedQty : reqQty) * resolvedQuotedPrice));
+
+            return {
+                lineId: line.lineId || line.rfqLineId || line.rfq_line_id || null,
+                lineNumber: line.lineNumber || line.line_number || (idx + 1),
+                itemId: line.itemId || line.item_id || line.sku || 'SKU-ITEM',
+                sku: line.sku || line.itemId || line.item_id || 'SKU-ITEM',
+                name: line.name || line.itemName || line.item_name || 'Quoted Product',
+                itemName: line.itemName || line.item_name || line.name || 'Quoted Product',
+                specs: line.specs || '',
+                category: line.category || 'Supplies',
+                purchaseUomCode: line.purchaseUomCode || line.purchase_uom_code || line.unit || 'Unit',
+                unit: line.unit || line.purchaseUomCode || line.purchase_uom_code || 'Unit',
+                requestedQuantity: reqQty,
+                quantity: reqQty,
+                quotedQuantity: resolvedQuotedQty,
+                targetUnitPrice: targetPrice,
+                targetPrice: targetPrice,
+                quotedUnitPrice: resolvedQuotedPrice,
+                quotedLineTotal: resolvedQuotedLineTotal,
+                leadTimeDays: (line.leadTimeDays !== undefined && line.leadTimeDays !== null && line.leadTimeDays !== '') ? parseInt(line.leadTimeDays, 10) : ((line.lead_time_days !== undefined && line.lead_time_days !== null && line.lead_time_days !== '') ? parseInt(line.lead_time_days, 10) : 3),
+                isAwarded: Boolean(line.isAwarded !== undefined ? line.isAwarded : (r.status === 'Awarded')),
+                rfqLineNotes: line.rfqLineNotes || line.rfq_line_notes || line.notes || '',
+                rfqLineCreatedBy: line.rfqLineCreatedBy || line.rfq_line_created_by || 'Buyer Officer',
+                rfqLineCreatedAt: line.rfqLineCreatedAt || line.rfq_line_created_at || '2026-09-24',
+                rfqLineUpdatedBy: line.rfqLineUpdatedBy || line.rfq_line_updated_by || 'Purchasing Lead',
+                rfqLineUpdatedAt: line.rfqLineUpdatedAt || line.rfq_line_updated_at || '2026-10-01'
+            };
+        })
     };
 }
 
@@ -583,11 +619,12 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             openSendEmailModal();
         } else if (e.key === 'Escape') {
+            closeRowItemMasterDropdown();
             closeAllModals();
         }
     });
 
-    // Close floating column dropdowns on outside click
+    // Close floating column dropdowns & inline row Item Master portal on outside click
     document.addEventListener('click', (e) => {
         const dropdown = document.getElementById('tableColumnFilterDropdown');
         const filterBtn = document.getElementById('btnTableColumnFilter');
@@ -619,7 +656,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (vendorComboTrigger) vendorComboTrigger.classList.remove('is-active');
             }
         }
+
+        const rowPortal = document.getElementById('rfqInlineItemMasterPortal');
+        if (rowPortal && rowPortal.classList.contains('is-open')) {
+            if (!rowPortal.contains(e.target) && !e.target.closest('.rfq-inline-item-combo')) {
+                closeRowItemMasterDropdown();
+            }
+        }
     });
+
+    window.addEventListener('scroll', (e) => {
+        const rowPortal = document.getElementById('rfqInlineItemMasterPortal');
+        if (rowPortal && rowPortal.classList.contains('is-open')) {
+            if (e.target && rowPortal.contains(e.target)) return;
+            closeRowItemMasterDropdown();
+        }
+    }, true);
 });
 
 /**
@@ -1354,17 +1406,28 @@ function applyStageFormLocks(stage) {
 }
 
 function calculateItemVariances(item) {
-    const reqQty = parseFloat(item.requestedQuantity !== undefined ? item.requestedQuantity : (item.quantity || 0));
-    const quotedQty = parseFloat(item.quotedQuantity !== undefined ? item.quotedQuantity : reqQty);
-    const targetPrice = parseFloat(item.targetUnitPrice !== undefined ? item.targetUnitPrice : (item.targetPrice || 0));
-    const quotedPrice = parseFloat(item.quotedUnitPrice !== undefined ? item.quotedUnitPrice : targetPrice);
+    const rawReqQty = item.requestedQuantity !== undefined ? item.requestedQuantity : item.quantity;
+    const reqQty = (rawReqQty !== undefined && rawReqQty !== null && rawReqQty !== '' && !isNaN(parseFloat(rawReqQty)))
+        ? parseFloat(rawReqQty)
+        : 0;
+
+    const hasQuotedQty = (item.quotedQuantity !== undefined && item.quotedQuantity !== null && item.quotedQuantity !== '' && !isNaN(parseFloat(item.quotedQuantity)));
+    const quotedQty = hasQuotedQty ? parseFloat(item.quotedQuantity) : reqQty;
+
+    const rawTargetPrice = item.targetUnitPrice !== undefined ? item.targetUnitPrice : item.targetPrice;
+    const targetPrice = (rawTargetPrice !== undefined && rawTargetPrice !== null && rawTargetPrice !== '' && !isNaN(parseFloat(rawTargetPrice)))
+        ? parseFloat(rawTargetPrice)
+        : 0;
+
+    const hasQuotedPrice = (item.quotedUnitPrice !== undefined && item.quotedUnitPrice !== null && item.quotedUnitPrice !== '' && !isNaN(parseFloat(item.quotedUnitPrice)));
+    const quotedPrice = hasQuotedPrice ? parseFloat(item.quotedUnitPrice) : targetPrice;
 
     const targetTotal = reqQty * targetPrice;
-    const quotedTotal = quotedQty * quotedPrice;
+    const quotedTotal = (quotedQty === 0 || quotedPrice === 0) ? 0 : (quotedQty * quotedPrice);
     const qtyVariance = quotedQty - reqQty;
     const priceVariance = quotedPrice - targetPrice;
     const priceVariancePct = targetPrice > 0 ? ((quotedPrice - targetPrice) / targetPrice) * 100 : 0;
-    const isWithinBudget = (quotedPrice <= targetPrice || priceVariancePct <= 5.0);
+    const isWithinBudget = (quotedQty === 0 || quotedPrice <= targetPrice || priceVariancePct <= 5.0);
 
     return {
         reqQty,
@@ -1717,7 +1780,7 @@ function updateLifecycleProgressBar(status) {
                     <span>Attached Files</span>
                     <span class="rfq-stage-badge-count" id="rfqAttachedCountBadge">${attCount}</span>
                 </button>
-                <button type="button" class="rfq-stage-action-btn rfq-btn-stage-submit" onclick="submitActiveRfqToVendor()" title="Submit Tender for Vendor Bidding">
+                <button type="button" class="rfq-stage-action-btn rfq-btn-stage-submit" onclick="submitActiveRfqToVendor()" title="Tag RFQ as Submitted / Sent internally (no email required)">
                     <i class="ph ph-paper-plane-tilt"></i>
                     <span>Submit</span>
                 </button>
@@ -1941,17 +2004,27 @@ async function transitionActiveRfqStage(targetStage, options = {}) {
             vendor_name: window.AppStore.activeRfq.vendorName || window.AppStore.activeRfq.vendorTradeName || null,
             rejection_reason: options.rejectionReason || null,
             revision_notes: options.revisionNotes || null,
-            items: (window.AppStore.activeRfq.items || []).map(it => ({
-                line_id: it.lineId || it.rfqLineId || null,
-                item_id: it.itemId || it.sku || '',
-                requested_quantity: parseFloat(it.requestedQuantity !== undefined ? it.requestedQuantity : (it.quantity || 1)) || 1,
-                target_unit_price: parseFloat(it.targetUnitPrice !== undefined ? it.targetUnitPrice : (it.targetPrice || 0)) || 0,
-                quoted_quantity: parseFloat(it.quotedQuantity !== undefined ? it.quotedQuantity : (it.requestedQuantity || it.quantity || 1)) || 1,
-                quoted_unit_price: parseFloat(it.quotedUnitPrice !== undefined ? it.quotedUnitPrice : (it.targetUnitPrice !== undefined ? it.targetUnitPrice : it.targetPrice || 0)) || 0,
-                purchase_uom_code: it.purchaseUomCode || it.uom || 'PCS',
-                lead_time_days: parseInt(it.leadTimeDays || 0) || 0,
-                rfq_line_notes: it.notes || it.rfqLineNotes || null
-            }))
+            items: (window.AppStore.activeRfq.items || []).map(it => {
+                const rawReqQty = it.requestedQuantity !== undefined ? it.requestedQuantity : it.quantity;
+                const reqQty = (rawReqQty !== undefined && rawReqQty !== null && rawReqQty !== '' && !isNaN(parseFloat(rawReqQty))) ? parseFloat(rawReqQty) : 1;
+                const rawTarget = it.targetUnitPrice !== undefined ? it.targetUnitPrice : it.targetPrice;
+                const targetPrice = (rawTarget !== undefined && rawTarget !== null && rawTarget !== '' && !isNaN(parseFloat(rawTarget))) ? parseFloat(rawTarget) : 0;
+                const hasQQ = (it.quotedQuantity !== undefined && it.quotedQuantity !== null && it.quotedQuantity !== '' && !isNaN(parseFloat(it.quotedQuantity)));
+                const qQty = hasQQ ? parseFloat(it.quotedQuantity) : reqQty;
+                const hasQP = (it.quotedUnitPrice !== undefined && it.quotedUnitPrice !== null && it.quotedUnitPrice !== '' && !isNaN(parseFloat(it.quotedUnitPrice)));
+                const qPrice = hasQP ? parseFloat(it.quotedUnitPrice) : targetPrice;
+                return {
+                    line_id: it.lineId || it.rfqLineId || null,
+                    item_id: it.itemId || it.sku || '',
+                    requested_quantity: reqQty,
+                    target_unit_price: targetPrice,
+                    quoted_quantity: qQty,
+                    quoted_unit_price: qPrice,
+                    purchase_uom_code: it.purchaseUomCode || it.uom || 'PCS',
+                    lead_time_days: parseInt(it.leadTimeDays || 0, 10) || 0,
+                    rfq_line_notes: it.notes || it.rfqLineNotes || null
+                };
+            })
         };
 
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
@@ -2277,40 +2350,48 @@ function moveToApprovalStage() {
             quoteErrors.push(`Row #${idx + 1} Requested Qty`);
         }
 
-        // Quote Validation: Check Vendor Quoted Unit Price
-        const qPriceInput = row ? row.querySelector('input[data-field="quotedUnitPrice"], input[onchange*="quotedUnitPrice"]') : null;
-        const qPriceVal = (qPriceInput && qPriceInput.value !== '')
-            ? parseFloat(qPriceInput.value)
-            : (item.quotedUnitPrice !== undefined && item.quotedUnitPrice !== null && item.quotedUnitPrice !== '' ? parseFloat(item.quotedUnitPrice) : 0);
-
-        if (!qPriceVal || qPriceVal <= 0) {
-            if (qPriceInput) {
-                qPriceInput.classList.add('rfq-field-error-glow');
-                if (!firstErrorEl) firstErrorEl = qPriceInput;
-                qPriceInput.addEventListener('input', () => qPriceInput.classList.remove('rfq-field-error-glow'), { once: true });
-            }
-            quoteErrors.push(`Row #${idx + 1} Quoted Price`);
-        } else {
-            item.quotedUnitPrice = qPriceVal;
-        }
-
-        // Quote Validation: Check Vendor Quoted Quantity
+        // Quote Validation: Check Vendor Quoted Quantity (0 is permitted when vendor excludes an item)
         const qQtyInput = row ? row.querySelector('input[data-field="quotedQuantity"], input[onchange*="quotedQuantity"]') : null;
         const qQtyVal = (qQtyInput && qQtyInput.value !== '')
             ? parseFloat(qQtyInput.value)
-            : (item.quotedQuantity !== undefined && item.quotedQuantity !== null && item.quotedQuantity !== '' ? parseFloat(item.quotedQuantity) : (item.requestedQuantity || 1));
+            : (item.quotedQuantity !== undefined && item.quotedQuantity !== null && item.quotedQuantity !== '' ? parseFloat(item.quotedQuantity) : (item.requestedQuantity ?? 1));
 
-        if (!qQtyVal || qQtyVal <= 0) {
+        if (isNaN(qQtyVal) || qQtyVal < 0) {
             if (qQtyInput) {
                 qQtyInput.classList.add('rfq-field-error-glow');
                 if (!firstErrorEl) firstErrorEl = qQtyInput;
                 qQtyInput.addEventListener('input', () => qQtyInput.classList.remove('rfq-field-error-glow'), { once: true });
             }
-            if (!quoteErrors.includes(`Row #${idx + 1} Quoted Price`)) {
-                quoteErrors.push(`Row #${idx + 1} Quoted Qty`);
-            }
+            quoteErrors.push(`Row #${idx + 1} Quoted Qty`);
         } else {
             item.quotedQuantity = qQtyVal;
+        }
+
+        // Quote Validation: Check Vendor Quoted Unit Price (0 is permitted when vendor excludes an item)
+        const qPriceInput = row ? row.querySelector('input[data-field="quotedUnitPrice"], input[onchange*="quotedUnitPrice"]') : null;
+        let qPriceVal = (qPriceInput && qPriceInput.value !== '')
+            ? parseFloat(qPriceInput.value)
+            : (item.quotedUnitPrice !== undefined && item.quotedUnitPrice !== null && item.quotedUnitPrice !== '' ? parseFloat(item.quotedUnitPrice) : NaN);
+
+        if (qQtyVal === 0 && isNaN(qPriceVal)) {
+            qPriceVal = 0;
+        }
+
+        if (isNaN(qPriceVal) || qPriceVal < 0) {
+            if (qPriceInput) {
+                qPriceInput.classList.add('rfq-field-error-glow');
+                if (!firstErrorEl) firstErrorEl = qPriceInput;
+                qPriceInput.addEventListener('input', () => qPriceInput.classList.remove('rfq-field-error-glow'), { once: true });
+            }
+            if (!quoteErrors.includes(`Row #${idx + 1} Quoted Qty`)) {
+                quoteErrors.push(`Row #${idx + 1} Quoted Price`);
+            }
+        } else {
+            item.quotedUnitPrice = qPriceVal;
+        }
+
+        if (!isNaN(qQtyVal) && qQtyVal >= 0 && !isNaN(qPriceVal) && qPriceVal >= 0) {
+            item.quotedLineTotal = qQtyVal * qPriceVal;
         }
     });
 
@@ -2350,7 +2431,7 @@ function handleApproverApprove() {
     // 3. Ensure required approval columns are visible
     ensureApprovalColumnsVisible();
 
-    // 4. Validate vendor quotation response fields (Quoted Quantity & Quoted Price)
+    // 4. Validate vendor quotation response fields (Quoted Quantity & Quoted Price; 0 permitted for excluded lines)
     items.forEach((item, idx) => {
         const row = document.querySelector(`tr[data-row-idx="${idx}"]`);
 
@@ -2358,30 +2439,42 @@ function handleApproverApprove() {
         const qQtyInput = row ? row.querySelector('input[onchange*="quotedQuantity"]') : null;
         const qQtyVal = (qQtyInput && qQtyInput.value !== '')
             ? parseFloat(qQtyInput.value)
-            : (item.quotedQuantity !== undefined && item.quotedQuantity !== null && item.quotedQuantity !== '' ? parseFloat(item.quotedQuantity) : 0);
+            : (item.quotedQuantity !== undefined && item.quotedQuantity !== null && item.quotedQuantity !== '' ? parseFloat(item.quotedQuantity) : NaN);
 
-        if (!qQtyVal || qQtyVal <= 0) {
+        if (isNaN(qQtyVal) || qQtyVal < 0) {
             if (qQtyInput) {
                 qQtyInput.classList.add('rfq-field-error-glow');
                 if (!firstErrorEl) firstErrorEl = qQtyInput;
                 qQtyInput.addEventListener('input', () => qQtyInput.classList.remove('rfq-field-error-glow'), { once: true });
             }
             errors.push(`Row #${idx + 1} Quoted Quantity`);
+        } else {
+            item.quotedQuantity = qQtyVal;
         }
 
         // Check Quoted Unit Price
         const qPriceInput = row ? row.querySelector('input[onchange*="quotedUnitPrice"]') : null;
-        const qPriceVal = (qPriceInput && qPriceInput.value !== '')
+        let qPriceVal = (qPriceInput && qPriceInput.value !== '')
             ? parseFloat(qPriceInput.value)
-            : (item.quotedUnitPrice !== undefined && item.quotedUnitPrice !== null && item.quotedUnitPrice !== '' ? parseFloat(item.quotedUnitPrice) : 0);
+            : (item.quotedUnitPrice !== undefined && item.quotedUnitPrice !== null && item.quotedUnitPrice !== '' ? parseFloat(item.quotedUnitPrice) : NaN);
 
-        if (!qPriceVal || qPriceVal <= 0) {
+        if (qQtyVal === 0 && isNaN(qPriceVal)) {
+            qPriceVal = 0;
+        }
+
+        if (isNaN(qPriceVal) || qPriceVal < 0) {
             if (qPriceInput) {
                 qPriceInput.classList.add('rfq-field-error-glow');
                 if (!firstErrorEl) firstErrorEl = qPriceInput;
                 qPriceInput.addEventListener('input', () => qPriceInput.classList.remove('rfq-field-error-glow'), { once: true });
             }
             errors.push(`Row #${idx + 1} Quoted Price`);
+        } else {
+            item.quotedUnitPrice = qPriceVal;
+        }
+
+        if (!isNaN(qQtyVal) && qQtyVal >= 0 && !isNaN(qPriceVal) && qPriceVal >= 0) {
+            item.quotedLineTotal = qQtyVal * qPriceVal;
         }
     });
 
@@ -2477,7 +2570,12 @@ function renderItemsTable() {
                 if (isBaseEditable) {
                     rowsHtml += `
                         <td>
-                            <input type="text" value="${escapeHtml(item.itemId || item.sku || '')}" placeholder="Item ID / SKU" onchange="updateItemRowField(${idx}, 'itemId', this.value)" style="font-family: monospace; font-weight: 700;">
+                            <div class="rfq-inline-item-combo" data-row-idx="${idx}" data-combo-mode="sku">
+                                <input type="text" autocomplete="off" value="${escapeHtml(item.itemId || item.sku || '')}" placeholder="Item ID / SKU" onfocus="openRowItemMasterDropdown(this, ${idx}, 'sku')" onclick="openRowItemMasterDropdown(this, ${idx}, 'sku')" oninput="filterRowItemMasterDropdown(this, ${idx}, 'sku', this.value)" onchange="updateItemRowField(${idx}, 'itemId', this.value)" style="font-family: monospace; font-weight: 700;">
+                                <button type="button" class="rfq-inline-combo-btn" tabindex="-1" onclick="toggleRowItemMasterDropdown(event, ${idx}, 'sku')" title="Select SKU from Item Master">
+                                    <i class="ph ph-caret-down"></i>
+                                </button>
+                            </div>
                         </td>
                     `;
                 } else {
@@ -2491,7 +2589,12 @@ function renderItemsTable() {
                 if (isBaseEditable) {
                     rowsHtml += `
                         <td>
-                            <input type="text" value="${escapeHtml(item.itemName || item.name || '')}" placeholder="Item description" onchange="updateItemRowField(${idx}, 'itemName', this.value)" required style="font-weight: 600;">
+                            <div class="rfq-inline-item-combo" data-row-idx="${idx}" data-combo-mode="name">
+                                <input type="text" autocomplete="off" value="${escapeHtml(item.itemName || item.name || '')}" placeholder="Item description" onfocus="openRowItemMasterDropdown(this, ${idx}, 'name')" onclick="openRowItemMasterDropdown(this, ${idx}, 'name')" oninput="filterRowItemMasterDropdown(this, ${idx}, 'name', this.value)" onchange="updateItemRowField(${idx}, 'itemName', this.value)" required style="font-weight: 600;">
+                                <button type="button" class="rfq-inline-combo-btn" tabindex="-1" onclick="toggleRowItemMasterDropdown(event, ${idx}, 'name')" title="Select Item from Item Master">
+                                    <i class="ph ph-caret-down"></i>
+                                </button>
+                            </div>
                         </td>
                     `;
                 } else {
@@ -2584,9 +2687,9 @@ function renderItemsTable() {
                 }
             } else if (col.id === 'quoted_quantity') {
                 if (currentStage === 'Submitted' || currentStage === 'Approval') {
-                    const qQtyVal = (item.quotedQuantity !== undefined && item.quotedQuantity !== null && item.quotedQuantity !== '') 
-                        ? item.quotedQuantity 
-                        : (calc.quotedQty > 0 ? calc.quotedQty : '');
+                    const qQtyVal = (item.quotedQuantity !== undefined && item.quotedQuantity !== null && item.quotedQuantity !== '')
+                        ? item.quotedQuantity
+                        : (calc.quotedQty >= 0 ? calc.quotedQty : '');
                     const isSub = (currentStage === 'Submitted');
                     rowsHtml += `
                         <td class="td-num">
@@ -2633,7 +2736,7 @@ function renderItemsTable() {
             } else if (col.id === 'quoted_line_total') {
                 if (currentStage === 'Submitted' || currentStage === 'Approval' || currentStage === 'Approved' || currentStage === 'Refused') {
                     rowsHtml += `
-                        <td class="td-num" style="font-weight: 800; color: #b45309;">
+                        <td class="td-num" data-row-quoted-total="${idx}" style="font-weight: 800; color: #b45309;">
                             ₱${formatMoney(calc.quotedTotal)}
                         </td>
                     `;
@@ -2742,12 +2845,26 @@ function renderItemsTable() {
 function updateItemRowFieldLive(index, field, value) {
     const item = window.AppStore?.activeRfq?.items?.[index];
     if (!item) return;
+    const parsed = (value !== '' && value !== null && value !== undefined && !isNaN(parseFloat(value))) ? parseFloat(value) : 0;
     if (field === 'quotedQuantity') {
-        item.quotedQuantity = parseFloat(value) || 0;
+        item.quotedQuantity = parsed;
+        if (parsed === 0 && (item.quotedUnitPrice === undefined || item.quotedUnitPrice === null || item.quotedUnitPrice === '')) {
+            item.quotedUnitPrice = 0;
+            const row = document.querySelector(`tr[data-row-idx="${index}"]`);
+            const qPriceEl = row ? row.querySelector('input[data-field="quotedUnitPrice"]') : null;
+            if (qPriceEl && qPriceEl.value === '') qPriceEl.value = '0';
+        }
     } else if (field === 'quotedUnitPrice') {
-        item.quotedUnitPrice = parseFloat(value) || 0;
+        item.quotedUnitPrice = parsed;
     } else if (field === 'leadTimeDays') {
         item.leadTimeDays = parseInt(value, 10) || 0;
+    }
+
+    const calc = calculateItemVariances(item);
+    item.quotedLineTotal = calc.quotedTotal;
+    const totalCell = document.querySelector(`td[data-row-quoted-total="${index}"]`);
+    if (totalCell) {
+        totalCell.textContent = `₱${formatMoney(calc.quotedTotal)}`;
     }
     if (typeof updateLiveDocumentMockup === 'function') {
         updateLiveDocumentMockup();
@@ -2758,6 +2875,8 @@ function updateItemRowField(index, field, value) {
     const item = window.AppStore.activeRfq.items[index];
     if (!item) return;
 
+    let shouldRender = ['requestedQuantity', 'quantity', 'targetUnitPrice', 'targetPrice', 'quotedQuantity', 'quotedUnitPrice'].includes(field);
+
     if (field === 'requestedQuantity' || field === 'quantity') {
         const val = parseFloat(value) || 0;
         item.requestedQuantity = val;
@@ -2767,20 +2886,39 @@ function updateItemRowField(index, field, value) {
         item.targetUnitPrice = val;
         item.targetPrice = val;
     } else if (field === 'quotedQuantity') {
-        item.quotedQuantity = parseFloat(value) || 0;
+        const val = (value !== '' && value !== null && value !== undefined && !isNaN(parseFloat(value))) ? parseFloat(value) : 0;
+        item.quotedQuantity = val;
+        if (val === 0 && (item.quotedUnitPrice === undefined || item.quotedUnitPrice === null || item.quotedUnitPrice === '')) {
+            item.quotedUnitPrice = 0;
+        }
+        item.quotedLineTotal = calculateItemVariances(item).quotedTotal;
     } else if (field === 'quotedUnitPrice') {
-        item.quotedUnitPrice = parseFloat(value) || 0;
+        const val = (value !== '' && value !== null && value !== undefined && !isNaN(parseFloat(value))) ? parseFloat(value) : 0;
+        item.quotedUnitPrice = val;
+        item.quotedLineTotal = calculateItemVariances(item).quotedTotal;
     } else if (field === 'leadTimeDays') {
         item.leadTimeDays = parseInt(value, 10) || 0;
     } else if (field === 'purchaseUomCode' || field === 'unit') {
         item.purchaseUomCode = value;
         item.unit = value;
     } else if (field === 'itemId' || field === 'sku') {
-        item.itemId = value;
-        item.sku = value;
+        const trimmed = String(value || '').trim();
+        item.itemId = trimmed;
+        item.sku = trimmed;
+        const master = (window.AppStore.itemMaster || []).find(it => String(it.sku || '').toLowerCase() === trimmed.toLowerCase());
+        if (master) {
+            applyMasterItemToRowObject(item, master);
+            shouldRender = true;
+        }
     } else if (field === 'itemName' || field === 'name') {
-        item.itemName = value;
-        item.name = value;
+        const trimmed = String(value || '').trim();
+        item.itemName = trimmed;
+        item.name = trimmed;
+        const master = (window.AppStore.itemMaster || []).find(it => String(it.name || '').toLowerCase() === trimmed.toLowerCase());
+        if (master) {
+            applyMasterItemToRowObject(item, master);
+            shouldRender = true;
+        }
     } else if (field === 'rfqLineNotes' || field === 'notes') {
         item.rfqLineNotes = value;
         item.notes = value;
@@ -2794,10 +2932,160 @@ function updateItemRowField(index, field, value) {
         updateLiveDocumentMockup();
     }
 
-    // Re-render table if variance fields or calculations are impacted
-    if (['requestedQuantity', 'quantity', 'targetUnitPrice', 'targetPrice', 'quotedQuantity', 'quotedUnitPrice'].includes(field)) {
+    if (shouldRender) {
         renderItemsTable();
     }
+}
+
+function applyMasterItemToRowObject(item, master) {
+    if (!item || !master) return;
+    item.itemId = master.sku;
+    item.sku = master.sku;
+    item.itemName = master.name;
+    item.name = master.name;
+    item.specs = master.specs || '';
+    item.category = master.category || 'Raw Ingredients';
+    item.purchaseUomCode = master.unit || 'PCS';
+    item.unit = master.unit || 'PCS';
+    item.targetUnitPrice = parseFloat(master.defaultCost) || 0;
+    item.targetPrice = parseFloat(master.defaultCost) || 0;
+}
+
+let activeRowItemMasterPortalState = { rowIdx: null, mode: null };
+
+function ensureRowItemMasterPortal() {
+    let portal = document.getElementById('rfqInlineItemMasterPortal');
+    if (!portal) {
+        portal = document.createElement('div');
+        portal.id = 'rfqInlineItemMasterPortal';
+        portal.className = 'rfq-inline-item-portal';
+        portal.innerHTML = `
+            <div class="rfq-inline-item-portal-header">
+                <span><i class="ph ph-package"></i> Item Master Catalog</span>
+                <span id="rfqInlineItemPortalCount">0 items</span>
+            </div>
+            <div class="rfq-inline-item-portal-list" id="rfqInlineItemPortalList"></div>
+        `;
+        document.body.appendChild(portal);
+    }
+    return portal;
+}
+
+function renderRowItemMasterPortalOptions(rowIdx, query) {
+    const listEl = document.getElementById('rfqInlineItemPortalList');
+    const countEl = document.getElementById('rfqInlineItemPortalCount');
+    if (!listEl) return;
+
+    const q = String(query || '').toLowerCase().trim();
+    const allMaster = window.AppStore.itemMaster || [];
+    const filtered = !q
+        ? allMaster
+        : allMaster.filter(it =>
+            (it.sku && it.sku.toLowerCase().includes(q)) ||
+            (it.name && it.name.toLowerCase().includes(q)) ||
+            (it.specs && it.specs.toLowerCase().includes(q)) ||
+            (it.category && it.category.toLowerCase().includes(q))
+        );
+
+    if (countEl) {
+        countEl.textContent = `${filtered.length} item${filtered.length === 1 ? '' : 's'}`;
+    }
+
+    if (filtered.length === 0) {
+        listEl.innerHTML = `<div class="rfq-inline-item-empty">No Item Master match for "${escapeHtml(query)}" — keep typing to use as custom row.</div>`;
+        return;
+    }
+
+    listEl.innerHTML = filtered.slice(0, 60).map(it => `
+        <button type="button" class="rfq-inline-item-option" data-row-idx="${rowIdx}" data-sku="${escapeHtml(it.sku)}" onmousedown="event.preventDefault(); selectRowItemFromMaster(${rowIdx}, this.getAttribute('data-sku'))">
+            <div class="rfq-inline-item-opt-main">
+                <div class="rfq-inline-item-opt-sku">${escapeHtml(it.sku)}</div>
+                <div class="rfq-inline-item-opt-name">${escapeHtml(it.name)}</div>
+            </div>
+            <div class="rfq-inline-item-opt-meta">
+                <div>${escapeHtml(it.unit || 'PCS')}</div>
+                <div>₱${formatMoney(it.defaultCost || 0)}</div>
+            </div>
+        </button>
+    `).join('');
+}
+
+function openRowItemMasterDropdown(inputEl, rowIdx, mode, showAll = false) {
+    if (!inputEl) return;
+    const portal = ensureRowItemMasterPortal();
+    activeRowItemMasterPortalState = { rowIdx, mode };
+
+    renderRowItemMasterPortalOptions(rowIdx, showAll ? '' : inputEl.value);
+
+    const rect = inputEl.getBoundingClientRect();
+    const portalWidth = Math.max(320, Math.min(420, rect.width + 120));
+    let left = rect.left;
+    if (left + portalWidth > window.innerWidth - 12) {
+        left = Math.max(12, window.innerWidth - portalWidth - 12);
+    }
+
+    portal.style.width = `${portalWidth}px`;
+    portal.style.left = `${left}px`;
+    portal.classList.add('is-open');
+
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const portalHeight = Math.min(290, portal.offsetHeight || 280);
+    if (spaceBelow < portalHeight + 12 && rect.top > portalHeight + 12) {
+        portal.style.top = `${rect.top - portalHeight - 4}px`;
+    } else {
+        portal.style.top = `${rect.bottom + 4}px`;
+    }
+}
+
+function toggleRowItemMasterDropdown(event, rowIdx, mode) {
+    if (event) event.stopPropagation();
+    const portal = document.getElementById('rfqInlineItemMasterPortal');
+    const isSameOpen = portal && portal.classList.contains('is-open')
+        && activeRowItemMasterPortalState.rowIdx === rowIdx
+        && activeRowItemMasterPortalState.mode === mode;
+
+    if (isSameOpen) {
+        closeRowItemMasterDropdown();
+        return;
+    }
+
+    const combo = event?.currentTarget?.closest('.rfq-inline-item-combo');
+    const inputEl = combo ? combo.querySelector('input') : null;
+    if (inputEl) {
+        inputEl.focus();
+        openRowItemMasterDropdown(inputEl, rowIdx, mode, true);
+    }
+}
+
+function filterRowItemMasterDropdown(inputEl, rowIdx, mode, query) {
+    const portal = ensureRowItemMasterPortal();
+    activeRowItemMasterPortalState = { rowIdx, mode };
+    if (!portal.classList.contains('is-open')) {
+        openRowItemMasterDropdown(inputEl, rowIdx, mode, false);
+        return;
+    }
+    renderRowItemMasterPortalOptions(rowIdx, query);
+}
+
+function closeRowItemMasterDropdown() {
+    const portal = document.getElementById('rfqInlineItemMasterPortal');
+    if (portal) portal.classList.remove('is-open');
+    activeRowItemMasterPortalState = { rowIdx: null, mode: null };
+}
+
+function selectRowItemFromMaster(rowIdx, sku) {
+    const item = window.AppStore?.activeRfq?.items?.[rowIdx];
+    const master = (window.AppStore?.itemMaster || []).find(it => it.sku === sku);
+    if (!item || !master) {
+        closeRowItemMasterDropdown();
+        return;
+    }
+
+    applyMasterItemToRowObject(item, master);
+    closeRowItemMasterDropdown();
+    persistDraft();
+    renderItemsTable();
+    showToast(`✓ Selected [${master.sku}] ${master.name}`, 'success');
 }
 
 function addNewBlankItemRow() {
@@ -3095,26 +3383,29 @@ function updateLiveDocumentMockup() {
             return `<tr><td colspan="7" style="text-align: center; padding: 22px 8px; color: #94a3b8; font-style: italic;">No line items added to tender yet</td></tr>`;
         }
         return slice.map((it, idx) => {
-            const reqQty = parseFloat(it.quantity || it.requestedQuantity || 0);
+            const reqQty = parseFloat(it.quantity ?? it.requestedQuantity ?? 0) || 0;
             const hasQuotedQty = (it.quotedQuantity !== undefined && it.quotedQuantity !== null && it.quotedQuantity !== '' && !isNaN(parseFloat(it.quotedQuantity)));
             const quotedQty = hasQuotedQty ? parseFloat(it.quotedQuantity) : null;
 
-            const hasQuotedPrice = (it.quotedUnitPrice !== undefined && it.quotedUnitPrice !== null && it.quotedUnitPrice !== '' && !isNaN(parseFloat(it.quotedUnitPrice)) && parseFloat(it.quotedUnitPrice) > 0);
-            const quotedPrice = hasQuotedPrice ? parseFloat(it.quotedUnitPrice) : null;
+            const rawQPrice = (it.quotedUnitPrice !== undefined && it.quotedUnitPrice !== null && it.quotedUnitPrice !== '' && !isNaN(parseFloat(it.quotedUnitPrice)))
+                ? parseFloat(it.quotedUnitPrice)
+                : null;
+            const hasQuotedPrice = rawQPrice !== null && (rawQPrice > 0 || (hasQuotedQty && quotedQty === 0));
+            const quotedPrice = hasQuotedPrice ? rawQPrice : null;
 
             const hasLeadTime = (it.leadTimeDays !== undefined && it.leadTimeDays !== null && it.leadTimeDays !== '' && !isNaN(parseInt(it.leadTimeDays, 10)) && parseInt(it.leadTimeDays, 10) > 0);
             const leadTime = hasLeadTime ? parseInt(it.leadTimeDays, 10) : null;
 
             // Quantity formatting
             let qtyCellHtml = '';
-            if (hasQuotedQty && quotedQty > 0) {
+            if (hasQuotedQty && quotedQty >= 0) {
                 if (Math.abs(quotedQty - reqQty) > 0.001 && reqQty > 0) {
                     qtyCellHtml = `
-                        <div style="font-weight: 700; color: #0f172a; font-family: monospace; font-size: 0.67rem;">${quotedQty.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 2 })}</div>
+                        <div style="font-weight: 700; color: ${quotedQty === 0 ? '#94a3b8' : '#0f172a'}; font-family: monospace; font-size: 0.67rem;">${quotedQty.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 2 })}</div>
                         <div style="font-size: 0.58rem; color: #64748b;">(Req: ${reqQty.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 2 })})</div>
                     `;
                 } else {
-                    qtyCellHtml = `<div style="font-weight: 700; color: #0f172a; font-family: monospace; font-size: 0.67rem;">${quotedQty.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 2 })}</div>`;
+                    qtyCellHtml = `<div style="font-weight: 700; color: ${quotedQty === 0 ? '#94a3b8' : '#0f172a'}; font-family: monospace; font-size: 0.67rem;">${quotedQty.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 2 })}</div>`;
                 }
             } else {
                 qtyCellHtml = `<div style="font-weight: 700; color: #475569; font-family: monospace; font-size: 0.67rem;">${reqQty.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 2 })}</div>`;
@@ -3123,13 +3414,15 @@ function updateLiveDocumentMockup() {
             // Vendor Quoted ₱ formatting
             let priceCellHtml = '';
             if (hasQuotedPrice) {
-                const effQty = (hasQuotedQty && quotedQty > 0) ? quotedQty : reqQty;
-                const lineTotal = (it.quotedLineTotal !== undefined && it.quotedLineTotal !== null && parseFloat(it.quotedLineTotal) > 0)
-                    ? parseFloat(it.quotedLineTotal)
-                    : (quotedPrice * effQty);
+                const effQty = hasQuotedQty ? quotedQty : reqQty;
+                const lineTotal = effQty === 0
+                    ? 0
+                    : ((it.quotedLineTotal !== undefined && it.quotedLineTotal !== null && parseFloat(it.quotedLineTotal) >= 0)
+                        ? parseFloat(it.quotedLineTotal)
+                        : (quotedPrice * effQty));
                 priceCellHtml = `
-                    <div style="font-weight: 700; color: #047857; font-family: monospace; font-size: 0.67rem;">₱${formatMoney(quotedPrice)}</div>
-                    <div style="font-size: 0.58rem; color: #64748b; font-family: monospace;">Total: ₱${formatMoney(lineTotal)}</div>
+                    <div style="font-weight: 700; color: ${effQty === 0 ? '#94a3b8' : '#047857'}; font-family: monospace; font-size: 0.67rem;">₱${formatMoney(quotedPrice)}</div>
+                    <div style="font-size: 0.58rem; color: #64748b; font-family: monospace;">${effQty === 0 ? 'Excluded: ₱0.00' : `Total: ₱${formatMoney(lineTotal)}`}</div>
                 `;
             } else {
                 priceCellHtml = `<span class="mockup-slot-cell" style="font-size: 0.65rem; color: #94a3b8;">₱ ____________</span>`;
@@ -3161,14 +3454,23 @@ function updateLiveDocumentMockup() {
     };
 
     // Calculate overall quoted statistics if any item has vendor quoted response
-    const hasAnyQuotedPrice = items.some(it => parseFloat(it.quotedUnitPrice) > 0);
+    const hasAnyQuotedPrice = items.some(it =>
+        parseFloat(it.quotedUnitPrice) > 0 ||
+        (it.quotedQuantity !== undefined && it.quotedQuantity !== null && it.quotedQuantity !== '' && parseFloat(it.quotedQuantity) === 0)
+    );
     const totalQuotedAmount = items.reduce((acc, it) => {
         const p = parseFloat(it.quotedUnitPrice) || 0;
-        const q = parseFloat(it.quotedQuantity || it.quantity || it.requestedQuantity || 0);
-        const lt = (it.quotedLineTotal !== undefined && parseFloat(it.quotedLineTotal) > 0) ? parseFloat(it.quotedLineTotal) : (p * q);
+        const hasQ = (it.quotedQuantity !== undefined && it.quotedQuantity !== null && it.quotedQuantity !== '' && !isNaN(parseFloat(it.quotedQuantity)));
+        const q = hasQ ? parseFloat(it.quotedQuantity) : (parseFloat(it.quantity ?? it.requestedQuantity ?? 0) || 0);
+        if (q === 0) return acc;
+        const lt = (it.quotedLineTotal !== undefined && it.quotedLineTotal !== null && !isNaN(parseFloat(it.quotedLineTotal)) && parseFloat(it.quotedLineTotal) >= 0) ? parseFloat(it.quotedLineTotal) : (p * q);
         return acc + lt;
     }, 0);
-    const totalQuotedUnits = items.reduce((s, it) => s + (parseFloat(it.quotedQuantity || it.quantity || it.requestedQuantity) || 0), 0);
+    const totalQuotedUnits = items.reduce((s, it) => {
+        const hasQ = (it.quotedQuantity !== undefined && it.quotedQuantity !== null && it.quotedQuantity !== '' && !isNaN(parseFloat(it.quotedQuantity)));
+        const q = hasQ ? parseFloat(it.quotedQuantity) : (parseFloat(it.quantity ?? it.requestedQuantity ?? 0) || 0);
+        return s + q;
+    }, 0);
     const maxLeadTime = items.reduce((max, it) => Math.max(max, parseInt(it.leadTimeDays, 10) || 0), 0);
 
     let fullHtml = '';
@@ -3532,7 +3834,14 @@ async function executeEmailDispatch() {
         // Increment sequence counter
         const currentCounter = parseInt(localStorage.getItem('rms_last_rfq_counter') || '42');
         localStorage.setItem('rms_last_rfq_counter', String(currentCounter + 1));
-        localStorage.removeItem('rms_rfq_current_draft');
+
+        // Synchronize Draft RFQ to Submitted (Sent) stage when emailed to vendor
+        const currentStage = getNormalizedRfqStage(window.AppStore.activeRfq.rfqStatus || window.AppStore.activeRfq.status);
+        if (currentStage === 'Draft') {
+            await transitionActiveRfqStage('Submitted');
+        } else {
+            localStorage.removeItem('rms_rfq_current_draft');
+        }
     } else {
         showToast('❌ Failed to dispatch email after 3 retry attempts. Please check network connection.', 'error');
     }
@@ -6176,9 +6485,12 @@ async function generatePoForApprovedRfq() {
     const pos = JSON.parse(localStorage.getItem('rms_purchase_orders') || '[]');
     let nextPoNum = `PO-2026-${String(pos.length + 105).padStart(4, '0')}`;
 
-    const mappedItems = (rfq.items || []).map(it => {
-        const q = parseFloat(it.quotedQuantity !== undefined && it.quotedQuantity !== '' ? it.quotedQuantity : (it.requestedQuantity !== undefined ? it.requestedQuantity : it.quantity)) || 1;
-        const p = parseFloat(it.quotedUnitPrice !== undefined && it.quotedUnitPrice !== '' ? it.quotedUnitPrice : (it.targetUnitPrice !== undefined ? it.targetUnitPrice : (it.unitPrice || it.targetPrice || 0))) || 0;
+    const mappedItemsRaw = (rfq.items || []).map(it => {
+        const hasQQ = (it.quotedQuantity !== undefined && it.quotedQuantity !== null && it.quotedQuantity !== '' && !isNaN(parseFloat(it.quotedQuantity)));
+        const rawReq = it.requestedQuantity !== undefined ? it.requestedQuantity : it.quantity;
+        const q = hasQQ ? parseFloat(it.quotedQuantity) : ((rawReq !== undefined && rawReq !== null && rawReq !== '' && !isNaN(parseFloat(rawReq))) ? parseFloat(rawReq) : 1);
+        const hasQP = (it.quotedUnitPrice !== undefined && it.quotedUnitPrice !== null && it.quotedUnitPrice !== '' && !isNaN(parseFloat(it.quotedUnitPrice)));
+        const p = hasQP ? parseFloat(it.quotedUnitPrice) : (parseFloat(it.targetUnitPrice ?? it.unitPrice ?? it.targetPrice ?? 0) || 0);
         const t = parseFloat(it.targetUnitPrice !== undefined ? it.targetUnitPrice : (it.targetPrice || p)) || p;
         return {
             sku: it.itemId || it.sku || 'CAT-01',
@@ -6193,10 +6505,12 @@ async function generatePoForApprovedRfq() {
             receivedQuantity: 0
         };
     });
+    const positiveItems = mappedItemsRaw.filter(it => it.quantity > 0);
+    const mappedItems = positiveItems.length > 0 ? positiveItems : mappedItemsRaw;
 
     const grossTotal = mappedItems.reduce((acc, it) => acc + (it.quantity * it.unitPrice), 0);
 
-    showLockOverlay(`Creating Purchase Order from ${rfq.rfqNumber}...`);
+    showLockOverlay(`Creating Draft Purchase Order from ${rfq.rfqNumber}...`);
     try {
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
         const convertUrl = window.RfqConfig?.routes?.convertToPo || '/purchase/api/rfq/convert-po';
@@ -6267,7 +6581,8 @@ async function generatePoForApprovedRfq() {
         amountPaid: 0,
         balanceDue: grossTotal,
         approvedBy: rfq.approvedBy || 'Procurement Manager',
-        status: 'Approved / Issued',
+        status: 'Draft PO',
+        poStatus: 'DRAFT',
         items: mappedItems
     };
 
@@ -6278,7 +6593,7 @@ async function generatePoForApprovedRfq() {
 
     updateLifecycleProgressBar('Approved');
     renderRfqDirectory();
-    showToast(`✓ Created ${nextPoNum} from ${rfq.rfqNumber}! Opening in Purchase Order Builder...`, 'success');
+    showToast(`✓ Created Draft PO ${nextPoNum} from ${rfq.rfqNumber}! Opening in Purchase Order Builder...`, 'success');
     openLinkedPoFromRfq(nextPoNum);
 }
 
@@ -7070,6 +7385,11 @@ Object.assign(window, {
   renderItemsTable,
   updateItemRowField,
   updateItemRowFieldLive,
+  openRowItemMasterDropdown,
+  toggleRowItemMasterDropdown,
+  filterRowItemMasterDropdown,
+  closeRowItemMasterDropdown,
+  selectRowItemFromMaster,
   addNewBlankItemRow,
   cloneItemRow,
   deleteItemRow,

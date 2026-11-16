@@ -6,6 +6,7 @@
     elseif (request()->routeIs('sales.*')) $activeModule = 'sales';
     elseif (request()->routeIs('inventory.*')) $activeModule = 'inventory';
     elseif (request()->routeIs('purchase.*')) $activeModule = 'purchase';
+    elseif (request()->routeIs('accounting.*')) $activeModule = 'accounting';
     elseif (request()->routeIs('credits.*')) $activeModule = 'credits';
 
     $user = Auth::user();
@@ -51,6 +52,7 @@
             <a href="#" class="rail-item{{ $activeModule === 'sales' ? ' active' : '' }}" data-tooltip="Sales Operations" data-title="Sales Operations" data-target="submenu-sales" data-tooltip-pos="right"><i class="ph ph-chart-line-up"></i></a>
             <a href="#" class="rail-item{{ $activeModule === 'inventory' ? ' active' : '' }}" data-tooltip="Inventory Operations" data-title="Inventory Operations" data-target="submenu-inventory" data-tooltip-pos="right"><i class="ph ph-package"></i></a>
             <a href="#" class="rail-item{{ $activeModule === 'purchase' ? ' active' : '' }}" data-tooltip="Purchase Operations" data-title="Purchase Operations" data-target="submenu-purchase" data-tooltip-pos="right"><i class="ph ph-shopping-cart"></i></a>
+            <a href="#" class="rail-item{{ $activeModule === 'accounting' ? ' active' : '' }}" data-tooltip="Accounting & Finance" data-title="Accounting & Finance" data-target="submenu-accounting" data-tooltip-pos="right"><i class="ph ph-calculator"></i></a>
             <a href="{{ route('ess.dashboard') }}" target="_blank" class="rail-item" data-tooltip="Employee Self-Service (ESS)" data-title="ESS Portal" data-tooltip-pos="right" style="color: #2563eb;"><i class="ph ph-identification-card"></i></a>
         </nav>
         
@@ -309,6 +311,55 @@
                     <a href="{{ route('purchase.vendor-masterlist') }}" class="sub-nav-item{{ request()->routeIs('purchase.vendor-masterlist') ? ' active' : '' }}"><span>Vendor Masterlist</span></a>
                     <a href="{{ route('purchase.vendor-bills') }}" class="sub-nav-item{{ request()->routeIs('purchase.vendor-bills') ? ' active' : '' }}"><span>Vendor Bills</span></a>
                 </div>
+            </div>
+        </div>
+
+        <!-- Accounting & Finance -->
+        <div id="submenu-accounting" class="panel-content submenu{{ $activeModule === 'accounting' ? ' active' : '' }}">
+            <div class="submenu-header">
+                <span class="submenu-title">Accounting & Finance</span>
+            </div>
+            <div class="nav-section">
+                <a href="{{ route('accounting.dashboard') }}" class="nav-item{{ request()->routeIs('accounting.dashboard') ? ' active' : '' }}">
+                    <i class="ph ph-gauge"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="{{ route('accounting.ap') }}" class="nav-item{{ request()->routeIs('accounting.ap') ? ' active' : '' }}">
+                    <i class="ph ph-receipt"></i>
+                    <span>Accounts Payable</span>
+                </a>
+                <a href="{{ route('accounting.ar') }}" class="nav-item{{ request()->routeIs('accounting.ar') ? ' active' : '' }}">
+                    <i class="ph ph-hand-coins"></i>
+                    <span>Accounts Receivable</span>
+                </a>
+                <a href="{{ route('accounting.cash-bank') }}" class="nav-item{{ request()->routeIs('accounting.cash-bank') ? ' active' : '' }}">
+                    <i class="ph ph-bank"></i>
+                    <span>Cash & Bank</span>
+                </a>
+                <a href="{{ route('accounting.gl') }}" class="nav-item{{ request()->routeIs('accounting.gl') ? ' active' : '' }}">
+                    <i class="ph ph-books"></i>
+                    <span>General Ledger</span>
+                </a>
+                <a href="{{ route('accounting.fixed-assets') }}" class="nav-item{{ request()->routeIs('accounting.fixed-assets') ? ' active' : '' }}">
+                    <i class="ph ph-buildings"></i>
+                    <span>Fixed Assets</span>
+                </a>
+                <a href="{{ route('accounting.loans') }}" class="nav-item{{ request()->routeIs('accounting.loans') ? ' active' : '' }}">
+                    <i class="ph ph-currency-circle-dollar"></i>
+                    <span>Loans</span>
+                </a>
+                <a href="{{ route('accounting.tax') }}" class="nav-item{{ request()->routeIs('accounting.tax') ? ' active' : '' }}">
+                    <i class="ph ph-percent"></i>
+                    <span>Tax</span>
+                </a>
+                <a href="{{ route('accounting.reports') }}" class="nav-item{{ request()->routeIs('accounting.reports') ? ' active' : '' }}">
+                    <i class="ph ph-chart-bar"></i>
+                    <span>Financial Reports</span>
+                </a>
+                <a href="{{ route('accounting.config') }}" class="nav-item{{ request()->routeIs('accounting.config') ? ' active' : '' }}">
+                    <i class="ph ph-sliders-horizontal"></i>
+                    <span>Configuration</span>
+                </a>
             </div>
         </div>
 

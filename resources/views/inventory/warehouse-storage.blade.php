@@ -32,26 +32,19 @@
     <!-- Toast Notifications Container -->
     <div class="wh-toast-container" id="whToastContainer"></div>
 
+    <div id="whDirectoryView" class="wh-directory-view">
     <!-- 1. Page Header (Consistent Flat ERP Title Row) -->
-    <div class="hr-parent-title" style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;">
+    <div class="hr-parent-title" style="margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;">
         <div style="display: flex; align-items: center; gap: 12px;">
             <div class="wh-title-icon">
                 <i class="ph ph-warehouse"></i>
             </div>
             <div>
                 <h1 style="margin: 0; font-size: 1.32rem; font-weight: 800; color: #0f172a; letter-spacing: -0.02em;">Warehouse & Storage Area</h1>
-                <p style="margin: 2px 0 0 0; font-size: 0.8rem; color: #64748b;">Physical facility directory, nested storage hierarchy (Zones, Aisles, Racks, Bins), handheld scanner barcodes & bulk bin generator</p>
+                <p style="margin: 2px 0 0 0; font-size: 0.8rem; color: #64748b;">Physical facility directory, nested storage locations (Physical &amp; Virtual), and unique scanner barcodes</p>
             </div>
         </div>
         <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-            <a href="{{ route('inventory.movement-flows') }}" class="wh-btn wh-btn-outline" style="text-decoration: none;">
-                <i class="ph ph-git-branch"></i>
-                <span>Movement Types & Supply Flows</span>
-            </a>
-            <button type="button" class="wh-btn wh-btn-secondary" onclick="openBulkGeneratorModal()">
-                <i class="ph ph-lightning"></i>
-                <span>Bulk Bin Generator</span>
-            </button>
             <button type="button" class="wh-btn wh-btn-primary" onclick="openWarehouseModal()">
                 <i class="ph ph-plus-circle"></i>
                 <span>New Warehouse</span>
@@ -59,7 +52,7 @@
         </div>
     </div>
 
-    <!-- 2. Top KPI Strip & Handheld Barcode Scanner Lookup Bar -->
+    <!-- 2. Top KPI Strip -->
     <div class="wh-top-strip">
         <div class="wh-kpi-grid">
             <div class="wh-kpi-card">
@@ -68,54 +61,34 @@
                     <span class="wh-kpi-icon purple"><i class="ph ph-buildings"></i></span>
                 </div>
                 <div class="wh-kpi-val" id="whKpiActiveWarehouses">0</div>
-                <div class="wh-kpi-sub" id="whKpiTotalWarehousesSub">Auto-seeded with Dock & Stock zones</div>
+                <div class="wh-kpi-sub" id="whKpiTotalWarehousesSub">Auto-seeded with Physical &amp; Virtual Stock</div>
             </div>
 
             <div class="wh-kpi-card">
                 <div class="wh-kpi-head">
-                    <span class="wh-kpi-label">Physical Storage Areas</span>
+                    <span class="wh-kpi-label">Storage Locations</span>
                     <span class="wh-kpi-icon blue"><i class="ph ph-tree-structure"></i></span>
                 </div>
                 <div class="wh-kpi-val" id="whKpiTotalAreas">0</div>
-                <div class="wh-kpi-sub" id="whKpiBehaviorBreakdownSub">0 Storage • 0 Staging • 0 Dock</div>
+                <div class="wh-kpi-sub" id="whKpiBehaviorBreakdownSub">0 Physical &bull; 0 Virtual</div>
             </div>
 
             <div class="wh-kpi-card">
                 <div class="wh-kpi-head">
-                    <span class="wh-kpi-label">Barcoded Bins & Racks</span>
-                    <span class="wh-kpi-icon emerald"><i class="ph ph-barcode"></i></span>
+                    <span class="wh-kpi-label">Virtual Locations</span>
+                    <span class="wh-kpi-icon emerald"><i class="ph ph-cube-transparent"></i></span>
                 </div>
-                <div class="wh-kpi-val" id="whKpiBarcodedBins">0</div>
-                <div class="wh-kpi-sub">100% unique handheld scanner codes</div>
+                <div class="wh-kpi-val" id="whKpiVirtualLocations">0</div>
+                <div class="wh-kpi-sub" id="whKpiVirtualSub">Active virtual ledger counterparts</div>
             </div>
 
             <div class="wh-kpi-card">
                 <div class="wh-kpi-head">
-                    <span class="wh-kpi-label">Stocked Areas Protected</span>
-                    <span class="wh-kpi-icon amber"><i class="ph ph-shield-check"></i></span>
+                    <span class="wh-kpi-label">Stocked Locations</span>
+                    <span class="wh-kpi-icon amber"><i class="ph ph-package"></i></span>
                 </div>
                 <div class="wh-kpi-val" id="whKpiStockedAreas">0</div>
-                <div class="wh-kpi-sub" id="whKpiStockedUnitsSub">Non-negative physical balance enforced</div>
-            </div>
-        </div>
-
-        <!-- Handheld Scanner Barcode Lookup Bar -->
-        <div class="wh-scanner-bar">
-            <div class="wh-scanner-left">
-                <div class="wh-scanner-badge">
-                    <i class="ph ph-barcode"></i>
-                    <span>Handheld Scanner Test & Barcode Lookup</span>
-                </div>
-                <div class="wh-scanner-input-wrap">
-                    <i class="ph ph-CornersOut"></i>
-                    <input type="text" id="whBarcodeScannerInput" class="wh-scanner-input" placeholder="Scan or type area barcode (e.g. WH-MAIN-ZA-RA1-B01) and press Enter..." autocomplete="off">
-                    <button type="button" class="wh-btn wh-btn-primary wh-btn-sm" onclick="triggerBarcodeScanLookup()">
-                        <i class="ph ph-magnifying-glass"></i> Locate Area
-                    </button>
-                </div>
-            </div>
-            <div class="wh-scanner-samples" id="whScannerSamplePills">
-                <!-- Populated dynamically with quick-test barcodes -->
+                <div class="wh-kpi-sub" id="whKpiStockedUnitsSub">0 units tracked across locations</div>
             </div>
         </div>
     </div>
@@ -147,32 +120,13 @@
                 <div class="wh-warehouse-list" id="whWarehouseListContainer">
                     <!-- Populated dynamically by renderWarehouseList() -->
                 </div>
-
-                <!-- Boundary Areas System Integrity Box (Hidden from Physical Tree by Design) -->
-                <div class="wh-boundary-info-box">
-                    <div class="wh-boundary-head" onclick="toggleBoundaryDrawerInfo()">
-                        <div style="display: flex; align-items: center; gap: 6px;">
-                            <i class="ph ph-shield-star"></i>
-                            <span>4 Virtual Boundary Areas (Ledger-Only)</span>
-                        </div>
-                        <i class="ph ph-caret-down" id="whBoundaryCaret"></i>
-                    </div>
-                    <div class="wh-boundary-body" id="whBoundaryBody">
-                        <p class="wh-boundary-desc">
-                            Boundary areas belong to no physical warehouse and never appear in the storage tree. They act as immutable ledger counterparts so every stock movement has a valid <strong>From</strong> and <strong>To</strong>:
-                        </p>
-                        <div class="wh-boundary-pills" id="whBoundaryPillsList">
-                            <!-- Populated dynamically from initialBoundaryAreas -->
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
 
-        <!-- RIGHT PANEL: Selected Warehouse Storage Area Tree -->
+        <!-- RIGHT PANEL: Selected Warehouse Location Directory -->
         <div class="wh-right-panel">
             <div class="wh-panel-card wh-tree-panel">
-                <!-- Selected Warehouse Banner & Quick Area Creation Buttons -->
+                <!-- Selected Warehouse Banner & Quick Location Creation Buttons -->
                 <div class="wh-tree-header">
                     <div class="wh-tree-wh-identity">
                         <div class="wh-tree-wh-top">
@@ -187,119 +141,520 @@
                     </div>
 
                     <div class="wh-tree-quick-actions">
-                        <button type="button" class="wh-btn wh-btn-outline wh-btn-sm" onclick="openStorageAreaModal({ presetType: 'Zone', presetBehavior: 'Storage' })">
-                            <i class="ph ph-squares-four"></i> + Add Zone
+                        <button type="button" class="wh-btn wh-btn-outline wh-btn-sm" onclick="openStorageAreaModal({ presetKind: 'Virtual', presetType: 'Virtual Location', presetBehavior: 'Virtual' })">
+                            <i class="ph ph-cube-transparent"></i> + Add Virtual Location
                         </button>
-                        <button type="button" class="wh-btn wh-btn-outline wh-btn-sm" onclick="openStorageAreaModal({ presetType: 'Rack', presetBehavior: 'Storage' })">
-                            <i class="ph ph-rows"></i> + Add Rack / Aisle
-                        </button>
-                        <button type="button" class="wh-btn wh-btn-outline wh-btn-sm" onclick="openStorageAreaModal({ presetType: 'Bin', presetBehavior: 'Storage' })">
-                            <i class="ph ph-package"></i> + Add Bin
-                        </button>
-                        <button type="button" class="wh-btn wh-btn-primary wh-btn-sm" onclick="openBulkGeneratorModal()">
-                            <i class="ph ph-lightning"></i> Bulk Generate Bins
+                        <button type="button" class="wh-btn wh-btn-primary wh-btn-sm" onclick="openStorageAreaModal({ presetKind: 'Physical', presetType: 'Zone', presetBehavior: 'Storage' })">
+                            <i class="ph ph-plus-circle"></i> + Add Physical Location
                         </button>
                     </div>
                 </div>
 
-                <!-- Tree Filter & Behavior Legend Bar -->
+                <!-- Filter Tabs, Holds Stock Toggle & Search Toolbar -->
                 <div class="wh-tree-toolbar">
                     <div class="wh-behavior-filters" id="whBehaviorFilterGroup">
                         <button type="button" class="wh-filter-chip active" data-behavior="ALL" onclick="setAreaBehaviorFilter('ALL')">
-                            All Physical Areas <span id="countBehAll">0</span>
+                            All <span id="countBehAll">0</span>
                         </button>
-                        <button type="button" class="wh-filter-chip storage" data-behavior="Storage" onclick="setAreaBehaviorFilter('Storage')" title="Stock rests here (Zones, Racks, Bins)">
+                        <button type="button" class="wh-filter-chip storage" data-behavior="Storage" onclick="setAreaBehaviorFilter('Storage')" title="Physical stock rests here (Zones, Racks, Bins)">
                             <span class="dot storage"></span> Storage <span id="countBehStorage">0</span>
                         </button>
                         <button type="button" class="wh-filter-chip staging" data-behavior="Staging" onclick="setAreaBehaviorFilter('Staging')" title="Stock passes through here (Packing Tables, QA Benches)">
                             <span class="dot staging"></span> Staging <span id="countBehStaging">0</span>
                         </button>
-                        <button type="button" class="wh-filter-chip dock" data-behavior="Dock" onclick="setAreaBehaviorFilter('Dock')" title="Where stock enters or leaves the building (Receiving / Shipping Docks)">
+                        <button type="button" class="wh-filter-chip dock" data-behavior="Dock" onclick="setAreaBehaviorFilter('Dock')" title="Where stock enters or leaves the building">
                             <span class="dot dock"></span> Dock <span id="countBehDock">0</span>
                         </button>
-                        <button type="button" class="wh-filter-chip stocked" data-behavior="STOCKED" onclick="setAreaBehaviorFilter('STOCKED')" title="Areas currently holding physical stock (> 0 units)">
-                            <i class="ph ph-lock-key"></i> Holds Stock <span id="countBehStocked">0</span>
+                        <button type="button" class="wh-filter-chip virtual" data-behavior="Virtual" onclick="setAreaBehaviorFilter('Virtual')" title="Virtual ledger locations (Virtual Stock, Transit, Loss/Adjustment)">
+                            <span class="dot virtual"></span> Virtual <span id="countBehVirtual">0</span>
                         </button>
                     </div>
 
                     <div class="wh-tree-controls">
+                        <label class="wh-stocked-toggle" title="Show only locations holding stock (> 0 units)">
+                            <input type="checkbox" id="whHoldsStockToggle" onchange="toggleHoldsStockFilter(this.checked)">
+                            <span>Holds stock</span>
+                            <span class="wh-stocked-count" id="countBehStocked">0</span>
+                        </label>
                         <div class="wh-tree-search">
                             <i class="ph ph-magnifying-glass"></i>
-                            <input type="text" id="whTreeSearchInput" placeholder="Filter area or barcode..." oninput="renderSelectedWarehouseTree()">
+                            <input type="text" id="whTreeSearchInput" placeholder="Search name, code, or scan barcode…" oninput="renderSelectedWarehouseTree()" onkeydown="handleSmartLocationSearchKey(event)">
                         </div>
-                        <button type="button" class="wh-icon-btn" onclick="expandOrCollapseAllTree(true)" title="Expand All Nodes">
-                            <i class="ph ph-arrows-out-line-vertical"></i>
-                        </button>
-                        <button type="button" class="wh-icon-btn" onclick="expandOrCollapseAllTree(false)" title="Collapse All Nodes">
-                            <i class="ph ph-arrows-in-line-vertical"></i>
-                        </button>
+                        <div class="wh-expand-pair" role="group" aria-label="Hierarchy expand controls">
+                            <button type="button" class="wh-tree-text-btn" onclick="expandOrCollapseAllTree(true)" title="Expand all hierarchy levels">Expand all</button>
+                            <span class="wh-expand-sep"></span>
+                            <button type="button" class="wh-tree-text-btn" onclick="expandOrCollapseAllTree(false)" title="Collapse all hierarchy levels">Collapse all</button>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Interactive Nested Storage Tree Container -->
-                <div class="wh-tree-viewport" id="whStorageTreeViewport">
-                    <!-- Populated dynamically by renderSelectedWarehouseTree() -->
+                <!-- Column-Aligned Location Table Container (Full Height + RFQ Column Settings) -->
+                <div class="wh-table-shell">
+                    <div class="wh-table-responsive" id="whStorageTreeViewport">
+                        <table class="rfq-table wh-location-table" id="whLocationsTable">
+                            <thead id="whLocationsThead"></thead>
+                            <tbody id="whLocationsTbody"></tbody>
+                        </table>
+                    </div>
+                    <div id="whColSettingsDropdown" class="rfq-table-settings-dropdown"></div>
+                    <div id="whRowActionMenu" class="wh-row-action-menu"></div>
                 </div>
 
-                <!-- Tree Footer Guardrail Notice -->
+                <!-- Quiet Utility Footer -->
                 <div class="wh-tree-footer">
                     <div class="wh-tree-footer-rule">
-                        <i class="ph ph-shield-check"></i>
-                        <span><strong>Trust Invariant:</strong> Physical areas can never hold negative stock. Any bin or rack holding stock (> 0) cannot be deleted—only deactivated.</span>
+                        <i class="ph ph-info"></i>
+                        <span>Press <strong>Enter</strong> in search to locate a scanned barcode across facilities.</span>
                     </div>
-                    <div id="whTreeSummaryCount" class="wh-tree-footer-meta">0 physical areas</div>
+                    <div id="whTreeSummaryCount" class="wh-tree-footer-meta">0 locations</div>
                 </div>
             </div>
         </div>
 
     </div>
 
-</div>
+    </div><!-- /#whDirectoryView -->
+
+<!-- Shared Half-Screen Drawer Backdrop (Starts strictly below top .main-header) -->
+<div class="wh-drawer-backdrop" id="whDrawerBackdrop" onclick="closeActiveWhDrawers()" aria-hidden="true"></div>
 
 <!-- ==========================================================================
-     MODAL 1: CREATE / EDIT WAREHOUSE
+     DRAWER 1: CREATE / EDIT WAREHOUSE (Half-Screen Below Header)
      ========================================================================== -->
-<div class="wh-modal-backdrop" id="whWarehouseModal" role="dialog" aria-modal="true" aria-labelledby="whModalTitle">
-    <div class="wh-modal-card" style="max-width: 540px;">
-        <div class="wh-modal-header">
-            <div class="wh-modal-title-group">
-                <div class="wh-modal-icon"><i class="ph ph-warehouse"></i></div>
-                <div>
-                    <div class="wh-modal-title" id="whModalTitle">Create Warehouse</div>
-                    <div class="wh-modal-subtitle">Set up a physical building and auto-provision default dock & storage areas</div>
+<aside class="wh-page-workspace wh-drawer-panel" id="whWarehouseModal" aria-labelledby="whModalTitle" aria-hidden="true">
+    <!-- 1. Sticky Drawer Header -->
+    <div class="wh-drawer-header">
+        <div class="wh-hero-left">
+            <div class="wh-hero-icon"><i class="ph ph-warehouse"></i></div>
+            <div style="min-width: 0;">
+                <div class="wh-hero-title-row">
+                    <h2 class="wh-hero-title" id="whModalTitle">Create Warehouse</h2>
+                    <span class="wh-inline-code" id="whPageCodePreview">WH-NEW</span>
+                    <span class="wh-status-pill active" id="whPageStatusPill">Active</span>
+                </div>
+                <p class="wh-hero-sub" id="whModalSubtitle">Configure facility identity, default Stock counterparts, and storage location hierarchy</p>
+            </div>
+        </div>
+        <div class="wh-drawer-head-actions">
+            <button type="button" class="wh-btn wh-btn-danger-outline wh-btn-sm" id="btnDeleteWhFromPage" style="display: none;" onclick="deleteWarehouseFromPage()" title="Delete Warehouse">
+                <i class="ph ph-trash"></i>
+                <span>Delete</span>
+            </button>
+            <button type="button" class="wh-drawer-close" onclick="closeWarehouseModal()" title="Close Drawer (Esc)" aria-label="Close drawer">
+                <i class="ph ph-x"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- 2. RFQ-Style Tab Strip -->
+    <div class="wh-drawer-tabs-strip">
+        <nav class="rfq-nav-tabs-bar wh-page-tabs-bar" aria-label="Warehouse Configuration Tabs">
+            <button type="button" class="rfq-tab-btn wh-page-tab-btn active" data-wh-tab="general" onclick="switchWhPageTab('general')">
+                <i class="ph ph-buildings"></i>
+                <span>General &amp; Facility Info</span>
+            </button>
+            <button type="button" class="rfq-tab-btn wh-page-tab-btn" data-wh-tab="defaults" onclick="switchWhPageTab('defaults')">
+                <i class="ph ph-sparkle"></i>
+                <span>Default Locations &amp; Rules</span>
+            </button>
+            <button type="button" class="rfq-tab-btn wh-page-tab-btn" data-wh-tab="hierarchy" onclick="switchWhPageTab('hierarchy')">
+                <i class="ph ph-tree-structure"></i>
+                <span>Storage Hierarchy</span>
+                <span class="rfq-tab-count wh-tab-count" id="whPageHierarchyTabCount">0</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- 3. Scrollable Drawer Body -->
+    <div class="wh-drawer-body wh-page-body">
+        <input type="hidden" id="whFormId" value="">
+
+        <!-- TAB 1: General & Facility Info -->
+        <div class="wh-page-tab-pane active" id="whTabPane-general">
+            <div class="wh-bento-grid">
+                <div class="wh-bento-card">
+                    <div class="wh-bento-head">
+                        <div class="wh-bento-title"><i class="ph ph-identification-card"></i><span>Facility Identity &amp; Contact</span></div>
+                        <span class="wh-bento-badge">Required Master Fields</span>
+                    </div>
+                    <div class="wh-bento-body">
+                        <div class="wh-form-grid">
+                            <div class="wh-field">
+                                <label class="wh-label" for="whFormName">Warehouse Building Name *</label>
+                                <input type="text" id="whFormName" class="wh-input" placeholder="e.g. South Commissary &amp; Distribution Hub" oninput="updateWhPageLivePreview()">
+                            </div>
+                            <div class="wh-field">
+                                <label class="wh-label" for="whFormCode">Short Code * <span class="wh-hint">(e.g. WH-MAIN)</span></label>
+                                <input type="text" id="whFormCode" class="wh-input mono" placeholder="e.g. WH-SOUTH" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9-]/g, ''); updateWhPageLivePreview();">
+                            </div>
+                            <div class="wh-field full">
+                                <label class="wh-label" for="whFormAddress">Physical Building Address *</label>
+                                <input type="text" id="whFormAddress" class="wh-input" placeholder="e.g. Lot 12 Industrial Ave, Carmona, Cavite">
+                            </div>
+                            <div class="wh-field">
+                                <label class="wh-label" for="whFormManager">Facility Manager / Supervisor</label>
+                                <input type="text" id="whFormManager" class="wh-input" placeholder="e.g. Juan Dela Cruz">
+                            </div>
+                            <div class="wh-field">
+                                <label class="wh-label" for="whFormPhone">Contact Phone / Local Ext.</label>
+                                <input type="text" id="whFormPhone" class="wh-input" placeholder="e.g. +63 917 555 0142">
+                            </div>
+                            <div class="wh-field full">
+                                <label class="wh-label" for="whFormNotes">Receiving Hours &amp; Operational Notes</label>
+                                <textarea id="whFormNotes" class="wh-textarea" rows="3" placeholder="Dock hours, cold chain compliance notes, or dispatch instructions..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="wh-bento-side">
+                    <div class="wh-bento-card">
+                        <div class="wh-bento-head">
+                            <div class="wh-bento-title"><i class="ph ph-toggle-right"></i><span>Operational Status</span></div>
+                        </div>
+                        <div class="wh-bento-body">
+                            <label class="wh-switch-card">
+                                <input type="checkbox" id="whFormActive" checked onchange="updateWhPageLivePreview()">
+                                <div>
+                                    <div class="wh-switch-title">Warehouse is Active</div>
+                                    <div class="wh-switch-desc">Available for receiving, picking, transfers, and inventory ledger movements.</div>
+                                </div>
+                            </label>
+
+                            <div id="whAutoSeedNoticeBox" class="wh-autoseed-banner" style="margin-top: 12px;">
+                                <i class="ph ph-sparkle"></i>
+                                <div>
+                                    <div style="font-weight: 800; font-size: 0.78rem; color: #5b21b6;">Automatic Default Stock Locations</div>
+                                    <div style="font-size: 0.72rem; color: #6d28d9; margin-top: 2px;">
+                                        Upon creation, the system automatically seeds <strong>Stock</strong> (Physical Storage) and <strong>Virtual Stock</strong> (Virtual Counterpart) locations so operations can start immediately.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="whPageEditMetricsBox" class="wh-metrics-box" style="display: none; margin-top: 12px;"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <button type="button" class="wh-icon-btn" onclick="closeWarehouseModal()"><i class="ph ph-x"></i></button>
         </div>
 
-        <div class="wh-modal-body">
-            <input type="hidden" id="whFormId" value="">
-            <div class="wh-form-grid">
-                <div class="wh-field">
-                    <label class="wh-label" for="whFormName">Warehouse Building Name *</label>
-                    <input type="text" id="whFormName" class="wh-input" placeholder="e.g. South Commissary & Distribution Hub">
+        <!-- TAB 2: Default Locations & Rules -->
+        <div class="wh-page-tab-pane" id="whTabPane-defaults">
+            <div class="wh-bento-grid">
+                <div class="wh-bento-card">
+                    <div class="wh-bento-head">
+                        <div class="wh-bento-title"><i class="ph ph-package"></i><span>Default System Locations</span></div>
+                        <span class="wh-bento-badge">Physical &amp; Virtual Stock</span>
+                    </div>
+                    <div class="wh-bento-body" id="whPageDefaultsList">
+                        <!-- Populated dynamically by renderWarehousePageSubTabs() -->
+                    </div>
                 </div>
-                <div class="wh-field">
-                    <label class="wh-label" for="whFormCode">Short Code * <span class="wh-hint">(e.g. WH-MAIN)</span></label>
-                    <input type="text" id="whFormCode" class="wh-input mono" placeholder="e.g. WH-SOUTH" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9-]/g, '')">
+
+                <div class="wh-bento-side">
+                    <div class="wh-bento-card">
+                        <div class="wh-bento-head">
+                            <div class="wh-bento-title"><i class="ph ph-shield-check"></i><span>Facility Ledger &amp; Barcode Rules</span></div>
+                        </div>
+                        <div class="wh-bento-body">
+                            <ul class="wh-rule-list">
+                                <li><i class="ph ph-barcode"></i><span><strong>Unique Prefixing:</strong> Barcodes inherit the warehouse code (e.g. <code>WH-MAIN-STOCK</code>) to prevent cross-site scan collisions.</span></li>
+                                <li><i class="ph ph-arrows-left-right"></i><span><strong>Physical + Virtual Pairing:</strong> Every active facility maintains a physical <em>Stock</em> root alongside a <em>Virtual Stock</em> ledger counterpart.</span></li>
+                                <li><i class="ph ph-scales"></i><span><strong>Non-Negative Balance:</strong> Stock quantities on physical and virtual storage nodes can never drop below zero.</span></li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
-                <div class="wh-field full">
-                    <label class="wh-label" for="whFormAddress">Physical Building Address *</label>
-                    <input type="text" id="whFormAddress" class="wh-input" placeholder="e.g. Lot 12 Industrial Ave, Carmona, Cavite">
+            </div>
+        </div>
+
+        <!-- TAB 3: Storage Hierarchy -->
+        <div class="wh-page-tab-pane" id="whTabPane-hierarchy">
+            <div class="wh-bento-card">
+                <div class="wh-bento-head">
+                    <div class="wh-bento-title"><i class="ph ph-tree-structure"></i><span>Warehouse Storage Hierarchy</span></div>
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;" id="whPageHierarchyActions">
+                        <button type="button" class="wh-btn wh-btn-outline wh-btn-xs" onclick="openStorageAreaFromWhPage('Virtual')">
+                            <i class="ph ph-cube-transparent"></i> + Add Virtual Location
+                        </button>
+                        <button type="button" class="wh-btn wh-btn-primary wh-btn-xs" onclick="openStorageAreaFromWhPage('Physical')">
+                            <i class="ph ph-plus-circle"></i> + Add Physical Location
+                        </button>
+                    </div>
                 </div>
-                <div class="wh-field full">
-                    <label class="wh-checkbox-row">
-                        <input type="checkbox" id="whFormActive" checked>
-                        <span><strong>Warehouse is Active</strong> (Available for receiving, picking, and supply flows)</span>
-                    </label>
+                <div class="wh-bento-body" style="padding: 0;" id="whPageHierarchyList">
+                    <!-- Populated dynamically by renderWarehousePageSubTabs() -->
                 </div>
-                <div class="wh-field full" id="whAutoSeedNoticeBox">
-                    <div class="wh-autoseed-banner">
-                        <i class="ph ph-sparkle"></i>
-                        <div>
-                            <div style="font-weight: 800; font-size: 0.78rem; color: #5b21b6;">Automatic Default Storage Areas</div>
-                            <div style="font-size: 0.72rem; color: #6d28d9; margin-top: 2px;">
-                                Upon creation, the system automatically seeds <strong>Receiving Dock</strong> (Dock), <strong>Shipping Dock</strong> (Dock), and <strong>Stock Zone</strong> (Storage) with scanner barcodes so operations can start immediately.
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. Sticky Drawer Footer -->
+    <div class="wh-drawer-footer">
+        <span class="wh-page-breadcrumb">
+            <span>Warehouses</span>
+            <i class="ph ph-caret-right"></i>
+            <strong id="whPageBreadcrumbLabel">New Warehouse</strong>
+        </span>
+        <div class="wh-drawer-footer-actions">
+            <button type="button" class="wh-btn wh-btn-outline wh-btn-sm" onclick="closeWarehouseModal()">Cancel</button>
+            <button type="button" class="wh-btn wh-btn-primary wh-btn-sm" onclick="saveWarehouseForm()">
+                <i class="ph ph-floppy-disk"></i>
+                <span>Save Warehouse</span>
+            </button>
+        </div>
+    </div>
+</aside>
+
+<!-- ==========================================================================
+     DRAWER 2: CREATE / EDIT STORAGE LOCATION (Half-Screen Below Header)
+     ========================================================================== -->
+<aside class="wh-page-workspace wh-drawer-panel" id="whStorageAreaModal" aria-labelledby="areaModalTitle" aria-hidden="true">
+    <!-- 1. Sticky Drawer Header -->
+    <div class="wh-drawer-header">
+        <div class="wh-hero-left">
+            <div class="wh-hero-icon" id="areaPageHeroIcon"><i class="ph ph-tree-structure"></i></div>
+            <div style="min-width: 0;">
+                <div class="wh-hero-title-row">
+                    <h2 class="wh-hero-title" id="areaModalTitle">Add Storage Location</h2>
+                    <span class="wh-inline-code" id="areaPageCodeChip">NEW</span>
+                    <span class="wh-kind-tag physical" id="areaPageKindPill">Physical</span>
+                    <span class="wh-beh-tag Storage" id="areaPageBehaviorPill">Storage</span>
+                    <span class="wh-status-pill active" id="areaPageStatusPill">Active</span>
+                </div>
+                <p class="wh-hero-sub" id="areaPageSubtitle">Configure location kind, nesting placement, operational behavior, capacity, and scanner barcode</p>
+            </div>
+        </div>
+        <div class="wh-drawer-head-actions">
+            <button type="button" class="wh-btn wh-btn-outline wh-btn-sm" id="btnAddChildFromAreaPage" style="display: none;" onclick="addChildFromAreaPage()">
+                <i class="ph ph-plus"></i>
+                <span>+ Child</span>
+            </button>
+            <button type="button" class="wh-btn wh-btn-danger-outline wh-btn-sm" id="btnDeleteAreaFromPage" style="display: none;" onclick="deleteAreaFromPage()" title="Delete Location">
+                <i class="ph ph-trash"></i>
+            </button>
+            <button type="button" class="wh-drawer-close" onclick="closeStorageAreaModal()" title="Close Drawer (Esc)" aria-label="Close drawer">
+                <i class="ph ph-x"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- 2. RFQ-Style Tab Strip -->
+    <div class="wh-drawer-tabs-strip">
+        <nav class="rfq-nav-tabs-bar wh-page-tabs-bar" aria-label="Storage Location Tabs">
+            <button type="button" class="rfq-tab-btn wh-page-tab-btn active" data-area-tab="general" onclick="switchAreaPageTab('general')">
+                <i class="ph ph-sliders"></i>
+                <span>Identity &amp; Hierarchy</span>
+            </button>
+            <button type="button" class="rfq-tab-btn wh-page-tab-btn" data-area-tab="stock" onclick="switchAreaPageTab('stock')">
+                <i class="ph ph-package"></i>
+                <span>Stock &amp; Capacity Specs</span>
+            </button>
+            <button type="button" class="rfq-tab-btn wh-page-tab-btn" data-area-tab="children" onclick="switchAreaPageTab('children')">
+                <i class="ph ph-tree-structure"></i>
+                <span>Sub-Locations</span>
+                <span class="rfq-tab-count wh-tab-count" id="areaPageChildrenTabCount">0</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- 3. Scrollable Drawer Body -->
+    <div class="wh-drawer-body wh-page-body">
+        <input type="hidden" id="areaFormId" value="">
+
+        <!-- TAB 1: Identity & Hierarchy -->
+        <div class="wh-page-tab-pane active" id="areaTabPane-general">
+            <div class="wh-bento-grid">
+                <div class="wh-bento-card">
+                    <div class="wh-bento-head">
+                        <div class="wh-bento-title"><i class="ph ph-map-pin-area"></i><span>Location Kind, Identity &amp; Nesting</span></div>
+                        <span class="wh-bento-badge">Required Structure</span>
+                    </div>
+                    <div class="wh-bento-body">
+                        <div class="wh-field full" style="margin-bottom: 14px;">
+                            <label class="wh-label">Location Kind *</label>
+                            <div class="wh-kind-selector-grid">
+                                <button type="button" id="kindCardPhysical" class="wh-kind-card active" onclick="selectAreaKindCard('Physical')">
+                                    <div class="wh-kind-card-head">
+                                        <span class="wh-kind-card-icon"><i class="ph ph-buildings"></i></span>
+                                        <span class="wh-kind-card-title">Physical Location</span>
+                                    </div>
+                                    <div class="wh-kind-card-desc">Real warehouse space such as a Zone, Aisle, Rack, Bin, Packing Table, or Dock Door.</div>
+                                </button>
+                                <button type="button" id="kindCardVirtual" class="wh-kind-card" onclick="selectAreaKindCard('Virtual')">
+                                    <div class="wh-kind-card-head">
+                                        <span class="wh-kind-card-icon virtual"><i class="ph ph-cloud"></i></span>
+                                        <span class="wh-kind-card-title">Virtual Location</span>
+                                    </div>
+                                    <div class="wh-kind-card-desc">Logical ledger counterpart such as Virtual Stock, Transit, Quarantine, or Loss/Adjustment.</div>
+                                </button>
+                            </div>
+                            <select id="areaFormKind" class="wh-select" onchange="handleAreaKindChange(this.value)" style="display: none;">
+                                <option value="Physical">Physical Location</option>
+                                <option value="Virtual">Virtual Location</option>
+                            </select>
+                        </div>
+
+                        <div class="wh-form-grid">
+                            <div class="wh-field">
+                                <label class="wh-label" for="areaFormName">Location Name *</label>
+                                <input type="text" id="areaFormName" class="wh-input" placeholder="e.g. Bin B-12 or Virtual Transit" oninput="autoSuggestAreaBarcode(); updateAreaPageLivePreview();">
+                            </div>
+                            <div class="wh-field">
+                                <label class="wh-label" for="areaFormCode">Location Code *</label>
+                                <input type="text" id="areaFormCode" class="wh-input mono" placeholder="e.g. BIN-B12 or VRT-TRN" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9-]/g, ''); autoSuggestAreaBarcode(); updateAreaPageLivePreview();">
+                            </div>
+                            <div class="wh-field">
+                                <label class="wh-label" for="areaFormWarehouse">Warehouse Facility</label>
+                                <input type="text" id="areaFormWarehouse" class="wh-input mono" readonly style="background: #f8fafc !important; color: #475569 !important;">
+                            </div>
+                            <div class="wh-field">
+                                <label class="wh-label" for="areaFormParent">Nested Inside (Parent Location)</label>
+                                <select id="areaFormParent" class="wh-select" onchange="autoSuggestAreaBarcode(); updateAreaPageLivePreview();">
+                                    <!-- Populated dynamically with cycle-prevention -->
+                                </select>
+                            </div>
+                            <div class="wh-field">
+                                <label class="wh-label" for="areaFormType">Structural Level / Type *</label>
+                                <select id="areaFormType" class="wh-select" onchange="handleAreaTypeChange(this.value); updateAreaPageLivePreview();">
+                                    <option value="Zone">Zone (e.g. Dry Zone A, Cold Room)</option>
+                                    <option value="Aisle">Aisle (e.g. Aisle A, Aisle B)</option>
+                                    <option value="Rack">Rack / Shelf (e.g. Rack B, Shelf 2)</option>
+                                    <option value="Bin">Bin (e.g. Bin B-12)</option>
+                                    <option value="Packing Table">Packing / QA Table</option>
+                                    <option value="Dock Door">Dock Door (Receiving / Shipping)</option>
+                                    <option value="Virtual Location">Virtual Location (e.g. Virtual Stock)</option>
+                                    <option value="Virtual Transit">Virtual Transit / Quarantine</option>
+                                    <option value="Virtual Loss / Adj">Virtual Loss / Inventory Adjustment</option>
+                                </select>
+                            </div>
+                            <div class="wh-field">
+                                <label class="wh-label" for="areaFormBehavior">Area Behavior *</label>
+                                <select id="areaFormBehavior" class="wh-select" onchange="updateAreaPageLivePreview()">
+                                    <option value="Storage">Storage — Stock rests here (Bins, Racks, Zones)</option>
+                                    <option value="Staging">Staging — Stock passes through (Packing, QC Table)</option>
+                                    <option value="Dock">Dock — Stock enters or leaves building</option>
+                                    <option value="Virtual">Virtual — Logical / Ledger counterpart</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="wh-bento-side">
+                    <div class="wh-bento-card">
+                        <div class="wh-bento-head">
+                            <div class="wh-bento-title"><i class="ph ph-barcode"></i><span>Handheld Scanner Barcode *</span></div>
+                        </div>
+                        <div class="wh-bento-body">
+                            <div class="wh-barcode-preview-card">
+                                <div class="wh-barcode-bars" aria-hidden="true"></div>
+                                <div class="wh-barcode-preview-val" id="areaBarcodePreviewText">WH-MAIN-LOC</div>
+                            </div>
+
+                            <div class="wh-field" style="margin-top: 10px;">
+                                <label class="wh-label" for="areaFormBarcode">Unique Scanner Barcode *</label>
+                                <div style="display: flex; gap: 6px; align-items: center;">
+                                    <input type="text" id="areaFormBarcode" class="wh-input mono" style="flex: 1;" placeholder="e.g. WH-MAIN-ZA-RB-B12" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9-]/g, ''); updateAreaPageLivePreview();">
+                                    <button type="button" class="wh-btn wh-btn-outline wh-btn-xs" onclick="autoSuggestAreaBarcode(true); updateAreaPageLivePreview();" title="Auto-generate from parent and code">
+                                        <i class="ph ph-sparkle"></i> Auto
+                                    </button>
+                                    <button type="button" class="wh-btn wh-btn-outline wh-btn-xs" onclick="copyAreaBarcode(document.getElementById('areaFormBarcode').value)" title="Copy barcode">
+                                        <i class="ph ph-copy"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="wh-bento-card">
+                        <div class="wh-bento-head">
+                            <div class="wh-bento-title"><i class="ph ph-toggle-right"></i><span>Operational Controls</span></div>
+                        </div>
+                        <div class="wh-bento-body" style="display: flex; flex-direction: column; gap: 10px;">
+                            <label class="wh-switch-card">
+                                <input type="checkbox" id="areaFormActive" checked onchange="updateAreaPageLivePreview()">
+                                <div>
+                                    <div class="wh-switch-title">Location is Active</div>
+                                    <div class="wh-switch-desc">Enabled for stock counts, putaway, picking, and scanner lookups.</div>
+                                </div>
+                            </label>
+                            <label class="wh-switch-card">
+                                <input type="checkbox" id="areaFormDefault">
+                                <div>
+                                    <div class="wh-switch-title">Mark as Default Location</div>
+                                    <div class="wh-switch-desc">Flags this node as a primary default destination in its warehouse.</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: Stock & Capacity Specs -->
+        <div class="wh-page-tab-pane" id="areaTabPane-stock">
+            <div class="wh-bento-grid">
+                <div class="wh-bento-card">
+                    <div class="wh-bento-head">
+                        <div class="wh-bento-title"><i class="ph ph-sliders-horizontal"></i><span>Stock Level, Capacity &amp; Handling Specs</span></div>
+                    </div>
+                    <div class="wh-bento-body">
+                        <div class="wh-form-grid">
+                            <div class="wh-field">
+                                <label class="wh-label" for="areaFormStockQty">Direct Unit Quantity <span class="wh-hint">(&ge; 0 only)</span></label>
+                                <input type="number" id="areaFormStockQty" class="wh-input" min="0" step="1" value="0" oninput="updateAreaPageLivePreview()">
+                            </div>
+                            <div class="wh-field">
+                                <label class="wh-label" for="areaFormMaxCapacity">Max Unit Capacity <span class="wh-hint">(optional)</span></label>
+                                <input type="number" id="areaFormMaxCapacity" class="wh-input" min="0" step="1" placeholder="Unlimited">
+                            </div>
+                            <div class="wh-field">
+                                <label class="wh-label" for="areaFormTempZone">Environment / Storage Class</label>
+                                <select id="areaFormTempZone" class="wh-select">
+                                    <option value="Ambient / Dry">Ambient / Dry Storage</option>
+                                    <option value="Chilled (2°C – 8°C)">Chilled (2°C – 8°C)</option>
+                                    <option value="Frozen (-18°C)">Frozen (-18°C)</option>
+                                    <option value="Controlled / Hazmat">Controlled / Security Cage</option>
+                                    <option value="Virtual / N/A">Virtual / Not Applicable</option>
+                                </select>
+                            </div>
+                            <div class="wh-field">
+                                <label class="wh-label" for="areaFormPickStrategy">Removal / Picking Strategy</label>
+                                <select id="areaFormPickStrategy" class="wh-select">
+                                    <option value="FEFO">FEFO (First Expired, First Out)</option>
+                                    <option value="FIFO">FIFO (First In, First Out)</option>
+                                    <option value="LIFO">LIFO (Last In, First Out)</option>
+                                    <option value="Manual">Manual / Directed Putaway</option>
+                                </select>
+                            </div>
+                            <div class="wh-field full">
+                                <label class="wh-label" for="areaFormNotes">Handling &amp; Operational Notes</label>
+                                <textarea id="areaFormNotes" class="wh-textarea" rows="3" placeholder="Forklift clearance, allergen separation, or virtual ledger usage notes..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="wh-bento-side">
+                    <div class="wh-bento-card">
+                        <div class="wh-bento-head">
+                            <div class="wh-bento-title"><i class="ph ph-chart-bar"></i><span>Live Stock Roll-Up Summary</span></div>
+                        </div>
+                        <div class="wh-bento-body">
+                            <div class="wh-stock-summary-rows">
+                                <div class="wh-summary-row">
+                                    <span>Direct On-Hand Stock</span>
+                                    <strong id="areaSummaryDirectStock">0</strong>
+                                </div>
+                                <div class="wh-summary-row">
+                                    <span>Nested Sub-Locations Stock</span>
+                                    <strong id="areaSummaryNestedStock">0</strong>
+                                </div>
+                                <div class="wh-summary-row total">
+                                    <span>Total Subtree Stock</span>
+                                    <strong id="areaSummaryTotalStock">0</strong>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -307,103 +662,40 @@
             </div>
         </div>
 
-        <div class="wh-modal-footer">
-            <button type="button" class="wh-btn wh-btn-outline" onclick="closeWarehouseModal()">Cancel</button>
-            <button type="button" class="wh-btn wh-btn-primary" onclick="saveWarehouseForm()">
-                <i class="ph ph-check-circle"></i> Save Warehouse
-            </button>
-        </div>
-    </div>
-</div>
-
-<!-- ==========================================================================
-     MODAL 2: CREATE / EDIT PHYSICAL STORAGE AREA
-     ========================================================================== -->
-<div class="wh-modal-backdrop" id="whStorageAreaModal" role="dialog" aria-modal="true" aria-labelledby="areaModalTitle">
-    <div class="wh-modal-card" style="max-width: 600px;">
-        <div class="wh-modal-header">
-            <div class="wh-modal-title-group">
-                <div class="wh-modal-icon"><i class="ph ph-tree-structure"></i></div>
-                <div>
-                    <div class="wh-modal-title" id="areaModalTitle">Add Physical Storage Area</div>
-                    <div class="wh-modal-subtitle">Configure nesting parent, physical behavior, and unique scanner barcode</div>
+        <!-- TAB 3: Sub-Locations -->
+        <div class="wh-page-tab-pane" id="areaTabPane-children">
+            <div class="wh-bento-card">
+                <div class="wh-bento-head">
+                    <div class="wh-bento-title"><i class="ph ph-tree-structure"></i><span>Nested Sub-Locations</span></div>
+                    <button type="button" class="wh-btn wh-btn-primary wh-btn-xs" id="btnTabAddChildArea" onclick="addChildFromAreaPage()">
+                        <i class="ph ph-plus"></i> Add Child Location
+                    </button>
                 </div>
-            </div>
-            <button type="button" class="wh-icon-btn" onclick="closeStorageAreaModal()"><i class="ph ph-x"></i></button>
-        </div>
-
-        <div class="wh-modal-body">
-            <input type="hidden" id="areaFormId" value="">
-            <div class="wh-form-grid">
-                <div class="wh-field">
-                    <label class="wh-label" for="areaFormWarehouse">Warehouse Facility</label>
-                    <input type="text" id="areaFormWarehouse" class="wh-input mono" readonly style="background: #f8fafc; color: #475569;">
-                </div>
-                <div class="wh-field">
-                    <label class="wh-label" for="areaFormParent">Nested Inside (Parent Area)</label>
-                    <select id="areaFormParent" class="wh-select" onchange="autoSuggestAreaBarcode()">
-                        <!-- Populated dynamically with cycle-prevention -->
-                    </select>
-                </div>
-
-                <div class="wh-field">
-                    <label class="wh-label" for="areaFormType">Structural Level / Type *</label>
-                    <select id="areaFormType" class="wh-select" onchange="handleAreaTypeChange(this.value)">
-                        <option value="Zone">Zone (e.g. Dry Zone A, Cold Room)</option>
-                        <option value="Aisle">Aisle (e.g. Aisle A, Aisle B)</option>
-                        <option value="Rack">Rack / Shelf (e.g. Rack B, Shelf 2)</option>
-                        <option value="Bin">Bin (e.g. Bin B-12)</option>
-                        <option value="Packing Table">Packing / QA Table</option>
-                        <option value="Dock Door">Dock Door (Receiving / Shipping)</option>
-                    </select>
-                </div>
-
-                <div class="wh-field">
-                    <label class="wh-label" for="areaFormBehavior">Area Behavior *</label>
-                    <select id="areaFormBehavior" class="wh-select">
-                        <option value="Storage">Storage — Stock rests here (Bins, Racks, Zones)</option>
-                        <option value="Staging">Staging — Stock passes through (Packing, QC Table)</option>
-                        <option value="Dock">Dock — Stock enters or leaves building</option>
-                    </select>
-                </div>
-
-                <div class="wh-field">
-                    <label class="wh-label" for="areaFormName">Area Name *</label>
-                    <input type="text" id="areaFormName" class="wh-input" placeholder="e.g. Bin B-12" oninput="autoSuggestAreaBarcode()">
-                </div>
-
-                <div class="wh-field">
-                    <label class="wh-label" for="areaFormCode">Area Code *</label>
-                    <input type="text" id="areaFormCode" class="wh-input mono" placeholder="e.g. BIN-B12" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9-]/g, ''); autoSuggestAreaBarcode();">
-                </div>
-
-                <div class="wh-field">
-                    <label class="wh-label" for="areaFormBarcode">Unique Handheld Scanner Barcode *</label>
-                    <input type="text" id="areaFormBarcode" class="wh-input mono" placeholder="e.g. WH-MAIN-ZA-RB-B12" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9-]/g, '')">
-                </div>
-
-                <div class="wh-field">
-                    <label class="wh-label" for="areaFormStockQty">Current Physical Stock (Units) <span class="wh-hint">(≥ 0 only)</span></label>
-                    <input type="number" id="areaFormStockQty" class="wh-input" min="0" step="1" value="0">
-                </div>
-
-                <div class="wh-field full">
-                    <label class="wh-checkbox-row">
-                        <input type="checkbox" id="areaFormActive" checked>
-                        <span><strong>Storage Area is Active</strong> (Can receive scans and hold inventory)</span>
-                    </label>
+                <div class="wh-bento-body" style="padding: 0;" id="areaPageChildrenList">
+                    <!-- Populated dynamically by renderAreaPageChildrenTab() -->
                 </div>
             </div>
         </div>
+    </div>
 
-        <div class="wh-modal-footer">
-            <button type="button" class="wh-btn wh-btn-outline" onclick="closeStorageAreaModal()">Cancel</button>
-            <button type="button" class="wh-btn wh-btn-primary" onclick="saveStorageAreaForm()">
-                <i class="ph ph-check-circle"></i> Save Storage Area
+    <!-- 4. Sticky Drawer Footer -->
+    <div class="wh-drawer-footer">
+        <div class="wh-page-breadcrumb" id="areaPageBreadcrumb">
+            <span>WH-MAIN</span>
+            <i class="ph ph-caret-right"></i>
+            <strong>New Location</strong>
+        </div>
+        <div class="wh-drawer-footer-actions">
+            <button type="button" class="wh-btn wh-btn-outline wh-btn-sm" onclick="closeStorageAreaModal()">Cancel</button>
+            <button type="button" class="wh-btn wh-btn-primary wh-btn-sm" onclick="saveStorageAreaForm()">
+                <i class="ph ph-floppy-disk"></i>
+                <span>Save Location</span>
             </button>
         </div>
     </div>
-</div>
+</aside>
+
+</div><!-- /#whStorageApp -->
 
 <!-- ==========================================================================
      MODAL 3: BULK STORAGE BIN GENERATOR ("Aisle A, Racks 1-10, Bins 1-5" -> 50 Bins)
