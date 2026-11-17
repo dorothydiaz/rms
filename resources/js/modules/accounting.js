@@ -1707,365 +1707,475 @@
         let activeBillRecord = null;
 
         // =====================================================================
-        // VENDOR BILLS REGISTER — RFQ CUSTOMIZABLE COLUMN & WIDTH ENGINE
+        // SHARED RFQ CUSTOMIZABLE COLUMN & WIDTH ENGINE (BILLS + OPEN BALANCES)
         // =====================================================================
-        const AP_BILLS_COLUMNS = [
-            { id: 'bill_no', label: 'Bill #', subLabel: 'System Voucher', default: true, align: 'left', defaultWidth: '130px', lockVisible: true },
-            { id: 'vendor', label: 'Vendor', subLabel: 'Supplier / Code', default: true, align: 'left', defaultWidth: '190px' },
-            { id: 'invoice_no', label: 'Invoice / Ref #', subLabel: 'Vendor SI #', default: true, align: 'left', defaultWidth: '140px' },
-            { id: 'po_match', label: 'PO / GRN Match', subLabel: 'Linked Order', default: true, align: 'left', defaultWidth: '135px' },
-            { id: 'bill_date', label: 'Bill Date', subLabel: 'Invoice Date', default: true, align: 'left', defaultWidth: '110px' },
-            { id: 'due_date', label: 'Due Date', subLabel: 'Maturity', default: true, align: 'left', defaultWidth: '110px' },
-            { id: 'match_type', label: 'Match Type', subLabel: '3-Way Status', default: true, align: 'left', defaultWidth: '135px' },
-            { id: 'total', label: 'Total Amount', subLabel: 'Gross Payable', default: true, align: 'right', defaultWidth: '125px' },
-            { id: 'paid', label: 'Paid / Credit', subLabel: 'Settled', default: true, align: 'right', defaultWidth: '125px' },
-            { id: 'balance', label: 'Balance Due', subLabel: 'Open Payable', default: true, align: 'right', defaultWidth: '125px' },
-            { id: 'status', label: 'Status', subLabel: 'Posting State', default: true, align: 'left', defaultWidth: '105px' },
-            { id: 'actions', label: 'Actions', subLabel: 'Pay / View', default: true, align: 'right', defaultWidth: '165px', lockVisible: true },
-        ];
+        function setupApRfqCustomizableTable(tblCfg) {
+            const {
+                columns,
+                storagePrefix,
+                theadRowId,
+                tbodyId,
+                settingsBtnId,
+                dropdownId,
+                colListId,
+                counterId,
+                searchInputId,
+                resetDefId,
+                showAllId,
+                resetWidthsId,
+                resetMessage,
+                rowFilterSelector,
+            } = tblCfg;
 
-        let activeApBillsColIds = (() => {
-            try {
-                const saved = JSON.parse(localStorage.getItem('rms_ap_bills_cols_v1') || 'null');
-                if (Array.isArray(saved) && saved.length > 0) return saved;
-            } catch (e) {}
-            return AP_BILLS_COLUMNS.filter(c => c.default).map(c => c.id);
-        })();
+            const lsColsKey = `${storagePrefix}_cols_v1`;
+            const lsOrderKey = `${storagePrefix}_cols_order_v1`;
+            const lsWidthKey = `${storagePrefix}_col_widths_v1`;
 
-        let apBillsColOrder = (() => {
-            try {
-                const saved = JSON.parse(localStorage.getItem('rms_ap_bills_cols_order_v1') || 'null');
-                if (Array.isArray(saved) && saved.length > 0) {
-                    const allIds = AP_BILLS_COLUMNS.map(c => c.id);
-                    const merged = saved.filter(id => allIds.includes(id));
-                    allIds.forEach(id => { if (!merged.includes(id)) merged.push(id); });
-                    return merged;
-                }
-            } catch (e) {}
-            return AP_BILLS_COLUMNS.map(c => c.id);
-        })();
+            let activeColIds = (() => {
+                try {
+                    const saved = JSON.parse(localStorage.getItem(lsColsKey) || 'null');
+                    if (Array.isArray(saved) && saved.length > 0) return saved;
+                } catch (e) {}
+                return columns.filter(c => c.default).map(c => c.id);
+            })();
 
-        let savedApBillsColWidths = (() => {
-            try {
-                const saved = JSON.parse(localStorage.getItem('rms_ap_bills_col_widths_v1') || 'null');
-                if (saved && typeof saved === 'object') return saved;
-            } catch (e) {}
-            return {};
-        })();
+            let colOrder = (() => {
+                try {
+                    const saved = JSON.parse(localStorage.getItem(lsOrderKey) || 'null');
+                    if (Array.isArray(saved) && saved.length > 0) {
+                        const allIds = columns.map(c => c.id);
+                        const merged = saved.filter(id => allIds.includes(id));
+                        allIds.forEach(id => { if (!merged.includes(id)) merged.push(id); });
+                        return merged;
+                    }
+                } catch (e) {}
+                return columns.map(c => c.id);
+            })();
 
-        let apBillsColSearchTerm = '';
-        let apHeaderDragSourceId = null;
-        let apDropdownDragSourceId = null;
-        let apResizingColId = null;
-        let apResizeStartX = 0;
-        let apResizeStartW = 0;
-        let apResizeRaf = null;
+            let savedColWidths = (() => {
+                try {
+                    const saved = JSON.parse(localStorage.getItem(lsWidthKey) || 'null');
+                    if (saved && typeof saved === 'object') return saved;
+                } catch (e) {}
+                return {};
+            })();
 
-        function getApBillColWidth(col) {
-            return savedApBillsColWidths[col.id] || col.defaultWidth || '125px';
-        }
+            let colSearchTerm = '';
+            let headerDragSourceId = null;
+            let dropdownDragSourceId = null;
+            let resizingColId = null;
+            let resizeStartX = 0;
+            let resizeStartW = 0;
+            let resizeRaf = null;
 
-        function getOrderedVisibleApCols() {
-            return apBillsColOrder
-                .filter(id => activeApBillsColIds.includes(id))
-                .map(id => AP_BILLS_COLUMNS.find(c => c.id === id))
+            const getColWidth = (col) => savedColWidths[col.id] || col.defaultWidth || '125px';
+            const getOrderedVisibleCols = () => colOrder
+                .filter(id => activeColIds.includes(id))
+                .map(id => columns.find(c => c.id === id))
                 .filter(Boolean);
-        }
 
-        function renderApBillsTableHeader() {
-            const theadRow = document.getElementById('apBillsTheadRow');
-            if (!theadRow) return;
+            function applyColumnLayout() {
+                const tbody = document.getElementById(tbodyId);
+                if (!tbody) return;
+                const visibleCols = getOrderedVisibleCols();
+                const visibleIds = new Set(visibleCols.map(c => c.id));
 
-            const visibleCols = getOrderedVisibleApCols();
-            theadRow.innerHTML = visibleCols.map(col => {
-                const w = getApBillColWidth(col);
-                const isRight = col.align === 'right';
-                const alignClass = isRight ? 'th-num' : 'th-left';
-
-                if (col.id === 'actions') {
-                    return `
-                        <th class="rfq-th-stacked th-num th-actions-sticky" data-col-id="actions" style="width:${w};text-align:right;user-select:none;">
-                            <div class="rfq-header-action-wrapper" style="justify-content:flex-end;gap:8px;">
-                                <div class="rfq-th-content" style="align-items:flex-end;text-align:right;">
-                                    <div class="rfq-th-title">${escapeHtml(col.label)}</div>
-                                    <div class="rfq-th-sub">${escapeHtml(col.subLabel)}</div>
-                                </div>
-                                <button type="button" class="rfq-th-settings-btn" id="btnApBillsTableSettings" title="Customize Columns &amp; Widths">
-                                    <i class="ph ph-gear"></i>
-                                </button>
-                            </div>
-                        </th>
-                    `;
-                }
-
-                return `
-                    <th class="rfq-th-stacked ${alignClass}" data-col-id="${col.id}" draggable="true"
-                        style="width:${w};text-align:${isRight ? 'right' : 'left'};position:relative;user-select:none;">
-                        <div class="rfq-th-content" style="align-items:${isRight ? 'flex-end' : 'flex-start'};text-align:${isRight ? 'right' : 'left'};">
-                            <div class="rfq-th-title">${escapeHtml(col.label)}</div>
-                            ${col.subLabel ? `<div class="rfq-th-sub">${escapeHtml(col.subLabel)}</div>` : ''}
-                        </div>
-                        <div class="rfq-col-resizer" data-resize-col="${col.id}"></div>
-                    </th>
-                `;
-            }).join('');
-
-            applyApBillsColumnLayout();
-            renderApBillsColDropdownChecklist();
-        }
-
-        function applyApBillsColumnLayout() {
-            const tbody = document.getElementById('apBillsRegisterBody');
-            if (!tbody) return;
-            const visibleCols = getOrderedVisibleApCols();
-            const visibleIds = new Set(visibleCols.map(c => c.id));
-
-            tbody.querySelectorAll('tr').forEach(tr => {
-                if (tr.classList.contains('ap-empty-row')) {
-                    const emptyTd = tr.querySelector('td');
-                    if (emptyTd) emptyTd.setAttribute('colspan', String(Math.max(1, visibleCols.length)));
-                    return;
-                }
-                const cellMap = {};
-                Array.from(tr.children).forEach(td => {
-                    const cid = td.getAttribute('data-col-id');
-                    if (cid) cellMap[cid] = td;
+                tbody.querySelectorAll('tr').forEach(tr => {
+                    if (
+                        tr.classList.contains('ap-empty-row')
+                        || tr.classList.contains('ap-vendor-empty-row')
+                        || tr.classList.contains('ap-vendor-pos-detail-row')
+                    ) {
+                        const spanTd = tr.querySelector('td');
+                        if (spanTd) spanTd.setAttribute('colspan', String(Math.max(1, visibleCols.length)));
+                        return;
+                    }
+                    if (rowFilterSelector && !tr.matches(rowFilterSelector)) {
+                        return;
+                    }
+                    const cellMap = {};
+                    Array.from(tr.children).forEach(td => {
+                        const cid = td.getAttribute('data-col-id');
+                        if (cid) cellMap[cid] = td;
+                    });
+                    colOrder.forEach(cid => {
+                        const td = cellMap[cid];
+                        if (!td) return;
+                        td.style.display = visibleIds.has(cid) ? '' : 'none';
+                        tr.appendChild(td);
+                    });
                 });
-                apBillsColOrder.forEach(cid => {
-                    const td = cellMap[cid];
-                    if (!td) return;
-                    td.style.display = visibleIds.has(cid) ? '' : 'none';
-                    tr.appendChild(td);
-                });
-            });
-        }
+            }
 
-        function renderApBillsColDropdownChecklist() {
-            const listEl = document.getElementById('apBillsColCheckboxesList');
-            if (!listEl) return;
+            function renderColDropdownChecklist() {
+                const listEl = document.getElementById(colListId);
+                if (!listEl) return;
 
-            const q = (apBillsColSearchTerm || '').toLowerCase().trim();
-            const orderedCols = apBillsColOrder.map(id => AP_BILLS_COLUMNS.find(c => c.id === id)).filter(Boolean);
+                const q = (colSearchTerm || '').toLowerCase().trim();
+                const orderedCols = colOrder.map(id => columns.find(c => c.id === id)).filter(Boolean);
 
-            listEl.innerHTML = orderedCols
-                .filter(col => !q || col.label.toLowerCase().includes(q) || (col.subLabel && col.subLabel.toLowerCase().includes(q)))
-                .map(col => {
-                    const isChecked = activeApBillsColIds.includes(col.id);
-                    const isDisabled = col.lockVisible ? 'disabled' : '';
-                    return `
-                        <div class="rfq-dropdown-col-item" data-col-id="${col.id}" draggable="${col.id !== 'actions' ? 'true' : 'false'}">
-                            ${col.id !== 'actions'
-                                ? '<span class="rfq-drag-handle" title="Drag to reorder column"><i class="ph ph-dots-six-vertical"></i></span>'
-                                : '<span style="width:14px;display:inline-block;"></span>'}
-                            <label class="rfq-col-item-label">
-                                <div style="display:flex;align-items:center;gap:6px;min-width:0;">
-                                    <input type="checkbox" class="ap-col-vis-chk" data-col-id="${col.id}" ${isChecked ? 'checked' : ''} ${isDisabled}>
-                                    <div style="display:flex;flex-direction:column;min-width:0;">
-                                        <span class="rfq-col-name">${escapeHtml(col.label)}</span>
-                                        ${col.subLabel ? `<span class="rfq-col-subname">${escapeHtml(col.subLabel)}</span>` : ''}
+                listEl.innerHTML = orderedCols
+                    .filter(col => !q || col.label.toLowerCase().includes(q) || (col.subLabel && col.subLabel.toLowerCase().includes(q)))
+                    .map(col => {
+                        const isChecked = activeColIds.includes(col.id);
+                        const isDisabled = col.lockVisible ? 'disabled' : '';
+                        return `
+                            <div class="rfq-dropdown-col-item" data-col-id="${col.id}" draggable="${col.id !== 'actions' ? 'true' : 'false'}">
+                                ${col.id !== 'actions'
+                                    ? '<span class="rfq-drag-handle" title="Drag to reorder column"><i class="ph ph-dots-six-vertical"></i></span>'
+                                    : '<span style="width:14px;display:inline-block;"></span>'}
+                                <label class="rfq-col-item-label">
+                                    <div style="display:flex;align-items:center;gap:6px;min-width:0;">
+                                        <input type="checkbox" class="ap-col-vis-chk" data-col-id="${col.id}" ${isChecked ? 'checked' : ''} ${isDisabled}>
+                                        <div style="display:flex;flex-direction:column;min-width:0;">
+                                            <span class="rfq-col-name">${escapeHtml(col.label)}</span>
+                                            ${col.subLabel ? `<span class="rfq-col-subname">${escapeHtml(col.subLabel)}</span>` : ''}
+                                        </div>
                                     </div>
+                                    <div style="display:flex;align-items:center;gap:4px;">
+                                        ${col.default ? '<span class="rfq-col-badge-default">Default</span>' : ''}
+                                        ${col.lockVisible ? '<span style="font-size:0.65rem;color:#94a3b8;font-weight:600;">(Locked)</span>' : ''}
+                                    </div>
+                                </label>
+                            </div>
+                        `;
+                    }).join('');
+
+                const counter = document.getElementById(counterId);
+                if (counter) {
+                    counter.textContent = `${activeColIds.length} of ${columns.length} visible`;
+                }
+            }
+
+            function renderTableHeader() {
+                const theadRow = document.getElementById(theadRowId);
+                if (!theadRow) return;
+
+                const visibleCols = getOrderedVisibleCols();
+                theadRow.innerHTML = visibleCols.map(col => {
+                    const w = getColWidth(col);
+                    const isRight = col.align === 'right';
+                    const alignClass = isRight ? 'th-num' : 'th-left';
+
+                    if (col.id === 'actions') {
+                        return `
+                            <th class="rfq-th-stacked th-num th-actions-sticky" data-col-id="actions" style="width:${w};text-align:right;user-select:none;">
+                                <div class="rfq-header-action-wrapper" style="justify-content:flex-end;gap:8px;">
+                                    <div class="rfq-th-content" style="align-items:flex-end;text-align:right;">
+                                        <div class="rfq-th-title">${escapeHtml(col.label)}</div>
+                                        <div class="rfq-th-sub">${escapeHtml(col.subLabel)}</div>
+                                    </div>
+                                    <button type="button" class="rfq-th-settings-btn" id="${settingsBtnId}" title="Customize Columns &amp; Widths">
+                                        <i class="ph ph-gear"></i>
+                                    </button>
                                 </div>
-                                <div style="display:flex;align-items:center;gap:4px;">
-                                    ${col.default ? '<span class="rfq-col-badge-default">Default</span>' : ''}
-                                    ${col.lockVisible ? '<span style="font-size:0.65rem;color:#94a3b8;font-weight:600;">(Locked)</span>' : ''}
-                                </div>
-                            </label>
-                        </div>
+                            </th>
+                        `;
+                    }
+
+                    return `
+                        <th class="rfq-th-stacked ${alignClass}" data-col-id="${col.id}" draggable="true"
+                            style="width:${w};text-align:${isRight ? 'right' : 'left'};position:relative;user-select:none;">
+                            <div class="rfq-th-content" style="align-items:${isRight ? 'flex-end' : 'flex-start'};text-align:${isRight ? 'right' : 'left'};">
+                                <div class="rfq-th-title">${escapeHtml(col.label)}</div>
+                                ${col.subLabel ? `<div class="rfq-th-sub">${escapeHtml(col.subLabel)}</div>` : ''}
+                            </div>
+                            <div class="rfq-col-resizer" data-resize-col="${col.id}"></div>
+                        </th>
                     `;
                 }).join('');
 
-            const counter = document.getElementById('apBillsColActiveCounter');
-            if (counter) {
-                counter.textContent = `${activeApBillsColIds.length} of ${AP_BILLS_COLUMNS.length} visible`;
+                applyColumnLayout();
+                renderColDropdownChecklist();
             }
-        }
 
-        function reorderApBillColumns(sourceId, targetId) {
-            if (!sourceId || !targetId || sourceId === targetId || sourceId === 'actions' || targetId === 'actions') return;
-            const sIdx = apBillsColOrder.indexOf(sourceId);
-            const tIdx = apBillsColOrder.indexOf(targetId);
-            if (sIdx === -1 || tIdx === -1) return;
-            apBillsColOrder.splice(sIdx, 1);
-            apBillsColOrder.splice(tIdx, 0, sourceId);
-            localStorage.setItem('rms_ap_bills_cols_order_v1', JSON.stringify(apBillsColOrder));
-            renderApBillsTableHeader();
-        }
+            function reorderColumns(sourceId, targetId) {
+                if (!sourceId || !targetId || sourceId === targetId || sourceId === 'actions' || targetId === 'actions') return;
+                const sIdx = colOrder.indexOf(sourceId);
+                const tIdx = colOrder.indexOf(targetId);
+                if (sIdx === -1 || tIdx === -1) return;
+                colOrder.splice(sIdx, 1);
+                colOrder.splice(tIdx, 0, sourceId);
+                localStorage.setItem(lsOrderKey, JSON.stringify(colOrder));
+                renderTableHeader();
+            }
 
-        const apBillsTheadRow = document.getElementById('apBillsTheadRow');
-        if (apBillsTheadRow) {
-            apBillsTheadRow.addEventListener('click', (e) => {
-                const gearBtn = e.target.closest('#btnApBillsTableSettings');
-                if (!gearBtn) return;
-                e.stopPropagation();
-                const dd = document.getElementById('apBillsTableSettingsDropdown');
-                if (!dd) return;
-                const isOpen = dd.classList.contains('is-active');
-                if (isOpen) {
-                    dd.classList.remove('is-active');
-                    dd.style.display = 'none';
-                    gearBtn.classList.remove('is-active');
-                } else {
-                    dd.style.display = 'block';
-                    dd.classList.add('is-active');
-                    gearBtn.classList.add('is-active');
-                    const rect = gearBtn.getBoundingClientRect();
-                    let left = Math.max(10, rect.right - 370);
-                    let top = rect.bottom + 6;
-                    if (top + 400 > window.innerHeight) top = Math.max(10, rect.top - 410);
-                    dd.style.left = `${left}px`;
-                    dd.style.top = `${top}px`;
-                    renderApBillsColDropdownChecklist();
-                }
-            });
+            const theadRow = document.getElementById(theadRowId);
+            if (theadRow) {
+                theadRow.addEventListener('click', (e) => {
+                    const gearBtn = e.target.closest(`#${settingsBtnId}`);
+                    if (!gearBtn) return;
+                    e.stopPropagation();
+                    const dd = document.getElementById(dropdownId);
+                    if (!dd) return;
+                    const isOpen = dd.classList.contains('is-active');
+                    if (isOpen) {
+                        dd.classList.remove('is-active');
+                        dd.style.display = 'none';
+                        gearBtn.classList.remove('is-active');
+                    } else {
+                        dd.style.display = 'block';
+                        dd.classList.add('is-active');
+                        gearBtn.classList.add('is-active');
+                        const rect = gearBtn.getBoundingClientRect();
+                        const left = Math.max(10, rect.right - 370);
+                        let top = rect.bottom + 6;
+                        if (top + 400 > window.innerHeight) top = Math.max(10, rect.top - 410);
+                        dd.style.left = `${left}px`;
+                        dd.style.top = `${top}px`;
+                        renderColDropdownChecklist();
+                    }
+                });
 
-            apBillsTheadRow.addEventListener('mousedown', (e) => {
-                const resizer = e.target.closest('.rfq-col-resizer');
-                if (!resizer) return;
-                e.preventDefault();
-                e.stopPropagation();
-                apResizingColId = resizer.getAttribute('data-resize-col');
-                apResizeStartX = e.pageX;
-                const th = apBillsTheadRow.querySelector(`th[data-col-id="${apResizingColId}"]`);
-                apResizeStartW = th ? th.offsetWidth : 120;
-                resizer.classList.add('is-resizing');
-            });
-
-            apBillsTheadRow.addEventListener('dragstart', (e) => {
-                const th = e.target.closest('th[data-col-id]');
-                const cid = th?.getAttribute('data-col-id');
-                if (!cid || cid === 'actions') { e.preventDefault(); return; }
-                apHeaderDragSourceId = cid;
-                e.dataTransfer.effectAllowed = 'move';
-                th.classList.add('is-header-dragging');
-            });
-            apBillsTheadRow.addEventListener('dragover', (e) => {
-                const th = e.target.closest('th[data-col-id]');
-                const cid = th?.getAttribute('data-col-id');
-                if (!cid || cid === 'actions' || !apHeaderDragSourceId) return;
-                e.preventDefault();
-                if (apHeaderDragSourceId !== cid) th.classList.add('is-header-drag-over');
-            });
-            apBillsTheadRow.addEventListener('dragleave', (e) => {
-                e.target.closest('th[data-col-id]')?.classList.remove('is-header-drag-over');
-            });
-            apBillsTheadRow.addEventListener('drop', (e) => {
-                const th = e.target.closest('th[data-col-id]');
-                const cid = th?.getAttribute('data-col-id');
-                th?.classList.remove('is-header-drag-over');
-                if (apHeaderDragSourceId && cid && cid !== 'actions') {
+                theadRow.addEventListener('mousedown', (e) => {
+                    const resizer = e.target.closest('.rfq-col-resizer');
+                    if (!resizer) return;
                     e.preventDefault();
-                    reorderApBillColumns(apHeaderDragSourceId, cid);
+                    e.stopPropagation();
+                    resizingColId = resizer.getAttribute('data-resize-col');
+                    resizeStartX = e.pageX;
+                    const th = theadRow.querySelector(`th[data-col-id="${resizingColId}"]`);
+                    resizeStartW = th ? th.offsetWidth : 120;
+                    resizer.classList.add('is-resizing');
+                });
+
+                theadRow.addEventListener('dragstart', (e) => {
+                    const th = e.target.closest('th[data-col-id]');
+                    const cid = th?.getAttribute('data-col-id');
+                    if (!cid || cid === 'actions') { e.preventDefault(); return; }
+                    headerDragSourceId = cid;
+                    e.dataTransfer.effectAllowed = 'move';
+                    th.classList.add('is-header-dragging');
+                });
+                theadRow.addEventListener('dragover', (e) => {
+                    const th = e.target.closest('th[data-col-id]');
+                    const cid = th?.getAttribute('data-col-id');
+                    if (!cid || cid === 'actions' || !headerDragSourceId) return;
+                    e.preventDefault();
+                    if (headerDragSourceId !== cid) th.classList.add('is-header-drag-over');
+                });
+                theadRow.addEventListener('dragleave', (e) => {
+                    e.target.closest('th[data-col-id]')?.classList.remove('is-header-drag-over');
+                });
+                theadRow.addEventListener('drop', (e) => {
+                    const th = e.target.closest('th[data-col-id]');
+                    const cid = th?.getAttribute('data-col-id');
+                    th?.classList.remove('is-header-drag-over');
+                    if (headerDragSourceId && cid && cid !== 'actions') {
+                        e.preventDefault();
+                        reorderColumns(headerDragSourceId, cid);
+                    }
+                    headerDragSourceId = null;
+                });
+                theadRow.addEventListener('dragend', () => {
+                    headerDragSourceId = null;
+                    theadRow.querySelectorAll('th').forEach(th => th.classList.remove('is-header-dragging', 'is-header-drag-over'));
+                });
+            }
+
+            document.addEventListener('mousemove', (e) => {
+                if (!resizingColId) return;
+                const pageX = e.pageX;
+                if (resizeRaf) return;
+                resizeRaf = window.requestAnimationFrame(() => {
+                    resizeRaf = null;
+                    if (!resizingColId) return;
+                    const newWidth = Math.max(75, resizeStartW + (pageX - resizeStartX));
+                    savedColWidths[resizingColId] = `${newWidth}px`;
+                    const th = document.querySelector(`#${theadRowId} th[data-col-id="${resizingColId}"]`);
+                    if (th) th.style.width = `${newWidth}px`;
+                });
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (!resizingColId) return;
+                localStorage.setItem(lsWidthKey, JSON.stringify(savedColWidths));
+                document.querySelectorAll(`#${theadRowId} .rfq-col-resizer`).forEach(r => r.classList.remove('is-resizing'));
+                resizingColId = null;
+            });
+
+            const dropdown = document.getElementById(dropdownId);
+            if (dropdown) {
+                dropdown.addEventListener('click', (e) => e.stopPropagation());
+                dropdown.addEventListener('change', (e) => {
+                    const chk = e.target.closest('.ap-col-vis-chk');
+                    if (!chk) return;
+                    const cid = chk.getAttribute('data-col-id');
+                    if (chk.checked) {
+                        if (!activeColIds.includes(cid)) activeColIds.push(cid);
+                    } else {
+                        activeColIds = activeColIds.filter(id => id !== cid);
+                    }
+                    localStorage.setItem(lsColsKey, JSON.stringify(activeColIds));
+                    renderTableHeader();
+                });
+                dropdown.addEventListener('dragstart', (e) => {
+                    const item = e.target.closest('.rfq-dropdown-col-item');
+                    const cid = item?.getAttribute('data-col-id');
+                    if (!cid || cid === 'actions') { e.preventDefault(); return; }
+                    dropdownDragSourceId = cid;
+                    item.classList.add('is-dragging');
+                });
+                dropdown.addEventListener('dragover', (e) => {
+                    const item = e.target.closest('.rfq-dropdown-col-item');
+                    const cid = item?.getAttribute('data-col-id');
+                    if (!cid || cid === 'actions' || !dropdownDragSourceId) return;
+                    e.preventDefault();
+                    if (dropdownDragSourceId !== cid) item.classList.add('is-drag-over');
+                });
+                dropdown.addEventListener('dragleave', (e) => {
+                    e.target.closest('.rfq-dropdown-col-item')?.classList.remove('is-drag-over');
+                });
+                dropdown.addEventListener('drop', (e) => {
+                    const item = e.target.closest('.rfq-dropdown-col-item');
+                    const cid = item?.getAttribute('data-col-id');
+                    item?.classList.remove('is-drag-over');
+                    if (dropdownDragSourceId && cid && cid !== 'actions') {
+                        e.preventDefault();
+                        reorderColumns(dropdownDragSourceId, cid);
+                    }
+                    dropdownDragSourceId = null;
+                });
+                dropdown.addEventListener('dragend', () => {
+                    dropdownDragSourceId = null;
+                    dropdown.querySelectorAll('.rfq-dropdown-col-item').forEach(el => el.classList.remove('is-dragging', 'is-drag-over'));
+                });
+            }
+
+            document.addEventListener('click', () => {
+                if (dropdown && dropdown.classList.contains('is-active')) {
+                    dropdown.classList.remove('is-active');
+                    dropdown.style.display = 'none';
+                    document.getElementById(settingsBtnId)?.classList.remove('is-active');
                 }
-                apHeaderDragSourceId = null;
             });
-            apBillsTheadRow.addEventListener('dragend', () => {
-                apHeaderDragSourceId = null;
-                apBillsTheadRow.querySelectorAll('th').forEach(th => th.classList.remove('is-header-dragging', 'is-header-drag-over'));
+
+            document.getElementById(searchInputId)?.addEventListener('input', (e) => {
+                colSearchTerm = e.target.value || '';
+                renderColDropdownChecklist();
             });
+            document.getElementById(resetDefId)?.addEventListener('click', () => {
+                activeColIds = columns.filter(c => c.default).map(c => c.id);
+                colOrder = columns.map(c => c.id);
+                localStorage.setItem(lsColsKey, JSON.stringify(activeColIds));
+                localStorage.removeItem(lsOrderKey);
+                renderTableHeader();
+                notify('success', resetMessage || 'Reset to default columns.');
+            });
+            document.getElementById(showAllId)?.addEventListener('click', () => {
+                activeColIds = columns.map(c => c.id);
+                localStorage.setItem(lsColsKey, JSON.stringify(activeColIds));
+                renderTableHeader();
+            });
+            document.getElementById(resetWidthsId)?.addEventListener('click', () => {
+                savedColWidths = {};
+                localStorage.removeItem(lsWidthKey);
+                renderTableHeader();
+                notify('success', 'Column widths reset.');
+            });
+
+            renderTableHeader();
         }
 
-        document.addEventListener('mousemove', (e) => {
-            if (!apResizingColId) return;
-            const pageX = e.pageX;
-            if (apResizeRaf) return;
-            apResizeRaf = window.requestAnimationFrame(() => {
-                apResizeRaf = null;
-                if (!apResizingColId) return;
-                const newWidth = Math.max(75, apResizeStartW + (pageX - apResizeStartX));
-                savedApBillsColWidths[apResizingColId] = `${newWidth}px`;
-                const th = document.querySelector(`#apBillsTheadRow th[data-col-id="${apResizingColId}"]`);
-                if (th) th.style.width = `${newWidth}px`;
-            });
+        // 1. Vendor Bills Tracker Table Customizer
+        setupApRfqCustomizableTable({
+            columns: [
+                { id: 'bill_no', label: 'Bill #', subLabel: 'System Voucher', default: true, align: 'left', defaultWidth: '130px', lockVisible: true },
+                { id: 'vendor', label: 'Vendor', subLabel: 'Supplier / Code', default: true, align: 'left', defaultWidth: '190px' },
+                { id: 'invoice_no', label: 'Invoice / Ref #', subLabel: 'Vendor SI #', default: true, align: 'left', defaultWidth: '140px' },
+                { id: 'po_match', label: 'PO / GRN Match', subLabel: 'Linked Order', default: true, align: 'left', defaultWidth: '135px' },
+                { id: 'bill_date', label: 'Bill Date', subLabel: 'Invoice Date', default: true, align: 'left', defaultWidth: '110px' },
+                { id: 'due_date', label: 'Due Date', subLabel: 'Maturity', default: true, align: 'left', defaultWidth: '110px' },
+                { id: 'match_type', label: 'Match Type', subLabel: '3-Way Status', default: true, align: 'left', defaultWidth: '135px' },
+                { id: 'total', label: 'Total Amount', subLabel: 'Gross Payable', default: true, align: 'right', defaultWidth: '125px' },
+                { id: 'paid', label: 'Paid / Credit', subLabel: 'Settled', default: true, align: 'right', defaultWidth: '125px' },
+                { id: 'balance', label: 'Balance Due', subLabel: 'Open Payable', default: true, align: 'right', defaultWidth: '125px' },
+                { id: 'status', label: 'Status', subLabel: 'Posting State', default: true, align: 'left', defaultWidth: '105px' },
+                { id: 'actions', label: 'Actions', subLabel: 'Pay / View', default: true, align: 'right', defaultWidth: '165px', lockVisible: true },
+            ],
+            storagePrefix: 'rms_ap_bills',
+            theadRowId: 'apBillsTheadRow',
+            tbodyId: 'apBillsRegisterBody',
+            settingsBtnId: 'btnApBillsTableSettings',
+            dropdownId: 'apBillsTableSettingsDropdown',
+            colListId: 'apBillsColCheckboxesList',
+            counterId: 'apBillsColActiveCounter',
+            searchInputId: 'apBillsColSearchInput',
+            resetDefId: 'btnApBillsResetDefaults',
+            showAllId: 'btnApBillsShowAll',
+            resetWidthsId: 'btnApBillsResetWidths',
+            resetMessage: 'Reset to default Vendor Bills columns.',
         });
 
-        document.addEventListener('mouseup', () => {
-            if (!apResizingColId) return;
-            localStorage.setItem('rms_ap_bills_col_widths_v1', JSON.stringify(savedApBillsColWidths));
-            document.querySelectorAll('#apBillsTheadRow .rfq-col-resizer').forEach(r => r.classList.remove('is-resizing'));
-            apResizingColId = null;
+        // 2. Vendor Open Balances Table Customizer (Tab 4: 80% Right Panel)
+        setupApRfqCustomizableTable({
+            columns: [
+                { id: 'vendor_code', label: 'Vendor Code', subLabel: 'Expand > POs', default: true, align: 'left', defaultWidth: '140px', lockVisible: true },
+                { id: 'trade_name', label: 'Supplier Name', subLabel: 'Trade / Legal', default: true, align: 'left', defaultWidth: '210px' },
+                { id: 'tin', label: 'TIN', subLabel: 'BIR Tax ID', default: true, align: 'left', defaultWidth: '130px' },
+                { id: 'payment_terms', label: 'Terms', subLabel: 'Credit Window', default: true, align: 'left', defaultWidth: '110px' },
+                { id: 'pending_pos', label: 'Pending POs', subLabel: 'Unsettled Orders', default: true, align: 'left', defaultWidth: '130px' },
+                { id: 'open_bills', label: 'Open Bills', subLabel: 'Unpaid Count', default: true, align: 'right', defaultWidth: '95px' },
+                { id: 'credit_avail', label: 'Vendor Credit', subLabel: 'Unapplied Memos', default: true, align: 'right', defaultWidth: '130px' },
+                { id: 'outstanding_balance', label: 'Outstanding Balance', subLabel: 'Total AP Due', default: true, align: 'right', defaultWidth: '155px' },
+                { id: 'actions', label: 'Actions', subLabel: 'Settle PO / Bill', default: true, align: 'right', defaultWidth: '130px', lockVisible: true },
+            ],
+            storagePrefix: 'rms_ap_vendor_bal',
+            theadRowId: 'apVendorBalancesTheadRow',
+            tbodyId: 'apVendorBalancesBody',
+            settingsBtnId: 'btnApVendorBalancesTableSettings',
+            dropdownId: 'apVendorBalancesTableSettingsDropdown',
+            colListId: 'apVendorBalancesColCheckboxesList',
+            counterId: 'apVendorBalancesColActiveCounter',
+            searchInputId: 'apVendorBalancesColSearchInput',
+            resetDefId: 'btnApVendorBalancesResetDefaults',
+            showAllId: 'btnApVendorBalancesShowAll',
+            resetWidthsId: 'btnApVendorBalancesResetWidths',
+            resetMessage: 'Reset to default Vendor Open Balances columns.',
+            rowFilterSelector: 'tr.ap-vendor-balance-row',
         });
 
-        const apBillsDropdown = document.getElementById('apBillsTableSettingsDropdown');
-        if (apBillsDropdown) {
-            apBillsDropdown.addEventListener('click', (e) => e.stopPropagation());
-            apBillsDropdown.addEventListener('change', (e) => {
-                const chk = e.target.closest('.ap-col-vis-chk');
-                if (!chk) return;
-                const cid = chk.getAttribute('data-col-id');
-                if (chk.checked) {
-                    if (!activeApBillsColIds.includes(cid)) activeApBillsColIds.push(cid);
-                } else {
-                    activeApBillsColIds = activeApBillsColIds.filter(id => id !== cid);
-                }
-                localStorage.setItem('rms_ap_bills_cols_v1', JSON.stringify(activeApBillsColIds));
-                renderApBillsTableHeader();
-            });
-            apBillsDropdown.addEventListener('dragstart', (e) => {
-                const item = e.target.closest('.rfq-dropdown-col-item');
-                const cid = item?.getAttribute('data-col-id');
-                if (!cid || cid === 'actions') { e.preventDefault(); return; }
-                apDropdownDragSourceId = cid;
-                item.classList.add('is-dragging');
-            });
-            apBillsDropdown.addEventListener('dragover', (e) => {
-                const item = e.target.closest('.rfq-dropdown-col-item');
-                const cid = item?.getAttribute('data-col-id');
-                if (!cid || cid === 'actions' || !apDropdownDragSourceId) return;
-                e.preventDefault();
-                if (apDropdownDragSourceId !== cid) item.classList.add('is-drag-over');
-            });
-            apBillsDropdown.addEventListener('dragleave', (e) => {
-                e.target.closest('.rfq-dropdown-col-item')?.classList.remove('is-drag-over');
-            });
-            apBillsDropdown.addEventListener('drop', (e) => {
-                const item = e.target.closest('.rfq-dropdown-col-item');
-                const cid = item?.getAttribute('data-col-id');
-                item?.classList.remove('is-drag-over');
-                if (apDropdownDragSourceId && cid && cid !== 'actions') {
-                    e.preventDefault();
-                    reorderApBillColumns(apDropdownDragSourceId, cid);
-                }
-                apDropdownDragSourceId = null;
-            });
-            apBillsDropdown.addEventListener('dragend', () => {
-                apDropdownDragSourceId = null;
-                apBillsDropdown.querySelectorAll('.rfq-dropdown-col-item').forEach(el => el.classList.remove('is-dragging', 'is-drag-over'));
-            });
-        }
-
-        document.addEventListener('click', () => {
-            if (apBillsDropdown && apBillsDropdown.classList.contains('is-active')) {
-                apBillsDropdown.classList.remove('is-active');
-                apBillsDropdown.style.display = 'none';
-                document.getElementById('btnApBillsTableSettings')?.classList.remove('is-active');
+        // Tab 4: Expand / Collapse Vendor Pending POs (>) + Search/Filter
+        document.getElementById('apVendorBalancesBody')?.addEventListener('click', (e) => {
+            const expandTrigger = e.target.closest('.btnApExpandVendorPos');
+            if (expandTrigger) {
+                const vId = expandTrigger.getAttribute('data-vendor-id');
+                if (!vId) return;
+                const detailRow = document.querySelector(`#apVendorBalancesBody tr.ap-vendor-pos-detail-row[data-parent-vendor-id="${vId}"]`);
+                const caretBtn = document.querySelector(`#apVendorBalancesBody tr.ap-vendor-balance-row[data-vendor-id="${vId}"] .ap-expand-po-btn`);
+                if (!detailRow) return;
+                const isOpen = detailRow.style.display !== 'none';
+                detailRow.style.display = isOpen ? 'none' : 'table-row';
+                if (caretBtn) caretBtn.classList.toggle('is-expanded', !isOpen);
+                return;
             }
         });
 
-        document.getElementById('apBillsColSearchInput')?.addEventListener('input', (e) => {
-            apBillsColSearchTerm = e.target.value || '';
-            renderApBillsColDropdownChecklist();
-        });
-        document.getElementById('btnApBillsResetDefaults')?.addEventListener('click', () => {
-            activeApBillsColIds = AP_BILLS_COLUMNS.filter(c => c.default).map(c => c.id);
-            apBillsColOrder = AP_BILLS_COLUMNS.map(c => c.id);
-            localStorage.setItem('rms_ap_bills_cols_v1', JSON.stringify(activeApBillsColIds));
-            localStorage.removeItem('rms_ap_bills_cols_order_v1');
-            renderApBillsTableHeader();
-            notify('success', 'Reset to default Vendor Bills columns.');
-        });
-        document.getElementById('btnApBillsShowAll')?.addEventListener('click', () => {
-            activeApBillsColIds = AP_BILLS_COLUMNS.map(c => c.id);
-            localStorage.setItem('rms_ap_bills_cols_v1', JSON.stringify(activeApBillsColIds));
-            renderApBillsTableHeader();
-        });
-        document.getElementById('btnApBillsResetWidths')?.addEventListener('click', () => {
-            savedApBillsColWidths = {};
-            localStorage.removeItem('rms_ap_bills_col_widths_v1');
-            renderApBillsTableHeader();
-            notify('success', 'Vendor Bills column widths reset.');
-        });
-
-        renderApBillsTableHeader();
+        const filterVendorOpenBalances = () => {
+            const q = (document.getElementById('apLedgerVendorSearch')?.value || '').trim().toLowerCase();
+            const fMode = (document.getElementById('apLedgerBalanceFilter')?.value || '').trim().toUpperCase();
+            document.querySelectorAll('#apVendorBalancesBody tr.ap-vendor-balance-row').forEach(tr => {
+                const vId = tr.getAttribute('data-vendor-id');
+                const hay = tr.getAttribute('data-search') || '';
+                const hasOpen = tr.getAttribute('data-has-open') === '1';
+                const hasPending = tr.getAttribute('data-has-pending-po') === '1';
+                const hasCredit = tr.getAttribute('data-has-credit') === '1';
+                const matchesMode = !fMode
+                    || (fMode === 'OPEN' && hasOpen)
+                    || (fMode === 'PENDING_PO' && hasPending)
+                    || (fMode === 'WITH_CREDIT' && hasCredit);
+                const visible = (!q || hay.includes(q)) && matchesMode;
+                tr.style.display = visible ? '' : 'none';
+                if (!visible && vId) {
+                    const detailRow = document.querySelector(`#apVendorBalancesBody tr.ap-vendor-pos-detail-row[data-parent-vendor-id="${vId}"]`);
+                    const caretBtn = tr.querySelector('.ap-expand-po-btn');
+                    if (detailRow) detailRow.style.display = 'none';
+                    if (caretBtn) caretBtn.classList.remove('is-expanded');
+                }
+            });
+        };
+        document.getElementById('apLedgerVendorSearch')?.addEventListener('input', filterVendorOpenBalances);
+        document.getElementById('apLedgerBalanceFilter')?.addEventListener('change', filterVendorOpenBalances);
 
         // =====================================================================
         // VENDOR BILL WORKSPACE DRAWER & LINE ITEMS
@@ -2769,10 +2879,23 @@
 
         pmtDrawerBackdrop?.addEventListener('click', closePaymentDrawer);
         document.getElementById('btnApNewPayment')?.addEventListener('click', () => {
+            const modeSel = document.getElementById('apPmtSettlementMode');
+            if (modeSel) modeSel.value = 'COMBINED';
+            openPaymentDrawer();
+            recalcPaymentModalNet();
+        });
+        document.getElementById('btnApNewSeparate2307')?.addEventListener('click', () => {
+            const modeSel = document.getElementById('apPmtSettlementMode');
+            if (modeSel) {
+                modeSel.value = 'EWT_2307_ONLY';
+                modeSel.dispatchEvent(new Event('change'));
+            }
             openPaymentDrawer();
             recalcPaymentModalNet();
         });
         document.getElementById('btnApOpenPaymentFromBills')?.addEventListener('click', () => {
+            const modeSel = document.getElementById('apPmtSettlementMode');
+            if (modeSel) modeSel.value = 'COMBINED';
             openPaymentDrawer();
             recalcPaymentModalNet();
         });
@@ -2822,11 +2945,16 @@
             recalcPaymentModalNet();
         }
 
-        document.getElementById('apPmtVendor')?.addEventListener('change', (e) => {
-            const vId = e.target.value;
+        function renderPaymentAllocationsForVendor(vId, preserveCheckedBillIds = null) {
             const body = document.getElementById('apPmtAllocationsBody');
             const countBadge = document.getElementById('apPmtMatchedCountBadge');
             if (!body) return;
+
+            const mode = document.getElementById('apPmtSettlementMode')?.value || 'COMBINED';
+            const issue2307El = document.getElementById('apPmtIssue2307');
+            if (issue2307El) {
+                issue2307El.checked = mode !== 'BILL_ONLY';
+            }
 
             updateVendorCreditBannerForPayment(vId);
             if (!vId) {
@@ -2838,16 +2966,20 @@
 
             const keys = resolveVendorKeys(vId);
             const bills = (state.data.vendorBills || []).filter(b => {
+                if (!keys.has(String(b.vendor_id))) return false;
+                if (String(b.vendor_bill_status || '').toUpperCase() === 'DRAFT') return false;
                 const bal = parseFloat(b.bill_total_amount) - parseFloat(b.bill_paid_amount);
-                return keys.has(String(b.vendor_id)) && bal > 0.01 && String(b.vendor_bill_status || '').toUpperCase() !== 'DRAFT';
+                return mode === 'EWT_2307_ONLY' ? true : bal > 0.01;
             });
 
             if (countBadge) {
-                countBadge.textContent = `${bills.length} Open Obligation(s)`;
+                countBadge.textContent = mode === 'EWT_2307_ONLY'
+                    ? `${bills.length} Bill(s) Eligible for 2307`
+                    : `${bills.length} Open Obligation(s)`;
             }
 
             if (bills.length === 0) {
-                body.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:18px;color:#94a3b8;">No open posted bills/POs for this vendor. Entering a <strong>Total Payment Amount</strong> above will create a Vendor Credit balance.</td></tr>';
+                body.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:18px;color:#94a3b8;">No matching posted bills/POs for this vendor. Entering a <strong>Total Payment Amount</strong> above will create a Vendor Credit balance.</td></tr>';
                 const totEl = document.getElementById('apPmtTotalInput');
                 if (totEl) totEl.value = '0.00';
                 recalcPaymentModalNet();
@@ -2856,13 +2988,35 @@
 
             body.innerHTML = bills.map((b) => {
                 const bal = Math.max(0, parseFloat(b.bill_total_amount) - parseFloat(b.bill_paid_amount));
-                const defaultEwt = (bal * 0.01);
+                const billTotal = parseFloat(b.bill_total_amount) || 0;
+                const billSub = parseFloat(b.bill_subtotal_amount) || billTotal;
+                const isChecked = preserveCheckedBillIds
+                    ? preserveCheckedBillIds.has(String(b.vendor_bill_id))
+                    : true;
+
+                let allocAmt = 0;
+                let ewtAmt = 0;
+                let defaultRule = '1';
+                if (mode === 'BILL_ONLY') {
+                    allocAmt = isChecked ? bal : 0;
+                    ewtAmt = 0;
+                    defaultRule = '0';
+                } else if (mode === 'EWT_2307_ONLY') {
+                    defaultRule = '1';
+                    ewtAmt = isChecked ? Math.round((billSub * 0.01 + Number.EPSILON) * 100) / 100 : 0;
+                    allocAmt = ewtAmt;
+                } else {
+                    allocAmt = isChecked ? bal : 0;
+                    ewtAmt = isChecked ? Math.round((bal * 0.01 + Number.EPSILON) * 100) / 100 : 0;
+                    defaultRule = '1';
+                }
+
                 const poObj = b.purchase_order_id ? poByIdLookup.get(String(b.purchase_order_id)) : null;
                 const poLabel = poObj ? poObj.po_number : (String(b.purchase_order_id || '').startsWith('PO-') ? b.purchase_order_id : '');
                 return `
-                    <tr data-bill-id="${escapeHtml(b.vendor_bill_id)}" data-po-id="${escapeHtml(b.purchase_order_id || '')}" data-po-no="${escapeHtml(poLabel)}" data-open-balance="${bal.toFixed(2)}">
+                    <tr data-bill-id="${escapeHtml(b.vendor_bill_id)}" data-po-id="${escapeHtml(b.purchase_order_id || '')}" data-po-no="${escapeHtml(poLabel)}" data-open-balance="${bal.toFixed(2)}" data-bill-total="${billTotal.toFixed(2)}" data-bill-subtotal="${billSub.toFixed(2)}">
                         <td style="text-align:center;">
-                            <input type="checkbox" class="ap-pmt-row-check" checked>
+                            <input type="checkbox" class="ap-pmt-row-check" ${isChecked ? 'checked' : ''}>
                         </td>
                         <td>
                             ${poLabel ? `<span class="acct-badge" style="background:#f3e8ff;color:#7e22ce;font-weight:700;">${escapeHtml(poLabel)}</span><br>` : ''}
@@ -2870,27 +3024,42 @@
                         </td>
                         <td>${escapeHtml(b.vendor_invoice_number)}</td>
                         <td class="acct-num">${fmtMoney(b.bill_total_amount, '')}</td>
-                        <td class="acct-num" style="font-weight:700;color:#ef4444;">${fmtMoney(bal, '')}</td>
+                        <td class="acct-num" style="font-weight:700;color:${bal > 0.01 ? '#ef4444' : '#059669'};">${fmtMoney(bal, '')}</td>
                         <td>
-                            <input type="number" step="0.01" min="0" class="acct-input acct-num ap-pmt-alloc-amt" value="${bal.toFixed(2)}" style="width:100%;">
+                            <input type="number" step="0.01" min="0" class="acct-input acct-num ap-pmt-alloc-amt" value="${allocAmt.toFixed(2)}" style="width:100%;">
                         </td>
                         <td>
                             <select class="acct-select ap-pmt-ewt-rule" style="width:100%;font-size:12px;">
-                                <option value="1" data-atc="WC158">WC158 - Goods (1%)</option>
-                                <option value="2" data-atc="WC160">WC160 - Services (2%)</option>
-                                <option value="0" data-atc="NONE">Exempt / No EWT (0%)</option>
+                                <option value="1" data-atc="WC158" ${defaultRule === '1' ? 'selected' : ''}>WC158 - Goods (1%)</option>
+                                <option value="2" data-atc="WC160" ${defaultRule === '2' ? 'selected' : ''}>WC160 - Services (2%)</option>
+                                <option value="0" data-atc="NONE" ${defaultRule === '0' ? 'selected' : ''}>Exempt / No EWT (0%)</option>
                                 <option value="custom" data-atc="CUSTOM">Manual EWT Input</option>
                             </select>
                         </td>
                         <td>
-                            <input type="number" step="0.01" min="0" class="acct-input acct-num ap-pmt-ewt-amt" value="${defaultEwt.toFixed(2)}" style="width:100%;" title="EWT Withheld amount (editable)">
+                            <input type="number" step="0.01" min="0" class="acct-input acct-num ap-pmt-ewt-amt" value="${ewtAmt.toFixed(2)}" style="width:100%;" title="EWT Withheld amount (editable)">
                         </td>
-                        <td class="acct-num ap-pmt-row-net" style="font-weight:700;color:#0f172a;">${fmtMoney(Math.max(0, bal - defaultEwt), '')}</td>
+                        <td class="acct-num ap-pmt-row-net" style="font-weight:700;color:#0f172a;">${fmtMoney(Math.max(0, allocAmt - ewtAmt), '')}</td>
                     </tr>
                 `;
             }).join('');
 
             syncTotalInputFromPaymentRows();
+        }
+
+        document.getElementById('apPmtVendor')?.addEventListener('change', (e) => {
+            renderPaymentAllocationsForVendor(e.target.value);
+        });
+
+        document.getElementById('apPmtSettlementMode')?.addEventListener('change', () => {
+            const vId = document.getElementById('apPmtVendor')?.value;
+            const checkedIds = new Set();
+            document.querySelectorAll('#apPmtAllocationsBody tr[data-bill-id]').forEach(tr => {
+                if (tr.querySelector('.ap-pmt-row-check')?.checked) {
+                    checkedIds.add(String(tr.getAttribute('data-bill-id')));
+                }
+            });
+            renderPaymentAllocationsForVendor(vId, checkedIds.size > 0 ? checkedIds : null);
         });
 
         // Quick Match Purchase Order dropdown inside Payment Drawer
@@ -2905,15 +3074,16 @@
             if (vendorSelect && poVendorId) {
                 const matchedVendor = vendorsList.find(v => String(v.id) === String(poVendorId) || String(v.vendor_code) === String(poVendorId));
                 vendorSelect.value = matchedVendor ? String(matchedVendor.id) : String(poVendorId);
-                vendorSelect.dispatchEvent(new Event('change'));
+                renderPaymentAllocationsForVendor(vendorSelect.value);
             }
 
-            // Focus & check only the matched PO bill row
+            const mode = document.getElementById('apPmtSettlementMode')?.value || 'COMBINED';
             let foundRow = false;
             document.querySelectorAll('#apPmtAllocationsBody tr[data-bill-id]').forEach(tr => {
                 const rowPoId = tr.getAttribute('data-po-id');
                 const rowPoNo = tr.getAttribute('data-po-no');
                 const openBal = parseFloat(tr.getAttribute('data-open-balance')) || 0;
+                const billSub = parseFloat(tr.getAttribute('data-bill-subtotal')) || parseFloat(tr.getAttribute('data-bill-total')) || openBal;
                 const chk = tr.querySelector('.ap-pmt-row-check');
                 const amtInput = tr.querySelector('.ap-pmt-alloc-amt');
                 const ruleSel = tr.querySelector('.ap-pmt-ewt-rule');
@@ -2923,10 +3093,21 @@
                     foundRow = true;
                     tr.style.background = '#faf5ff';
                     if (chk) chk.checked = true;
-                    if (amtInput) amtInput.value = openBal.toFixed(2);
-                    if (ruleSel && ruleSel.value !== 'custom' && ewtInput) {
-                        const pct = parseFloat(ruleSel.value) || 0;
-                        ewtInput.value = (openBal * (pct / 100)).toFixed(2);
+                    if (mode === 'EWT_2307_ONLY') {
+                        const pct = ruleSel && ruleSel.value !== 'custom' ? (parseFloat(ruleSel.value) || 1) : 1;
+                        const ewtVal = (billSub * (pct / 100)).toFixed(2);
+                        if (amtInput) amtInput.value = ewtVal;
+                        if (ewtInput) ewtInput.value = ewtVal;
+                    } else if (mode === 'BILL_ONLY') {
+                        if (amtInput) amtInput.value = openBal.toFixed(2);
+                        if (ruleSel) ruleSel.value = '0';
+                        if (ewtInput) ewtInput.value = '0.00';
+                    } else {
+                        if (amtInput) amtInput.value = openBal.toFixed(2);
+                        if (ruleSel && ruleSel.value !== 'custom' && ewtInput) {
+                            const pct = parseFloat(ruleSel.value) || 0;
+                            ewtInput.value = (openBal * (pct / 100)).toFixed(2);
+                        }
                     }
                 } else {
                     tr.style.background = '';
@@ -2941,80 +3122,99 @@
             }
         });
 
-        function openPaymentModalForBill(billId, vendorIdOverride = null) {
-            const bill = (state.data.vendorBills || []).find(b => String(b.vendor_bill_id) === String(billId));
+        function openPaymentModalForBill(billId, vendorIdOverride = null, modeOverride = 'COMBINED', poIdOverride = null) {
+            const modeSel = document.getElementById('apPmtSettlementMode');
+            if (modeSel) modeSel.value = modeOverride || 'COMBINED';
+
+            const bill = (state.data.vendorBills || []).find(b =>
+                (billId && String(b.vendor_bill_id) === String(billId))
+                || (poIdOverride && String(b.purchase_order_id) === String(poIdOverride))
+            );
+            const targetBillId = billId || bill?.vendor_bill_id || '';
             const rawVendorId = vendorIdOverride || bill?.vendor_id || '';
             const matchedVendor = vendorsList.find(v => String(v.id) === String(rawVendorId) || String(v.vendor_code) === String(rawVendorId));
             const selectVendorVal = matchedVendor ? String(matchedVendor.id) : String(rawVendorId);
 
             const poQuick = document.getElementById('apPmtPoQuickSelect');
             if (poQuick) {
-                poQuick.value = bill?.purchase_order_id ? String(bill.purchase_order_id) : '';
+                poQuick.value = (poIdOverride || bill?.purchase_order_id) ? String(poIdOverride || bill.purchase_order_id) : '';
             }
 
             const vendorSelect = document.getElementById('apPmtVendor');
             if (vendorSelect && selectVendorVal) {
                 vendorSelect.value = selectVendorVal;
-                vendorSelect.dispatchEvent(new Event('change'));
+                const preserveSet = targetBillId ? new Set([String(targetBillId)]) : null;
+                renderPaymentAllocationsForVendor(selectVendorVal, preserveSet);
             }
 
-            if (billId) {
+            if (targetBillId) {
                 document.querySelectorAll('#apPmtAllocationsBody tr[data-bill-id]').forEach(tr => {
-                    const rowBillId = tr.getAttribute('data-bill-id');
-                    const openBal = parseFloat(tr.getAttribute('data-open-balance')) || 0;
-                    const chk = tr.querySelector('.ap-pmt-row-check');
-                    const amtInput = tr.querySelector('.ap-pmt-alloc-amt');
-                    const ewtInput = tr.querySelector('.ap-pmt-ewt-amt');
-                    const ruleSel = tr.querySelector('.ap-pmt-ewt-rule');
-                    if (String(rowBillId) === String(billId)) {
+                    if (String(tr.getAttribute('data-bill-id')) === String(targetBillId)) {
                         tr.style.background = '#faf5ff';
-                        if (chk) chk.checked = true;
-                        if (amtInput) amtInput.value = openBal.toFixed(2);
-                        if (ruleSel && ruleSel.value !== 'custom' && ewtInput) {
-                            const pct = parseFloat(ruleSel.value) || 0;
-                            ewtInput.value = (openBal * (pct / 100)).toFixed(2);
-                        }
-                    } else {
-                        tr.style.background = '';
-                        if (chk) chk.checked = false;
-                        if (amtInput) amtInput.value = '0.00';
-                        if (ewtInput) ewtInput.value = '0.00';
                     }
                 });
-                syncTotalInputFromPaymentRows();
             }
 
             openPaymentDrawer();
+            recalcPaymentModalNet();
         }
 
         document.querySelectorAll('.btnApPayBill').forEach(btn => {
             btn.addEventListener('click', () => {
                 const bId = btn.getAttribute('data-bill-id');
                 const vId = btn.getAttribute('data-vendor-id');
-                openPaymentModalForBill(bId, vId);
+                const poId = btn.getAttribute('data-po-id');
+                openPaymentModalForBill(bId, vId, 'COMBINED', poId);
+            });
+        });
+
+        document.querySelectorAll('.btnApSeparate2307').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const bId = btn.getAttribute('data-bill-id');
+                const vId = btn.getAttribute('data-vendor-id');
+                openPaymentModalForBill(bId, vId, 'EWT_2307_ONLY');
+            });
+        });
+
+        document.querySelectorAll('.btnApPayVendorFromLedger').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const vId = btn.getAttribute('data-vendor-id');
+                openPaymentModalForBill('', vId, 'COMBINED');
             });
         });
 
         const triggerDrawerPay = () => {
             if (!activeBillRecord) return;
             hideBillWorkspace();
-            openPaymentModalForBill(activeBillRecord.vendor_bill_id, activeBillRecord.vendor_id);
+            openPaymentModalForBill(activeBillRecord.vendor_bill_id, activeBillRecord.vendor_id, 'COMBINED');
         };
         document.getElementById('btnApDrawerPayBill')?.addEventListener('click', triggerDrawerPay);
         document.getElementById('btnApDrawerPayBillInline')?.addEventListener('click', triggerDrawerPay);
 
         // Quick Preset Buttons & Total Payment Input Waterfall Distribution
         document.getElementById('btnApPmtPresetMatch')?.addEventListener('click', () => {
+            const mode = document.getElementById('apPmtSettlementMode')?.value || 'COMBINED';
             document.querySelectorAll('#apPmtAllocationsBody tr[data-bill-id]').forEach(row => {
                 const chk = row.querySelector('.ap-pmt-row-check');
                 const openBal = parseFloat(row.getAttribute('data-open-balance')) || 0;
+                const billSub = parseFloat(row.getAttribute('data-bill-subtotal')) || parseFloat(row.getAttribute('data-bill-total')) || openBal;
                 const amtInput = row.querySelector('.ap-pmt-alloc-amt');
                 const ruleSel = row.querySelector('.ap-pmt-ewt-rule');
                 const ewtInput = row.querySelector('.ap-pmt-ewt-amt');
                 if (chk && chk.checked && amtInput) {
-                    amtInput.value = openBal.toFixed(2);
-                    if (ruleSel && ruleSel.value !== 'custom' && ewtInput) {
-                        ewtInput.value = (openBal * ((parseFloat(ruleSel.value) || 0) / 100)).toFixed(2);
+                    if (mode === 'EWT_2307_ONLY') {
+                        const pct = (ruleSel && ruleSel.value !== 'custom') ? (parseFloat(ruleSel.value) || 1) : 1;
+                        const ewtVal = (billSub * (pct / 100)).toFixed(2);
+                        amtInput.value = ewtVal;
+                        if (ewtInput) ewtInput.value = ewtVal;
+                    } else if (mode === 'BILL_ONLY') {
+                        amtInput.value = openBal.toFixed(2);
+                        if (ewtInput) ewtInput.value = '0.00';
+                    } else {
+                        amtInput.value = openBal.toFixed(2);
+                        if (ruleSel && ruleSel.value !== 'custom' && ewtInput) {
+                            ewtInput.value = (openBal * ((parseFloat(ruleSel.value) || 0) / 100)).toFixed(2);
+                        }
                     }
                 }
             });
@@ -3022,6 +3222,7 @@
         });
 
         document.getElementById('btnApPmtPresetHalf')?.addEventListener('click', () => {
+            const mode = document.getElementById('apPmtSettlementMode')?.value || 'COMBINED';
             document.querySelectorAll('#apPmtAllocationsBody tr[data-bill-id]').forEach(row => {
                 const chk = row.querySelector('.ap-pmt-row-check');
                 const openBal = parseFloat(row.getAttribute('data-open-balance')) || 0;
@@ -3031,7 +3232,9 @@
                 const ewtInput = row.querySelector('.ap-pmt-ewt-amt');
                 if (chk && chk.checked && amtInput) {
                     amtInput.value = half.toFixed(2);
-                    if (ruleSel && ruleSel.value !== 'custom' && ewtInput) {
+                    if (mode === 'BILL_ONLY') {
+                        if (ewtInput) ewtInput.value = '0.00';
+                    } else if (ruleSel && ruleSel.value !== 'custom' && ewtInput) {
                         ewtInput.value = (half * ((parseFloat(ruleSel.value) || 0) / 100)).toFixed(2);
                     }
                 }
@@ -3040,6 +3243,7 @@
         });
 
         document.getElementById('apPmtTotalInput')?.addEventListener('input', () => {
+            const mode = document.getElementById('apPmtSettlementMode')?.value || 'COMBINED';
             const totalWanted = Math.max(0, parseFloat(document.getElementById('apPmtTotalInput')?.value) || 0);
             const checkedRows = Array.from(document.querySelectorAll('#apPmtAllocationsBody tr[data-bill-id]'))
                 .filter(row => row.querySelector('.ap-pmt-row-check')?.checked);
@@ -3051,13 +3255,16 @@
                     const amtInput = row.querySelector('.ap-pmt-alloc-amt');
                     const ruleSel = row.querySelector('.ap-pmt-ewt-rule');
                     const ewtInput = row.querySelector('.ap-pmt-ewt-amt');
-                    // Last checked row absorbs any remaining amount (including intentional overpayment -> Vendor Credit)
                     const rowAlloc = (idx === checkedRows.length - 1)
                         ? Math.max(0, remaining)
                         : Math.min(openBal, Math.max(0, remaining));
                     remaining = Math.max(0, remaining - rowAlloc);
                     if (amtInput) amtInput.value = rowAlloc.toFixed(2);
-                    if (ruleSel && ruleSel.value !== 'custom' && ewtInput) {
+                    if (mode === 'EWT_2307_ONLY' && ewtInput) {
+                        ewtInput.value = rowAlloc.toFixed(2);
+                    } else if (mode === 'BILL_ONLY' && ewtInput) {
+                        ewtInput.value = '0.00';
+                    } else if (ruleSel && ruleSel.value !== 'custom' && ewtInput) {
                         ewtInput.value = (rowAlloc * ((parseFloat(ruleSel.value) || 0) / 100)).toFixed(2);
                     }
                 });
@@ -3069,6 +3276,7 @@
         const pmtAllocTable = document.getElementById('apPmtAllocationsTable');
         if (pmtAllocTable) {
             pmtAllocTable.addEventListener('input', (e) => {
+                const mode = document.getElementById('apPmtSettlementMode')?.value || 'COMBINED';
                 if (e.target.matches('.ap-pmt-alloc-amt')) {
                     const row = e.target.closest('tr');
                     const chk = row?.querySelector('.ap-pmt-row-check');
@@ -3076,7 +3284,11 @@
                     if (chk && pay > 0 && !chk.checked) chk.checked = true;
                     const ruleSel = row?.querySelector('.ap-pmt-ewt-rule');
                     const ewtInput = row?.querySelector('.ap-pmt-ewt-amt');
-                    if (ruleSel && ruleSel.value !== 'custom' && ewtInput) {
+                    if (mode === 'EWT_2307_ONLY' && ewtInput) {
+                        ewtInput.value = pay.toFixed(2);
+                    } else if (mode === 'BILL_ONLY' && ewtInput) {
+                        ewtInput.value = '0.00';
+                    } else if (ruleSel && ruleSel.value !== 'custom' && ewtInput) {
                         const pct = parseFloat(ruleSel.value) || 0;
                         ewtInput.value = (pay * (pct / 100)).toFixed(2);
                     }
@@ -3091,24 +3303,46 @@
             });
 
             pmtAllocTable.addEventListener('change', (e) => {
+                const mode = document.getElementById('apPmtSettlementMode')?.value || 'COMBINED';
                 if (e.target.matches('.ap-pmt-row-check')) {
                     const row = e.target.closest('tr');
                     const openBal = parseFloat(row?.getAttribute('data-open-balance')) || 0;
+                    const billSub = parseFloat(row?.getAttribute('data-bill-subtotal')) || parseFloat(row?.getAttribute('data-bill-total')) || openBal;
                     const amtInput = row?.querySelector('.ap-pmt-alloc-amt');
                     const ruleSel = row?.querySelector('.ap-pmt-ewt-rule');
                     const ewtInput = row?.querySelector('.ap-pmt-ewt-amt');
-                    const nextAmt = e.target.checked ? openBal : 0;
-                    if (amtInput) amtInput.value = nextAmt.toFixed(2);
-                    if (ruleSel && ruleSel.value !== 'custom' && ewtInput) {
-                        ewtInput.value = (nextAmt * ((parseFloat(ruleSel.value) || 0) / 100)).toFixed(2);
+                    if (!e.target.checked) {
+                        if (amtInput) amtInput.value = '0.00';
+                        if (ewtInput) ewtInput.value = '0.00';
+                    } else if (mode === 'EWT_2307_ONLY') {
+                        const pct = (ruleSel && ruleSel.value !== 'custom') ? (parseFloat(ruleSel.value) || 1) : 1;
+                        const ewtVal = (billSub * (pct / 100)).toFixed(2);
+                        if (amtInput) amtInput.value = ewtVal;
+                        if (ewtInput) ewtInput.value = ewtVal;
+                    } else {
+                        if (amtInput) amtInput.value = openBal.toFixed(2);
+                        if (mode === 'BILL_ONLY' && ewtInput) {
+                            ewtInput.value = '0.00';
+                        } else if (ruleSel && ruleSel.value !== 'custom' && ewtInput) {
+                            ewtInput.value = (openBal * ((parseFloat(ruleSel.value) || 0) / 100)).toFixed(2);
+                        }
                     }
                     syncTotalInputFromPaymentRows();
                 } else if (e.target.matches('.ap-pmt-ewt-rule')) {
                     const row = e.target.closest('tr');
-                    const pay = parseFloat(row?.querySelector('.ap-pmt-alloc-amt')?.value) || 0;
+                    const billSub = parseFloat(row?.getAttribute('data-bill-subtotal')) || parseFloat(row?.getAttribute('data-bill-total')) || 0;
+                    const amtInput = row?.querySelector('.ap-pmt-alloc-amt');
                     const ewtInput = row?.querySelector('.ap-pmt-ewt-amt');
                     if (e.target.value !== 'custom' && ewtInput) {
                         const pct = parseFloat(e.target.value) || 0;
+                        if (mode === 'EWT_2307_ONLY') {
+                            const nextEwt = (billSub * (pct / 100)).toFixed(2);
+                            if (amtInput) amtInput.value = nextEwt;
+                            ewtInput.value = nextEwt;
+                            syncTotalInputFromPaymentRows();
+                            return;
+                        }
+                        const pay = parseFloat(amtInput?.value) || 0;
                         ewtInput.value = (pay * (pct / 100)).toFixed(2);
                     }
                     recalcPaymentModalNet();
@@ -3117,6 +3351,7 @@
         }
 
         function recalcPaymentModalNet() {
+            const mode = document.getElementById('apPmtSettlementMode')?.value || 'COMBINED';
             let rowAllocSum = 0;
             let totalMatched = 0;
             let totalEwt = 0;
@@ -3128,13 +3363,15 @@
                 const netCell = row.querySelector('.ap-pmt-row-net');
                 if (netCell) netCell.textContent = fmtMoney(Math.max(0, pay - ewt), '');
                 rowAllocSum += pay;
-                totalMatched += Math.min(pay, openBal);
+                totalMatched += mode === 'EWT_2307_ONLY' ? pay : Math.min(pay, openBal);
                 totalEwt += ewt;
             });
 
             const inputTotal = parseFloat(document.getElementById('apPmtTotalInput')?.value) || 0;
             const totalPay = Math.max(inputTotal, rowAllocSum);
-            const excessCredit = Math.max(0, Math.round((totalPay - totalMatched + Number.EPSILON) * 100) / 100);
+            const excessCredit = mode === 'EWT_2307_ONLY'
+                ? 0
+                : Math.max(0, Math.round((totalPay - totalMatched + Number.EPSILON) * 100) / 100);
             const net = Math.max(0, totalPay - totalEwt);
 
             const elGross = document.getElementById('apPmtKpiGross');
@@ -3167,6 +3404,7 @@
             const pmtDate = document.getElementById('apPmtDate')?.value;
             const method = document.getElementById('apPmtMethod')?.value;
             const bankAccId = document.getElementById('apPmtBankAccount')?.value;
+            const settlementMode = document.getElementById('apPmtSettlementMode')?.value || 'COMBINED';
             const totalInputVal = parseFloat(document.getElementById('apPmtTotalInput')?.value) || 0;
 
             if (!vendorId) {
@@ -3188,16 +3426,16 @@
                 const selectedAtc = ruleSel?.options[ruleSel.selectedIndex]?.getAttribute('data-atc') || 'WC158';
                 const ewtRatePct = (ruleSel && ruleSel.value !== 'custom') ? (parseFloat(ruleSel.value) || 0) : 0;
 
-                if (billId && allocAmt > 0) {
+                if (billId && (allocAmt > 0 || (settlementMode === 'EWT_2307_ONLY' && ewtAmt > 0))) {
                     allocations.push({
                         vendor_bill_id: billId,
-                        allocated_amount: allocAmt,
-                        ewt_amount: ewtAmt,
-                        ewt_rate_pct: ewtRatePct,
-                        ewt_tax_code: selectedAtc,
+                        allocated_amount: allocAmt > 0 ? allocAmt : ewtAmt,
+                        ewt_amount: settlementMode === 'BILL_ONLY' ? 0 : ewtAmt,
+                        ewt_rate_pct: settlementMode === 'BILL_ONLY' ? 0 : ewtRatePct,
+                        ewt_tax_code: settlementMode === 'BILL_ONLY' ? 'NONE' : selectedAtc,
                     });
-                    rowsTotal += allocAmt;
-                    ewtTotal += ewtAmt;
+                    rowsTotal += (allocAmt > 0 ? allocAmt : ewtAmt);
+                    ewtTotal += (settlementMode === 'BILL_ONLY' ? 0 : ewtAmt);
                 }
             });
 
@@ -3211,6 +3449,7 @@
                 vendor_id: vendorId,
                 payment_date: pmtDate,
                 payment_method: method,
+                settlement_mode: settlementMode,
                 bank_account_id: bankAccId,
                 reference_number: document.getElementById('apPmtReference')?.value || null,
                 notes: document.getElementById('apPmtNotes')?.value || null,
@@ -3230,27 +3469,24 @@
             }
         });
 
-        // Tab 2 Payment Register Search & Method Filter + BIR 2307 Preview Controls
+        // Unified Tab 2 Payment Register Search & Filter + BIR 2307 Preview Controls
         const filterPaymentsRegister = () => {
             const q = (document.getElementById('apPaymentSearch')?.value || '').trim().toLowerCase();
-            const methodF = (document.getElementById('apPaymentMethodFilter')?.value || '').trim().toUpperCase();
+            const filterVal = (document.getElementById('apPaymentMethodFilter')?.value || '').trim().toUpperCase();
             document.querySelectorAll('#apPaymentsRegisterBody tr[data-pmt-method]').forEach(tr => {
                 const hay = tr.getAttribute('data-search') || '';
                 const m = tr.getAttribute('data-pmt-method') || '';
-                const show = (!q || hay.includes(q)) && (!methodF || m === methodF);
+                const has2307 = tr.getAttribute('data-has-2307') === '1';
+                let matchesFilter = true;
+                if (filterVal === 'WITH_2307') matchesFilter = has2307;
+                else if (filterVal === 'NO_2307') matchesFilter = !has2307;
+                else if (filterVal) matchesFilter = m === filterVal;
+                const show = (!q || hay.includes(q)) && matchesFilter;
                 tr.style.display = show ? '' : 'none';
             });
         };
         document.getElementById('apPaymentSearch')?.addEventListener('input', filterPaymentsRegister);
         document.getElementById('apPaymentMethodFilter')?.addEventListener('change', filterPaymentsRegister);
-
-        document.getElementById('ap2307Search')?.addEventListener('input', (e) => {
-            const q = (e.target.value || '').trim().toLowerCase();
-            document.querySelectorAll('#ap2307RegisterBody tr[data-search]').forEach(tr => {
-                const hay = tr.getAttribute('data-search') || '';
-                tr.style.display = (!q || hay.includes(q)) ? '' : 'none';
-            });
-        });
 
         const modal2307 = document.getElementById('ap2307PreviewModal');
         const close2307 = () => { if (modal2307) modal2307.style.display = 'none'; };

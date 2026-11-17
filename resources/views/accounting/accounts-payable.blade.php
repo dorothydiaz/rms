@@ -8,6 +8,22 @@
     $validTabs = ['bills', 'payments', 'memos', 'ledger'];
     if (!in_array($initialTab, $validTabs, true)) $initialTab = 'bills';
     $cur = $accountingPayload['baseCurrency'] ?? 'PHP';
+
+    $apPmtsCollection = collect($accountingPayload['vendorPayments'] ?? []);
+    $apTotalEwtWithheld = $apPmtsCollection->sum(fn($p) => (float) ($p->total_ewt_amount ?? $p->ewt_amount ?? 0));
+    $apAvailVendorCredits = collect($accountingPayload['vendorMemos'] ?? [])
+        ->filter(fn($m) => in_array(strtoupper((string) ($m->memo_type ?? '')), ['CREDIT', 'CREDIT_MEMO'], true)
+            && strtoupper((string) ($m->status ?? '')) === 'POSTED'
+            && (float) ($m->unapplied_amount ?? 0) > 0)
+        ->sum(fn($m) => (float) $m->unapplied_amount);
+
+    $apBankAccountMap = collect($accountingPayload['bankAccounts'] ?? [])->keyBy('bank_account_id');
+    $apCoaMap = collect($accountingPayload['accounts'] ?? [])->keyBy('account_id');
+    $apPoByIdMap = collect($accountingPayload['purchaseOrders'] ?? [])->keyBy(fn($po) => (string) $po->id);
+    $apBillByIdMap = collect($accountingPayload['vendorBills'] ?? [])->keyBy('vendor_bill_id');
+    $apCertificatesList = collect($accountingPayload['vendorCertificates'] ?? []);
+    $apCertByPmtIdMap = $apCertificatesList->filter(fn($c) => !empty($c->vendor_payment_id))->keyBy('vendor_payment_id');
+    $apCertBySourceIdMap = $apCertificatesList->filter(fn($c) => !empty($c->source_document_id))->keyBy('source_document_id');
 @endphp
 
 <div class="acct-workspace" id="accountingApRoot" data-initial-tab="{{ $initialTab }}">
@@ -18,7 +34,7 @@
         'accountingPayload' => $accountingPayload,
     ])
 
-    <!-- AP KPI Summary Cards -->
+    <!-- Unified Top AP KPI Summary Cards (4 Metrics) -->
     <div class="acct-kpi-grid-4">
         <div class="rfq-kpi-card">
             <div class="rfq-kpi-header"><span class="rfq-kpi-label">AP Control Balance</span><span class="rfq-kpi-icon awaiting"><i class="ph ph-receipt"></i></span></div>
@@ -31,14 +47,14 @@
             <div class="rfq-kpi-sub">Past-due vendor obligations</div>
         </div>
         <div class="rfq-kpi-card">
-            <div class="rfq-kpi-header"><span class="rfq-kpi-label">Tax Rules Active</span><span class="rfq-kpi-icon"><i class="ph ph-percent"></i></span></div>
-            <div class="rfq-kpi-val">{{ count($accountingPayload['taxCodes'] ?? []) }}</div>
-            <div class="rfq-kpi-sub">Input VAT &amp; EWT ATC Rules ready</div>
+            <div class="rfq-kpi-header"><span class="rfq-kpi-label">EWT Withheld (BIR 2307)</span><span class="rfq-kpi-icon"><i class="ph ph-percent"></i></span></div>
+            <div class="rfq-kpi-val acct-num" style="text-align:left;color:#9333ea;">{{ $cur }} {{ number_format($apTotalEwtWithheld, 2) }}</div>
+            <div class="rfq-kpi-sub">{{ $apCertificatesList->count() }} BIR 2307 certificate(s) issued</div>
         </div>
         <div class="rfq-kpi-card">
-            <div class="rfq-kpi-header"><span class="rfq-kpi-label">Unified Purchase Link</span><span class="rfq-kpi-icon awarded"><i class="ph ph-link"></i></span></div>
-            <div class="rfq-kpi-val" style="font-size:15px;">PO &rarr; GRN &rarr; Bill</div>
-            <div class="rfq-kpi-sub">3-Way Match &amp; PPV variance tracking</div>
+            <div class="rfq-kpi-header"><span class="rfq-kpi-label">Unapplied Vendor Credits</span><span class="rfq-kpi-icon awarded"><i class="ph ph-wallet"></i></span></div>
+            <div class="rfq-kpi-val acct-num" style="text-align:left;color:#059669;">{{ $cur }} {{ number_format($apAvailVendorCredits, 2) }}</div>
+            <div class="rfq-kpi-sub">From overpayments &amp; credit memos</div>
         </div>
     </div>
 
@@ -439,64 +455,31 @@
     </div>
 
     <!-- ===================================================================== -->
-    <!-- TAB 2: VENDOR PAYMENTS & BIR 2307 (PO SETTLEMENT & WITHHOLDING) -->
+    <!-- TAB 2: UNIFIED VENDOR PAYMENTS & BIR FORM 2307 REGISTER -->
     <!-- ===================================================================== -->
-    @php
-        $apPmtsCollection = collect($accountingPayload['vendorPayments'] ?? []);
-        $apTotalDisbursedGross = $apPmtsCollection->sum(fn($p) => (float) ($p->total_amount ?? $p->gross_amount ?? 0));
-        $apTotalEwtWithheld = $apPmtsCollection->sum(fn($p) => (float) ($p->total_ewt_amount ?? $p->ewt_amount ?? 0));
-        $apTotalNetDisbursed = $apPmtsCollection->sum(fn($p) => (float) ($p->total_net_amount ?? $p->net_amount ?? 0));
-        $apAvailVendorCredits = collect($accountingPayload['vendorMemos'] ?? [])
-            ->filter(fn($m) => in_array(strtoupper((string) ($m->memo_type ?? '')), ['CREDIT', 'CREDIT_MEMO'], true)
-                && strtoupper((string) ($m->status ?? '')) === 'POSTED'
-                && (float) ($m->unapplied_amount ?? 0) > 0)
-            ->sum(fn($m) => (float) $m->unapplied_amount);
-        $apBankAccountMap = collect($accountingPayload['bankAccounts'] ?? [])->keyBy('bank_account_id');
-        $apCoaMap = collect($accountingPayload['accounts'] ?? [])->keyBy('account_id');
-        $apPoByIdMap = collect($accountingPayload['purchaseOrders'] ?? [])->keyBy(fn($po) => (string) $po->id);
-        $apBillByIdMap = collect($accountingPayload['vendorBills'] ?? [])->keyBy('vendor_bill_id');
-    @endphp
     <div class="acct-tab-pane{{ $initialTab === 'payments' ? ' is-active' : '' }}" data-acct-pane="payments">
-        <!-- 4-Card Disbursement & Tax KPI Strip -->
-        <div class="acct-kpi-grid-4" style="margin-bottom:16px;">
-            <div class="rfq-kpi-card">
-                <div class="rfq-kpi-header"><span class="rfq-kpi-label">Total Gross Disbursed</span><span class="rfq-kpi-icon awarded"><i class="ph ph-money"></i></span></div>
-                <div class="rfq-kpi-val acct-num" style="text-align:left;">{{ $cur }} {{ number_format($apTotalDisbursedGross, 2) }}</div>
-                <div class="rfq-kpi-sub">{{ $apPmtsCollection->count() }} payment transaction(s)</div>
-            </div>
-            <div class="rfq-kpi-card">
-                <div class="rfq-kpi-header"><span class="rfq-kpi-label">EWT Withheld (BIR 2307)</span><span class="rfq-kpi-icon awaiting"><i class="ph ph-percent"></i></span></div>
-                <div class="rfq-kpi-val acct-num" style="text-align:left;color:#9333ea;">{{ $cur }} {{ number_format($apTotalEwtWithheld, 2) }}</div>
-                <div class="rfq-kpi-sub">{{ count($accountingPayload['vendorCertificates'] ?? []) }} certificate(s) issued</div>
-            </div>
-            <div class="rfq-kpi-card">
-                <div class="rfq-kpi-header"><span class="rfq-kpi-label">Net Cash Outflow</span><span class="rfq-kpi-icon"><i class="ph ph-bank"></i></span></div>
-                <div class="rfq-kpi-val acct-num" style="text-align:left;color:#0f172a;">{{ $cur }} {{ number_format($apTotalNetDisbursed, 2) }}</div>
-                <div class="rfq-kpi-sub">Actual bank / check / cash release</div>
-            </div>
-            <div class="rfq-kpi-card">
-                <div class="rfq-kpi-header"><span class="rfq-kpi-label">Unapplied Vendor Credits</span><span class="rfq-kpi-icon draft"><i class="ph ph-wallet"></i></span></div>
-                <div class="rfq-kpi-val acct-num" style="text-align:left;color:#059669;">{{ $cur }} {{ number_format($apAvailVendorCredits, 2) }}</div>
-                <div class="rfq-kpi-sub">From overpayments &amp; credit memos</div>
-            </div>
-        </div>
-
         <div class="acct-panel">
             <div class="acct-panel-head">
                 <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-                    <h2 class="acct-panel-title"><i class="ph ph-credit-card"></i> Vendor Payment Vouchers &amp; PO Matching</h2>
+                    <h2 class="acct-panel-title"><i class="ph ph-credit-card"></i> Vendor Payments &amp; BIR Form 2307 Register</h2>
                     <span class="acct-badge acct-badge-system">{{ $apPmtsCollection->count() }} Vouchers</span>
+                    <span class="acct-badge" style="background:#f3e8ff;color:#7e22ce;font-weight:700;">{{ $apCertificatesList->count() }} Form 2307 Issued</span>
                 </div>
                 <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                    <input type="text" class="acct-input" id="apPaymentSearch" placeholder="Search voucher #, PO #, vendor..." style="width:210px;height:34px;">
-                    <select class="acct-select" id="apPaymentMethodFilter" style="width:145px;height:34px;">
-                        <option value="">All Methods</option>
+                    <input type="text" class="acct-input" id="apPaymentSearch" placeholder="Search voucher #, PO #, 2307 #, vendor..." style="width:225px;height:34px;">
+                    <select class="acct-select" id="apPaymentMethodFilter" style="width:165px;height:34px;">
+                        <option value="">All Vouchers</option>
+                        <option value="WITH_2307">With BIR 2307 Issued</option>
+                        <option value="NO_2307">Bill Only (No 2307)</option>
                         <option value="BANK_TRANSFER">Bank Transfer</option>
                         <option value="CHECK">Check</option>
                         <option value="PDC">PDC</option>
                         <option value="CASH">Cash</option>
                         <option value="PO_ADVANCE">PO Advance</option>
                     </select>
+                    <button type="button" class="rfq-btn rfq-btn-outline" id="btnApNewSeparate2307" title="Record a separate BIR 2307 / EWT withholding settlement">
+                        <i class="ph ph-certificate"></i> + Separate 2307
+                    </button>
                     <button type="button" class="rfq-btn rfq-btn-primary" id="btnApNewPayment">
                         <i class="ph ph-plus-circle"></i> New Payment / Settle PO
                     </button>
@@ -517,6 +500,7 @@
                             <th class="acct-num">EWT (2307)</th>
                             <th class="acct-num">Net Disbursed</th>
                             <th>Status</th>
+                            <th style="text-align:right;">BIR Form 2307 / Action</th>
                         </tr>
                     </thead>
                     <tbody id="apPaymentsRegisterBody">
@@ -529,11 +513,15 @@
                                 $isPoAdv = ($pmt->status ?? '') === 'PO_ADVANCE';
                                 $pmtLines = collect($pmt->lines ?? []);
                                 $matchedTags = [];
+                                $firstBillId = '';
                                 $excessCreditAmt = 0.0;
                                 foreach ($pmtLines as $pl) {
                                     if (!empty($pl->is_prepayment) || ($pl->bill_number ?? '') === 'OVERPAYMENT-CREDIT') {
                                         $excessCreditAmt += (float) ($pl->allocated_amount ?? 0);
                                         continue;
+                                    }
+                                    if (!$firstBillId && !empty($pl->vendor_bill_id)) {
+                                        $firstBillId = (string) $pl->vendor_bill_id;
                                     }
                                     $bObj = $apBillByIdMap->get($pl->vendor_bill_id ?? '');
                                     $poObj = $bObj && !empty($bObj->purchase_order_id) ? $apPoByIdMap->get((string) $bObj->purchase_order_id) : null;
@@ -543,8 +531,16 @@
                                 $disbGl = $apCoaMap->get($pmt->disbursement_account_id ?? '');
                                 $bankRefLabel = $pmt->bank_reference ?? $pmt->reference_number ?? $pmt->check_number ?? ($isPoAdv ? 'PO Settlement' : 'N/A');
                                 $bankAcctName = $disbGl ? ($disbGl->account_name ?? '') : ($pmt->fund_source ?? '');
+                                $cert = $apCertByPmtIdMap->get($pmt->payment_id ?? '') ?? $apCertBySourceIdMap->get($pmt->payment_id ?? '');
+                                $certTin = $cert ? ($cert->payee_tin ?: ($cert->party_tin ?: '000-000-000-000')) : '';
+                                $certFrom = $cert && $cert->period_from ? \Carbon\Carbon::parse($cert->period_from) : \Carbon\Carbon::parse($pmt->payment_date ?? now());
+                                $certQuarter = 'Q' . $certFrom->quarter . ' ' . $certFrom->year;
+                                $certIncome = $cert ? (float) ($cert->gross_income_payment ?: $cert->income_payment_amount ?: 0) : 0.0;
+                                $certTax = $cert ? (float) ($cert->amount_withheld ?: $cert->tax_withheld_amount ?: 0) : (float) ($pmt->total_ewt_amount ?? 0);
                             @endphp
-                            <tr data-pmt-method="{{ $isPoAdv ? 'PO_ADVANCE' : strtoupper((string) $pmt->payment_method) }}" data-search="{{ strtolower(trim(($pmt->payment_number ?? '') . ' ' . $vName . ' ' . implode(' ', $matchedTags) . ' ' . $bankRefLabel)) }}">
+                            <tr data-pmt-method="{{ $isPoAdv ? 'PO_ADVANCE' : strtoupper((string) $pmt->payment_method) }}"
+                                data-has-2307="{{ $cert ? '1' : '0' }}"
+                                data-search="{{ strtolower(trim(($pmt->payment_number ?? '') . ' ' . $vName . ' ' . implode(' ', $matchedTags) . ' ' . $bankRefLabel . ' ' . ($cert->certificate_number ?? '') . ' ' . $certTin)) }}">
                                 <td class="acct-mono" style="font-weight:700;color:{{ $isPoAdv ? '#0284c7' : '#7e22ce' }};">
                                     {{ $pmt->payment_number }}
                                 </td>
@@ -579,85 +575,45 @@
                                         <span class="acct-badge acct-badge-posted">{{ $pmt->status }}</span>
                                     @endif
                                 </td>
+                                <td style="text-align:right;white-space:nowrap;">
+                                    @if($cert)
+                                        <button
+                                            type="button"
+                                            class="acct-row-btn btnApView2307"
+                                            style="border-color:#d8b4fe;background:#faf5ff;color:#7e22ce;"
+                                            data-cert-no="{{ $cert->certificate_number }}"
+                                            data-payee="{{ $cert->party_name ?? $vName }}"
+                                            data-tin="{{ $certTin }}"
+                                            data-atc="{{ $cert->atc_code }}"
+                                            data-quarter="{{ $certQuarter }}"
+                                            data-period="{{ ($cert->period_from ? \Carbon\Carbon::parse($cert->period_from)->format('M d, Y') : '') . ' – ' . ($cert->period_to ? \Carbon\Carbon::parse($cert->period_to)->format('M d, Y') : '') }}"
+                                            data-income="{{ number_format($certIncome, 2) }}"
+                                            data-tax="{{ number_format($certTax, 2) }}"
+                                            data-voucher="{{ $cert->source_document_number }}"
+                                            data-signed="{{ $cert->signed_by ?? 'Disbursement Officer' }}"
+                                            title="{{ $cert->certificate_number }} ({{ $cert->atc_code }})"
+                                        >
+                                            <i class="ph ph-certificate"></i> View 2307
+                                        </button>
+                                    @elseif(!$isPoAdv)
+                                        <button
+                                            type="button"
+                                            class="acct-row-btn btnApSeparate2307"
+                                            data-vendor-id="{{ $vObj ? $vObj->id : $pmt->vendor_id }}"
+                                            data-bill-id="{{ $firstBillId }}"
+                                            title="Record a separate BIR Form 2307 EWT voucher for this vendor/bill"
+                                        >
+                                            <i class="ph ph-plus-circle"></i> Record 2307
+                                        </button>
+                                    @else
+                                        <span style="color:#94a3b8;font-size:11.5px;">Synced PO Adv</span>
+                                    @endif
+                                </td>
                             </tr>
                         @empty
                             <tr class="ap-pmt-empty-row">
-                                <td colspan="10" style="text-align:center;padding:24px;color:#94a3b8;">
+                                <td colspan="11" style="text-align:center;padding:24px;color:#94a3b8;">
                                     No vendor payments disbursed yet. Click <strong>+ New Payment / Settle PO</strong> to post your first payment voucher.
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- BIR Form 2307 Certificates Register -->
-        <div class="acct-panel" style="margin-top:16px;">
-            <div class="acct-panel-head">
-                <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-                    <h2 class="acct-panel-title"><i class="ph ph-certificate"></i> BIR Form 2307 Certificates (Creditable Tax Withheld at Source)</h2>
-                    <span class="acct-badge acct-badge-system">{{ count($accountingPayload['vendorCertificates'] ?? []) }} Issued</span>
-                </div>
-                <input type="text" class="acct-input" id="ap2307Search" placeholder="Search 2307 #, TIN, or vendor..." style="width:220px;height:34px;">
-            </div>
-            <div class="acct-table-responsive">
-                <table class="acct-table" id="ap2307RegisterTable">
-                    <thead>
-                        <tr>
-                            <th>Certificate #</th>
-                            <th>Vendor / Payee</th>
-                            <th>Payee TIN</th>
-                            <th>ATC Code</th>
-                            <th>Period Covered</th>
-                            <th class="acct-num">Income Payment</th>
-                            <th class="acct-num">Tax Withheld</th>
-                            <th>Status</th>
-                            <th style="text-align:right;">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="ap2307RegisterBody">
-                        @forelse($accountingPayload['vendorCertificates'] ?? [] as $cert)
-                            @php
-                                $certVendorName = $cert->party_name ?? $cert->party_id ?? 'Vendor';
-                                $certTin = $cert->payee_tin ?: ($cert->party_tin ?: '000-000-000-000');
-                                $certFrom = $cert->period_from ? \Carbon\Carbon::parse($cert->period_from) : now();
-                                $certQuarter = 'Q' . $certFrom->quarter . ' ' . $certFrom->year;
-                                $certIncome = (float) ($cert->gross_income_payment ?: $cert->income_payment_amount ?: 0);
-                                $certTax = (float) ($cert->amount_withheld ?: $cert->tax_withheld_amount ?: 0);
-                            @endphp
-                            <tr data-search="{{ strtolower(trim($cert->certificate_number . ' ' . $certVendorName . ' ' . $certTin . ' ' . ($cert->atc_code ?? ''))) }}">
-                                <td class="acct-mono" style="font-weight:700;color:#7e22ce;">{{ $cert->certificate_number }}</td>
-                                <td style="font-weight:600;color:#0f172a;">{{ $certVendorName }}</td>
-                                <td class="acct-mono" style="font-size:12px;">{{ $certTin }}</td>
-                                <td><span class="acct-badge">{{ $cert->atc_code }}</span></td>
-                                <td>{{ $certQuarter }}</td>
-                                <td class="acct-num">{{ number_format($certIncome, 2) }}</td>
-                                <td class="acct-num" style="font-weight:700;color:#9333ea;">{{ number_format($certTax, 2) }}</td>
-                                <td><span class="acct-badge acct-badge-posted">{{ $cert->status }}</span></td>
-                                <td style="text-align:right;">
-                                    <button
-                                        type="button"
-                                        class="acct-row-btn btnApView2307"
-                                        data-cert-no="{{ $cert->certificate_number }}"
-                                        data-payee="{{ $certVendorName }}"
-                                        data-tin="{{ $certTin }}"
-                                        data-atc="{{ $cert->atc_code }}"
-                                        data-quarter="{{ $certQuarter }}"
-                                        data-period="{{ ($cert->period_from ? \Carbon\Carbon::parse($cert->period_from)->format('M d, Y') : '') . ' – ' . ($cert->period_to ? \Carbon\Carbon::parse($cert->period_to)->format('M d, Y') : '') }}"
-                                        data-income="{{ number_format($certIncome, 2) }}"
-                                        data-tax="{{ number_format($certTax, 2) }}"
-                                        data-voucher="{{ $cert->source_document_number }}"
-                                        data-signed="{{ $cert->signed_by ?? 'Disbursement Officer' }}"
-                                    >
-                                        <i class="ph ph-printer"></i> View 2307
-                                    </button>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="9" style="text-align:center;padding:20px;color:#94a3b8;">
-                                    No Form 2307 certificates generated yet. Certificates are auto-created when paying POs/bills with EWT withheld.
                                 </td>
                             </tr>
                         @endforelse
@@ -729,82 +685,272 @@
     </div>
 
     <!-- ===================================================================== -->
-    <!-- TAB 4: VENDOR LEDGER & AGING -->
+    <!-- TAB 4: VENDOR LEDGER & AGING (20% AGING SCHEDULE : 80% OPEN BALANCES) -->
     <!-- ===================================================================== -->
+    @php
+        $apAgingBuckets = $accountingPayload['vendorAging']['aging'] ?? [];
+        $apAgingTotalOpen = (float) ($accountingPayload['vendorAging']['total_open_payables'] ?? ($apAgingBuckets['total_open'] ?? 0));
+        $apAgingTotalCredits = (float) ($accountingPayload['vendorAging']['total_open_credits'] ?? $apAvailVendorCredits);
+        $apAgingNetExposure = (float) ($accountingPayload['vendorAging']['net_payable_due'] ?? ($apAgingTotalOpen - $apAgingTotalCredits));
+    @endphp
     <div class="acct-tab-pane{{ $initialTab === 'ledger' ? ' is-active' : '' }}" data-acct-pane="ledger">
-        <div class="acct-panel">
-            <div class="acct-panel-head">
-                <h2 class="acct-panel-title"><i class="ph ph-clock-counter-clockwise"></i> Vendor Payables Aging Schedule</h2>
+        <div class="acct-ledger-split-20-80" id="apLedgerSplitContainer">
+            <!-- LEFT 20% CONTAINER: VENDOR PAYABLES AGING SCHEDULE -->
+            <div class="acct-panel" id="apAgingSchedulePanel">
+                <div class="acct-panel-head" style="margin-bottom:10px;">
+                    <h2 class="acct-panel-title" style="font-size:14px;"><i class="ph ph-clock-counter-clockwise"></i> Payables Aging Schedule</h2>
+                </div>
+                <div class="ap-aging-stack-list">
+                    <div class="ap-aging-bucket-card">
+                        <span class="ap-aging-bucket-label">Current (Not Yet Due)</span>
+                        <span class="ap-aging-bucket-val">{{ $cur }} {{ number_format((float) ($apAgingBuckets['current'] ?? 0), 2) }}</span>
+                    </div>
+                    <div class="ap-aging-bucket-card">
+                        <span class="ap-aging-bucket-label">1 - 30 Days Past Due</span>
+                        <span class="ap-aging-bucket-val">{{ $cur }} {{ number_format((float) ($apAgingBuckets['days_1_30'] ?? 0), 2) }}</span>
+                    </div>
+                    <div class="ap-aging-bucket-card">
+                        <span class="ap-aging-bucket-label">31 - 60 Days Past Due</span>
+                        <span class="ap-aging-bucket-val">{{ $cur }} {{ number_format((float) ($apAgingBuckets['days_31_60'] ?? 0), 2) }}</span>
+                    </div>
+                    <div class="ap-aging-bucket-card">
+                        <span class="ap-aging-bucket-label">61 - 90 Days Past Due</span>
+                        <span class="ap-aging-bucket-val">{{ $cur }} {{ number_format((float) ($apAgingBuckets['days_61_90'] ?? 0), 2) }}</span>
+                    </div>
+                    <div class="ap-aging-bucket-card is-danger">
+                        <span class="ap-aging-bucket-label" style="color:#b91c1c;">Over 90 Days Past Due</span>
+                        <span class="ap-aging-bucket-val" style="color:#dc2626;">{{ $cur }} {{ number_format((float) ($apAgingBuckets['days_over_90'] ?? 0), 2) }}</span>
+                    </div>
+                </div>
+                <div style="margin-top:12px;padding-top:10px;border-top:1px dashed #cbd5e1;display:flex;flex-direction:column;gap:6px;font-size:12px;">
+                    <div style="display:flex;justify-content:space-between;color:#475569;">
+                        <span>Total Open Payables</span>
+                        <strong class="acct-num">{{ $cur }} {{ number_format($apAgingTotalOpen, 2) }}</strong>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;color:#059669;">
+                        <span>Less: Unapplied Credits</span>
+                        <strong class="acct-num">- {{ $cur }} {{ number_format($apAgingTotalCredits, 2) }}</strong>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;padding-top:6px;border-top:1px solid #e2e8f0;font-size:13px;color:#0f172a;">
+                        <strong>Net Payable Exposure</strong>
+                        <strong class="acct-num" style="color:#7e22ce;">{{ $cur }} {{ number_format($apAgingNetExposure, 2) }}</strong>
+                    </div>
+                </div>
             </div>
-            <div class="acct-kpi-grid-4" style="margin-top:12px;">
-                <div class="rfq-kpi-card">
-                    <div class="rfq-kpi-header"><span class="rfq-kpi-label">Current (0-30 Days)</span></div>
-                    <div class="rfq-kpi-val acct-num" style="text-align:left;">
-                        {{ $cur }} {{ number_format((float) ($accountingPayload['vendorAging']['summary']['current'] ?? 0), 2) }}
-                    </div>
-                </div>
-                <div class="rfq-kpi-card">
-                    <div class="rfq-kpi-header"><span class="rfq-kpi-label">31 - 60 Days</span></div>
-                    <div class="rfq-kpi-val acct-num" style="text-align:left;">
-                        {{ $cur }} {{ number_format((float) ($accountingPayload['vendorAging']['summary']['31_60'] ?? 0), 2) }}
-                    </div>
-                </div>
-                <div class="rfq-kpi-card">
-                    <div class="rfq-kpi-header"><span class="rfq-kpi-label">61 - 90 Days</span></div>
-                    <div class="rfq-kpi-val acct-num" style="text-align:left;">
-                        {{ $cur }} {{ number_format((float) ($accountingPayload['vendorAging']['summary']['61_90'] ?? 0), 2) }}
-                    </div>
-                </div>
-                <div class="rfq-kpi-card">
-                    <div class="rfq-kpi-header"><span class="rfq-kpi-label">Over 90 Days</span><span class="rfq-kpi-icon draft"><i class="ph ph-warning"></i></span></div>
-                    <div class="rfq-kpi-val acct-num" style="text-align:left;color:#ef4444;">
-                        {{ $cur }} {{ number_format((float) ($accountingPayload['vendorAging']['summary']['over_90'] ?? 0), 2) }}
-                    </div>
-                </div>
-            </div>
-        </div>
 
-        <div class="acct-panel" style="margin-top:16px;">
-            <div class="acct-panel-head">
-                <h2 class="acct-panel-title"><i class="ph ph-users"></i> Vendor Open Balances</h2>
-            </div>
-            <div class="acct-table-responsive">
-                <table class="acct-table">
-                    <thead>
-                        <tr>
-                            <th>Vendor Code</th>
-                            <th>Trade Name</th>
-                            <th>TIN</th>
-                            <th>Payment Terms</th>
-                            <th class="acct-num">Open Bills</th>
-                            <th class="acct-num">Total Outstanding Balance</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($accountingPayload['vendors'] ?? [] as $v)
-                            @php
-                                $vOpen = collect($accountingPayload['vendorBills'] ?? [])
-                                    ->where('vendor_id', $v->id)
-                                    ->whereIn('vendor_bill_status', ['POSTED', 'PARTIAL']);
-                                $vBalance = $vOpen->sum(fn($b) => (float) $b->bill_total_amount - (float) $b->bill_paid_amount);
-                            @endphp
-                            <tr>
-                                <td class="acct-mono" style="font-weight:600;">{{ $v->vendor_code }}</td>
-                                <td>{{ $v->trade_name ?: $v->legal_name }}</td>
-                                <td>{{ $v->tax_id ?: 'N/A' }}</td>
-                                <td><span class="acct-badge">{{ $v->payment_terms ?: 'NET30' }}</span></td>
-                                <td class="acct-num">{{ $vOpen->count() }}</td>
-                                <td class="acct-num" style="font-weight:700;color:{{ $vBalance > 0 ? '#ef4444' : '#10b981' }};">
-                                    {{ number_format($vBalance, 2) }}
-                                </td>
+            <!-- RIGHT 80% CONTAINER: VENDOR OPEN BALANCES (CUSTOMIZABLE RFQ TABLE + > EXPAND PENDING POs) -->
+            <div class="acct-panel" id="apVendorOpenBalancesPanel">
+                <div class="acct-panel-head">
+                    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                        <h2 class="acct-panel-title"><i class="ph ph-users"></i> Vendor Open Balances &amp; Pending POs</h2>
+                        <span class="acct-badge acct-badge-system">{{ count($accountingPayload['vendors'] ?? []) }} Suppliers</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                        <input type="text" class="acct-input" id="apLedgerVendorSearch" placeholder="Search vendor, code, or PO #..." style="width:205px;height:34px;">
+                        <select class="acct-select" id="apLedgerBalanceFilter" style="width:165px;height:34px;">
+                            <option value="">All Suppliers</option>
+                            <option value="OPEN">With Open Balance</option>
+                            <option value="PENDING_PO">With Pending POs</option>
+                            <option value="WITH_CREDIT">With Available Credit</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="rfq-table-responsive" style="overflow-x:auto;position:relative;min-height:220px;">
+                    <table class="rfq-table acct-table" id="apVendorOpenBalancesTable">
+                        <thead id="apVendorBalancesThead">
+                            <tr id="apVendorBalancesTheadRow">
+                                <th class="rfq-th-stacked th-left" data-col-id="vendor_code" style="width:140px;">Vendor Code</th>
+                                <th class="rfq-th-stacked th-left" data-col-id="trade_name" style="width:210px;">Supplier Name</th>
+                                <th class="rfq-th-stacked th-left" data-col-id="tin" style="width:130px;">TIN</th>
+                                <th class="rfq-th-stacked th-left" data-col-id="payment_terms" style="width:110px;">Terms</th>
+                                <th class="rfq-th-stacked th-left" data-col-id="pending_pos" style="width:125px;">Pending POs</th>
+                                <th class="rfq-th-stacked th-num" data-col-id="open_bills" style="width:95px;text-align:right;">Open Bills</th>
+                                <th class="rfq-th-stacked th-num" data-col-id="credit_avail" style="width:130px;text-align:right;">Vendor Credit</th>
+                                <th class="rfq-th-stacked th-num" data-col-id="outstanding_balance" style="width:155px;text-align:right;">Outstanding Balance</th>
+                                <th class="rfq-th-stacked th-num th-actions-sticky" data-col-id="actions" style="width:130px;text-align:right;">Actions</th>
                             </tr>
-                        @empty
-                            <tr>
-                                <td colspan="6" style="text-align:center;padding:20px;color:#94a3b8;">No vendors available.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody id="apVendorBalancesBody">
+                            @forelse($accountingPayload['vendors'] ?? [] as $v)
+                                @php
+                                    $vKeys = array_filter([(string) $v->id, (string) ($v->vendor_code ?? '')]);
+                                    $vOpenBills = collect($accountingPayload['vendorBills'] ?? [])->filter(function ($b) use ($vKeys) {
+                                        return in_array((string) $b->vendor_id, $vKeys, true)
+                                            && in_array(strtoupper((string) $b->vendor_bill_status), ['POSTED', 'PARTIAL', 'APPROVED'], true);
+                                    });
+                                    $vBalance = $vOpenBills->sum(fn($b) => max(0, (float) $b->bill_total_amount - (float) $b->bill_paid_amount));
+                                    $vCredits = collect($accountingPayload['vendorMemos'] ?? [])->filter(function ($m) use ($vKeys) {
+                                        return in_array((string) $m->vendor_id, $vKeys, true)
+                                            && in_array(strtoupper((string) ($m->memo_type ?? '')), ['CREDIT', 'CREDIT_MEMO'], true)
+                                            && strtoupper((string) ($m->status ?? '')) === 'POSTED'
+                                            && (float) ($m->unapplied_amount ?? 0) > 0;
+                                    })->sum(fn($m) => (float) $m->unapplied_amount);
+
+                                    $vNameDisplay = $v->trade_name ?: $v->legal_name;
+                                    $vPendingPos = collect($accountingPayload['purchaseOrders'] ?? [])->filter(function ($po) use ($vKeys, $vNameDisplay, $v) {
+                                        $poVendorMatches = in_array((string) ($po->resolved_vendor_id ?? ''), $vKeys, true)
+                                            || in_array((string) ($po->vendor_id ?? ''), $vKeys, true)
+                                            || ($vNameDisplay && strcasecmp((string) ($po->vendor_name ?? ''), (string) $vNameDisplay) === 0)
+                                            || (!empty($v->legal_name) && strcasecmp((string) ($po->vendor_name ?? ''), (string) $v->legal_name) === 0);
+                                        $poBal = max(0, (float) ($po->gross_total ?? 0) - (float) ($po->amount_paid ?? 0));
+                                        return $poVendorMatches && $poBal > 0.01;
+                                    })->values();
+
+                                    $poNumbersSearch = $vPendingPos->pluck('po_number')->implode(' ');
+                                @endphp
+                                <tr class="ap-vendor-balance-row"
+                                    data-vendor-id="{{ $v->id }}"
+                                    data-has-open="{{ $vBalance > 0.01 ? '1' : '0' }}"
+                                    data-has-pending-po="{{ $vPendingPos->isNotEmpty() ? '1' : '0' }}"
+                                    data-has-credit="{{ $vCredits > 0.01 ? '1' : '0' }}"
+                                    data-search="{{ strtolower(trim(($v->vendor_code ?? '') . ' ' . $vNameDisplay . ' ' . ($v->tax_id ?? '') . ' ' . $poNumbersSearch)) }}">
+                                    <td data-col-id="vendor_code">
+                                        <div style="display:flex;align-items:center;gap:8px;">
+                                            <button type="button" class="ap-expand-po-btn btnApExpandVendorPos" data-vendor-id="{{ $v->id }}" title="Expand pending Purchase Orders &amp; bills">
+                                                <i class="ph ph-caret-right"></i>
+                                            </button>
+                                            <span class="acct-mono" style="font-weight:700;color:#7e22ce;">{{ $v->vendor_code }}</span>
+                                        </div>
+                                    </td>
+                                    <td data-col-id="trade_name" style="font-weight:600;color:#0f172a;">{{ $vNameDisplay }}</td>
+                                    <td data-col-id="tin" class="acct-mono" style="font-size:12px;">{{ $v->tax_id ?: 'N/A' }}</td>
+                                    <td data-col-id="payment_terms"><span class="acct-badge">{{ $v->payment_terms ?: 'NET30' }}</span></td>
+                                    <td data-col-id="pending_pos">
+                                        @if($vPendingPos->isNotEmpty())
+                                            <button type="button" class="acct-badge btnApExpandVendorPos" data-vendor-id="{{ $v->id }}" style="background:#f3e8ff;color:#7e22ce;font-weight:700;border:1px solid #e9d5ff;cursor:pointer;">
+                                                {{ $vPendingPos->count() }} Pending PO{{ $vPendingPos->count() === 1 ? '' : 's' }}
+                                            </button>
+                                        @else
+                                            <span style="color:#94a3b8;font-size:12px;">None</span>
+                                        @endif
+                                    </td>
+                                    <td data-col-id="open_bills" class="acct-num">{{ $vOpenBills->count() }}</td>
+                                    <td data-col-id="credit_avail" class="acct-num" style="color:{{ $vCredits > 0 ? '#059669' : '#94a3b8' }};font-weight:{{ $vCredits > 0 ? '700' : '400' }};">
+                                        {{ number_format($vCredits, 2) }}
+                                    </td>
+                                    <td data-col-id="outstanding_balance" class="acct-num" style="font-weight:700;color:{{ $vBalance > 0 ? '#ef4444' : '#10b981' }};">
+                                        {{ number_format($vBalance, 2) }}
+                                    </td>
+                                    <td data-col-id="actions" style="text-align:right;overflow:visible;">
+                                        <button type="button" class="acct-row-btn btnApPayVendorFromLedger" data-vendor-id="{{ $v->id }}" title="Open Payment Drawer for {{ $vNameDisplay }}">
+                                            <i class="ph ph-credit-card"></i> Settle
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr class="ap-vendor-pos-detail-row" data-parent-vendor-id="{{ $v->id }}" style="display:none;">
+                                    <td colspan="9">
+                                        <div class="ap-vendor-pos-subbox">
+                                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                                                <div style="font-size:12px;font-weight:700;color:#581c87;display:flex;align-items:center;gap:6px;">
+                                                    <i class="ph ph-shopping-cart"></i>
+                                                    <span>Pending Purchase Orders &amp; Unsettled Obligations — {{ $vNameDisplay }}</span>
+                                                </div>
+                                                <button type="button" class="acct-row-btn btnApPayVendorFromLedger" data-vendor-id="{{ $v->id }}">
+                                                    <i class="ph ph-plus-circle"></i> Pay All / Match POs
+                                                </button>
+                                            </div>
+                                            @if($vPendingPos->isNotEmpty() || $vOpenBills->isNotEmpty())
+                                                <table class="ap-vendor-pos-subtable">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>PO / Document #</th>
+                                                            <th>Order / Bill Date</th>
+                                                            <th>Status</th>
+                                                            <th>Linked AP Bill #</th>
+                                                            <th class="acct-num">Total Amount</th>
+                                                            <th class="acct-num">Paid / Credit</th>
+                                                            <th class="acct-num">Balance Due</th>
+                                                            <th style="text-align:right;">Action</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @foreach($vPendingPos as $po)
+                                                            @php
+                                                                $poGross = (float) ($po->gross_total ?? 0);
+                                                                $poPaid = (float) ($po->amount_paid ?? 0);
+                                                                $poBal = max(0, $poGross - $poPaid);
+                                                                $linkedBill = collect($accountingPayload['vendorBills'] ?? [])->first(fn($b) => (string) $b->purchase_order_id === (string) $po->id || (string) $b->purchase_order_id === (string) $po->po_number);
+                                                            @endphp
+                                                            <tr>
+                                                                <td class="acct-mono" style="font-weight:700;color:#7e22ce;">{{ $po->po_number }}</td>
+                                                                <td>{{ $po->order_date ? \Carbon\Carbon::parse($po->order_date)->format('Y-m-d') : '--' }}</td>
+                                                                <td><span class="acct-badge">{{ $po->status ?? 'Approved / Issued' }}</span></td>
+                                                                <td class="acct-mono" style="font-size:11.5px;color:#475569;">{{ $linkedBill ? $linkedBill->vendor_bill_number : 'Auto-Sync Ready' }}</td>
+                                                                <td class="acct-num">{{ $cur }} {{ number_format($poGross, 2) }}</td>
+                                                                <td class="acct-num" style="color:#0284c7;">{{ $cur }} {{ number_format($poPaid, 2) }}</td>
+                                                                <td class="acct-num" style="font-weight:700;color:#ef4444;">{{ $cur }} {{ number_format($poBal, 2) }}</td>
+                                                                <td style="text-align:right;">
+                                                                    <button type="button"
+                                                                        class="acct-row-btn btnApPayBill"
+                                                                        data-bill-id="{{ $linkedBill ? $linkedBill->vendor_bill_id : '' }}"
+                                                                        data-vendor-id="{{ $v->id }}"
+                                                                        data-po-id="{{ $po->id }}"
+                                                                        style="border-color:#a7f3d0;background:#ecfdf5;color:#047857;">
+                                                                        <i class="ph ph-credit-card"></i> Pay PO
+                                                                    </button>
+                                                                </td>
+                                                            </tr>
+                                                        @endforeach
+                                                        @foreach($vOpenBills->filter(fn($b) => empty($b->purchase_order_id)) as $directBill)
+                                                            @php $dbBal = max(0, (float) $directBill->bill_total_amount - (float) $directBill->bill_paid_amount); @endphp
+                                                            <tr>
+                                                                <td class="acct-mono" style="font-weight:700;color:#0f172a;">{{ $directBill->vendor_bill_number }}</td>
+                                                                <td>{{ \Carbon\Carbon::parse($directBill->vendor_invoice_date)->format('Y-m-d') }}</td>
+                                                                <td><span class="acct-badge">{{ $directBill->vendor_bill_status }}</span></td>
+                                                                <td class="acct-mono" style="font-size:11.5px;color:#475569;">{{ $directBill->vendor_invoice_number }}</td>
+                                                                <td class="acct-num">{{ $cur }} {{ number_format((float) $directBill->bill_total_amount, 2) }}</td>
+                                                                <td class="acct-num" style="color:#0284c7;">{{ $cur }} {{ number_format((float) $directBill->bill_paid_amount, 2) }}</td>
+                                                                <td class="acct-num" style="font-weight:700;color:#ef4444;">{{ $cur }} {{ number_format($dbBal, 2) }}</td>
+                                                                <td style="text-align:right;">
+                                                                    <button type="button"
+                                                                        class="acct-row-btn btnApPayBill"
+                                                                        data-bill-id="{{ $directBill->vendor_bill_id }}"
+                                                                        data-vendor-id="{{ $v->id }}"
+                                                                        style="border-color:#a7f3d0;background:#ecfdf5;color:#047857;">
+                                                                        <i class="ph ph-credit-card"></i> Pay Bill
+                                                                    </button>
+                                                                </td>
+                                                            </tr>
+                                                        @endforeach
+                                                    </tbody>
+                                                </table>
+                                            @else
+                                                <div style="padding:12px;background:#fff;border:1px dashed #cbd5e1;border-radius:8px;color:#64748b;font-size:12px;text-align:center;">
+                                                    All Purchase Orders and Vendor Bills for {{ $vNameDisplay }} are settled.
+                                                </div>
+                                            @endif
+                                        </div>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr class="ap-vendor-empty-row">
+                                    <td colspan="9" style="text-align:center;padding:20px;color:#94a3b8;">No vendors available.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+
+                    <!-- RFQ-Style Floating Table Columns & Width Settings Dropdown for Vendor Open Balances -->
+                    <div id="apVendorBalancesTableSettingsDropdown" class="rfq-table-settings-dropdown" style="display:none;">
+                        <div class="rfq-settings-dropdown-header">
+                            <div class="rfq-settings-title-row" style="display:flex;align-items:center;justify-content:space-between;">
+                                <div class="rfq-settings-title">
+                                    <i class="ph ph-gear-six"></i>
+                                    <span>Table Columns &amp; Sequence</span>
+                                </div>
+                                <span class="rfq-col-badge-default" id="apVendorBalancesColActiveCounter">9 of 9 visible</span>
+                            </div>
+                            <div class="rfq-settings-links-row">
+                                <button type="button" class="rfq-settings-link-btn" id="btnApVendorBalancesResetDefaults">Reset to Default</button>
+                                <button type="button" class="rfq-settings-link-btn" id="btnApVendorBalancesShowAll">Select All</button>
+                                <button type="button" class="rfq-settings-link-btn" id="btnApVendorBalancesResetWidths">Reset Widths</button>
+                            </div>
+                            <input type="text" class="rfq-settings-search-input" id="apVendorBalancesColSearchInput" placeholder="Filter columns...">
+                        </div>
+                        <div class="rfq-settings-col-list" id="apVendorBalancesColCheckboxesList"></div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -874,6 +1020,14 @@
             <div class="rms-drawer-card-body">
                 <div class="acct-header-fields" style="grid-template-columns: repeat(3, 1fr);">
                     <div class="acct-field">
+                        <label class="acct-label" for="apPmtSettlementMode">Settlement Mode <span style="color:#ef4444;">*</span></label>
+                        <select class="acct-select" id="apPmtSettlementMode" style="font-weight:600;color:#7e22ce;">
+                            <option value="COMBINED">Combined Bill + EWT 2307 (Standard)</option>
+                            <option value="BILL_ONLY">Bill Principal Only (Separate 2307 Later)</option>
+                            <option value="EWT_2307_ONLY">Separate BIR 2307 / EWT Settlement Only</option>
+                        </select>
+                    </div>
+                    <div class="acct-field">
                         <label class="acct-label" for="apPmtPoQuickSelect">Quick Match Purchase Order</label>
                         <select class="acct-select" id="apPmtPoQuickSelect">
                             <option value="">-- Select PO to Auto-Match --</option>
@@ -935,13 +1089,13 @@
                         <input type="date" class="acct-input" id="apPmtPdcDate" value="{{ now()->addDays(30)->toDateString() }}">
                     </div>
                     <div class="acct-field">
-                        <label class="acct-label" for="apPmtTotalInput">Total Payment / Check Amount ({{ $cur }}) <span style="color:#ef4444;">*</span></label>
+                        <label class="acct-label" for="apPmtTotalInput">Total Payment / Voucher Amount ({{ $cur }}) <span style="color:#ef4444;">*</span></label>
                         <input type="number" step="0.01" min="0" class="acct-input acct-num" id="apPmtTotalInput" value="0.00" style="font-weight:700;color:#0f172a;">
                     </div>
-                    <div class="acct-field" style="grid-column: span 2;">
+                    <div class="acct-field" style="grid-column: span 3;">
                         <label class="acct-label" for="apPmtNotes">Payment Particulars &amp; Quick Presets</label>
                         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-                            <input type="text" class="acct-input" id="apPmtNotes" placeholder="Optional remarks or check memo..." style="flex:1;min-width:180px;">
+                            <input type="text" class="acct-input" id="apPmtNotes" placeholder="Optional remarks, check memo, or 2307 remittance ref..." style="flex:1;min-width:180px;">
                             <button type="button" class="rfq-btn rfq-btn-outline" id="btnApPmtPresetMatch" style="height:34px;padding:0 10px;font-size:11.5px;">Match Selected POs</button>
                             <button type="button" class="rfq-btn rfq-btn-outline" id="btnApPmtPresetHalf" style="height:34px;padding:0 10px;font-size:11.5px;">50% Partial</button>
                         </div>

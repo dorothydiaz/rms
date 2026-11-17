@@ -242,6 +242,16 @@ class ApPurchaseOrderPaymentIntegrationTest extends TestCase
         $resAp->assertSee('id="btnApAddBillLineTop"', false);
         $resAp->assertSee('id="btnApAddBillLine"', false);
         $resAp->assertSee('Add Row', false);
+        $resAp->assertSee('EWT Withheld (BIR 2307)', false);
+        $resAp->assertSee('Unapplied Vendor Credits', false);
+        $resAp->assertDontSee('id="ap2307RegisterTable"', false);
+        $resAp->assertSee('id="btnApNewSeparate2307"', false);
+        $resAp->assertSee('id="apPmtSettlementMode"', false);
+        $resAp->assertSee('class="acct-ledger-split-20-80"', false);
+        $resAp->assertSee('id="apAgingSchedulePanel"', false);
+        $resAp->assertSee('id="apVendorOpenBalancesTable"', false);
+        $resAp->assertSee('id="apVendorBalancesTableSettingsDropdown"', false);
+        $resAp->assertSee('id="apVendorBalancesBody"', false);
 
         $resPo = $this->actingAs($this->user)->get(route('purchase.purchase-orders'));
         $resPo->assertStatus(200);
@@ -338,6 +348,146 @@ class ApPurchaseOrderPaymentIntegrationTest extends TestCase
         $this->assertNotNull($cert);
         $this->assertEquals('WC158', $cert->atc_code);
         $this->assertEquals(15.00, (float) $cert->amount_withheld);
+    }
+
+    public function test_separate_bill_only_and_ewt_2307_payments_and_ledger_pending_pos(): void
+    {
+        $vendor = ProcurementVendor::create([
+            'vendor_code' => 'VEND-SEP-2307',
+            'legal_name' => 'Cebu Spice & Packaging Corp.',
+            'trade_name' => 'Cebu Spice',
+            'tax_id' => '456-789-123-000',
+            'is_active' => true,
+        ]);
+
+        $bankAccount = AcctBankAccount::create([
+            'company_id' => $this->companyId,
+            'account_name' => 'UnionBank Corporate Checking',
+            'bank_name' => 'UnionBank',
+            'account_number' => '777-222-999',
+            'account_type' => 'CHECKING',
+            'gl_account_id' => ChartOfAccount::where('system_role', 'CASH_IN_BANK')->value('account_id'),
+            'current_balance' => 100000.00,
+            'is_active' => true,
+        ]);
+
+        $resPo = $this->actingAs($this->user)->postJson(route('purchase.api.orders.create'), [
+            'vendor_id' => (string) $vendor->id,
+            'vendor_name' => $vendor->legal_name,
+            'vendor_trade_name' => $vendor->trade_name,
+            'status' => 'Approved / Issued',
+            'items' => [
+                [
+                    'sku' => 'SPICE-2307-1',
+                    'name' => 'Whole Black Peppercorns',
+                    'unit' => 'KG',
+                    'quantity' => 2,
+                    'unitPrice' => 500.00,
+                ],
+            ],
+        ]);
+        $resPo->assertStatus(200);
+        $poId = $resPo->json('data.po.id');
+        $poNumber = $resPo->json('data.po_number');
+
+        $bill = VendorBillHeader::where('purchase_order_id', (string) $poId)->firstOrFail();
+        $this->assertEquals('POSTED', $bill->vendor_bill_status);
+        $this->assertEquals(1000.00, (float) $bill->bill_total_amount);
+
+        // Verify Tab 4 Vendor Open Balances renders expandable pending PO row for this vendor
+        $resViewBefore = $this->actingAs($this->user)->get(route('accounting.ap'));
+        $resViewBefore->assertStatus(200);
+        $resViewBefore->assertSee('btnApExpandVendorPos', false);
+        $resViewBefore->assertSee('ap-vendor-pos-detail-row', false);
+        $resViewBefore->assertSee($poNumber, false);
+
+        // 1. Pay bill principal only (BILL_ONLY) -> zero EWT, no BIR 2307 issued yet
+        $resBillOnly = $this->actingAs($this->user)->postJson(route('accounting.api.ap.payments.save'), [
+            'payment' => [
+                'vendor_id' => (string) $vendor->id,
+                'payment_date' => now()->toDateString(),
+                'payment_method' => 'BANK_TRANSFER',
+                'settlement_mode' => 'BILL_ONLY',
+                'bank_account_id' => $bankAccount->bank_account_id,
+                'reference_number' => 'TRF-BILL-ONLY-1000',
+                'total_amount' => 1000.00,
+                'total_ewt_amount' => 0.00,
+                'total_net_amount' => 1000.00,
+            ],
+            'allocations' => [
+                [
+                    'vendor_bill_id' => $bill->vendor_bill_id,
+                    'allocated_amount' => 1000.00,
+                    'ewt_amount' => 0.00,
+                    'ewt_rate_pct' => 0.00,
+                ],
+            ],
+        ]);
+        $resBillOnly->assertStatus(200)->assertJsonPath('success', true);
+
+        $bill->refresh();
+        $this->assertEquals('PAID', $bill->vendor_bill_status);
+        $this->assertEquals(1000.00, (float) $bill->bill_paid_amount);
+
+        $billOnlyPmt = AcctVendorPayment::where('vendor_id', (string) $vendor->id)
+            ->orderBy('payment_number')
+            ->firstOrFail();
+        $this->assertEquals(0.00, (float) $billOnlyPmt->ewt_amount);
+        $this->assertSame(
+            0,
+            AcctBir2307Certificate::where('vendor_payment_id', $billOnlyPmt->payment_id)->count()
+        );
+
+        $resViewMid = $this->actingAs($this->user)->get(route('accounting.ap'));
+        $resViewMid->assertStatus(200);
+        $resViewMid->assertSee('btnApSeparate2307', false);
+
+        // 2. Issue separate EWT / BIR 2307 voucher (EWT_2307_ONLY) on already-paid bill
+        $resEwtOnly = $this->actingAs($this->user)->postJson(route('accounting.api.ap.payments.save'), [
+            'payment' => [
+                'vendor_id' => (string) $vendor->id,
+                'payment_date' => now()->toDateString(),
+                'payment_method' => 'BANK_TRANSFER',
+                'settlement_mode' => 'EWT_2307_ONLY',
+                'bank_account_id' => $bankAccount->bank_account_id,
+                'reference_number' => 'BIR-2307-ONLY-10',
+                'total_amount' => 10.00,
+                'total_ewt_amount' => 10.00,
+                'total_net_amount' => 0.00,
+            ],
+            'allocations' => [
+                [
+                    'vendor_bill_id' => $bill->vendor_bill_id,
+                    'allocated_amount' => 10.00,
+                    'ewt_amount' => 10.00,
+                    'ewt_rate_pct' => 1.0,
+                    'ewt_tax_code' => 'WC158',
+                ],
+            ],
+        ]);
+        $resEwtOnly->assertStatus(200)->assertJsonPath('success', true);
+
+        $ewtOnlyPmt = AcctVendorPayment::where('vendor_id', (string) $vendor->id)
+            ->where('payment_id', '!=', $billOnlyPmt->payment_id)
+            ->firstOrFail();
+
+        $cert = AcctBir2307Certificate::where('vendor_payment_id', $ewtOnlyPmt->payment_id)->first();
+        $this->assertNotNull($cert);
+        $this->assertEquals('WC158', $cert->atc_code);
+        $this->assertEquals(10.00, (float) $cert->amount_withheld);
+        $this->assertEquals(1000.00, (float) $cert->gross_income_payment);
+
+        // Must NOT falsely generate an overpayment vendor credit memo under EWT_2307_ONLY
+        $this->assertSame(
+            0,
+            AcctVendorMemo::where('vendor_id', (string) $vendor->id)
+                ->where('memo_type', 'CREDIT')
+                ->count()
+        );
+
+        $resViewAfter = $this->actingAs($this->user)->get(route('accounting.ap'));
+        $resViewAfter->assertStatus(200);
+        $resViewAfter->assertSee('btnApView2307', false);
     }
 }
 

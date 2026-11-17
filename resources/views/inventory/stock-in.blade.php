@@ -186,6 +186,7 @@
             <!-- RFQ Responsive Table with Stacked Headers & Gear Settings Button -->
             <div class="rfq-table-responsive" style="position: relative; overflow-x: auto;">
                 <table class="rfq-table" id="queueTable">
+                    <colgroup id="queueColgroup"></colgroup>
                     <thead id="queueTableThead">
                         <tr id="queueTableTheadRow">
                             <!-- Rendered dynamically by renderQueueTableHeader() with rfq-th-settings-btn gear icon -->
@@ -238,125 +239,144 @@
          ===================================================================== -->
     <div class="po-tab-pane rfq-tab-pane grn-builder" id="panelIntakeBuilder" style="display: none;">
 
-        <!-- ZONE 1: Live Inbound Route Pipeline + Read-only Document Status -->
+        <!-- ZONE 1: Top Action Bar + Right-Aligned 12.5% Chevron Pipeline -->
         <div class="po-lifecycle-bar-container rfq-lifecycle-bar-container stage-theme-issued grn-zone1" id="grnLifecycleStepperWrap">
-            <div class="grn-zone1-status">
-                <span class="grn-status-chip" id="grnStatusChip" data-state="draft">
-                    <i class="ph ph-circle-dashed" aria-hidden="true"></i>
-                    <span id="grnStatusChipText">Draft · Not Posted</span>
-                </span>
-                <span class="grn-draft-indicator" id="grnDraftIndicator" hidden>
+            <div class="grn-zone1-actions" role="toolbar" aria-label="Receiving stage actions">
+                <input type="file" id="grnProofFileInput" accept="image/*,.pdf" multiple hidden onchange="onGrnProofAttached(this)">
+                <button type="button" class="grn-top-action-btn is-neutral" id="btnGrnAttachProof" onclick="document.getElementById('grnProofFileInput')?.click()" title="Attach delivery slip or inspection photo proof">
+                    <i class="ph ph-paperclip" aria-hidden="true"></i>
+                    <span class="grn-top-btn-sep" aria-hidden="true"></span>
+                    <span id="btnGrnAttachProofLabel">Attach Proof</span>
+                </button>
+
+                <button type="button" class="grn-top-action-btn is-neutral" id="btnFooterSaveDraft" onclick="handleGrnSecondaryAction()" title="Save current intake sheet as a local draft">
                     <i class="ph ph-floppy-disk" aria-hidden="true"></i>
-                    <span id="grnDraftIndicatorText">Draft saved</span>
-                </span>
+                    <span class="grn-top-btn-sep" aria-hidden="true"></span>
+                    <span id="btnFooterSaveDraftLabel">Save Draft</span>
+                </button>
+
+                <button type="button" class="grn-top-action-btn is-danger" id="btnRejectReturnGrn" onclick="handleGrnRejectOrReturn()" title="Reject / Return delivery or move to quarantine">
+                    <i class="ph ph-warning" aria-hidden="true"></i>
+                    <span class="grn-top-btn-sep" aria-hidden="true"></span>
+                    <span>Reject / Return</span>
+                </button>
+
+                <button type="button" class="grn-top-action-btn is-primary grn-btn-cta" id="btnConfirmIntake" onclick="handleGrnPrimaryStepAction()" title="Confirm current step &amp; proceed (F10)">
+                    <span class="grn-top-btn-check" aria-hidden="true"><i class="ph-bold ph-check"></i></span>
+                    <span class="grn-top-btn-sep" aria-hidden="true"></span>
+                    <span id="btnConfirmIntakeLabel">Confirm Dock Receipt →</span>
+                </button>
+            </div>
+
+            <!-- Hidden compatibility status chips -->
+            <div hidden aria-hidden="true">
+                <span id="grnStatusChip" data-state="draft"><span id="grnStatusChipText">Draft · Not Posted</span></span>
+                <span id="grnDraftIndicator"><span id="grnDraftIndicatorText">Draft saved</span></span>
             </div>
 
             <!-- Receiving -> (QC if route has inspection) -> Storage -> Status; rendered by renderGrnChevronPipeline() -->
             <div class="po-chevron-pipeline rfq-chevron-pipeline" id="grnLifecycleProgressBar" role="list" aria-label="Inbound route stages"></div>
+            <div class="grn-chevron-tooltip" id="grnChevronTooltip" role="tooltip" hidden></div>
         </div>
 
         <!-- ZONE 2: Identity Ribbon + Operational Form Grid -->
         <div class="po-panel-card rfq-panel-card grn-header-card" id="grnTopBannerCard">
-            <!-- Identity ribbon: GRN ref · single PO pill (selector + open link) · mode -->
+            <!-- Unified segmented metadata strip: GRN Ref | PO Selector | Mode | Active Route Preset -->
             <div class="grn-ribbon">
-                <div class="grn-ribbon-left">
-                    <div class="grn-ref-pill">
-                        <i class="ph ph-tray-arrow-down" aria-hidden="true"></i>
-                        <span class="grn-ref-label">GRN</span>
-                        <span id="intakeDocNoDisplay" class="grn-ref-value">GRN-DIRECT</span>
-                        <button type="button" class="grn-icon-btn" onclick="copyGrnReference()" title="Copy GRN reference" aria-label="Copy GRN reference">
-                            <i class="ph ph-copy" aria-hidden="true"></i>
-                        </button>
+                <div class="grn-identity-strip" role="group" aria-label="Document identity and purchase order link">
+                    <div class="grn-id-seg grn-id-seg-ref">
+                        <span class="grn-id-key">GRN</span>
+                        <div class="grn-id-val-row">
+                            <span id="intakeDocNoDisplay" class="grn-id-val">GRN-DIRECT</span>
+                            <button type="button" class="grn-seg-icon-btn" onclick="copyGrnReference()" title="Copy GRN reference" aria-label="Copy GRN reference">
+                                <i class="ph ph-copy" aria-hidden="true"></i>
+                            </button>
+                        </div>
                     </div>
 
-                    <div class="grn-po-pill">
-                        <i class="ph ph-receipt" aria-hidden="true"></i>
-                        <label class="grn-ref-label" for="intakePoSelect">PO</label>
-                        <select id="intakePoSelect" class="grn-po-select" onchange="onIntakePoSelected(this.value)">
-                            <option value="">Direct Inbound (Bypass PO)</option>
-                        </select>
-                        <button type="button" class="grn-icon-btn" id="grnOpenPoBtn" onclick="openActivePoInPurchaseModule()" title="Open in Purchase Order module" aria-label="Open linked purchase order in Purchase Order module">
-                            <i class="ph ph-arrow-square-out" aria-hidden="true"></i>
-                        </button>
+                    <div class="grn-id-seg grn-id-seg-po">
+                        <label class="grn-id-key" for="intakePoSelect">PO</label>
+                        <div class="grn-id-val-row">
+                            <select id="intakePoSelect" class="grn-po-select" onchange="onIntakePoSelected(this.value)" title="Select linked Purchase Order or Direct Inbound">
+                                <option value="">Direct Inbound (Bypass PO)</option>
+                            </select>
+                            <button type="button" class="grn-seg-icon-btn" id="grnOpenPoBtn" onclick="openActivePoInPurchaseModule()" title="Open in Purchase Order module" aria-label="Open linked purchase order in Purchase Order module" hidden>
+                                <i class="ph ph-arrow-square-out" aria-hidden="true"></i>
+                            </button>
+                        </div>
                     </div>
 
-                    <span class="status-pill sent grn-mode-pill" id="intakeModeBadge">
-                        <i class="ph ph-dot" aria-hidden="true"></i>
-                        <span id="intakeModeText">Direct Spot Inbound</span>
-                    </span>
+                    <div class="grn-id-seg grn-id-seg-mode" hidden>
+                        <span class="grn-id-key">PO</span>
+                        <div class="grn-id-val-row">
+                            <span class="grn-mode-tag sent" id="intakeModeBadge">
+                                <span id="intakeModeText">Direct Spot Inbound</span>
+                            </span>
+                        </div>
+                    </div>
                 </div>
-                <div class="grn-ribbon-right">
-                    <span class="grn-hint-text"><kbd>F2</kbd> Scan · <kbd>F8</kbd> Preview · <kbd>F10</kbd> Confirm</span>
+
+                <div class="grn-route-preset-pill" title="Active Inbound Movement Preset">
+                    <i class="ph ph-check-circle" aria-hidden="true"></i>
+                    <span id="routePresetBadge">3-Step Quality Check</span>
                 </div>
             </div>
 
-            <!-- Operational grid: Row 1 Vendor · Movement Type · ETA · Arrival | Row 2 Route (span 2) · DR # · Notes -->
-            <div class="grn-form-grid">
+            <!-- Single 6-Column Operational Row: Vendor/Supplier | Movement Type | Route | ETA | Arrival Date | Delivery Number -->
+            <div class="grn-form-grid grn-form-row-6">
                 <div class="grn-field">
                     <label class="grn-label" for="intakeVendorSelect">
-                        <span>Vendor / Supplier <span class="grn-req" aria-hidden="true">*</span></span>
-                        <span class="grn-label-badge">Masterlist</span>
+                        <span><i class="ph ph-users" aria-hidden="true"></i> Vendor / Supplier</span>
                     </label>
                     <select id="intakeVendorSelect" class="grn-control" onchange="onIntakeVendorChanged()" required></select>
                 </div>
 
                 <div class="grn-field">
                     <label class="grn-label" for="intakeMovementTypeSelect">
-                        <span>Inbound Movement Type <span class="grn-req" aria-hidden="true">*</span></span>
-                        <span class="grn-label-badge is-accent" id="routePresetBadge">Route</span>
+                        <span><i class="ph ph-cube" aria-hidden="true"></i> Movement Type</span>
                     </label>
                     <select id="intakeMovementTypeSelect" class="grn-control" onchange="onIntakeMovementTypeChanged(this.value)" required></select>
                 </div>
 
                 <div class="grn-field">
+                    <label class="grn-label" for="intakeCombinedRouteSelect" id="grnRouteLabel">
+                        <span><i class="ph ph-git-branch" aria-hidden="true"></i> Route</span>
+                    </label>
+                    <select id="intakeCombinedRouteSelect" class="grn-control" aria-label="Route Source to Destination" onchange="onIntakeCombinedRouteChanged(this.value)"></select>
+                </div>
+
+                <div class="grn-field">
                     <label class="grn-label" for="intakeExpectedDelivery">
-                        <span>Expected Delivery (ETA)</span>
-                        <span class="grn-label-badge">Scheduled</span>
+                        <span><i class="ph ph-calendar-blank" aria-hidden="true"></i> Est. Time of Arrival</span>
                     </label>
                     <input type="date" id="intakeExpectedDelivery" class="grn-control" onchange="onIntakeHeaderChanged()">
                 </div>
 
                 <div class="grn-field">
                     <label class="grn-label" for="intakeReceivedAt">
-                        <span>Arrival Date &amp; Time <span class="grn-req" aria-hidden="true">*</span></span>
-                        <span class="grn-label-badge" id="grnTimelinessBadge" data-state="none">Dock Stamp</span>
+                        <span><i class="ph ph-calendar-check" aria-hidden="true"></i> Arrival Date</span>
                     </label>
                     <input type="datetime-local" id="intakeReceivedAt" class="grn-control" value="{{ now()->format('Y-m-d\TH:i') }}" onchange="onIntakeHeaderChanged()" required>
                 </div>
 
-                <div class="grn-field grn-field-span-2">
-                    <span class="grn-label" id="grnRouteLabel">
-                        <span>Route: Source <i class="ph ph-arrow-right" aria-hidden="true"></i> Destination <span class="grn-req" aria-hidden="true">*</span></span>
-                        <span class="grn-label-badge is-success" id="grnRouteStageBadge">Storage</span>
-                    </span>
-                    <div class="grn-route-field" role="group" aria-labelledby="grnRouteLabel">
-                        <select id="intakeSourceLocationSelect" class="grn-control grn-route-src" aria-label="Source location" onchange="onIntakeSourceLocationChanged(this.value)"></select>
-                        <span class="grn-route-arrow" aria-hidden="true"><i class="ph ph-arrow-right"></i></span>
-                        <select id="intakeDestinationLocationSelect" class="grn-control grn-route-dest" aria-label="Destination location" onchange="onIntakeDestinationLocationChanged(this.value)"></select>
-                    </div>
-                </div>
-
                 <div class="grn-field">
                     <label class="grn-label" for="intakeDeliverySlip">
-                        <span>Delivery Slip (DR #)</span>
-                        <span class="grn-label-badge">Logistics</span>
+                        <span><i class="ph ph-file-text" aria-hidden="true"></i> Delivery Number</span>
                     </label>
-                    <input type="text" id="intakeDeliverySlip" class="grn-control" maxlength="100" placeholder="e.g. DR-2026-9921" oninput="onIntakeHeaderChanged()">
-                </div>
-
-                <div class="grn-field">
-                    <label class="grn-label" for="intakeDeliveryNotes">
-                        <span>Receiving Notes</span>
-                        <span class="grn-label-badge">Optional</span>
-                    </label>
-                    <input type="text" id="intakeDeliveryNotes" class="grn-control" maxlength="300" placeholder="e.g. Lalamove 4W, seals intact" oninput="onIntakeHeaderChanged()">
+                    <input type="text" id="intakeDeliverySlip" class="grn-control" maxlength="100" placeholder="e.g. DR-2026-0001" oninput="onIntakeHeaderChanged()">
                 </div>
             </div>
 
-            <!-- Hidden compatibility inputs -->
-            <input type="hidden" id="intakeWarehouseSelect" value="WH-MAIN">
-            <input type="hidden" id="intakeCarrier" value="">
-            <input type="hidden" id="intakeReceiverName" value="{{ auth()->user()->name ?? 'Warehouse Supervisor' }}">
+            <!-- Hidden compatibility controls preserving existing route/payload hooks -->
+            <div hidden aria-hidden="true">
+                <span id="grnRouteStageBadge">Step 1/3: Receive at Inbound Dock</span>
+                <select id="intakeSourceLocationSelect" aria-label="Source location" onchange="onIntakeSourceLocationChanged(this.value)"></select>
+                <select id="intakeDestinationLocationSelect" aria-label="Destination location" onchange="onIntakeDestinationLocationChanged(this.value)"></select>
+                <input type="text" id="intakeDeliveryNotes" value="">
+                <input type="hidden" id="intakeWarehouseSelect" value="WH-MAIN">
+                <input type="hidden" id="intakeCarrier" value="">
+                <input type="hidden" id="intakeReceiverName" value="{{ auth()->user()->name ?? 'Warehouse Supervisor' }}">
+            </div>
         </div>
 
         <!-- ZONE 3: Items Panel (full width on <1440px) + GRN Mockup (sticky column / drawer) -->
@@ -364,22 +384,62 @@
 
             <div class="po-items-panel-col rfq-items-panel-col">
                 <div class="po-items-panel rfq-items-panel">
-                    <!-- Items toolbar: Scan bar (primary focus) · counter · unplanned item · overflow -->
+                    <!-- Contextual Read-Only Historical Step Banner -->
+                    <div class="grn-step-readonly-banner" id="grnReadOnlyStepBanner" role="status" hidden>
+                        <div class="grn-step-readonly-info">
+                            <i class="ph ph-lock-key" aria-hidden="true"></i>
+                            <span id="grnReadOnlyStepText">Viewing completed step in read-only mode.</span>
+                        </div>
+                        <button type="button" class="grn-btn grn-btn-primary grn-btn-xs" id="btnBannerReturnActiveStep" onclick="returnToActiveGrnStep()">
+                            <i class="ph ph-arrow-bend-up-right" aria-hidden="true"></i>
+                            <span id="btnBannerReturnActiveStepLabel">Return to Active Step [Step 2]</span>
+                        </button>
+                    </div>
+
+                    <!-- Contextual QA & Inspection Verification Strip (Active on QA/Inspection steps) -->
+                    <div class="grn-qa-inspection-bar" id="grnQaInspectionBar" role="region" aria-label="Quality Check &amp; Inspection Parameters" hidden>
+                        <div class="grn-qa-bar-title">
+                            <i class="ph ph-seal-check" aria-hidden="true"></i>
+                            <span>QA &amp; Inspection Gate</span>
+                        </div>
+                        <div class="grn-qa-bar-controls">
+                            <label class="grn-qa-field" for="grnQaTempInput">
+                                <span>Temp (°C)</span>
+                                <input type="number" step="0.1" id="grnQaTempInput" class="grn-control grn-qa-input" value="2.4" oninput="onGrnQaParamChanged()" placeholder="2.4">
+                            </label>
+                            <label class="grn-qa-field" for="grnQaResultSelect">
+                                <span>Disposition</span>
+                                <select id="grnQaResultSelect" class="grn-control grn-qa-select" onchange="onGrnQaParamChanged()">
+                                    <option value="PASS">Pass — Specs &amp; Seals OK</option>
+                                    <option value="FAIL">Fail — Out of Spec / Damaged</option>
+                                </select>
+                            </label>
+                            <label class="grn-qa-check" for="grnQaChecklistVerified">
+                                <input type="checkbox" id="grnQaChecklistVerified" checked onchange="onGrnQaParamChanged()">
+                                <span>Checklist &amp; Lot Verified</span>
+                            </label>
+                            <button type="button" class="grn-btn grn-btn-danger-outline grn-btn-xs" id="btnFailQaQuarantine" onclick="failGrnQaAndQuarantine()" title="Fail QA inspection &amp; move shipment to Quarantine" hidden>
+                                <i class="ph ph-shield-warning" aria-hidden="true"></i>
+                                <span id="btnFailQaQuarantineLabel">Fail QA / Quarantine</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Items toolbar: Enterprise Search Bar + Unplanned Item -->
                     <div class="grn-items-toolbar">
                         <div class="grn-scan-bar">
-                            <i class="ph ph-barcode" aria-hidden="true"></i>
-                            <label for="grnScanInput" class="sr-only">Scan barcode or type SKU</label>
-                            <input type="text" id="grnScanInput" class="grn-scan-input" autocomplete="off" spellcheck="false" placeholder="Scan barcode or type SKU, then Enter…" onkeydown="onGrnScanKeydown(event)">
-                            <kbd class="grn-kbd">F2</kbd>
+                            <i class="ph ph-magnifying-glass" aria-hidden="true"></i>
+                            <label for="grnScanInput" class="sr-only">Scan barcode or type SKU / Item Name</label>
+                            <input type="text" id="grnScanInput" class="grn-scan-input" autocomplete="off" spellcheck="false" placeholder="Scan barcode or type SKU / Item Name..." title="Press F2 to focus scanner, Enter to add" onkeydown="onGrnScanKeydown(event)">
                         </div>
 
                         <div class="grn-items-toolbar-right">
                             <span class="po-items-counter-pill rfq-items-counter-pill" id="intakeItemCountBadge">0 Line Items</span>
-                            <button type="button" class="grn-btn grn-btn-soft" onclick="addAdHocIntakeRow()" title="Add an item that is not on the PO">
-                                <i class="ph ph-plus-circle" aria-hidden="true"></i>
+                            <button type="button" class="grn-btn grn-btn-secondary" id="btnAddUnplannedItem" onclick="addAdHocIntakeRow()" title="Add an item that is not on the PO">
+                                <i class="ph ph-plus" aria-hidden="true"></i>
                                 <span>Unplanned Item</span>
                             </button>
-                            <button type="button" class="grn-btn grn-btn-ghost grn-mockup-toggle" id="grnMockupToggleBtn" onclick="toggleGrnMockupDrawer()" aria-controls="grnMockupPanelCol" aria-expanded="false" title="Show GRN document panel">
+                            <button type="button" class="grn-btn grn-btn-secondary grn-mockup-toggle" id="grnMockupToggleBtn" onclick="toggleGrnMockupDrawer()" aria-controls="grnMockupPanelCol" aria-expanded="false" title="Show GRN document panel">
                                 <i class="ph ph-file-text" aria-hidden="true"></i>
                                 <span>GRN Panel</span>
                             </button>
@@ -388,8 +448,8 @@
                                     <i class="ph ph-dots-three-vertical" aria-hidden="true"></i>
                                 </button>
                                 <div class="grn-overflow-menu" id="grnOverflowMenu" role="menu" hidden onclick="event.stopPropagation()">
-                                    <button type="button" role="menuitem" onclick="openGrnDocumentPreview(); toggleGrnOverflowMenu();">
-                                        <i class="ph ph-printer" aria-hidden="true"></i> Print preview <kbd>F8</kbd>
+                                    <button type="button" role="menuitem" onclick="openGrnDocumentPreview(); toggleGrnOverflowMenu();" title="Print preview (F8)">
+                                        <i class="ph ph-printer" aria-hidden="true"></i> Print preview
                                     </button>
                                     <button type="button" role="menuitem" onclick="discardGrnDraft()">
                                         <i class="ph ph-arrow-counter-clockwise" aria-hidden="true"></i> Discard saved draft
@@ -405,6 +465,7 @@
                     <!-- Table viewport with gear column settings (cost hidden by default) -->
                     <div class="po-table-responsive rfq-table-responsive grn-table-viewport" id="grnTableContainer">
                         <table class="po-table rfq-table grn-items-table" id="intakeTable">
+                            <colgroup id="intakeColgroup"></colgroup>
                             <thead id="intakeTableThead">
                                 <tr id="intakeItemsTheadRow"></tr>
                             </thead>
@@ -450,12 +511,6 @@
                                 <div class="grn-progress-fill" id="fulfillmentProgressBar"></div>
                             </div>
                         </div>
-
-                        <button type="button" class="grn-btn grn-btn-primary grn-btn-cta" id="btnConfirmIntake" onclick="confirmAndCommitStockIntake()" title="Confirm receipt & post to SYS_LEDGER (F10)">
-                            <i class="ph ph-check-circle" aria-hidden="true"></i>
-                            <span>Confirm GRN</span>
-                            <kbd class="grn-kbd grn-kbd-contrast">F10</kbd>
-                        </button>
                     </div>
                 </div>
             </div>
@@ -467,15 +522,14 @@
                         <div class="grn-mockup-title">
                             <i class="ph ph-file-text" aria-hidden="true"></i>
                             <span>Goods Receipt (GRN)</span>
-                            <span class="grn-mockup-pages" id="grnMockupPageCountBadge">1 Page</span>
+                            <span class="grn-mockup-pages" id="grnMockupPageCountBadge">1 Page (A4)</span>
                             <span class="grn-live-dot" aria-hidden="true"></span>
                             <span class="grn-live-text">Live</span>
                         </div>
                         <div class="grn-mockup-actions">
-                            <button type="button" class="grn-btn grn-btn-ghost" onclick="openGrnDocumentPreview()" title="Print preview (F8)">
+                            <button type="button" class="grn-btn grn-btn-secondary grn-btn-xs" onclick="openGrnDocumentPreview()" title="Print A4 GRN (F8)">
                                 <i class="ph ph-printer" aria-hidden="true"></i>
-                                <span>Preview</span>
-                                <kbd class="grn-kbd">F8</kbd>
+                                <span>Print A4</span>
                             </button>
                             <button type="button" class="grn-icon-btn grn-icon-btn-lg grn-mockup-close" onclick="toggleGrnMockupDrawer(false)" aria-label="Close GRN panel">
                                 <i class="ph ph-x" aria-hidden="true"></i>

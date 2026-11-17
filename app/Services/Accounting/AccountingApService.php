@@ -377,7 +377,8 @@ class AccountingApService
         return DB::transaction(function () use ($paymentData, $billAllocations, $companyId, $branchId, $actor) {
             $paymentNumber = $this->numberingService->generateNextNumber($companyId, 'PV', 'PV');
             $method = strtoupper((string) ($paymentData['payment_method'] ?? 'BANK_TRANSFER'));
-            $isPrepayment = (bool) ($paymentData['is_prepayment'] ?? empty($billAllocations));
+            $settlementMode = strtoupper((string) ($paymentData['settlement_mode'] ?? 'COMBINED'));
+            $isPrepayment = (bool) ($paymentData['is_prepayment'] ?? (empty($billAllocations) && $settlementMode !== 'EWT_2307_ONLY'));
 
             $vendorRecord = $this->resolveVendorRecord((string) $paymentData['vendor_id'], $paymentData['vendor_name'] ?? null);
             $resolvedVendorName = $paymentData['vendor_name']
@@ -420,7 +421,7 @@ class AccountingApService
 
             if ($isPrepayment) {
                 $grossSum = (float) ($paymentData['total_amount'] ?? $paymentData['gross_amount'] ?? $paymentData['net_amount'] ?? 0.0);
-                $ewtSum = (float) ($paymentData['total_ewt_amount'] ?? $paymentData['ewt_amount'] ?? 0.0);
+                $ewtSum = $settlementMode === 'BILL_ONLY' ? 0.0 : (float) ($paymentData['total_ewt_amount'] ?? $paymentData['ewt_amount'] ?? 0.0);
             } else {
                 foreach ($billAllocations as $alloc) {
                     $billId = $alloc['vendor_bill_id'] ?? null;
@@ -439,17 +440,34 @@ class AccountingApService
 
                     $balanceBefore = max(0.0, round((float) $bill->bill_total_amount - (float) $bill->bill_paid_amount, 4));
                     $rawAllocated = max(0.0, (float) ($alloc['allocated_amount'] ?? 0.0));
+
+                    if ($settlementMode === 'BILL_ONLY') {
+                        $ewtRate = 0.0;
+                        $ewtTaxCode = 'NONE';
+                        $ewtWithheld = 0.0;
+                    } elseif ($settlementMode === 'EWT_2307_ONLY') {
+                        $ewtRate = (float) ($alloc['ewt_rate_pct'] ?? 1.0);
+                        $ewtTaxCode = $alloc['ewt_tax_code'] ?? 'WC158';
+                        $baseAmt = (float) ($bill->bill_subtotal_amount > 0 ? $bill->bill_subtotal_amount : $bill->bill_total_amount);
+                        $ewtWithheld = isset($alloc['ewt_amount']) && (float) $alloc['ewt_amount'] > 0
+                            ? (float) $alloc['ewt_amount']
+                            : round($baseAmt * ($ewtRate / 100), 4);
+                        if ($rawAllocated <= 0.0001) {
+                            $rawAllocated = $ewtWithheld;
+                        }
+                    } else {
+                        $ewtRate = (float) ($alloc['ewt_rate_pct'] ?? 1.0);
+                        $ewtTaxCode = $alloc['ewt_tax_code'] ?? 'WC158';
+                        $ewtWithheld = isset($alloc['ewt_amount']) ? (float) $alloc['ewt_amount'] : round($rawAllocated * ($ewtRate / 100), 4);
+                    }
+
                     if ($rawAllocated <= 0.0001 && count($billAllocations) > 1) {
                         continue;
                     }
                     $rawAllocated = max(0.01, $rawAllocated);
 
-                    // Cap bill settlement at open balance; any excess automatically rolls into AP Vendor Credit
+                    // Cap bill settlement at open balance; any excess automatically rolls into AP Vendor Credit (unless EWT_2307_ONLY)
                     $appliedToBill = $balanceBefore > 0.0001 ? min($rawAllocated, $balanceBefore) : 0.0;
-
-                    $ewtRate = (float) ($alloc['ewt_rate_pct'] ?? 1.0);
-                    $ewtTaxCode = $alloc['ewt_tax_code'] ?? 'WC158';
-                    $ewtWithheld = isset($alloc['ewt_amount']) ? (float) $alloc['ewt_amount'] : round($rawAllocated * ($ewtRate / 100), 4);
 
                     $allocGrossSum += $rawAllocated;
                     $totalAppliedToBills += $appliedToBill;
@@ -472,16 +490,21 @@ class AccountingApService
 
                 $requestedGrossTotal = (float) ($paymentData['total_amount'] ?? $paymentData['gross_amount'] ?? 0.0);
                 $grossSum = max($requestedGrossTotal, $allocGrossSum);
-                if ($ewtSum === 0.0 && isset($paymentData['total_ewt_amount'])) {
+                if ($settlementMode === 'BILL_ONLY') {
+                    $ewtSum = 0.0;
+                } elseif ($ewtSum === 0.0 && isset($paymentData['total_ewt_amount'])) {
                     $ewtSum = (float) $paymentData['total_ewt_amount'];
+                }
+                if ($settlementMode === 'EWT_2307_ONLY' && $ewtSum <= 0.0001 && $grossSum > 0.0001) {
+                    $ewtSum = $grossSum;
                 }
             }
 
-            $excessCreditAmount = (!empty($allocatedLines) || (!$isPrepayment && $grossSum > 0.009))
+            $excessCreditAmount = ($settlementMode !== 'EWT_2307_ONLY' && (!empty($allocatedLines) || (!$isPrepayment && $grossSum > 0.009)))
                 ? max(0.0, round($grossSum - $totalAppliedToBills, 4))
                 : 0.0;
 
-            $netAmount = round($grossSum - $ewtSum, 4);
+            $netAmount = max(0.0, round($grossSum - $ewtSum, 4));
             $refNumber = $paymentData['bank_reference'] ?? $paymentData['reference_number'] ?? null;
             $checkNumber = $paymentData['check_number'] ?? (in_array($method, ['CHECK', 'PDC'], true) ? $refNumber : null);
 
@@ -522,7 +545,7 @@ class AccountingApService
             // Save line allocations and update vendor bills
             foreach ($allocatedLines as $a) {
                 $bill = $a['bill_model'];
-                if ($a['allocated_amount'] > 0.0001) {
+                if ($a['allocated_amount'] > 0.0001 || ($settlementMode === 'EWT_2307_ONLY' && $a['ewt_withheld'] > 0.0001)) {
                     AcctVendorPaymentLine::create([
                         'payment_id' => $payment->payment_id,
                         'vendor_bill_id' => $a['vendor_bill_id'],
@@ -536,10 +559,12 @@ class AccountingApService
                         'is_prepayment' => false,
                     ]);
 
-                    $newPaid = min((float) $bill->bill_total_amount, round((float) $bill->bill_paid_amount + $a['allocated_amount'], 4));
-                    $bill->bill_paid_amount = $newPaid;
-                    $bill->vendor_bill_status = ($newPaid >= (float) $bill->bill_total_amount - 0.05) ? 'PAID' : 'PARTIAL';
-                    $bill->save();
+                    if ($a['allocated_amount'] > 0.0001) {
+                        $newPaid = min((float) $bill->bill_total_amount, round((float) $bill->bill_paid_amount + $a['allocated_amount'], 4));
+                        $bill->bill_paid_amount = $newPaid;
+                        $bill->vendor_bill_status = ($newPaid >= (float) $bill->bill_total_amount - 0.05) ? 'PAID' : 'PARTIAL';
+                        $bill->save();
+                    }
                 }
 
                 if (!empty($bill->purchase_order_id)) {
@@ -584,18 +609,23 @@ class AccountingApService
                     'partner_id' => $payment->vendor_id,
                     'transaction_debit' => $grossSum,
                     'transaction_credit' => 0.0,
-                    'description' => $excessCreditAmount > 0.009
-                        ? "Disbursement & Overpayment Credit for {$payment->vendor_name} ({$payment->payment_number})"
-                        : "Disbursement for Vendor {$payment->vendor_name} ({$payment->payment_number})",
+                    'description' => $settlementMode === 'EWT_2307_ONLY'
+                        ? "Separate BIR 2307 / EWT Withholding for {$payment->vendor_name} ({$payment->payment_number})"
+                        : ($excessCreditAmount > 0.009
+                            ? "Disbursement & Overpayment Credit for {$payment->vendor_name} ({$payment->payment_number})"
+                            : "Disbursement for Vendor {$payment->vendor_name} ({$payment->payment_number})"),
                 ],
-                [
+            ];
+
+            if ($netAmount > 0.0001) {
+                $glLines[] = [
                     'account_id' => $disbursementAccId,
                     'branch_id' => $branchId,
                     'transaction_debit' => 0.0,
                     'transaction_credit' => $netAmount,
                     'description' => "Net payment via {$method} ({$payment->payment_number})",
-                ],
-            ];
+                ];
+            }
 
             if ($ewtSum > 0.0001) {
                 $glLines[] = [

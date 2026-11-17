@@ -401,9 +401,7 @@ function initPoStore() {
     }
 
     // 3b. Load Accounting AP Vendor Credits & Synced PO Payments + Bank/Tax Config
-    window.PoStore.vendorCredits = Array.isArray(window.PurchaseOrderConfig?.data?.initialVendorCredits)
-        ? window.PurchaseOrderConfig.data.initialVendorCredits
-        : [];
+    initializeVendorCredits();
     window.PoStore.bankAccounts = Array.isArray(window.PurchaseOrderConfig?.data?.initialBankAccounts)
         ? window.PurchaseOrderConfig.data.initialBankAccounts
         : [];
@@ -1845,12 +1843,16 @@ function updatePoTotals() {
     const creditInfo = getAvailableVendorCreditForPo(po);
     const availCredit = creditInfo.totalCredit;
 
+    const stage = getNormalizedPoStage(po.status);
+    const isDraft = (stage === 'Draft' || stage === 'Approval');
+
     // Show/hide Vendor Credit Balance row inside PO Payment Summary
+    // Per requirements: Do NOT include credits in the Draft stage (appear only in Issued stage)
     const creditRow = document.getElementById('summaryPoVendorCreditRow');
     const creditBalEl = document.getElementById('summaryPoVendorCreditBal');
     const applyCreditBtn = document.getElementById('btnApplyPoSummaryCredit');
     if (creditRow) {
-        if (availCredit > 0.009) {
+        if (!isDraft && availCredit > 0.009 && balanceDue > 0.009) {
             creditRow.style.display = 'flex';
             if (creditBalEl) creditBalEl.textContent = `₱ ${formatMoney(availCredit)}`;
             if (applyCreditBtn) {
@@ -1865,13 +1867,15 @@ function updatePoTotals() {
 
     // Amount Due displays the initial / remaining obligation
     if (elBalanceDue) {
-        elBalanceDue.textContent = `₱ ${formatMoney(totalGross > 0 && payments.length === 0 ? totalGross : balanceDue)}`;
-        elBalanceDue.style.color = (balanceDue <= 0.009 && totalGross > 0) ? '#059669' : '#0f172a';
+        const displayedBalance = isDraft ? totalGross : (totalGross > 0 && payments.length === 0 ? totalGross : balanceDue);
+        elBalanceDue.textContent = `₱ ${formatMoney(displayedBalance)}`;
+        elBalanceDue.style.color = (!isDraft && balanceDue <= 0.009 && totalGross > 0) ? '#059669' : '#0f172a';
     }
 
-    // Adaptive Payment Rows AFTER Amount Due (continues adding rows until balanceDue reaches 0)
+    // Payment rows & settlement access AFTER Amount Due
     if (elPaymentsList) {
-        if (totalGross <= 0 && payments.length === 0) {
+        if (isDraft || (totalGross <= 0 && payments.length === 0)) {
+            // In Draft stage, remove settlement features and adaptive payment rows completely
             elPaymentsList.innerHTML = '';
         } else {
             let runningBalance = totalGross;
@@ -1902,23 +1906,12 @@ function updatePoTotals() {
                 `;
             }).join('');
 
-            // If there is still an amount to settle, render an adaptive next-payment row right below
-            const nextTrancheDefault = payments.length === 0 ? 'Downpayment' : 'Partial Payment';
-            const creditOptHtml = availCredit > 0.009
-                ? `<option value="Vendor Credit Application">Vendor Credit (₱${formatMoney(availCredit)})</option>`
-                : '';
-            const settleRowHtml = balanceDue > 0.009 ? `
-                <div class="po-fin-adaptive-input-row">
-                    <select id="inlinePoPayType" class="po-fin-inline-select" title="Payment Type" onchange="if(this.value==='Vendor Credit Application'){ const a=document.getElementById('inlinePoPayAmt'); if(a) a.value=Math.min(${balanceDue.toFixed(2)}, ${availCredit.toFixed(2)}).toFixed(2); }">
-                        <option value="Downpayment" ${nextTrancheDefault === 'Downpayment' ? 'selected' : ''}>Downpayment</option>
-                        <option value="Partial Payment" ${nextTrancheDefault === 'Partial Payment' ? 'selected' : ''}>Partial Payment</option>
-                        <option value="Final Settlement">Final Settlement</option>
-                        ${creditOptHtml}
-                    </select>
-                    <input type="text" id="inlinePoPayRef" class="po-fin-inline-ref" placeholder="OR / Bill Ref">
-                    <input type="number" step="0.01" min="0.01" max="${balanceDue.toFixed(2)}" id="inlinePoPayAmt" class="po-fin-inline-amt" value="${balanceDue.toFixed(2)}" placeholder="0.00" title="Enter payment amount (up to ₱${formatMoney(balanceDue)})">
-                    <button type="button" class="po-fin-inline-btn" onclick="submitInlinePoPaymentRow()" title="Record payment row">
-                        <i class="ph ph-plus"></i> Pay
+            // In Issued/Approved stage, payments are made through Settlement (po-fin-adaptive-input-row is removed)
+            const settlementActionHtml = balanceDue > 0.009 ? `
+                <div style="display: flex; justify-content: flex-end; margin-top: 8px;">
+                    <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="openPaymentSettlementModal('${escapeHtml(po.poNumber)}')" style="display: inline-flex; align-items: center; gap: 6px; font-size: 11px; padding: 4px 10px; border-radius: 6px;" title="Open Financial Tracking & Settlement Modal">
+                        <i class="ph ph-bank" style="color: #7c3aed;"></i>
+                        <span>Disburse in Settlement</span>
                     </button>
                 </div>
             ` : `
@@ -1928,12 +1921,79 @@ function updatePoTotals() {
                 </div>
             `;
 
-            elPaymentsList.innerHTML = recordedRowsHtml + settleRowHtml;
+            elPaymentsList.innerHTML = recordedRowsHtml + settlementActionHtml;
         }
     }
 
     calculateBalanceDue();
     updatePoSummaryPayBadge();
+}
+
+function initializeVendorCredits() {
+    const rawCredits = Array.isArray(window.PurchaseOrderConfig?.data?.initialVendorCredits)
+        ? JSON.parse(JSON.stringify(window.PurchaseOrderConfig.data.initialVendorCredits))
+        : [];
+    window.PoStore.vendorCredits = rawCredits;
+
+    // Deduct local credit payments that were recorded in this browser and not yet posted to accounting
+    const localCreditPayments = getStoredPayments().filter(p =>
+        p.source !== 'accounting_ap' &&
+        (p.isCreditApplication || p.method === 'VENDOR_CREDIT' || p.method === 'Vendor Credit Memo' || p.trancheType === 'Vendor Credit Application' || p.fundSource === 'AP Vendor Credit Balance')
+    );
+
+    localCreditPayments.forEach(p => {
+        let toDeduct = parseFloat(p.amount) || 0;
+        if (toDeduct <= 0) return;
+        let candidateMemos = rawCredits.filter(m => (parseFloat(m.unapplied_amount || 0) > 0.009));
+        if (p.reference && p.reference !== 'AP-CREDIT') {
+            const byRef = candidateMemos.filter(m => String(m.memo_number || '').trim().toLowerCase() === String(p.reference).trim().toLowerCase());
+            if (byRef.length > 0) candidateMemos = byRef;
+        }
+        for (const m of candidateMemos) {
+            if (toDeduct <= 0) break;
+            const avail = parseFloat(m.unapplied_amount || 0);
+            const used = Math.min(avail, toDeduct);
+            m.unapplied_amount = Math.max(0, Math.round((avail - used + Number.EPSILON) * 100) / 100);
+            toDeduct = Math.max(0, Math.round((toDeduct - used + Number.EPSILON) * 100) / 100);
+        }
+    });
+}
+
+function deductVendorCreditFromState(poObj, amountToDeduct) {
+    let toDeduct = parseFloat(amountToDeduct) || 0;
+    if (toDeduct <= 0) return 0;
+    const creditInfo = getAvailableVendorCreditForPo(poObj);
+    let totalDeducted = 0;
+    for (const memo of creditInfo.memos) {
+        if (toDeduct <= 0) break;
+        const currentAvail = parseFloat(memo.unapplied_amount || 0);
+        const used = Math.min(currentAvail, toDeduct);
+        memo.unapplied_amount = Math.max(0, Math.round((currentAvail - used + Number.EPSILON) * 100) / 100);
+        toDeduct = Math.max(0, Math.round((toDeduct - used + Number.EPSILON) * 100) / 100);
+        totalDeducted += used;
+    }
+    return totalDeducted;
+}
+
+function restoreVendorCreditToState(poNumber, amount, memoRef) {
+    const refundAmt = parseFloat(amount) || 0;
+    if (refundAmt <= 0 || !Array.isArray(window.PoStore?.vendorCredits)) return;
+    const credits = window.PoStore.vendorCredits;
+    let memo = null;
+    if (memoRef && memoRef !== 'AP-CREDIT') {
+        memo = credits.find(m => String(m.memo_number || '').trim().toLowerCase() === String(memoRef).trim().toLowerCase());
+    }
+    if (!memo) {
+        const poObj = (window.PoStore.purchaseOrders || []).find(p => p.poNumber === poNumber) || window.PoStore.activePo;
+        const creditInfo = getAvailableVendorCreditForPo(poObj);
+        memo = creditInfo.memos[0] || credits[0];
+    }
+    if (memo) {
+        const cur = parseFloat(memo.unapplied_amount || 0);
+        const total = parseFloat(memo.total_amount || 0);
+        const restored = Math.round((cur + refundAmt + Number.EPSILON) * 100) / 100;
+        memo.unapplied_amount = total > 0 ? Math.min(total, restored) : restored;
+    }
 }
 
 function getAvailableVendorCreditForPo(po) {
@@ -2037,7 +2097,7 @@ async function persistPoPaymentToAccounting(paymentEntry, poObj, isCreditApplica
                 target.source = 'accounting_ap';
                 saveStoredPayments(stored);
             }
-            if (json.data?.applied_credit > 0) {
+            if (json.data?.applied_credit > 0 && !paymentEntry.creditDeducted) {
                 let toDeduct = parseFloat(json.data.applied_credit) || 0;
                 const creditInfo = getAvailableVendorCreditForPo(poObj);
                 creditInfo.memos.forEach(m => {
@@ -2127,6 +2187,11 @@ function updatePayModalExcessAndEwtPreview() {
 function applyVendorCreditInline() {
     const po = window.PoStore?.activePo;
     if (!po) return;
+    const stage = getNormalizedPoStage(po.status);
+    if (stage === 'Draft' || stage === 'Approval') {
+        showToast('Credits can only be applied after the Purchase Order has been Issued.', 'warning');
+        return;
+    }
     const creditInfo = getAvailableVendorCreditForPo(po);
     if (creditInfo.totalCredit <= 0.009) {
         showToast('No available vendor credit balance in Accounting AP.', 'warning');
@@ -2141,17 +2206,19 @@ function applyVendorCreditInline() {
         return;
     }
 
-    const applyAmt = Math.min(remaining, creditInfo.totalCredit);
-    const typeSelect = document.getElementById('inlinePoPayType');
-    const amtInput = document.getElementById('inlinePoPayAmt');
-    if (typeSelect) typeSelect.value = 'Vendor Credit Application';
-    if (amtInput) amtInput.value = applyAmt.toFixed(2);
-    submitInlinePoPaymentRow(true);
+    openPaymentSettlementModal(po.poNumber);
+    fillVendorCreditBalance();
 }
 
 function submitInlinePoPaymentRow(forceCredit = false) {
     const po = window.PoStore?.activePo;
     if (!po) return;
+
+    const stage = getNormalizedPoStage(po.status);
+    if (stage === 'Draft' || stage === 'Approval') {
+        showToast('Settlement disbursements are only available once the Purchase Order has been Issued.', 'warning');
+        return;
+    }
 
     const amtInput = document.getElementById('inlinePoPayAmt');
     const typeSelect = document.getElementById('inlinePoPayType');
@@ -2180,6 +2247,7 @@ function submitInlinePoPaymentRow(forceCredit = false) {
             return;
         }
         appliedAmt = Math.min(appliedAmt, creditInfo.totalCredit);
+        deductVendorCreditFromState(po, appliedAmt);
     }
 
     const trancheType = isCreditApp
@@ -2198,6 +2266,8 @@ function submitInlinePoPaymentRow(forceCredit = false) {
         paymentDate: new Date().toISOString().split('T')[0],
         fundSource: isCreditApp ? 'AP Vendor Credit Balance' : (po.fundSource || 'Main Commissary Checking Acct'),
         remarks: `${trancheType} recorded inline`,
+        isCreditApplication: isCreditApp,
+        creditDeducted: isCreditApp,
         recordedAt: new Date().toISOString(),
         actor: window.PurchaseOrderConfig?.user?.name || 'Procurement Specialist'
     };
@@ -2995,11 +3065,17 @@ function renderPoDirectory() {
                     </td>
                 `;
             } else if (col.id === 'payment') {
+                const poStage = getNormalizedPoStage(p.status);
+                const isDraftPo = (poStage === 'Draft' || poStage === 'Approval');
                 const displayPayStatus = (totalPaid >= gross && gross > 0) ? 'Paid in Full' : (totalPaid > 0 ? `Partial (${poPayments.length || 1}x)` : 'Unpaid');
+                const pmtClick = isDraftPo
+                    ? `onclick="showToast('Settlement is only available for Issued purchase orders.', 'info')"`
+                    : `onclick="openPaymentSettlementModal('${escapeHtml(p.poNumber)}')"` ;
+                const pmtTitle = isDraftPo ? 'Settlement available once PO is issued' : 'View Bills & Multi-Payment Settlement';
                 cellsHtml += `
                     <td class="td-left">
                         <div class="rms-cell-stack" style="align-items: flex-start; gap: 3px;">
-                            <span class="pay-badge ${payBadgeClass}" style="cursor: pointer; padding: 2px 8px; font-size: 0.70rem; border-radius: 6px;" onclick="openPaymentSettlementModal('${escapeHtml(p.poNumber)}')" title="View Bills & Multi-Payment Settlement">
+                            <span class="pay-badge ${payBadgeClass}" style="${isDraftPo ? 'cursor: default; opacity: 0.85;' : 'cursor: pointer;'} padding: 2px 8px; font-size: 0.70rem; border-radius: 6px;" ${pmtClick} title="${pmtTitle}">
                                 ${escapeHtml(displayPayStatus)}
                             </span>
                             <div class="rms-cell-sub" style="font-variant-numeric: tabular-nums; color: ${balanceDue <= 0.009 && gross > 0 ? '#059669' : '#64748b'}; font-weight: 600;">
@@ -4578,13 +4654,32 @@ function openPaymentSettlementModal(targetRef) {
 
     currentSettlementRef = targetRef || (window.PoStore.activePo.poNumber || 'PO-2026-0105');
 
-    // Populate References Dropdown
+    // Prevent opening settlement for Draft or Approval POs
+    const targetPo = (targetRef === window.PoStore.activePo?.poNumber)
+        ? window.PoStore.activePo
+        : ((window.PoStore.purchaseOrders || []).find(p => p.poNumber === currentSettlementRef) || window.PoStore.activePo);
+    const stage = getNormalizedPoStage(targetPo?.status || 'Draft PO');
+    if (stage === 'Draft' || stage === 'Approval') {
+        showToast('Financial settlement is only available for Issued purchase orders.', 'warning');
+        return;
+    }
+
+    // Populate References Dropdown (only Issued/Approved POs)
     const select = document.getElementById('payModalRefSelect');
     if (select) {
         const pos = window.PoStore.purchaseOrders || [];
         const refSet = new Set();
-        if (window.PoStore.activePo.poNumber) refSet.add(window.PoStore.activePo.poNumber);
-        pos.forEach(p => { if (p.poNumber) refSet.add(p.poNumber); });
+        if (window.PoStore.activePo.poNumber && ['Issued', 'Approved'].includes(getNormalizedPoStage(window.PoStore.activePo.status))) {
+            refSet.add(window.PoStore.activePo.poNumber);
+        }
+        pos.forEach(p => {
+            if (p.poNumber && ['Issued', 'Approved'].includes(getNormalizedPoStage(p.status))) {
+                refSet.add(p.poNumber);
+            }
+        });
+        if (refSet.size === 0 && currentSettlementRef) {
+            refSet.add(currentSettlementRef);
+        }
 
         select.innerHTML = Array.from(refSet).map(ref => `
             <option value="${ref}" ${ref === currentSettlementRef ? 'selected' : ''}>${ref}</option>
@@ -4758,6 +4853,24 @@ function renderPaymentSettlementData() {
     } else {
         if (modalCreditBtn) modalCreditBtn.style.display = 'none';
         if (modalCreditBanner) modalCreditBanner.style.display = 'none';
+    }
+
+    // Configure the Tranche type dropdown for Vendor Credit
+    const trancheSelect = document.getElementById('newPayTrancheType');
+    if (trancheSelect) {
+        const creditOpt = Array.from(trancheSelect.options).find(o => o.value === 'Vendor Credit Application');
+        if (creditOpt) {
+            if (modalCreditInfo.totalCredit > 0.009 && !isFullySettled) {
+                creditOpt.disabled = false;
+                creditOpt.textContent = `Apply Vendor Credit Balance (₱${formatMoney(modalCreditInfo.totalCredit)})`;
+            } else {
+                creditOpt.disabled = true;
+                creditOpt.textContent = 'Apply Vendor Credit Balance (₱0.00 - None Available)';
+                if (trancheSelect.value === 'Vendor Credit Application') {
+                    trancheSelect.value = 'Downpayment / Deposit';
+                }
+            }
+        }
     }
 
     // Render Ledger Table with Progressive Running Balance ("Balance After")
@@ -4953,6 +5066,14 @@ function fillVendorCreditBalance() {
     const totalPaid = payments.reduce((acc, p) => acc + (parseFloat(p.amount) || 0), 0);
     const balanceDue = Math.max(0, Math.round((gross - totalPaid + Number.EPSILON) * 100) / 100);
     const creditInfo = getAvailableVendorCreditForPo(poObj);
+    if (creditInfo.totalCredit <= 0.009) {
+        showToast('No available vendor credit balance in Accounting AP.', 'warning');
+        return;
+    }
+    if (balanceDue <= 0.009) {
+        showToast(`${ref} is already fully settled.`, 'info');
+        return;
+    }
     const applyAmt = Math.min(balanceDue, creditInfo.totalCredit);
 
     const trancheSelect = document.getElementById('newPayTrancheType');
@@ -5059,7 +5180,12 @@ function addPaymentDisbursement() {
             showToast('No available vendor credit balance in Accounting AP.', 'warning');
             return;
         }
-        amountVal = Math.min(amountVal, creditInfo.totalCredit);
+        if (amountVal > creditInfo.totalCredit) {
+            amountVal = creditInfo.totalCredit;
+            const amtInput = document.getElementById('newPayAmount');
+            if (amtInput) amtInput.value = amountVal.toFixed(2);
+        }
+        deductVendorCreditFromState(poObj, amountVal);
     }
 
     const billRef = document.getElementById('newPayBillRef')?.value?.trim() || '';
@@ -5094,6 +5220,8 @@ function addPaymentDisbursement() {
         ewtTaxCode: ewtTaxCode,
         ewtAmount: ewtAmount,
         remarks: remarks,
+        isCreditApplication: isCreditApp,
+        creditDeducted: isCreditApp,
         recordedAt: new Date().toISOString(),
         actor: window.PurchaseOrderConfig?.user?.name || 'Procurement Specialist'
     };
@@ -5157,6 +5285,15 @@ function deletePaymentDisbursement(id) {
     saveStoredPayments(payments);
 
     if (deleted) {
+        const isCredit = deleted.isCreditApplication
+            || deleted.method === 'VENDOR_CREDIT'
+            || deleted.method === 'Vendor Credit Memo'
+            || deleted.trancheType === 'Vendor Credit Application'
+            || deleted.fundSource === 'AP Vendor Credit Balance';
+        if (isCredit) {
+            restoreVendorCreditToState(deleted.poNumber, deleted.amount, deleted.reference);
+        }
+
         logProcurementAudit(
             'PO',
             deleted.poNumber,
@@ -5233,6 +5370,14 @@ function updatePoLifecycleProgressBar(status) {
     const effectiveStatus = status || window.PoStore?.activePo?.status || 'Draft PO';
     const stage = getNormalizedPoStage(effectiveStatus);
     applyPoStageFormLocks(stage);
+
+    // Financial Settlement Quick Status Pill in Header (Only shown in Issued or Approved Stage)
+    const headerSettlementBtn = document.getElementById('poHeaderSettlementBtn');
+    if (headerSettlementBtn) {
+        const canSettle = (stage === 'Issued' || stage === 'Approved');
+        headerSettlementBtn.style.display = canSettle ? 'inline-flex' : 'none';
+    }
+
     const wrap = document.getElementById('poLifecycleStepperWrap');
     if (!wrap) return;
 
@@ -5644,13 +5789,15 @@ function updatePoLiveDocumentMockup() {
     if (!sheet || !window.PoStore || !window.PoStore.activePo) return;
 
     const po = window.PoStore.activePo;
+    const stage = getNormalizedPoStage(po.status);
+    const isDraft = (stage === 'Draft' || stage === 'Approval');
     const items = po.items || [];
     const taxBreakdown = computePoTaxBreakdown(items);
     const gross = taxBreakdown.totalWithTax;
-    const payments = getStoredPayments().filter(p => p.poNumber === po.poNumber);
+    const payments = isDraft ? [] : getStoredPayments().filter(p => p.poNumber === po.poNumber);
     const paidFromLedger = payments.reduce((acc, p) => acc + (parseFloat(p.amount) || 0), 0);
-    const paid = payments.length > 0 ? paidFromLedger : parseFloat(po.amountPaid || 0);
-    const balance = Math.max(0, Math.round((gross - paid + Number.EPSILON) * 100) / 100);
+    const paid = isDraft ? 0 : (payments.length > 0 ? paidFromLedger : parseFloat(po.amountPaid || 0));
+    const balance = isDraft ? gross : Math.max(0, Math.round((gross - paid + Number.EPSILON) * 100) / 100);
     const validRfqRef = hasValidRfqReference(po.rfqReference) ? String(po.rfqReference).trim() : '';
 
     syncPoRfqReferenceUI(po.rfqReference);
@@ -6179,6 +6326,9 @@ Object.assign(window, {
   fillPercentageRemainingBalance,
   fillFullRemainingBalance,
   fillVendorCreditBalance,
+  initializeVendorCredits,
+  deductVendorCreditFromState,
+  restoreVendorCreditToState,
   applyVendorCreditInline,
   submitInlinePoPaymentRow,
   quickRecordPoPaymentTranche,

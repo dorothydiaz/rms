@@ -18,6 +18,17 @@ window.StockInStore = {
 
     activeMode: 'queue', // 'queue' | 'builder'
     activePoNumber: null,
+    isCurrentGrnPosted: false,
+    lastPostedGrnNumber: null,
+    activeRouteStepIndex: 0,
+    unlockedRouteStepIndex: 0,
+    completedRouteSteps: [],
+    qaInspectionState: {
+        verified: true,
+        tempC: '2.4',
+        result: 'PASS',
+        quarantined: false,
+    },
 
     queueWarehouseFilter: 'ALL',
     queueStatusFilter: 'ALL',
@@ -106,7 +117,9 @@ let activeQueueColIds = (() => {
     } catch (e) {}
     return QUEUE_DIRECTORY_COLUMNS.filter(c => c.default).map(c => c.id);
 })();
-let savedQueueColWidths = {};
+let savedQueueColWidths = (() => {
+    try { return JSON.parse(localStorage.getItem('rms_grn_queue_col_widths_v1') || '{}') || {}; } catch (e) { return {}; }
+})();
 let queueColSearchTerm = '';
 let draggedQueueColId = null;
 
@@ -121,13 +134,13 @@ function saveQueueColsState() {
 // Cost & Amount columns are included in the Gear Menu but HIDDEN by default!
 // ============================================================================
 const GRN_BUILDER_COLUMNS = [
-    { id: 'index', label: '#', category: 'Core Stock Specs', lockVisible: true, default: true, align: 'center', width: '40px' },
-    { id: 'item_name', label: 'Item Description & Specs', category: 'Core Stock Specs', lockVisible: true, default: true, align: 'left', minWidth: '240px' },
-    { id: 'uom', label: 'UOM', category: 'Core Stock Specs', lockVisible: false, default: true, align: 'center', width: '90px' },
-    { id: 'ordered_qty', label: 'Ordered', category: 'Receiving & Fulfillment', lockVisible: false, default: true, align: 'right', width: '95px' },
-    { id: 'prev_recv_qty', label: 'Prev Recv', category: 'Receiving & Fulfillment', lockVisible: false, default: true, align: 'right', width: '95px' },
-    { id: 'receive_now', label: 'Receive Now', category: 'Receiving & Fulfillment', lockVisible: true, default: true, align: 'center', width: '140px' },
-    { id: 'balance_fulfillment', label: 'Pending Balance & Status', category: 'Receiving & Fulfillment', lockVisible: false, default: true, align: 'right', width: '150px' },
+    { id: 'index', label: '#', category: 'Core Stock Specs', lockVisible: true, default: true, align: 'center', width: '44px' },
+    { id: 'item_name', label: 'Item Description & Specs', category: 'Core Stock Specs', lockVisible: true, default: true, align: 'left', width: '250px' },
+    { id: 'uom', label: 'UOM', category: 'Core Stock Specs', lockVisible: false, default: true, align: 'center', width: '80px' },
+    { id: 'ordered_qty', label: 'Ordered', category: 'Receiving & Fulfillment', lockVisible: false, default: true, align: 'right', width: '88px' },
+    { id: 'prev_recv_qty', label: 'Prev Recv', category: 'Receiving & Fulfillment', lockVisible: false, default: true, align: 'right', width: '90px' },
+    { id: 'receive_now', label: 'Receive Now', category: 'Receiving & Fulfillment', lockVisible: true, default: true, align: 'right', width: '112px' },
+    { id: 'balance_fulfillment', label: 'Pending Balance & Status', category: 'Receiving & Fulfillment', lockVisible: false, default: true, align: 'right', width: '148px' },
     // Commercial / Cost Columns — HIDDEN BY DEFAULT in Inventory Module (Toggleable in Gear Menu)
     { id: 'unit_cost', label: 'Unit Cost (₱)', category: 'Cost & Amount (Hidden)', lockVisible: false, default: false, align: 'right', width: '105px' },
     { id: 'line_total', label: 'Line Amount (₱)', category: 'Cost & Amount (Hidden)', lockVisible: false, default: false, align: 'right', width: '115px' }
@@ -135,6 +148,59 @@ const GRN_BUILDER_COLUMNS = [
 
 const GRN_DEFAULT_STAGE_COLUMNS = GRN_BUILDER_COLUMNS.filter(c => c.default).map(c => c.id);
 let activeGrnBuilderCols = [...GRN_DEFAULT_STAGE_COLUMNS];
+let savedGrnBuilderColWidths = (() => {
+    try { return JSON.parse(localStorage.getItem('rms_grn_builder_col_widths_v1') || '{}') || {}; } catch (e) { return {}; }
+})();
+
+function getGrnBuilderColWidth(col) {
+    return savedGrnBuilderColWidths[col.id] || col.width || col.minWidth || '120px';
+}
+
+function createGrnTableColResizer(colgroupId, storageKey, widthsObj) {
+    let resizingColId = null;
+    let startX = 0;
+    let startW = 0;
+    let rafId = null;
+
+    function onMouseMove(e) {
+        if (!resizingColId) return;
+        const pageX = e.pageX;
+        if (rafId) return;
+        rafId = window.requestAnimationFrame(() => {
+            rafId = null;
+            if (!resizingColId) return;
+            const newWidth = Math.max(48, startW + (pageX - startX));
+            widthsObj[resizingColId] = `${newWidth}px`;
+            const colEl = document.querySelector(`#${colgroupId} col[data-col-id="${resizingColId}"]`);
+            if (colEl) colEl.style.width = `${newWidth}px`;
+            const thEl = document.querySelector(`#${colgroupId}`)?.parentElement?.querySelector(`th[data-col-id="${resizingColId}"]`);
+            if (thEl) thEl.style.width = `${newWidth}px`;
+        });
+    }
+
+    function onMouseUp() {
+        if (!resizingColId) return;
+        try { localStorage.setItem(storageKey, JSON.stringify(widthsObj)); } catch (e) {}
+        resizingColId = null;
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+    }
+
+    return function initResize(e, colId) {
+        e.preventDefault();
+        e.stopPropagation();
+        resizingColId = colId;
+        startX = e.pageX;
+        const colEl = document.querySelector(`#${colgroupId} col[data-col-id="${colId}"]`);
+        const thEl = document.querySelector(`#${colgroupId}`)?.parentElement?.querySelector(`th[data-col-id="${colId}"]`);
+        startW = (thEl && thEl.offsetWidth) || (colEl && colEl.offsetWidth) || 120;
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+    };
+}
+
+window.initGrnBuilderColResize = createGrnTableColResizer('intakeColgroup', 'rms_grn_builder_col_widths_v1', savedGrnBuilderColWidths);
+window.initGrnQueueColResize = createGrnTableColResizer('queueColgroup', 'rms_grn_queue_col_widths_v1', savedQueueColWidths);
 
 // Helper: Sync Item Master products (including trackingBy: 'lots' | 'quantity' | 'serial' & variants) from localStorage
 function getSyncedItemMasterCatalog() {
@@ -200,6 +266,59 @@ window.isLotTrackingEnabledForItem = function(itemOrProd) {
     return window.getItemMasterTrackingMode(itemOrProd) === 'lots';
 };
 
+function mergeSyncedEntitiesById(baseList, storageKeys) {
+    const mergedMap = new Map();
+    (Array.isArray(baseList) ? baseList : []).forEach(item => {
+        if (item && item.id) mergedMap.set(item.id, Object.assign({}, item));
+    });
+    for (const key of storageKeys) {
+        try {
+            const raw = localStorage.getItem(key);
+            if (!raw) continue;
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) {
+                parsed.forEach(item => {
+                    if (item && item.id) mergedMap.set(item.id, Object.assign({}, item));
+                });
+            }
+        } catch (e) {}
+    }
+    return Array.from(mergedMap.values());
+}
+
+function getSyncedWarehouses() {
+    const base = window.StockInConfig?.data?.initialWarehouses || [];
+    return mergeSyncedEntitiesById(base, ['rms_inv_warehouses_v1']);
+}
+
+function getSyncedStorageAreas() {
+    const base = window.StockInConfig?.data?.initialStorageAreas || [];
+    return mergeSyncedEntitiesById(base, ['rms_inv_storage_areas_v1']);
+}
+
+function getSyncedInboundMovementTypes() {
+    const base = window.StockInConfig?.data?.initialMovementTypes || [];
+    const merged = mergeSyncedEntitiesById(base, ['rms_movement_supply_flows_v1', 'rms_inv_movement_types_v2']);
+    return merged.filter(mt =>
+        mt && (mt.operation_kind === 'Inbound Receipt' || mt.stock_effect === 'Receipt')
+    );
+}
+
+function getActiveInboundMovementType() {
+    const list = getSyncedInboundMovementTypes();
+    window.StockInStore.movementTypes = list;
+    const selVal = document.getElementById('intakeMovementTypeSelect')?.value;
+    return list.find(m => m.id === selVal) || list[0] || { id: 'MT-MAIN-RCV', route_preset: '2-Step Staged', steps: [] };
+}
+
+function refreshSyncedRouteCatalog() {
+    window.StockInStore.warehouses = getSyncedWarehouses();
+    window.StockInStore.storageAreas = getSyncedStorageAreas();
+    window.StockInStore.movementTypes = getSyncedInboundMovementTypes();
+    const whId = document.getElementById('intakeWarehouseSelect')?.value || window.StockInStore.warehouses[0]?.id || 'WH-MAIN';
+    syncMovementTypesForWarehouse(whId, true);
+}
+
 // 1. Initial State Hydration
 function initStockInModule() {
     const cfg = window.StockInConfig || {};
@@ -210,9 +329,9 @@ function initStockInModule() {
     window.StockInStore.products = d.initialProducts || [];
     window.StockInStore.products = getSyncedItemMasterCatalog();
     window.StockInStore.goodsReceipts = d.initialReceipts || [];
-    window.StockInStore.warehouses = d.initialWarehouses || [];
-    window.StockInStore.storageAreas = d.initialStorageAreas || [];
-    window.StockInStore.movementTypes = d.initialMovementTypes || [];
+    window.StockInStore.warehouses = getSyncedWarehouses();
+    window.StockInStore.storageAreas = getSyncedStorageAreas();
+    window.StockInStore.movementTypes = getSyncedInboundMovementTypes();
 
     // Populate Filters & Dropdowns
     populateWarehouseDropdowns();
@@ -226,6 +345,16 @@ function initStockInModule() {
 
     // Initialize Default Intake Sheet
     resetIntakeSheet(false);
+
+    // Sync route additions/edits made in Movement Types & Supply Flows
+    window.addEventListener('storage', (e) => {
+        if (!e.key || ['rms_inv_movement_types_v2', 'rms_movement_supply_flows_v1', 'rms_inv_warehouses_v1', 'rms_inv_storage_areas_v1'].includes(e.key)) {
+            refreshSyncedRouteCatalog();
+        }
+    });
+    window.addEventListener('focus', () => {
+        refreshSyncedRouteCatalog();
+    });
 
     // Handle deep-link ?po=PO-XXXX from Purchase Order Builder Phase 3
     try {
@@ -280,9 +409,9 @@ function populateWarehouseDropdowns() {
         queueWhFilter.innerHTML = opts;
     }
 
-    // Intake Header Warehouse Select
+    // Intake Header Warehouse Select (only populate options if it is a <select>, not hidden input)
     const intakeWhSelect = document.getElementById('intakeWarehouseSelect');
-    if (intakeWhSelect) {
+    if (intakeWhSelect && intakeWhSelect.tagName === 'SELECT') {
         let opts = '';
         warehouses.forEach(w => {
             opts += `<option value="${escapeHtml(w.id)}">${escapeHtml(w.code)} — ${escapeHtml(w.name)}</option>`;
@@ -368,6 +497,7 @@ function getQueueColWidth(col) {
 
 window.renderQueueTableHeader = function() {
     const theadRow = document.getElementById('queueTableTheadRow');
+    const colgroup = document.getElementById('queueColgroup');
     if (!theadRow) return;
 
     const visibleCols = queueColOrder
@@ -375,21 +505,23 @@ window.renderQueueTableHeader = function() {
         .map(id => QUEUE_DIRECTORY_COLUMNS.find(c => c.id === id))
         .filter(Boolean);
 
+    let colHtml = '';
     let thHtml = '';
     visibleCols.forEach(col => {
         const w = getQueueColWidth(col);
         const isRight = (col.align === 'right');
         const alignClass = isRight ? 'th-num' : 'th-left';
+        colHtml += `<col data-col-id="${col.id}" style="width: ${w};">`;
 
         if (col.id === 'actions') {
             thHtml += `
                 <th class="rfq-th-stacked th-num th-actions-sticky" data-col-id="actions" style="width: ${w}; text-align: right; user-select: none;">
-                    <div class="rfq-header-action-wrapper" style="display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
+                    <div class="grn-action-th-inner">
                         <div class="rfq-th-content" style="align-items: flex-end; text-align: right;">
                             <div class="rfq-th-title">${escapeHtml(col.label || 'Action')}</div>
-                            <div class="rfq-th-sub">${escapeHtml(col.subLabel || 'Receive / Inspect')}</div>
+                            <div class="rfq-th-sub">${escapeHtml(col.subLabel || 'Receive / View')}</div>
                         </div>
-                        <button type="button" class="rfq-th-settings-btn" id="btnQueueTableSettings" onclick="toggleQueueTableSettingsDropdown(event)" title="Customize Columns & Drag Sequence">
+                        <button type="button" class="rfq-th-settings-btn" id="btnQueueTableSettings" onclick="toggleQueueTableSettingsDropdown(event)" title="Customize Columns &amp; Drag Sequence">
                             <i class="ph ph-gear"></i>
                         </button>
                     </div>
@@ -405,11 +537,13 @@ window.renderQueueTableHeader = function() {
                             ${col.subLabel ? `<div class="rfq-th-sub">${escapeHtml(col.subLabel)}</div>` : ''}
                         </div>
                     </div>
+                    <div class="rfq-col-resizer" onmousedown="initGrnQueueColResize(event, '${col.id}')" title="Drag to resize column"></div>
                 </th>
             `;
         }
     });
 
+    if (colgroup) colgroup.innerHTML = colHtml;
     theadRow.innerHTML = thHtml;
     renderQueueColChecklist();
 };
@@ -532,6 +666,7 @@ window.showAllQueueColumns = function() {
 
 window.resetQueueColumnWidths = function() {
     savedQueueColWidths = {};
+    try { localStorage.removeItem('rms_grn_queue_col_widths_v1'); } catch (e) {}
     renderQueueTableHeader();
     renderOrdersQueue();
     showGrnToast('Column widths reset');
@@ -733,12 +868,14 @@ window.renderOrdersQueue = function() {
             }
             if (col.id === 'actions') {
                 return `
-                    <td style="text-align: right;">
+                    <td class="td-actions-sticky" style="text-align: right;">
                         ${status !== 'Fully Received' ? `
-                        <button type="button" class="hr-btn hr-btn-primary hr-btn-sm" onclick="openPoInIntakeBuilder('${escapeHtml(po.po_number)}')">
+                        <button type="button" class="hr-btn hr-btn-primary hr-btn-sm" onclick="openPoInIntakeBuilder('${escapeHtml(po.po_number)}', false)">
                             <i class="ph ph-tray-arrow-down"></i> Receive Intake
                         </button>` : `
-                        <span style="font-size: 11px; color: #94a3b8; font-weight: 600;">Fulfilled</span>`}
+                        <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="openPoInIntakeBuilder('${escapeHtml(po.po_number)}', true)" title="View completed Goods Receipt &amp; A4 GRN">
+                            <i class="ph ph-eye"></i> View
+                        </button>`}
                     </td>
                 `;
             }
@@ -783,22 +920,31 @@ function positionGrnBuilderSettingsDropdown() {
 
 window.renderGrnBuilderTableHeader = function() {
     const theadRow = document.getElementById('intakeItemsTheadRow');
+    const colgroup = document.getElementById('intakeColgroup');
     if (!theadRow) return;
 
     const wasOpen = document.getElementById('grnBuilderSettingsDropdown')?.style.display === 'block';
     const visibleCols = GRN_BUILDER_COLUMNS.filter(c => c.lockVisible || activeGrnBuilderCols.includes(c.id));
 
+    let colHtml = '';
     let html = visibleCols.map(col => {
         const alignClass = col.align === 'right' ? 'th-num' : (col.align === 'center' ? 'th-center' : '');
-        const wStyle = col.width ? `width: ${col.width};` : (col.minWidth ? `min-width: ${col.minWidth};` : '');
-        return `<th class="${alignClass}" style="${wStyle}">${escapeHtml(col.label)}</th>`;
+        const w = getGrnBuilderColWidth(col);
+        colHtml += `<col data-col-id="${col.id}" style="width: ${w};">`;
+        return `
+            <th class="${alignClass}" data-col-id="${col.id}" style="width: ${w};">
+                <span>${escapeHtml(col.label)}</span>
+                <div class="rfq-col-resizer" onmousedown="initGrnBuilderColResize(event, '${col.id}')" title="Drag to resize column"></div>
+            </th>
+        `;
     }).join('');
 
+    colHtml += `<col data-col-id="actions" style="width: 112px;">`;
     html += `
-        <th class="th-center" style="width: 78px; position: relative;">
-            <div style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; position: relative;">
+        <th class="th-center th-actions-sticky" data-col-id="actions" style="width: 112px;">
+            <div class="grn-action-th-inner">
                 <span>Action</span>
-                <button type="button" class="rfq-th-settings-btn" id="btnGrnBuilderSettings" onclick="toggleGrnBuilderSettingsDropdown(event)" title="Customize Stock Intake Sheet Columns (Cost Hidden by Default)">
+                <button type="button" class="rfq-th-settings-btn" id="btnGrnBuilderSettings" onclick="toggleGrnBuilderSettingsDropdown(event)" title="Customize Stock Intake Sheet Columns">
                     <i class="ph ph-gear"></i>
                 </button>
             </div>
@@ -807,9 +953,10 @@ window.renderGrnBuilderTableHeader = function() {
                     <span style="font-weight: 800; font-size: 12px; color: #0f172a;"><i class="ph ph-gear-six" style="color: #9333ea;"></i> Intake Sheet Columns</span>
                     <span style="font-size: 10.5px; font-weight: 700; color: #7e22ce; background: #f3e8ff; padding: 2px 7px; border-radius: 8px;">${visibleCols.length} of ${GRN_BUILDER_COLUMNS.length}</span>
                 </div>
-                <div style="padding: 6px 10px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; gap: 6px; background: #ffffff;">
-                    <button type="button" class="inv-col-quick-link" onclick="resetGrnBuilderColumnsToStage()" style="font-size: 11px; color: #7e22ce; font-weight: 700; background: none; border: none; cursor: pointer;">Stocks Default (No Cost)</button>
-                    <button type="button" class="inv-col-quick-link" onclick="showAllGrnBuilderColumns()" style="font-size: 11px; color: #475569; font-weight: 600; background: none; border: none; cursor: pointer;">Show All (+ Cost)</button>
+                <div style="padding: 6px 10px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; gap: 6px; background: #ffffff; flex-wrap: wrap;">
+                    <button type="button" class="inv-col-quick-link" onclick="resetGrnBuilderColumnsToStage()" style="font-size: 11px; color: #7e22ce; font-weight: 700; background: none; border: none; cursor: pointer;">Stocks Default</button>
+                    <button type="button" class="inv-col-quick-link" onclick="showAllGrnBuilderColumns()" style="font-size: 11px; color: #475569; font-weight: 600; background: none; border: none; cursor: pointer;">Show All</button>
+                    <button type="button" class="inv-col-quick-link" onclick="resetGrnBuilderColumnWidths()" style="font-size: 11px; color: #475569; font-weight: 600; background: none; border: none; cursor: pointer;">Reset Widths</button>
                 </div>
                 <div style="max-height: 270px; overflow-y: auto; padding: 6px 10px; background: #ffffff;">
                     ${GRN_BUILDER_COLUMNS.map(col => {
@@ -830,10 +977,18 @@ window.renderGrnBuilderTableHeader = function() {
         </th>
     `;
 
+    if (colgroup) colgroup.innerHTML = colHtml;
     theadRow.innerHTML = html;
     if (wasOpen) {
         requestAnimationFrame(() => positionGrnBuilderSettingsDropdown());
     }
+};
+
+window.resetGrnBuilderColumnWidths = function() {
+    savedGrnBuilderColWidths = {};
+    try { localStorage.removeItem('rms_grn_builder_col_widths_v1'); } catch (e) {}
+    renderGrnBuilderTableHeader();
+    showGrnToast('Intake table column widths reset');
 };
 
 window.toggleGrnBuilderSettingsDropdown = function(event) {
@@ -903,7 +1058,7 @@ function scheduleDraftSave() {
     draftSaveTimer = setTimeout(saveGrnDraft, 500);
 }
 
-function saveGrnDraft() {
+function saveGrnDraft(isManual = false) {
     try {
         const poNumber = window.StockInStore.activePoNumber || document.getElementById('intakePoSelect')?.value || '';
         const vendorId = document.getElementById('intakeVendorSelect')?.value || '';
@@ -917,6 +1072,7 @@ function saveGrnDraft() {
 
         const items = window.StockInStore.intakeItems || [];
         if (items.length === 0 && !poNumber && !vendorId) {
+            if (isManual) showGrnToast('Add at least one item or select a PO/Vendor to save a draft.', 'warning');
             return;
         }
 
@@ -931,6 +1087,10 @@ function saveGrnDraft() {
             destinationLocation,
             deliverySlip,
             deliveryNotes,
+            activeRouteStepIndex: window.StockInStore.activeRouteStepIndex || 0,
+            unlockedRouteStepIndex: window.StockInStore.unlockedRouteStepIndex || 0,
+            completedRouteSteps: Array.isArray(window.StockInStore.completedRouteSteps) ? window.StockInStore.completedRouteSteps : [],
+            qaInspectionState: Object.assign({}, window.StockInStore.qaInspectionState || {}),
             items,
         };
 
@@ -940,12 +1100,19 @@ function saveGrnDraft() {
         const indTxt = document.getElementById('grnDraftIndicatorText');
         if (ind && indTxt) {
             ind.hidden = false;
-            indTxt.textContent = 'Draft autosaved';
+            indTxt.textContent = isManual ? 'Draft saved' : 'Draft autosaved';
+        }
+        if (isManual) {
+            showGrnToast('Intake sheet draft saved locally');
         }
     } catch (e) {
         console.warn('Could not save GRN draft:', e);
     }
 }
+
+window.saveGrnDraftManual = function() {
+    saveGrnDraft(true);
+};
 
 function checkGrnDraft() {
     try {
@@ -980,9 +1147,43 @@ window.resumeGrnDraft = function() {
             if (vSelect) vSelect.value = draft.vendorId;
         }
         if (draft.movementTypeId) {
+            refreshSyncedRouteCatalog();
             const mtSelect = document.getElementById('intakeMovementTypeSelect');
-            if (mtSelect) mtSelect.value = draft.movementTypeId;
+            if (mtSelect && Array.from(mtSelect.options).some(o => o.value === draft.movementTypeId)) {
+                mtSelect.value = draft.movementTypeId;
+                const mt = window.StockInStore.movementTypes.find(m => m.id === draft.movementTypeId);
+                if (mt) {
+                    if (mt.warehouse_id) {
+                        const whInput = document.getElementById('intakeWarehouseSelect');
+                        if (whInput) whInput.value = mt.warehouse_id;
+                    }
+                    resetRouteStepProgress(mt);
+                    const maxIdx = Math.max(0, (mt.steps || []).length - 1);
+                    const unlockedIdx = Math.max(0, Math.min(Number(draft.unlockedRouteStepIndex || 0), maxIdx));
+                    const activeIdx = Math.max(0, Math.min(Number(draft.activeRouteStepIndex ?? unlockedIdx), unlockedIdx));
+                    window.StockInStore.unlockedRouteStepIndex = unlockedIdx;
+                    window.StockInStore.activeRouteStepIndex = activeIdx;
+                    window.StockInStore.completedRouteSteps = Array.isArray(draft.completedRouteSteps)
+                        ? draft.completedRouteSteps.filter(i => Number.isInteger(i) && i >= 0 && i < unlockedIdx)
+                        : [];
+                    if (draft.qaInspectionState && typeof draft.qaInspectionState === 'object') {
+                        window.StockInStore.qaInspectionState = Object.assign({}, window.StockInStore.qaInspectionState, draft.qaInspectionState);
+                        syncQaInputsFromStore();
+                    }
+                    updateRouteIndicator(mt);
+                    populateRouteLocationDropdowns(mt);
+                }
+            }
         }
+        const srcSelect = document.getElementById('intakeSourceLocationSelect');
+        if (draft.sourceLocation && srcSelect) {
+            ensureGrnSelectOption(srcSelect, draft.sourceLocation);
+        }
+        const destSelect = document.getElementById('intakeDestinationLocationSelect');
+        if (draft.destinationLocation && destSelect) {
+            ensureGrnSelectOption(destSelect, draft.destinationLocation);
+        }
+        renderGrnChevronPipeline();
         if (draft.expectedDelivery) {
             const eta = document.getElementById('intakeExpectedDelivery');
             if (eta) eta.value = draft.expectedDelivery;
@@ -1119,6 +1320,7 @@ function flashTableRow(idx) {
 // Timeliness Badge & Header Change Listener
 window.onIntakeHeaderChanged = function() {
     updateTimelinessBadge();
+    syncGrnStepActionButtons();
     scheduleLiveMockupUpdate();
     scheduleDraftSave();
 };
@@ -1154,28 +1356,463 @@ function updateTimelinessBadge() {
     }
 }
 
+function ensureGrnSelectOption(selectEl, value) {
+    if (!selectEl || !value) return;
+    const exists = Array.from(selectEl.options || []).some(opt => opt.value === value);
+    if (!exists) {
+        const opt = document.createElement('option');
+        opt.value = value;
+        opt.textContent = value;
+        selectEl.appendChild(opt);
+    }
+    selectEl.value = value;
+}
+
+function getActiveRouteSteps(movementType) {
+    const mt = movementType || getActiveInboundMovementType();
+    return (Array.isArray(mt?.steps) && mt.steps.length > 0)
+        ? mt.steps
+        : [{ step_no: 1, name: 'Receiving & Putaway', from_area: 'Supplier / Vendor Origin (Boundary)', to_area: 'Stock Zone A (Dry Goods)' }];
+}
+
+function isStepQaInspection(step, movementType) {
+    const text = `${step?.name || ''} ${step?.to_area || ''}`.toLowerCase();
+    return /qa|qc|quality|inspect|temp/.test(text);
+}
+
+function isColdChainMovement(movementType) {
+    const mt = movementType || getActiveInboundMovementType();
+    const stepsText = (mt?.steps || []).map(s => `${s?.name || ''} ${s?.to_area || ''}`).join(' ');
+    return /cold|chill|freez|meat|dairy/i.test(`${mt?.code || ''} ${mt?.name || ''} ${stepsText}`);
+}
+
+function syncQaInputsFromStore() {
+    const qa = window.StockInStore.qaInspectionState || {};
+    const tempInput = document.getElementById('grnQaTempInput');
+    const resultSel = document.getElementById('grnQaResultSelect');
+    const checkEl = document.getElementById('grnQaChecklistVerified');
+    if (tempInput) tempInput.value = qa.tempC ?? '2.4';
+    if (resultSel) resultSel.value = qa.result || 'PASS';
+    if (checkEl) checkEl.checked = qa.verified !== false;
+}
+
+function resetRouteStepProgress(movementType) {
+    window.StockInStore.activeRouteStepIndex = 0;
+    window.StockInStore.unlockedRouteStepIndex = 0;
+    window.StockInStore.completedRouteSteps = [];
+    window.StockInStore.qaInspectionState = {
+        verified: true,
+        tempC: isColdChainMovement(movementType) ? '2.4' : '22.0',
+        result: 'PASS',
+        quarantined: false,
+    };
+    syncQaInputsFromStore();
+}
+
+function isViewingCompletedStepReadOnly() {
+    if (window.StockInStore.isCurrentGrnPosted) return false;
+    const activeIdx = Number(window.StockInStore.activeRouteStepIndex || 0);
+    const unlockedIdx = Number(window.StockInStore.unlockedRouteStepIndex || 0);
+    return activeIdx < unlockedIdx;
+}
+
+window.isIntakeSheetLocked = function() {
+    return isViewingCompletedStepReadOnly() || !!window.StockInStore.isCurrentGrnPosted;
+};
+
+function isExpiredDate(dateStr) {
+    if (!dateStr) return false;
+    const expDate = new Date(String(dateStr).includes('T') ? dateStr : `${dateStr}T00:00:00`);
+    if (isNaN(expDate.getTime())) return true;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return expDate < today;
+}
+
+function evaluateGrnStepValidation() {
+    const mt = getActiveInboundMovementType();
+    const steps = getActiveRouteSteps(mt);
+    const activeIdx = Math.max(0, Math.min(Number(window.StockInStore.activeRouteStepIndex || 0), steps.length - 1));
+    const activeStep = steps[activeIdx] || {};
+    const items = window.StockInStore.intakeItems || [];
+    const receivingItems = items.filter(it => Number(it.receive_now || 0) > 0);
+
+    if (receivingItems.length === 0) {
+        return { valid: false, reason: 'Enter a "Receive Now" quantity greater than 0 for at least one item.' };
+    }
+
+    const missingLotItem = receivingItems.find(it =>
+        window.isLotTrackingEnabledForItem(it) && !String(it.lot_number || '').trim()
+    );
+    if (missingLotItem) {
+        return { valid: false, reason: `Mandatory Batch / Lot # is empty for ${missingLotItem.sku}.` };
+    }
+
+    const expiredItem = receivingItems.find(it =>
+        window.isLotTrackingEnabledForItem(it) && it.expiry_date && isExpiredDate(it.expiry_date)
+    );
+    if (expiredItem) {
+        return { valid: false, reason: `Expiry date for ${expiredItem.sku} is invalid or already expired.` };
+    }
+
+    if (isStepQaInspection(activeStep, mt)) {
+        const qa = window.StockInStore.qaInspectionState || {};
+        if (qa.quarantined || qa.result === 'FAIL') {
+            return { valid: false, reason: 'QA disposition is FAIL / Quarantined. Switch Disposition to Pass or keep in Quarantine.' };
+        }
+        if (!qa.verified) {
+            return { valid: false, reason: 'Verify the QA & Lot inspection checklist before proceeding.' };
+        }
+        const tempStr = String(qa.tempC ?? '').trim();
+        const tempNum = parseFloat(tempStr);
+        if (tempStr === '' || Number.isNaN(tempNum)) {
+            return { valid: false, reason: 'Enter a valid QA temperature reading (°C).' };
+        }
+        if (isColdChainMovement(mt) && tempNum > 8) {
+            return { valid: false, reason: `Cold-chain temperature (${tempNum}°C) exceeds max safe threshold (8.0°C).` };
+        }
+    }
+
+    if (activeIdx === steps.length - 1) {
+        const destVal = (document.getElementById('intakeDestinationLocationSelect')?.value || '').trim();
+        if (!destVal) {
+            return { valid: false, reason: 'Select a target storage bin / destination before posting GRN.' };
+        }
+    }
+
+    return { valid: true, reason: '' };
+}
+
+function syncGrnStepActionButtons() {
+    const mt = getActiveInboundMovementType();
+    const steps = getActiveRouteSteps(mt);
+    const totalSteps = steps.length;
+    const unlockedIdx = Math.max(0, Math.min(Number(window.StockInStore.unlockedRouteStepIndex || 0), totalSteps - 1));
+    const activeIdx = Math.max(0, Math.min(Number(window.StockInStore.activeRouteStepIndex || 0), unlockedIdx));
+    window.StockInStore.unlockedRouteStepIndex = unlockedIdx;
+    window.StockInStore.activeRouteStepIndex = activeIdx;
+
+    const activeStep = steps[activeIdx] || {};
+    const isPosted = !!window.StockInStore.isCurrentGrnPosted;
+    const isViewingHistory = !isPosted && (activeIdx < unlockedIdx);
+    const isReadOnly = isViewingHistory || isPosted;
+    const isQcStep = isStepQaInspection(activeStep, mt);
+    const validation = evaluateGrnStepValidation();
+
+    const roBanner = document.getElementById('grnReadOnlyStepBanner');
+    const roText = document.getElementById('grnReadOnlyStepText');
+    const roBtnLabel = document.getElementById('btnBannerReturnActiveStepLabel');
+    if (roBanner) {
+        roBanner.hidden = !isViewingHistory;
+        if (roText && isViewingHistory) {
+            const label = getGrnStepShortLabel(activeStep, activeIdx, totalSteps);
+            roText.textContent = `Viewing completed Step ${activeIdx + 1} (${label}) in read-only mode.`;
+        }
+        if (roBtnLabel) {
+            roBtnLabel.textContent = `Return to Active Step [Step ${unlockedIdx + 1}]`;
+        }
+    }
+
+    const qaBar = document.getElementById('grnQaInspectionBar');
+    if (qaBar) {
+        qaBar.hidden = !isQcStep || isReadOnly;
+    }
+
+    ['intakePoSelect', 'intakeVendorSelect', 'intakeMovementTypeSelect', 'intakeExpectedDelivery', 'intakeReceivedAt', 'intakeDeliverySlip', 'intakeDeliveryNotes']
+        .forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.disabled = isPosted;
+        });
+
+    const srcSelect = document.getElementById('intakeSourceLocationSelect');
+    const destSelect = document.getElementById('intakeDestinationLocationSelect');
+    const scanInput = document.getElementById('grnScanInput');
+    const unplannedBtn = document.getElementById('btnAddUnplannedItem') || document.querySelector('[onclick="addAdHocIntakeRow()"]');
+    if (srcSelect) srcSelect.disabled = isReadOnly || (srcSelect.options?.length || 0) <= 1;
+    if (destSelect) destSelect.disabled = isReadOnly;
+    if (scanInput) scanInput.disabled = isReadOnly;
+    if (unplannedBtn) unplannedBtn.disabled = isReadOnly;
+    if (typeof window.syncCombinedRouteDropdown === 'function') window.syncCombinedRouteDropdown();
+
+    const btnSaveDraft = document.getElementById('btnFooterSaveDraft');
+    const btnSaveDraftLabel = document.getElementById('btnFooterSaveDraftLabel');
+    const btnAttachProof = document.getElementById('btnGrnAttachProof');
+    const btnRejectReturn = document.getElementById('btnRejectReturnGrn');
+    if (btnAttachProof) {
+        btnAttachProof.hidden = isPosted;
+        btnAttachProof.disabled = isReadOnly;
+    }
+    if (btnRejectReturn) {
+        btnRejectReturn.hidden = isPosted;
+        btnRejectReturn.disabled = isViewingHistory;
+    }
+    if (btnSaveDraft) {
+        btnSaveDraft.hidden = isPosted;
+        btnSaveDraft.disabled = isViewingHistory;
+        btnSaveDraft.title = 'Save intake draft locally';
+    }
+    if (btnSaveDraftLabel) {
+        btnSaveDraftLabel.textContent = 'Save Draft';
+    }
+
+    const btnFailQa = document.getElementById('btnFailQaQuarantine');
+    const btnConfirm = document.getElementById('btnConfirmIntake');
+    const btnLabel = document.getElementById('btnConfirmIntakeLabel');
+    if (!btnConfirm) return;
+
+    if (isPosted) {
+        if (btnFailQa) btnFailQa.hidden = true;
+        if (btnLabel) btnLabel.textContent = 'Print GRN (A4)';
+        btnConfirm.classList.add('is-final-step');
+        btnConfirm.disabled = false;
+        btnConfirm.title = 'Preview & Print A4 Goods Receipt Note';
+    } else if (isViewingHistory) {
+        if (btnFailQa) btnFailQa.hidden = true;
+        if (btnLabel) btnLabel.textContent = `Return to Active Step [Step ${unlockedIdx + 1}]`;
+        btnConfirm.classList.remove('is-final-step');
+        btnConfirm.disabled = false;
+        btnConfirm.title = `Return to Active Step [Step ${unlockedIdx + 1}]`;
+    } else if (totalSteps === 1) {
+        if (btnFailQa) btnFailQa.hidden = true;
+        if (btnLabel) btnLabel.textContent = 'Confirm & Post GRN';
+        btnConfirm.classList.add('is-final-step');
+        btnConfirm.disabled = !validation.valid;
+        btnConfirm.title = validation.valid ? 'Confirm & Post GRN (F10)' : validation.reason;
+    } else if (activeIdx === 0) {
+        if (btnFailQa) btnFailQa.hidden = true;
+        if (btnLabel) btnLabel.textContent = 'Confirm Dock Receipt →';
+        btnConfirm.classList.remove('is-final-step');
+        btnConfirm.disabled = !validation.valid;
+        btnConfirm.title = validation.valid ? 'Confirm Dock Receipt & Proceed to Step 2 (F10)' : validation.reason;
+    } else if (activeIdx < totalSteps - 1) {
+        if (btnFailQa) btnFailQa.hidden = false;
+        if (btnLabel) btnLabel.textContent = isQcStep ? 'Pass QA & Proceed →' : `Confirm Step ${activeIdx + 1} & Proceed →`;
+        btnConfirm.classList.remove('is-final-step');
+        btnConfirm.disabled = !validation.valid;
+        btnConfirm.title = validation.valid ? 'Confirm inspection & proceed to next step (F10)' : validation.reason;
+    } else {
+        if (btnFailQa) btnFailQa.hidden = true;
+        if (btnLabel) btnLabel.textContent = 'Confirm Putaway & Post GRN';
+        btnConfirm.classList.add('is-final-step');
+        btnConfirm.disabled = !validation.valid;
+        btnConfirm.title = validation.valid ? 'Confirm Putaway & Post GRN (F10)' : validation.reason;
+    }
+}
+
+window.onGrnQaParamChanged = function() {
+    const tempInput = document.getElementById('grnQaTempInput');
+    const resultSel = document.getElementById('grnQaResultSelect');
+    const checkEl = document.getElementById('grnQaChecklistVerified');
+    const resultVal = resultSel?.value || 'PASS';
+    window.StockInStore.qaInspectionState = {
+        tempC: tempInput ? tempInput.value : '2.4',
+        result: resultVal,
+        verified: checkEl ? !!checkEl.checked : true,
+        quarantined: resultVal === 'FAIL',
+    };
+    if (resultVal === 'PASS') {
+        const mt = getActiveInboundMovementType();
+        const steps = getActiveRouteSteps(mt);
+        const curStep = steps[window.StockInStore.activeRouteStepIndex || 0];
+        const destSelect = document.getElementById('intakeDestinationLocationSelect');
+        if (destSelect && curStep?.to_area) {
+            ensureGrnSelectOption(destSelect, curStep.to_area);
+        }
+        updateFulfillmentProgress();
+    } else {
+        syncGrnStepActionButtons();
+    }
+    updateLiveMockup();
+    scheduleDraftSave();
+};
+
+window.failGrnQaAndQuarantine = function() {
+    window.StockInStore.qaInspectionState = Object.assign({}, window.StockInStore.qaInspectionState || {}, {
+        result: 'FAIL',
+        quarantined: true,
+    });
+    const resultSel = document.getElementById('grnQaResultSelect');
+    if (resultSel) resultSel.value = 'FAIL';
+
+    const destSelect = document.getElementById('intakeDestinationLocationSelect');
+    if (destSelect) ensureGrnSelectOption(destSelect, 'QA Quarantine & Hold Cage');
+
+    const statusChip = document.getElementById('grnStatusChip');
+    const statusChipText = document.getElementById('grnStatusChipText');
+    if (statusChip && statusChipText) {
+        statusChip.setAttribute('data-state', 'blocked');
+        statusChipText.textContent = 'QA Failed · Quarantined';
+    }
+    const statusTitle = document.getElementById('grnStepStatusTitle');
+    const statusDesc = document.getElementById('grnStepStatusDesc');
+    if (statusTitle) statusTitle.textContent = 'Quarantined';
+    if (statusDesc) statusDesc.textContent = 'Held at QA Bench';
+
+    syncGrnStepActionButtons();
+    updateLiveMockup();
+    scheduleDraftSave();
+    showGrnToast('QA Failed: Batch moved to Quarantine hold. Posting blocked.', 'danger');
+};
+
+window.returnToActiveGrnStep = function() {
+    const unlockedIdx = Number(window.StockInStore.unlockedRouteStepIndex || 0);
+    selectGrnRouteStep(unlockedIdx);
+};
+
+function advanceGrnRouteStep() {
+    const mt = getActiveInboundMovementType();
+    const steps = getActiveRouteSteps(mt);
+    const curIdx = Math.max(0, Math.min(Number(window.StockInStore.activeRouteStepIndex || 0), steps.length - 1));
+    if (curIdx >= steps.length - 1) return;
+
+    const completed = new Set(window.StockInStore.completedRouteSteps || []);
+    completed.add(curIdx);
+    window.StockInStore.completedRouteSteps = Array.from(completed).sort((a, b) => a - b);
+
+    const nextIdx = curIdx + 1;
+    window.StockInStore.unlockedRouteStepIndex = Math.max(window.StockInStore.unlockedRouteStepIndex || 0, nextIdx);
+    window.StockInStore.activeRouteStepIndex = nextIdx;
+
+    const nextStep = steps[nextIdx];
+    const srcSelect = document.getElementById('intakeSourceLocationSelect');
+    const destSelect = document.getElementById('intakeDestinationLocationSelect');
+    if (nextStep) {
+        if (srcSelect && nextStep.from_area) ensureGrnSelectOption(srcSelect, nextStep.from_area);
+        if (destSelect && nextStep.to_area) ensureGrnSelectOption(destSelect, nextStep.to_area);
+    }
+
+    renderGrnChevronPipeline(mt);
+    renderIntakeTable();
+    updateLiveMockup();
+    scheduleDraftSave();
+
+    const completedLabel = getGrnStepShortLabel(steps[curIdx], curIdx, steps.length);
+    const nextLabel = getGrnStepShortLabel(nextStep, nextIdx, steps.length);
+    showGrnToast(`Step ${curIdx + 1} (${completedLabel}) confirmed. Advanced to Step ${nextIdx + 1}: ${nextLabel}`);
+}
+
+window.handleGrnSecondaryAction = function() {
+    if (window.StockInStore.isCurrentGrnPosted) {
+        switchGrnMode('queue');
+        return;
+    }
+    saveGrnDraftManual();
+};
+
+window.onGrnProofAttached = function(input) {
+    const files = input?.files ? Array.from(input.files) : [];
+    const lbl = document.getElementById('btnGrnAttachProofLabel');
+    if (files.length > 0) {
+        window.StockInStore.attachedProofFiles = files.map(f => f.name);
+        if (lbl) lbl.textContent = `Proof (${files.length})`;
+        showGrnToast(`Attached ${files.length} proof file${files.length > 1 ? 's' : ''}`);
+    }
+};
+
+window.handleGrnRejectOrReturn = function() {
+    if (window.StockInStore.isCurrentGrnPosted) {
+        switchGrnMode('queue');
+        return;
+    }
+    failGrnQaAndQuarantine();
+};
+
+window.handleGrnPrimaryStepAction = function() {
+    if (window.StockInStore.isCurrentGrnPosted) {
+        openGrnDocumentPreview();
+        return;
+    }
+
+    if (isViewingCompletedStepReadOnly()) {
+        returnToActiveGrnStep();
+        return;
+    }
+
+    const validation = evaluateGrnStepValidation();
+    if (!validation.valid) {
+        showGrnToast(validation.reason, 'warning');
+        return;
+    }
+
+    const vendorSelect = document.getElementById('intakeVendorSelect');
+    if (!vendorSelect || !vendorSelect.value) {
+        showGrnToast('Please select a Vendor Partner before proceeding.', 'warning');
+        return;
+    }
+
+    const mt = getActiveInboundMovementType();
+    const steps = getActiveRouteSteps(mt);
+    const activeIdx = Math.max(0, Math.min(Number(window.StockInStore.activeRouteStepIndex || 0), steps.length - 1));
+
+    if (activeIdx < steps.length - 1) {
+        advanceGrnRouteStep();
+        return;
+    }
+
+    confirmAndCommitStockIntake(true);
+};
+
 // Route location listeners
 window.onIntakeSourceLocationChanged = function(val) {
+    const mt = getActiveInboundMovementType();
+    const steps = getActiveRouteSteps(mt);
+    const unlockedIdx = Number(window.StockInStore.unlockedRouteStepIndex || 0);
+    const activeIdx = Number(window.StockInStore.activeRouteStepIndex || 0);
+    const matchedIdx = steps.findIndex(s => s.from_area === val);
+    if (matchedIdx > unlockedIdx) {
+        const srcSelect = document.getElementById('intakeSourceLocationSelect');
+        if (srcSelect && steps[activeIdx]?.from_area) {
+            ensureGrnSelectOption(srcSelect, steps[activeIdx].from_area);
+        }
+        showGrnToast(`Step ${matchedIdx + 1} is locked. Complete Step ${unlockedIdx + 1} first.`, 'warning');
+        return;
+    }
+    syncGrnStepActionButtons();
     updateLiveMockup();
     scheduleDraftSave();
 };
 
 window.onIntakeDestinationLocationChanged = function(val) {
-    const mtSelect = document.getElementById('intakeMovementTypeSelect');
-    const mt = window.StockInStore.movementTypes.find(m => m.id === mtSelect?.value);
+    const mt = getActiveInboundMovementType();
+    const steps = getActiveRouteSteps(mt);
+    const unlockedIdx = Number(window.StockInStore.unlockedRouteStepIndex || 0);
+    const activeIdx = Number(window.StockInStore.activeRouteStepIndex || 0);
+    const matchedIdx = steps.findIndex(s => s.to_area === val);
+    if (matchedIdx > unlockedIdx) {
+        const destSelect = document.getElementById('intakeDestinationLocationSelect');
+        if (destSelect && steps[activeIdx]?.to_area) {
+            ensureGrnSelectOption(destSelect, steps[activeIdx].to_area);
+        }
+        showGrnToast(`Step ${matchedIdx + 1} is locked. Complete Step ${unlockedIdx + 1} first.`, 'warning');
+        return;
+    }
     renderGrnChevronPipeline(mt);
     updateLiveMockup();
     scheduleDraftSave();
 };
 
-window.openPoInIntakeBuilder = function(poNumber) {
+window.openPoInIntakeBuilder = function(poNumber, viewCompleted = false) {
     const po = window.StockInStore.purchaseOrders.find(p => p.po_number === poNumber);
     if (!po) return;
 
+    const existingGrn = (window.StockInStore.goodsReceipts || []).find(g => g.po_number === poNumber);
+    const isCompletedView = Boolean(viewCompleted || po.status === 'Fully Received');
+
     window.StockInStore.activePoNumber = poNumber;
+    window.StockInStore.isCurrentGrnPosted = isCompletedView;
+    window.StockInStore.lastPostedGrnNumber = isCompletedView
+        ? (existingGrn?.grn_number || `GRN-${po.po_number.replace(/^PO-?/, '')}`)
+        : null;
 
     const poSelect = document.getElementById('intakePoSelect');
-    if (poSelect) poSelect.value = po.po_number;
+    if (poSelect) {
+        poSelect.value = po.po_number;
+        if (poSelect.value !== po.po_number && po.po_number) {
+            const label = `${po.po_number}${po.vendor_name ? ' — ' + po.vendor_name : ''}`;
+            poSelect.innerHTML += `<option value="${escapeHtml(po.po_number)}" selected>${escapeHtml(label)}</option>`;
+            poSelect.value = po.po_number;
+        }
+    }
 
     const vendorSelect = document.getElementById('intakeVendorSelect');
     if (vendorSelect) {
@@ -1190,6 +1827,11 @@ window.openPoInIntakeBuilder = function(poNumber) {
         etaInput.value = po.expected_delivery_date || po.delivery_date || '';
     }
 
+    const slipInput = document.getElementById('intakeDeliverySlip');
+    if (slipInput) slipInput.value = existingGrn?.delivery_slip || '';
+    const notesInput = document.getElementById('intakeDeliveryNotes');
+    if (notesInput) notesInput.value = existingGrn?.notes || '';
+
     let resolvedWhId = 'WH-MAIN';
     const locLower = (po.delivery_location || '').toLowerCase();
     const matchedWh = window.StockInStore.warehouses.find(w => 
@@ -1202,10 +1844,27 @@ window.openPoInIntakeBuilder = function(poNumber) {
 
     syncMovementTypesForWarehouse(resolvedWhId);
 
+    if (isCompletedView) {
+        const activeMt = getActiveInboundMovementType();
+        const mtSteps = getActiveRouteSteps(activeMt);
+        window.StockInStore.completedRouteSteps = mtSteps.map((_, idx) => idx);
+        window.StockInStore.unlockedRouteStepIndex = Math.max(0, mtSteps.length - 1);
+        window.StockInStore.activeRouteStepIndex = Math.max(0, mtSteps.length - 1);
+        populateRouteLocationDropdowns(activeMt, false);
+        renderGrnChevronPipeline(activeMt);
+    }
+
     window.StockInStore.intakeItems = (po.items || []).map((it, idx) => {
         const ordered = Number(it.quantity || 0);
         const prev = Number(it.received_quantity || 0);
         const remaining = Math.max(0, ordered - prev);
+        const grnItem = existingGrn?.items?.find(gi => gi.sku === it.sku);
+        const displayReceiveNow = isCompletedView
+            ? Number(grnItem?.receive_now ?? grnItem?.received_qty ?? (prev > 0 ? prev : ordered))
+            : remaining;
+        const displayPrevRecv = isCompletedView
+            ? Math.max(0, prev - displayReceiveNow)
+            : prev;
         const unitCost = Number(it.unit_price || it.cost_price || 0);
 
         const matchedProd = window.StockInStore.products.find(p => 
@@ -1224,34 +1883,38 @@ window.openPoInIntakeBuilder = function(poNumber) {
             specs: cleanSpecs,
             uom: it.uom || matchedProd?.uom || 'PCS',
             ordered_qty: ordered,
-            prev_recv_qty: prev,
-            receive_now: remaining,
-            balance: 0,
+            prev_recv_qty: displayPrevRecv,
+            receive_now: displayReceiveNow,
+            balance: isCompletedView ? 0 : Math.max(0, ordered - prev - remaining),
             unit_cost: unitCost,
             vat_type: '12% VAT',
             trackingBy: trackingMode,
-            lot_number: lotEnabled ? `LOT-${new Date().toISOString().slice(2, 10).replace(/-/g, '')}-${(idx + 1).toString().padStart(2, '0')}` : '',
-            expiry_date: '',
-            mfg_date: '',
-            notes: '',
+            lot_number: grnItem?.lot_number || (lotEnabled ? `LOT-${new Date().toISOString().slice(2, 10).replace(/-/g, '')}-${(idx + 1).toString().padStart(2, '0')}` : ''),
+            expiry_date: grnItem?.expiry_date || '',
+            mfg_date: grnItem?.mfg_date || '',
+            notes: grnItem?.notes || '',
             is_adhoc: false,
         };
     });
 
     const docDisplay = document.getElementById('intakeDocNoDisplay');
-    if (docDisplay) docDisplay.textContent = `GRN-${po.po_number.replace(/^PO-?/, '')}`;
+    if (docDisplay) docDisplay.textContent = window.StockInStore.lastPostedGrnNumber || `GRN-${po.po_number.replace(/^PO-?/, '')}`;
 
     const modeBadge = document.getElementById('intakeModeBadge');
     const modeText = document.getElementById('intakeModeText');
     if (modeBadge && modeText) {
-        modeBadge.className = 'status-pill awarded grn-mode-pill';
-        modeText.textContent = `PO: ${po.po_number}`;
+        modeBadge.className = isCompletedView ? 'grn-mode-tag awarded' : 'grn-mode-tag awarded';
+        modeText.textContent = isCompletedView ? `Posted: ${window.StockInStore.lastPostedGrnNumber}` : `PO: ${po.po_number}`;
     }
 
     updateTimelinessBadge();
     switchGrnMode('builder');
-    showGrnToast(`Loaded ${window.StockInStore.intakeItems.length} lines from ${po.po_number}`);
-    scheduleDraftSave();
+    if (isCompletedView) {
+        showGrnToast(`Viewing completed GRN (${window.StockInStore.lastPostedGrnNumber}) for ${po.po_number}`);
+    } else {
+        showGrnToast(`Loaded ${window.StockInStore.intakeItems.length} lines from ${po.po_number}`);
+        scheduleDraftSave();
+    }
 };
 
 window.startDirectBypassIntake = function() {
@@ -1262,6 +1925,8 @@ window.startDirectBypassIntake = function() {
 
 window.resetIntakeSheet = function(addBlankRow = true) {
     window.StockInStore.activePoNumber = null;
+    window.StockInStore.isCurrentGrnPosted = false;
+    window.StockInStore.lastPostedGrnNumber = null;
 
     const poSelect = document.getElementById('intakePoSelect');
     if (poSelect) poSelect.value = '';
@@ -1287,7 +1952,7 @@ window.resetIntakeSheet = function(addBlankRow = true) {
     const modeBadge = document.getElementById('intakeModeBadge');
     const modeText = document.getElementById('intakeModeText');
     if (modeBadge && modeText) {
-        modeBadge.className = 'status-pill sent grn-mode-pill';
+        modeBadge.className = 'grn-mode-tag sent';
         modeText.textContent = 'Direct Spot Inbound';
     }
 
@@ -1310,36 +1975,68 @@ window.onIntakeWarehouseChanged = function(whId) {
     scheduleDraftSave();
 };
 
-function syncMovementTypesForWarehouse(whId) {
+function syncMovementTypesForWarehouse(whId, preserveSelection = false) {
     const mtSelect = document.getElementById('intakeMovementTypeSelect');
     if (!mtSelect) return;
 
-    const allTypes = window.StockInStore.movementTypes;
-    const matched = allTypes.filter(mt => 
-        (mt.warehouse_id === whId || !mt.warehouse_id) && mt.operation_kind === 'Inbound Receipt' && mt.is_active !== false
-    );
+    const prevMtId = mtSelect.value;
+    const allTypes = getSyncedInboundMovementTypes();
+    window.StockInStore.movementTypes = allTypes;
 
-    let opts = '';
-    const available = matched.length > 0 ? matched : allTypes.filter(mt => mt.operation_kind === 'Inbound Receipt');
-    available.forEach(mt => {
-        opts += `<option value="${escapeHtml(mt.id)}">${escapeHtml(mt.code)} — ${escapeHtml(mt.name)}</option>`;
+    const activeInbound = allTypes.filter(mt =>
+        mt.is_active !== false && (mt.operation_kind === 'Inbound Receipt' || mt.stock_effect === 'Receipt')
+    );
+    const basePool = activeInbound.length > 0
+        ? activeInbound
+        : allTypes.filter(mt => mt.operation_kind === 'Inbound Receipt' || mt.stock_effect === 'Receipt');
+
+    // Keep warehouse-matching routes first, but keep ALL active inbound routes selectable (1-Step, 2-Step, 3-Step, Custom)
+    const available = [...basePool].sort((a, b) => {
+        const prioA = a.warehouse_id === whId ? 0 : (!a.warehouse_id ? 1 : 2);
+        const prioB = b.warehouse_id === whId ? 0 : (!b.warehouse_id ? 1 : 2);
+        return prioA - prioB;
     });
 
-    mtSelect.innerHTML = opts;
+    mtSelect.innerHTML = available.map(mt =>
+        `<option value="${escapeHtml(mt.id)}">${escapeHtml(mt.code)} — ${escapeHtml(mt.name)}</option>`
+    ).join('');
+
     if (available.length > 0) {
-        mtSelect.value = available[0].id;
-        updateRouteIndicator(available[0]);
-        populateRouteLocationDropdowns(available[0]);
-        renderGrnChevronPipeline(available[0]);
+        const preservedMt = preserveSelection ? available.find(m => m.id === prevMtId) : null;
+        const selectedMt = preservedMt || available[0];
+        mtSelect.value = selectedMt.id;
+
+        if (!preserveSelection) {
+            const whInput = document.getElementById('intakeWarehouseSelect');
+            if (whInput && selectedMt.warehouse_id) {
+                whInput.value = selectedMt.warehouse_id;
+            }
+            resetRouteStepProgress(selectedMt);
+        } else {
+            const maxIdx = Math.max(0, getActiveRouteSteps(selectedMt).length - 1);
+            window.StockInStore.unlockedRouteStepIndex = Math.max(0, Math.min(window.StockInStore.unlockedRouteStepIndex || 0, maxIdx));
+            window.StockInStore.activeRouteStepIndex = Math.max(0, Math.min(window.StockInStore.activeRouteStepIndex || 0, window.StockInStore.unlockedRouteStepIndex));
+        }
+
+        updateRouteIndicator(selectedMt);
+        populateRouteLocationDropdowns(selectedMt, preserveSelection);
+        renderGrnChevronPipeline(selectedMt);
     }
 }
 
 window.onIntakeMovementTypeChanged = function(mtId) {
+    window.StockInStore.movementTypes = getSyncedInboundMovementTypes();
     const mt = window.StockInStore.movementTypes.find(m => m.id === mtId);
     if (mt) {
+        const whInput = document.getElementById('intakeWarehouseSelect');
+        if (whInput && mt.warehouse_id) {
+            whInput.value = mt.warehouse_id;
+        }
+        resetRouteStepProgress(mt);
         updateRouteIndicator(mt);
-        populateRouteLocationDropdowns(mt);
+        populateRouteLocationDropdowns(mt, false);
         renderGrnChevronPipeline(mt);
+        renderIntakeTable();
     }
     updateLiveMockup();
     scheduleDraftSave();
@@ -1348,89 +2045,192 @@ window.onIntakeMovementTypeChanged = function(mtId) {
 function updateRouteIndicator(movementType) {
     const badge = document.getElementById('routePresetBadge');
     if (badge && movementType) {
-        badge.textContent = movementType.route_preset || `${(movementType.steps || []).length}-Step Route`;
+        const stepCount = (movementType.steps || []).length;
+        badge.textContent = movementType.route_preset || `${stepCount}-Step Route`;
     }
 }
 
-// Dynamic Inbound Chevron Pipeline synced with current destination location
+function getGrnStepShortLabel(step, idx, totalSteps) {
+    const rawName = (step?.name || '').trim();
+    if (rawName) return rawName;
+    const txt = `${step?.to_area || ''}`.toLowerCase();
+    if (/qa|qc|quality|inspect/.test(txt)) return 'Quality Check';
+    if (idx === 0) return 'Receiving';
+    if (idx === totalSteps - 1) return 'Storage';
+    return `Step ${idx + 1}`;
+}
+
+window.selectGrnRouteStep = function(stepIdx) {
+    const mt = getActiveInboundMovementType();
+    const steps = getActiveRouteSteps(mt);
+    if (steps.length === 0) return;
+
+    const targetIdx = Math.max(0, Math.min(Number(stepIdx) || 0, steps.length - 1));
+    const unlockedIdx = Math.max(0, Math.min(Number(window.StockInStore.unlockedRouteStepIndex || 0), steps.length - 1));
+
+    // Strict forward lock: prevent skipping past the current active unlocked step
+    if (targetIdx > unlockedIdx) {
+        showGrnToast(`Step ${targetIdx + 1} is locked. Please complete Step ${unlockedIdx + 1} first.`, 'warning');
+        return;
+    }
+
+    window.StockInStore.activeRouteStepIndex = targetIdx;
+
+    const step = steps[targetIdx];
+    if (step) {
+        const srcSelect = document.getElementById('intakeSourceLocationSelect');
+        const destSelect = document.getElementById('intakeDestinationLocationSelect');
+        if (srcSelect && step.from_area) ensureGrnSelectOption(srcSelect, step.from_area);
+        if (destSelect && step.to_area) ensureGrnSelectOption(destSelect, step.to_area);
+    }
+
+    renderGrnChevronPipeline(mt);
+    renderIntakeTable();
+    updateLiveMockup();
+    scheduleDraftSave();
+};
+
+// Dynamic Inbound Chevron Pipeline synced with sequential step gating
 window.renderGrnChevronPipeline = function(movementType) {
     const pipeline = document.getElementById('grnLifecycleProgressBar');
     if (!pipeline) return;
 
-    const mt = movementType || window.StockInStore.movementTypes[0] || {};
-    const steps = mt.steps || [];
-    const hasQc = steps.some(s => {
-        const text = ((s.name || '') + ' ' + (s.to_area || '') + ' ' + (mt.route_preset || '')).toLowerCase();
-        return text.includes('qa') || text.includes('qc') || text.includes('quality') || text.includes('inspect');
-    });
+    const mt = movementType || getActiveInboundMovementType();
+    const rawSteps = getActiveRouteSteps(mt);
 
-    const destLoc = (document.getElementById('intakeDestinationLocationSelect')?.value || '').toLowerCase();
-    const isQcActive = destLoc.includes('qa') || destLoc.includes('qc') || destLoc.includes('inspect');
+    const unlockedIdx = Math.max(0, Math.min(Number(window.StockInStore.unlockedRouteStepIndex || 0), rawSteps.length - 1));
+    const activeIdx = Math.max(0, Math.min(Number(window.StockInStore.activeRouteStepIndex || 0), unlockedIdx));
+    window.StockInStore.unlockedRouteStepIndex = unlockedIdx;
+    window.StockInStore.activeRouteStepIndex = activeIdx;
 
-    let stageIdx = 1;
-    let html = `
-        <div class="po-chevron-step rfq-chevron-step is-done" id="grnStepIndicatorReceiving">
-            <div class="rfq-chevron-badge"><i class="ph ph-check"></i></div>
-            <div class="rfq-chevron-info">
-                <span class="rfq-chevron-title">Receiving</span>
-                <span class="rfq-chevron-desc">${escapeHtml(steps[0]?.to_area || 'Dock Airlock')}</span>
-            </div>
-        </div>
-    `;
+    const isPosted = !!window.StockInStore.isCurrentGrnPosted;
+    const destLocRaw = (document.getElementById('intakeDestinationLocationSelect')?.value || '').trim();
+    const completedSet = new Set(window.StockInStore.completedRouteSteps || []);
 
-    if (hasQc) {
-        const qcDone = !isQcActive && destLoc !== '';
-        const qcClass = isQcActive ? 'is-active stage-approval' : (qcDone ? 'is-done' : 'stage-approval');
-        const qcIcon = qcDone ? 'ph-check' : 'ph-seal-check';
-        html += `
-            <div class="po-chevron-step rfq-chevron-step ${qcClass}" id="grnStepIndicatorQc">
-                <div class="rfq-chevron-badge"><i class="ph ${qcIcon}"></i>${!qcDone ? `<span class="rfq-chevron-num">${++stageIdx}</span>` : ''}</div>
+    const stepsHtml = rawSteps.map((step, idx) => {
+        const stageNum = idx + 1;
+        const shortLabel = getGrnStepShortLabel(step, idx, rawSteps.length);
+        const stepTitle = shortLabel;
+        const stepDesc = (idx === activeIdx && destLocRaw) ? destLocRaw : (step.to_area || step.from_area || 'Stage Target');
+        const isCompleted = isPosted || idx < unlockedIdx || completedSet.has(idx);
+        const isInProgress = !isPosted && idx === unlockedIdx;
+        const isLocked = !isPosted && idx > unlockedIdx;
+        const isViewingHistory = isCompleted && idx === activeIdx;
+        const isQcStep = isStepQaInspection(step, mt);
+
+        let stepClass = '';
+        if (isCompleted) {
+            stepClass = isViewingHistory ? 'is-done is-viewing-history' : 'is-done';
+        } else if (isInProgress) {
+            stepClass = isQcStep ? 'is-active stage-approval' : 'is-active stage-draft';
+        } else {
+            stepClass = 'is-locked stage-pending';
+        }
+
+        const iconClass = isCompleted
+            ? 'ph-check'
+            : (isLocked ? 'ph-lock-simple' : (isQcStep ? 'ph-seal-check' : (idx === 0 ? 'ph-truck' : (idx === rawSteps.length - 1 ? 'ph-warehouse' : 'ph-arrows-left-right'))));
+        const descIcon = isQcStep
+            ? 'ph-clipboard-text'
+            : (idx === 0 ? 'ph-warehouse' : (idx === rawSteps.length - 1 ? 'ph-map-pin' : 'ph-arrows-left-right'));
+
+        const stateLabel = isCompleted ? 'Completed' : (isInProgress ? 'In Progress' : `Locked (complete Step ${unlockedIdx + 1} first)`);
+        const fullTooltip = `Step ${stageNum}: ${stepTitle} — ${stepDesc} (${stateLabel})`;
+
+        return `
+            <div class="po-chevron-step rfq-chevron-step ${stepClass}" id="grnStepIndicatorStep${stageNum}" role="button" tabindex="${isLocked ? '-1' : '0'}"
+                 aria-disabled="${isLocked ? 'true' : 'false'}"
+                 data-step-title="${escapeHtml(`Step ${stageNum}: ${stepTitle}`)}"
+                 data-step-desc="${escapeHtml(stepDesc)}"
+                 data-step-state="${escapeHtml(stateLabel)}"
+                 onclick="selectGrnRouteStep(${idx})"
+                 onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectGrnRouteStep(${idx});}"
+                 onmouseenter="showGrnChevronTooltip(this)"
+                 onmouseleave="hideGrnChevronTooltip()"
+                 onfocus="showGrnChevronTooltip(this)"
+                 onblur="hideGrnChevronTooltip()"
+                 title="${escapeHtml(fullTooltip)}">
+                <div class="rfq-chevron-badge"><i class="ph ${iconClass}"></i><span class="rfq-chevron-num">${stageNum}</span></div>
                 <div class="rfq-chevron-info">
-                    <span class="rfq-chevron-title">Quality Check</span>
-                    <span class="rfq-chevron-desc">Inbound QA Bench</span>
+                    <span class="rfq-chevron-title">${escapeHtml(stepTitle)}</span>
+                    <span class="rfq-chevron-desc"><i class="ph ${descIcon}" aria-hidden="true"></i> <span>${escapeHtml(stepDesc)}</span></span>
                 </div>
             </div>
         `;
-    }
+    }).join('');
 
-    const storageActive = !isQcActive;
-    const storageClass = storageActive ? 'is-active stage-draft' : 'stage-draft';
-    html += `
-        <div class="po-chevron-step rfq-chevron-step ${storageClass}" id="grnStepIndicatorStocks">
-            <div class="rfq-chevron-badge"><i class="ph ph-warehouse"></i><span class="rfq-chevron-num">${++stageIdx}</span></div>
+    const statusStageNum = rawSteps.length + 1;
+    const statusTitleText = isPosted ? 'Posted' : 'Status';
+    const statusDescText = isPosted ? (window.StockInStore.lastPostedGrnNumber || 'Committed') : 'Ready to Commit';
+    const statusStateText = isPosted ? 'GRN Posted & Stock Updated' : 'Pending Final Step';
+    pipeline.innerHTML = `
+        ${stepsHtml}
+        <div class="po-chevron-step rfq-chevron-step stage-status ${isPosted ? 'is-done' : 'is-locked'}" id="grnStepIndicatorStatus"
+             aria-disabled="${isPosted ? 'false' : 'true'}"
+             data-step-title="${escapeHtml(statusTitleText)}"
+             data-step-desc="${escapeHtml(statusDescText)}"
+             data-step-state="${escapeHtml(statusStateText)}"
+             onmouseenter="showGrnChevronTooltip(this)"
+             onmouseleave="hideGrnChevronTooltip()"
+             title="${escapeHtml(`${statusTitleText} — ${statusDescText}`)}">
+            <div class="rfq-chevron-badge"><i class="ph ${isPosted ? 'ph-check' : 'ph-check-circle'}"></i><span class="rfq-chevron-num">${statusStageNum}</span></div>
             <div class="rfq-chevron-info">
-                <span class="rfq-chevron-title">Storage</span>
-                <span class="rfq-chevron-desc">${escapeHtml(destLoc || 'Stock Zone A')}</span>
-            </div>
-        </div>
-        <div class="po-chevron-step rfq-chevron-step stage-status" id="grnStepIndicatorStatus">
-            <div class="rfq-chevron-badge"><i class="ph ph-check-circle"></i><span class="rfq-chevron-num">${++stageIdx}</span></div>
-            <div class="rfq-chevron-info">
-                <span class="rfq-chevron-title" id="grnStepStatusTitle">Status</span>
-                <span class="rfq-chevron-desc" id="grnStepStatusDesc">Ready to Commit</span>
+                <span class="rfq-chevron-title" id="grnStepStatusTitle">${escapeHtml(statusTitleText)}</span>
+                <span class="rfq-chevron-desc"><i class="ph ph-flag-checkered" aria-hidden="true"></i> <span id="grnStepStatusDesc">${escapeHtml(statusDescText)}</span></span>
             </div>
         </div>
     `;
 
-    pipeline.innerHTML = html;
-
+    const activeStep = rawSteps[activeIdx] || {};
+    const activeShortLabel = getGrnStepShortLabel(activeStep, activeIdx, rawSteps.length);
+    const isQcActive = isStepQaInspection(activeStep, mt);
     const stageBadge = document.getElementById('grnRouteStageBadge');
     if (stageBadge) {
-        stageBadge.textContent = isQcActive ? 'Route: Quality Check' : 'Route: Storage Putaway';
-        stageBadge.className = isQcActive ? 'grn-label-badge is-accent' : 'grn-label-badge is-success';
+        const roTag = (!isPosted && activeIdx < unlockedIdx) ? ' (Read-Only)' : '';
+        stageBadge.textContent = `Step ${activeIdx + 1}/${rawSteps.length}: ${activeShortLabel}${roTag}`;
+        stageBadge.className = isPosted ? 'grn-label-badge grn-divider-pill is-success' : (isQcActive ? 'grn-label-badge grn-divider-pill is-accent' : 'grn-label-badge grn-divider-pill is-success');
+    }
+
+    updateFulfillmentProgress();
+};
+
+window.showGrnChevronTooltip = function(el) {
+    const tip = document.getElementById('grnChevronTooltip');
+    if (!tip || !el) return;
+    const title = el.getAttribute('data-step-title') || '';
+    const desc = el.getAttribute('data-step-desc') || '';
+    const state = el.getAttribute('data-step-state') || '';
+    tip.innerHTML = `<div class="grn-chevron-tooltip-title">${escapeHtml(title)}</div>` +
+        (desc ? `<div class="grn-chevron-tooltip-desc">${escapeHtml(desc)}</div>` : '') +
+        (state ? `<div class="grn-chevron-tooltip-state">${escapeHtml(state)}</div>` : '');
+    tip.hidden = false;
+    if (typeof el.getBoundingClientRect === 'function') {
+        const rect = el.getBoundingClientRect();
+        const top = Math.max(8, rect.bottom + 6);
+        const left = Math.max(12, Math.min(rect.left + (rect.width / 2), (window.innerWidth || 1280) - 160));
+        tip.style.top = `${top}px`;
+        tip.style.left = `${left}px`;
+        tip.style.transform = 'translateX(-50%)';
     }
 };
 
-window.populateRouteLocationDropdowns = function(movementType) {
+window.hideGrnChevronTooltip = function() {
+    const tip = document.getElementById('grnChevronTooltip');
+    if (tip) tip.hidden = true;
+};
+
+window.populateRouteLocationDropdowns = function(movementType, preserveLocations = false) {
     const srcSelect = document.getElementById('intakeSourceLocationSelect');
     const destSelect = document.getElementById('intakeDestinationLocationSelect');
     if (!srcSelect || !destSelect) return;
 
-    const whId = document.getElementById('intakeWarehouseSelect')?.value || 'WH-MAIN';
+    const mt = movementType || getActiveInboundMovementType();
+    const whId = mt?.warehouse_id || document.getElementById('intakeWarehouseSelect')?.value || 'WH-MAIN';
     const whAreas = window.StockInStore.storageAreas.filter(a => a.warehouse_id === whId);
+    const steps = getActiveRouteSteps(mt);
 
-    const mt = movementType || window.StockInStore.movementTypes[0] || {};
-    const steps = mt.steps || [];
+    const prevSrc = srcSelect.value;
+    const prevDest = destSelect.value;
 
     const sourceOrigins = ['Supplier / Vendor Origin (Boundary)'];
     const destTargets = [];
@@ -1450,23 +2250,71 @@ window.populateRouteLocationDropdowns = function(movementType) {
         }
     });
 
-    srcSelect.innerHTML = sourceOrigins.map((src, i) => 
-        `<option value="${escapeHtml(src)}" ${i === 0 ? 'selected' : ''}>${escapeHtml(src)}</option>`
+    const activeStepIdx = Math.max(0, Math.min(Number(window.StockInStore.activeRouteStepIndex || 0), Math.max(0, steps.length - 1)));
+    const activeStep = steps[activeStepIdx] || {};
+
+    const defaultSrc = activeStep.from_area || sourceOrigins[0];
+    const defaultDest = activeStep.to_area || destTargets[0] || 'Stock Zone A (Dry Goods)';
+    if (defaultSrc && !sourceOrigins.includes(defaultSrc)) sourceOrigins.push(defaultSrc);
+    if (defaultDest && !destTargets.includes(defaultDest)) destTargets.unshift(defaultDest);
+
+    const chosenSrc = (preserveLocations && prevSrc && sourceOrigins.includes(prevSrc)) ? prevSrc : defaultSrc;
+    const chosenDest = (preserveLocations && prevDest && destTargets.includes(prevDest)) ? prevDest : defaultDest;
+
+    srcSelect.innerHTML = sourceOrigins.map(src =>
+        `<option value="${escapeHtml(src)}" ${src === chosenSrc ? 'selected' : ''}>${escapeHtml(src)}</option>`
     ).join('');
-    srcSelect.disabled = sourceOrigins.length <= 1;
+    srcSelect.disabled = isViewingCompletedStepReadOnly() || sourceOrigins.length <= 1;
 
-    const isQcRoute = steps.some(s => {
-        const text = ((s.name || '') + ' ' + (s.to_area || '')).toLowerCase();
-        return text.includes('qa') || text.includes('qc') || text.includes('quality') || text.includes('inspect');
-    });
-
-    const defaultDest = isQcRoute 
-        ? (destTargets.find(d => /qa|qc|inspect|check/i.test(d)) || destTargets[0])
-        : (destTargets.find(d => /stock|store|freezer|chiller|dry/i.test(d)) || destTargets[destTargets.length - 1] || destTargets[0]);
-
-    destSelect.innerHTML = destTargets.map(dest => 
-        `<option value="${escapeHtml(dest)}" ${dest === defaultDest ? 'selected' : ''}>${escapeHtml(dest)}</option>`
+    destSelect.innerHTML = destTargets.map(dest =>
+        `<option value="${escapeHtml(dest)}" ${dest === chosenDest ? 'selected' : ''}>${escapeHtml(dest)}</option>`
     ).join('');
+    destSelect.disabled = isViewingCompletedStepReadOnly();
+
+    syncCombinedRouteDropdown();
+};
+
+window.syncCombinedRouteDropdown = function() {
+    const combinedSel = document.getElementById('intakeCombinedRouteSelect');
+    if (!combinedSel) return;
+
+    const mt = getActiveInboundMovementType();
+    const steps = getActiveRouteSteps(mt);
+    const total = steps.length;
+    const unlockedIdx = Math.max(0, Math.min(Number(window.StockInStore.unlockedRouteStepIndex || 0), Math.max(0, total - 1)));
+    const activeIdx = Math.max(0, Math.min(Number(window.StockInStore.activeRouteStepIndex || 0), unlockedIdx));
+    const isPosted = !!window.StockInStore.isCurrentGrnPosted;
+    const isReadOnly = window.isIntakeSheetLocked();
+
+    const srcVal = (document.getElementById('intakeSourceLocationSelect')?.value || '').trim();
+    const destVal = (document.getElementById('intakeDestinationLocationSelect')?.value || '').trim();
+    const activeStep = steps[activeIdx] || {};
+    const defaultSrc = (activeStep.from_area || 'Supplier / Vendor Origin (Boundary)').trim();
+    const defaultDest = (activeStep.to_area || 'Stock Zone A (Dry Goods)').trim();
+    const hasCustomOverride = (srcVal && srcVal !== defaultSrc) || (destVal && destVal !== defaultDest);
+
+    let optsHtml = steps.map((s, idx) => {
+        const fromTxt = (s.from_area || 'Source').trim();
+        const toTxt = (s.to_area || 'Destination').trim();
+        const isLockedOpt = !isPosted && idx > unlockedIdx;
+        const selected = !hasCustomOverride && idx === activeIdx;
+        return `<option value="step:${idx}" ${selected ? 'selected' : ''} ${isLockedOpt ? 'disabled' : ''}>${escapeHtml(fromTxt)} &gt; ${escapeHtml(toTxt)}</option>`;
+    }).join('');
+
+    if (hasCustomOverride) {
+        optsHtml += `<option value="custom" selected>${escapeHtml(srcVal || defaultSrc)} &gt; ${escapeHtml(destVal || defaultDest)}</option>`;
+    }
+
+    combinedSel.innerHTML = optsHtml;
+    combinedSel.value = hasCustomOverride ? 'custom' : `step:${activeIdx}`;
+    combinedSel.disabled = isReadOnly;
+};
+
+window.onIntakeCombinedRouteChanged = function(val) {
+    if (!val || val === 'custom') return;
+    const match = String(val).match(/^step:(\d+)$/);
+    if (!match) return;
+    selectGrnRouteStep(Number(match[1]));
 };
 
 function renderExpiryChip(dateStr) {
@@ -1543,6 +2391,12 @@ window.generateRandomLotNumber = function() {
 };
 
 window.saveLotExpiryModal = function() {
+    if (isViewingCompletedStepReadOnly()) {
+        showGrnToast('Completed step is read-only. Return to active step to edit.', 'warning');
+        closeLotExpiryModal();
+        return;
+    }
+
     const idx = parseInt(document.getElementById('lotModalRowIdx')?.value || '-1', 10);
     if (idx < 0 || !window.StockInStore.intakeItems[idx]) {
         closeLotExpiryModal();
@@ -1572,6 +2426,7 @@ window.saveLotExpiryModal = function() {
 
     closeLotExpiryModal();
     renderIntakeTable();
+    updateFulfillmentProgress();
     updateLiveMockup();
     showGrnToast(`Lot & Expiry updated for ${item.sku}`);
     scheduleDraftSave();
@@ -1586,6 +2441,7 @@ window.onIntakePoSelected = function(poNumber) {
 };
 
 window.onIntakeVendorChanged = function() {
+    syncGrnStepActionButtons();
     updateLiveMockup();
     scheduleDraftSave();
 };
@@ -1600,6 +2456,8 @@ function renderIntakeTable() {
     if (!tbody) return;
 
     const items = window.StockInStore.intakeItems;
+    const isReadOnly = window.isIntakeSheetLocked();
+    const disAttr = isReadOnly ? 'disabled' : '';
     if (countBadge) countBadge.textContent = `${items.length} Line Item${items.length === 1 ? '' : 's'}`;
     if (summaryLines) summaryLines.textContent = String(items.length);
 
@@ -1644,10 +2502,10 @@ function renderIntakeTable() {
                     return `
                         <td>
                             <div class="grn-item-cell">
-                                <input type="text" class="grn-adhoc-input is-title" value="${escapeHtml(it.name || '')}" onchange="onAdhocFieldChange(${idx}, 'name', this.value)" placeholder="Item Description">
+                                <input type="text" class="grn-adhoc-input is-title" value="${escapeHtml(it.name || '')}" onchange="onAdhocFieldChange(${idx}, 'name', this.value)" placeholder="Item Description" ${disAttr}>
                                 <div style="display: flex; align-items: center; gap: 6px;">
-                                    <input type="text" class="grn-adhoc-input is-sku" value="${escapeHtml(it.sku || '')}" onchange="onAdhocFieldChange(${idx}, 'sku', this.value)" placeholder="SKU">
-                                    <input type="text" class="grn-adhoc-input" style="flex: 1;" value="${escapeHtml(it.specs || '')}" onchange="onAdhocFieldChange(${idx}, 'specs', this.value)" placeholder="Specs / Brand">
+                                    <input type="text" class="grn-adhoc-input is-sku" value="${escapeHtml(it.sku || '')}" onchange="onAdhocFieldChange(${idx}, 'sku', this.value)" placeholder="SKU" ${disAttr}>
+                                    <input type="text" class="grn-adhoc-input" style="flex: 1;" value="${escapeHtml(it.specs || '')}" onchange="onAdhocFieldChange(${idx}, 'specs', this.value)" placeholder="Specs / Brand" ${disAttr}>
                                 </div>
                                 ${lotAllowed && (it.lot_number || it.expiry_date) ? `
                                     <div class="grn-trace-line">
@@ -1662,14 +2520,14 @@ function renderIntakeTable() {
                 return `
                     <td>
                         <div class="grn-item-cell">
-                            <div class="grn-item-title">${escapeHtml(it.name)}</div>
+                            <div class="grn-item-title" title="${escapeHtml(it.name || '')}">${escapeHtml(it.name)}</div>
                             <div class="grn-item-meta">
-                                <span class="grn-sku-badge">${escapeHtml(it.sku)}</span>
-                                ${it.specs ? `<span class="grn-specs">${escapeHtml(it.specs)}</span>` : ''}
+                                <span class="grn-sku-badge" title="${escapeHtml(it.sku || '')}">${escapeHtml(it.sku)}</span>
+                                ${it.specs ? `<span class="grn-specs" title="${escapeHtml(it.specs)}">${escapeHtml(it.specs)}</span>` : ''}
                             </div>
                             ${lotAllowed && (it.lot_number || it.expiry_date) ? `
                                 <div class="grn-trace-line">
-                                    <span class="grn-mono"><i class="ph ph-barcode" style="color: var(--grn-primary); margin-right: 2px;"></i>${escapeHtml(it.lot_number || 'No Lot')}</span>
+                                    <span class="grn-mono" title="${escapeHtml(it.lot_number || 'No Lot')}"><i class="ph ph-barcode" style="color: var(--grn-primary); margin-right: 2px;"></i>${escapeHtml(it.lot_number || 'No Lot')}</span>
                                     ${renderExpiryChip(it.expiry_date)}
                                 </div>
                             ` : ''}
@@ -1681,7 +2539,7 @@ function renderIntakeTable() {
                 if (it.is_adhoc) {
                     return `
                         <td class="td-center" style="min-width: 90px;">
-                            <select data-uom-select data-uom-placeholder="Select UOM" data-uom-current="${escapeHtml(it.uom || 'PCS')}" onchange="onAdhocFieldChange(${idx}, 'uom', this.value)">
+                            <select data-uom-select data-uom-placeholder="Select UOM" data-uom-current="${escapeHtml(it.uom || 'PCS')}" onchange="onAdhocFieldChange(${idx}, 'uom', this.value)" ${disAttr}>
                                 ${(() => {
                                     if (window.UomRegistry && window.UomRegistry.isLoaded) {
                                         const units = window.UomRegistry.getUnits();
@@ -1716,15 +2574,22 @@ function renderIntakeTable() {
                 return `<td class="td-num" style="color: var(--grn-on-surface-subtle); font-weight: 600;">${prev > 0 ? prev.toFixed(2) : '0.00'}</td>`;
             }
             if (col.id === 'receive_now') {
+                const qtyTitle = isOver
+                    ? `Exceeds remaining PO balance (${remaining.toFixed(2)})`
+                    : (ordered > 0 ? `Expected remaining: ${remaining.toFixed(2)}` : 'Enter received quantity');
                 return `
                     <td class="td-center">
-                        <div class="grn-stepper-wrap ${isOver ? 'is-over' : ''}">
-                            <button type="button" class="grn-stepper-btn" onclick="adjustRowQty(${idx}, -1)" title="Decrement 1" aria-label="Decrease quantity">−</button>
-                            <input type="number" class="grn-stepper-input" value="${recvNow}" min="0" step="any" oninput="onReceiveQtyInput(${idx}, this.value)" aria-label="Receive quantity">
-                            <button type="button" class="grn-stepper-btn" onclick="adjustRowQty(${idx}, 1)" title="Increment 1" aria-label="Increase quantity">+</button>
-                            <button type="button" class="grn-stepper-btn is-max" onclick="setRowReceiveQty(${idx}, ${ordered > 0 ? remaining : (recvNow || 1)})" title="Set to remaining balance">Max</button>
-                            <button type="button" class="grn-stepper-btn" onclick="setRowReceiveQty(${idx}, 0)" title="Zero out" style="font-size: 11px;">0</button>
-                        </div>
+                        <input type="number"
+                               class="grn-qty-input ${isOver ? 'is-over' : ''}"
+                               value="${recvNow}"
+                               min="0"
+                               step="any"
+                               placeholder="0"
+                               data-remaining="${remaining}"
+                               aria-invalid="${isOver ? 'true' : 'false'}"
+                               title="${escapeHtml(qtyTitle)}"
+                               oninput="onReceiveQtyInput(${idx}, this.value)"
+                               aria-label="Receive quantity" ${disAttr}>
                     </td>
                 `;
             }
@@ -1757,7 +2622,7 @@ function renderIntakeTable() {
             if (col.id === 'unit_cost') {
                 return `
                     <td class="td-num">
-                        <input type="number" step="0.01" min="0" value="${unitCost.toFixed(2)}" onchange="onAdhocFieldChange(${idx}, 'unit_cost', this.value)" style="text-align: right; font-weight: 700; width: 95px; height: 30px; font-size: 12px; border: 1px solid var(--grn-border-strong); border-radius: 4px; padding: 2px 6px;">
+                        <input type="number" class="grn-table-line-input" step="0.01" min="0" value="${unitCost.toFixed(2)}" onchange="onAdhocFieldChange(${idx}, 'unit_cost', this.value)" style="text-align: right; font-weight: 700; width: 100%; height: 30px; font-size: 12px;" ${disAttr}>
                     </td>
                 `;
             }
@@ -1773,10 +2638,10 @@ function renderIntakeTable() {
         return `
             <tr data-row-idx="${idx}" class="${isOver ? 'is-over-receipt' : ''}">
                 ${cells}
-                <td class="td-center" style="white-space: nowrap;">
+                <td class="td-center td-actions-sticky" style="white-space: nowrap;">
                     <div style="display: inline-flex; align-items: center; justify-content: center; gap: 4px;">
                         ${lotEnabledForRow ? `
-                            <button type="button" class="grn-lot-btn ${it.lot_number ? 'has-lot' : ''}" onclick="openLotExpiryModal(${idx})" title="Configure Batch / Lot # & Expiry">
+                            <button type="button" class="grn-lot-btn ${it.lot_number ? 'has-lot' : ''}" onclick="openLotExpiryModal(${idx})" title="Configure Batch / Lot # & Expiry" ${disAttr}>
                                 <span class="grn-state-dot" aria-hidden="true"></span>
                                 <i class="ph ${it.lot_number ? 'ph-barcode' : 'ph-calendar-plus'}" aria-hidden="true"></i>
                                 <span>${it.lot_number ? 'Lot Set' : 'Add Lot'}</span>
@@ -1788,7 +2653,7 @@ function renderIntakeTable() {
                             </span>
                         `}
                         ${it.is_adhoc ? `
-                            <button type="button" class="grn-row-remove" onclick="removeAdHocRow(${idx})" title="Remove item" aria-label="Remove item">
+                            <button type="button" class="grn-row-remove" onclick="removeAdHocRow(${idx})" title="Remove item" aria-label="Remove item" ${disAttr}>
                                 <i class="ph ph-trash" aria-hidden="true"></i>
                             </button>
                         ` : ''}
@@ -1810,6 +2675,10 @@ function scheduleLiveMockupUpdate() {
 }
 
 window.adjustRowQty = function(idx, delta) {
+    if (isViewingCompletedStepReadOnly()) {
+        showGrnToast('Completed step is read-only. Return to active step to edit.', 'warning');
+        return;
+    }
     const item = window.StockInStore.intakeItems[idx];
     if (!item) return;
     const cur = Number(item.receive_now || 0);
@@ -1818,6 +2687,10 @@ window.adjustRowQty = function(idx, delta) {
 };
 
 window.onAdhocFieldChange = function(idx, field, val) {
+    if (isViewingCompletedStepReadOnly()) {
+        showGrnToast('Completed step is read-only. Return to active step to edit.', 'warning');
+        return;
+    }
     const item = window.StockInStore.intakeItems[idx];
     if (!item) return;
     if (field === 'unit_cost') {
@@ -1832,6 +2705,10 @@ window.onAdhocFieldChange = function(idx, field, val) {
 };
 
 window.onReceiveQtyInput = function(idx, val) {
+    if (isViewingCompletedStepReadOnly()) {
+        showGrnToast('Completed step is read-only. Return to active step to edit.', 'warning');
+        return;
+    }
     const item = window.StockInStore.intakeItems[idx];
     if (!item) return;
 
@@ -1886,10 +2763,17 @@ window.onReceiveQtyInput = function(idx, val) {
             }
         }
 
-        const stepperWrap = row.querySelector('.grn-stepper-wrap');
-        if (stepperWrap) {
-            if (isOver) stepperWrap.classList.add('is-over');
-            else stepperWrap.classList.remove('is-over');
+        const qtyInput = row.querySelector('.grn-qty-input');
+        if (qtyInput) {
+            if (isOver) {
+                qtyInput.classList.add('is-over');
+                qtyInput.setAttribute('aria-invalid', 'true');
+                qtyInput.title = `Exceeds remaining PO balance (${remaining.toFixed(2)})`;
+            } else {
+                qtyInput.classList.remove('is-over');
+                qtyInput.setAttribute('aria-invalid', 'false');
+                qtyInput.title = ordered > 0 ? `Expected remaining: ${remaining.toFixed(2)}` : 'Enter received quantity';
+            }
         }
 
         const totTd = row.querySelector('[data-cell-role="line-total"]');
@@ -1905,11 +2789,15 @@ window.onReceiveQtyInput = function(idx, val) {
 };
 
 window.setRowReceiveQty = function(idx, qty) {
+    if (isViewingCompletedStepReadOnly()) {
+        showGrnToast('Completed step is read-only. Return to active step to edit.', 'warning');
+        return;
+    }
     const item = window.StockInStore.intakeItems[idx];
     if (!item) return;
 
     const row = document.querySelector(`tr[data-row-idx="${idx}"]`);
-    const input = row ? row.querySelector('.grn-stepper-input') : null;
+    const input = row ? row.querySelector('.grn-qty-input') : null;
     if (input) {
         input.value = qty;
         onReceiveQtyInput(idx, qty);
@@ -1925,6 +2813,7 @@ window.setRowReceiveQty = function(idx, qty) {
 window.onRowLotChange = function(idx, lot) {
     if (window.StockInStore.intakeItems[idx]) {
         window.StockInStore.intakeItems[idx].lot_number = lot;
+        syncGrnStepActionButtons();
         scheduleLiveMockupUpdate();
         scheduleDraftSave();
     }
@@ -1933,12 +2822,17 @@ window.onRowLotChange = function(idx, lot) {
 window.onRowExpiryChange = function(idx, date) {
     if (window.StockInStore.intakeItems[idx]) {
         window.StockInStore.intakeItems[idx].expiry_date = date;
+        syncGrnStepActionButtons();
         scheduleLiveMockupUpdate();
         scheduleDraftSave();
     }
 };
 
 window.addAdHocIntakeRow = function() {
+    if (isViewingCompletedStepReadOnly()) {
+        showGrnToast('Completed step is read-only. Return to active step to edit.', 'warning');
+        return;
+    }
     const products = window.StockInStore.products;
     const p = products[0] || { sku: 'ITEM-DIRECT', name: 'Direct Spot Item', uom: 'KG', cost_price: 0 };
     const dateStr = new Date().toISOString().slice(2, 10).replace(/-/g, '');
@@ -1970,6 +2864,10 @@ window.addAdHocIntakeRow = function() {
 };
 
 window.removeAdHocRow = function(idx) {
+    if (isViewingCompletedStepReadOnly()) {
+        showGrnToast('Completed step is read-only. Return to active step to edit.', 'warning');
+        return;
+    }
     window.StockInStore.intakeItems.splice(idx, 1);
     renderIntakeTable();
     updateFulfillmentProgress();
@@ -2036,7 +2934,22 @@ function updateFulfillmentProgress() {
     const statusChip = document.getElementById('grnStatusChip');
     const statusChipText = document.getElementById('grnStatusChipText');
 
-    if (sumOver > 0) {
+    if (window.StockInStore.isCurrentGrnPosted) {
+        const postedNo = window.StockInStore.lastPostedGrnNumber || 'Committed';
+        if (statusTitle) statusTitle.textContent = 'Posted';
+        if (statusDesc) statusDesc.textContent = postedNo;
+        if (statusChip && statusChipText) {
+            statusChip.setAttribute('data-state', 'ready');
+            statusChipText.textContent = `Posted · ${postedNo}`;
+        }
+    } else if (window.StockInStore.qaInspectionState?.quarantined) {
+        if (statusTitle) statusTitle.textContent = 'Quarantined';
+        if (statusDesc) statusDesc.textContent = 'Held at QA Bench';
+        if (statusChip && statusChipText) {
+            statusChip.setAttribute('data-state', 'blocked');
+            statusChipText.textContent = 'QA Failed · Quarantined';
+        }
+    } else if (sumOver > 0) {
         if (statusTitle) statusTitle.textContent = 'Over-Receipt';
         if (statusDesc) statusDesc.textContent = `+${sumOver.toFixed(0)} units excess`;
         if (statusChip && statusChipText) {
@@ -2058,6 +2971,8 @@ function updateFulfillmentProgress() {
             statusChipText.textContent = rate > 0 ? `In Progress (${rate.toFixed(0)}%)` : 'Draft · Not Posted';
         }
     }
+
+    syncGrnStepActionButtons();
 }
 
 // Collapsible Mockup Drawer & Overflow Menu
@@ -2115,7 +3030,7 @@ window.confirmClearIntakeSheet = function() {
     }
 };
 
-// 8. Live Document Mockup & Status Sync
+// 8. Live Document Mockup & A4 Printable Sheet Sync (mirrors RFQ Live Mockup A4 layout)
 window.updateLiveMockup = function() {
     const poSelect = document.getElementById('intakePoSelect');
     const vendorSelect = document.getElementById('intakeVendorSelect');
@@ -2131,147 +3046,304 @@ window.updateLiveMockup = function() {
     const modeBadge = document.getElementById('intakeModeBadge');
     const modeText = document.getElementById('intakeModeText');
     const sheet = document.getElementById('grnLiveMockupSheet');
+    const printSheet = document.getElementById('grnDedicatedPrintSheet');
 
     const poVal = poSelect?.value || '';
-    const grnRef = poVal ? `GRN-${poVal.replace(/^PO-?/, '')}` : 'GRN-DIRECT';
+    const isPosted = !!window.StockInStore.isCurrentGrnPosted;
+    const grnRef = (isPosted && window.StockInStore.lastPostedGrnNumber)
+        ? window.StockInStore.lastPostedGrnNumber
+        : (poVal ? `GRN-${poVal.replace(/^PO-?/, '')}` : 'GRN-DIRECT');
 
     if (docDisplay) docDisplay.textContent = grnRef;
 
     if (modeBadge && modeText) {
-        if (poVal) {
-            modeBadge.className = 'status-pill awarded grn-mode-pill';
+        if (isPosted) {
+            modeBadge.className = 'grn-mode-tag awarded';
+            modeText.textContent = `Posted: ${grnRef}`;
+        } else if (poVal) {
+            modeBadge.className = 'grn-mode-tag awarded';
             modeText.textContent = `PO: ${poVal}`;
         } else {
-            modeBadge.className = 'status-pill sent grn-mode-pill';
+            modeBadge.className = 'grn-mode-tag sent';
             modeText.textContent = 'Direct Spot Inbound';
         }
     }
 
-    if (!sheet) return;
+    if (!sheet && !printSheet) return;
 
-    const companyName = window.StockInConfig?.company?.name || 'RMS Logistics';
-    const vendorName = vendorSelect?.options[vendorSelect.selectedIndex]?.text?.replace(/^.*—\s*/, '') || 'Select Target Vendor';
-    const mtName = mtSelect?.options[mtSelect.selectedIndex]?.text || 'Standard Inbound Receipt';
+    const companyName = window.StockInConfig?.company?.name || 'RMS Enterprise Logistics';
+    const companyAddr = window.StockInConfig?.company?.address || 'Central Receiving & Warehousing Hub';
+    const vendorName = vendorSelect?.options?.[vendorSelect.selectedIndex]?.text?.replace(/^.*—\s*/, '') || 'Select Target Vendor';
+    const mtName = mtSelect?.options?.[mtSelect.selectedIndex]?.text || 'Standard Inbound Receipt';
     const sourceLoc = srcSelect?.value || 'Supplier / Vendor Origin';
     const destLoc = destSelect?.value || 'Storage Putaway';
     const etaDate = etaInput?.value || 'Scheduled';
-    const timestamp = tsInput?.value ? tsInput.value.replace('T', ' ') : 'Live Stamp';
-    const slipNotes = [slipInput?.value?.trim(), notesInput?.value?.trim()].filter(Boolean).join(' • ') || 'Pending DR #';
+    const timestamp = tsInput?.value ? tsInput.value.replace('T', ' ') : new Date().toISOString().slice(0, 16).replace('T', ' ');
+    const slipNo = slipInput?.value?.trim() || 'Pending DR #';
+    const notesText = notesInput?.value?.trim() || 'Physical dock count verified against delivery receipt.';
 
     const items = window.StockInStore.intakeItems || [];
     const showCostInMockup = activeGrnBuilderCols.includes('unit_cost') || activeGrnBuilderCols.includes('line_total');
 
-    const pageBadge = document.getElementById('grnMockupPageCountBadge');
-    if (pageBadge) {
-        const pages = Math.max(1, Math.ceil(items.length / 10));
-        pageBadge.textContent = `${pages} Page${pages > 1 ? 's' : ''}`;
-    }
-
     let sumOrdered = 0;
     let sumRecvNow = 0;
     let sumBalance = 0;
+    let sumAmount = 0;
     items.forEach(it => {
-        sumOrdered += Number(it.ordered_qty || it.receive_now || 0);
-        sumRecvNow += Number(it.receive_now || 0);
+        const recv = Number(it.receive_now || 0);
+        sumOrdered += Number(it.ordered_qty || recv || 0);
+        sumRecvNow += recv;
         sumBalance += Number(it.balance || 0);
+        sumAmount += recv * Number(it.unit_cost || 0);
     });
 
-    const rowsHtml = items.length === 0 ? `
-        <tr>
-            <td colspan="${showCostInMockup ? 7 : 6}" style="text-align: center; padding: 14px; color: #94a3b8;">No items loaded</td>
-        </tr>
-    ` : items.map((it, i) => `
-        <tr style="border-bottom: 1px solid #f1f5f9;">
-            <td style="padding: 4px 5px; color: #64748b;">${i + 1}</td>
-            <td style="padding: 4px 5px;">
-                <div style="font-weight: 700; color: #0f172a;">${escapeHtml(it.name || it.sku)}</div>
-                <div style="font-family: monospace; font-size: 8.5px; color: #64748b;">${escapeHtml(it.sku)}${it.specs ? ` • ${escapeHtml(it.specs)}` : ''}</div>
-            </td>
-            <td style="padding: 4px 5px; text-align: center; font-weight: 700;">${escapeHtml(it.uom)}</td>
-            <td style="padding: 4px 5px; text-align: right;">${Number(it.ordered_qty || 0).toFixed(2)}</td>
-            <td style="padding: 4px 5px; text-align: right; font-weight: 800; color: #059669;">+${Number(it.receive_now || 0).toFixed(2)}</td>
-            <td style="padding: 4px 5px; text-align: left; font-size: 9px; color: #7e22ce; font-family: monospace; font-weight: 600;">${escapeHtml(it.lot_number || 'No Lot')}${it.expiry_date ? ` (Exp: ${escapeHtml(it.expiry_date)})` : ''}</td>
-            ${showCostInMockup ? `<td style="padding: 4px 5px; text-align: right; font-weight: 700;">₱${(Number(it.receive_now || 0) * Number(it.unit_cost || 0)).toFixed(2)}</td>` : ''}
-        </tr>
-    `).join('');
-
-    sheet.innerHTML = `
-        <div style="border-bottom: 2px solid #0f172a; padding-bottom: 10px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: flex-start;">
-            <div>
-                <div style="font-weight: 900; font-size: 13px; color: #0f172a; letter-spacing: -0.02em;">${escapeHtml(companyName.toUpperCase())}</div>
-                <div style="font-size: 10px; color: #64748b;">Warehouse Logistics & Receiving Operations</div>
-            </div>
-            <div style="text-align: right;">
-                <div style="font-weight: 900; font-size: 11.5px; color: #7e22ce; text-transform: uppercase;">GOODS RECEIPT NOTE</div>
-                <div style="font-family: monospace; font-weight: 800; font-size: 11px; color: #0f172a;">${escapeHtml(grnRef)}</div>
-                <div style="font-family: monospace; font-size: 9.5px; color: #059669; font-weight: 700;">${poVal ? 'PO Ref: ' + escapeHtml(poVal) : 'Direct Spot Intake'}</div>
-            </div>
-        </div>
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; font-size: 10px;">
-            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px;">
-                <div style="font-weight: 800; font-size: 8.5px; color: #64748b; text-transform: uppercase; margin-bottom: 3px;">Vendor & Delivery</div>
-                <div style="font-weight: 800; color: #0f172a;">${escapeHtml(vendorName)}</div>
-                <div style="color: #475569; font-size: 9.5px; margin-top: 2px;">DR / Notes: <strong>${escapeHtml(slipNotes)}</strong></div>
-                <div style="color: #64748b; font-size: 9px; margin-top: 1px;">ETA: <strong>${escapeHtml(etaDate)}</strong></div>
-            </div>
-            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px;">
-                <div style="font-weight: 800; font-size: 8.5px; color: #64748b; text-transform: uppercase; margin-bottom: 3px;">Movement Route (Source ➔ Destination)</div>
-                <div style="font-weight: 700; color: #7e22ce; font-size: 10px;">${escapeHtml(mtName)}</div>
-                <div style="color: #0f172a; font-size: 9.5px; margin-top: 2px;">Route: <strong>${escapeHtml(sourceLoc)}</strong> ➔ <strong>${escapeHtml(destLoc)}</strong></div>
-                <div style="color: #64748b; font-size: 9px; margin-top: 1px;">Arrival: ${escapeHtml(timestamp)}</div>
-            </div>
-        </div>
-
-        <table style="width: 100%; border-collapse: collapse; font-size: 9.8px; margin-bottom: 12px;">
-            <thead>
-                <tr style="background: #f1f5f9; border-bottom: 1.5px solid #cbd5e1; text-align: left;">
-                    <th style="padding: 4px 5px;">#</th>
-                    <th style="padding: 4px 5px;">Item & Specs</th>
-                    <th style="padding: 4px 5px; text-align: center;">UOM</th>
-                    <th style="padding: 4px 5px; text-align: right;">Ord</th>
-                    <th style="padding: 4px 5px; text-align: right;">Recv</th>
-                    <th style="padding: 4px 5px;">Batch / Lot & Expiry</th>
-                    ${showCostInMockup ? `<th style="padding: 4px 5px; text-align: right;">Amt</th>` : ''}
-                </tr>
-            </thead>
-            <tbody>
-                ${rowsHtml}
-            </tbody>
-        </table>
-
-        <div style="border-top: 1.5px solid #cbd5e1; padding-top: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 10px;">
-            <div style="color: #64748b;">
-                <div>Dock Arrival: <strong>${escapeHtml(timestamp)}</strong></div>
-                <div>Ledger Target: <strong>SYS_LEDGER (Immutable)</strong></div>
-            </div>
-            <div style="text-align: right;">
-                <div style="font-size: 9.5px; color: #64748b;">Ordered: <strong>${sumOrdered.toFixed(2)}</strong> • Backlog: <strong style="color: #d97706;">${sumBalance.toFixed(2)}</strong></div>
-                <div style="font-size: 11.5px; font-weight: 900; color: #059669; margin-top: 2px;">Total Received Now: +${sumRecvNow.toFixed(2)} Units</div>
-            </div>
-        </div>
-    `;
-};
-
-window.openGrnDocumentPreview = function() {
-    const sheet = document.getElementById('grnLiveMockupSheet');
-    if (!sheet) return;
-    if (typeof Swal !== 'undefined') {
-        Swal.fire({
-            title: 'Goods Receipt Note (GRN) Preview',
-            html: `<div style="text-align: left; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; background: #fff;">${sheet.innerHTML}</div>`,
-            width: 720,
-            showCancelButton: true,
-            confirmButtonText: '<i class="ph ph-printer"></i> Print GRN Slip',
-            confirmButtonColor: '#7c3aed',
-            cancelButtonText: 'Close'
-        }).then(res => {
-            if (res.isConfirmed) window.print();
-        });
+    const PAGE_1_CAPACITY = 20;
+    const SUBSEQUENT_PAGE_CAPACITY = 24;
+    const pages = [];
+    if (items.length === 0) {
+        pages.push([]);
     } else {
-        window.print();
+        pages.push(items.slice(0, PAGE_1_CAPACITY));
+        let cursor = PAGE_1_CAPACITY;
+        while (cursor < items.length) {
+            pages.push(items.slice(cursor, cursor + SUBSEQUENT_PAGE_CAPACITY));
+            cursor += SUBSEQUENT_PAGE_CAPACITY;
+        }
     }
+
+    const totalPages = pages.length;
+    const pageBadge = document.getElementById('grnMockupPageCountBadge');
+    if (pageBadge) {
+        pageBadge.textContent = `${totalPages} Page${totalPages > 1 ? 's' : ''} (A4)`;
+    }
+
+    const colSpanCount = showCostInMockup ? 7 : 6;
+    const statusLabel = isPosted ? 'POSTED · SYS_LEDGER' : 'DRAFT · IN PROGRESS';
+    const qa = window.StockInStore.qaInspectionState || {};
+    const qaSummary = qa.quarantined ? `QA FAIL / QUARANTINED (${qa.tempC || '-'}°C)` : `Route: ${sourceLoc} -> ${destLoc}`;
+
+    const userName = window.StockInConfig?.user?.name || 'Warehouse Receiver';
+    const qtyFmt = (n) => Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 2 });
+    const theadHtml = `
+        <thead>
+            <tr>
+                <th style="width: 24px; text-align: center;">#</th>
+                <th style="width: 76px;">SKU</th>
+                <th>Item Description &amp; Specifications</th>
+                <th style="width: 44px; text-align: center;">UOM</th>
+                <th style="width: 55px; text-align: right;">Ordered</th>
+                <th style="width: 60px; text-align: right;">Received</th>
+                <th style="width: 92px;">Lot / Expiry</th>
+                ${showCostInMockup ? '<th style="width: 78px; text-align: right;">Amount ₱</th>' : ''}
+            </tr>
+        </thead>
+    `;
+
+    const renderRowsHtml = (slice, startOffset) => {
+        if (!slice || slice.length === 0) {
+            return `<tr><td colspan="${colSpanCount + 1}" style="text-align: center; padding: 22px 8px; color: #94a3b8; font-style: italic;">No line items loaded in intake sheet yet</td></tr>`;
+        }
+        return slice.map((it, idx) => {
+            const recv = Number(it.receive_now || 0);
+            const ord = Number(it.ordered_qty || 0);
+            const amt = recv * Number(it.unit_cost || 0);
+            const lotHtml = it.lot_number
+                ? `<div style="font-family: monospace; font-weight: 700; color: #6d28d9; font-size: 0.60rem;">${escapeHtml(it.lot_number)}</div>${it.expiry_date ? `<div style="font-size: 0.58rem; color: #64748b;">Exp: ${escapeHtml(it.expiry_date)}</div>` : ''}`
+                : `<span style="font-size: 0.60rem; color: #94a3b8;">Standard Qty</span>`;
+            return `
+            <tr>
+                <td style="text-align: center; font-weight: 700; color: #64748b; font-size: 0.65rem;">${startOffset + idx + 1}</td>
+                <td style="font-family: monospace; font-weight: 700; color: #9333ea; font-size: 0.65rem;">${escapeHtml(it.sku || '--')}</td>
+                <td>
+                    <div style="font-weight: 700; color: #0f172a; font-size: 0.68rem;">${escapeHtml(it.name || it.sku || 'Item')}</div>
+                    ${it.specs ? `<div style="font-size: 0.60rem; color: #64748b; margin-top: 1px;">${escapeHtml(it.specs)}</div>` : ''}
+                </td>
+                <td style="text-align: center; font-weight: 600; color: #475569; font-size: 0.65rem;">${escapeHtml(it.uom || 'PCS')}</td>
+                <td style="text-align: right; font-family: monospace; font-weight: 700; color: #475569; font-size: 0.67rem;">${ord > 0 ? qtyFmt(ord) : '—'}</td>
+                <td style="text-align: right; font-family: monospace; font-weight: 800; color: #047857; font-size: 0.67rem;">${qtyFmt(recv)}</td>
+                <td>${lotHtml}</td>
+                ${showCostInMockup ? `<td style="text-align: right; font-family: monospace; font-weight: 700; color: #0f172a; font-size: 0.67rem;">₱${amt.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>` : ''}
+            </tr>
+            `;
+        }).join('');
+    };
+
+    const tfootHtml = `
+        <tfoot>
+            <tr style="background: #f8fafc; border-top: 1.5px solid #cbd5e1;">
+                <td colspan="4" style="text-align: right; font-weight: 700; font-size: 0.65rem; color: #475569;">Totals (${items.length} Line${items.length === 1 ? '' : 's'}):</td>
+                <td style="text-align: right; font-weight: 700; font-size: 0.67rem; font-family: monospace; color: #0f172a;">${qtyFmt(sumOrdered)}</td>
+                <td style="text-align: right; font-weight: 800; font-size: 0.70rem; font-family: monospace; color: #047857;">${qtyFmt(sumRecvNow)}</td>
+                <td style="font-size: 0.62rem; font-weight: 700; color: #b45309;">Backlog: ${qtyFmt(sumBalance)}</td>
+                ${showCostInMockup ? `<td style="text-align: right; font-weight: 800; font-size: 0.70rem; font-family: monospace; color: #0f172a;">₱${sumAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>` : ''}
+            </tr>
+        </tfoot>
+    `;
+
+    let pagesHtml = '';
+    let startIdx = 0;
+    pages.forEach((pageItems, pIdx) => {
+        const pageNumber = pIdx + 1;
+        const isFirst = pIdx === 0;
+        const isLast = pIdx === totalPages - 1;
+
+        const endingHtml = isLast ? `
+            <div class="mockup-terms-disclaimer">
+                <div class="mockup-disclaimer-title"><i class="ph ph-info"></i> Receiving Remarks &amp; Ledger Notes:</div>
+                <div class="mockup-disclaimer-body">
+                    1. ${escapeHtml(notesText)}<br>
+                    2. Quantities received under <strong>${escapeHtml(mtName)}</strong> are stamped to the immutable <strong>SYS_LEDGER</strong>.<br>
+                    3. Discrepancies, damages, or short deliveries must be reported to Procurement within 24 hours.
+                </div>
+            </div>
+
+            <div class="mockup-signatures-grid">
+                <div class="mockup-sig-box">
+                    <div class="mockup-sig-title">Delivered By (Carrier / Vendor):</div>
+                    <div class="mockup-sig-line">
+                        <span>Signature over Printed Name</span>
+                        <span>Date: _________</span>
+                    </div>
+                </div>
+                <div class="mockup-sig-box">
+                    <div class="mockup-sig-title">Received &amp; Inspected By:</div>
+                    <div class="mockup-sig-line">
+                        <span>${escapeHtml(userName)}</span>
+                        <span>Date: ${escapeHtml(timestamp.slice(0, 10))}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mockup-page-footer">
+                <span>RMS Warehouse Official Goods Receipt Document</span>
+                <span>Page ${pageNumber} of ${totalPages}</span>
+            </div>
+        ` : `
+            <div class="mockup-page-continuation-banner">
+                <span><i class="ph ph-arrow-down" style="vertical-align: middle;"></i> Continued on Page ${pageNumber + 1}...</span>
+                <span>Page ${pageNumber} of ${totalPages}</span>
+            </div>
+        `;
+
+        if (isFirst) {
+            pagesHtml += `
+                <div class="rfq-live-mockup-paper">
+                    <div class="mockup-sheet-header">
+                        <div class="mockup-brand-block">
+                            <div class="mockup-brand-title">${escapeHtml(companyName.toUpperCase())}</div>
+                            <div class="mockup-brand-subtitle">${escapeHtml(companyAddr)} • Warehouse Receiving Division</div>
+                        </div>
+                        <div class="mockup-badge-block">
+                            <div class="mockup-badge-tag">GOODS RECEIPT NOTE</div>
+                            <div class="mockup-meta-kv">Ref: <strong>${escapeHtml(grnRef)}</strong></div>
+                            <div class="mockup-meta-kv">Received: <strong>${escapeHtml(timestamp)}</strong></div>
+                            <div class="mockup-meta-kv mockup-due-accent">Status: <strong>${escapeHtml(statusLabel)}</strong></div>
+                        </div>
+                    </div>
+
+                    <div class="mockup-parties-grid">
+                        <div class="mockup-party-box">
+                            <div class="mockup-party-heading">SUPPLIER &amp; DELIVERY</div>
+                            <div class="mockup-party-name">${escapeHtml(vendorName)}</div>
+                            <div class="mockup-party-sub">PO Ref: <strong>${escapeHtml(poVal || 'Direct Spot Intake')}</strong></div>
+                            <div class="mockup-party-sub">DR #: <strong>${escapeHtml(slipNo)}</strong></div>
+                            <div class="mockup-party-sub">Expected (ETA): <span>${escapeHtml(etaDate)}</span></div>
+                        </div>
+                        <div class="mockup-party-box">
+                            <div class="mockup-party-heading">MOVEMENT ROUTE &amp; PUTAWAY</div>
+                            <div class="mockup-party-name">${escapeHtml(mtName)}</div>
+                            <div class="mockup-party-sub">${escapeHtml(qaSummary)}</div>
+                            <div class="mockup-party-sub">Ledger Target: <strong>SYS_LEDGER (Immutable)</strong></div>
+                        </div>
+                    </div>
+
+                    <div class="mockup-table-container">
+                        <table class="mockup-table">
+                            ${theadHtml}
+                            <tbody>${renderRowsHtml(pageItems, startIdx)}</tbody>
+                            ${isLast ? tfootHtml : ''}
+                        </table>
+                    </div>
+
+                    ${endingHtml}
+                </div>
+            `;
+        } else {
+            pagesHtml += `
+                <div class="mockup-page-divider">
+                    <span class="mockup-page-divider-pill">PAGE ${pageNumber} OF ${totalPages}</span>
+                </div>
+
+                <div class="rfq-live-mockup-paper">
+                    <div class="mockup-sheet-header-mini">
+                        <div>
+                            <strong>${escapeHtml(companyName.toUpperCase())}</strong>
+                            <span style="font-size: 0.65rem; color: #64748b; font-weight: normal; margin-left: 4px;">• Goods Receipt Note</span>
+                        </div>
+                        <span>Ref: ${escapeHtml(grnRef)} (Cont.)</span>
+                    </div>
+
+                    <div class="mockup-table-container">
+                        <table class="mockup-table">
+                            ${theadHtml}
+                            <tbody>${renderRowsHtml(pageItems, startIdx)}</tbody>
+                            ${isLast ? tfootHtml : ''}
+                        </table>
+                    </div>
+
+                    ${endingHtml}
+                </div>
+            `;
+        }
+        startIdx += pageItems.length;
+    });
+
+    if (sheet) {
+        sheet.innerHTML = pagesHtml;
+    }
+    syncGrnDedicatedPrintSheet(pagesHtml);
 };
+
+// Dedicated A4 print sheet lives directly under <body> (mirrors #rfqDedicatedPrintSheet)
+function syncGrnDedicatedPrintSheet(html) {
+    let printSheet = document.getElementById('grnDedicatedPrintSheet');
+    if (!printSheet && document.body && typeof document.createElement === 'function') {
+        printSheet = document.createElement('div');
+        printSheet.id = 'grnDedicatedPrintSheet';
+        printSheet.className = 'rfq-dedicated-print-sheet';
+        document.body.appendChild(printSheet);
+    }
+    if (!printSheet) return;
+    if (typeof html === 'string') {
+        printSheet.innerHTML = html;
+    } else {
+        const container = document.getElementById('grnLiveMockupSheet');
+        if (container) printSheet.innerHTML = container.innerHTML;
+    }
+}
+
+// Print / PDF: identical flow to openRfqDocumentPreview() — sync A4 sheet, then native print (Save as PDF)
+window.openGrnDocumentPreview = function() {
+    updateLiveMockup();
+    syncGrnDedicatedPrintSheet();
+    setTimeout(() => {
+        window.print();
+    }, 80);
+};
+
+window.printGrnDocument = function() {
+    openGrnDocumentPreview();
+};
+
+// Global browser print listener for Ctrl+P or browser menu print
+if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+    window.addEventListener('beforeprint', () => {
+        if (typeof window.updateLiveMockup === 'function') {
+            window.updateLiveMockup();
+        }
+        syncGrnDedicatedPrintSheet();
+    });
+}
 
 // Close floating menus when clicking outside
 document.addEventListener('click', (e) => {
@@ -2292,7 +3364,21 @@ document.addEventListener('click', (e) => {
 });
 
 // 9. Confirm Receipt & Putaway (Atomic Vectorized Execution)
-window.confirmAndCommitStockIntake = function() {
+window.confirmAndCommitStockIntake = function(fromFinalGate = false) {
+    const mt = getActiveInboundMovementType();
+    const steps = getActiveRouteSteps(mt);
+    const activeIdx = Math.max(0, Math.min(Number(window.StockInStore.activeRouteStepIndex || 0), steps.length - 1));
+    if (!fromFinalGate && (isViewingCompletedStepReadOnly() || activeIdx < steps.length - 1 || !evaluateGrnStepValidation().valid)) {
+        handleGrnPrimaryStepAction();
+        return;
+    }
+
+    const validation = evaluateGrnStepValidation();
+    if (!validation.valid) {
+        showGrnToast(validation.reason, 'warning');
+        return;
+    }
+
     const items = window.StockInStore.intakeItems;
     const receivingItems = items.filter(it => it.receive_now > 0);
 
@@ -2385,13 +3471,16 @@ function executeIntakeSubmission(backorderPolicy) {
 
     const poNumber = window.StockInStore.activePoNumber || null;
     const vendorId = vendorSelect?.value || null;
-    const vendorName = vendorSelect?.options[vendorSelect.selectedIndex]?.text || 'Vendor';
-    const warehouseId = whSelect?.value || 'WH-MAIN';
-    const movementTypeId = mtSelect?.value || 'WH-MAIN-IN';
+    const vendorName = vendorSelect?.options?.[vendorSelect.selectedIndex]?.text || 'Vendor';
+    const activeMt = getActiveInboundMovementType();
+    const warehouseId = whSelect?.value || activeMt?.warehouse_id || 'WH-MAIN';
+    const movementTypeId = mtSelect?.value || activeMt?.id || 'WH-MAIN-IN';
     const deliverySlip = (slipInput?.value || '').trim();
     const carrier = (carrierInput?.value || '').trim();
     const destSelect = document.getElementById('intakeDestinationLocationSelect');
     const destinationLocation = destSelect?.value || 'Stock Zone A (Dry Goods)';
+    const matchedWh = (window.StockInStore.warehouses || []).find(w => w.id === warehouseId);
+    const deliveryLocation = whSelect?.options?.[whSelect.selectedIndex]?.text || matchedWh?.name || destinationLocation || warehouseId;
 
     const activeLines = window.StockInStore.intakeItems.filter(it => it.receive_now > 0).map(it => ({
         sku: it.sku,
@@ -2413,7 +3502,7 @@ function executeIntakeSubmission(backorderPolicy) {
         vendor_name: vendorName,
         warehouse_id: warehouseId,
         movement_type_id: movementTypeId,
-        delivery_location: whSelect?.options[whSelect.selectedIndex]?.text || warehouseId,
+        delivery_location: deliveryLocation,
         delivery_slip: deliverySlip,
         carrier: carrier,
         backorder_policy: backorderPolicy,
@@ -2467,6 +3556,33 @@ function executeIntakeSubmission(backorderPolicy) {
             }
         }
 
+        // Persist posted receipt record in store for queue/builder historical inspection
+        const existingReceipts = window.StockInStore.goodsReceipts || [];
+        existingReceipts.unshift({
+            grn_number: grnNo,
+            po_number: poNumber || null,
+            delivery_slip: document.getElementById('intakeDeliverySlip')?.value || '',
+            notes: document.getElementById('intakeDeliveryNotes')?.value || '',
+            items: (window.StockInStore.intakeItems || []).map(it => Object.assign({}, it))
+        });
+        window.StockInStore.goodsReceipts = existingReceipts;
+
+        // Keep user in the Builder showing the completed posted GRN ending (all steps + Status green, read-only)
+        window.StockInStore.isCurrentGrnPosted = true;
+        window.StockInStore.lastPostedGrnNumber = grnNo;
+        const activeMt = getActiveInboundMovementType();
+        const mtSteps = getActiveRouteSteps(activeMt);
+        window.StockInStore.completedRouteSteps = mtSteps.map((_, idx) => idx);
+        window.StockInStore.unlockedRouteStepIndex = Math.max(0, mtSteps.length - 1);
+        window.StockInStore.activeRouteStepIndex = Math.max(0, mtSteps.length - 1);
+
+        renderGrnChevronPipeline(activeMt);
+        renderIntakeTable();
+        updateFulfillmentProgress();
+        updateLiveMockup();
+        renderOrdersQueue();
+        renderKpis();
+
         if (typeof Swal !== 'undefined') {
             Swal.fire({
                 title: 'Goods Receipt Posted!',
@@ -2478,16 +3594,15 @@ function executeIntakeSubmission(backorderPolicy) {
                 `,
                 icon: 'success',
                 confirmButtonColor: '#7c3aed',
-                confirmButtonText: 'Return to Orders Queue'
-            }).then(() => {
-                resetIntakeSheet(false);
-                switchGrnMode('queue');
-                renderKpis();
+                confirmButtonText: 'View Completed GRN',
+                showCancelButton: true,
+                cancelButtonText: 'Return to Orders Queue'
+            }).then((res) => {
+                if (res?.dismiss === Swal.DismissReason?.cancel) {
+                    resetIntakeSheet(false);
+                    switchGrnMode('queue');
+                }
             });
-        } else {
-            resetIntakeSheet(false);
-            switchGrnMode('queue');
-            renderKpis();
         }
     })
     .catch(err => {
@@ -2518,7 +3633,7 @@ document.addEventListener('keydown', (e) => {
     } else if (e.key === 'F10') {
         if (window.StockInStore.activeMode === 'builder') {
             e.preventDefault();
-            confirmAndCommitStockIntake();
+            handleGrnPrimaryStepAction();
         }
     } else if (e.key === 'F8') {
         if (window.StockInStore.activeMode === 'builder') {

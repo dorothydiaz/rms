@@ -346,8 +346,8 @@ t Management System')
                         <i class="ph ph-dot"></i> Draft PO
                     </span>
 
-                    <!-- Financial Settlement Quick Status Pill -->
-                    <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="openPaymentSettlementModal()" title="Open Financial Tracking & Payment Settlement Ledger" style="padding: 3px 9px; font-size: 11px; height: 26px; display: inline-flex; align-items: center; gap: 5px; border-radius: 6px;">
+                    <!-- Financial Settlement Quick Status Pill (Only in Issued/Approved Stage) -->
+                    <button type="button" id="poHeaderSettlementBtn" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="openPaymentSettlementModal()" title="Open Financial Tracking & Payment Settlement Ledger" style="display: none; padding: 3px 9px; font-size: 11px; height: 26px; align-items: center; gap: 5px; border-radius: 6px;">
                         <i class="ph ph-bank" style="color: #7c3aed;"></i>
                         <span>Settlement:</span>
                         <span id="poSummaryPayBadge" class="pay-badge unpaid" style="font-size: 10px; padding: 1px 6px;">Unpaid</span>
