@@ -4053,6 +4053,53 @@
             }
         });
 
+        // Credit Review Queue Actions (Sales Order -> Accounting AR Gate)
+        document.getElementById('arCreditReviewTable')?.addEventListener('click', async (e) => {
+            const btn = e.target.closest('.btnArCreditDecision');
+            if (!btn) return;
+            const orderId = btn.dataset.orderId;
+            const decision = btn.dataset.decision;
+            const row = btn.closest('tr');
+            const remarks = row?.querySelector('.cr-remarks-input')?.value?.trim() || '';
+            const newLimitRaw = row?.querySelector('.cr-new-limit-input')?.value;
+            const payload = {
+                decision,
+                remarks: remarks || null,
+            };
+            if (newLimitRaw !== undefined && newLimitRaw !== '' && !isNaN(parseFloat(newLimitRaw))) {
+                payload.new_credit_limit = parseFloat(newLimitRaw);
+            }
+            try {
+                btn.disabled = true;
+                const res = await apiRequest(`/accounting/api/ar/credit-review/${encodeURIComponent(orderId)}`, 'POST', payload);
+                notify('success', res.message || 'Credit review updated.');
+                setTimeout(() => window.location.reload(), 900);
+            } catch (err) {
+                notify('error', err.message);
+                btn.disabled = false;
+            }
+        });
+
+        // 1-Click Post Draft Sales Invoice linked to a Sales Order
+        document.getElementById('arInvoicesRegisterBody')?.addEventListener('click', async (e) => {
+            const btn = e.target.closest('.btnArPostLinkedDraftInvoice');
+            if (!btn) return;
+            const orderId = btn.dataset.salesOrderId;
+            const invoiceId = btn.dataset.invoiceId;
+            try {
+                btn.disabled = true;
+                const res = await apiRequest(`/sales/api/orders/${encodeURIComponent(orderId)}/create-bill`, 'POST', {
+                    invoice_id: invoiceId,
+                    target_status: 'POSTED',
+                });
+                notify('success', res.message || 'Sales Invoice posted to GL & AR.');
+                setTimeout(() => window.location.reload(), 900);
+            } catch (err) {
+                notify('error', err.message);
+                btn.disabled = false;
+            }
+        });
+
         renderInvoiceLines();
     }
 

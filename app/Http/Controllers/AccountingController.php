@@ -39,6 +39,8 @@ use App\Models\Accounting\VendorBillHeader;
 use App\Models\Accounting\VendorBillLine;
 use App\Models\Branch;
 use App\Models\Hr\Department;
+use App\Models\Sales\SalesOrder;
+use App\Services\Sales\SalesCreditControlService;
 use App\Services\Accounting\AccountingApService;
 use App\Services\Accounting\AccountingArService;
 use App\Services\Accounting\AccountingCashBankService;
@@ -184,7 +186,7 @@ class AccountingController extends Controller
         $pendingApprovals = Schema::hasTable('approval_requests')
             ? DB::table('approval_requests')
                 ->where('approval_request_status', 'PENDING')
-                ->whereIn('approval_document_type', ['GL_JOURNAL', 'VENDOR_BILL', 'VENDOR_PAYMENT', 'PERIOD_CLOSE'])
+                ->whereIn('approval_document_type', ['GL_JOURNAL', 'VENDOR_BILL', 'VENDOR_PAYMENT', 'PERIOD_CLOSE', 'SALES_ORDER_CREDIT'])
                 ->orderByDesc('approval_request_created_at')
                 ->get()
             : collect([]);
@@ -375,6 +377,30 @@ class AccountingController extends Controller
         } catch (Throwable $e) {
         }
 
+        $pendingCreditOrders = collect([]);
+        if (Schema::hasTable('sales_orders')) {
+            try {
+                $creditControl = app(SalesCreditControlService::class);
+                $pendingCreditOrders = SalesOrder::with(['customer', 'lines'])
+                    ->where('company_id', $companyId)
+                    ->where('status', 'CREDIT_HOLD')
+                    ->orderByDesc('created_at')
+                    ->get()
+                    ->map(function (SalesOrder $so) use ($creditControl) {
+                        if ($so->customer) {
+                            $so->setAttribute('credit_evaluation', $creditControl->evaluateCustomerCredit(
+                                $so->customer,
+                                (float) $so->gross_total,
+                                (string) $so->payment_terms_code,
+                                $so->sales_order_id
+                            ));
+                        }
+                        return $so;
+                    });
+            } catch (Throwable $e) {
+            }
+        }
+
         // Cash & Bank Data
         $bankAccounts = AcctBankAccount::with('glAccount')
             ->where('company_id', $companyId)
@@ -524,6 +550,7 @@ class AccountingController extends Controller
             'collectionReceipts' => $collectionReceipts,
             'customerMemos' => $customerMemos,
             'customerAging' => $customerAging,
+            'pendingCreditOrders' => $pendingCreditOrders,
             'bankAccounts' => $bankAccounts,
             'employeeAdvances' => $employeeAdvances,
             'fundTransfers' => $fundTransfers,
@@ -1258,6 +1285,13 @@ class AccountingController extends Controller
             'payment_terms_code' => 'nullable|string|max:30',
             'credit_limit' => 'nullable|numeric|min:0',
             'is_active' => 'nullable|boolean',
+            'customer_tier' => 'nullable|string|max:30',
+            'credit_hold' => 'nullable|boolean',
+            'credit_grace_days' => 'nullable|integer|min:0|max:365',
+            'default_tax_code' => 'nullable|string|max:30',
+            'shipping_address' => 'nullable|string|max:500',
+            'sales_rep_name' => 'nullable|string|max:120',
+            'notes' => 'nullable|string|max:1000',
         ]);
 
         try {
@@ -1275,9 +1309,16 @@ class AccountingController extends Controller
                     'contact_person' => $validated['contact_person'] ?? null,
                     'email' => $validated['email'] ?? null,
                     'phone' => $validated['phone'] ?? null,
-                    'payment_terms_code' => $validated['payment_terms_code'] ?? 'NET30',
+                    'payment_terms_code' => $validated['payment_terms_code'] ?? 'NET_30',
                     'credit_limit' => (float) ($validated['credit_limit'] ?? 0.0),
                     'is_active' => $validated['is_active'] ?? true,
+                    'customer_tier' => $validated['customer_tier'] ?? 'STANDARD',
+                    'credit_hold' => (bool) ($validated['credit_hold'] ?? false),
+                    'credit_grace_days' => (int) ($validated['credit_grace_days'] ?? 15),
+                    'default_tax_code' => $validated['default_tax_code'] ?? 'VAT12_OUT',
+                    'shipping_address' => $validated['shipping_address'] ?? null,
+                    'sales_rep_name' => $validated['sales_rep_name'] ?? null,
+                    'notes' => $validated['notes'] ?? null,
                 ]
             );
 
@@ -1409,6 +1450,38 @@ class AccountingController extends Controller
 
         $result = $this->arService->getCustomerLedgerAndAging($companyId, $customerId);
         return response()->json(['success' => true, 'data' => $result]);
+    }
+
+    public function apiResolveSalesCreditReview(Request $request, string $salesOrderId): JsonResponse
+    {
+        $validated = $request->validate([
+            'decision' => 'required|string|in:APPROVE,APPROVE_OVERRIDE,RETURN_TO_DRAFT,REJECT',
+            'remarks' => 'nullable|string|max:500',
+            'new_credit_limit' => 'nullable|numeric|min:0',
+            'clear_customer_hold' => 'nullable|boolean',
+        ]);
+
+        try {
+            $actor = Auth::user()->name ?? 'AR Credit Officer';
+            $order = app(SalesCreditControlService::class)->resolveCreditReview(
+                $salesOrderId,
+                $validated['decision'],
+                $actor,
+                $validated['remarks'] ?? null,
+                isset($validated['new_credit_limit']) ? (float) $validated['new_credit_limit'] : null,
+                (bool) ($validated['clear_customer_hold'] ?? false)
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => "Sales Order {$order->order_number} credit review updated ({$order->status}).",
+                'data' => $order,
+            ]);
+        } catch (DomainException|InvalidArgumentException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+        } catch (Throwable $e) {
+            return response()->json(['success' => false, 'message' => 'Error resolving credit review: ' . $e->getMessage()], 500);
+        }
     }
 
     // =========================================================================

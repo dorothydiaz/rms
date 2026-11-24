@@ -5,9 +5,10 @@
 @section('content')
 @php
     $initialTab = request()->query('tab', 'invoices');
-    $validTabs = ['invoices', 'receipts', 'memos', 'dunning', 'ledger'];
+    $validTabs = ['invoices', 'credit-review', 'receipts', 'memos', 'dunning', 'ledger'];
     if (!in_array($initialTab, $validTabs, true)) $initialTab = 'invoices';
     $cur = $accountingPayload['baseCurrency'] ?? 'PHP';
+    $pendingCreditCount = count($accountingPayload['pendingCreditOrders'] ?? []);
 @endphp
 
 <div class="acct-workspace" id="accountingArRoot" data-initial-tab="{{ $initialTab }}">
@@ -46,6 +47,12 @@
     <div class="rfq-nav-tabs-bar" role="tablist">
         <button type="button" class="rfq-tab-btn{{ $initialTab === 'invoices' ? ' active' : '' }}" data-acct-tab="invoices">
             <i class="ph ph-file-text"></i> <span>Sales Invoices</span>
+        </button>
+        <button type="button" class="rfq-tab-btn{{ $initialTab === 'credit-review' ? ' active' : '' }}" data-acct-tab="credit-review">
+            <i class="ph ph-shield-check"></i> <span>Credit Review Queue</span>
+            @if($pendingCreditCount > 0)
+                <span class="rfq-tab-count" style="background:#f59e0b;color:#fff;">{{ $pendingCreditCount }}</span>
+            @endif
         </button>
         <button type="button" class="rfq-tab-btn{{ $initialTab === 'receipts' ? ' active' : '' }}" data-acct-tab="receipts">
             <i class="ph ph-receipt"></i> <span>Collection Receipts &amp; 2307</span>
@@ -242,9 +249,14 @@
                     <tbody id="arInvoicesRegisterBody">
                         @forelse($accountingPayload['salesInvoices'] ?? [] as $inv)
                             <tr data-invoice-id="{{ $inv->invoice_id }}">
-                                <td class="acct-mono" style="font-weight:600;">{{ $inv->invoice_number }}</td>
+                                <td class="acct-mono" style="font-weight:600;">
+                                    {{ $inv->invoice_number }}
+                                    @if(!empty($inv->sales_order_number))
+                                        <div style="font-size:10.5px;color:#7c3aed;font-weight:700;">SO: {{ $inv->sales_order_number }}</div>
+                                    @endif
+                                </td>
                                 <td>{{ $inv->customer_name }}</td>
-                                <td>{{ $inv->customer_po_number ?: 'N/A' }}</td>
+                                <td>{{ $inv->stock_out_number ?: ($inv->customer_po_number ?? 'N/A') }}</td>
                                 <td>{{ \Carbon\Carbon::parse($inv->invoice_date)->format('Y-m-d') }}</td>
                                 <td>{{ \Carbon\Carbon::parse($inv->due_date)->format('Y-m-d') }}</td>
                                 <td class="acct-num">{{ number_format((float) $inv->total_amount, 2) }}</td>
@@ -256,7 +268,12 @@
                                         {{ $inv->status }}
                                     </span>
                                 </td>
-                                <td style="text-align:right;">
+                                <td style="text-align:right;white-space:nowrap;">
+                                    @if(strtoupper((string) $inv->status) === 'DRAFT' && !empty($inv->sales_order_id))
+                                        <button type="button" class="rfq-btn rfq-btn-primary btnArPostLinkedDraftInvoice" data-sales-order-id="{{ $inv->sales_order_id }}" data-invoice-id="{{ $inv->invoice_id }}" style="padding:4px 9px;font-size:11px;">
+                                            <i class="ph ph-check-circle"></i> Post Bill
+                                        </button>
+                                    @endif
                                     <button type="button" class="acct-row-btn btnArViewInvoice" data-invoice-id="{{ $inv->invoice_id }}" title="View details">
                                         <i class="ph ph-eye"></i>
                                     </button>
@@ -266,6 +283,101 @@
                             <tr>
                                 <td colspan="9" style="text-align:center;padding:24px;color:#94a3b8;">
                                     No sales invoices recorded yet. Click <strong>New Invoice Draft</strong> to issue an invoice.
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- TAB 1B: SALES ORDER CREDIT REVIEW QUEUE -->
+    <!-- ===================================================================== -->
+    <div class="acct-tab-pane{{ $initialTab === 'credit-review' ? ' is-active' : '' }}" data-acct-pane="credit-review">
+        <div class="acct-panel">
+            <div class="acct-panel-head">
+                <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                    <h2 class="acct-panel-title"><i class="ph ph-shield-check"></i> Sales Order Credit Limit Review Queue</h2>
+                    <span class="acct-badge">{{ $pendingCreditCount }} Pending</span>
+                </div>
+                <a href="{{ route('sales.orders') }}" class="rfq-btn rfq-btn-outline">
+                    <i class="ph ph-arrow-square-out"></i> Open Sales Orders
+                </a>
+            </div>
+
+            <div class="acct-table-responsive">
+                <table class="acct-table" id="arCreditReviewTable">
+                    <thead>
+                        <tr>
+                            <th>Sales Order #</th>
+                            <th>Customer &amp; Terms</th>
+                            <th class="acct-num">Credit Limit</th>
+                            <th class="acct-num">AR + Open Orders</th>
+                            <th class="acct-num">This Order</th>
+                            <th class="acct-num">Projected Exposure</th>
+                            <th>Assessment</th>
+                            <th>Remarks / New Limit</th>
+                            <th style="text-align:right;">Decision</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($accountingPayload['pendingCreditOrders'] ?? [] as $co)
+                            @php
+                                $eval = $co->getAttribute('credit_evaluation') ?? [];
+                                $withinLimit = (bool) ($eval['within_limit'] ?? false);
+                                $flags = $eval['flags'] ?? ($co->credit_review_flags_json ?? []);
+                                $limitVal = (float) ($eval['credit_limit'] ?? $co->credit_limit_snapshot);
+                                $existingExp = (float) ($eval['current_ar_balance'] ?? 0) + (float) ($eval['open_orders_exposure'] ?? 0);
+                                $projExp = (float) ($eval['projected_exposure'] ?? $co->credit_exposure_snapshot);
+                            @endphp
+                            <tr data-credit-order-id="{{ $co->sales_order_id }}">
+                                <td class="acct-mono" style="font-weight:700;color:#7c3aed;">
+                                    {{ $co->order_number }}
+                                    <div style="font-size:10.5px;color:#64748b;font-weight:500;">{{ optional($co->order_date)->format('Y-m-d') }}</div>
+                                </td>
+                                <td>
+                                    <div style="font-weight:600;color:#0f172a;">{{ $co->customer_name }}</div>
+                                    <span class="acct-badge">{{ $co->payment_terms_code }}</span>
+                                </td>
+                                <td class="acct-num">{{ $cur }} {{ number_format($limitVal, 2) }}</td>
+                                <td class="acct-num">{{ $cur }} {{ number_format($existingExp, 2) }}</td>
+                                <td class="acct-num" style="font-weight:700;">{{ $cur }} {{ number_format((float) $co->gross_total, 2) }}</td>
+                                <td class="acct-num" style="font-weight:700;color:{{ $withinLimit ? '#059669' : '#dc2626' }};">
+                                    {{ $cur }} {{ number_format($projExp, 2) }}
+                                </td>
+                                <td>
+                                    @if($withinLimit)
+                                        <span class="acct-badge acct-badge-posted">Within Credit Limit</span>
+                                    @else
+                                        <span class="acct-badge acct-badge-voided" title="{{ implode(' | ', $eval['reasons'] ?? []) }}">
+                                            {{ implode(', ', $flags) ?: 'Over Limit / Review' }}
+                                        </span>
+                                    @endif
+                                </td>
+                                <td style="min-width:210px;">
+                                    <input type="text" class="acct-input cr-remarks-input" placeholder="{{ $withinLimit ? 'Optional approval note' : 'Required override reason...' }}" style="width:100%;margin-bottom:4px;font-size:11.5px;">
+                                    <input type="number" step="0.01" min="0" class="acct-input acct-num cr-new-limit-input" placeholder="Optional new limit ({{ number_format($limitVal, 0) }})" style="width:100%;font-size:11.5px;">
+                                </td>
+                                <td style="text-align:right;white-space:nowrap;">
+                                    <div style="display:inline-flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;">
+                                        <button type="button" class="rfq-btn rfq-btn-primary btnArCreditDecision" data-order-id="{{ $co->sales_order_id }}" data-decision="{{ $withinLimit ? 'APPROVE' : 'APPROVE_OVERRIDE' }}" style="padding:5px 9px;font-size:11px;">
+                                            <i class="ph ph-check"></i> {{ $withinLimit ? 'Approve' : 'Override' }}
+                                        </button>
+                                        <button type="button" class="rfq-btn rfq-btn-outline btnArCreditDecision" data-order-id="{{ $co->sales_order_id }}" data-decision="RETURN_TO_DRAFT" style="padding:5px 8px;font-size:11px;">
+                                            Return
+                                        </button>
+                                        <button type="button" class="rfq-btn rfq-btn-danger btnArCreditDecision" data-order-id="{{ $co->sales_order_id }}" data-decision="REJECT" style="padding:5px 8px;font-size:11px;">
+                                            Reject
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="9" style="text-align:center;padding:28px;color:#94a3b8;">
+                                    No Sales Orders currently awaiting Accounting Credit Review.
                                 </td>
                             </tr>
                         @endforelse

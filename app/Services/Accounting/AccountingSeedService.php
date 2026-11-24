@@ -27,6 +27,9 @@ class AccountingSeedService
     public function ensureSeeded(string $companyId = '1'): void
     {
         if (ChartOfAccount::where('company_id', $companyId)->exists()) {
+            $this->seedNumberingSeries($companyId);
+            $this->seedApprovalWorkflows($companyId);
+            $this->ensureSalesDiscountAccount($companyId);
             return;
         }
 
@@ -212,6 +215,7 @@ class AccountingSeedService
             // REVENUE (4000–4999)
             ['code' => '4010', 'name' => 'Food & Beverage Sales Revenue', 'type' => 'REVENUE', 'norm' => 'CREDIT', 'cf' => 'OPERATING', 'role' => 'SALES_REVENUE'],
             ['code' => '4020', 'name' => 'Delivery & Catering Revenue', 'type' => 'REVENUE', 'norm' => 'CREDIT', 'cf' => 'OPERATING', 'role' => null],
+            ['code' => '4090', 'name' => 'Sales Discounts & Allowances', 'type' => 'REVENUE', 'norm' => 'DEBIT', 'cf' => 'OPERATING', 'role' => 'SALES_DISCOUNTS'],
 
             // COGS (5000–5999)
             ['code' => '5010', 'name' => 'Cost of Goods Sold — Food & Packaging', 'type' => 'COGS', 'norm' => 'DEBIT', 'cf' => 'OPERATING', 'role' => 'COGS'],
@@ -247,6 +251,23 @@ class AccountingSeedService
         }
     }
 
+    protected function ensureSalesDiscountAccount(string $companyId): void
+    {
+        ChartOfAccount::firstOrCreate(
+            ['company_id' => $companyId, 'system_role' => 'SALES_DISCOUNTS'],
+            [
+                'account_id' => (string) Str::uuid(),
+                'account_code' => '4090',
+                'account_name' => 'Sales Discounts & Allowances',
+                'account_type' => 'REVENUE',
+                'normal_balance' => 'DEBIT',
+                'cash_flow_category' => 'OPERATING',
+                'allow_manual_journal' => false,
+                'is_active' => true,
+            ]
+        );
+    }
+
     protected function seedApprovalWorkflows(string $companyId): void
     {
         if (!Schema::hasTable('approval_workflows')) {
@@ -258,6 +279,7 @@ class AccountingSeedService
             ['code' => 'ACCT_VENDOR_BILL', 'name' => 'Vendor Bill & 3-Way Match Approval', 'doc' => 'VENDOR_BILL', 'min' => 0, 'step' => 'AP Supervisor Review'],
             ['code' => 'ACCT_PAYMENT_VOUCHER', 'name' => 'Vendor Payment & Check Release', 'doc' => 'VENDOR_PAYMENT', 'min' => 10000, 'step' => 'Finance Manager Approval'],
             ['code' => 'ACCT_PERIOD_CLOSE', 'name' => 'Fiscal Period Lock & Closing Sign-Off', 'doc' => 'PERIOD_CLOSE', 'min' => 0, 'step' => 'Chief Accountant Sign-Off'],
+            ['code' => 'ACCT_SALES_ORDER_CREDIT', 'name' => 'Sales Order Credit Limit Review', 'doc' => 'SALES_ORDER_CREDIT', 'min' => 0, 'step' => 'AR Credit Officer Review'],
         ];
 
         foreach ($workflows as $wf) {

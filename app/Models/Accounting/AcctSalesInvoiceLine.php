@@ -28,6 +28,7 @@ class AcctSalesInvoiceLine extends Model
         'subtotal',
         'total',
         'gl_revenue_account_id',
+        'sales_order_line_id',
     ];
 
     protected function casts(): array

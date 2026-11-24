@@ -166,6 +166,21 @@
                 </a>
             </div>
             <div class="nav-section">
+                @php $salesO2cActive = request()->routeIs('sales.quotes', 'sales.orders', 'sales.deliveries', 'sales.bills'); @endphp
+                <div class="nav-item-group" data-group-id="sales-o2c">
+                    <a href="#" class="nav-item">
+                        <i class="ph ph-handshake"></i>
+                        <span>Order-to-Cash</span>
+                    </a>
+                    <button class="add-btn"><i class="ph {{ $salesO2cActive ? 'ph-minus' : 'ph-plus' }}"></i></button>
+                </div>
+                <div class="sub-nav{{ $salesO2cActive ? ' expanded' : '' }}">
+                    <a href="{{ route('sales.orders') }}" class="sub-nav-item{{ request()->routeIs('sales.orders', 'sales.quotes') ? ' active' : '' }}"><span>Sales Quotes &amp; Orders</span></a>
+                    <a href="{{ route('sales.deliveries') }}" class="sub-nav-item{{ request()->routeIs('sales.deliveries') ? ' active' : '' }}"><span>Delivery &amp; Dispatch</span></a>
+                    <a href="{{ route('sales.bills') }}" class="sub-nav-item{{ request()->routeIs('sales.bills') ? ' active' : '' }}"><span>Customer Bills</span></a>
+                </div>
+            </div>
+            <div class="nav-section">
                 @php $salesMgtActive = request()->routeIs('sales.daily-sales', 'sales.payment-report', 'sales.reconciliations'); @endphp
                 <div class="nav-item-group" data-group-id="sales-mgt">
                     <a href="#" class="nav-item">

@@ -3,6 +3,7 @@
 namespace App\Models\Inventory;
 
 use App\Models\Purchase\ProcurementVendor;
+use App\Models\Sales\SalesOrder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -34,6 +35,11 @@ class StockOutOrder extends Model
         'total_packed_qty',
         'total_cost_value',
         'notes',
+        'sales_order_id',
+        'sales_order_number',
+        'customer_id',
+        'customer_name',
+        'cogs_journal_id',
     ];
 
     protected $casts = [
@@ -53,6 +59,11 @@ class StockOutOrder extends Model
     public function items(): HasMany
     {
         return $this->hasMany(StockOutOrderItem::class, 'stock_out_order_id');
+    }
+
+    public function salesOrder(): BelongsTo
+    {
+        return $this->belongsTo(SalesOrder::class, 'sales_order_id', 'sales_order_id');
     }
 
     public function getFulfillmentPercentageAttribute(): float

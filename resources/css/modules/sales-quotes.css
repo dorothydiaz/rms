@@ -1,0 +1,11 @@
+/* sales-quotes.css — Module Extensions (Inherits erp-rfq-core.css) */
+.status-pill.sent { background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(217, 119, 6, 0.18)); color: #b45309; border: 1px solid rgba(245, 158, 11, 0.32); }
+.status-pill.confirmed { background: linear-gradient(135deg, rgba(59, 130, 246, 0.12), rgba(14, 165, 233, 0.18)); color: #0369a1; border: 1px solid rgba(14, 165, 233, 0.32); }
+.status-pill.converted { background: linear-gradient(135deg, rgba(16, 185, 129, 0.14), rgba(5, 150, 105, 0.22)); color: #047857; border: 1px solid rgba(16, 185, 129, 0.38); }
+.status-pill.expired { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+.sq-credit-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font-size: 0.74rem; font-weight: 700; background: #f8fafc; border: 1px solid #e2e8f0; color: #334155; }
+.sq-credit-chip.is-hold { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
+.sq-credit-chip.is-ok { background: #f0fdf4; border-color: #bbf7d0; color: #15803d; }
+.sq-margin-warn { color: #dc2626; font-weight: 700; font-size: 0.72rem; }
+.sq-atp-pill { display: inline-flex; align-items: center; padding: 2px 7px; border-radius: 999px; font-size: 0.69rem; font-weight: 700; background: #eff6ff; color: #1d4ed8; font-variant-numeric: tabular-nums; }
+.sq-atp-pill.is-low { background: #fef2f2; color: #b91c1c; }

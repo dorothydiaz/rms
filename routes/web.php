@@ -350,6 +350,10 @@ Route::middleware('auth')->group(function () {
     // Sales Operations
     Route::prefix('sales')->name('sales.')->group(function () {
         Route::get('/dashboard', [SalesController::class, 'dashboard'])->name('dashboard');
+        Route::get('/quotes', [SalesController::class, 'quotes'])->name('quotes');
+        Route::get('/orders', [SalesController::class, 'orders'])->name('orders');
+        Route::get('/deliveries', [SalesController::class, 'deliveries'])->name('deliveries');
+        Route::get('/bills', [SalesController::class, 'bills'])->name('bills');
         Route::get('/daily-sales', [SalesController::class, 'dailySales'])->name('daily-sales');
         Route::get('/payment-report', [SalesController::class, 'paymentReport'])->name('payment-report');
         Route::get('/reconciliations', [SalesController::class, 'reconciliations'])->name('reconciliations');
@@ -357,6 +361,50 @@ Route::middleware('auth')->group(function () {
         Route::get('/voucher-config', [SalesController::class, 'voucherConfig'])->name('voucher-config');
         Route::get('/bundle-promotions', [SalesController::class, 'bundlePromotions'])->name('bundle-promotions');
         Route::get('/customer-masterlist', [SalesController::class, 'customerMasterlist'])->name('customer-masterlist');
+
+        // Customer Masterlist APIs (Single Source of Truth: acct_customers)
+        Route::get('/api/customers', [SalesController::class, 'apiGetCustomers'])->name('api.customers.index');
+        Route::post('/api/customers/save', [SalesController::class, 'apiSaveCustomer'])->name('api.customers.save');
+        Route::post('/api/customers/{customerId}/toggle-hold', [SalesController::class, 'apiToggleCustomerHold'])->name('api.customers.toggle-hold');
+        Route::get('/api/customers/{customerId}/credit-check', [SalesController::class, 'apiCheckCustomerCredit'])->name('api.customers.credit-check');
+
+        // Sales Quotes APIs
+        Route::get('/api/quotes', [SalesController::class, 'apiGetQuotes'])->name('api.quotes.index');
+        Route::post('/api/quotes/save-draft', [SalesController::class, 'apiSaveQuoteDraft'])->name('api.quotes.save-draft');
+        Route::post('/api/quotes/transition-status', [SalesController::class, 'apiTransitionQuoteStatus'])->name('api.quotes.transition-status');
+        Route::post('/api/quotes/revise', [SalesController::class, 'apiReviseQuote'])->name('api.quotes.revise');
+        Route::post('/api/quotes/convert-order', [SalesController::class, 'apiConvertQuoteToOrder'])->name('api.quotes.convert-order');
+        Route::post('/api/quotes/batch-archive', [SalesController::class, 'apiBatchArchiveQuotes'])->name('api.quotes.batch-archive');
+        Route::post('/api/quotes/batch-delete', [SalesController::class, 'apiBatchDeleteQuotes'])->name('api.quotes.batch-delete');
+
+        // Sales Orders & Fulfillment APIs
+        Route::get('/api/orders', [SalesController::class, 'apiGetOrders'])->name('api.orders.index');
+        Route::post('/api/orders/save-draft', [SalesController::class, 'apiSaveOrderDraft'])->name('api.orders.save-draft');
+        Route::post('/api/orders/confirm', [SalesController::class, 'apiConfirmOrder'])->name('api.orders.confirm');
+        Route::post('/api/orders/{salesOrderId}/credit-review', [SalesController::class, 'apiResolveCreditReview'])->name('api.orders.credit-review');
+        Route::post('/api/orders/{salesOrderId}/create-delivery', [SalesController::class, 'apiCreateDelivery'])->name('api.orders.create-delivery');
+        Route::post('/api/orders/{salesOrderId}/create-bill', [SalesController::class, 'apiCreateOrPostBill'])->name('api.orders.create-bill');
+        Route::post('/api/orders/{salesOrderId}/cancel', [SalesController::class, 'apiCancelOrder'])->name('api.orders.cancel');
+        Route::post('/api/orders/{salesOrderId}/quote-stage', [SalesController::class, 'apiUnifiedQuoteStage'])->name('api.orders.quote-stage');
+        Route::post('/api/orders/{salesOrderId}/revise-quote', [SalesController::class, 'apiUnifiedQuoteRevise'])->name('api.orders.revise-quote');
+        Route::post('/api/orders/batch-archive', [SalesController::class, 'apiBatchArchiveOrders'])->name('api.orders.batch-archive');
+
+        // Promotions APIs (Discounts, Vouchers, Bundles)
+        Route::post('/api/discounts/save', [SalesController::class, 'apiSaveDiscount'])->name('api.discounts.save');
+        Route::post('/api/discounts/{discountId}/toggle', [SalesController::class, 'apiToggleDiscount'])->name('api.discounts.toggle');
+        Route::post('/api/vouchers/save', [SalesController::class, 'apiSaveVoucher'])->name('api.vouchers.save');
+        Route::post('/api/vouchers/{voucherId}/toggle', [SalesController::class, 'apiToggleVoucher'])->name('api.vouchers.toggle');
+        Route::post('/api/vouchers/validate', [SalesController::class, 'apiValidateVoucher'])->name('api.vouchers.validate');
+        Route::post('/api/bundles/save', [SalesController::class, 'apiSaveBundle'])->name('api.bundles.save');
+        Route::post('/api/bundles/{bundleId}/toggle', [SalesController::class, 'apiToggleBundle'])->name('api.bundles.toggle');
+        Route::post('/api/bundles/{bundleId}/explode', [SalesController::class, 'apiExplodeBundle'])->name('api.bundles.explode');
+        Route::get('/api/promotions/{module}/telemetry', [SalesController::class, 'apiGetPromotionTelemetry'])->name('api.promotions.telemetry');
+
+        // Reports & 3-Way Reconciliation APIs
+        Route::get('/api/reports/daily-sales', [SalesController::class, 'apiGetDailySalesReport'])->name('api.reports.daily-sales');
+        Route::get('/api/reports/payments', [SalesController::class, 'apiGetPaymentReport'])->name('api.reports.payments');
+        Route::get('/api/reconciliations', [SalesController::class, 'apiGetReconciliations'])->name('api.reconciliations.index');
+        Route::post('/api/reconciliations/{salesOrderId}/resync', [SalesController::class, 'apiResyncOrderState'])->name('api.reconciliations.resync');
     });
 
     // Inventory Operations
@@ -492,6 +540,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/api/ar/memos/save', [AccountingController::class, 'apiSaveCustomerMemo'])->name('api.ar.memos.save');
         Route::post('/api/ar/checks/{checkId}/bounce', [AccountingController::class, 'apiHandleBouncedCheck'])->name('api.ar.checks.bounce');
         Route::get('/api/ar/customer-ledger', [AccountingController::class, 'apiGetCustomerLedger'])->name('api.ar.customer-ledger');
+        Route::post('/api/ar/credit-review/{salesOrderId}', [AccountingController::class, 'apiResolveSalesCreditReview'])->name('api.ar.credit-review');
 
         // Cash & Bank APIs
         Route::post('/api/cash/banks/save', [AccountingController::class, 'apiSaveBankAccount'])->name('api.cash.banks.save');

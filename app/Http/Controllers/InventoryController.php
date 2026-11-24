@@ -628,7 +628,12 @@ class InventoryController extends Controller
 
     public function stockOut(): View
     {
-        $orders = StockOutOrder::with(['items', 'vendor'])->orderByDesc('id')->get();
+        $orderTypeFilter = request()->query('order_type');
+        $ordersQuery = StockOutOrder::with(['items', 'vendor', 'salesOrder'])->orderByDesc('id');
+        if (!empty($orderTypeFilter)) {
+            $ordersQuery->where('order_type', strtoupper(trim((string) $orderTypeFilter)));
+        }
+        $orders = $ordersQuery->get();
         $products = InventoryItem::where('is_active', true)->orderBy('name')->get();
         $vendors = ProcurementVendor::where('is_active', true)->orderBy('legal_name')->get();
         $categories = InventoryCategory::where('is_active', true)->orderBy('name')->get();
@@ -660,7 +665,7 @@ class InventoryController extends Controller
      */
     public function apiGetStockOutData(): JsonResponse
     {
-        $orders = StockOutOrder::with(['items', 'vendor'])->orderByDesc('id')->get();
+        $orders = StockOutOrder::with(['items', 'vendor', 'salesOrder'])->orderByDesc('id')->get();
         $products = InventoryItem::where('is_active', true)->orderBy('name')->get();
         $vendors = ProcurementVendor::where('is_active', true)->orderBy('legal_name')->get();
         $categories = InventoryCategory::where('is_active', true)->orderBy('name')->get();
@@ -1017,13 +1022,18 @@ class InventoryController extends Controller
                 'total_cost_value' => $totalActualCost,
             ]);
 
+            $salesSync = null;
+            if (!empty($order->sales_order_id)) {
+                $salesSync = app(\App\Services\Sales\SalesInventoryService::class)->onDeliveryShipped($order->fresh('items'), $performedBy);
+            }
+
             if (!empty($validated['idempotency_key'])) {
                 \Illuminate\Support\Facades\Cache::put('stock_out_idem_' . $validated['idempotency_key'], [
                     'order_id' => $order->id,
                 ], 60);
             }
 
-            $order->load(['items', 'vendor']);
+            $order->load(['items', 'vendor', 'salesOrder']);
 
             return response()->json([
                 'success' => true,
@@ -1031,6 +1041,7 @@ class InventoryController extends Controller
                 'data' => [
                     'order' => $order,
                     'dispatched_at' => $order->dispatched_at->format('Y-m-d H:i:s'),
+                    'sales_sync' => $salesSync,
                 ],
             ]);
         });

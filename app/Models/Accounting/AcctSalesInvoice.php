@@ -2,6 +2,7 @@
 
 namespace App\Models\Accounting;
 
+use App\Models\Sales\SalesOrder;
 use DomainException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -28,12 +29,16 @@ class AcctSalesInvoice extends Model
         'currency_code',
         'exchange_rate',
         'subtotal_amount',
+        'discount_amount',
         'tax_amount',
         'total_amount',
         'paid_amount',
         'balance_due',
         'stock_out_id',
         'stock_out_number',
+        'sales_order_id',
+        'sales_order_number',
+        'stock_out_order_ref_id',
         'status',
         'journal_id',
         'approval_request_id',
@@ -50,6 +55,7 @@ class AcctSalesInvoice extends Model
             'due_date' => 'date',
             'exchange_rate' => 'decimal:6',
             'subtotal_amount' => 'decimal:4',
+            'discount_amount' => 'decimal:4',
             'tax_amount' => 'decimal:4',
             'total_amount' => 'decimal:4',
             'paid_amount' => 'decimal:4',
@@ -96,6 +102,11 @@ class AcctSalesInvoice extends Model
     public function receiptAllocations(): HasMany
     {
         return $this->hasMany(AcctCollectionReceiptLine::class, 'sales_invoice_id', 'invoice_id');
+    }
+
+    public function salesOrder(): BelongsTo
+    {
+        return $this->belongsTo(SalesOrder::class, 'sales_order_id', 'sales_order_id');
     }
 }
 

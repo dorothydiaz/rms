@@ -2,6 +2,8 @@
 
 namespace App\Models\Accounting;
 
+use App\Models\Sales\SalesOrder;
+use App\Models\Sales\SalesQuote;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
@@ -28,6 +30,13 @@ class AcctCustomer extends Model
         'credit_limit',
         'current_balance',
         'is_active',
+        'customer_tier',
+        'credit_hold',
+        'credit_grace_days',
+        'default_tax_code',
+        'shipping_address',
+        'sales_rep_name',
+        'notes',
     ];
 
     protected function casts(): array
@@ -36,6 +45,8 @@ class AcctCustomer extends Model
             'credit_limit' => 'decimal:4',
             'current_balance' => 'decimal:4',
             'is_active' => 'boolean',
+            'credit_hold' => 'boolean',
+            'credit_grace_days' => 'integer',
         ];
     }
 
@@ -56,6 +67,16 @@ class AcctCustomer extends Model
     public function receipts(): HasMany
     {
         return $this->hasMany(AcctCollectionReceipt::class, 'customer_id', 'customer_id');
+    }
+
+    public function salesOrders(): HasMany
+    {
+        return $this->hasMany(SalesOrder::class, 'customer_id', 'customer_id');
+    }
+
+    public function salesQuotes(): HasMany
+    {
+        return $this->hasMany(SalesQuote::class, 'customer_id', 'customer_id');
     }
 }
 

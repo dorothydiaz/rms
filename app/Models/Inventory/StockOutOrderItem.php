@@ -24,6 +24,7 @@ class StockOutOrderItem extends Model
         'batch_lot_no',
         'storage_location',
         'notes',
+        'sales_order_line_id',
     ];
 
     protected $casts = [

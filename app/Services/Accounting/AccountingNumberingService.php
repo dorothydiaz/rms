@@ -15,6 +15,9 @@ class AccountingNumberingService
         'PV' => ['name' => 'Vendor Payment Vouchers', 'prefix' => 'PV'],
         'VMEMO' => ['name' => 'Vendor Credit / Debit Memos', 'prefix' => 'VCM'],
         'SINV' => ['name' => 'Sales Invoices', 'prefix' => 'SI'],
+        'SQ' => ['name' => 'Sales Quotations', 'prefix' => 'SQ'],
+        'SORD' => ['name' => 'Sales Orders', 'prefix' => 'SLS'],
+        'DO' => ['name' => 'Sales Delivery Orders', 'prefix' => 'DO'],
         'CR' => ['name' => 'Collection Receipts', 'prefix' => 'CR'],
         'CMEMO' => ['name' => 'Customer Credit Memos', 'prefix' => 'CCM'],
         'FT' => ['name' => 'Fund Transfers', 'prefix' => 'FT'],
@@ -69,7 +72,10 @@ class AccountingNumberingService
             $seq = max(1, (int) $series->next_number);
             $pad = max(3, min(8, (int) $series->padding));
             $year = date('Y');
-            $formatted = sprintf('%s-%s-%0' . $pad . 'd', $series->prefix, $year, $seq);
+            $companyTag = ($companyId !== '1' && $companyId !== '')
+                ? '-C' . preg_replace('/[^A-Za-z0-9]/', '', $companyId)
+                : '';
+            $formatted = sprintf('%s%s-%s-%0' . $pad . 'd', $series->prefix, $companyTag, $year, $seq);
 
             $series->next_number = $seq + 1;
             $series->save();

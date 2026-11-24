@@ -42,6 +42,7 @@ class ChartOfAccount extends Model
         'LOAN_PAYABLE',
         'RETAINED_EARNINGS',
         'SALES_REVENUE',
+        'SALES_DISCOUNTS',
         'COGS',
         'PURCHASE_PRICE_VARIANCE',
         'DEPRECIATION_EXPENSE',

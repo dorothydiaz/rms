@@ -137,6 +137,16 @@
                         ['title' => 'Sales Dashboard', 'url' => route('sales.dashboard'), 'icon' => 'ph-chart-line-up', 'route' => 'sales.dashboard']
                     ]
                 ],
+                'o2c' => [
+                    'title' => 'Order-to-Cash',
+                    'url' => route('sales.orders'),
+                    'icon' => 'ph-handshake',
+                    'items' => [
+                        ['title' => 'Sales Quotes & Orders', 'url' => route('sales.orders'), 'icon' => 'ph-clipboard-text', 'route' => 'sales.orders'],
+                        ['title' => 'Delivery & Dispatch', 'url' => route('sales.deliveries'), 'icon' => 'ph-truck', 'route' => 'sales.deliveries'],
+                        ['title' => 'Customer Bills', 'url' => route('sales.bills'), 'icon' => 'ph-receipt', 'route' => 'sales.bills'],
+                    ]
+                ],
                 'sales_mgt' => [
                     'title' => 'Sales Management',
                     'url' => route('sales.daily-sales'),

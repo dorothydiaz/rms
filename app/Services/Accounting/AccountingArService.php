@@ -11,10 +11,12 @@ use App\Models\Accounting\AcctCustomerMemo;
 use App\Models\Accounting\AcctSalesInvoice;
 use App\Models\Accounting\AcctSalesInvoiceLine;
 use App\Models\Accounting\AcctTaxCode;
+use App\Models\Sales\SalesOrder;
 use Carbon\Carbon;
 use DomainException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 
@@ -77,10 +79,12 @@ class AccountingArService
                 $unitPrice = max(0.0, (float) ($raw['unit_price'] ?? 0.0));
                 $lineSubtotal = round($qty * $unitPrice, 4);
 
-                $taxCodeStr = strtoupper((string) ($raw['tax_code'] ?? 'VAT_12'));
+                $taxCodeStr = strtoupper((string) ($raw['tax_code'] ?? 'VAT12_OUT'));
                 $taxCodeObj = AcctTaxCode::where('company_id', $companyId)->where('tax_code', $taxCodeStr)->first();
                 $taxRate = $taxCodeObj ? (float) $taxCodeObj->rate_pct : 12.0;
-                $lineTax = ($taxCodeStr === 'EXEMPT' || $taxCodeStr === 'ZERO_RATED') ? 0.0 : round($lineSubtotal * ($taxRate / 100), 4);
+                $lineTax = in_array($taxCodeStr, ['EXEMPT', 'ZERO_RATED', 'VAT_EXEMPT', 'VAT_ZERO'], true)
+                    ? 0.0
+                    : round($lineSubtotal * ($taxRate / 100), 4);
                 $lineTotal = round($lineSubtotal + $lineTax, 4);
 
                 $subtotal += $lineSubtotal;
@@ -100,10 +104,20 @@ class AccountingArService
                     'subtotal' => $lineSubtotal,
                     'total' => $lineTotal,
                     'gl_revenue_account_id' => $raw['gl_revenue_account_id'] ?? null,
+                    'sales_order_line_id' => $raw['sales_order_line_id'] ?? null,
                 ];
             }
 
-            $grandTotal = round($subtotal + $taxTotal, 4);
+            $grossSubtotal = round($subtotal, 4);
+            $headerDiscount = min($grossSubtotal, max(0.0, round((float) ($headerData['discount_amount'] ?? 0.0), 4)));
+            $netSubtotal = round($grossSubtotal - $headerDiscount, 4);
+            if ($headerDiscount > 0.0001 && $grossSubtotal > 0.0001) {
+                $factor = $netSubtotal / $grossSubtotal;
+                $taxTotal = round($taxTotal * $factor, 4);
+            } else {
+                $taxTotal = round($taxTotal, 4);
+            }
+            $grandTotal = round($netSubtotal + $taxTotal, 4);
 
             // Credit Limit Check (if credit limit > 0)
             if ((float) $customer->credit_limit > 0 && $targetStatus === 'POSTED') {
@@ -130,13 +144,17 @@ class AccountingArService
                 'payment_terms_code' => $headerData['payment_terms_code'] ?? ($customer->payment_terms_code ?: 'NET_30'),
                 'currency_code' => $currency,
                 'exchange_rate' => $rate,
-                'subtotal_amount' => $subtotal,
+                'subtotal_amount' => $netSubtotal,
+                'discount_amount' => $headerDiscount,
                 'tax_amount' => $taxTotal,
                 'total_amount' => $grandTotal,
                 'paid_amount' => $inv ? (float) $inv->paid_amount : 0.0,
                 'balance_due' => round($grandTotal - ($inv ? (float) $inv->paid_amount : 0.0), 4),
                 'stock_out_id' => $headerData['stock_out_id'] ?? null,
                 'stock_out_number' => $headerData['stock_out_number'] ?? null,
+                'sales_order_id' => $headerData['sales_order_id'] ?? ($inv ? $inv->sales_order_id : null),
+                'sales_order_number' => $headerData['sales_order_number'] ?? ($inv ? $inv->sales_order_number : null),
+                'stock_out_order_ref_id' => $headerData['stock_out_order_ref_id'] ?? ($inv ? $inv->stock_out_order_ref_id : null),
                 'status' => $targetStatus,
                 'notes' => $headerData['notes'] ?? null,
                 'created_by' => $inv ? $inv->created_by : $actor,
@@ -176,13 +194,27 @@ class AccountingArService
                         'transaction_credit' => 0.0,
                         'description' => "AR Trade for Sales Invoice {$inv->invoice_number} ({$customer->customer_name})",
                     ],
-                    [
-                        'account_id' => $revAccount->account_id,
+                ];
+
+                if ($headerDiscount > 0.0001) {
+                    $discAccount = $this->postingService->resolveSystemRoleAccount($companyId, 'SALES_DISCOUNTS');
+                    $glLines[] = [
+                        'account_id' => $discAccount->account_id,
                         'branch_id' => $branchId,
-                        'transaction_debit' => 0.0,
-                        'transaction_credit' => $subtotal,
-                        'description' => "Sales Revenue from Invoice {$inv->invoice_number}",
-                    ],
+                        'partner_type' => 'CUSTOMER',
+                        'partner_id' => $customer->customer_id,
+                        'transaction_debit' => $headerDiscount,
+                        'transaction_credit' => 0.0,
+                        'description' => "Sales Discounts & Allowances on Invoice {$inv->invoice_number}",
+                    ];
+                }
+
+                $glLines[] = [
+                    'account_id' => $revAccount->account_id,
+                    'branch_id' => $branchId,
+                    'transaction_debit' => 0.0,
+                    'transaction_credit' => $grossSubtotal,
+                    'description' => "Sales Revenue from Invoice {$inv->invoice_number}",
                 ];
 
                 if ($taxTotal > 0.0001) {
@@ -217,6 +249,10 @@ class AccountingArService
                 // Increment customer current balance
                 $customer->current_balance = round((float) $customer->current_balance + $grandTotal, 4);
                 $customer->save();
+
+                if (!empty($inv->sales_order_id)) {
+                    $this->syncSalesOrderPaymentState((string) $inv->sales_order_id);
+                }
             }
 
             $this->postingService->recordAudit(
@@ -359,6 +395,10 @@ class AccountingArService
                 $inv->balance_due = $newBalance;
                 $inv->status = ($newBalance <= 0.05) ? 'PAID' : 'PARTIAL';
                 $inv->save();
+
+                if (!empty($inv->sales_order_id)) {
+                    $this->syncSalesOrderPaymentState((string) $inv->sales_order_id);
+                }
             }
 
             // Decrement customer open balance
@@ -582,6 +622,13 @@ class AccountingArService
             }
             $customer->save();
 
+            if (!empty($memo->sales_invoice_id)) {
+                $linkedInv = AcctSalesInvoice::where('invoice_id', $memo->sales_invoice_id)->first();
+                if ($linkedInv && !empty($linkedInv->sales_order_id)) {
+                    $this->syncSalesOrderPaymentState((string) $linkedInv->sales_order_id);
+                }
+            }
+
             return $memo;
         });
     }
@@ -743,5 +790,78 @@ class AccountingArService
             'total_open_credits' => round((float) $openCredits, 2),
             'net_receivable_due' => round($aging['total_open'] - (float) $openCredits, 2),
         ];
+    }
+
+    /**
+     * Synchronize linked Sales Order billed, paid, balance due, and lifecycle state
+     * whenever a sales invoice posts or receives collections.
+     */
+    public function syncSalesOrderPaymentState(?string $salesOrderId): void
+    {
+        if (!$salesOrderId || !Schema::hasTable('sales_orders')) {
+            return;
+        }
+
+        $order = SalesOrder::where('sales_order_id', $salesOrderId)
+            ->lockForUpdate()
+            ->first();
+
+        if (!$order) {
+            return;
+        }
+
+        $invoices = AcctSalesInvoice::where('sales_order_id', $salesOrderId)
+            ->whereIn('status', ['POSTED', 'PARTIAL', 'PAID'])
+            ->get();
+
+        $amountBilled = round((float) $invoices->sum('total_amount'), 4);
+        $amountPaid = round((float) $invoices->sum('paid_amount'), 4);
+        $balanceDue = max(0.0, round($amountBilled - $amountPaid, 4));
+
+        if ($amountBilled <= 0.0001) {
+            $paymentStatus = 'UNBILLED';
+        } elseif ($balanceDue <= 0.05) {
+            $paymentStatus = 'PAID';
+        } elseif ($amountPaid > 0.0001) {
+            $paymentStatus = 'PARTIAL';
+        } else {
+            $paymentStatus = 'UNPAID';
+        }
+
+        $order->amount_billed = $amountBilled;
+        $order->amount_paid = $amountPaid;
+        $order->balance_due = $balanceDue;
+        $order->payment_status = $paymentStatus;
+
+        $fulfillment = strtoupper((string) $order->fulfillment_status);
+        $currentStatus = strtoupper((string) $order->status);
+
+        if ($currentStatus !== 'CANCELLED' && $currentStatus !== 'ARCHIVED') {
+            if ($fulfillment === 'DELIVERED' && $paymentStatus === 'PAID') {
+                $order->status = 'CLOSED';
+            } elseif ($amountBilled > 0.0001 && in_array($currentStatus, ['APPROVED', 'PARTIALLY_DELIVERED', 'DELIVERED', 'BILLED', 'CLOSED'], true)) {
+                $order->status = 'BILLED';
+            }
+        }
+
+        $order->save();
+
+        // Sync line invoiced quantities from all posted/partial/paid invoice lines
+        if (Schema::hasTable('sales_order_lines')) {
+            $invoicedByLine = AcctSalesInvoiceLine::whereIn('invoice_id', $invoices->pluck('invoice_id')->all())
+                ->whereNotNull('sales_order_line_id')
+                ->get(['sales_order_line_id', 'quantity'])
+                ->groupBy('sales_order_line_id')
+                ->map(fn ($rows) => round((float) $rows->sum('quantity'), 4));
+
+            $order->load('lines');
+            foreach ($order->lines as $soLine) {
+                $qtyInv = (float) ($invoicedByLine->get($soLine->sales_order_line_id) ?? 0.0);
+                if (abs((float) $soLine->qty_invoiced - $qtyInv) > 0.0001) {
+                    $soLine->qty_invoiced = $qtyInv;
+                    $soLine->save();
+                }
+            }
+        }
     }
 }
