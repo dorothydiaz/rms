@@ -376,6 +376,8 @@ class InventoryController extends Controller
             'carrier' => 'nullable|string|max:255',
             'reason_code' => 'nullable|string|max:100',
             'delivery_location' => 'required|string|max:255',
+            'expected_delivery' => 'nullable|date',
+            'received_at' => 'nullable|date',
             'backorder_policy' => 'nullable|string|in:CREATE_BACKORDER,SHORT_CLOSE',
             'intake_uuid' => 'nullable|string|max:100',
             'items' => 'required|array|min:1',
@@ -411,11 +413,18 @@ class InventoryController extends Controller
             $po = null;
             if (!empty($validated['po_number'])) {
                 $po = PurchaseOrder::where('po_number', $validated['po_number'])->lockForUpdate()->first();
+                if ($po && !empty($validated['expected_delivery'])) {
+                    $po->expected_delivery = $validated['expected_delivery'];
+                    $po->save();
+                }
             }
 
             // Stamped native user identity (Pillar 4 Rule 15)
             $performedBy = auth()->user()->name ?? auth()->user()->email ?? 'Warehouse Logistics Supervisor';
             $now = now();
+            $receivedAt = !empty($validated['received_at'])
+                ? \Carbon\Carbon::parse($validated['received_at'])->setTimeFrom($now)
+                : $now;
 
             // Create Goods Receipt Header
             $receipt = GoodsReceipt::create([
@@ -438,7 +447,7 @@ class InventoryController extends Controller
                 'total_landed_costs' => 0.00,
                 'items_subtotal' => 0.00,
                 'gross_total' => 0.00,
-                'received_at' => $now,
+                'received_at' => $receivedAt,
                 'received_by' => $performedBy,
                 'status' => 'COMPLETED',
                 'notes' => $po ? "Fulfillment for PO {$po->po_number}" : "Direct inbound stock receiving",

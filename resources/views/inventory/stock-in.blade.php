@@ -167,15 +167,6 @@
                 </div>
 
                 <div class="rfq-toolbar-right grn-queue-toolbar-right">
-                    <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" id="btnQueueColConfig" onclick="toggleQueueTableSettingsDropdown(event)" title="Customize visible columns & order" style="padding: 5px 10px; font-size: 12px; border-radius: 8px;">
-                        <i class="ph ph-gear-six"></i>
-                        <span>Columns</span>
-                        <i class="ph ph-caret-down" style="font-size: 10px; margin-left: 2px;"></i>
-                    </button>
-                    <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="initStockInModule()" title="Refresh Incoming Orders" style="padding: 5px 10px; font-size: 12px; border-radius: 8px;">
-                        <i class="ph ph-arrows-clockwise"></i>
-                        <span>Refresh</span>
-                    </button>
                     <button type="button" class="hr-btn hr-btn-primary hr-btn-sm" onclick="startDirectBypassIntake()" style="padding: 5px 12px; font-size: 12px; border-radius: 8px;">
                         <i class="ph ph-plus-circle"></i>
                         <span>Direct Inbound</span>
@@ -196,27 +187,27 @@
                         <!-- Populated dynamically via JS -->
                     </tbody>
                 </table>
+            </div>
 
-                <!-- Floating Settings Dropdown Menu Anchored to End Column Settings Gear (RFQ Directory Parity) -->
-                <div id="queueTableSettingsDropdown" class="rfq-table-settings-dropdown" style="display: none;" onclick="event.stopPropagation()">
-                    <div class="rfq-settings-dropdown-header">
-                        <div class="rfq-settings-title-row">
-                            <div class="rfq-settings-title">
-                                <i class="ph ph-gear-six"></i>
-                                <span>Table Columns & Sequence</span>
-                            </div>
-                            <span class="rfq-col-badge-default" id="queueColActiveCounter">10 of 13 visible</span>
+            <!-- Floating Settings Dropdown Menu Anchored to End Column Settings Gear (Viewport-clamped outside table scroll container) -->
+            <div id="queueTableSettingsDropdown" class="rfq-table-settings-dropdown grn-queue-settings-popover" style="display: none;" onclick="event.stopPropagation()">
+                <div class="rfq-settings-dropdown-header">
+                    <div class="rfq-settings-title-row">
+                        <div class="rfq-settings-title">
+                            <i class="ph ph-gear-six"></i>
+                            <span>Table Columns & Sequence</span>
                         </div>
-                        <div class="rfq-settings-links-row">
-                            <button type="button" class="rfq-settings-link-btn" onclick="resetQueueColumnDefaults()">Reset to Default</button>
-                            <button type="button" class="rfq-settings-link-btn" onclick="showAllQueueColumns()">Select All</button>
-                            <button type="button" class="rfq-settings-link-btn" onclick="resetQueueColumnWidths()">Reset Widths</button>
-                        </div>
-                        <input type="text" class="rfq-settings-search-input" id="queueColSearchInput" placeholder="Filter columns..." oninput="handleQueueColSearch(this.value)">
+                        <span class="rfq-col-badge-default" id="queueColActiveCounter">12 of 15 visible</span>
                     </div>
-                    <div class="rfq-settings-col-list" id="queueColCheckboxesList">
-                        <!-- Populated dynamically with draggable items -->
+                    <div class="rfq-settings-links-row">
+                        <button type="button" class="rfq-settings-link-btn" onclick="resetQueueColumnDefaults()">Reset to Default</button>
+                        <button type="button" class="rfq-settings-link-btn" onclick="showAllQueueColumns()">Select All</button>
+                        <button type="button" class="rfq-settings-link-btn" onclick="resetQueueColumnWidths()">Reset Widths</button>
                     </div>
+                    <input type="text" class="rfq-settings-search-input" id="queueColSearchInput" placeholder="Filter columns..." oninput="handleQueueColSearch(this.value)">
+                </div>
+                <div class="rfq-settings-col-list" id="queueColCheckboxesList">
+                    <!-- Populated dynamically with draggable items -->
                 </div>
             </div>
 
@@ -261,7 +252,7 @@
                     <span>Reject / Return</span>
                 </button>
 
-                <button type="button" class="grn-top-action-btn is-primary grn-btn-cta" id="btnConfirmIntake" onclick="handleGrnPrimaryStepAction()" title="Confirm current step &amp; proceed (F10)">
+                <button type="button" class="grn-top-action-btn is-primary" id="btnConfirmIntake" onclick="handleGrnPrimaryStepAction()" title="Confirm current step &amp; proceed (F10)">
                     <span class="grn-top-btn-check" aria-hidden="true"><i class="ph-bold ph-check"></i></span>
                     <span class="grn-top-btn-sep" aria-hidden="true"></span>
                     <span id="btnConfirmIntakeLabel">Confirm Dock Receipt →</span>
@@ -295,11 +286,17 @@
                     </div>
 
                     <div class="grn-id-seg grn-id-seg-po">
-                        <label class="grn-id-key" for="intakePoSelect">PO</label>
+                        <label class="grn-id-key" for="grnPoPickerTrigger">PO</label>
                         <div class="grn-id-val-row">
-                            <select id="intakePoSelect" class="grn-po-select" onchange="onIntakePoSelected(this.value)" title="Select linked Purchase Order or Direct Inbound">
+                            <select id="intakePoSelect" class="grn-po-select" hidden aria-hidden="true" tabindex="-1" onchange="onIntakePoSelected(this.value)">
                                 <option value="">Direct Inbound (Bypass PO)</option>
                             </select>
+                            <div class="grn-po-picker-wrap" id="grnPoPickerWrap">
+                                <button type="button" class="grn-po-picker-trigger" id="grnPoPickerTrigger" onclick="toggleGrnPoPicker(event)" aria-haspopup="listbox" aria-expanded="false" title="Select linked Purchase Order or Direct Inbound">
+                                    <span class="grn-po-picker-label" id="grnPoPickerLabel">Direct Inbound (Bypass PO)</span>
+                                    <i class="ph ph-caret-down grn-picker-caret" aria-hidden="true"></i>
+                                </button>
+                            </div>
                             <button type="button" class="grn-seg-icon-btn" id="grnOpenPoBtn" onclick="openActivePoInPurchaseModule()" title="Open in Purchase Order module" aria-label="Open linked purchase order in Purchase Order module" hidden>
                                 <i class="ph ph-arrow-square-out" aria-hidden="true"></i>
                             </button>
@@ -325,24 +322,36 @@
             <!-- Single 6-Column Operational Row: Vendor/Supplier | Movement Type | Route | ETA | Arrival Date | Delivery Number -->
             <div class="grn-form-grid grn-form-row-6">
                 <div class="grn-field">
-                    <label class="grn-label" for="intakeVendorSelect">
+                    <label class="grn-label" for="grnVendorPickerTrigger">
                         <span><i class="ph ph-users" aria-hidden="true"></i> Vendor / Supplier</span>
                     </label>
-                    <select id="intakeVendorSelect" class="grn-control" onchange="onIntakeVendorChanged()" required></select>
+                    <select id="intakeVendorSelect" class="grn-control" hidden aria-hidden="true" tabindex="-1" onchange="onIntakeVendorChanged()" required></select>
+                    <button type="button" class="grn-header-picker-trigger" id="grnVendorPickerTrigger" onclick="toggleGrnHeaderPicker('vendor', this, event)" aria-haspopup="listbox" aria-expanded="false" title="Select Vendor / Supplier">
+                        <span class="grn-header-picker-label" id="grnVendorPickerLabel">Choose Vendor Partner...</span>
+                        <i class="ph ph-caret-down grn-picker-caret" aria-hidden="true"></i>
+                    </button>
                 </div>
 
                 <div class="grn-field">
-                    <label class="grn-label" for="intakeMovementTypeSelect">
+                    <label class="grn-label" for="grnMovementTypePickerTrigger">
                         <span><i class="ph ph-cube" aria-hidden="true"></i> Movement Type</span>
                     </label>
-                    <select id="intakeMovementTypeSelect" class="grn-control" onchange="onIntakeMovementTypeChanged(this.value)" required></select>
+                    <select id="intakeMovementTypeSelect" class="grn-control" hidden aria-hidden="true" tabindex="-1" onchange="onIntakeMovementTypeChanged(this.value)" required></select>
+                    <button type="button" class="grn-header-picker-trigger" id="grnMovementTypePickerTrigger" onclick="toggleGrnHeaderPicker('movementType', this, event)" aria-haspopup="listbox" aria-expanded="false" title="Select Inbound Movement Type">
+                        <span class="grn-header-picker-label" id="grnMovementTypePickerLabel">Select Movement Type...</span>
+                        <i class="ph ph-caret-down grn-picker-caret" aria-hidden="true"></i>
+                    </button>
                 </div>
 
                 <div class="grn-field">
-                    <label class="grn-label" for="intakeCombinedRouteSelect" id="grnRouteLabel">
+                    <label class="grn-label" for="grnRoutePickerTrigger" id="grnRouteLabel">
                         <span><i class="ph ph-git-branch" aria-hidden="true"></i> Route</span>
                     </label>
-                    <select id="intakeCombinedRouteSelect" class="grn-control" aria-label="Route Source to Destination" onchange="onIntakeCombinedRouteChanged(this.value)"></select>
+                    <select id="intakeCombinedRouteSelect" class="grn-control" hidden aria-hidden="true" tabindex="-1" aria-label="Route Source to Destination" onchange="onIntakeCombinedRouteChanged(this.value)"></select>
+                    <button type="button" class="grn-header-picker-trigger" id="grnRoutePickerTrigger" onclick="toggleGrnHeaderPicker('route', this, event)" aria-haspopup="listbox" aria-expanded="false" title="Select Route Stage">
+                        <span class="grn-header-picker-label" id="grnRoutePickerLabel">Source &gt; Destination</span>
+                        <i class="ph ph-caret-down grn-picker-caret" aria-hidden="true"></i>
+                    </button>
                 </div>
 
                 <div class="grn-field">
@@ -356,7 +365,7 @@
                     <label class="grn-label" for="intakeReceivedAt">
                         <span><i class="ph ph-calendar-check" aria-hidden="true"></i> Arrival Date</span>
                     </label>
-                    <input type="datetime-local" id="intakeReceivedAt" class="grn-control" value="{{ now()->format('Y-m-d\TH:i') }}" onchange="onIntakeHeaderChanged()" required>
+                    <input type="date" id="intakeReceivedAt" class="grn-control" value="{{ now()->format('Y-m-d') }}" onchange="onIntakeHeaderChanged()" required>
                 </div>
 
                 <div class="grn-field">
@@ -435,30 +444,29 @@
 
                         <div class="grn-items-toolbar-right">
                             <span class="po-items-counter-pill rfq-items-counter-pill" id="intakeItemCountBadge">0 Line Items</span>
-                            <button type="button" class="grn-btn grn-btn-secondary" id="btnAddUnplannedItem" onclick="addAdHocIntakeRow()" title="Add an item that is not on the PO">
-                                <i class="ph ph-plus" aria-hidden="true"></i>
-                                <span>Unplanned Item</span>
-                            </button>
+                            <div class="grn-unplanned-wrap">
+                                <button type="button" class="grn-btn grn-btn-secondary" id="btnAddUnplannedItem" onclick="toggleUnplannedItemPicker(event)" aria-haspopup="listbox" aria-expanded="false" title="Pick an item from catalog or add an unplanned line">
+                                    <i class="ph ph-plus" aria-hidden="true"></i>
+                                    <span>Unplanned Item</span>
+                                </button>
+                                <div class="grn-unplanned-popover" id="grnUnplannedItemDropdown" role="dialog" aria-label="Add Unplanned Item" hidden onclick="event.stopPropagation()">
+                                    <div class="grn-unplanned-search-wrap">
+                                        <i class="ph ph-magnifying-glass" aria-hidden="true"></i>
+                                        <input type="text" id="grnUnplannedSearchInput" class="grn-unplanned-search" placeholder="Search SKU or item name..." oninput="renderUnplannedItemPickerList(this.value)" autocomplete="off">
+                                    </div>
+                                    <div class="grn-unplanned-list" id="grnUnplannedItemList" role="listbox"></div>
+                                    <div class="grn-unplanned-foot">
+                                        <button type="button" class="grn-unplanned-blank-btn" onclick="addAdHocIntakeRow(null, true); closeUnplannedItemPicker();">
+                                            <i class="ph ph-plus-circle" aria-hidden="true"></i>
+                                            <span>Add Blank / Custom Unlisted Line</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                             <button type="button" class="grn-btn grn-btn-secondary grn-mockup-toggle" id="grnMockupToggleBtn" onclick="toggleGrnMockupDrawer()" aria-controls="grnMockupPanelCol" aria-expanded="false" title="Show GRN document panel">
                                 <i class="ph ph-file-text" aria-hidden="true"></i>
                                 <span>GRN Panel</span>
                             </button>
-                            <div class="grn-overflow">
-                                <button type="button" class="grn-icon-btn grn-icon-btn-lg" id="grnOverflowBtn" onclick="toggleGrnOverflowMenu(event)" aria-haspopup="menu" aria-expanded="false" aria-label="More actions">
-                                    <i class="ph ph-dots-three-vertical" aria-hidden="true"></i>
-                                </button>
-                                <div class="grn-overflow-menu" id="grnOverflowMenu" role="menu" hidden onclick="event.stopPropagation()">
-                                    <button type="button" role="menuitem" onclick="openGrnDocumentPreview(); toggleGrnOverflowMenu();" title="Print preview (F8)">
-                                        <i class="ph ph-printer" aria-hidden="true"></i> Print preview
-                                    </button>
-                                    <button type="button" role="menuitem" onclick="discardGrnDraft()">
-                                        <i class="ph ph-arrow-counter-clockwise" aria-hidden="true"></i> Discard saved draft
-                                    </button>
-                                    <button type="button" role="menuitem" class="is-danger" onclick="confirmClearIntakeSheet()">
-                                        <i class="ph ph-trash" aria-hidden="true"></i> Clear all lines…
-                                    </button>
-                                </div>
-                            </div>
                         </div>
                     </div>
 
@@ -544,6 +552,43 @@
             </aside>
             <div class="grn-drawer-backdrop" id="grnDrawerBackdrop" onclick="toggleGrnMockupDrawer(false)" hidden></div>
 
+        </div>
+
+        <!-- Root-Level Floating Searchable Pickers (Viewport-fixed to prevent clipping) -->
+        <div class="grn-unplanned-popover grn-floating-picker grn-po-popover" id="grnPoPickerDropdown" role="dialog" aria-label="Select Purchase Order" hidden onclick="event.stopPropagation()">
+            <div class="grn-unplanned-search-wrap">
+                <i class="ph ph-magnifying-glass" aria-hidden="true"></i>
+                <input type="text" id="grnPoSearchInput" class="grn-unplanned-search" placeholder="Search PO #, vendor, or status..." oninput="renderGrnPoPickerList(this.value)" autocomplete="off">
+            </div>
+            <div class="grn-unplanned-list" id="grnPoPickerList" role="listbox"></div>
+            <div class="grn-unplanned-foot">
+                <button type="button" class="grn-unplanned-blank-btn" onclick="selectGrnPoFromPicker('')">
+                    <i class="ph ph-lightning" aria-hidden="true"></i>
+                    <span>Direct Inbound (Bypass PO)</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="grn-unplanned-popover grn-floating-picker grn-header-popover" id="grnHeaderFieldPickerDropdown" role="dialog" aria-label="Select Option" hidden onclick="event.stopPropagation()">
+            <div class="grn-unplanned-search-wrap">
+                <i class="ph ph-magnifying-glass" aria-hidden="true"></i>
+                <input type="text" id="grnHeaderFieldSearchInput" class="grn-unplanned-search" placeholder="Search..." oninput="renderGrnHeaderPickerList(this.value)" autocomplete="off">
+            </div>
+            <div class="grn-unplanned-list" id="grnHeaderFieldPickerList" role="listbox"></div>
+        </div>
+
+        <div class="grn-unplanned-popover grn-floating-picker" id="grnRowItemPickerDropdown" role="dialog" aria-label="Select Item from Catalog" hidden onclick="event.stopPropagation()">
+            <div class="grn-unplanned-search-wrap">
+                <i class="ph ph-magnifying-glass" aria-hidden="true"></i>
+                <input type="text" id="grnRowItemSearchInput" class="grn-unplanned-search" placeholder="Search SKU or item name..." oninput="renderRowItemPickerList(this.value)" autocomplete="off">
+            </div>
+            <div class="grn-unplanned-list" id="grnRowItemPickerList" role="listbox"></div>
+            <div class="grn-unplanned-foot">
+                <button type="button" class="grn-unplanned-blank-btn" onclick="selectCustomUnlistedForActiveRow()">
+                    <i class="ph ph-pencil-simple" aria-hidden="true"></i>
+                    <span>Custom / Unlisted Item...</span>
+                </button>
+            </div>
         </div>
     </div><!-- /#panelIntakeBuilder -->
 

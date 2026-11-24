@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             InventoryAndProcurementSeeder::class,
             BillOfMaterialsSeeder::class,
             WasteAndExpirySeeder::class,
+            SalesModuleSeeder::class,
         ]);
     }
 }

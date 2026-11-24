@@ -432,7 +432,7 @@ class SalesOrderToCashIntegrationTest extends TestCase
 
         $this->actingAs($this->user)->get('/sales/customer-masterlist')
             ->assertStatus(200)
-            ->assertSee('vendor-kanban-grid');
+            ->assertSee('customerDirectorySection');
 
         $this->actingAs($this->user)->get('/accounting/ar?tab=credit-review')
             ->assertStatus(200)

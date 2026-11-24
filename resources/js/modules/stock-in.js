@@ -59,15 +59,108 @@ function escapeHtml(str) {
         .replace(/'/g, '&#39;');
 }
 
+function normalizeIsoDate(val) {
+    if (!val) return '';
+    const str = String(val).trim();
+    const isoMatch = str.match(/^(\d{4}-\d{2}-\d{2})/);
+    if (isoMatch) return isoMatch[1];
+    try {
+        const d = new Date(str);
+        if (isNaN(d.getTime())) return '';
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+    } catch (e) {
+        return '';
+    }
+}
+
+function getTodayIsoDate() {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+}
+
+function getPoExpectedEtaIso(po) {
+    if (!po) return '';
+    return normalizeIsoDate(po.expected_delivery || po.expected_delivery_date || po.delivery_date || '');
+}
+
+function getPoActualArrivalIso(po) {
+    if (!po) return '';
+    const receipts = Array.isArray(window.StockInStore.goodsReceipts) ? window.StockInStore.goodsReceipts : [];
+    const matched = receipts.find(r => r && r.po_number && r.po_number === po.po_number && (r.received_at || r.created_at));
+    if (matched) {
+        const dt = normalizeIsoDate(matched.received_at || matched.created_at);
+        if (dt) return dt;
+    }
+    return normalizeIsoDate(po.arrival_date || po.received_at || '');
+}
+
 function formatDisplayDate(val) {
     if (!val) return '—';
     try {
-        const d = new Date(val);
+        const iso = normalizeIsoDate(val);
+        const d = iso ? new Date(`${iso}T12:00:00`) : new Date(val);
         if (isNaN(d.getTime())) return String(val).slice(0, 10);
         return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     } catch (e) {
         return String(val).slice(0, 10);
     }
+}
+
+function renderQueueExpectedEtaCell(po, arrivalIso) {
+    const etaIso = getPoExpectedEtaIso(po);
+    if (!etaIso) {
+        return `<span class="grn-date-empty">—</span>`;
+    }
+
+    const formatted = formatDisplayDate(etaIso);
+    const hasArrived = (po.status === 'Fully Received') || !!arrivalIso;
+
+    // If already arrived, show ONLY the clean date with zero countdown badge
+    if (hasArrived) {
+        return `<span class="grn-eta-cell" title="Expected ETA: ${escapeHtml(formatted)} (Arrived)"><span class="grn-eta-date">${escapeHtml(formatted)}</span></span>`;
+    }
+
+    const today = new Date();
+    const todayMid = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const [y, m, d] = etaIso.split('-').map(Number);
+    const etaMid = new Date(y, (m || 1) - 1, d || 1);
+    const diffDays = Math.round((etaMid - todayMid) / (1000 * 60 * 60 * 24));
+
+    let pillCls = 'is-scheduled';
+    let pillText = `${diffDays}d left`;
+    let pillIcon = 'ph-calendar-blank';
+    let tooltip = `Expected ETA: ${formatted} (${diffDays} days left)`;
+
+    if (diffDays < 0) {
+        const late = Math.abs(diffDays);
+        pillCls = 'is-overdue';
+        pillText = `${late}d overdue`;
+        pillIcon = 'ph-warning-circle';
+        tooltip = `Expected ETA: ${formatted} (${late} day${late === 1 ? '' : 's'} overdue)`;
+    } else if (diffDays === 0) {
+        pillCls = 'is-today';
+        pillText = 'Due today';
+        pillIcon = 'ph-clock';
+        tooltip = `Expected ETA: ${formatted} (Arriving today)`;
+    } else if (diffDays <= 7) {
+        pillCls = diffDays <= 2 ? 'is-imminent' : 'is-within-7d';
+        pillText = `≤7d · ${diffDays}d left`;
+        pillIcon = 'ph-hourglass-medium';
+        tooltip = `Arriving within 7 days — ${diffDays} day${diffDays === 1 ? '' : 's'} left (${formatted})`;
+    }
+
+    return `
+        <span class="grn-eta-cell" title="${escapeHtml(tooltip)}">
+            <span class="grn-eta-date">${escapeHtml(formatted)}</span>
+            <span class="grn-eta-pill ${pillCls}"><i class="ph ${pillIcon}" aria-hidden="true"></i>${escapeHtml(pillText)}</span>
+        </span>
+    `;
 }
 
 function showGrnToast(message, type = 'success') {
@@ -89,8 +182,9 @@ function showGrnToast(message, type = 'success') {
 const QUEUE_DIRECTORY_COLUMNS = [
     { id: 'po_reference', label: 'PO Reference', subLabel: 'Order ID & Source', default: true, lockVisible: true, defaultWidth: '135px', align: 'left' },
     { id: 'order_date', label: 'Order Date', subLabel: 'Issued Timestamp', default: true, lockVisible: false, defaultWidth: '115px', align: 'left' },
-    { id: 'expected_delivery', label: 'Expected ETA', subLabel: 'Scheduled Dock Date', default: false, lockVisible: false, defaultWidth: '120px', align: 'left' },
-    { id: 'target_vendor', label: 'Target Vendor', subLabel: 'Supplier Partner', default: true, lockVisible: false, defaultWidth: '210px', align: 'left' },
+    { id: 'expected_delivery', label: 'Expected ETA', subLabel: 'Countdown & Dock Date', default: true, lockVisible: false, defaultWidth: '195px', align: 'left' },
+    { id: 'arrival_date', label: 'Arrival Date', subLabel: 'Actual Dock Arrival', default: true, lockVisible: false, defaultWidth: '125px', align: 'left' },
+    { id: 'target_vendor', label: 'Target Vendor', subLabel: 'Supplier Partner', default: true, lockVisible: false, defaultWidth: '205px', align: 'left' },
     { id: 'delivery_facility', label: 'Delivery Facility', subLabel: 'Receiving Hub', default: true, lockVisible: false, defaultWidth: '175px', align: 'left' },
     { id: 'lines', label: 'Lines', subLabel: 'SKU Count', default: true, lockVisible: false, defaultWidth: '75px', align: 'right' },
     { id: 'ordered', label: 'Ordered', subLabel: 'Contract Units', default: true, lockVisible: false, defaultWidth: '105px', align: 'right' },
@@ -106,7 +200,7 @@ const QUEUE_DIRECTORY_COLUMNS = [
 let queueColOrder = QUEUE_DIRECTORY_COLUMNS.map(c => c.id);
 let activeQueueColIds = (() => {
     try {
-        const saved = localStorage.getItem('rms_grn_queue_cols_v1');
+        const saved = localStorage.getItem('rms_grn_queue_cols_v2');
         if (saved) {
             const parsed = JSON.parse(saved);
             const validIds = QUEUE_DIRECTORY_COLUMNS.map(c => c.id);
@@ -125,7 +219,7 @@ let draggedQueueColId = null;
 
 function saveQueueColsState() {
     try {
-        localStorage.setItem('rms_grn_queue_cols_v1', JSON.stringify(activeQueueColIds));
+        localStorage.setItem('rms_grn_queue_cols_v2', JSON.stringify(activeQueueColIds));
     } catch (e) {}
 }
 
@@ -432,6 +526,7 @@ function populateVendorDropdown() {
         opts += `<option value="${escapeHtml(code)}">${escapeHtml(code)} — ${escapeHtml(name)}</option>`;
     });
     vendorSelect.innerHTML = opts;
+    if (typeof window.syncGrnHeaderPickerLabels === 'function') window.syncGrnHeaderPickerLabels();
 }
 
 function populatePoSelectDropdown() {
@@ -447,6 +542,7 @@ function populatePoSelectDropdown() {
         }
     });
     poSelect.innerHTML = opts;
+    if (typeof window.syncGrnPoPickerLabel === 'function') window.syncGrnPoPickerLabel();
 }
 
 // 4. Top KPI Cards
@@ -616,20 +712,32 @@ window.toggleQueueTableSettingsDropdown = function(event) {
     renderQueueColChecklist();
     dd.style.display = 'block';
 
-    const trigger = event?.currentTarget || document.getElementById('btnQueueTableSettings') || document.getElementById('btnQueueColFilter');
-    if (trigger) {
+    const trigger = event?.currentTarget || document.getElementById('btnQueueTableSettings');
+    if (trigger && typeof trigger.getBoundingClientRect === 'function') {
         const rect = trigger.getBoundingClientRect();
-        const dropdownW = 290;
-        const viewportW = window.innerWidth || 1280;
+        const viewportW = window.innerWidth || document.documentElement?.clientWidth || 1280;
+        const viewportH = window.innerHeight || document.documentElement?.clientHeight || 800;
+        const dropdownW = Math.min(dd.offsetWidth || 320, viewportW - 24);
+        const dropdownH = Math.min(dd.offsetHeight || 420, viewportH - 24);
+
         let left = rect.right - dropdownW;
+        if (left + dropdownW > viewportW - 12) left = viewportW - dropdownW - 12;
         if (left < 12) left = 12;
-        if (left + dropdownW > viewportW - 12) left = Math.max(12, viewportW - dropdownW - 12);
+
+        let top = rect.bottom + 6;
+        if (top + dropdownH > viewportH - 12) {
+            if (rect.top - dropdownH - 6 >= 12) {
+                top = rect.top - dropdownH - 6;
+            } else {
+                top = Math.max(12, viewportH - dropdownH - 12);
+            }
+        }
 
         dd.style.position = 'fixed';
-        dd.style.top = `${Math.round(rect.bottom + 6)}px`;
+        dd.style.top = `${Math.round(top)}px`;
         dd.style.left = `${Math.round(left)}px`;
         dd.style.right = 'auto';
-        dd.style.zIndex = '9999';
+        dd.style.zIndex = '10075';
     }
 };
 
@@ -819,6 +927,8 @@ window.renderOrdersQueue = function() {
             statusPillHtml = `<span class="status-pill awarded"><i class="ph ph-dot"></i> Ready to Receive</span>`;
         }
 
+        const arrivalIso = getPoActualArrivalIso(po);
+
         const cellsHtml = visibleCols.map(col => {
             if (col.id === 'po_reference') {
                 return `
@@ -833,7 +943,14 @@ window.renderOrdersQueue = function() {
                 return `<td style="color: #64748b; font-size: 11.5px; white-space: nowrap;">${formatDisplayDate(po.order_date)}</td>`;
             }
             if (col.id === 'expected_delivery') {
-                return `<td style="color: #475569; font-size: 11.5px; white-space: nowrap;">${formatDisplayDate(po.expected_delivery || po.order_date)}</td>`;
+                return `<td style="white-space: nowrap;">${renderQueueExpectedEtaCell(po, arrivalIso)}</td>`;
+            }
+            if (col.id === 'arrival_date') {
+                if (arrivalIso) {
+                    const fmtArr = formatDisplayDate(arrivalIso);
+                    return `<td style="white-space: nowrap;"><span class="grn-arrival-cell is-arrived" title="Arrived on ${escapeHtml(fmtArr)}"><i class="ph-fill ph-check-circle" aria-hidden="true"></i><span>${escapeHtml(fmtArr)}</span></span></td>`;
+                }
+                return `<td style="white-space: nowrap;"><span class="grn-arrival-cell is-pending">— Pending</span></td>`;
             }
             if (col.id === 'target_vendor') {
                 return `<td style="font-weight: 600; color: #0f172a;">${escapeHtml(po.vendor_name || 'Vendor')}</td>`;
@@ -897,25 +1014,29 @@ function positionGrnBuilderSettingsDropdown() {
     if (!dd || !btn) return;
 
     const rect = btn.getBoundingClientRect();
-    const dropdownWidth = 310;
-    const viewportW = window.innerWidth || document.documentElement.clientWidth || 1280;
-    const viewportH = window.innerHeight || document.documentElement.clientHeight || 800;
+    const viewportW = window.innerWidth || document.documentElement?.clientWidth || 1280;
+    const viewportH = window.innerHeight || document.documentElement?.clientHeight || 800;
+    const dropdownWidth = Math.min(dd.offsetWidth || 320, viewportW - 24);
+    const dropdownH = Math.min(dd.offsetHeight || 360, viewportH - 24);
 
     let left = rect.right - dropdownWidth;
+    if (left + dropdownWidth > viewportW - 12) left = viewportW - dropdownWidth - 12;
     if (left < 12) left = 12;
-    if (left + dropdownWidth > viewportW - 12) left = Math.max(12, viewportW - dropdownWidth - 12);
 
     let top = rect.bottom + 6;
-    const maxDropdownH = 360;
-    if (top + maxDropdownH > viewportH - 12 && rect.top > maxDropdownH) {
-        top = Math.max(12, rect.top - maxDropdownH - 6);
+    if (top + dropdownH > viewportH - 12) {
+        if (rect.top - dropdownH - 6 >= 12) {
+            top = rect.top - dropdownH - 6;
+        } else {
+            top = Math.max(12, viewportH - dropdownH - 12);
+        }
     }
 
     dd.style.position = 'fixed';
     dd.style.top = `${Math.round(top)}px`;
     dd.style.left = `${Math.round(left)}px`;
     dd.style.right = 'auto';
-    dd.style.zIndex = '9999';
+    dd.style.zIndex = '10075';
 }
 
 window.renderGrnBuilderTableHeader = function() {
@@ -1142,6 +1263,8 @@ window.resumeGrnDraft = function() {
             const poSelect = document.getElementById('intakePoSelect');
             if (poSelect) poSelect.value = draft.poNumber;
         }
+        if (typeof window.syncGrnPoPickerLabel === 'function') window.syncGrnPoPickerLabel();
+        if (typeof window.syncGrnHeaderPickerLabels === 'function') window.syncGrnHeaderPickerLabels();
         if (draft.vendorId) {
             const vSelect = document.getElementById('intakeVendorSelect');
             if (vSelect) vSelect.value = draft.vendorId;
@@ -1190,7 +1313,7 @@ window.resumeGrnDraft = function() {
         }
         if (draft.receivedAt) {
             const rcv = document.getElementById('intakeReceivedAt');
-            if (rcv) rcv.value = draft.receivedAt;
+            if (rcv) rcv.value = String(draft.receivedAt).slice(0, 10);
         }
         if (draft.deliverySlip) {
             const slip = document.getElementById('intakeDeliverySlip');
@@ -1319,6 +1442,16 @@ function flashTableRow(idx) {
 
 // Timeliness Badge & Header Change Listener
 window.onIntakeHeaderChanged = function() {
+    const activePoNum = window.StockInStore.activePoNumber || document.getElementById('intakePoSelect')?.value || '';
+    const etaVal = normalizeIsoDate(document.getElementById('intakeExpectedDelivery')?.value || '');
+    if (activePoNum && etaVal) {
+        const activePo = (window.StockInStore.purchaseOrders || []).find(p => p.po_number === activePoNum);
+        if (activePo) {
+            activePo.expected_delivery = etaVal;
+            activePo.expected_delivery_date = etaVal;
+            renderOrdersQueue();
+        }
+    }
     updateTimelinessBadge();
     syncGrnStepActionButtons();
     scheduleLiveMockupUpdate();
@@ -1338,7 +1471,7 @@ function updateTimelinessBadge() {
     }
 
     const etaDate = new Date(etaVal + 'T23:59:59');
-    const recvDate = new Date(recvVal);
+    const recvDate = new Date(String(recvVal).includes('T') ? recvVal : `${recvVal}T12:00:00`);
 
     if (isNaN(etaDate.getTime()) || isNaN(recvDate.getTime())) {
         badge.textContent = 'Dock Stamp';
@@ -1523,6 +1656,7 @@ function syncGrnStepActionButtons() {
             const el = document.getElementById(id);
             if (el) el.disabled = isPosted;
         });
+    if (typeof window.syncGrnHeaderPickerLabels === 'function') window.syncGrnHeaderPickerLabels();
 
     const srcSelect = document.getElementById('intakeSourceLocationSelect');
     const destSelect = document.getElementById('intakeDestinationLocationSelect');
@@ -1813,6 +1947,7 @@ window.openPoInIntakeBuilder = function(poNumber, viewCompleted = false) {
             poSelect.value = po.po_number;
         }
     }
+    if (typeof window.syncGrnPoPickerLabel === 'function') window.syncGrnPoPickerLabel();
 
     const vendorSelect = document.getElementById('intakeVendorSelect');
     if (vendorSelect) {
@@ -1821,10 +1956,17 @@ window.openPoInIntakeBuilder = function(poNumber, viewCompleted = false) {
             vendorSelect.innerHTML += `<option value="${escapeHtml(po.vendor_id || 'VEN')}" selected>${escapeHtml(po.vendor_name)}</option>`;
         }
     }
+    if (typeof window.syncGrnHeaderPickerLabels === 'function') window.syncGrnHeaderPickerLabels();
 
     const etaInput = document.getElementById('intakeExpectedDelivery');
     if (etaInput) {
-        etaInput.value = po.expected_delivery_date || po.delivery_date || '';
+        etaInput.value = getPoExpectedEtaIso(po);
+    }
+
+    const rcvInput = document.getElementById('intakeReceivedAt');
+    if (rcvInput) {
+        const existingArrIso = normalizeIsoDate(existingGrn?.received_at || existingGrn?.created_at || po.arrival_date || po.received_at || '');
+        rcvInput.value = existingArrIso || getTodayIsoDate();
     }
 
     const slipInput = document.getElementById('intakeDeliverySlip');
@@ -1930,9 +2072,11 @@ window.resetIntakeSheet = function(addBlankRow = true) {
 
     const poSelect = document.getElementById('intakePoSelect');
     if (poSelect) poSelect.value = '';
+    if (typeof window.syncGrnPoPickerLabel === 'function') window.syncGrnPoPickerLabel();
 
     const vendorSelect = document.getElementById('intakeVendorSelect');
     if (vendorSelect) vendorSelect.selectedIndex = 0;
+    if (typeof window.syncGrnHeaderPickerLabels === 'function') window.syncGrnHeaderPickerLabels();
 
     const whSelect = document.getElementById('intakeWarehouseSelect');
     const defaultWh = window.StockInStore.warehouses[0]?.id || 'WH-MAIN';
@@ -2022,6 +2166,7 @@ function syncMovementTypesForWarehouse(whId, preserveSelection = false) {
         populateRouteLocationDropdowns(selectedMt, preserveSelection);
         renderGrnChevronPipeline(selectedMt);
     }
+    if (typeof window.syncGrnHeaderPickerLabels === 'function') window.syncGrnHeaderPickerLabels();
 }
 
 window.onIntakeMovementTypeChanged = function(mtId) {
@@ -2038,6 +2183,7 @@ window.onIntakeMovementTypeChanged = function(mtId) {
         renderGrnChevronPipeline(mt);
         renderIntakeTable();
     }
+    if (typeof window.syncGrnHeaderPickerLabels === 'function') window.syncGrnHeaderPickerLabels();
     updateLiveMockup();
     scheduleDraftSave();
 };
@@ -2308,6 +2454,7 @@ window.syncCombinedRouteDropdown = function() {
     combinedSel.innerHTML = optsHtml;
     combinedSel.value = hasCustomOverride ? 'custom' : `step:${activeIdx}`;
     combinedSel.disabled = isReadOnly;
+    if (typeof window.syncGrnHeaderPickerLabels === 'function') window.syncGrnHeaderPickerLabels();
 };
 
 window.onIntakeCombinedRouteChanged = function(val) {
@@ -2441,6 +2588,7 @@ window.onIntakePoSelected = function(poNumber) {
 };
 
 window.onIntakeVendorChanged = function() {
+    if (typeof window.syncGrnHeaderPickerLabels === 'function') window.syncGrnHeaderPickerLabels();
     syncGrnStepActionButtons();
     updateLiveMockup();
     scheduleDraftSave();
@@ -2498,11 +2646,16 @@ function renderIntakeTable() {
             }
             if (col.id === 'item_name') {
                 const lotAllowed = window.isLotTrackingEnabledForItem(it);
-                if (it.is_adhoc) {
+                if (it.is_custom_unlisted) {
                     return `
-                        <td>
+                        <td class="td-item-cell">
                             <div class="grn-item-cell">
-                                <input type="text" class="grn-adhoc-input is-title" value="${escapeHtml(it.name || '')}" onchange="onAdhocFieldChange(${idx}, 'name', this.value)" placeholder="Item Description" ${disAttr}>
+                                <div style="display: flex; align-items: center; gap: 4px;">
+                                    <input type="text" class="grn-adhoc-input is-title" style="flex: 1;" value="${escapeHtml(it.name || '')}" onchange="onAdhocFieldChange(${idx}, 'name', this.value)" placeholder="Custom Item Description" ${disAttr}>
+                                    <button type="button" class="grn-btn-icon" style="width: 22px; height: 22px; flex-shrink: 0;" onclick="onIntakeItemSelected(${idx}, '__CATALOG__')" title="Switch back to Item Master dropdown" aria-label="Switch back to Item Master dropdown" ${disAttr}>
+                                        <i class="ph ph-list-magnifying-glass" aria-hidden="true"></i>
+                                    </button>
+                                </div>
                                 <div style="display: flex; align-items: center; gap: 6px;">
                                     <input type="text" class="grn-adhoc-input is-sku" value="${escapeHtml(it.sku || '')}" onchange="onAdhocFieldChange(${idx}, 'sku', this.value)" placeholder="SKU" ${disAttr}>
                                     <input type="text" class="grn-adhoc-input" style="flex: 1;" value="${escapeHtml(it.specs || '')}" onchange="onAdhocFieldChange(${idx}, 'specs', this.value)" placeholder="Specs / Brand" ${disAttr}>
@@ -2517,12 +2670,20 @@ function renderIntakeTable() {
                         </td>
                     `;
                 }
+
+                const curSku = String(it.sku || '').trim();
+                const curName = String(it.name || '').trim();
+                const displayLabel = curName || curSku || 'Select Item...';
+
                 return `
-                    <td>
+                    <td class="td-item-cell">
                         <div class="grn-item-cell">
-                            <div class="grn-item-title" title="${escapeHtml(it.name || '')}">${escapeHtml(it.name)}</div>
+                            <button type="button" class="grn-item-picker-trigger" data-row-item-select="${idx}" onclick="toggleRowItemPicker(${idx}, this, event)" title="${escapeHtml(curSku && curName ? `${curSku} — ${curName}` : displayLabel)}" aria-haspopup="listbox" aria-expanded="false" ${disAttr}>
+                                <span class="grn-item-picker-text">${escapeHtml(displayLabel)}</span>
+                                <i class="ph ph-caret-down grn-picker-caret" aria-hidden="true"></i>
+                            </button>
                             <div class="grn-item-meta">
-                                <span class="grn-sku-badge" title="${escapeHtml(it.sku || '')}">${escapeHtml(it.sku)}</span>
+                                ${curSku ? `<span class="grn-sku-badge" title="${escapeHtml(curSku)}">${escapeHtml(curSku)}</span>` : ''}
                                 ${it.specs ? `<span class="grn-specs" title="${escapeHtml(it.specs)}">${escapeHtml(it.specs)}</span>` : ''}
                             </div>
                             ${lotAllowed && (it.lot_number || it.expiry_date) ? `
@@ -2536,34 +2697,27 @@ function renderIntakeTable() {
                 `;
             }
             if (col.id === 'uom') {
-                if (it.is_adhoc) {
-                    return `
-                        <td class="td-center" style="min-width: 90px;">
-                            <select data-uom-select data-uom-placeholder="Select UOM" data-uom-current="${escapeHtml(it.uom || 'PCS')}" onchange="onAdhocFieldChange(${idx}, 'uom', this.value)" ${disAttr}>
-                                ${(() => {
-                                    if (window.UomRegistry && window.UomRegistry.isLoaded) {
-                                        const units = window.UomRegistry.getUnits();
-                                        let opts = units.map(u => `<option value="${u.uom_code}" ${String(it.uom).toUpperCase() === u.uom_code.toUpperCase() ? 'selected' : ''}>${u.uom_code}</option>`).join('');
-                                        if (it.uom && !units.some(u => u.uom_code.toUpperCase() === String(it.uom).toUpperCase())) {
-                                            opts = `<option value="${escapeHtml(it.uom)}" selected>${escapeHtml(it.uom)}</option>` + opts;
-                                        }
-                                        return opts;
-                                    }
-                                    const fallbackUnits = ['KG', 'L', 'PCS', 'BOX', 'PACK', 'TRAY', 'SACK'];
-                                    const cur = String(it.uom || 'PCS').toUpperCase();
-                                    let opts = fallbackUnits.map(u => `<option value="${u}" ${cur === u ? 'selected' : ''}>${u}</option>`).join('');
-                                    if (!fallbackUnits.includes(cur)) {
+                return `
+                    <td class="td-center td-uom-cell" style="min-width: 96px;">
+                        <select data-uom-select data-uom-placeholder="Select UOM" data-uom-current="${escapeHtml(it.uom || 'PCS')}" onchange="onAdhocFieldChange(${idx}, 'uom', this.value)" ${disAttr}>
+                            ${(() => {
+                                if (window.UomRegistry && window.UomRegistry.isLoaded) {
+                                    const units = window.UomRegistry.getUnits();
+                                    let opts = units.map(u => `<option value="${escapeHtml(u.uom_code)}" ${String(it.uom || 'PCS').toUpperCase() === String(u.uom_code).toUpperCase() ? 'selected' : ''}>${escapeHtml(u.uom_code)}</option>`).join('');
+                                    if (it.uom && !units.some(u => String(u.uom_code).toUpperCase() === String(it.uom).toUpperCase())) {
                                         opts = `<option value="${escapeHtml(it.uom)}" selected>${escapeHtml(it.uom)}</option>` + opts;
                                     }
                                     return opts;
-                                })()}
-                            </select>
-                        </td>
-                    `;
-                }
-                return `
-                    <td class="td-center">
-                        <span class="grn-uom-pill">${escapeHtml(it.uom || 'PCS')}</span>
+                                }
+                                const fallbackUnits = ['KG', 'L', 'PCS', 'BOX', 'PACK', 'TRAY', 'SACK'];
+                                const cur = String(it.uom || 'PCS').toUpperCase();
+                                let opts = fallbackUnits.map(u => `<option value="${u}" ${cur === u ? 'selected' : ''}>${u}</option>`).join('');
+                                if (it.uom && !fallbackUnits.includes(cur)) {
+                                    opts = `<option value="${escapeHtml(it.uom)}" selected>${escapeHtml(it.uom)}</option>` + opts;
+                                }
+                                return opts;
+                            })()}
+                        </select>
                     </td>
                 `;
             }
@@ -2828,36 +2982,669 @@ window.onRowExpiryChange = function(idx, date) {
     }
 };
 
-window.addAdHocIntakeRow = function() {
+window.onIntakeItemSelected = function(idx, selectedVal) {
+    if (isViewingCompletedStepReadOnly()) {
+        showGrnToast('Completed step is read-only. Return to active step to edit.', 'warning');
+        renderIntakeTable();
+        return;
+    }
+    const item = window.StockInStore.intakeItems[idx];
+    if (!item) return;
+
+    if (selectedVal === '__CUSTOM__') {
+        item.is_custom_unlisted = true;
+        renderIntakeTable();
+        scheduleDraftSave();
+        return;
+    }
+    if (selectedVal === '__CATALOG__') {
+        item.is_custom_unlisted = false;
+        renderIntakeTable();
+        scheduleDraftSave();
+        return;
+    }
+
+    const products = Array.isArray(window.StockInStore.products) ? window.StockInStore.products : [];
+    const targetUpper = String(selectedVal || '').trim().toUpperCase();
+    const matched = products.find(p => String(p.sku || p.item_code || '').trim().toUpperCase() === targetUpper);
+    if (!matched) return;
+
+    const dateStr = new Date().toISOString().slice(2, 10).replace(/-/g, '');
+    const trackingMode = window.getItemMasterTrackingMode(matched);
+    const lotEnabled = trackingMode === 'lots';
+
+    item.sku = matched.sku || matched.item_code || item.sku;
+    item.name = matched.name || matched.item_name || item.name;
+    item.specs = matched.description || matched.specs || '';
+    item.uom = matched.uom || matched.base_uom || 'PCS';
+    item.unit_cost = Number(matched.cost_price ?? matched.unit_cost ?? item.unit_cost ?? 0);
+    item.trackingBy = trackingMode;
+    item.is_custom_unlisted = false;
+    if (lotEnabled && !item.lot_number) {
+        item.lot_number = `LOT-${dateStr}-${(idx + 1).toString().padStart(2, '0')}`;
+    } else if (!lotEnabled) {
+        item.lot_number = '';
+    }
+
+    renderIntakeTable();
+    updateFulfillmentProgress();
+    syncGrnStepActionButtons();
+    scheduleLiveMockupUpdate();
+    scheduleDraftSave();
+};
+
+window.closeUnplannedItemPicker = function() {
+    const dd = document.getElementById('grnUnplannedItemDropdown');
+    const btn = document.getElementById('btnAddUnplannedItem');
+    if (dd) dd.hidden = true;
+    if (btn) btn.setAttribute('aria-expanded', 'false');
+};
+
+window.renderUnplannedItemPickerList = function(query = '') {
+    const listEl = document.getElementById('grnUnplannedItemList');
+    if (!listEl) return;
+
+    const products = Array.isArray(window.StockInStore.products) ? window.StockInStore.products : [];
+    const q = String(query || '').trim().toLowerCase();
+    const filtered = q
+        ? products.filter(p => {
+            const sku = String(p.sku || p.item_code || '').toLowerCase();
+            const name = String(p.name || p.item_name || '').toLowerCase();
+            const specs = String(p.description || p.specs || '').toLowerCase();
+            return sku.includes(q) || name.includes(q) || specs.includes(q);
+        })
+        : products;
+
+    if (filtered.length === 0) {
+        listEl.innerHTML = `<div style="padding: 14px 10px; text-align: center; font-size: 12px; color: #64748b;">No matching items in catalog. Use "Add Blank / Custom Unlisted Line" below.</div>`;
+        return;
+    }
+
+    listEl.innerHTML = filtered.slice(0, 80).map(p => {
+        const sku = String(p.sku || p.item_code || '').trim();
+        const name = String(p.name || p.item_name || sku || 'Unnamed Item').trim();
+        const uom = String(p.uom || p.base_uom || 'PCS').trim();
+        const safeSkuArg = escapeHtml(sku).replace(/&#39;/g, "\\'");
+        return `
+            <button type="button" class="grn-unplanned-opt" role="option" onclick="addAdHocIntakeRowBySku('${safeSkuArg}'); closeUnplannedItemPicker();">
+                <span class="grn-unplanned-opt-main">
+                    <span class="grn-unplanned-opt-name">${escapeHtml(name)}</span>
+                    <span class="grn-unplanned-opt-meta">${escapeHtml(sku || 'NO-SKU')}</span>
+                </span>
+                <span class="grn-unplanned-opt-uom">${escapeHtml(uom)}</span>
+            </button>
+        `;
+    }).join('');
+};
+
+let activeRowItemPickerIdx = null;
+let activeRowItemPickerTrigger = null;
+let activeHeaderPickerKind = null; // 'vendor' | 'movementType' | 'route'
+let activeHeaderPickerTrigger = null;
+
+function positionFloatingGrnPopover(triggerEl, popoverEl, preferredWidth = 360) {
+    if (!triggerEl || !popoverEl || typeof triggerEl.getBoundingClientRect !== 'function') return;
+    const rect = triggerEl.getBoundingClientRect();
+    const vw = window.innerWidth || 1280;
+    const vh = window.innerHeight || 800;
+    const width = Math.min(Math.max(preferredWidth, rect.width), vw - 16);
+    popoverEl.style.width = `${width}px`;
+    const measuredHeight = popoverEl.offsetHeight || 320;
+    const estHeight = Math.min(Math.max(measuredHeight, 120), 360);
+    const spaceBelow = vh - rect.bottom;
+    const top = (spaceBelow < estHeight + 12 && rect.top > estHeight + 12)
+        ? Math.max(8, rect.top - estHeight - 6)
+        : Math.max(8, Math.min(vh - estHeight - 8, rect.bottom + 6));
+    const left = Math.max(8, Math.min(rect.left, vw - width - 8));
+    popoverEl.style.top = `${top}px`;
+    popoverEl.style.left = `${left}px`;
+}
+
+window.syncGrnHeaderPickerLabels = function() {
+    if (typeof window.syncGrnPoPickerLabel === 'function') window.syncGrnPoPickerLabel();
+
+    // 1. Vendor / Supplier
+    const vendorSelect = document.getElementById('intakeVendorSelect');
+    const vendorTrigger = document.getElementById('grnVendorPickerTrigger');
+    const vendorLabel = document.getElementById('grnVendorPickerLabel');
+    if (vendorSelect && vendorLabel) {
+        if (vendorTrigger) vendorTrigger.disabled = !!vendorSelect.disabled;
+        const vVal = String(vendorSelect.value || '').trim();
+        if (!vVal) {
+            vendorLabel.textContent = 'Choose Vendor Partner...';
+            vendorLabel.classList?.add('is-placeholder');
+            if (vendorTrigger) vendorTrigger.title = 'Choose Vendor Partner from Masterlist';
+        } else {
+            const matched = (window.StockInStore.vendors || []).find(v => (v.vendor_code || v.id) === vVal || v.id === vVal);
+            const txt = matched
+                ? (matched.legal_name || matched.name || vVal)
+                : (vendorSelect.options?.[vendorSelect.selectedIndex]?.text || vVal);
+            vendorLabel.textContent = txt;
+            vendorLabel.classList?.remove('is-placeholder');
+            if (vendorTrigger) vendorTrigger.title = matched ? `${matched.vendor_code || matched.id} — ${txt}` : txt;
+        }
+    }
+
+    // 2. Movement Type
+    const mtSelect = document.getElementById('intakeMovementTypeSelect');
+    const mtTrigger = document.getElementById('grnMovementTypePickerTrigger');
+    const mtLabel = document.getElementById('grnMovementTypePickerLabel');
+    if (mtSelect && mtLabel) {
+        if (mtTrigger) mtTrigger.disabled = !!mtSelect.disabled;
+        const mtVal = String(mtSelect.value || '').trim();
+        const mtObj = (window.StockInStore.movementTypes || []).find(m => m.id === mtVal);
+        const txt = mtObj
+            ? `${mtObj.code} — ${mtObj.name}`
+            : (mtSelect.options?.[mtSelect.selectedIndex]?.text || 'Select Movement Type...');
+        mtLabel.textContent = txt;
+        if (mtVal) mtLabel.classList?.remove('is-placeholder');
+        else mtLabel.classList?.add('is-placeholder');
+        if (mtTrigger) mtTrigger.title = txt;
+    }
+
+    // 3. Route
+    const routeSelect = document.getElementById('intakeCombinedRouteSelect');
+    const routeTrigger = document.getElementById('grnRoutePickerTrigger');
+    const routeLabel = document.getElementById('grnRoutePickerLabel');
+    if (routeSelect && routeLabel) {
+        if (routeTrigger) routeTrigger.disabled = !!routeSelect.disabled;
+        const selOpt = routeSelect.options?.[routeSelect.selectedIndex];
+        const txt = selOpt?.text || 'Source > Destination';
+        routeLabel.textContent = txt;
+        if (selOpt?.text) routeLabel.classList?.remove('is-placeholder');
+        else routeLabel.classList?.add('is-placeholder');
+        if (routeTrigger) routeTrigger.title = txt;
+    }
+};
+
+window.closeGrnHeaderPicker = function() {
+    const dd = document.getElementById('grnHeaderFieldPickerDropdown');
+    if (dd) dd.hidden = true;
+    if (activeHeaderPickerTrigger) {
+        activeHeaderPickerTrigger.setAttribute('aria-expanded', 'false');
+        activeHeaderPickerTrigger = null;
+    }
+    activeHeaderPickerKind = null;
+};
+
+window.renderGrnHeaderPickerList = function(query = '') {
+    const listEl = document.getElementById('grnHeaderFieldPickerList');
+    if (!listEl || !activeHeaderPickerKind) return;
+
+    const q = String(query || '').trim().toLowerCase();
+
+    if (activeHeaderPickerKind === 'vendor') {
+        const vendorSelect = document.getElementById('intakeVendorSelect');
+        const curVal = String(vendorSelect?.value || '').trim();
+        const vendors = Array.isArray(window.StockInStore.vendors) ? window.StockInStore.vendors : [];
+        const list = vendors.map(v => ({
+            val: String(v.vendor_code || v.id || '').trim(),
+            name: String(v.legal_name || v.name || v.vendor_code || v.id || 'Vendor').trim(),
+            meta: String(v.vendor_code || v.id || '').trim(),
+            badge: String(v.category || v.payment_terms || 'Vendor').trim(),
+        }));
+        if (curVal && !list.some(item => item.val === curVal)) {
+            const fallbackTxt = vendorSelect?.options?.[vendorSelect.selectedIndex]?.text || curVal;
+            list.unshift({ val: curVal, name: fallbackTxt, meta: curVal, badge: 'Selected' });
+        }
+        const filtered = q
+            ? list.filter(v => v.name.toLowerCase().includes(q) || v.meta.toLowerCase().includes(q) || v.badge.toLowerCase().includes(q))
+            : list;
+
+        if (filtered.length === 0) {
+            listEl.innerHTML = `<div style="padding: 14px 10px; text-align: center; font-size: 12px; color: #64748b;">No matching vendors found.</div>`;
+            return;
+        }
+        listEl.innerHTML = filtered.slice(0, 80).map(v => {
+            const isSel = curVal !== '' && v.val === curVal;
+            const safeVal = escapeHtml(v.val).replace(/&#39;/g, "\\'");
+            return `
+                <button type="button" class="grn-unplanned-opt ${isSel ? 'is-selected' : ''}" role="option" aria-selected="${isSel ? 'true' : 'false'}" onclick="selectGrnHeaderPickerOption('${safeVal}')">
+                    <span class="grn-unplanned-opt-main">
+                        <span class="grn-unplanned-opt-name">${escapeHtml(v.name)}</span>
+                        <span class="grn-unplanned-opt-meta">${escapeHtml(v.meta)}</span>
+                    </span>
+                    <span class="grn-unplanned-opt-uom">${escapeHtml(v.badge)}</span>
+                </button>
+            `;
+        }).join('');
+        return;
+    }
+
+    if (activeHeaderPickerKind === 'movementType') {
+        const mtSelect = document.getElementById('intakeMovementTypeSelect');
+        const curVal = String(mtSelect?.value || '').trim();
+        const optionIds = Array.from(mtSelect?.options || []).map(o => o.value);
+        const allMts = Array.isArray(window.StockInStore.movementTypes) ? window.StockInStore.movementTypes : [];
+        const pool = optionIds.length > 0
+            ? optionIds.map(id => allMts.find(m => m.id === id)).filter(Boolean)
+            : allMts.filter(mt => mt.is_active !== false && (mt.operation_kind === 'Inbound Receipt' || mt.stock_effect === 'Receipt'));
+
+        const filtered = q
+            ? pool.filter(mt =>
+                String(mt.code || '').toLowerCase().includes(q) ||
+                String(mt.name || '').toLowerCase().includes(q) ||
+                String(mt.route_preset || '').toLowerCase().includes(q)
+            )
+            : pool;
+
+        if (filtered.length === 0) {
+            listEl.innerHTML = `<div style="padding: 14px 10px; text-align: center; font-size: 12px; color: #64748b;">No matching movement types found.</div>`;
+            return;
+        }
+        listEl.innerHTML = filtered.map(mt => {
+            const isSel = curVal !== '' && mt.id === curVal;
+            const stepCount = getActiveRouteSteps(mt).length;
+            const badge = mt.route_preset || `${stepCount}-Step`;
+            const safeVal = escapeHtml(mt.id).replace(/&#39;/g, "\\'");
+            return `
+                <button type="button" class="grn-unplanned-opt ${isSel ? 'is-selected' : ''}" role="option" aria-selected="${isSel ? 'true' : 'false'}" onclick="selectGrnHeaderPickerOption('${safeVal}')">
+                    <span class="grn-unplanned-opt-main">
+                        <span class="grn-unplanned-opt-name">${escapeHtml(mt.name || mt.code)}</span>
+                        <span class="grn-unplanned-opt-meta">${escapeHtml(mt.code || mt.id)} · ${stepCount} step${stepCount === 1 ? '' : 's'}</span>
+                    </span>
+                    <span class="grn-unplanned-opt-uom is-status-ready">${escapeHtml(badge)}</span>
+                </button>
+            `;
+        }).join('');
+        return;
+    }
+
+    if (activeHeaderPickerKind === 'route') {
+        const routeSelect = document.getElementById('intakeCombinedRouteSelect');
+        const curVal = String(routeSelect?.value || '').trim();
+        const mt = getActiveInboundMovementType();
+        const steps = getActiveRouteSteps(mt);
+        const total = steps.length;
+        const unlockedIdx = Math.max(0, Math.min(Number(window.StockInStore.unlockedRouteStepIndex || 0), Math.max(0, total - 1)));
+        const activeIdx = Math.max(0, Math.min(Number(window.StockInStore.activeRouteStepIndex || 0), unlockedIdx));
+        const completed = new Set(window.StockInStore.completedRouteSteps || []);
+        const isPosted = !!window.StockInStore.isCurrentGrnPosted;
+
+        const items = steps.map((s, idx) => {
+            const fromTxt = (s.from_area || 'Source').trim();
+            const toTxt = (s.to_area || 'Destination').trim();
+            const isLocked = !isPosted && idx > unlockedIdx;
+            const isDone = isPosted || completed.has(idx);
+            const isCurrent = curVal === `step:${idx}` || (curVal === '' && idx === activeIdx);
+            const badge = isDone ? 'Done' : (isLocked ? 'Locked' : (isCurrent ? 'Active' : 'Ready'));
+            const badgeCls = isDone ? 'is-status-done' : (isLocked ? 'is-status-locked' : 'is-status-ready');
+            return {
+                val: `step:${idx}`,
+                title: `${fromTxt} → ${toTxt}`,
+                meta: `Step ${idx + 1}: ${s.name || 'Stage'}`,
+                badge,
+                badgeCls,
+                isLocked,
+                isSel: isCurrent,
+            };
+        });
+
+        const filtered = q
+            ? items.filter(it => it.title.toLowerCase().includes(q) || it.meta.toLowerCase().includes(q) || it.badge.toLowerCase().includes(q))
+            : items;
+
+        if (filtered.length === 0) {
+            listEl.innerHTML = `<div style="padding: 14px 10px; text-align: center; font-size: 12px; color: #64748b;">No matching route steps found.</div>`;
+            return;
+        }
+        listEl.innerHTML = filtered.map(it => {
+            const safeVal = escapeHtml(it.val).replace(/&#39;/g, "\\'");
+            return `
+                <button type="button" class="grn-unplanned-opt ${it.isSel ? 'is-selected' : ''} ${it.isLocked ? 'is-disabled' : ''}" role="option" aria-selected="${it.isSel ? 'true' : 'false'}" ${it.isLocked ? 'disabled' : `onclick="selectGrnHeaderPickerOption('${safeVal}')"`}>
+                    <span class="grn-unplanned-opt-main">
+                        <span class="grn-unplanned-opt-name">${escapeHtml(it.title)}</span>
+                        <span class="grn-unplanned-opt-meta">${escapeHtml(it.meta)}</span>
+                    </span>
+                    <span class="grn-unplanned-opt-uom ${it.badgeCls}">${escapeHtml(it.badge)}</span>
+                </button>
+            `;
+        }).join('');
+    }
+};
+
+window.toggleGrnHeaderPicker = function(kind, triggerEl, event) {
+    if (event) event.stopPropagation();
+    const dd = document.getElementById('grnHeaderFieldPickerDropdown');
+    if (!dd || triggerEl?.disabled) return;
+
+    const isSameOpen = !dd.hidden && activeHeaderPickerKind === kind;
+    closeUnplannedItemPicker();
+    closeGrnPoPicker();
+    closeRowItemPicker();
+
+    if (isSameOpen) {
+        closeGrnHeaderPicker();
+        return;
+    }
+
+    if (activeHeaderPickerTrigger && activeHeaderPickerTrigger !== triggerEl) {
+        activeHeaderPickerTrigger.setAttribute('aria-expanded', 'false');
+    }
+
+    activeHeaderPickerKind = kind;
+    activeHeaderPickerTrigger = triggerEl || null;
+    if (triggerEl) triggerEl.setAttribute('aria-expanded', 'true');
+
+    const searchInput = document.getElementById('grnHeaderFieldSearchInput');
+    if (searchInput) {
+        searchInput.value = '';
+        searchInput.placeholder = kind === 'vendor'
+            ? 'Search vendor name or code...'
+            : (kind === 'movementType' ? 'Search movement code or preset...' : 'Search route step or location...');
+    }
+
+    dd.hidden = false;
+    renderGrnHeaderPickerList('');
+    positionFloatingGrnPopover(triggerEl, dd, kind === 'route' ? 360 : 340);
+    setTimeout(() => searchInput?.focus(), 20);
+};
+
+window.selectGrnHeaderPickerOption = function(val) {
+    const kind = activeHeaderPickerKind;
+    closeGrnHeaderPicker();
+    if (!kind) return;
+
+    if (kind === 'vendor') {
+        const sel = document.getElementById('intakeVendorSelect');
+        if (sel) sel.value = val;
+        syncGrnHeaderPickerLabels();
+        onIntakeVendorChanged();
+    } else if (kind === 'movementType') {
+        const sel = document.getElementById('intakeMovementTypeSelect');
+        if (sel) sel.value = val;
+        syncGrnHeaderPickerLabels();
+        onIntakeMovementTypeChanged(val);
+    } else if (kind === 'route') {
+        const sel = document.getElementById('intakeCombinedRouteSelect');
+        if (sel) sel.value = val;
+        syncGrnHeaderPickerLabels();
+        onIntakeCombinedRouteChanged(val);
+    }
+};
+
+window.syncGrnPoPickerLabel = function() {
+    const poSelect = document.getElementById('intakePoSelect');
+    const trigger = document.getElementById('grnPoPickerTrigger');
+    const labelEl = document.getElementById('grnPoPickerLabel');
+    if (!labelEl) return;
+
+    const poVal = String(poSelect?.value || '').trim();
+    if (trigger) trigger.disabled = !!poSelect?.disabled;
+
+    if (!poVal) {
+        labelEl.textContent = 'Direct Inbound (Bypass PO)';
+        if (trigger) trigger.title = 'Direct Inbound (Bypass PO)';
+        return;
+    }
+
+    const orders = Array.isArray(window.StockInStore.purchaseOrders) ? window.StockInStore.purchaseOrders : [];
+    const matched = orders.find(o => o.po_number === poVal);
+    const display = matched
+        ? `${matched.po_number}${matched.vendor_name ? ' — ' + matched.vendor_name : ''}`
+        : (poSelect?.options?.[poSelect.selectedIndex]?.text || poVal);
+    labelEl.textContent = display;
+    if (trigger) trigger.title = display;
+};
+
+window.closeGrnPoPicker = function() {
+    const dd = document.getElementById('grnPoPickerDropdown');
+    const trigger = document.getElementById('grnPoPickerTrigger');
+    if (dd) dd.hidden = true;
+    if (trigger) trigger.setAttribute('aria-expanded', 'false');
+};
+
+window.renderGrnPoPickerList = function(query = '') {
+    const listEl = document.getElementById('grnPoPickerList');
+    if (!listEl) return;
+
+    const orders = (Array.isArray(window.StockInStore.purchaseOrders) ? window.StockInStore.purchaseOrders : [])
+        .filter(po => {
+            const st = po.status || 'Issued';
+            return st !== 'Cancelled' && st !== 'Archived';
+        });
+    const activePo = String(document.getElementById('intakePoSelect')?.value || '').trim();
+    const q = String(query || '').trim().toLowerCase();
+    const filtered = q
+        ? orders.filter(po => {
+            const num = String(po.po_number || '').toLowerCase();
+            const vendor = String(po.vendor_name || '').toLowerCase();
+            const status = String(po.status || '').toLowerCase();
+            return num.includes(q) || vendor.includes(q) || status.includes(q);
+        })
+        : orders;
+
+    if (filtered.length === 0) {
+        listEl.innerHTML = `<div style="padding: 14px 10px; text-align: center; font-size: 12px; color: #64748b;">No matching purchase orders found.</div>`;
+        return;
+    }
+
+    listEl.innerHTML = filtered.slice(0, 80).map(po => {
+        const poNum = String(po.po_number || '').trim();
+        const vendor = String(po.vendor_name || 'Vendor').trim();
+        const status = String(po.status || 'Issued').trim();
+        const itemCount = Array.isArray(po.items) ? po.items.length : 0;
+        const isSelected = activePo !== '' && activePo === poNum;
+        const stLower = status.toLowerCase();
+        const statusCls = stLower.includes('fully') || stLower.includes('received') && !stLower.includes('partial')
+            ? 'is-status-done'
+            : (stLower.includes('partial') ? 'is-status-partial' : 'is-status-ready');
+        const safePoArg = escapeHtml(poNum).replace(/&#39;/g, "\\'");
+        return `
+            <button type="button" class="grn-unplanned-opt ${isSelected ? 'is-selected' : ''}" role="option" aria-selected="${isSelected ? 'true' : 'false'}" onclick="selectGrnPoFromPicker('${safePoArg}')">
+                <span class="grn-unplanned-opt-main">
+                    <span class="grn-unplanned-opt-name">${escapeHtml(poNum)}</span>
+                    <span class="grn-unplanned-opt-meta">${escapeHtml(vendor)}${itemCount > 0 ? ` · ${itemCount} item${itemCount === 1 ? '' : 's'}` : ''}</span>
+                </span>
+                <span class="grn-unplanned-opt-uom ${statusCls}">${escapeHtml(status)}</span>
+            </button>
+        `;
+    }).join('');
+};
+
+window.toggleGrnPoPicker = function(event) {
+    if (event) event.stopPropagation();
+    const trigger = document.getElementById('grnPoPickerTrigger');
+    const dd = document.getElementById('grnPoPickerDropdown');
+    if (!dd || trigger?.disabled) return;
+
+    const willOpen = dd.hidden;
+    closeUnplannedItemPicker();
+    closeGrnHeaderPicker();
+    closeRowItemPicker();
+
+    dd.hidden = !willOpen;
+    if (trigger) trigger.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+    if (willOpen) {
+        const searchInput = document.getElementById('grnPoSearchInput');
+        if (searchInput) searchInput.value = '';
+        renderGrnPoPickerList('');
+        positionFloatingGrnPopover(trigger, dd, 380);
+        setTimeout(() => searchInput?.focus(), 20);
+    }
+};
+
+window.selectGrnPoFromPicker = function(poNumber) {
+    closeGrnPoPicker();
+    const poSelect = document.getElementById('intakePoSelect');
+    if (poSelect) {
+        poSelect.value = poNumber || '';
+    }
+    syncGrnPoPickerLabel();
+    onIntakePoSelected(poNumber || '');
+};
+
+window.closeRowItemPicker = function() {
+    const dd = document.getElementById('grnRowItemPickerDropdown');
+    if (dd) dd.hidden = true;
+    if (activeRowItemPickerTrigger) {
+        activeRowItemPickerTrigger.setAttribute('aria-expanded', 'false');
+        activeRowItemPickerTrigger = null;
+    }
+    activeRowItemPickerIdx = null;
+};
+
+window.renderRowItemPickerList = function(query = '') {
+    const listEl = document.getElementById('grnRowItemPickerList');
+    if (!listEl) return;
+
+    const rowItem = activeRowItemPickerIdx !== null ? window.StockInStore.intakeItems[activeRowItemPickerIdx] : null;
+    const curSkuUpper = String(rowItem?.sku || '').trim().toUpperCase();
+    const products = Array.isArray(window.StockInStore.products) ? window.StockInStore.products : [];
+    const q = String(query || '').trim().toLowerCase();
+    const filtered = q
+        ? products.filter(p => {
+            const sku = String(p.sku || p.item_code || '').toLowerCase();
+            const name = String(p.name || p.item_name || '').toLowerCase();
+            const specs = String(p.description || p.specs || '').toLowerCase();
+            return sku.includes(q) || name.includes(q) || specs.includes(q);
+        })
+        : products;
+
+    if (filtered.length === 0) {
+        listEl.innerHTML = `<div style="padding: 14px 10px; text-align: center; font-size: 12px; color: #64748b;">No matching items in catalog. Use "Custom / Unlisted Item..." below.</div>`;
+        return;
+    }
+
+    listEl.innerHTML = filtered.slice(0, 80).map(p => {
+        const sku = String(p.sku || p.item_code || '').trim();
+        const name = String(p.name || p.item_name || sku || 'Unnamed Item').trim();
+        const uom = String(p.uom || p.base_uom || 'PCS').trim();
+        const isSelected = curSkuUpper !== '' && sku.toUpperCase() === curSkuUpper;
+        const safeSkuArg = escapeHtml(sku).replace(/&#39;/g, "\\'");
+        return `
+            <button type="button" class="grn-unplanned-opt ${isSelected ? 'is-selected' : ''}" role="option" aria-selected="${isSelected ? 'true' : 'false'}" onclick="selectCatalogItemForActiveRow('${safeSkuArg}')">
+                <span class="grn-unplanned-opt-main">
+                    <span class="grn-unplanned-opt-name">${escapeHtml(name)}</span>
+                    <span class="grn-unplanned-opt-meta">${escapeHtml(sku || 'NO-SKU')}</span>
+                </span>
+                <span class="grn-unplanned-opt-uom">${escapeHtml(uom)}</span>
+            </button>
+        `;
+    }).join('');
+};
+
+window.toggleRowItemPicker = function(idx, triggerEl, event) {
+    if (event) event.stopPropagation();
     if (isViewingCompletedStepReadOnly()) {
         showGrnToast('Completed step is read-only. Return to active step to edit.', 'warning');
         return;
     }
-    const products = window.StockInStore.products;
-    const p = products[0] || { sku: 'ITEM-DIRECT', name: 'Direct Spot Item', uom: 'KG', cost_price: 0 };
+    const dd = document.getElementById('grnRowItemPickerDropdown');
+    if (!dd) return;
+
+    const isSameRowOpen = !dd.hidden && activeRowItemPickerIdx === idx;
+    closeUnplannedItemPicker();
+    closeGrnPoPicker();
+    closeGrnHeaderPicker();
+
+    if (isSameRowOpen) {
+        closeRowItemPicker();
+        return;
+    }
+
+    if (activeRowItemPickerTrigger && activeRowItemPickerTrigger !== triggerEl) {
+        activeRowItemPickerTrigger.setAttribute('aria-expanded', 'false');
+    }
+
+    activeRowItemPickerIdx = idx;
+    activeRowItemPickerTrigger = triggerEl || null;
+    dd.hidden = false;
+    if (triggerEl) triggerEl.setAttribute('aria-expanded', 'true');
+
+    const searchInput = document.getElementById('grnRowItemSearchInput');
+    if (searchInput) searchInput.value = '';
+    renderRowItemPickerList('');
+    positionFloatingGrnPopover(triggerEl, dd, 350);
+    setTimeout(() => searchInput?.focus(), 20);
+};
+
+window.selectCatalogItemForActiveRow = function(sku) {
+    const idx = activeRowItemPickerIdx;
+    closeRowItemPicker();
+    if (idx !== null && idx !== undefined) {
+        onIntakeItemSelected(idx, sku);
+    }
+};
+
+window.selectCustomUnlistedForActiveRow = function() {
+    const idx = activeRowItemPickerIdx;
+    closeRowItemPicker();
+    if (idx !== null && idx !== undefined) {
+        onIntakeItemSelected(idx, '__CUSTOM__');
+    }
+};
+
+window.toggleUnplannedItemPicker = function(event) {
+    if (event) event.stopPropagation();
+    if (isViewingCompletedStepReadOnly()) {
+        showGrnToast('Completed step is read-only. Return to active step to edit.', 'warning');
+        return;
+    }
+    const dd = document.getElementById('grnUnplannedItemDropdown');
+    const btn = document.getElementById('btnAddUnplannedItem');
+    if (!dd) {
+        addAdHocIntakeRow();
+        return;
+    }
+    const willOpen = dd.hidden;
+    closeGrnPoPicker();
+    closeGrnHeaderPicker();
+    closeRowItemPicker();
+    dd.hidden = !willOpen;
+    if (btn) btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+    if (willOpen) {
+        const searchInput = document.getElementById('grnUnplannedSearchInput');
+        if (searchInput) searchInput.value = '';
+        renderUnplannedItemPickerList('');
+        setTimeout(() => searchInput?.focus(), 20);
+    }
+};
+
+window.addAdHocIntakeRowBySku = function(sku) {
+    const products = Array.isArray(window.StockInStore.products) ? window.StockInStore.products : [];
+    const target = String(sku || '').trim().toUpperCase();
+    const matched = products.find(p => String(p.sku || p.item_code || '').trim().toUpperCase() === target);
+    window.addAdHocIntakeRow(matched || null, !matched);
+};
+
+window.addAdHocIntakeRow = function(product = null, isBlankCustom = false) {
+    if (isViewingCompletedStepReadOnly()) {
+        showGrnToast('Completed step is read-only. Return to active step to edit.', 'warning');
+        return;
+    }
+    const products = Array.isArray(window.StockInStore.products) ? window.StockInStore.products : [];
+    const p = isBlankCustom
+        ? { sku: '', name: '', specs: '', uom: 'PCS', cost_price: 0 }
+        : (product || products[0] || { sku: 'ITEM-DIRECT', name: 'Direct Spot Item', uom: 'KG', cost_price: 0 });
     const dateStr = new Date().toISOString().slice(2, 10).replace(/-/g, '');
     const nextIdx = window.StockInStore.intakeItems.length + 1;
+    const trackingMode = isBlankCustom ? 'lots' : window.getItemMasterTrackingMode(p);
+    const lotEnabled = trackingMode === 'lots';
 
     window.StockInStore.intakeItems.push({
-        sku: p.sku || `SPOT-${nextIdx}`,
-        name: p.name || 'Direct Spot Inbound Item',
+        sku: isBlankCustom ? '' : (p.sku || p.item_code || `SPOT-${nextIdx}`),
+        name: isBlankCustom ? '' : (p.name || p.item_name || 'Direct Spot Inbound Item'),
         specs: p.description || p.specs || '',
-        uom: p.uom || 'PCS',
+        uom: p.uom || p.base_uom || 'PCS',
         ordered_qty: 0,
         prev_recv_qty: 0,
         receive_now: 1,
         balance: 0,
-        unit_cost: Number(p.cost_price || 0),
+        unit_cost: Number(p.cost_price ?? p.unit_cost ?? 0),
         vat_type: '12% VAT',
-        lot_number: `LOT-${dateStr}-${nextIdx.toString().padStart(2, '0')}`,
+        trackingBy: trackingMode,
+        lot_number: lotEnabled ? `LOT-${dateStr}-${nextIdx.toString().padStart(2, '0')}` : '',
         expiry_date: '',
         mfg_date: '',
         notes: '',
         is_adhoc: true,
+        is_custom_unlisted: !!isBlankCustom,
     });
 
     renderIntakeTable();
     updateFulfillmentProgress();
+    syncGrnStepActionButtons();
     updateLiveMockup();
     flashTableRow(window.StockInStore.intakeItems.length - 1);
     scheduleDraftSave();
@@ -3345,7 +4132,7 @@ if (typeof window !== 'undefined' && typeof window.addEventListener === 'functio
     });
 }
 
-// Close floating menus when clicking outside
+// Close floating menus when clicking outside & elevate open table UOM menus above scroll viewport
 document.addEventListener('click', (e) => {
     const qDd = document.getElementById('queueTableSettingsDropdown');
     if (qDd && !qDd.contains(e.target) && e.target.id !== 'btnQueueTableSettings') {
@@ -3355,13 +4142,79 @@ document.addEventListener('click', (e) => {
     if (bDd && !bDd.contains(e.target) && e.target.id !== 'btnGrnBuilderSettings') {
         bDd.style.display = 'none';
     }
-    const oMenu = document.getElementById('grnOverflowMenu');
-    const oBtn = document.getElementById('grnOverflowBtn');
-    if (oMenu && !oMenu.hidden && !oMenu.contains(e.target) && !oBtn?.contains(e.target)) {
-        oMenu.hidden = true;
-        if (oBtn) oBtn.setAttribute('aria-expanded', 'false');
+    const uDd = document.getElementById('grnUnplannedItemDropdown');
+    const uBtn = document.getElementById('btnAddUnplannedItem');
+    if (uDd && !uDd.hidden && !uDd.contains(e.target) && !uBtn?.contains(e.target)) {
+        closeUnplannedItemPicker();
+    }
+    const poDd = document.getElementById('grnPoPickerDropdown');
+    const poBtn = document.getElementById('grnPoPickerTrigger');
+    if (poDd && !poDd.hidden && !poDd.contains(e.target) && !poBtn?.contains(e.target)) {
+        closeGrnPoPicker();
+    }
+    const hdrDd = document.getElementById('grnHeaderFieldPickerDropdown');
+    if (hdrDd && !hdrDd.hidden && !hdrDd.contains(e.target) && !e.target?.closest?.('.grn-header-picker-trigger')) {
+        closeGrnHeaderPicker();
+    }
+    const rowDd = document.getElementById('grnRowItemPickerDropdown');
+    if (rowDd && !rowDd.hidden && !rowDd.contains(e.target) && !e.target?.closest?.('.grn-item-picker-trigger')) {
+        closeRowItemPicker();
+    }
+
+    const uomTrigger = e.target?.closest?.('#intakeTableBody .uom-dropdown-trigger');
+    if (uomTrigger && typeof window.requestAnimationFrame === 'function') {
+        window.requestAnimationFrame(() => {
+            const wrapper = uomTrigger.closest('.uom-dropdown-wrapper');
+            const menu = wrapper?.querySelector('.uom-dropdown-menu');
+            if (!wrapper || !menu || !wrapper.classList.contains('is-open')) return;
+            const rect = uomTrigger.getBoundingClientRect();
+            const menuW = Math.max(220, rect.width);
+            const menuH = 290;
+            const spaceBelow = window.innerHeight - rect.bottom;
+            const top = (spaceBelow < menuH && rect.top > menuH)
+                ? Math.max(8, rect.top - menuH - 4)
+                : Math.min(window.innerHeight - 60, rect.bottom + 4);
+            const left = Math.max(8, Math.min(rect.left, window.innerWidth - menuW - 8));
+            menu.style.position = 'fixed';
+            menu.style.top = `${top}px`;
+            menu.style.left = `${left}px`;
+            menu.style.width = `${menuW}px`;
+            menu.style.zIndex = '10060';
+        });
     }
 });
+
+// Close fixed-positioned UOM menus if the intake table scrolls
+if (typeof document !== 'undefined') {
+    document.addEventListener('DOMContentLoaded', () => {
+        const tc = document.getElementById('grnTableContainer');
+        if (tc) {
+            tc.addEventListener('scroll', () => {
+                closeRowItemPicker();
+                tc.querySelectorAll('.uom-dropdown-wrapper.is-open').forEach(w => {
+                    w.classList.remove('is-open');
+                    const trig = w.querySelector('.uom-dropdown-trigger');
+                    if (trig) trig.setAttribute('aria-expanded', 'false');
+                });
+            }, { passive: true });
+        }
+        window.addEventListener('resize', () => {
+            closeGrnPoPicker();
+            closeGrnHeaderPicker();
+            closeRowItemPicker();
+            const qDd = document.getElementById('queueTableSettingsDropdown');
+            if (qDd) qDd.style.display = 'none';
+            const bDd = document.getElementById('grnBuilderSettingsDropdown');
+            if (bDd) bDd.style.display = 'none';
+        });
+        window.addEventListener('scroll', (ev) => {
+            if (ev?.target?.closest?.('.grn-unplanned-popover')) return;
+            closeGrnPoPicker();
+            closeGrnHeaderPicker();
+            closeRowItemPicker();
+        }, true);
+    });
+}
 
 // 9. Confirm Receipt & Putaway (Atomic Vectorized Execution)
 window.confirmAndCommitStockIntake = function(fromFinalGate = false) {
@@ -3505,6 +4358,8 @@ function executeIntakeSubmission(backorderPolicy) {
         delivery_location: deliveryLocation,
         delivery_slip: deliverySlip,
         carrier: carrier,
+        expected_delivery: normalizeIsoDate(document.getElementById('intakeExpectedDelivery')?.value || '') || null,
+        received_at: normalizeIsoDate(document.getElementById('intakeReceivedAt')?.value || '') || null,
         backorder_policy: backorderPolicy,
         intake_uuid: clientUuid,
         items: activeLines,
@@ -3536,6 +4391,9 @@ function executeIntakeSubmission(backorderPolicy) {
         const indicator = document.getElementById('grnDraftIndicator');
         if (indicator) indicator.hidden = true;
 
+        const postedReceivedAt = normalizeIsoDate(data.received_at || document.getElementById('intakeReceivedAt')?.value || '') || getTodayIsoDate();
+        const postedEta = normalizeIsoDate(document.getElementById('intakeExpectedDelivery')?.value || '');
+
         if (poNumber) {
             const po = window.StockInStore.purchaseOrders.find(p => p.po_number === poNumber);
             if (po) {
@@ -3547,6 +4405,12 @@ function executeIntakeSubmission(backorderPolicy) {
                         if (poLine.received_quantity < Number(poLine.quantity)) allDone = false;
                     }
                 });
+
+                if (postedEta) {
+                    po.expected_delivery = postedEta;
+                    po.expected_delivery_date = postedEta;
+                }
+                po.arrival_date = postedReceivedAt;
 
                 if (backorderPolicy === 'SHORT_CLOSE') {
                     po.status = 'Fully Received';
@@ -3561,6 +4425,7 @@ function executeIntakeSubmission(backorderPolicy) {
         existingReceipts.unshift({
             grn_number: grnNo,
             po_number: poNumber || null,
+            received_at: postedReceivedAt,
             delivery_slip: document.getElementById('intakeDeliverySlip')?.value || '',
             notes: document.getElementById('intakeDeliveryNotes')?.value || '',
             items: (window.StockInStore.intakeItems || []).map(it => Object.assign({}, it))
@@ -3647,8 +4512,10 @@ document.addEventListener('keydown', (e) => {
             return;
         }
         toggleGrnMockupDrawer(false);
-        const oMenu = document.getElementById('grnOverflowMenu');
-        if (oMenu) oMenu.hidden = true;
+        closeUnplannedItemPicker();
+        closeGrnPoPicker();
+        closeGrnHeaderPicker();
+        closeRowItemPicker();
     } else if (e.key === '/' && !['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) {
         e.preventDefault();
         const search = document.getElementById('queueSearchInput');
