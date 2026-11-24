@@ -497,8 +497,8 @@
                         </div>
                     </div>
 
-                    <div class="rfq-table-responsive">
-                        <table class="rfq-table" id="soItemsTable">
+                    <div class="po-table-responsive rfq-table-responsive" id="soTableContainer">
+                        <table class="po-table rfq-table" id="soItemsTable">
                             <thead>
                                 <tr>
                                     <th style="width:34px;">#</th>

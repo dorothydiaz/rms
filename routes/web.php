@@ -362,11 +362,24 @@ Route::middleware('auth')->group(function () {
         Route::get('/bundle-promotions', [SalesController::class, 'bundlePromotions'])->name('bundle-promotions');
         Route::get('/customer-masterlist', [SalesController::class, 'customerMasterlist'])->name('customer-masterlist');
 
-        // Customer Masterlist APIs (Single Source of Truth: acct_customers)
+        // Customer Masterlist & 360° MDM APIs (Single Source of Truth: acct_customers)
         Route::get('/api/customers', [SalesController::class, 'apiGetCustomers'])->name('api.customers.index');
         Route::post('/api/customers/save', [SalesController::class, 'apiSaveCustomer'])->name('api.customers.save');
+        Route::post('/api/customers/check-duplicates', [SalesController::class, 'apiCheckCustomerDuplicates'])->name('api.customers.check-duplicates');
+        Route::get('/api/customers/{customerId}/profile', [SalesController::class, 'apiGetCustomerProfile'])->name('api.customers.profile');
+        Route::post('/api/customers/{customerId}/convert', [SalesController::class, 'apiConvertCustomerProspect'])->name('api.customers.convert');
+        Route::post('/api/customers/{customerId}/archive', [SalesController::class, 'apiToggleCustomerArchive'])->name('api.customers.archive');
         Route::post('/api/customers/{customerId}/toggle-hold', [SalesController::class, 'apiToggleCustomerHold'])->name('api.customers.toggle-hold');
         Route::get('/api/customers/{customerId}/credit-check', [SalesController::class, 'apiCheckCustomerCredit'])->name('api.customers.credit-check');
+        Route::post('/api/customers/{customerId}/contacts/save', [SalesController::class, 'apiSaveCustomerContact'])->name('api.customers.contacts.save');
+        Route::delete('/api/customers/{customerId}/contacts/{contactId}', [SalesController::class, 'apiDeleteCustomerContact'])->name('api.customers.contacts.delete');
+        Route::post('/api/customers/{customerId}/addresses/save', [SalesController::class, 'apiSaveCustomerAddress'])->name('api.customers.addresses.save');
+        Route::delete('/api/customers/{customerId}/addresses/{addressId}', [SalesController::class, 'apiDeleteCustomerAddress'])->name('api.customers.addresses.delete');
+        Route::post('/api/customers/{customerId}/price-list/save', [SalesController::class, 'apiSaveCustomerPriceList'])->name('api.customers.price-list.save');
+        Route::delete('/api/customers/{customerId}/price-list/{priceListId}', [SalesController::class, 'apiDeleteCustomerPriceList'])->name('api.customers.price-list.delete');
+        Route::post('/api/customers/{customerId}/documents/save', [SalesController::class, 'apiSaveCustomerDocument'])->name('api.customers.documents.save');
+        Route::delete('/api/customers/{customerId}/documents/{documentId}', [SalesController::class, 'apiDeleteCustomerDocument'])->name('api.customers.documents.delete');
+        Route::post('/api/customers/{customerId}/activities/save', [SalesController::class, 'apiSaveCustomerActivity'])->name('api.customers.activities.save');
 
         // Sales Quotes APIs
         Route::get('/api/quotes', [SalesController::class, 'apiGetQuotes'])->name('api.quotes.index');

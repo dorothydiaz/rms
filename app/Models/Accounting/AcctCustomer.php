@@ -5,6 +5,7 @@ namespace App\Models\Accounting;
 use App\Models\Sales\SalesOrder;
 use App\Models\Sales\SalesQuote;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
@@ -37,6 +38,13 @@ class AcctCustomer extends Model
         'shipping_address',
         'sales_rep_name',
         'notes',
+        'parent_customer_id',
+        'account_stage',
+        'archived_at',
+        'converted_at',
+        'website',
+        'industry',
+        'tax_exempt_cert_no',
     ];
 
     protected function casts(): array
@@ -47,6 +55,8 @@ class AcctCustomer extends Model
             'is_active' => 'boolean',
             'credit_hold' => 'boolean',
             'credit_grace_days' => 'integer',
+            'archived_at' => 'datetime',
+            'converted_at' => 'datetime',
         ];
     }
 
@@ -77,6 +87,46 @@ class AcctCustomer extends Model
     public function salesQuotes(): HasMany
     {
         return $this->hasMany(SalesQuote::class, 'customer_id', 'customer_id');
+    }
+
+    public function parentCustomer(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'parent_customer_id', 'customer_id');
+    }
+
+    public function subsidiaries(): HasMany
+    {
+        return $this->hasMany(self::class, 'parent_customer_id', 'customer_id');
+    }
+
+    public function contacts(): HasMany
+    {
+        return $this->hasMany(AcctCustomerContact::class, 'customer_id', 'customer_id');
+    }
+
+    public function addresses(): HasMany
+    {
+        return $this->hasMany(AcctCustomerAddress::class, 'customer_id', 'customer_id');
+    }
+
+    public function priceLists(): HasMany
+    {
+        return $this->hasMany(AcctCustomerPriceList::class, 'customer_id', 'customer_id');
+    }
+
+    public function documents(): HasMany
+    {
+        return $this->hasMany(AcctCustomerDocument::class, 'customer_id', 'customer_id');
+    }
+
+    public function activities(): HasMany
+    {
+        return $this->hasMany(AcctCustomerActivity::class, 'customer_id', 'customer_id');
+    }
+
+    public function memos(): HasMany
+    {
+        return $this->hasMany(AcctCustomerMemo::class, 'customer_id', 'customer_id');
     }
 }
 

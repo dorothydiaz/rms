@@ -22,6 +22,7 @@ use App\Services\Accounting\AccountingNumberingService;
 use App\Services\Accounting\AccountingSeedService;
 use App\Services\CompanyBranchContext;
 use App\Services\Sales\SalesCreditControlService;
+use App\Services\Sales\SalesCustomerService;
 use App\Services\Sales\SalesInventoryService;
 use App\Services\Sales\SalesOrderService;
 use App\Services\Sales\SalesPromotionService;
@@ -46,6 +47,7 @@ class SalesController extends Controller
         protected SalesInventoryService $inventoryService,
         protected SalesPromotionService $promotionService,
         protected SalesReportingService $reportingService,
+        protected SalesCustomerService $customerService,
         protected AccountingSeedService $seedService,
         protected AccountingNumberingService $numberingService
     ) {
@@ -307,8 +309,11 @@ class SalesController extends Controller
         $this->seedService->ensureSeeded($companyId);
 
         return view('sales.customer-masterlist', [
-            'initialCustomers' => $this->buildEnrichedCustomers($companyId),
+            'initialCustomers' => $this->customerService->getEnrichedDirectory($companyId),
             'initialTaxCodes' => $this->buildTaxCodes($companyId),
+            'initialPaymentTerms' => $this->buildPaymentTerms($companyId),
+            'initialItems' => $this->buildEnrichedItems(),
+            'initialEmployees' => $this->buildEmployeesList(),
         ]);
     }
 
@@ -409,7 +414,7 @@ class SalesController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $this->buildEnrichedCustomers($companyId),
+            'data' => $this->customerService->getEnrichedDirectory($companyId),
         ]);
     }
 
@@ -438,73 +443,30 @@ class SalesController extends Controller
             'sales_rep_name' => 'nullable|string|max:120',
             'notes' => 'nullable|string|max:1000',
             'is_active' => 'nullable|boolean',
+            'parent_customer_id' => 'nullable|string|max:60',
+            'account_stage' => 'nullable|string|in:PROSPECT,ACTIVE,ARCHIVED',
+            'website' => 'nullable|string|max:200',
+            'industry' => 'nullable|string|max:100',
+            'tax_exempt_cert_no' => 'nullable|string|max:100',
+            'allow_duplicate' => 'nullable|boolean',
         ]);
 
         try {
-            $customer = null;
-            if (!empty($validated['customer_id'])) {
-                $customer = AcctCustomer::where('company_id', $companyId)
-                    ->where('customer_id', $validated['customer_id'])
-                    ->first();
-            }
-
-            $code = !empty($validated['customer_code'])
-                ? strtoupper(trim($validated['customer_code']))
-                : ($customer?->customer_code ?? ('CUST-' . strtoupper(Str::random(5))));
-
-            if ($customer) {
-                $customer->fill([
-                    'customer_code' => $code,
-                    'customer_name' => trim($validated['customer_name']),
-                    'trade_name' => $validated['trade_name'] ?? trim($validated['customer_name']),
-                    'tin' => $validated['tin'] ?? null,
-                    'address' => $validated['address'] ?? null,
-                    'shipping_address' => $validated['shipping_address'] ?? ($validated['address'] ?? null),
-                    'contact_person' => $validated['contact_person'] ?? null,
-                    'email' => $validated['email'] ?? null,
-                    'phone' => $validated['phone'] ?? null,
-                    'payment_terms_code' => $validated['payment_terms_code'] ?? 'NET_30',
-                    'credit_limit' => (float) ($validated['credit_limit'] ?? 0.0),
-                    'credit_hold' => (bool) ($validated['credit_hold'] ?? false),
-                    'credit_grace_days' => (int) ($validated['credit_grace_days'] ?? 15),
-                    'customer_tier' => $validated['customer_tier'] ?? 'STANDARD',
-                    'default_tax_code' => $validated['default_tax_code'] ?? 'VAT12_OUT',
-                    'sales_rep_name' => $validated['sales_rep_name'] ?? null,
-                    'notes' => $validated['notes'] ?? null,
-                    'is_active' => $validated['is_active'] ?? true,
-                ]);
-                $customer->save();
-            } else {
-                $customer = AcctCustomer::create([
-                    'customer_id' => (string) Str::uuid(),
-                    'company_id' => $companyId,
-                    'customer_code' => $code,
-                    'customer_name' => trim($validated['customer_name']),
-                    'trade_name' => $validated['trade_name'] ?? trim($validated['customer_name']),
-                    'tin' => $validated['tin'] ?? null,
-                    'address' => $validated['address'] ?? null,
-                    'shipping_address' => $validated['shipping_address'] ?? ($validated['address'] ?? null),
-                    'contact_person' => $validated['contact_person'] ?? null,
-                    'email' => $validated['email'] ?? null,
-                    'phone' => $validated['phone'] ?? null,
-                    'payment_terms_code' => $validated['payment_terms_code'] ?? 'NET_30',
-                    'credit_limit' => (float) ($validated['credit_limit'] ?? 0.0),
-                    'current_balance' => 0.0,
-                    'credit_hold' => (bool) ($validated['credit_hold'] ?? false),
-                    'credit_grace_days' => (int) ($validated['credit_grace_days'] ?? 15),
-                    'customer_tier' => $validated['customer_tier'] ?? 'STANDARD',
-                    'default_tax_code' => $validated['default_tax_code'] ?? 'VAT12_OUT',
-                    'sales_rep_name' => $validated['sales_rep_name'] ?? null,
-                    'notes' => $validated['notes'] ?? null,
-                    'is_active' => $validated['is_active'] ?? true,
-                ]);
-            }
+            $customer = $this->customerService->saveCustomer($companyId, $validated, $this->resolveActorName());
+            $enriched = $this->customerService->getEnrichedDirectory($companyId)->firstWhere('customer_id', $customer->customer_id) ?? $customer;
 
             return response()->json([
                 'success' => true,
                 'message' => "Customer [{$customer->customer_code}] saved.",
-                'data' => $this->buildEnrichedCustomers($companyId)->firstWhere('customer_id', $customer->customer_id) ?? $customer,
+                'data' => $enriched,
             ]);
+        } catch (DomainException $e) {
+            $dups = $this->customerService->detectDuplicates($companyId, $validated, $validated['customer_id'] ?? null);
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'duplicates' => $dups,
+            ], 422);
         } catch (Throwable $e) {
             return response()->json(['success' => false, 'message' => 'Error saving customer: ' . $e->getMessage()], 500);
         }
@@ -513,6 +475,7 @@ class SalesController extends Controller
     public function apiToggleCustomerHold(string $customerId): JsonResponse
     {
         $companyId = $this->resolveActiveCompanyId();
+        $actor = $this->resolveActorName();
         $customer = AcctCustomer::where('company_id', $companyId)
             ->where('customer_id', $customerId)
             ->firstOrFail();
@@ -520,12 +483,239 @@ class SalesController extends Controller
         $customer->credit_hold = !$customer->credit_hold;
         $customer->save();
 
+        $this->customerService->recordSystemActivity(
+            $companyId,
+            $customer->customer_id,
+            $customer->credit_hold ? 'Credit Hold Placed' : 'Credit Hold Lifted',
+            ($customer->credit_hold ? 'Placed on Credit Hold' : 'Credit Hold lifted') . " by {$actor}.",
+            $actor
+        );
+
+        $enriched = $this->customerService->getEnrichedDirectory($companyId)->firstWhere('customer_id', $customer->customer_id) ?? $customer;
+
         return response()->json([
             'success' => true,
             'message' => $customer->credit_hold
                 ? "Customer [{$customer->customer_name}] placed on Credit Hold."
                 : "Credit Hold lifted for [{$customer->customer_name}].",
-            'data' => $customer,
+            'data' => $enriched,
+        ]);
+    }
+
+    public function apiGetCustomerProfile(string $customerId): JsonResponse
+    {
+        $companyId = $this->resolveActiveCompanyId();
+        return response()->json([
+            'success' => true,
+            'data' => $this->customerService->getCustomer360Profile($companyId, $customerId),
+        ]);
+    }
+
+    public function apiCheckCustomerDuplicates(Request $request): JsonResponse
+    {
+        $companyId = $this->resolveActiveCompanyId();
+        $dups = $this->customerService->detectDuplicates(
+            $companyId,
+            $request->only(['customer_name', 'email', 'tin']),
+            $request->input('exclude_customer_id')
+        );
+
+        return response()->json(['success' => true, 'duplicates' => $dups]);
+    }
+
+    public function apiConvertCustomerProspect(string $customerId): JsonResponse
+    {
+        $companyId = $this->resolveActiveCompanyId();
+        $customer = $this->customerService->convertProspectToActive($companyId, $customerId, $this->resolveActorName());
+        $enriched = $this->customerService->getEnrichedDirectory($companyId)->firstWhere('customer_id', $customer->customer_id) ?? $customer;
+
+        return response()->json([
+            'success' => true,
+            'message' => "Converted [{$customer->customer_name}] to Active Customer.",
+            'data' => $enriched,
+        ]);
+    }
+
+    public function apiToggleCustomerArchive(string $customerId): JsonResponse
+    {
+        $companyId = $this->resolveActiveCompanyId();
+        try {
+            $customer = $this->customerService->toggleArchive($companyId, $customerId, $this->resolveActorName());
+            $enriched = $this->customerService->getEnrichedDirectory($companyId)->firstWhere('customer_id', $customer->customer_id) ?? $customer;
+
+            return response()->json([
+                'success' => true,
+                'message' => strtoupper((string) $customer->account_stage) === 'ARCHIVED'
+                    ? "Customer [{$customer->customer_name}] archived."
+                    : "Customer [{$customer->customer_name}] restored.",
+                'data' => $enriched,
+            ]);
+        } catch (DomainException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+        }
+    }
+
+    public function apiSaveCustomerContact(Request $request, string $customerId): JsonResponse
+    {
+        $companyId = $this->resolveActiveCompanyId();
+        $validated = $request->validate([
+            'contact_id' => 'nullable|string|max:64',
+            'full_name' => 'required|string|max:150',
+            'role_title' => 'nullable|string|max:100',
+            'department' => 'nullable|string|max:100',
+            'email' => 'nullable|email|max:150',
+            'phone' => 'nullable|string|max:60',
+            'is_primary' => 'nullable|boolean',
+            'receives_invoices' => 'nullable|boolean',
+            'notes' => 'nullable|string|max:1000',
+        ]);
+
+        $contact = $this->customerService->saveContact($companyId, $customerId, $validated, $this->resolveActorName());
+        return response()->json([
+            'success' => true,
+            'message' => "Contact [{$contact->full_name}] saved.",
+            'data' => $this->customerService->getCustomer360Profile($companyId, $customerId),
+        ]);
+    }
+
+    public function apiDeleteCustomerContact(string $customerId, string $contactId): JsonResponse
+    {
+        $companyId = $this->resolveActiveCompanyId();
+        $this->customerService->deleteContact($companyId, $customerId, $contactId);
+        return response()->json([
+            'success' => true,
+            'message' => 'Contact removed.',
+            'data' => $this->customerService->getCustomer360Profile($companyId, $customerId),
+        ]);
+    }
+
+    public function apiSaveCustomerAddress(Request $request, string $customerId): JsonResponse
+    {
+        $companyId = $this->resolveActiveCompanyId();
+        $validated = $request->validate([
+            'address_id' => 'nullable|string|max:64',
+            'address_type' => 'required|string|in:BILLING,SHIPPING,BOTH',
+            'label' => 'required|string|max:120',
+            'address_line' => 'required|string|max:500',
+            'city' => 'nullable|string|max:120',
+            'province' => 'nullable|string|max:120',
+            'postal_code' => 'nullable|string|max:20',
+            'receiving_contact' => 'nullable|string|max:150',
+            'receiving_phone' => 'nullable|string|max:60',
+            'delivery_window' => 'nullable|string|max:120',
+            'is_default' => 'nullable|boolean',
+        ]);
+
+        $addr = $this->customerService->saveAddress($companyId, $customerId, $validated, $this->resolveActorName());
+        return response()->json([
+            'success' => true,
+            'message' => "Address [{$addr->label}] saved.",
+            'data' => $this->customerService->getCustomer360Profile($companyId, $customerId),
+        ]);
+    }
+
+    public function apiDeleteCustomerAddress(string $customerId, string $addressId): JsonResponse
+    {
+        $companyId = $this->resolveActiveCompanyId();
+        $this->customerService->deleteAddress($companyId, $customerId, $addressId);
+        return response()->json([
+            'success' => true,
+            'message' => 'Address removed.',
+            'data' => $this->customerService->getCustomer360Profile($companyId, $customerId),
+        ]);
+    }
+
+    public function apiSaveCustomerPriceList(Request $request, string $customerId): JsonResponse
+    {
+        $companyId = $this->resolveActiveCompanyId();
+        $validated = $request->validate([
+            'price_list_id' => 'nullable|string|max:64',
+            'inventory_item_id' => 'nullable|integer',
+            'internal_sku' => 'nullable|string|max:100',
+            'item_name' => 'nullable|string|max:255',
+            'customer_sku' => 'nullable|string|max:100',
+            'uom' => 'nullable|string|max:30',
+            'standard_price' => 'nullable|numeric|min:0',
+            'contract_price' => 'required|numeric|min:0',
+            'min_qty' => 'nullable|numeric|min:0.0001',
+            'valid_from' => 'nullable|date',
+            'valid_until' => 'nullable|date|after_or_equal:valid_from',
+            'notes' => 'nullable|string|max:1000',
+        ]);
+
+        $entry = $this->customerService->savePriceListEntry($companyId, $customerId, $validated, $this->resolveActorName());
+        return response()->json([
+            'success' => true,
+            'message' => "Price list entry [{$entry->item_name}] saved.",
+            'data' => $this->customerService->getCustomer360Profile($companyId, $customerId),
+        ]);
+    }
+
+    public function apiDeleteCustomerPriceList(string $customerId, string $priceListId): JsonResponse
+    {
+        $companyId = $this->resolveActiveCompanyId();
+        $this->customerService->deletePriceListEntry($companyId, $customerId, $priceListId);
+        return response()->json([
+            'success' => true,
+            'message' => 'Contract price entry removed.',
+            'data' => $this->customerService->getCustomer360Profile($companyId, $customerId),
+        ]);
+    }
+
+    public function apiSaveCustomerDocument(Request $request, string $customerId): JsonResponse
+    {
+        $companyId = $this->resolveActiveCompanyId();
+        $validated = $request->validate([
+            'doc_type' => 'required|string|in:BIR_2303_COR,TAX_EXEMPTION,CONTRACT,NDA,CREDIT_APP',
+            'document_title' => 'required|string|max:200',
+            'reference_no' => 'nullable|string|max:120',
+            'issue_date' => 'nullable|date',
+            'expiry_date' => 'nullable|date',
+            'notes' => 'nullable|string|max:1000',
+            'document_file' => 'nullable|file|max:10240',
+        ]);
+
+        $doc = $this->customerService->saveDocument(
+            $companyId,
+            $customerId,
+            $validated,
+            $request->file('document_file'),
+            $this->resolveActorName()
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => "Document [{$doc->document_title}] saved.",
+            'data' => $this->customerService->getCustomer360Profile($companyId, $customerId),
+        ]);
+    }
+
+    public function apiDeleteCustomerDocument(string $customerId, string $documentId): JsonResponse
+    {
+        $companyId = $this->resolveActiveCompanyId();
+        $this->customerService->deleteDocument($companyId, $customerId, $documentId);
+        return response()->json([
+            'success' => true,
+            'message' => 'Document deleted.',
+            'data' => $this->customerService->getCustomer360Profile($companyId, $customerId),
+        ]);
+    }
+
+    public function apiSaveCustomerActivity(Request $request, string $customerId): JsonResponse
+    {
+        $companyId = $this->resolveActiveCompanyId();
+        $validated = $request->validate([
+            'activity_type' => 'required|string|in:CALL,EMAIL,MEETING,REMINDER,NOTE',
+            'subject' => 'required|string|max:200',
+            'description' => 'nullable|string|max:2000',
+            'follow_up_date' => 'nullable|date',
+        ]);
+
+        $this->customerService->logActivity($companyId, $customerId, $validated, $this->resolveActorName());
+        return response()->json([
+            'success' => true,
+            'message' => 'CRM activity logged.',
+            'data' => $this->customerService->getCustomer360Profile($companyId, $customerId),
         ]);
     }
 

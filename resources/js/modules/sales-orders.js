@@ -203,6 +203,12 @@
             builderPane.classList.toggle('is-active', !isList);
             builderPane.style.display = isList ? 'none' : 'flex';
         }
+        if (!isList && !activeOrderId && !activeLines.length) {
+            const cust = customers.find((c) => c.customer_id === document.getElementById('soCustomerIdInput')?.value);
+            activeLines = [emptyLine(defaultTaxForCustomer(cust))];
+            updateStageUi(null);
+            renderLineRows(false);
+        }
     };
 
     function updateKpis() {
