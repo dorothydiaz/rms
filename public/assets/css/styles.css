@@ -1196,3 +1196,127 @@ html.rms-lite-mode *, html.rms-lite-mode *::before, html.rms-lite-mode *::after 
 @keyframes modalScaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; } }
 @keyframes userDropdownIn { from { opacity: 0; transform: translateY(-8px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+/* =========================================================================
+   GLOBAL BOTTOM-RIGHT TOAST LOADER
+   ========================================================================= */
+.rms-toast-loader {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 999999;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 18px 11px 14px;
+    max-width: min(340px, calc(100vw - 32px));
+    background: var(--surface-pure-white, #ffffff);
+    border: var(--border-subtle, 1px solid #e2e8f0);
+    border-radius: 14px;
+    box-shadow: var(--shadow-card-hover, 0 14px 32px rgba(168, 85, 247, 0.14), 0 4px 10px rgba(15, 23, 42, 0.08));
+    font-family: var(--font-family-body, 'Poppins', sans-serif);
+    color: var(--text-primary, #0f172a);
+    pointer-events: none;
+    overflow: hidden;
+    opacity: 0;
+    transform: translate3d(0, 14px, 0) scale(0.96);
+    visibility: hidden;
+    transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.2s;
+}
+.rms-toast-loader::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 6px;
+    bottom: 6px;
+    width: 3.5px;
+    border-radius: 0 4px 4px 0;
+    background: var(--gradient-primary, linear-gradient(135deg, #ec4899 0%, #a855f7 100%));
+}
+.rms-toast-loader.is-visible {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    visibility: visible;
+}
+.rms-toast-loader__icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 9px;
+    background: var(--gradient-primary-subtle, rgba(168, 85, 247, 0.12));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--brand-primary, #9333ea);
+    font-size: 16px;
+}
+.rms-toast-loader__spinner {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2.2px solid rgba(147, 51, 234, 0.2);
+    border-top-color: var(--brand-primary, #9333ea);
+    border-right-color: var(--brand-accent-pink, #ec4899);
+    animation: rmsToastSpin 0.65s linear infinite;
+}
+.rms-toast-loader__glyph {
+    display: none;
+    line-height: 1;
+}
+.rms-toast-loader.is-success::before {
+    background: linear-gradient(180deg, #10b981 0%, #059669 100%);
+}
+.rms-toast-loader.is-success .rms-toast-loader__icon {
+    background: rgba(16, 185, 129, 0.12);
+    color: #059669;
+}
+.rms-toast-loader.is-error::before {
+    background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%);
+}
+.rms-toast-loader.is-error .rms-toast-loader__icon {
+    background: rgba(239, 68, 68, 0.12);
+    color: #dc2626;
+}
+.rms-toast-loader.is-success .rms-toast-loader__spinner,
+.rms-toast-loader.is-error .rms-toast-loader__spinner {
+    display: none;
+}
+.rms-toast-loader.is-success .rms-toast-loader__glyph,
+.rms-toast-loader.is-error .rms-toast-loader__glyph {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.rms-toast-loader__content {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    line-height: 1.25;
+}
+.rms-toast-loader__title {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text-primary, #0f172a);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.rms-toast-loader__sub {
+    font-size: 10.5px;
+    font-weight: 500;
+    color: var(--text-secondary, #64748b);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 1px;
+}
+@keyframes rmsToastSpin {
+    to { transform: rotate(360deg); }
+}
+@media (max-width: 640px) {
+    .rms-toast-loader {
+        bottom: 14px;
+        right: 14px;
+        padding: 9px 14px 9px 12px;
+    }
+}

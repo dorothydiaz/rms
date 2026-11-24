@@ -2043,13 +2043,109 @@ function getCellSortValue(cell) {
 })();
 
 /* =========================================================================
-   INSTANT TAB NAVIGATION (Hover/Mousedown Prefetch + <16ms Active Feedback)
+   INSTANT TAB NAVIGATION + GLOBAL BOTTOM-RIGHT TOAST LOADER
    ========================================================================= */
 (function () {
     const NAV_SELECTOR = '.sidebar a[href], .hr-tabs-wrapper a[href], .breadcrumb-nav a[href]';
+    const CLICK_NAV_SELECTOR = '.sidebar a[href], .hr-tabs-wrapper a[href], .breadcrumb-nav a[href], .pagination a[href]';
     const prefetchedUrls = new Set();
     let hoverTimer = null;
     let progressBar = null;
+    let toastEl = null;
+    let toastTitleEl = null;
+    let toastSubEl = null;
+    let toastGlyphEl = null;
+    let autoHideTimer = null;
+    let isNavigating = false;
+    let activeMutations = 0;
+    let activeSlowGets = 0;
+
+    function ensureToastElement() {
+        if (toastEl || !document.body) return toastEl;
+        toastEl = document.createElement('div');
+        toastEl.id = 'rms-toast-loader';
+        toastEl.className = 'rms-toast-loader';
+        toastEl.setAttribute('role', 'status');
+        toastEl.setAttribute('aria-live', 'polite');
+        toastEl.innerHTML =
+            '<div class="rms-toast-loader__icon" aria-hidden="true">' +
+                '<span class="rms-toast-loader__spinner"></span>' +
+                '<i class="ph ph-check-circle rms-toast-loader__glyph"></i>' +
+            '</div>' +
+            '<div class="rms-toast-loader__content">' +
+                '<span class="rms-toast-loader__title">Loading...</span>' +
+                '<span class="rms-toast-loader__sub">Please wait a moment</span>' +
+            '</div>';
+        document.body.appendChild(toastEl);
+        toastTitleEl = toastEl.querySelector('.rms-toast-loader__title');
+        toastSubEl = toastEl.querySelector('.rms-toast-loader__sub');
+        toastGlyphEl = toastEl.querySelector('.rms-toast-loader__glyph');
+        return toastEl;
+    }
+
+    function setToastContent(title, subtitle, state) {
+        if (!ensureToastElement()) return;
+        if (autoHideTimer) {
+            clearTimeout(autoHideTimer);
+            autoHideTimer = null;
+        }
+        toastEl.classList.remove('is-success', 'is-error');
+        if (state === 'success') {
+            toastEl.classList.add('is-success');
+            if (toastGlyphEl) toastGlyphEl.className = 'ph ph-check-circle rms-toast-loader__glyph';
+        } else if (state === 'error') {
+            toastEl.classList.add('is-error');
+            if (toastGlyphEl) toastGlyphEl.className = 'ph ph-warning-circle rms-toast-loader__glyph';
+        }
+        if (toastTitleEl) toastTitleEl.textContent = title || 'Loading...';
+        if (toastSubEl) {
+            if (subtitle) {
+                toastSubEl.textContent = subtitle;
+                toastSubEl.style.display = 'block';
+            } else {
+                toastSubEl.style.display = 'none';
+            }
+        }
+        toastEl.classList.add('is-visible');
+    }
+
+    const RMSToastLoader = {
+        show(title = 'Loading...', subtitle = 'Please wait a moment', mode = 'loading') {
+            const defaultSub = mode === 'saving' ? 'Please wait, do not close' : 'Please wait a moment';
+            setToastContent(title, subtitle || defaultSub, 'loading');
+        },
+        success(title = 'Saved', subtitle = 'Changes applied', duration = 1100) {
+            setToastContent(title, subtitle, 'success');
+            if (duration > 0) {
+                autoHideTimer = setTimeout(() => {
+                    if (!isNavigating && activeMutations === 0 && activeSlowGets === 0) {
+                        this.hide();
+                    }
+                }, duration);
+            }
+        },
+        error(title = 'Request failed', subtitle = 'Please check and try again', duration = 2200) {
+            setToastContent(title, subtitle, 'error');
+            if (duration > 0) {
+                autoHideTimer = setTimeout(() => {
+                    if (!isNavigating && activeMutations === 0 && activeSlowGets === 0) {
+                        this.hide();
+                    }
+                }, duration);
+            }
+        },
+        hide() {
+            if (autoHideTimer) {
+                clearTimeout(autoHideTimer);
+                autoHideTimer = null;
+            }
+            if (toastEl) {
+                toastEl.classList.remove('is-visible', 'is-success', 'is-error');
+            }
+        },
+    };
+
+    window.RMSToastLoader = RMSToastLoader;
 
     function isPrefetchableUrl(anchor) {
         if (!anchor || !anchor.href) return false;
@@ -2074,6 +2170,16 @@ function getCellSortValue(cell) {
         }
     }
 
+    function getNavToastTitle(anchor) {
+        if (!anchor) return 'Loading page...';
+        if (anchor.closest('.pagination')) return 'Loading page...';
+        const label = (anchor.getAttribute('data-title') || anchor.getAttribute('title') || anchor.textContent || '')
+            .replace(/\s+/g, ' ')
+            .trim();
+        if (!label || label.length > 36) return 'Loading view...';
+        return 'Loading ' + label + '...';
+    }
+
     function prefetchUrl(href) {
         if (!href || prefetchedUrls.has(href)) return;
         prefetchedUrls.add(href);
@@ -2085,12 +2191,13 @@ function getCellSortValue(cell) {
     }
 
     function showNavProgress() {
-        if (!progressBar) {
+        if (!progressBar && document.body) {
             progressBar = document.createElement('div');
             progressBar.id = 'rms-nav-progress';
             progressBar.style.cssText = 'position:fixed;top:0;left:0;height:2.5px;width:0;z-index:999999;pointer-events:none;background:linear-gradient(90deg,var(--brand-primary,#6d28d9),#a855f7);transition:width 0.35s cubic-bezier(0.22,1,0.36,1),opacity 0.15s ease;';
             document.body.appendChild(progressBar);
         }
+        if (!progressBar) return;
         progressBar.style.opacity = '1';
         progressBar.style.width = '35%';
         window.requestAnimationFrame(() => {
@@ -2118,9 +2225,147 @@ function getCellSortValue(cell) {
         }
     }
 
+    function resolveRequestUrl(rawUrl) {
+        if (!rawUrl || typeof rawUrl !== 'string') return null;
+        try {
+            const parsed = new URL(rawUrl, window.location.href);
+            return parsed.origin === window.location.origin ? parsed : null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function startTrackedRequest(method, urlStr) {
+        if (!resolveRequestUrl(urlStr)) return null;
+        const m = String(method || 'GET').toUpperCase();
+        const isMutation = m === 'POST' || m === 'PUT' || m === 'PATCH' || m === 'DELETE';
+        let slowTimer = null;
+        let showedToast = false;
+        let finished = false;
+
+        if (isMutation) {
+            activeMutations++;
+            showedToast = true;
+            RMSToastLoader.show('Saving changes...', 'Syncing with server', 'saving');
+        } else if (m === 'GET') {
+            slowTimer = setTimeout(() => {
+                if (finished || isNavigating) return;
+                showedToast = true;
+                activeSlowGets++;
+                if (activeMutations === 0) {
+                    RMSToastLoader.show('Loading data...', 'Fetching records', 'loading');
+                }
+            }, 220);
+        }
+
+        return function finishRequest(ok, wasAborted) {
+            if (finished) return;
+            finished = true;
+            if (slowTimer) {
+                clearTimeout(slowTimer);
+                slowTimer = null;
+            }
+            if (isMutation) {
+                activeMutations = Math.max(0, activeMutations - 1);
+                if (isNavigating) return;
+                if (activeMutations === 0) {
+                    if (wasAborted) {
+                        RMSToastLoader.hide();
+                    } else if (ok) {
+                        RMSToastLoader.success('Saved', 'Changes applied', 1100);
+                    } else {
+                        RMSToastLoader.error('Request failed', 'Please check and try again', 2200);
+                    }
+                }
+            } else if (showedToast) {
+                activeSlowGets = Math.max(0, activeSlowGets - 1);
+                if (!isNavigating && activeMutations === 0 && activeSlowGets === 0) {
+                    RMSToastLoader.hide();
+                }
+            }
+        };
+    }
+
+    function installNetworkToastInterceptors() {
+        if (window.__rmsToastNetworkPatched) return;
+        window.__rmsToastNetworkPatched = true;
+
+        if (typeof window.fetch === 'function') {
+            const nativeFetch = window.fetch;
+            window.fetch = function (input, init) {
+                const urlStr = typeof input === 'string'
+                    ? input
+                    : (input && typeof input.url === 'string' ? input.url : '');
+                const method = (init && init.method)
+                    || (input && typeof input === 'object' && input.method)
+                    || 'GET';
+                const done = startTrackedRequest(method, urlStr);
+                return nativeFetch.apply(this, arguments).then(
+                    (response) => {
+                        if (done) done(response ? response.ok : true, false);
+                        return response;
+                    },
+                    (err) => {
+                        if (done) done(false, err && err.name === 'AbortError');
+                        throw err;
+                    }
+                );
+            };
+        }
+
+        if (window.XMLHttpRequest && window.XMLHttpRequest.prototype) {
+            const origOpen = window.XMLHttpRequest.prototype.open;
+            const origSend = window.XMLHttpRequest.prototype.send;
+
+            window.XMLHttpRequest.prototype.open = function (method, url) {
+                this.__rmsMethod = method || 'GET';
+                this.__rmsUrl = typeof url === 'string' ? url : '';
+                return origOpen.apply(this, arguments);
+            };
+
+            window.XMLHttpRequest.prototype.send = function () {
+                const done = startTrackedRequest(this.__rmsMethod, this.__rmsUrl);
+                if (done) {
+                    this.addEventListener('loadend', () => {
+                        const wasAborted = this.status === 0;
+                        done(this.status >= 200 && this.status < 400, wasAborted);
+                    }, { once: true });
+                }
+                return origSend.apply(this, arguments);
+            };
+        }
+    }
+
+    function getFormSubmitToast(form, submitter) {
+        const methodAttr = (form.getAttribute('method') || 'GET').toUpperCase();
+        const spoofInput = form.querySelector('input[name="_method"]');
+        const method = spoofInput ? String(spoofInput.value || methodAttr).toUpperCase() : methodAttr;
+
+        if (method === 'GET') {
+            return ['Filtering records...', 'Updating view', 'loading'];
+        }
+        const rawLabel = submitter
+            ? (submitter.textContent || submitter.value || '')
+            : '';
+        const textLower = rawLabel.toLowerCase();
+        if (method === 'DELETE' || textLower.includes('delete') || textLower.includes('remove')) {
+            return ['Deleting...', 'Please wait, do not close', 'saving'];
+        }
+        if (textLower.includes('approv')) {
+            return ['Approving...', 'Please wait, do not close', 'saving'];
+        }
+        if (textLower.includes('generat')) {
+            return ['Generating...', 'Please wait, do not close', 'saving'];
+        }
+        return ['Saving changes...', 'Please wait, do not close', 'saving'];
+    }
+
     function initInstantTabNavigation() {
         if (window.__rmsInstantNavInitialized) return;
         window.__rmsInstantNavInitialized = true;
+
+        ensureToastElement();
+        installNetworkToastInterceptors();
 
         document.addEventListener('mouseover', (e) => {
             const anchor = e.target && e.target.closest ? e.target.closest(NAV_SELECTOR) : null;
@@ -2150,12 +2395,35 @@ function getCellSortValue(cell) {
 
         document.addEventListener('click', (e) => {
             if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-            const anchor = e.target && e.target.closest ? e.target.closest(NAV_SELECTOR) : null;
+            const anchor = e.target && e.target.closest ? e.target.closest(CLICK_NAV_SELECTOR) : null;
             if (!anchor) return;
             const targetHref = isPrefetchableUrl(anchor);
             if (!targetHref) return;
+            isNavigating = true;
             applyOptimisticActiveState(anchor);
             showNavProgress();
+            RMSToastLoader.show(getNavToastTitle(anchor), 'Please wait a moment', 'loading');
+        });
+
+        document.addEventListener('submit', (e) => {
+            if (e.defaultPrevented) return;
+            const form = e.target;
+            if (!form || form.tagName !== 'FORM' || form.getAttribute('target') === '_blank') return;
+            isNavigating = true;
+            showNavProgress();
+            const [title, sub, mode] = getFormSubmitToast(form, e.submitter);
+            RMSToastLoader.show(title, sub, mode);
+        });
+
+        window.addEventListener('pageshow', () => {
+            isNavigating = false;
+            activeMutations = 0;
+            activeSlowGets = 0;
+            if (progressBar) {
+                progressBar.style.opacity = '0';
+                progressBar.style.width = '0';
+            }
+            RMSToastLoader.hide();
         });
     }
 
