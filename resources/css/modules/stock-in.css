@@ -2545,3 +2545,489 @@
         print-color-adjust: exact !important;
     }
 }
+
+/* ============================================================================
+   STAGE STOCK-MOVEMENT SIMULATION BANNER & CHEVRON/ROW MOTION (/modern-ux-designer)
+   ============================================================================ */
+#grnAppRoot .grn-stage-transit-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 10px 16px;
+    margin-bottom: 12px;
+    border-radius: 12px;
+    border: 1px solid #d8b4fe;
+    background: linear-gradient(90deg, #faf5ff 0%, #ffffff 50%, #ecfdf5 100%);
+    box-shadow: 0 6px 20px rgba(147, 51, 234, 0.12);
+    animation: grnTransitBannerEnter 0.22s ease-out both;
+}
+
+#grnAppRoot .grn-stage-transit-banner[hidden] {
+    display: none !important;
+}
+
+#grnAppRoot .grn-transit-node {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    min-width: 0;
+    flex: 0 1 230px;
+}
+
+#grnAppRoot .grn-transit-node.is-dest {
+    justify-content: flex-end;
+    text-align: right;
+}
+
+#grnAppRoot .grn-transit-node-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 16px;
+    background: #f3e8ff;
+    color: var(--brand-primary, #9333ea);
+}
+
+#grnAppRoot .grn-transit-node.is-dest .grn-transit-node-icon {
+    background: #dcfce7;
+    color: #059669;
+}
+
+#grnAppRoot .grn-transit-node-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+#grnAppRoot .grn-transit-node-kicker {
+    font-size: 9.5px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    color: #64748b;
+    line-height: 1.1;
+}
+
+#grnAppRoot .grn-transit-node-text strong {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #0f172a;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#grnAppRoot .grn-transit-track-wrap {
+    flex: 1 1 auto;
+    min-width: 140px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+#grnAppRoot .grn-transit-track {
+    position: relative;
+    width: 100%;
+    height: 6px;
+    border-radius: 999px;
+    background: #e9d5ff;
+    overflow: visible;
+}
+
+#grnAppRoot .grn-transit-fill {
+    width: 0%;
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #9333ea 0%, #7c3aed 55%, #10b981 100%);
+}
+
+#grnAppRoot .grn-transit-shuttle {
+    position: absolute;
+    top: 50%;
+    left: 0%;
+    transform: translate(0, -50%);
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: var(--gradient-primary, linear-gradient(135deg, #9333ea, #7e22ce));
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    box-shadow: 0 4px 12px rgba(126, 34, 206, 0.35);
+}
+
+#grnAppRoot .grn-stage-transit-banner.is-animating .grn-transit-fill {
+    animation: grnTransitFillExpand 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+#grnAppRoot .grn-stage-transit-banner.is-animating .grn-transit-shuttle {
+    animation: grnShuttleMove 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+#grnAppRoot .grn-transit-stage-chip {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #6b21a8;
+    background: #f3e8ff;
+    padding: 1px 8px;
+    border-radius: 999px;
+}
+
+#grnAppRoot #grnLifecycleProgressBar.is-transiting .rfq-chevron-step.is-active {
+    animation: grnChevronReceivePulse 0.65s ease-out;
+}
+
+#grnAppRoot #intakeTable tbody tr.grn-row-transit-wave td {
+    animation: grnRowTransitWave 0.62s ease-out;
+}
+
+@keyframes grnTransitBannerEnter {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes grnTransitFillExpand {
+    from { width: 8%; }
+    to { width: 100%; }
+}
+
+@keyframes grnShuttleMove {
+    0% { left: 0%; transform: translate(0, -50%) scale(0.95); }
+    50% { transform: translate(-50%, -50%) scale(1.06); }
+    100% { left: 100%; transform: translate(-100%, -50%) scale(1); }
+}
+
+@keyframes grnChevronReceivePulse {
+    0% { filter: brightness(1); transform: scale(0.98); }
+    50% { filter: brightness(1.12); transform: scale(1.03); }
+    100% { filter: brightness(1); transform: scale(1); }
+}
+
+@keyframes grnRowTransitWave {
+    0% { background-color: #faf5ff; transform: translateX(0); }
+    35% { background-color: #f3e8ff; transform: translateX(4px); }
+    100% { background-color: transparent; transform: translateX(0); }
+}
+
+/* ============================================================================
+   BACKORDER STAGE PIPELINE BANNER & RMS RESOLUTION MODAL (/ux-skill)
+   ============================================================================ */
+#grnAppRoot .grn-backorder-stage-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 14px;
+    margin-bottom: 12px;
+    border-radius: 12px;
+    border: 1px solid #e9d5ff;
+    background: linear-gradient(90deg, #faf5ff 0%, #ffffff 100%);
+    flex-wrap: wrap;
+}
+
+#grnAppRoot .grn-backorder-stage-banner[hidden],
+#grnAppRoot #btnStartNextBackorderStage[hidden] {
+    display: none !important;
+}
+
+#grnAppRoot .grn-bo-banner-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+#grnAppRoot .grn-bo-banner-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    background: #f3e8ff;
+    color: var(--brand-primary, #9333ea);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+#grnAppRoot .grn-bo-banner-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+#grnAppRoot .grn-bo-banner-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    font-size: 12.5px;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+#grnAppRoot .grn-bo-banner-flow-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: #f3e8ff;
+    color: #7e22ce;
+    border: 1px solid #e9d5ff;
+    font-size: 10.5px;
+    font-weight: 700;
+}
+
+#grnAppRoot .grn-bo-banner-sub {
+    margin: 0;
+    font-size: 11.5px;
+    color: #475569;
+    font-variant-numeric: tabular-nums;
+}
+
+#grnAppRoot .grn-bo-modal-card {
+    width: min(560px, 94vw);
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 24px 54px rgba(15, 23, 42, 0.24);
+}
+
+#grnAppRoot .grn-bo-modal-body {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+#grnAppRoot .grn-bo-flow-box {
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: #faf5ff;
+    border: 1px solid #e9d5ff;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+#grnAppRoot .grn-bo-section-kicker {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    color: #7e22ce;
+}
+
+#grnAppRoot .grn-bo-stage-flow {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+#grnAppRoot .grn-bo-stage-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: #ffffff;
+    border: 1px solid #d8b4fe;
+    color: #4c1d95;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+#grnAppRoot .grn-bo-stage-pill.is-active-stage {
+    background: var(--gradient-primary, linear-gradient(135deg, #9333ea, #7e22ce));
+    border-color: #7e22ce;
+    color: #ffffff;
+}
+
+#grnAppRoot .grn-bo-stage-arrow {
+    color: #9333ea;
+    font-size: 12px;
+}
+
+#grnAppRoot .grn-bo-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+}
+
+#grnAppRoot .grn-bo-kpi-card {
+    padding: 9px 11px;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+#grnAppRoot .grn-bo-kpi-card.is-moving {
+    background: #ecfdf5;
+    border-color: #a7f3d0;
+}
+
+#grnAppRoot .grn-bo-kpi-card.is-shortage {
+    background: #fffbeb;
+    border-color: #fde68a;
+}
+
+#grnAppRoot .grn-bo-kpi-label {
+    font-size: 10.5px;
+    font-weight: 600;
+    color: #64748b;
+}
+
+#grnAppRoot .grn-bo-kpi-val {
+    font-size: 15px;
+    font-weight: 800;
+    color: #0f172a;
+    font-variant-numeric: tabular-nums;
+}
+
+#grnAppRoot .grn-bo-kpi-card.is-moving .grn-bo-kpi-val {
+    color: #047857;
+}
+
+#grnAppRoot .grn-bo-kpi-card.is-shortage .grn-bo-kpi-val {
+    color: #b45309;
+}
+
+#grnAppRoot .grn-bo-lines-list {
+    max-height: 128px;
+    overflow-y: auto;
+    border: 1px solid #e2e8f0;
+    border-radius: 9px;
+    background: #ffffff;
+}
+
+#grnAppRoot .grn-bo-line-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 7px 10px;
+    font-size: 11.5px;
+    border-bottom: 1px solid #f1f5f9;
+    font-variant-numeric: tabular-nums;
+}
+
+#grnAppRoot .grn-bo-line-row:last-child {
+    border-bottom: none;
+}
+
+#grnAppRoot .grn-bo-line-name {
+    font-weight: 700;
+    color: #0f172a;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#grnAppRoot .grn-bo-line-delta {
+    flex-shrink: 0;
+    font-weight: 700;
+    color: #b45309;
+}
+
+#grnAppRoot .grn-bo-options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+#grnAppRoot .grn-bo-option-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    width: 100%;
+    padding: 11px 12px;
+    border-radius: 11px;
+    border: 1.5px solid #e2e8f0;
+    background: #ffffff;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.14s ease, background-color 0.14s ease, box-shadow 0.14s ease;
+}
+
+#grnAppRoot .grn-bo-option-card:hover {
+    border-color: #c084fc;
+    background: #faf5ff;
+}
+
+#grnAppRoot .grn-bo-option-card.is-selected {
+    border-color: var(--brand-primary, #9333ea);
+    background: #faf5ff;
+    box-shadow: 0 0 0 3px rgba(147, 51, 234, 0.12);
+}
+
+#grnAppRoot .grn-bo-opt-radio {
+    font-size: 18px;
+    color: #94a3b8;
+    margin-top: 1px;
+    flex-shrink: 0;
+}
+
+#grnAppRoot .grn-bo-option-card.is-selected .grn-bo-opt-radio {
+    color: var(--brand-primary, #9333ea);
+}
+
+#grnAppRoot .grn-bo-opt-content {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+#grnAppRoot .grn-bo-opt-title-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    font-size: 12.5px;
+    color: #0f172a;
+}
+
+#grnAppRoot .grn-bo-rec-pill {
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: #f3e8ff;
+    color: #7e22ce;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+#grnAppRoot .grn-bo-warn-pill {
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: #fef3c7;
+    color: #92400e;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+#grnAppRoot .grn-bo-opt-desc {
+    font-size: 11.5px;
+    color: #475569;
+    line-height: 1.4;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #grnAppRoot .grn-stage-transit-banner,
+    #grnAppRoot .grn-stage-transit-banner.is-animating .grn-transit-fill,
+    #grnAppRoot .grn-stage-transit-banner.is-animating .grn-transit-shuttle,
+    #grnAppRoot #grnLifecycleProgressBar.is-transiting .rfq-chevron-step.is-active,
+    #grnAppRoot #intakeTable tbody tr.grn-row-transit-wave td {
+        animation: none !important;
+        transition: none !important;
+    }
+}

@@ -23,6 +23,9 @@ window.StockInStore = {
     activeRouteStepIndex: 0,
     unlockedRouteStepIndex: 0,
     completedRouteSteps: [],
+    backorderPolicy: 'CREATE_BACKORDER',
+    confirmedShortageSignature: null,
+    pendingBackorderContinuation: null,
     qaInspectionState: {
         verified: true,
         tempC: '2.4',
@@ -1324,7 +1327,43 @@ window.resumeGrnDraft = function() {
             if (notes) notes.value = draft.deliveryNotes;
         }
 
-        window.StockInStore.intakeItems = draft.items || [];
+        const rawItems = Array.isArray(draft.items) ? draft.items : [];
+        let reconciledNotice = null;
+        if (draft.poNumber) {
+            const livePo = (window.StockInStore.purchaseOrders || []).find(p => p.po_number === draft.poNumber);
+            if (livePo) {
+                const liveStatusUpper = String(livePo.status || '').toUpperCase();
+                if (liveStatusUpper === 'FULLY RECEIVED' || liveStatusUpper === 'FULFILLED') {
+                    localStorage.removeItem('rms_grn_draft_v1');
+                    const banner = document.getElementById('grnResumeBanner');
+                    if (banner) banner.hidden = true;
+                    openPoInIntakeBuilder(livePo.po_number, true);
+                    showGrnToast(`Offline draft discarded: ${livePo.po_number} was already Fully Received.`, 'warning');
+                    return;
+                }
+                const liveLines = Array.isArray(livePo.items) ? livePo.items : [];
+                rawItems.forEach(it => {
+                    const liveLine = liveLines.find(pl =>
+                        (it.purchase_order_item_id && pl.id === it.purchase_order_item_id) || pl.sku === it.sku
+                    );
+                    if (liveLine) {
+                        const livePrev = Number(liveLine.received_quantity || 0);
+                        const ordered = Number(liveLine.quantity ?? it.ordered_qty ?? 0);
+                        const remaining = Math.max(0, ordered - livePrev);
+                        if (Number(it.prev_recv_qty || 0) !== livePrev) {
+                            reconciledNotice = `Reconciled offline draft with latest receipts on ${livePo.po_number}.`;
+                        }
+                        it.purchase_order_item_id = liveLine.id ?? it.purchase_order_item_id ?? null;
+                        it.ordered_qty = ordered;
+                        it.prev_recv_qty = livePrev;
+                        it.receive_now = Math.min(Number(it.receive_now || 0), remaining);
+                        it.balance = Math.max(0, remaining - it.receive_now);
+                    }
+                });
+            }
+        }
+
+        window.StockInStore.intakeItems = rawItems;
 
         const banner = document.getElementById('grnResumeBanner');
         if (banner) banner.hidden = true;
@@ -1334,7 +1373,7 @@ window.resumeGrnDraft = function() {
         updateFulfillmentProgress();
         updateLiveMockup();
         updateTimelinessBadge();
-        showGrnToast('Resumed intake draft successfully');
+        showGrnToast(reconciledNotice || 'Resumed intake draft successfully', reconciledNotice ? 'warning' : 'success');
     } catch (e) {
         console.error('Draft resume failed', e);
     }
@@ -1793,6 +1832,234 @@ window.returnToActiveGrnStep = function() {
     selectGrnRouteStep(unlockedIdx);
 };
 
+let grnStageTransitTimer = null;
+
+function getShortageLinesAndSignature() {
+    const items = Array.isArray(window.StockInStore.intakeItems) ? window.StockInStore.intakeItems : [];
+    const shortLines = [];
+    let totalExpected = 0;
+    let totalReceiving = 0;
+    let totalShortage = 0;
+
+    items.forEach(it => {
+        const ordered = Number(it.ordered_qty || 0);
+        const prev = Number(it.prev_recv_qty || 0);
+        const remaining = Math.max(0, ordered - prev);
+        const recvNow = Math.max(0, Number(it.receive_now || 0));
+        if (ordered > 0 && remaining > 0) {
+            totalExpected += remaining;
+            totalReceiving += recvNow;
+            if (recvNow < remaining) {
+                const shortQty = Math.max(0, remaining - recvNow);
+                totalShortage += shortQty;
+                shortLines.push({
+                    sku: it.sku || '',
+                    name: it.name || it.sku || 'Item',
+                    uom: it.uom || 'PCS',
+                    remaining,
+                    receiving: recvNow,
+                    shortage: shortQty,
+                });
+            }
+        }
+    });
+
+    const isPartial = !!window.StockInStore.activePoNumber && shortLines.length > 0;
+    const signature = isPartial
+        ? `${window.StockInStore.activePoNumber}|${shortLines.map(l => `${l.sku}:${l.receiving.toFixed(4)}/${l.remaining.toFixed(4)}`).join(';')}`
+        : null;
+
+    return { isPartial, shortLines, totalExpected, totalReceiving, totalShortage, signature };
+}
+
+function getGrnWorkflowStageNames(mt) {
+    const steps = getActiveRouteSteps(mt || getActiveInboundMovementType());
+    const hasQc = steps.some(s => isStepQaInspection(s, mt));
+    return hasQc
+        ? ['Vendor', 'Receipt', 'QC Inspection', 'Stocks']
+        : ['Vendor', 'Receipt', 'Stocks'];
+}
+
+window.triggerGrnStageMovementSimulation = function(fromLabel, toLabel, curIdx, nextIdx, totalSteps) {
+    const banner = document.getElementById('grnStageTransitBanner');
+    const fromEl = document.getElementById('grnTransitFromLabel');
+    const toEl = document.getElementById('grnTransitToLabel');
+    const unitsEl = document.getElementById('grnTransitUnitsBadge');
+    const chipEl = document.getElementById('grnTransitStageChip');
+
+    const totalMoving = (window.StockInStore.intakeItems || []).reduce((acc, it) => acc + Math.max(0, Number(it.receive_now || 0)), 0);
+
+    if (fromEl) fromEl.textContent = fromLabel || 'Vendor / Origin';
+    if (toEl) toEl.textContent = toLabel || 'Next Stage';
+    if (unitsEl) unitsEl.textContent = `${totalMoving.toFixed(2)} Units`;
+    if (chipEl) {
+        chipEl.textContent = nextIdx >= totalSteps
+            ? 'Final Putaway → Stocks'
+            : `Stage ${curIdx + 1} → Stage ${nextIdx + 1}`;
+    }
+
+    if (banner) {
+        banner.hidden = false;
+        banner.classList?.remove('is-animating');
+        if (typeof banner.offsetWidth !== 'undefined') void banner.offsetWidth;
+        banner.classList?.add('is-animating');
+        clearTimeout(grnStageTransitTimer);
+        grnStageTransitTimer = setTimeout(() => {
+            banner.classList?.remove('is-animating');
+            banner.hidden = true;
+        }, 1250);
+    }
+
+    const pipeline = document.getElementById('grnLifecycleProgressBar');
+    if (pipeline) {
+        pipeline.classList?.remove('is-transiting');
+        if (typeof pipeline.offsetWidth !== 'undefined') void pipeline.offsetWidth;
+        pipeline.classList?.add('is-transiting');
+        setTimeout(() => pipeline.classList?.remove('is-transiting'), 700);
+    }
+
+    if (typeof document !== 'undefined' && typeof document.querySelectorAll === 'function') {
+        const rows = document.querySelectorAll('#intakeTableBody tr');
+        rows.forEach((tr, idx) => {
+            tr.classList?.remove('grn-row-transit-wave');
+            if (typeof tr.offsetWidth !== 'undefined') void tr.offsetWidth;
+            tr.style.animationDelay = `${Math.min(idx * 35, 220)}ms`;
+            tr.classList?.add('grn-row-transit-wave');
+        });
+    }
+};
+
+window.syncGrnBackorderStageBanner = function() {
+    const banner = document.getElementById('grnBackorderStageBanner');
+    if (!banner) return;
+
+    const poNum = window.StockInStore.activePoNumber;
+    const po = poNum ? (window.StockInStore.purchaseOrders || []).find(p => p.po_number === poNum) : null;
+    const mt = getActiveInboundMovementType();
+    const stageChain = getGrnWorkflowStageNames(mt).join(' → ');
+    const flowEl = document.getElementById('grnBackorderFlowStepsText');
+    const titleEl = document.getElementById('grnBackorderBannerTitle');
+    const textEl = document.getElementById('grnBackorderBannerText');
+    const startBtn = document.getElementById('btnStartNextBackorderStage');
+
+    if (flowEl) flowEl.textContent = stageChain;
+
+    // Case 1: PO is already posted as Partially Received -> offer 1-click Backorder Intake starting at Stage 1
+    if (po && window.StockInStore.isCurrentGrnPosted && po.status === 'Partially Received') {
+        const pendingTotal = (po.items || []).reduce((sum, it) => sum + Math.max(0, Number(it.quantity || 0) - Number(it.received_quantity || 0)), 0);
+        if (pendingTotal > 0) {
+            banner.hidden = false;
+            if (titleEl) titleEl.textContent = `Backorder Queued (${pendingTotal.toFixed(2)} Units Remaining)`;
+            if (textEl) textEl.textContent = `Next backorder delivery for ${po.po_number} will start from Stage 1 (${stageChain}).`;
+            if (startBtn) startBtn.hidden = false;
+            return;
+        }
+    }
+
+    // Case 2: Currently mid-flow with CREATE_BACKORDER policy confirmed on a partial delivery
+    const { isPartial, totalShortage, signature } = getShortageLinesAndSignature();
+    if (poNum && !window.StockInStore.isCurrentGrnPosted && isPartial && window.StockInStore.confirmedShortageSignature === signature && window.StockInStore.backorderPolicy === 'CREATE_BACKORDER') {
+        banner.hidden = false;
+        if (titleEl) titleEl.textContent = `Backorder Active (${totalShortage.toFixed(2)} Units Backordered)`;
+        if (textEl) textEl.textContent = `Current delivery moves through stages now; remainder re-enters at Stage 1 (${stageChain}).`;
+        if (startBtn) startBtn.hidden = true;
+        return;
+    }
+
+    banner.hidden = true;
+    if (startBtn) startBtn.hidden = true;
+};
+
+window.startBackorderStageFlow = function() {
+    const poNum = window.StockInStore.activePoNumber;
+    if (!poNum) return;
+    window.StockInStore.backorderPolicy = 'CREATE_BACKORDER';
+    window.StockInStore.confirmedShortageSignature = null;
+    openPoInIntakeBuilder(poNum, false);
+    showGrnToast(`Started Backorder Intake for ${poNum} at Stage 1 (Vendor → Receipt)`);
+};
+
+window.selectGrnBoPolicyOption = function(policy) {
+    const chosen = policy === 'SHORT_CLOSE' ? 'SHORT_CLOSE' : 'CREATE_BACKORDER';
+    window.StockInStore.backorderPolicy = chosen;
+    const modal = document.getElementById('grnBackorderModal');
+    if (modal && typeof modal.querySelectorAll === 'function') {
+        modal.querySelectorAll('.grn-bo-option-card').forEach(card => {
+            const isSel = card.getAttribute('data-bo-policy') === chosen;
+            card.classList?.toggle('is-selected', isSel);
+            card.setAttribute('aria-checked', isSel ? 'true' : 'false');
+            const iconWrap = card.querySelector('.grn-bo-opt-radio i');
+            if (iconWrap) {
+                iconWrap.className = isSel ? 'ph-fill ph-check-circle' : 'ph ph-circle';
+            }
+        });
+    }
+};
+
+window.openGrnBackorderModal = function(stageContextLabel, onConfirmCallback) {
+    const modal = document.getElementById('grnBackorderModal');
+    const summary = getShortageLinesAndSignature();
+    if (!modal || !summary.isPartial) {
+        if (typeof onConfirmCallback === 'function') onConfirmCallback();
+        return;
+    }
+
+    window.StockInStore.pendingBackorderContinuation = onConfirmCallback || null;
+
+    const mt = getActiveInboundMovementType();
+    const stageNames = getGrnWorkflowStageNames(mt);
+    const activeIdx = Math.max(0, Math.min(Number(window.StockInStore.activeRouteStepIndex || 0), stageNames.length - 1));
+
+    const subEl = document.getElementById('grnBoModalSubtitle');
+    if (subEl) subEl.textContent = `${window.StockInStore.activePoNumber} • ${stageContextLabel || 'Stage Transition'}`;
+
+    const flowEl = document.getElementById('grnBoModalStageFlow');
+    if (flowEl) {
+        flowEl.innerHTML = stageNames.map((name, i) => {
+            const activeCls = i === activeIdx || i === activeIdx + 1 ? 'is-active-stage' : '';
+            const arrow = i < stageNames.length - 1 ? '<i class="ph ph-arrow-right grn-bo-stage-arrow" aria-hidden="true"></i>' : '';
+            return `<span class="grn-bo-stage-pill ${activeCls}">${escapeHtml(name)}</span>${arrow}`;
+        }).join('');
+    }
+
+    const expEl = document.getElementById('grnBoExpectedUnits');
+    const recEl = document.getElementById('grnBoReceivingUnits');
+    const shEl = document.getElementById('grnBoShortageUnits');
+    if (expEl) expEl.textContent = summary.totalExpected.toFixed(2);
+    if (recEl) recEl.textContent = summary.totalReceiving.toFixed(2);
+    if (shEl) shEl.textContent = summary.totalShortage.toFixed(2);
+
+    const listEl = document.getElementById('grnBoLinesList');
+    if (listEl) {
+        listEl.innerHTML = summary.shortLines.map(l => `
+            <div class="grn-bo-line-row">
+                <span class="grn-bo-line-name">${escapeHtml(l.sku ? `${l.sku} — ${l.name}` : l.name)}</span>
+                <span class="grn-bo-line-delta">Receiving ${l.receiving.toFixed(2)} / ${l.remaining.toFixed(2)} ${escapeHtml(l.uom)} · Backorder: ${l.shortage.toFixed(2)}</span>
+            </div>
+        `).join('');
+    }
+
+    selectGrnBoPolicyOption(window.StockInStore.backorderPolicy || 'CREATE_BACKORDER');
+    modal.style.display = 'flex';
+};
+
+window.closeGrnBackorderModal = function() {
+    const modal = document.getElementById('grnBackorderModal');
+    if (modal) modal.style.display = 'none';
+    window.StockInStore.pendingBackorderContinuation = null;
+};
+
+window.confirmGrnBackorderModalChoice = function() {
+    const { signature } = getShortageLinesAndSignature();
+    window.StockInStore.confirmedShortageSignature = signature;
+    const modal = document.getElementById('grnBackorderModal');
+    if (modal) modal.style.display = 'none';
+    const cb = window.StockInStore.pendingBackorderContinuation;
+    window.StockInStore.pendingBackorderContinuation = null;
+    syncGrnBackorderStageBanner();
+    if (typeof cb === 'function') cb();
+};
+
 function advanceGrnRouteStep() {
     const mt = getActiveInboundMovementType();
     const steps = getActiveRouteSteps(mt);
@@ -1818,11 +2085,16 @@ function advanceGrnRouteStep() {
     renderGrnChevronPipeline(mt);
     renderIntakeTable();
     updateLiveMockup();
+    syncGrnBackorderStageBanner();
     scheduleDraftSave();
 
     const completedLabel = getGrnStepShortLabel(steps[curIdx], curIdx, steps.length);
     const nextLabel = getGrnStepShortLabel(nextStep, nextIdx, steps.length);
-    showGrnToast(`Step ${curIdx + 1} (${completedLabel}) confirmed. Advanced to Step ${nextIdx + 1}: ${nextLabel}`);
+    const fromZone = curIdx === 0 ? `Vendor → ${steps[curIdx]?.to_area || completedLabel}` : (steps[curIdx]?.to_area || completedLabel);
+    const toZone = nextStep?.to_area || nextLabel;
+    triggerGrnStageMovementSimulation(fromZone, toZone, curIdx, nextIdx, steps.length);
+
+    showGrnToast(`Moved stock to Step ${nextIdx + 1}: ${nextLabel}`);
 }
 
 window.handleGrnSecondaryAction = function() {
@@ -1877,6 +2149,23 @@ window.handleGrnPrimaryStepAction = function() {
     const mt = getActiveInboundMovementType();
     const steps = getActiveRouteSteps(mt);
     const activeIdx = Math.max(0, Math.min(Number(window.StockInStore.activeRouteStepIndex || 0), steps.length - 1));
+    const currentStepLabel = getGrnStepShortLabel(steps[activeIdx], activeIdx, steps.length);
+
+    // Trigger Backorder / Partial Shipment Resolution at the earliest stage where shortage occurs (Vendor > Receipt > QC > Stocks)
+    const shortageSummary = getShortageLinesAndSignature();
+    if (shortageSummary.isPartial && window.StockInStore.confirmedShortageSignature !== shortageSummary.signature) {
+        const boModal = document.getElementById('grnBackorderModal');
+        if (boModal) {
+            openGrnBackorderModal(`Stage ${activeIdx + 1}: ${currentStepLabel}`, () => {
+                if (activeIdx < steps.length - 1) {
+                    advanceGrnRouteStep();
+                } else {
+                    confirmAndCommitStockIntake(true);
+                }
+            });
+            return;
+        }
+    }
 
     if (activeIdx < steps.length - 1) {
         advanceGrnRouteStep();
@@ -1926,6 +2215,13 @@ window.onIntakeDestinationLocationChanged = function(val) {
 };
 
 window.openPoInIntakeBuilder = function(poNumber, viewCompleted = false) {
+    window.StockInStore.isCurrentGrnPosted = false;
+    window.StockInStore.lastPostedGrnNumber = null;
+    window.StockInStore.backorderPolicy = 'CREATE_BACKORDER';
+    window.StockInStore.confirmedShortageSignature = null;
+    window.StockInStore.pendingBackorderContinuation = null;
+    const transitBanner = document.getElementById('grnStageTransitBanner');
+    if (transitBanner) transitBanner.hidden = true;
     const po = window.StockInStore.purchaseOrders.find(p => p.po_number === poNumber);
     if (!po) return;
 
@@ -2020,10 +2316,12 @@ window.openPoInIntakeBuilder = function(poNumber, viewCompleted = false) {
         const lotEnabled = trackingMode === 'lots';
 
         return {
+            purchase_order_item_id: it.id || null,
             sku: it.sku || `SKU-${idx + 1}`,
             name: cleanName,
             specs: cleanSpecs,
             uom: it.uom || matchedProd?.uom || 'PCS',
+            base_uom: matchedProd?.uom || it.uom || 'PCS',
             ordered_qty: ordered,
             prev_recv_qty: displayPrevRecv,
             receive_now: displayReceiveNow,
@@ -2050,6 +2348,7 @@ window.openPoInIntakeBuilder = function(poNumber, viewCompleted = false) {
     }
 
     updateTimelinessBadge();
+    syncGrnBackorderStageBanner();
     switchGrnMode('builder');
     if (isCompletedView) {
         showGrnToast(`Viewing completed GRN (${window.StockInStore.lastPostedGrnNumber}) for ${po.po_number}`);
@@ -2069,6 +2368,12 @@ window.resetIntakeSheet = function(addBlankRow = true) {
     window.StockInStore.activePoNumber = null;
     window.StockInStore.isCurrentGrnPosted = false;
     window.StockInStore.lastPostedGrnNumber = null;
+    window.StockInStore.backorderPolicy = 'CREATE_BACKORDER';
+    window.StockInStore.confirmedShortageSignature = null;
+    window.StockInStore.pendingBackorderContinuation = null;
+    const transitBanner = document.getElementById('grnStageTransitBanner');
+    if (transitBanner) transitBanner.hidden = true;
+    syncGrnBackorderStageBanner();
 
     const poSelect = document.getElementById('intakePoSelect');
     if (poSelect) poSelect.value = '';
@@ -4271,12 +4576,20 @@ window.confirmAndCommitStockIntake = function(fromFinalGate = false) {
     proceedWithPartialCheck();
 
     function proceedWithPartialCheck() {
-        const isPartial = items.some(it => {
-            const remaining = Math.max(0, it.ordered_qty - it.prev_recv_qty);
-            return it.ordered_qty > 0 && it.receive_now < remaining;
-        });
-
-        if (isPartial && window.StockInStore.activePoNumber) {
+        const shortage = getShortageLinesAndSignature();
+        if (shortage.isPartial) {
+            // If user already chose policy in earlier stage (Vendor > Receipt > QC) for these exact quantities, proceed directly!
+            if (window.StockInStore.confirmedShortageSignature === shortage.signature) {
+                executeIntakeSubmission(window.StockInStore.backorderPolicy || 'CREATE_BACKORDER');
+                return;
+            }
+            const boModal = document.getElementById('grnBackorderModal');
+            if (boModal) {
+                openGrnBackorderModal('Final Putaway → Stocks', () => {
+                    executeIntakeSubmission(window.StockInStore.backorderPolicy || 'CREATE_BACKORDER');
+                });
+                return;
+            }
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
                     title: 'Partial Shipment Detected',
@@ -4304,7 +4617,7 @@ window.confirmAndCommitStockIntake = function(fromFinalGate = false) {
             }
         }
 
-        executeIntakeSubmission('CREATE_BACKORDER');
+        executeIntakeSubmission(window.StockInStore.backorderPolicy || 'CREATE_BACKORDER');
     }
 };
 
@@ -4335,17 +4648,44 @@ function executeIntakeSubmission(backorderPolicy) {
     const matchedWh = (window.StockInStore.warehouses || []).find(w => w.id === warehouseId);
     const deliveryLocation = whSelect?.options?.[whSelect.selectedIndex]?.text || matchedWh?.name || destinationLocation || warehouseId;
 
-    const activeLines = window.StockInStore.intakeItems.filter(it => it.receive_now > 0).map(it => ({
-        sku: it.sku,
-        name: it.name,
-        unit: it.uom,
-        received_qty: it.receive_now,
-        unit_cost: Number(it.unit_cost || 0),
-        storage_location: destinationLocation,
-        lot_number: it.lot_number,
-        expiry_date: it.expiry_date,
-        notes: it.notes || (notesInput?.value || null),
-    }));
+    const resolveClientUomMultiplier = (fromUom, toUom) => {
+        const f = String(fromUom || '').trim().toUpperCase();
+        const t = String(toUom || '').trim().toUpperCase();
+        if (!f || !t || f === t) return 1.0;
+        if (window.UomRegistry && window.UomRegistry.isLoaded && typeof window.UomRegistry.convert === 'function') {
+            const converted = window.UomRegistry.convert(1, f, t);
+            if (converted !== null && isFinite(converted) && converted > 0) return Number(converted);
+        }
+        const factors = { MG: 0.001, G: 1, GRAM: 1, KG: 1000, LB: 453.59237, SACK: 25000, ML: 1, L: 1000, LITER: 1000, GAL: 3785.41, PCS: 1, DOZ: 12 };
+        const dims = { MG: 'M', G: 'M', GRAM: 'M', KG: 'M', LB: 'M', SACK: 'M', ML: 'V', L: 'V', LITER: 'V', GAL: 'V', PCS: 'C', DOZ: 'C' };
+        if (dims[f] && dims[f] === dims[t] && factors[f] && factors[t]) {
+            return factors[f] / factors[t];
+        }
+        return 1.0;
+    };
+
+    const activeLines = window.StockInStore.intakeItems
+        .filter(it => (Number(it.receive_now || 0) + Number(it.rejected_qty || 0)) > 0)
+        .map(it => {
+            const prod = (window.StockInStore.products || []).find(p => p.sku === it.sku || p.item_code === it.sku);
+            const baseUom = it.base_uom || prod?.uom || it.uom;
+            const multiplier = resolveClientUomMultiplier(it.uom, baseUom);
+            return {
+                purchase_order_item_id: it.purchase_order_item_id || null,
+                sku: it.sku,
+                name: it.name,
+                unit: it.uom,
+                uom_multiplier: multiplier,
+                received_qty: Number(it.receive_now || 0),
+                rejected_qty: Number(it.rejected_qty || 0),
+                rejection_reason: it.rejection_reason || null,
+                unit_cost: Number(it.unit_cost || 0),
+                storage_location: destinationLocation,
+                lot_number: it.lot_number,
+                expiry_date: it.expiry_date,
+                notes: it.notes || (notesInput?.value || null),
+            };
+        });
 
     const clientUuid = `intake-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
@@ -4395,7 +4735,14 @@ function executeIntakeSubmission(backorderPolicy) {
         const postedEta = normalizeIsoDate(document.getElementById('intakeExpectedDelivery')?.value || '');
 
         if (poNumber) {
-            const po = window.StockInStore.purchaseOrders.find(p => p.po_number === poNumber);
+        window.StockInStore.isCurrentGrnPosted = false;
+    window.StockInStore.lastPostedGrnNumber = null;
+    window.StockInStore.backorderPolicy = 'CREATE_BACKORDER';
+    window.StockInStore.confirmedShortageSignature = null;
+    window.StockInStore.pendingBackorderContinuation = null;
+    const transitBanner = document.getElementById('grnStageTransitBanner');
+    if (transitBanner) transitBanner.hidden = true;
+    const po = window.StockInStore.purchaseOrders.find(p => p.po_number === poNumber);
             if (po) {
                 let allDone = true;
                 activeLines.forEach(al => {
@@ -4447,6 +4794,15 @@ function executeIntakeSubmission(backorderPolicy) {
         updateLiveMockup();
         renderOrdersQueue();
         renderKpis();
+        syncGrnBackorderStageBanner();
+        const finalStepObj = mtSteps[mtSteps.length - 1] || {};
+        triggerGrnStageMovementSimulation(
+            finalStepObj.from_area || 'Receiving / QA',
+            finalStepObj.to_area || 'Stocks Ledger',
+            Math.max(0, mtSteps.length - 1),
+            mtSteps.length,
+            mtSteps.length
+        );
 
         if (typeof Swal !== 'undefined') {
             Swal.fire({
@@ -4506,6 +4862,11 @@ document.addEventListener('keydown', (e) => {
             openGrnDocumentPreview();
         }
     } else if (e.key === 'Escape') {
+        const boModal = document.getElementById('grnBackorderModal');
+        if (boModal && boModal.style.display !== 'none') {
+            closeGrnBackorderModal();
+            return;
+        }
         const lotModal = document.getElementById('grnLotExpiryModal');
         if (lotModal && lotModal.style.display !== 'none') {
             closeLotExpiryModal();

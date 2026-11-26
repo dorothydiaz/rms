@@ -218,5 +218,152 @@ class StockInModuleTest extends TestCase
         $grn = GoodsReceipt::where('po_number', $poNumber)->first();
         $this->assertNotNull($grn);
         $this->assertEquals("Fulfillment for PO {$poNumber}", $grn->notes);
+
+        // FIX-02: Subsequent receipt on already Fully Received PO is blocked (422)
+        $dupResp = $this->actingAs($this->user)->postJson(route('inventory.api.receive-stock'), $payload);
+        $dupResp->assertStatus(422);
+
+        // FIX-05: Deleting a PO that has posted Goods Receipts is blocked (422)
+        $delResp = $this->actingAs($this->user)->postJson(route('purchase.api.orders.batch-delete'), [
+            'po_numbers' => [$poNumber],
+            'force' => true,
+        ]);
+        $delResp->assertStatus(422);
+    }
+
+    public function test_multi_unit_uom_conversion_and_moving_average_cost_and_quarantine_split(): void
+    {
+        $bean = InventoryItem::create([
+            'sku' => 'BEAN-ARAB-01',
+            'name' => 'Single-Origin Arabica Green Beans',
+            'category' => 'Coffee Beans',
+            'uom' => 'g',
+            'cost_price' => 0.05, // ₱0.05/g opening
+            'selling_price' => 1.50,
+            'current_stock' => 35000.00, // 35,000 g opening
+            'min_stock' => 50000.00,
+            'max_stock' => 300000.00,
+            'storage_location' => 'Main Warehouse',
+            'is_active' => true,
+        ]);
+
+        $poNumber = 'PO-UOM-' . uniqid();
+        $po = PurchaseOrder::create([
+            'po_number' => $poNumber,
+            'po_type' => 'vendor',
+            'vendor_id' => $this->testVendor->vendor_code,
+            'vendor_name' => $this->testVendor->legal_name,
+            'vendor_trade_name' => $this->testVendor->trade_name,
+            'order_date' => now()->toDateString(),
+            'expected_delivery' => now()->addDays(2)->toDateString(),
+            'delivery_location' => 'Main Warehouse',
+            'status' => 'Approved / Issued',
+            'gross_total' => 12000.00,
+        ]);
+
+        PurchaseOrderItem::create([
+            'purchase_order_id' => $po->id,
+            'sku' => 'BEAN-ARAB-01',
+            'item_name' => $bean->name,
+            'uom' => 'SACK',
+            'quantity' => 10.00,
+            'unit_price' => 1200.00, // ₱1,200 / SACK (25,000 g => ₱0.048/g)
+            'total_amount' => 12000.00,
+            'received_quantity' => 0.00,
+            'status' => 'PENDING',
+        ]);
+
+        // Unapproved >2% price variance (₱1,260 = +5%) is blocked unless supervisor_override + reason
+        $blockedPricePayload = [
+            'po_number' => $poNumber,
+            'vendor_name' => $this->testVendor->trade_name,
+            'vendor_id' => $this->testVendor->vendor_code,
+            'delivery_location' => 'Main Warehouse',
+            'items' => [[
+                'sku' => 'BEAN-ARAB-01',
+                'name' => $bean->name,
+                'unit' => 'SACK',
+                'received_qty' => 5,
+                'rejected_qty' => 1,
+                'rejection_reason' => 'Moisture damage on 1 sack',
+                'unit_cost' => 1260.00,
+            ]],
+        ];
+        $this->actingAs($this->user)->postJson(route('inventory.api.receive-stock'), $blockedPricePayload)->assertStatus(422);
+
+        // With supervisor_override + reason_code, split 5 SACK accepted (+125,000 g) & 1 SACK quarantined
+        $approvedPayload = $blockedPricePayload + [
+            'supervisor_override' => true,
+            'variance_reason_code' => 'SUP-01: Approved emergency fuel surcharge',
+        ];
+        $okResp = $this->actingAs($this->user)->postJson(route('inventory.api.receive-stock'), $approvedPayload);
+        $okResp->assertStatus(200);
+        $okResp->assertJsonPath('success', true);
+
+        // Verify base UoM stock: 35,000 g + (5 * 25,000 g) = 160,000 g (quarantined sack does not inflate sellable stock)
+        $bean->refresh();
+        $this->assertEquals(160000.00, (float) $bean->current_stock);
+        // Opening (35000*0.05 = 1750) + Incoming (125000*(1260/25000=0.0504) = 6300) = 8050 / 160000 = 0.0503 -> rounds to 0.05
+        $this->assertEquals(0.05, (float) $bean->cost_price);
+
+        $grnNo = $okResp->json('grn_number');
+        $activeLedger = StockLedger::where('reference_no', $grnNo)->where('transaction_type', 'PURCHASE_RECEIPT')->first();
+        $quarantineLedger = StockLedger::where('reference_no', $grnNo)->where('transaction_type', 'QUARANTINE_HOLD')->first();
+        $this->assertNotNull($activeLedger);
+        $this->assertNotNull($quarantineLedger);
+        $this->assertEquals(125000.00, (float) $activeLedger->quantity_change);
+        $this->assertEquals(6300.00, (float) $activeLedger->total_value);
+        $this->assertEquals(0.00, (float) $quarantineLedger->quantity_change);
+
+        $po->refresh();
+        $this->assertEquals('Partially Received', $po->status);
+    }
+
+    public function test_over_receipt_above_po_quantity_is_blocked_without_override_and_phantom_fulfill_blocked(): void
+    {
+        $poNumber = 'PO-OVR-' . uniqid();
+        $po = PurchaseOrder::create([
+            'po_number' => $poNumber,
+            'po_type' => 'vendor',
+            'vendor_id' => $this->testVendor->vendor_code,
+            'vendor_name' => $this->testVendor->legal_name,
+            'order_date' => now()->toDateString(),
+            'expected_delivery' => now()->addDays(1)->toDateString(),
+            'delivery_location' => 'Main Warehouse',
+            'status' => 'Approved / Issued',
+            'gross_total' => 425.00,
+        ]);
+
+        PurchaseOrderItem::create([
+            'purchase_order_id' => $po->id,
+            'sku' => $this->testProduct->sku,
+            'item_name' => $this->testProduct->name,
+            'uom' => $this->testProduct->uom,
+            'quantity' => 5.00,
+            'unit_price' => 85.00,
+            'total_amount' => 425.00,
+            'received_quantity' => 0.00,
+            'status' => 'PENDING',
+        ]);
+
+        // Direct PO status jump to Fully Received without GRN must be rejected
+        $this->actingAs($this->user)->postJson(route('purchase.api.orders.transition-status'), [
+            'po_number' => $poNumber,
+            'target_status' => 'Fully Received',
+        ])->assertStatus(422);
+
+        // Over-receipt (8 > 5) must be rejected without supervisor_override
+        $this->actingAs($this->user)->postJson(route('inventory.api.receive-stock'), [
+            'po_number' => $poNumber,
+            'vendor_name' => $this->testVendor->trade_name,
+            'delivery_location' => 'Main Warehouse',
+            'items' => [[
+                'sku' => $this->testProduct->sku,
+                'name' => $this->testProduct->name,
+                'unit' => $this->testProduct->uom,
+                'received_qty' => 8,
+                'unit_cost' => 85.00,
+            ]],
+        ])->assertStatus(422);
     }
 }

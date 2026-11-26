@@ -19,6 +19,10 @@ class GoodsReceiptItem extends Model
         'purchasing_uom',
         'uom_multiplier',
         'received_qty',
+        'accepted_qty',
+        'rejected_qty',
+        'rejection_reason',
+        'quarantine_location',
         'base_qty',
         'unit_cost',
         'total_cost',
@@ -28,9 +32,11 @@ class GoodsReceiptItem extends Model
     ];
 
     protected $casts = [
-        'uom_multiplier' => 'decimal:2',
-        'received_qty' => 'decimal:2',
-        'base_qty' => 'decimal:2',
+        'uom_multiplier' => 'decimal:4',
+        'received_qty' => 'decimal:4',
+        'accepted_qty' => 'decimal:4',
+        'rejected_qty' => 'decimal:4',
+        'base_qty' => 'decimal:4',
         'unit_cost' => 'decimal:2',
         'total_cost' => 'decimal:2',
         'expiry_date' => 'date',

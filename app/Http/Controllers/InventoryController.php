@@ -363,6 +363,76 @@ class InventoryController extends Controller
      * - Bottom-up ledger state synchronization
      * - Server-side native user identity stamp
      */
+    /**
+     * Resolve deterministic UoM conversion ratio from source unit to target unit.
+     * Queries active UnitOfMeasure rows first, then falls back to industry standards and explicit multipliers.
+     */
+    private static function resolveUomConversionRatio(?string $fromUom, ?string $toUom, ?float $explicitMultiplier = null): float
+    {
+        if ($explicitMultiplier !== null && $explicitMultiplier > 0 && abs($explicitMultiplier - 1.0) > 0.000001) {
+            return $explicitMultiplier;
+        }
+
+        $fromKey = strtoupper(trim((string) $fromUom));
+        $toKey = strtoupper(trim((string) $toUom));
+
+        $aliasMap = [
+            'GRAM' => 'G', 'GRAMS' => 'G', 'G' => 'G',
+            'KG' => 'KG', 'KILO' => 'KG', 'KILOGRAM' => 'KG', 'KILOGRAMS' => 'KG',
+            'MG' => 'MG', 'MILLIGRAM' => 'MG', 'MILLIGRAMS' => 'MG',
+            'LB' => 'LB', 'LBS' => 'LB', 'POUND' => 'LB', 'POUNDS' => 'LB',
+            'SACK' => 'SACK', 'SACKS' => 'SACK', 'BAG25' => 'SACK',
+            'ML' => 'ML', 'MILLILITER' => 'ML', 'MILLILITRE' => 'ML',
+            'L' => 'L', 'LITER' => 'L', 'LITERS' => 'L', 'LITRE' => 'L', 'LITRES' => 'L',
+            'GAL' => 'GAL', 'GALLON' => 'GAL', 'GALLONS' => 'GAL',
+            'PCS' => 'PCS', 'PC' => 'PCS', 'PIECE' => 'PCS', 'PIECES' => 'PCS', 'UNIT' => 'PCS',
+            'DOZ' => 'DOZ', 'DOZEN' => 'DOZ',
+        ];
+
+        $normFrom = $aliasMap[$fromKey] ?? $fromKey;
+        $normTo = $aliasMap[$toKey] ?? $toKey;
+
+        if ($normFrom === '' || $normTo === '' || $normFrom === $normTo) {
+            return ($explicitMultiplier !== null && $explicitMultiplier > 0) ? $explicitMultiplier : 1.0;
+        }
+
+        // Check active UnitOfMeasure registry when seeded in database
+        try {
+            $units = UnitOfMeasure::where('uom_is_active', true)->get()->keyBy(fn ($u) => strtoupper(trim((string) $u->uom_code)));
+            $fromModel = $units->get($fromKey) ?? $units->get($normFrom);
+            $toModel = $units->get($toKey) ?? $units->get($normTo);
+            if ($fromModel && $toModel && strtoupper((string) $fromModel->uom_category) === strtoupper((string) $toModel->uom_category)) {
+                $fromRatio = (float) $fromModel->base_ratio;
+                $toRatio = (float) $toModel->base_ratio;
+                if ($fromRatio > 0 && $toRatio > 0) {
+                    return $fromRatio / $toRatio;
+                }
+            }
+        } catch (\Throwable $e) {
+            // Fall through to deterministic conversion table
+        }
+
+        // Standard dimensional fallback table (grams, milliliters, pieces)
+        $dimensions = [
+            'MG'   => ['dim' => 'MASS',   'factor' => 0.001],
+            'G'    => ['dim' => 'MASS',   'factor' => 1.0],
+            'KG'   => ['dim' => 'MASS',   'factor' => 1000.0],
+            'LB'   => ['dim' => 'MASS',   'factor' => 453.59237],
+            'SACK' => ['dim' => 'MASS',   'factor' => 25000.0],
+            'ML'   => ['dim' => 'VOLUME', 'factor' => 1.0],
+            'L'    => ['dim' => 'VOLUME', 'factor' => 1000.0],
+            'GAL'  => ['dim' => 'VOLUME', 'factor' => 3785.41],
+            'PCS'  => ['dim' => 'COUNT',  'factor' => 1.0],
+            'DOZ'  => ['dim' => 'COUNT',  'factor' => 12.0],
+        ];
+
+        if (isset($dimensions[$normFrom], $dimensions[$normTo]) && $dimensions[$normFrom]['dim'] === $dimensions[$normTo]['dim']) {
+            return $dimensions[$normFrom]['factor'] / $dimensions[$normTo]['factor'];
+        }
+
+        return ($explicitMultiplier !== null && $explicitMultiplier > 0) ? $explicitMultiplier : 1.0;
+    }
+
     public function apiReceiveStock(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -380,18 +450,38 @@ class InventoryController extends Controller
             'received_at' => 'nullable|date',
             'backorder_policy' => 'nullable|string|in:CREATE_BACKORDER,SHORT_CLOSE',
             'intake_uuid' => 'nullable|string|max:100',
+            'supervisor_override' => 'nullable|boolean',
+            'variance_reason_code' => 'nullable|string|max:255',
+            'qty_over_tolerance_pct' => 'nullable|numeric|min:0|max:100',
+            'price_variance_tolerance_pct' => 'nullable|numeric|min:0|max:100',
+            'use_mac' => 'nullable|boolean',
             'items' => 'required|array|min:1',
+            'items.*.purchase_order_item_id' => 'nullable',
             'items.*.sku' => 'required|string|max:100',
             'items.*.name' => 'required|string|max:255',
             'items.*.unit' => 'nullable|string|max:50',
-            'items.*.uom_multiplier' => 'nullable|numeric|min:0.01',
-            'items.*.received_qty' => 'required|numeric|min:0.001',
+            'items.*.uom_multiplier' => 'nullable|numeric|min:0.0001',
+            'items.*.received_qty' => 'required|numeric|min:0',
+            'items.*.rejected_qty' => 'nullable|numeric|min:0',
+            'items.*.rejection_reason' => 'nullable|string|max:255',
+            'items.*.quarantine_location' => 'nullable|string|max:255',
             'items.*.unit_cost' => 'nullable|numeric|min:0',
             'items.*.storage_location' => 'nullable|string|max:255',
             'items.*.lot_number' => 'nullable|string|max:100',
             'items.*.expiry_date' => 'nullable|date',
             'items.*.notes' => 'nullable|string|max:500',
         ]);
+
+        // Ensure at least one item has non-zero accepted or rejected quantity
+        $hasPositiveMovement = collect($validated['items'])->some(function ($it) {
+            return ((float) ($it['received_qty'] ?? 0) + (float) ($it['rejected_qty'] ?? 0)) > 0;
+        });
+        if (!$hasPositiveMovement) {
+            return response()->json([
+                'success' => false,
+                'message' => 'At least one item must have an accepted or rejected quantity greater than zero.',
+            ], 422);
+        }
 
         // Idempotency Shield (Pillar 3 Rule 10)
         if (!empty($validated['intake_uuid'])) {
@@ -406,18 +496,51 @@ class InventoryController extends Controller
 
         return DB::transaction(function () use ($validated, $request) {
             $year = date('Y');
-            $count = GoodsReceipt::whereYear('created_at', $year)->count() + 1;
             $prefix = !empty($validated['po_number']) ? 'GRN' : 'DIR-REC';
-            $grnNumber = sprintf('%s-%s-%04d', $prefix, $year, $count);
+            $grnPrefix = "{$prefix}-{$year}-";
+
+            // FIX-02: Collision-safe sequential GRN voucher numbering under transaction lock
+            $latestGrn = GoodsReceipt::where('grn_number', 'like', "{$grnPrefix}%")->lockForUpdate()->orderByDesc('id')->first();
+            $nextSeq = 1;
+            if ($latestGrn && preg_match('/-(\d+)$/', (string) $latestGrn->grn_number, $m)) {
+                $nextSeq = ((int) $m[1]) + 1;
+            } else {
+                $nextSeq = GoodsReceipt::whereYear('created_at', $year)->count() + 1;
+            }
+            do {
+                $grnNumber = sprintf('%s%04d', $grnPrefix, $nextSeq++);
+            } while (GoodsReceipt::where('grn_number', $grnNumber)->exists());
 
             $po = null;
             if (!empty($validated['po_number'])) {
                 $po = PurchaseOrder::where('po_number', $validated['po_number'])->lockForUpdate()->first();
-                if ($po && !empty($validated['expected_delivery'])) {
+                if (!$po) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Purchase Order {$validated['po_number']} not found.",
+                    ], 404);
+                }
+
+                // FIX-02: Reject concurrent / late receipts if PO is already closed or cancelled
+                $poStatusUpper = strtoupper(trim((string) $po->status));
+                if (in_array($poStatusUpper, ['FULLY RECEIVED', 'FULFILLED', 'CANCELLED', 'REFUSED', 'SHORT-CLOSED'], true)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Purchase Order {$po->po_number} is already {$po->status} and cannot receive additional stock.",
+                    ], 422);
+                }
+
+                if (!empty($validated['expected_delivery'])) {
                     $po->expected_delivery = $validated['expected_delivery'];
                     $po->save();
                 }
             }
+
+            $supervisorOverride = (bool) ($validated['supervisor_override'] ?? $request->boolean('supervisor_override'));
+            $varianceReason = trim((string) ($validated['variance_reason_code'] ?? ''));
+            $qtyTolerancePct = (float) ($validated['qty_over_tolerance_pct'] ?? 0.0);
+            $priceTolerancePct = (float) ($validated['price_variance_tolerance_pct'] ?? 2.0);
+            $hasOverrideReason = $supervisorOverride && $varianceReason !== '';
 
             // Stamped native user identity (Pillar 4 Rule 15)
             $performedBy = auth()->user()->name ?? auth()->user()->email ?? 'Warehouse Logistics Supervisor';
@@ -425,6 +548,11 @@ class InventoryController extends Controller
             $receivedAt = !empty($validated['received_at'])
                 ? \Carbon\Carbon::parse($validated['received_at'])->setTimeFrom($now)
                 : $now;
+
+            $receiptNotes = $po ? "Fulfillment for PO {$po->po_number}" : 'Direct inbound stock receiving';
+            if ($hasOverrideReason) {
+                $receiptNotes .= " | Supervisor Variance Override: {$varianceReason}";
+            }
 
             // Create Goods Receipt Header
             $receipt = GoodsReceipt::create([
@@ -450,7 +578,7 @@ class InventoryController extends Controller
                 'received_at' => $receivedAt,
                 'received_by' => $performedBy,
                 'status' => 'COMPLETED',
-                'notes' => $po ? "Fulfillment for PO {$po->po_number}" : "Direct inbound stock receiving",
+                'notes' => $receiptNotes,
             ]);
 
             // High-Performance Vectorized Batching (Pillar 2 Rule 5)
@@ -459,15 +587,10 @@ class InventoryController extends Controller
             // Pre-fetch all relevant inventory items with locks in 1 query
             $inventoryItems = InventoryItem::whereIn('sku', $skus)->lockForUpdate()->get()->keyBy('sku');
 
-            // Pre-fetch all relevant PO lines with locks in 1 query
-            $poItems = collect();
-            if ($po) {
-                $poItems = PurchaseOrderItem::where('purchase_order_id', $po->id)
-                    ->whereIn('sku', $skus)
-                    ->lockForUpdate()
-                    ->get()
-                    ->keyBy('sku');
-            }
+            // Pre-fetch all PO lines with locks (by ID, avoiding duplicate-SKU key collapse)
+            $allPoLines = $po
+                ? PurchaseOrderItem::where('purchase_order_id', $po->id)->lockForUpdate()->get()
+                : collect();
 
             $receiptItemsToInsert = [];
             $ledgerEntriesToInsert = [];
@@ -477,12 +600,11 @@ class InventoryController extends Controller
 
             foreach ($validated['items'] as $itemData) {
                 $sku = trim($itemData['sku']);
-                $receivedQty = (float) $itemData['received_qty'];
-                if ($receivedQty <= 0) continue;
-
-                $multiplier = (float) ($itemData['uom_multiplier'] ?? 1.0);
-                if ($multiplier <= 0) $multiplier = 1.0;
-                $baseQty = $receivedQty * $multiplier;
+                $acceptedQty = max(0.0, (float) ($itemData['received_qty'] ?? 0));
+                $rejectedQty = max(0.0, (float) ($itemData['rejected_qty'] ?? 0));
+                if (($acceptedQty + $rejectedQty) <= 0) {
+                    continue;
+                }
 
                 // Resolve Inventory Item
                 $invItem = $inventoryItems->get($sku);
@@ -503,42 +625,114 @@ class InventoryController extends Controller
                     $inventoryItems->put($sku, $invItem);
                 }
 
-                $unitCost = (float) ($invItem->cost_price ?? 0);
-                if (isset($itemData['unit_cost']) && is_numeric($itemData['unit_cost']) && (float) $itemData['unit_cost'] > 0) {
-                    $unitCost = (float) $itemData['unit_cost'];
-                    $invItem->cost_price = $unitCost;
-                }
-                $poItem = $poItems->get($sku);
-                if ($poItem && $poItem->unit_price > 0) {
-                    $unitCost = (float) $poItem->unit_price;
+                $receiptUom = $itemData['unit'] ?? $invItem->uom ?? 'PCS';
+                $explicitMultiplier = isset($itemData['uom_multiplier']) && is_numeric($itemData['uom_multiplier'])
+                    ? (float) $itemData['uom_multiplier']
+                    : null;
+
+                // FIX-01: Resolve deterministic conversion to Item Master Base UoM
+                $multiplier = self::resolveUomConversionRatio($receiptUom, $invItem->uom, $explicitMultiplier);
+                $baseQty = round($acceptedQty * $multiplier, 4);
+                $rejectedBaseQty = round($rejectedQty * $multiplier, 4);
+
+                // FIX-05: Match PO line by purchase_order_item_id first, then by SKU (preferring lines with remaining balance)
+                $poItem = null;
+                if ($allPoLines->isNotEmpty()) {
+                    if (!empty($itemData['purchase_order_item_id'])) {
+                        $poItem = $allPoLines->firstWhere('id', $itemData['purchase_order_item_id']);
+                    }
+                    if (!$poItem) {
+                        $poItem = $allPoLines->first(function ($pl) use ($sku) {
+                            return $pl->sku === $sku && ((float) $pl->received_quantity < (float) $pl->quantity);
+                        }) ?? $allPoLines->firstWhere('sku', $sku);
+                    }
                 }
 
-                $totalCost = round($receivedQty * $unitCost, 2);
+                // Resolve unit cost & enforce PO variance + over-receipt gates (FIX-03)
+                $submittedCost = (isset($itemData['unit_cost']) && is_numeric($itemData['unit_cost']) && (float) $itemData['unit_cost'] > 0)
+                    ? (float) $itemData['unit_cost']
+                    : null;
+
+                $unitCost = (float) ($invItem->cost_price ?? 0);
+                if ($poItem) {
+                    $poUomRatio = self::resolveUomConversionRatio($receiptUom, $poItem->uom, null);
+                    $poNormalizedAccepted = round($acceptedQty * $poUomRatio, 4);
+                    $poNormalizedRejected = round($rejectedQty * $poUomRatio, 4);
+                    $remainingPoQty = max(0.0, (float) $poItem->quantity - (float) $poItem->received_quantity);
+                    $maxAllowedPoQty = ($remainingPoQty * (1.0 + ($qtyTolerancePct / 100.0))) + 0.0001;
+
+                    if ($poNormalizedAccepted > $maxAllowedPoQty && !$hasOverrideReason) {
+                        throw new \Illuminate\Http\Exceptions\HttpResponseException(response()->json([
+                            'success' => false,
+                            'message' => "Over-receipt blocked for SKU {$sku}: trying to receive {$poNormalizedAccepted} {$poItem->uom} against remaining PO balance of {$remainingPoQty} {$poItem->uom} (tolerance {$qtyTolerancePct}%). Supervisor override & variance_reason_code required.",
+                        ], 422));
+                    }
+
+                    $poContractPrice = (float) ($poItem->unit_price ?? 0);
+                    if ($submittedCost !== null && $poContractPrice > 0) {
+                        $expectedReceiptCost = $poContractPrice * $poUomRatio;
+                        $priceVariancePct = $expectedReceiptCost > 0
+                            ? (abs($submittedCost - $expectedReceiptCost) / $expectedReceiptCost) * 100.0
+                            : 0.0;
+
+                        if ($priceVariancePct > ($priceTolerancePct + 0.0001) && !$hasOverrideReason) {
+                            $roundedVar = round($priceVariancePct, 2);
+                            throw new \Illuminate\Http\Exceptions\HttpResponseException(response()->json([
+                                'success' => false,
+                                'message' => "Price variance blocked for SKU {$sku}: dock cost deviates {$roundedVar}% from PO contract price (limit ±{$priceTolerancePct}%). Supervisor override & variance_reason_code required.",
+                            ], 422));
+                        }
+                        $unitCost = $submittedCost;
+                    } elseif ($poContractPrice > 0) {
+                        $unitCost = $poContractPrice * $poUomRatio;
+                    } elseif ($submittedCost !== null) {
+                        $unitCost = $submittedCost;
+                    }
+
+                    // Update PO Item in memory using PO-normalized quantities
+                    $poItem->received_quantity = (float) $poItem->received_quantity + $poNormalizedAccepted;
+                    $poItem->rejected_quantity = (float) ($poItem->rejected_quantity ?? 0) + $poNormalizedRejected;
+                    $poItem->status = ($poItem->received_quantity >= (float) $poItem->quantity) ? 'FULFILLED' : 'PARTIAL';
+                    $poItemsToSave[$poItem->id] = $poItem;
+                } elseif ($submittedCost !== null) {
+                    $unitCost = $submittedCost;
+                }
+
+                $totalCost = round($acceptedQty * $unitCost, 2);
                 $itemsSubtotal += $totalCost;
 
-                // Update PO Item in memory
-                if ($poItem) {
-                    $poItem->received_quantity = (float) $poItem->received_quantity + $receivedQty;
-                    if ($poItem->received_quantity >= (float) $poItem->quantity) {
-                        $poItem->status = 'FULFILLED';
+                // Base unit cost & Moving Average Cost (MAC) update on Item Master (FIX-01)
+                $baseUnitCost = $multiplier > 0 ? round($unitCost / $multiplier, 6) : $unitCost;
+                $oldStock = max(0.0, (float) $invItem->current_stock);
+                $oldCost = max(0.0, (float) ($invItem->cost_price ?? 0));
+
+                if ($acceptedQty > 0 && $unitCost > 0) {
+                    if (($po || $request->boolean('use_mac')) && ($oldStock + $baseQty) > 0 && $oldCost > 0) {
+                        $invItem->cost_price = round((($oldStock * $oldCost) + ($baseQty * $baseUnitCost)) / ($oldStock + $baseQty), 2);
                     } else {
-                        $poItem->status = 'PARTIAL';
+                        $invItem->cost_price = round($baseUnitCost, 2);
                     }
-                    $poItemsToSave[$poItem->id] = $poItem;
                 }
 
-                // Prepare Receipt Item row
+                $rejectionReason = trim((string) ($itemData['rejection_reason'] ?? '')) ?: null;
+                $quarantineLoc = trim((string) ($itemData['quarantine_location'] ?? '')) ?: 'Inbound Quarantine & Vendor Return Cage';
+
+                // Prepare Receipt Item row (FIX-04)
                 $receiptItemsToInsert[] = [
                     'goods_receipt_id' => $receipt->id,
                     'purchase_order_item_id' => $poItem ? $poItem->id : null,
                     'sku' => $sku,
                     'item_name' => $itemData['name'],
-                    'uom' => $itemData['unit'] ?? $invItem->uom,
-                    'purchasing_uom' => $itemData['unit'] ?? $invItem->uom,
+                    'uom' => $invItem->uom ?: $receiptUom,
+                    'purchasing_uom' => $receiptUom,
                     'uom_multiplier' => $multiplier,
-                    'received_qty' => $receivedQty,
+                    'received_qty' => $acceptedQty,
+                    'accepted_qty' => $acceptedQty,
+                    'rejected_qty' => $rejectedQty,
+                    'rejection_reason' => $rejectedQty > 0 ? ($rejectionReason ?? 'Failed QC Inspection') : null,
+                    'quarantine_location' => $rejectedQty > 0 ? $quarantineLoc : null,
                     'base_qty' => $baseQty,
-                    'unit_cost' => $unitCost,
+                    'unit_cost' => round($unitCost, 2),
                     'total_cost' => $totalCost,
                     'lot_number' => $itemData['lot_number'] ?? null,
                     'expiry_date' => $itemData['expiry_date'] ?? null,
@@ -547,35 +741,65 @@ class InventoryController extends Controller
                     'updated_at' => $now,
                 ];
 
-                // Prepare Master Ledger (SYS_LEDGER) immutable row
-                $beforeQty = (float) $invItem->current_stock;
-                $afterQty = $beforeQty + $baseQty;
-                $invItem->current_stock = $afterQty;
-                $itemsToSave[$invItem->id] = $invItem;
-
                 $targetLocation = !empty($itemData['storage_location']) ? $itemData['storage_location'] : $validated['delivery_location'];
 
-                $ledgerEntriesToInsert[] = [
-                    'transaction_uuid' => (string) Str::uuid(),
-                    'sku' => $sku,
-                    'inventory_item_id' => $invItem->id,
-                    'item_name' => $invItem->name,
-                    'transaction_type' => $po ? 'PURCHASE_RECEIPT' : 'DIRECT_RECEIVING',
-                    'reference_type' => 'goods_receipts',
-                    'reference_id' => $receipt->id,
-                    'reference_no' => $receipt->grn_number,
-                    'before_quantity' => $beforeQty,
-                    'quantity_change' => $baseQty,
-                    'after_quantity' => $afterQty,
-                    'unit_cost' => $unitCost,
-                    'total_value' => round($baseQty * $unitCost, 2),
-                    'batch_lot_no' => $itemData['lot_number'] ?? null,
-                    'expiry_date' => $itemData['expiry_date'] ?? null,
-                    'storage_location' => $targetLocation,
-                    'performed_by' => $performedBy,
-                    'notes' => "Dock intake under {$receipt->grn_number}" . ($po ? " (PO: {$po->po_number})" : "") . " | Target: {$targetLocation}",
-                    'created_at' => $now,
-                ];
+                // Prepare Master Ledger (SYS_LEDGER) immutable row for ACCEPTED stock
+                if ($acceptedQty > 0) {
+                    $beforeQty = (float) $invItem->current_stock;
+                    $afterQty = $beforeQty + $baseQty;
+                    $invItem->current_stock = $afterQty;
+                    $itemsToSave[$invItem->id] = $invItem;
+
+                    $noteSuffix = $hasOverrideReason ? " | Variance Override: {$varianceReason}" : '';
+                    $ledgerEntriesToInsert[] = [
+                        'transaction_uuid' => (string) Str::uuid(),
+                        'sku' => $sku,
+                        'inventory_item_id' => $invItem->id,
+                        'item_name' => $invItem->name,
+                        'transaction_type' => $po ? 'PURCHASE_RECEIPT' : 'DIRECT_RECEIVING',
+                        'reference_type' => 'goods_receipts',
+                        'reference_id' => $receipt->id,
+                        'reference_no' => $receipt->grn_number,
+                        'before_quantity' => $beforeQty,
+                        'quantity_change' => $baseQty,
+                        'after_quantity' => $afterQty,
+                        'unit_cost' => round($baseUnitCost, 2),
+                        'total_value' => $totalCost,
+                        'batch_lot_no' => $itemData['lot_number'] ?? null,
+                        'expiry_date' => $itemData['expiry_date'] ?? null,
+                        'storage_location' => $targetLocation,
+                        'performed_by' => $performedBy,
+                        'notes' => "Dock intake under {$receipt->grn_number}" . ($po ? " (PO: {$po->po_number})" : '') . " | Target: {$targetLocation}{$noteSuffix}",
+                        'created_at' => $now,
+                    ];
+                }
+
+                // FIX-04: Segregated Quarantine Hold Ledger Entry for REJECTED / DAMAGED units
+                if ($rejectedQty > 0) {
+                    $currActive = (float) $invItem->current_stock;
+                    $reasonTxt = $rejectionReason ?? 'Failed QC Inspection';
+                    $ledgerEntriesToInsert[] = [
+                        'transaction_uuid' => (string) Str::uuid(),
+                        'sku' => $sku,
+                        'inventory_item_id' => $invItem->id,
+                        'item_name' => $invItem->name,
+                        'transaction_type' => 'QUARANTINE_HOLD',
+                        'reference_type' => 'goods_receipts',
+                        'reference_id' => $receipt->id,
+                        'reference_no' => $receipt->grn_number,
+                        'before_quantity' => $currActive,
+                        'quantity_change' => 0.00,
+                        'after_quantity' => $currActive,
+                        'unit_cost' => round($baseUnitCost, 2),
+                        'total_value' => round($rejectedQty * $unitCost, 2),
+                        'batch_lot_no' => $itemData['lot_number'] ?? null,
+                        'expiry_date' => $itemData['expiry_date'] ?? null,
+                        'storage_location' => $quarantineLoc,
+                        'performed_by' => $performedBy,
+                        'notes' => "QC Rejected/Quarantined {$rejectedBaseQty} {$invItem->uom} ({$rejectedQty} {$receiptUom}) under {$receipt->grn_number}" . ($po ? " (PO: {$po->po_number})" : '') . " | Reason: {$reasonTxt}",
+                        'created_at' => $now,
+                    ];
+                }
             }
 
             // 1-Shot Batch Inserts

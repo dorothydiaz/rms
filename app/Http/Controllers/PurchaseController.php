@@ -9,6 +9,8 @@ use App\Models\Accounting\AcctTaxCode;
 use App\Models\Accounting\AcctVendorMemo;
 use App\Models\Accounting\ChartOfAccount;
 use App\Models\Accounting\VendorBillHeader;
+use App\Models\Inventory\GoodsReceipt;
+use App\Models\Inventory\GoodsReceiptItem;
 use App\Models\Inventory\InventoryItem;
 use App\Models\Purchase\ProcurementVendor;
 use App\Models\Purchase\PurchaseOrder;
@@ -347,10 +349,20 @@ class PurchaseController extends Controller
             $year = date('Y');
             $poNum = $validated['po_number'] ?? null;
             if (empty($poNum)) {
-                $count = PurchaseOrder::whereYear('created_at', $year)->count() + 1;
-                $poNum = sprintf('PO-%s-%04d', $year, $count);
+                $prefix = "PO-{$year}-";
+                $latest = PurchaseOrder::where('po_number', 'like', "{$prefix}%")->lockForUpdate()->orderByDesc('id')->first();
+                $nextNum = 1;
+                if ($latest && preg_match('/-(\d+)$/', (string) $latest->po_number, $m)) {
+                    $nextNum = ((int) $m[1]) + 1;
+                } else {
+                    $nextNum = PurchaseOrder::whereYear('created_at', $year)->count() + 1;
+                }
+                do {
+                    $poNum = sprintf('%s%04d', $prefix, $nextNum++);
+                } while (PurchaseOrder::where('po_number', $poNum)->exists());
             }
 
+            $existingPo = PurchaseOrder::where('po_number', $poNum)->lockForUpdate()->first();
             $grossTotal = 0;
             foreach ($validated['items'] as $it) {
                 $grossTotal += ((float) $it['quantity'] * (float) $it['unitPrice']);
@@ -385,7 +397,7 @@ class PurchaseController extends Controller
                     'payment_remarks' => $validated['payment_remarks'] ?? null,
                     'approval_notes' => $validated['approval_notes'] ?? null,
                     'approved_by' => $validated['approved_by'] ?? 'Procurement Officer',
-                    'status' => $validated['status'] ?? 'Approved / Issued',
+                    'status' => $validated['status'] ?? ($existingPo->status ?? 'Approved / Issued'),
                     'subtotal' => $grossTotal,
                     'tax_amount' => 0.00,
                     'gross_total' => $grossTotal,
@@ -393,23 +405,7 @@ class PurchaseController extends Controller
                 ]
             );
 
-            PurchaseOrderItem::where('purchase_order_id', $po->id)->delete();
-
-            foreach ($validated['items'] as $it) {
-                PurchaseOrderItem::create([
-                    'purchase_order_id' => $po->id,
-                    'sku' => $it['sku'] ?? null,
-                    'item_name' => $it['name'],
-                    'specs' => $it['specs'] ?? null,
-                    'category' => $it['category'] ?? 'Raw Ingredients',
-                    'uom' => $it['unit'] ?? 'PCS',
-                    'quantity' => (float) $it['quantity'],
-                    'unit_price' => (float) $it['unitPrice'],
-                    'total_amount' => (float) $it['quantity'] * (float) $it['unitPrice'],
-                    'received_quantity' => 0.00,
-                    'status' => 'PENDING',
-                ]);
-            }
+            $this->syncPoLinesPreservingReceipts($po, $validated['items'], false);
 
             try {
                 app(AccountingApService::class)->ensureBillForPurchaseOrder($po->fresh('items'));
@@ -928,6 +924,7 @@ class PurchaseController extends Controller
                     $fallbackItem = $payloadBySku[$line->item_id] ?? ($payloadItems[$idx] ?? []);
                     PurchaseOrderItem::create([
                         'purchase_order_id' => $po->id,
+                        'rfq_line_id' => $line->rfq_line_id ?? null,
                         'sku' => $line->item_id ?: ($fallbackItem['sku'] ?? 'ITEM'),
                         'item_name' => $line->item ? $line->item->name : ($fallbackItem['name'] ?? $line->item_id),
                         'specs' => $fallbackItem['specs'] ?? $line->rfq_line_notes,
@@ -937,7 +934,12 @@ class PurchaseController extends Controller
                         'unit_price' => $price,
                         'total_amount' => $qty * $price,
                         'received_quantity' => 0.00,
+                        'rejected_quantity' => 0.00,
                         'status' => 'PENDING',
+                    ]);
+                    $line->update([
+                        'is_awarded' => true,
+                        'awarded_purchase_order_id' => $po->id,
                     ]);
                 }
             } else {
@@ -1208,25 +1210,7 @@ class PurchaseController extends Controller
                 ]
             );
 
-            PurchaseOrderItem::where('purchase_order_id', $po->id)->delete();
-
-            foreach ($items as $it) {
-                $qty = (float) ($it['quantity'] ?? 0);
-                $price = (float) ($it['unitPrice'] ?? 0);
-                PurchaseOrderItem::create([
-                    'purchase_order_id' => $po->id,
-                    'sku' => $it['sku'] ?? null,
-                    'item_name' => $it['name'] ?? ($it['sku'] ?? 'Custom Item'),
-                    'specs' => $it['specs'] ?? null,
-                    'category' => $it['category'] ?? 'Raw Ingredients',
-                    'uom' => $it['unit'] ?? 'PCS',
-                    'quantity' => $qty,
-                    'unit_price' => $price,
-                    'total_amount' => $qty * $price,
-                    'received_quantity' => 0.00,
-                    'status' => 'PENDING',
-                ]);
-            }
+            $this->syncPoLinesPreservingReceipts($po, $items, false);
 
             return response()->json([
                 'success' => true,
@@ -1258,6 +1242,7 @@ class PurchaseController extends Controller
             'special_notes' => 'nullable|string',
             'approved_by' => 'nullable|string|max:255',
             'approval_notes' => 'nullable|string',
+            'allow_without_grn' => 'nullable|boolean',
             'items' => 'nullable|array',
         ]);
 
@@ -1314,6 +1299,22 @@ class PurchaseController extends Controller
                 ], 422);
             }
 
+            // FIX-02: Prevent phantom PO fulfillment that bypasses physical GRN & SYS_LEDGER
+            if ($targetStage === 'FULFILLED' && $currentStage !== 'FULFILLED') {
+                $hasPostedGrn = GoodsReceipt::where('purchase_order_id', $po->id)
+                    ->orWhere('po_number', $po->po_number)
+                    ->exists();
+                $hasRecordedReceiptQty = PurchaseOrderItem::where('purchase_order_id', $po->id)
+                    ->where('received_quantity', '>', 0)
+                    ->exists();
+                if (!$hasPostedGrn && !$hasRecordedReceiptQty && empty($validated['allow_without_grn'])) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Cannot mark {$po->po_number} as Fully Received without a posted Goods Receipt (GRN). Please receive stock via Inventory -> Stock In (GRN) so SYS_LEDGER stays balanced.",
+                    ], 422);
+                }
+            }
+
             $canonicalStatusMap = [
                 'DRAFT' => 'Draft PO',
                 'APPROVAL' => 'Pending Approval',
@@ -1347,30 +1348,7 @@ class PurchaseController extends Controller
             }
 
             if (!empty($validated['items']) && is_array($validated['items'])) {
-                $grossTotal = 0.0;
-                PurchaseOrderItem::where('purchase_order_id', $po->id)->delete();
-                foreach ($validated['items'] as $it) {
-                    $qty = (float) ($it['quantity'] ?? 0);
-                    $price = (float) ($it['unitPrice'] ?? 0);
-                    $recQty = (float) ($it['receivedQuantity'] ?? 0);
-                    if ($targetStage === 'FULFILLED' && $recQty <= 0) {
-                        $recQty = $qty;
-                    }
-                    $grossTotal += ($qty * $price);
-                    PurchaseOrderItem::create([
-                        'purchase_order_id' => $po->id,
-                        'sku' => $it['sku'] ?? null,
-                        'item_name' => $it['name'] ?? ($it['sku'] ?? 'Custom Item'),
-                        'specs' => $it['specs'] ?? null,
-                        'category' => $it['category'] ?? 'Raw Ingredients',
-                        'uom' => $it['unit'] ?? 'PCS',
-                        'quantity' => $qty,
-                        'unit_price' => $price,
-                        'total_amount' => $qty * $price,
-                        'received_quantity' => $recQty,
-                        'status' => ($recQty >= $qty && $qty > 0) ? 'RECEIVED' : ($recQty > 0 ? 'PARTIAL' : 'PENDING'),
-                    ]);
-                }
+                $grossTotal = $this->syncPoLinesPreservingReceipts($po, $validated['items'], $targetStage === 'FULFILLED');
                 $po->subtotal = $grossTotal;
                 $po->gross_total = $grossTotal;
                 $po->balance_due = max(0, $grossTotal - (float) $po->amount_paid);
@@ -1395,6 +1373,84 @@ class PurchaseController extends Controller
     }
 
     /**
+     * Update or insert PurchaseOrderItem rows without wiping received_quantity or breaking GRN FKs.
+     */
+    private function syncPoLinesPreservingReceipts(PurchaseOrder $po, array $incomingItems, bool $markRemainingReceivedIfZero = false): float
+    {
+        $existingLines = PurchaseOrderItem::where('purchase_order_id', $po->id)->lockForUpdate()->get();
+        $matchedIds = [];
+        $grossTotal = 0.0;
+
+        foreach ($incomingItems as $it) {
+            $qty = (float) ($it['quantity'] ?? 0);
+            $price = (float) ($it['unitPrice'] ?? 0);
+            $sku = isset($it['sku']) ? trim((string) $it['sku']) : null;
+            $lineId = $it['id'] ?? $it['purchase_order_item_id'] ?? null;
+
+            $existing = $lineId
+                ? $existingLines->firstWhere('id', $lineId)
+                : ($sku ? $existingLines->first(fn ($l) => !in_array($l->id, $matchedIds, true) && $l->sku === $sku) : null);
+
+            $recQty = $existing ? (float) $existing->received_quantity : (float) ($it['receivedQuantity'] ?? 0);
+            if ($markRemainingReceivedIfZero && $recQty <= 0) {
+                $recQty = $qty;
+            }
+            $effectiveQty = max($qty, $recQty);
+            $grossTotal += ($effectiveQty * $price);
+            $lineStatus = ($recQty >= $effectiveQty && $effectiveQty > 0) ? 'FULFILLED' : ($recQty > 0 ? 'PARTIAL' : 'PENDING');
+
+            if ($existing) {
+                $matchedIds[] = $existing->id;
+                $existing->update([
+                    'sku' => $sku ?? $existing->sku,
+                    'item_name' => $it['name'] ?? $existing->item_name,
+                    'specs' => $it['specs'] ?? $existing->specs,
+                    'category' => $it['category'] ?? $existing->category,
+                    'uom' => $it['unit'] ?? $existing->uom,
+                    'quantity' => $effectiveQty,
+                    'unit_price' => $price,
+                    'total_amount' => $effectiveQty * $price,
+                    'received_quantity' => $recQty,
+                    'status' => $lineStatus,
+                ]);
+            } else {
+                $created = PurchaseOrderItem::create([
+                    'purchase_order_id' => $po->id,
+                    'rfq_line_id' => $it['rfq_line_id'] ?? null,
+                    'sku' => $sku,
+                    'item_name' => $it['name'] ?? ($sku ?? 'Custom Item'),
+                    'specs' => $it['specs'] ?? null,
+                    'category' => $it['category'] ?? 'Raw Ingredients',
+                    'uom' => $it['unit'] ?? 'PCS',
+                    'quantity' => $effectiveQty,
+                    'unit_price' => $price,
+                    'total_amount' => $effectiveQty * $price,
+                    'received_quantity' => $recQty,
+                    'rejected_quantity' => 0.00,
+                    'status' => $lineStatus,
+                ]);
+                $matchedIds[] = $created->id;
+            }
+        }
+
+        // Delete removed lines ONLY if they have zero received_quantity and no linked GoodsReceiptItem
+        $unmatchedZeroLines = $existingLines->filter(function ($line) use ($matchedIds) {
+            return !in_array($line->id, $matchedIds, true)
+                && (float) $line->received_quantity <= 0
+                && !GoodsReceiptItem::where('purchase_order_item_id', $line->id)->exists();
+        });
+        if ($unmatchedZeroLines->isNotEmpty()) {
+            PurchaseOrderItem::whereIn('id', $unmatchedZeroLines->pluck('id')->all())->delete();
+        }
+
+        // Recompute gross total across any preserved partial lines that remained untouched
+        $persistedLines = PurchaseOrderItem::where('purchase_order_id', $po->id)->get();
+        return $persistedLines->isNotEmpty()
+            ? (float) $persistedLines->sum('total_amount')
+            : $grossTotal;
+    }
+
+    /**
      * API: Delete / Batch Delete Purchase Orders
      */
     public function apiBatchDeletePos(Request $request): JsonResponse
@@ -1406,7 +1462,7 @@ class PurchaseController extends Controller
         ]);
 
         return DB::transaction(function () use ($validated) {
-            $query = PurchaseOrder::whereIn('po_number', $validated['po_numbers']);
+            $query = PurchaseOrder::whereIn('po_number', $validated['po_numbers'])->lockForUpdate();
             if (empty($validated['force'])) {
                 $query->whereIn('status', ['Draft PO', 'DRAFT', 'Draft', 'Cancelled', 'Refused']);
             }
@@ -1416,6 +1472,20 @@ class PurchaseController extends Controller
             $poNums = $headers->pluck('po_number')->all();
 
             if (!empty($poIds)) {
+                // FIX-05: Never orphan SYS_LEDGER or silently wipe posted GoodsReceipts on PO deletion
+                $hasPostedReceipts = GoodsReceipt::whereIn('purchase_order_id', $poIds)
+                    ->orWhereIn('po_number', $poNums)
+                    ->exists();
+                $hasReceivedLines = PurchaseOrderItem::whereIn('purchase_order_id', $poIds)
+                    ->where('received_quantity', '>', 0)
+                    ->exists();
+                if ($hasPostedReceipts || $hasReceivedLines) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Cannot delete Purchase Order(s) that already have posted Goods Receipts in SYS_LEDGER. Use Short-Close or a Vendor Return / Stock Adjustment instead.',
+                    ], 422);
+                }
+
                 // Unlink any RFQ referencing these POs so the RFQ can be re-converted if needed
                 RfqHeader::whereIn('purchase_order_id', $poIds)->update([
                     'purchase_order_id' => null,
@@ -1425,13 +1495,10 @@ class PurchaseController extends Controller
                     'purchase_order_id' => null,
                     'rfq_status' => 'APPROVED',
                 ]);
-
-                // Clean up any GoodsReceipt lines/headers referencing these POs
-                $grnIds = \App\Models\Inventory\GoodsReceipt::whereIn('purchase_order_id', $poIds)->pluck('id')->all();
-                if (!empty($grnIds)) {
-                    \App\Models\Inventory\GoodsReceiptItem::whereIn('goods_receipt_id', $grnIds)->delete();
-                    \App\Models\Inventory\GoodsReceipt::whereIn('id', $grnIds)->delete();
-                }
+                RfqLine::whereIn('awarded_purchase_order_id', $poIds)->update([
+                    'is_awarded' => false,
+                    'awarded_purchase_order_id' => null,
+                ]);
 
                 PurchaseOrderItem::whereIn('purchase_order_id', $poIds)->delete();
             }

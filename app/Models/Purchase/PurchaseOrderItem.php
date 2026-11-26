@@ -13,6 +13,7 @@ class PurchaseOrderItem extends Model
 
     protected $fillable = [
         'purchase_order_id',
+        'rfq_line_id',
         'sku',
         'item_name',
         'specs',
@@ -22,6 +23,7 @@ class PurchaseOrderItem extends Model
         'unit_price',
         'total_amount',
         'received_quantity',
+        'rejected_quantity',
         'status',
     ];
 
@@ -30,6 +32,7 @@ class PurchaseOrderItem extends Model
         'unit_price' => 'decimal:2',
         'total_amount' => 'decimal:2',
         'received_quantity' => 'decimal:2',
+        'rejected_quantity' => 'decimal:2',
     ];
 
     public function purchaseOrder(): BelongsTo

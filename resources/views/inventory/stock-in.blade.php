@@ -270,6 +270,54 @@
             <div class="grn-chevron-tooltip" id="grnChevronTooltip" role="tooltip" hidden></div>
         </div>
 
+        <!-- LIVE STAGE STOCK-MOVEMENT SIMULATION BANNER (Triggered on every stage transition) -->
+        <div class="grn-stage-transit-banner" id="grnStageTransitBanner" role="status" aria-live="polite" hidden>
+            <div class="grn-transit-node is-source">
+                <span class="grn-transit-node-icon"><i class="ph ph-storefront" aria-hidden="true"></i></span>
+                <div class="grn-transit-node-text">
+                    <span class="grn-transit-node-kicker">FROM STAGE</span>
+                    <strong id="grnTransitFromLabel">Vendor / Receiving</strong>
+                </div>
+            </div>
+
+            <div class="grn-transit-track-wrap">
+                <div class="grn-transit-track">
+                    <div class="grn-transit-fill"></div>
+                    <div class="grn-transit-shuttle">
+                        <i class="ph-fill ph-package" aria-hidden="true"></i>
+                        <span id="grnTransitUnitsBadge">0.00 Units</span>
+                    </div>
+                </div>
+                <span class="grn-transit-stage-chip" id="grnTransitStageChip">Stage 1 → Stage 2</span>
+            </div>
+
+            <div class="grn-transit-node is-dest">
+                <span class="grn-transit-node-icon"><i class="ph ph-warehouse" aria-hidden="true"></i></span>
+                <div class="grn-transit-node-text">
+                    <span class="grn-transit-node-kicker">MOVING TO</span>
+                    <strong id="grnTransitToLabel">Quality Check</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- BACKORDER STAGE PIPELINE BANNER (Routes unshipped balance Vendor -> Receipt -> QC -> Stocks) -->
+        <div class="grn-backorder-stage-banner" id="grnBackorderStageBanner" role="region" aria-label="Backorder stage queue" hidden>
+            <div class="grn-bo-banner-left">
+                <span class="grn-bo-banner-icon"><i class="ph ph-clock-countdown" aria-hidden="true"></i></span>
+                <div class="grn-bo-banner-copy">
+                    <div class="grn-bo-banner-title">
+                        <span id="grnBackorderBannerTitle">Backorder Scheduled</span>
+                        <span class="grn-bo-banner-flow-badge" id="grnBackorderFlowStepsText">Vendor → Receipt → QC → Stocks</span>
+                    </div>
+                    <p class="grn-bo-banner-sub" id="grnBackorderBannerText">Remaining balance will restart from Stage 1 when next delivery arrives.</p>
+                </div>
+            </div>
+            <button type="button" class="grn-btn grn-btn-primary grn-btn-xs" id="btnStartNextBackorderStage" onclick="startBackorderStageFlow()" hidden>
+                <i class="ph ph-arrow-clockwise" aria-hidden="true"></i>
+                <span>Start Backorder Intake (Stage 1) →</span>
+            </button>
+        </div>
+
         <!-- ZONE 2: Identity Ribbon + Operational Form Grid -->
         <div class="po-panel-card rfq-panel-card grn-header-card" id="grnTopBannerCard">
             <!-- Unified segmented metadata strip: GRN Ref | PO Selector | Mode | Active Route Preset -->
@@ -642,6 +690,86 @@
                 <button type="button" class="grn-btn grn-btn-ghost" onclick="closeLotExpiryModal()">Cancel</button>
                 <button type="button" class="grn-btn grn-btn-primary" onclick="saveLotExpiryModal()">
                     <i class="ph ph-check-circle" aria-hidden="true"></i> Save Details
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- =====================================================================
+         POPUP MODAL: RMS-THEMED PARTIAL SHIPMENT & BACKORDER STAGE RESOLUTION
+         ===================================================================== -->
+    <div id="grnBackorderModal" class="grn-modal-overlay" style="display: none;" onclick="closeGrnBackorderModal()">
+        <div class="grn-modal-card grn-bo-modal-card" role="dialog" aria-modal="true" aria-labelledby="grnBoModalHeading" aria-describedby="grnBoModalSubtitle" onclick="event.stopPropagation()">
+            <div class="grn-modal-head">
+                <div class="grn-modal-head-left">
+                    <div class="grn-modal-icon"><i class="ph ph-git-diff" aria-hidden="true"></i></div>
+                    <div>
+                        <h3 class="grn-modal-title" id="grnBoModalHeading">Partial Delivery &amp; Backorder Resolution</h3>
+                        <div class="grn-modal-sub" id="grnBoModalSubtitle">PO Reference • Stage Transition</div>
+                    </div>
+                </div>
+                <button type="button" class="grn-icon-btn grn-icon-btn-lg" onclick="closeGrnBackorderModal()" aria-label="Close dialog">
+                    <i class="ph ph-x" aria-hidden="true"></i>
+                </button>
+            </div>
+
+            <div class="grn-modal-body grn-bo-modal-body">
+                <!-- Dynamic Route Stage Flow (Vendor > Receipt > QC > Stocks) -->
+                <div class="grn-bo-flow-box">
+                    <span class="grn-bo-section-kicker">BACKORDER INBOUND STAGE PIPELINE</span>
+                    <div class="grn-bo-stage-flow" id="grnBoModalStageFlow"></div>
+                </div>
+
+                <!-- 3 Quantitative KPI Delta Cards -->
+                <div class="grn-bo-kpi-grid">
+                    <div class="grn-bo-kpi-card">
+                        <span class="grn-bo-kpi-label">Expected PO Balance</span>
+                        <strong class="grn-bo-kpi-val" id="grnBoExpectedUnits">0.00</strong>
+                    </div>
+                    <div class="grn-bo-kpi-card is-moving">
+                        <span class="grn-bo-kpi-label">Moving to Next Stage</span>
+                        <strong class="grn-bo-kpi-val" id="grnBoReceivingUnits">0.00</strong>
+                    </div>
+                    <div class="grn-bo-kpi-card is-shortage">
+                        <span class="grn-bo-kpi-label">Backorder Remainder</span>
+                        <strong class="grn-bo-kpi-val" id="grnBoShortageUnits">0.00</strong>
+                    </div>
+                </div>
+
+                <!-- Itemized Shortage Breakdown -->
+                <div class="grn-bo-lines-list" id="grnBoLinesList"></div>
+
+                <!-- Selectable RMS Policy Cards -->
+                <div class="grn-bo-options" role="radiogroup" aria-label="Unfulfilled remainder handling policy">
+                    <button type="button" class="grn-bo-option-card is-selected" data-bo-policy="CREATE_BACKORDER" role="radio" aria-checked="true" onclick="selectGrnBoPolicyOption('CREATE_BACKORDER')">
+                        <span class="grn-bo-opt-radio" aria-hidden="true"><i class="ph-fill ph-check-circle"></i></span>
+                        <span class="grn-bo-opt-content">
+                            <span class="grn-bo-opt-title-row">
+                                <strong>Create Backorder &amp; Route All Stages</strong>
+                                <span class="grn-bo-rec-pill">Recommended</span>
+                            </span>
+                            <span class="grn-bo-opt-desc">Advance current units through the active workflow now, and queue remaining units to re-enter at Stage 1 (Vendor → Receipt → QC → Stocks).</span>
+                        </span>
+                    </button>
+
+                    <button type="button" class="grn-bo-option-card" data-bo-policy="SHORT_CLOSE" role="radio" aria-checked="false" onclick="selectGrnBoPolicyOption('SHORT_CLOSE')">
+                        <span class="grn-bo-opt-radio" aria-hidden="true"><i class="ph ph-circle"></i></span>
+                        <span class="grn-bo-opt-content">
+                            <span class="grn-bo-opt-title-row">
+                                <strong>Short-Close Unshipped Remainder</strong>
+                                <span class="grn-bo-warn-pill">Closes PO</span>
+                            </span>
+                            <span class="grn-bo-opt-desc">Proceed with received quantities only and cancel the unfulfilled PO balance upon final Putaway to Stocks.</span>
+                        </span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="grn-modal-foot">
+                <button type="button" class="grn-btn grn-btn-ghost" onclick="closeGrnBackorderModal()">Review Quantities</button>
+                <button type="button" class="grn-btn grn-btn-primary" id="btnConfirmBoModalChoice" onclick="confirmGrnBackorderModalChoice()">
+                    <i class="ph ph-arrow-right" aria-hidden="true"></i>
+                    <span>Confirm Policy &amp; Move Stock →</span>
                 </button>
             </div>
         </div>
