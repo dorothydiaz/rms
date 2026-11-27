@@ -23,15 +23,15 @@
     ];
 
     const QUEUE_COLUMNS = [
-        { key: 'transfer_number', label: 'Transfer / Receipt #', defaultVisible: true },
-        { key: 'transfer_type', label: 'Flow Type', defaultVisible: true },
-        { key: 'source_location', label: 'Source Branch', defaultVisible: true },
-        { key: 'destination_location', label: 'Destination Branch', defaultVisible: true },
-        { key: 'items_count', label: 'Lines & Qty', defaultVisible: true },
-        { key: 'progress', label: 'Shipped / Accepted', defaultVisible: true },
-        { key: 'total_valuation', label: 'Valuation (₱)', defaultVisible: false },
-        { key: 'status', label: 'Status', defaultVisible: true },
-        { key: 'action', label: 'Action', defaultVisible: true },
+        { key: 'transfer_number', label: 'Transfer / Receipt #', width: '16%', defaultVisible: true },
+        { key: 'transfer_type', label: 'Flow Type', width: '12%', defaultVisible: true },
+        { key: 'source_location', label: 'Source Branch', width: '14%', defaultVisible: true },
+        { key: 'destination_location', label: 'Destination Branch', width: '14%', defaultVisible: true },
+        { key: 'items_count', label: 'Lines & Qty', width: '11%', defaultVisible: true },
+        { key: 'progress', label: 'Shipped / Accepted', width: '12%', defaultVisible: true },
+        { key: 'total_valuation', label: 'Valuation (₱)', width: '10%', defaultVisible: false },
+        { key: 'status', label: 'Status', width: '11%', defaultVisible: true },
+        { key: 'action', label: 'Action', width: '10%', defaultVisible: true },
     ];
 
     const COL_STORAGE_KEY = 'rms_trf_queue_cols_v1';
@@ -135,6 +135,9 @@
         renderPagination();
         hydrateWorkbenchDom();
 
+        document.getElementById('trfTableSettingsDropdown')?.addEventListener('click', (e) => e.stopPropagation());
+        document.getElementById('trfItemPickerDropdown')?.addEventListener('click', (e) => e.stopPropagation());
+
         document.addEventListener('click', () => {
             const gearMenu = document.getElementById('trfTableSettingsDropdown');
             if (gearMenu) gearMenu.style.display = 'none';
@@ -183,28 +186,57 @@
         document.getElementById('tabBtnTrfBuilder')?.classList.toggle('active', !isQueue);
         const qPanel = document.getElementById('panelTrfQueue');
         const bPanel = document.getElementById('panelTrfBuilder');
-        if (qPanel) qPanel.style.display = isQueue ? '' : 'none';
-        if (bPanel) bPanel.style.display = isQueue ? 'none' : '';
+        if (qPanel) {
+            qPanel.classList.toggle('trf-panel-hidden', !isQueue);
+            qPanel.style.display = isQueue ? '' : 'none';
+        }
+        if (bPanel) {
+            bPanel.classList.toggle('trf-panel-hidden', isQueue);
+            bPanel.style.display = isQueue ? 'none' : '';
+        }
     };
+
+    function syncKpiActiveHighlight(activeKey) {
+        document.querySelectorAll('#panelTrfQueue .trf-kpi-btn').forEach((btn) => {
+            btn.classList.toggle('is-active-filter', Boolean(activeKey) && btn.dataset.kpiFilter === activeKey);
+        });
+    }
 
     window.setPerspectiveFilter = function (persp) {
         state.perspective = persp;
         document.querySelectorAll('#trfPerspectiveBar .trf-persp-btn').forEach((btn) => {
             btn.classList.toggle('active', btn.dataset.persp === persp);
         });
+        syncKpiActiveHighlight(persp === 'all' ? '' : persp);
         fetchTransferQueue(1);
     };
 
     window.applyKpiQuickFilter = function (kind) {
         const statusSel = document.getElementById('trfStatusFilter');
         if (kind === 'completed') {
-            setPerspectiveFilter('all');
+            state.perspective = 'all';
+            document.querySelectorAll('#trfPerspectiveBar .trf-persp-btn').forEach((btn) => {
+                btn.classList.toggle('active', btn.dataset.persp === 'all');
+            });
             if (statusSel) statusSel.value = 'COMPLETED';
+            syncKpiActiveHighlight('completed');
             fetchTransferQueue(1);
             return;
         }
         if (statusSel) statusSel.value = 'ALL';
         setPerspectiveFilter(kind);
+    };
+
+    window.resetTrfFilters = function () {
+        const searchEl = document.getElementById('trfSearchInput');
+        const statusEl = document.getElementById('trfStatusFilter');
+        const typeEl = document.getElementById('trfTypeFilter');
+        const branchEl = document.getElementById('trfBranchFilter');
+        if (searchEl) searchEl.value = '';
+        if (statusEl) statusEl.value = 'ALL';
+        if (typeEl) typeEl.value = 'ALL';
+        if (branchEl) branchEl.value = '';
+        setPerspectiveFilter('all');
     };
 
     window.onTrfSearchInput = function () {
@@ -316,8 +348,12 @@
 
     function renderQueueHeader() {
         const thead = document.getElementById('trfQueueTheadRow');
+        const colgroup = document.getElementById('trfQueueColgroup');
         if (!thead) return;
         const activeCols = QUEUE_COLUMNS.filter((c) => state.visibleCols.has(c.key));
+        if (colgroup) {
+            colgroup.innerHTML = activeCols.map((col) => `<col style="width:${col.width};">`).join('');
+        }
         thead.innerHTML = activeCols.map((col, idx) => {
             const isLast = idx === activeCols.length - 1;
             const align = col.key === 'total_valuation' ? 'text-align:right;' : (col.key === 'status' || col.key === 'action' ? 'text-align:center;' : '');
@@ -325,8 +361,8 @@
                 return `<th style="${align} white-space:nowrap;">
                     <div style="display:inline-flex;align-items:center;gap:6px;">
                         <span>${escapeHtml(col.label)}</span>
-                        <button type="button" class="rfq-th-settings-btn" onclick="toggleTrfGearDropdown(event)" title="Configure visible columns">
-                            <i class="ph ph-gear-six"></i>
+                        <button type="button" class="rfq-th-settings-btn" onclick="toggleTrfGearDropdown(event)" title="Configure visible columns" aria-label="Configure visible columns">
+                            <i class="ph ph-gear-six" aria-hidden="true"></i>
                         </button>
                     </div>
                 </th>`;
@@ -335,15 +371,34 @@
         }).join('');
     }
 
+    function hasActiveQueueFilter() {
+        const q = (document.getElementById('trfSearchInput')?.value || '').trim();
+        const st = document.getElementById('trfStatusFilter')?.value || 'ALL';
+        const tp = document.getElementById('trfTypeFilter')?.value || 'ALL';
+        const br = document.getElementById('trfBranchFilter')?.value || '';
+        return Boolean(q || st !== 'ALL' || tp !== 'ALL' || br || state.perspective !== 'all');
+    }
+
     function renderQueueRows() {
         const tbody = document.getElementById('trfQueueTableBody');
         if (!tbody) return;
         const activeCols = QUEUE_COLUMNS.filter((c) => state.visibleCols.has(c.key));
 
         if (!state.queueRows.length) {
-            tbody.innerHTML = `<tr><td colspan="${activeCols.length}" style="text-align:center;padding:36px;color:#64748b;">
-                <i class="ph ph-arrows-left-right" style="font-size:32px;color:#cbd5e1;display:block;margin-bottom:8px;"></i>
-                No transfers or branch requests match the active perspective &amp; filters.
+            const filtered = hasActiveQueueFilter();
+            tbody.innerHTML = `<tr><td colspan="${activeCols.length}">
+                <div class="trf-empty-state">
+                    <div class="trf-empty-icon"><i class="ph ph-arrows-left-right" aria-hidden="true"></i></div>
+                    <div class="trf-empty-title">${filtered ? 'No matching transfers found' : 'No stock transfers or requests yet'}</div>
+                    <div class="trf-empty-desc">${filtered
+                        ? 'Adjust your perspective tab, status, branch filter, or search query to view more activity.'
+                        : 'Request stock from another branch or dispatch a direct transfer to start tracking transit custody.'}</div>
+                    <div class="trf-empty-actions">
+                        ${filtered ? `<button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="resetTrfFilters()"><i class="ph ph-arrow-counter-clockwise" aria-hidden="true"></i> Reset Filters</button>` : ''}
+                        <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="startNewTransferWorkbench('BRANCH_REQUEST')"><i class="ph ph-hand-grabbing" aria-hidden="true"></i> Request Stock</button>
+                        <button type="button" class="hr-btn hr-btn-primary hr-btn-sm" onclick="startNewTransferWorkbench('CUSTOM_PUSH')"><i class="ph ph-paper-plane-tilt" aria-hidden="true"></i> Direct Transfer</button>
+                    </div>
+                </div>
             </td></tr>`;
             return;
         }
@@ -778,7 +833,10 @@
             const pctMap = { NEW: '20%', DRAFT: '25%', PENDING: '35%', REQUESTED: '35%', APPROVED: '55%', IN_TRANSIT: '75%', PARTIALLY_RECEIVED: '85%', COMPLETED: '100%', DISCREPANCY: '100%' };
             fill.style.width = pctMap[st] || '25%';
         }
-        setText('trfBannerStageLabel', statusLabel(st));
+        const stageText = st === 'NEW'
+            ? (wb.transfer_type === 'CUSTOM_PUSH' ? 'Drafting Direct Transfer' : 'Drafting Stock Request')
+            : statusLabel(st);
+        setText('trfBannerStageLabel', stageText);
         const srcBr = BRANCHES_BY_ID.get(Number(wb.source_branch_id));
         const pMode = wb.pricing_mode || srcBr?.internal_pricing_mode || 'AT_COST';
         const mPct = Number(wb.markup_pct ?? srcBr?.internal_markup_pct ?? 0);
@@ -955,37 +1013,68 @@
         const { canSource, canDest } = getCustodyPermissions();
 
         const thead = document.getElementById('wbItemsTheadRow');
+        const colgroup = document.getElementById('wbItemsColgroup');
         const tbody = document.getElementById('wbItemsTableBody');
         if (!thead || !tbody) return;
 
-        let colsHtml = `
-            <th>Item &amp; SKU</th>
-            <th>Source Available</th>
-            <th>Unit (UOM)</th>
-        `;
+        let colSpecs = [
+            { width: '38%', html: '<th>Item &amp; SKU</th>' },
+            { width: '19%', html: '<th>Source Available</th>' },
+            { width: '19%', html: '<th>Unit (UOM)</th>' },
+        ];
         if (isNewOrDraft) {
-            colsHtml += `<th style="text-align:right;">${wb.transfer_type === 'CUSTOM_PUSH' ? 'Dispatch Qty' : 'Request Qty'}</th>
-                         <th style="text-align:center;width:54px;"></th>`;
+            colSpecs.push(
+                { width: '16%', html: `<th style="text-align:right;">${wb.transfer_type === 'CUSTOM_PUSH' ? 'Dispatch Qty' : 'Request Qty'}</th>` },
+                { width: '8%', html: '<th style="text-align:center;">Action</th>' }
+            );
         } else if (isDispatchPhase) {
-            colsHtml += `<th style="text-align:right;">Requested</th>
-                         <th style="text-align:right;">Approve / Dispatch Qty</th>`;
+            colSpecs = [
+                { width: '36%', html: '<th>Item &amp; SKU</th>' },
+                { width: '18%', html: '<th>Source Available</th>' },
+                { width: '14%', html: '<th>Unit (UOM)</th>' },
+                { width: '16%', html: '<th style="text-align:right;">Requested</th>' },
+                { width: '16%', html: '<th style="text-align:right;">Approve / Dispatch Qty</th>' },
+            ];
         } else if (isReceivePhase) {
-            colsHtml += `<th style="text-align:right;">Shipped</th>
-                         <th style="text-align:right;">Already Recv</th>
-                         <th style="text-align:right;">Accept Now</th>
-                         <th style="text-align:right;">Short / Variance</th>
-                         <th>Variance Reason</th>`;
+            colSpecs = [
+                { width: '24%', html: '<th>Item &amp; SKU</th>' },
+                { width: '13%', html: '<th>Source Available</th>' },
+                { width: '10%', html: '<th>Unit (UOM)</th>' },
+                { width: '10%', html: '<th style="text-align:right;">Shipped</th>' },
+                { width: '10%', html: '<th style="text-align:right;">Already Recv</th>' },
+                { width: '11%', html: '<th style="text-align:right;">Accept Now</th>' },
+                { width: '10%', html: '<th style="text-align:right;">Short / Variance</th>' },
+                { width: '12%', html: '<th>Variance Reason</th>' },
+            ];
         } else {
-            colsHtml += `<th style="text-align:right;">Requested</th>
-                         <th style="text-align:right;">Dispatched</th>
-                         <th style="text-align:right;">Accepted</th>
-                         <th style="text-align:right;">Variance</th>`;
+            colSpecs = [
+                { width: '30%', html: '<th>Item &amp; SKU</th>' },
+                { width: '16%', html: '<th>Source Available</th>' },
+                { width: '12%', html: '<th>Unit (UOM)</th>' },
+                { width: '10%', html: '<th style="text-align:right;">Requested</th>' },
+                { width: '11%', html: '<th style="text-align:right;">Dispatched</th>' },
+                { width: '11%', html: '<th style="text-align:right;">Accepted</th>' },
+                { width: '10%', html: '<th style="text-align:right;">Variance</th>' },
+            ];
         }
-        thead.innerHTML = colsHtml;
+
+        if (colgroup) {
+            colgroup.innerHTML = colSpecs.map((c) => `<col style="width:${c.width};">`).join('');
+        }
+        thead.innerHTML = colSpecs.map((c) => c.html).join('');
+        const colCount = colSpecs.length;
 
         if (!wb.items.length) {
-            tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:34px;color:#64748b;">
-                Scan a barcode (<strong>F2</strong>), click <strong>Add Item</strong>, or use <strong>Pull Low-Stock Items</strong> to populate lines.
+            tbody.innerHTML = `<tr><td colspan="${colCount}">
+                <div class="trf-empty-state">
+                    <div class="trf-empty-icon"><i class="ph ph-barcode" aria-hidden="true"></i></div>
+                    <div class="trf-empty-title">No line items added yet</div>
+                    <div class="trf-empty-desc">Scan a barcode (<strong>F2</strong>), pick items from the catalog, or auto-fill low-stock items for this branch route.</div>
+                    <div class="trf-empty-actions">
+                        <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="toggleTrfItemPicker(event)"><i class="ph ph-plus" aria-hidden="true"></i> Add Item</button>
+                        <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="pullLowStockSuggestions()"><i class="ph ph-sparkle" aria-hidden="true"></i> Pull Low-Stock Items</button>
+                    </div>
+                </div>
             </td></tr>`;
             updateFooterTotals();
             hydrateBannerAndHeaderOnly();
@@ -1001,11 +1090,11 @@
             const convNote = mult !== 1 ? `<div style="font-size:10.5px;color:#64748b;">= ${(targetQty * mult).toFixed(2)} ${escapeHtml(it.base_uom || it.uom)}</div>` : '';
 
             const uomCell = isNewOrDraft
-                ? `<td>
+                ? `<td class="trf-uom-cell">
                         <select data-uom-select data-uom-current="${escapeHtml(it.uom)}" onchange="onLineUomChanged(${idx}, this.value)"></select>
                         ${convNote}
                    </td>`
-                : `<td><span class="hr-badge hr-badge-neutral">${escapeHtml(it.uom)}</span>${convNote}</td>`;
+                : `<td class="trf-uom-cell"><span class="hr-badge hr-badge-neutral">${escapeHtml(it.uom)}</span>${convNote}</td>`;
 
             let phaseCells = '';
             if (isNewOrDraft) {
@@ -1404,46 +1493,49 @@
         const dstName = BRANCHES_BY_ID.get(Number(wb.destination_branch_id))?.name || wb.destination_location || '—';
 
         const rowsHtml = (wb.items || []).map((it) => `
-            <tr style="border-bottom:1px solid #f1f5f9;">
-                <td style="padding:5px 0;"><strong>${escapeHtml(it.item_name)}</strong><div style="font-size:10px;color:#64748b;">${escapeHtml(it.sku)}</div></td>
-                <td style="text-align:right;padding:5px 0;" class="trf-num">${Number(it.transferred_qty || it.requested_qty || 0).toFixed(2)} ${escapeHtml(it.uom)}</td>
-                <td style="text-align:right;padding:5px 0;color:#047857;font-weight:700;" class="trf-num">${Number(it.received_qty || 0).toFixed(2)}</td>
+            <tr>
+                <td><strong>${escapeHtml(it.item_name)}</strong><div style="font-size:10px;color:#64748b;">${escapeHtml(it.sku)}</div></td>
+                <td class="trf-num is-num">${Number(it.transferred_qty || it.requested_qty || 0).toFixed(2)} ${escapeHtml(it.uom)}</td>
+                <td class="trf-num is-num" style="color:#047857;font-weight:700;">${Number(it.received_qty || 0).toFixed(2)}</td>
             </tr>
-        `).join('') || '<tr><td colspan="3" style="padding:12px 0;text-align:center;color:#94a3b8;">No items</td></tr>';
+        `).join('') || '<tr><td colspan="3" class="trf-slip-empty">No items added yet</td></tr>';
 
         el.innerHTML = `
             <div class="trf-slip-doc-box">
-                <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid #e2e8f0;padding-bottom:8px;margin-bottom:10px;">
-                    <div>
-                        <div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;">Inter-Branch Transfer Slip</div>
-                        <div class="trf-mono" style="font-size:14px;color:var(--trf-primary-strong);">${escapeHtml(wb.transfer_number)}</div>
-                        ${wb.receipt_number ? `<div class="trf-mono" style="font-size:11px;color:#047857;">Receipt: ${escapeHtml(wb.receipt_number)}</div>` : ''}
+                <div class="trf-slip-accent-bar"></div>
+                <div class="trf-slip-inner">
+                    <div class="trf-slip-header">
+                        <div>
+                            <div class="trf-slip-kicker">Inter-Branch Transfer Slip</div>
+                            <div class="trf-mono trf-slip-ref">${escapeHtml(wb.transfer_number)}</div>
+                            ${wb.receipt_number ? `<div class="trf-mono trf-slip-rec">Receipt: ${escapeHtml(wb.receipt_number)}</div>` : ''}
+                        </div>
+                        ${renderStatusPill(String(wb.status || 'NEW'))}
                     </div>
-                    ${renderStatusPill(String(wb.status || 'NEW'))}
+                    <div class="trf-slip-route">
+                        <div><span class="trf-slip-route-label">From Source</span><strong>${escapeHtml(srcName)}</strong></div>
+                        <div><span class="trf-slip-route-label">To Destination</span><strong>${escapeHtml(dstName)}</strong></div>
+                    </div>
+                    <table class="trf-slip-table">
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th class="is-num">Req/Ship</th>
+                                <th class="is-num">Accepted</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rowsHtml}</tbody>
+                    </table>
+                    <div class="trf-slip-custody">
+                        <div><span class="trf-slip-route-label">Requested</span><strong>${escapeHtml(wb.requested_by || '—')}</strong></div>
+                        <div><span class="trf-slip-route-label">Dispatched</span><strong>${escapeHtml(wb.dispatched_by || 'Pending')}</strong></div>
+                        <div><span class="trf-slip-route-label">Accepted</span><strong>${escapeHtml(wb.received_by || 'Pending')}</strong></div>
+                    </div>
+                    ${wb.total_internal_billed ? `<div class="trf-slip-billing">
+                        <span>Internal Billed (${wb.pricing_mode === 'COST_PLUS_PCT' ? '+' + Number(wb.markup_pct || 0).toFixed(1) + '%' : 'At Cost'}): <strong>₱${Number(wb.total_internal_billed || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></span>
+                        <span class="hr-badge hr-badge-neutral">${escapeHtml(wb.settlement_status || 'UNBILLED')}</span>
+                    </div>` : ''}
                 </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;font-size:11px;">
-                    <div><span style="color:#64748b;">From:</span><br><strong>${escapeHtml(srcName)}</strong></div>
-                    <div><span style="color:#64748b;">To:</span><br><strong>${escapeHtml(dstName)}</strong></div>
-                </div>
-                <table style="width:100%;border-collapse:collapse;font-size:11px;margin-bottom:12px;">
-                    <thead>
-                        <tr style="border-bottom:1px solid #cbd5e1;color:#64748b;text-align:left;">
-                            <th style="padding-bottom:4px;">Item</th>
-                            <th style="padding-bottom:4px;text-align:right;">Req/Ship</th>
-                            <th style="padding-bottom:4px;text-align:right;">Accepted</th>
-                        </tr>
-                    </thead>
-                    <tbody>${rowsHtml}</tbody>
-                </table>
-                <div style="border-top:1px dashed #cbd5e1;padding-top:8px;font-size:10.5px;color:#475569;display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
-                    <div>Requested:<br><strong>${escapeHtml(wb.requested_by || '—')}</strong></div>
-                    <div>Dispatched:<br><strong>${escapeHtml(wb.dispatched_by || 'Pending')}</strong></div>
-                    <div>Accepted:<br><strong>${escapeHtml(wb.received_by || 'Pending')}</strong></div>
-                </div>
-                ${wb.total_internal_billed ? `<div style="margin-top:8px;padding-top:8px;border-top:1px solid #f1f5f9;display:flex;justify-content:space-between;font-size:11px;">
-                    <span>Internal Billed (${wb.pricing_mode === 'COST_PLUS_PCT' ? '+' + Number(wb.markup_pct || 0).toFixed(1) + '%' : 'At Cost'}): <strong>₱${Number(wb.total_internal_billed || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></span>
-                    <span class="hr-badge hr-badge-neutral">${escapeHtml(wb.settlement_status || 'UNBILLED')}</span>
-                </div>` : ''}
             </div>
         `;
     }

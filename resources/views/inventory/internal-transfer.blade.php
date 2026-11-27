@@ -52,67 +52,72 @@
 
 <div class="rfq-workspace-container" id="trfAppRoot">
 
-    <!-- Global Pessimistic Lock Overlay (Matches Stock In) -->
-    <div class="rfq-lock-overlay" id="trfGlobalLockOverlay" style="display: none;" aria-hidden="true">
+    <!-- Global Pessimistic Lock Overlay -->
+    <div class="rfq-lock-overlay trf-lock-overlay" id="trfGlobalLockOverlay" aria-hidden="true">
         <div class="rfq-spinner"></div>
-        <div style="font-weight: 700; font-size: 1.05rem;" id="trfLockMessage">Processing Stock Transfer & Ledger Commit...</div>
-        <div style="font-size: 0.82rem; opacity: 0.8;">Applying atomic branch locks &amp; recording immutable inventory ledger</div>
+        <div class="trf-lock-title" id="trfLockMessage">Processing Stock Transfer &amp; Ledger Commit...</div>
+        <div class="trf-lock-sub">Applying atomic branch locks &amp; recording immutable inventory ledger</div>
     </div>
 
     <!-- Toast Notifications Root -->
     <div class="rfq-toast-container" id="trfToastContainer"></div>
 
-    <!-- 1. Page Header — Flat HR Title Row (Stock In Parity) -->
+    <!-- 1. Page Header — Flat HR Title Row with Grouped Action Hierarchy -->
     <div class="hr-parent-header">
         <div class="hr-parent-title-row">
             <div>
                 <h1 class="hr-parent-title">
-                    <i class="ph ph-arrows-left-right"></i>
+                    <i class="ph ph-arrows-left-right" aria-hidden="true"></i>
                     <span>Stock Transfer &amp; Branch Requests</span>
                 </h1>
                 <p class="hr-parent-subtitle">
-                    Inter-Branch Stock Requests (Pull), Direct Transfers (Push), Transit Custody &amp; Destination Acceptance Receipts
+                    <span>Inter-Branch Stock Requests (Pull), Direct Transfers (Push), Transit Custody &amp; Destination Acceptance Receipts</span>
                     @if($isConsolidated)
-                        <span class="trf-branch-ctx-pill" style="margin-left: 8px;"><i class="ph ph-stack"></i> Consolidated HQ View</span>
+                        <span class="trf-branch-ctx-pill"><i class="ph ph-stack" aria-hidden="true"></i> Consolidated HQ View</span>
                     @elseif($activeBranchName)
-                        <span class="trf-branch-ctx-pill" style="margin-left: 8px;"><i class="ph ph-storefront"></i> Active: {{ $activeBranchName }}</span>
+                        <span class="trf-branch-ctx-pill"><i class="ph ph-storefront" aria-hidden="true"></i> Active: {{ $activeBranchName }}</span>
                     @endif
                 </p>
             </div>
-            <div class="hr-page-actions">
-                <a href="{{ route('inventory.stocks-overview') }}" class="hr-btn hr-btn-secondary" title="View Stocks Overview">
-                    <i class="ph ph-squares-four"></i>
-                    <span>Stocks Overview</span>
-                </a>
-                <a href="{{ route('inventory.stock-in') }}" class="hr-btn hr-btn-secondary" title="Open Stock In / Receiving">
-                    <i class="ph ph-tray-arrow-down"></i>
-                    <span>Stock In</span>
-                </a>
-                <button type="button" class="hr-btn hr-btn-secondary" onclick="openSettlementModal()" title="View Inter-Branch Due-To / Due-From Settlement Matrix">
-                    <i class="ph ph-scales"></i>
-                    <span>Settlements</span>
-                </button>
-                <button type="button" class="hr-btn hr-btn-secondary" onclick="startNewTransferWorkbench('BRANCH_REQUEST')" title="Request stock from another branch into your branch">
-                    <i class="ph ph-hand-grabbing"></i>
-                    <span>Request Stock</span>
-                </button>
-                <button type="button" class="hr-btn hr-btn-primary" onclick="startNewTransferWorkbench('CUSTOM_PUSH')" title="Directly dispatch stock from your branch to another branch">
-                    <i class="ph ph-paper-plane-tilt"></i>
-                    <span>Direct Transfer</span>
-                </button>
+            <div class="hr-page-actions trf-header-actions">
+                <div class="trf-header-util-group">
+                    <a href="{{ route('inventory.stocks-overview') }}" class="hr-btn hr-btn-secondary trf-btn-ghost" title="View Stocks Overview">
+                        <i class="ph ph-squares-four" aria-hidden="true"></i>
+                        <span>Stocks Overview</span>
+                    </a>
+                    <a href="{{ route('inventory.stock-in') }}" class="hr-btn hr-btn-secondary trf-btn-ghost" title="Open Stock In / Receiving">
+                        <i class="ph ph-tray-arrow-down" aria-hidden="true"></i>
+                        <span>Stock In</span>
+                    </a>
+                    <button type="button" class="hr-btn hr-btn-secondary trf-btn-ghost" onclick="openSettlementModal()" title="View Inter-Branch Due-To / Due-From Settlement Matrix">
+                        <i class="ph ph-scales" aria-hidden="true"></i>
+                        <span>Settlements</span>
+                    </button>
+                </div>
+                <span class="trf-header-divider" aria-hidden="true"></span>
+                <div class="trf-header-cta-group">
+                    <button type="button" class="hr-btn hr-btn-secondary" onclick="startNewTransferWorkbench('BRANCH_REQUEST')" title="Request stock from another branch into your branch">
+                        <i class="ph ph-hand-grabbing" aria-hidden="true"></i>
+                        <span>Request Stock</span>
+                    </button>
+                    <button type="button" class="hr-btn hr-btn-primary" onclick="startNewTransferWorkbench('CUSTOM_PUSH')" title="Directly dispatch stock from your branch to another branch">
+                        <i class="ph ph-paper-plane-tilt" aria-hidden="true"></i>
+                        <span>Direct Transfer</span>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- 2. Segmented Nav Tabs Bar (2 Clean Tabs — Stock In Parity) -->
-    <nav class="rfq-nav-tabs-bar" id="trfTabsBar">
+    <!-- 2. Segmented Nav Tabs Bar (2 Clean Tabs) -->
+    <nav class="rfq-nav-tabs-bar" id="trfTabsBar" aria-label="Stock transfer views">
         <button type="button" class="rfq-tab-btn active" id="tabBtnTrfQueue" onclick="switchTrfTab('queue')">
-            <i class="ph ph-list-dashes"></i>
+            <i class="ph ph-list-dashes" aria-hidden="true"></i>
             <span>Transfers &amp; Requests Queue</span>
             <span class="rfq-tab-count" id="badgeQueueTotal">{{ $stats['totalTransfers'] ?? 0 }}</span>
         </button>
         <button type="button" class="rfq-tab-btn" id="tabBtnTrfBuilder" onclick="switchTrfTab('builder')">
-            <i class="ph ph-arrows-left-right"></i>
+            <i class="ph ph-arrows-left-right" aria-hidden="true"></i>
             <span id="tabBuilderTitle">Transfer &amp; Request Workbench</span>
             <span class="rfq-tab-badge" id="badgeBuilderStatus">New Request</span>
         </button>
@@ -122,62 +127,62 @@
          TAB 1: TRANSFERS & REQUESTS QUEUE (O(1) Server-Paginated + SQL KPIs)
          ===================================================================== -->
     <div class="rfq-tab-pane active" id="panelTrfQueue">
-        <!-- 4 Interactive KPI Cards (Click to filter) -->
+        <!-- 4 Accessible Interactive KPI Cards (Click to filter) -->
         <div class="rfq-kpi-grid">
-            <div class="rfq-kpi-card" data-kpi-filter="to_fulfill" onclick="applyKpiQuickFilter('to_fulfill')">
+            <button type="button" class="rfq-kpi-card trf-kpi-btn" data-kpi-filter="to_fulfill" onclick="applyKpiQuickFilter('to_fulfill')">
                 <div class="rfq-kpi-header">
                     <span class="rfq-kpi-label">Incoming Requests (To Fulfill)</span>
-                    <div class="rfq-kpi-icon purple"><i class="ph ph-inbox"></i></div>
+                    <div class="rfq-kpi-icon purple"><i class="ph ph-tray-arrow-down" aria-hidden="true"></i></div>
                 </div>
                 <div class="rfq-kpi-val" id="trfKpiIncoming">{{ $stats['incomingRequestsCount'] ?? 0 }} Open</div>
                 <div class="rfq-kpi-sub">Branch requests waiting for source approval / dispatch</div>
-            </div>
+            </button>
 
-            <div class="rfq-kpi-card" data-kpi-filter="my_requests" onclick="applyKpiQuickFilter('my_requests')">
+            <button type="button" class="rfq-kpi-card trf-kpi-btn" data-kpi-filter="my_requests" onclick="applyKpiQuickFilter('my_requests')">
                 <div class="rfq-kpi-header">
                     <span class="rfq-kpi-label">My Outgoing Requests</span>
-                    <div class="rfq-kpi-icon awaiting"><i class="ph ph-clock-countdown"></i></div>
+                    <div class="rfq-kpi-icon awaiting"><i class="ph ph-clock-countdown" aria-hidden="true"></i></div>
                 </div>
                 <div class="rfq-kpi-val" id="trfKpiOutgoing">{{ $stats['outgoingRequestsCount'] ?? 0 }} Pending</div>
                 <div class="rfq-kpi-sub">Requisitions your branch requested from other branches</div>
-            </div>
+            </button>
 
-            <div class="rfq-kpi-card" data-kpi-filter="to_receive" onclick="applyKpiQuickFilter('to_receive')">
+            <button type="button" class="rfq-kpi-card trf-kpi-btn" data-kpi-filter="to_receive" onclick="applyKpiQuickFilter('to_receive')">
                 <div class="rfq-kpi-header">
                     <span class="rfq-kpi-label">In Transit (To Accept)</span>
-                    <div class="rfq-kpi-icon draft"><i class="ph ph-truck"></i></div>
+                    <div class="rfq-kpi-icon draft"><i class="ph ph-truck" aria-hidden="true"></i></div>
                 </div>
                 <div class="rfq-kpi-val" id="trfKpiTransit">{{ $stats['toReceiveCount'] ?? 0 }} En Route</div>
                 <div class="rfq-kpi-sub" id="trfKpiTransitSub">{{ $stats['inTransitCount'] ?? 0 }} total in-transit shipments</div>
-            </div>
+            </button>
 
-            <div class="rfq-kpi-card" data-kpi-filter="completed" onclick="applyKpiQuickFilter('completed')">
+            <button type="button" class="rfq-kpi-card trf-kpi-btn" data-kpi-filter="completed" onclick="applyKpiQuickFilter('completed')">
                 <div class="rfq-kpi-header">
                     <span class="rfq-kpi-label">Completed &amp; Variance</span>
-                    <div class="rfq-kpi-icon emerald"><i class="ph ph-check-circle"></i></div>
+                    <div class="rfq-kpi-icon emerald"><i class="ph ph-check-circle" aria-hidden="true"></i></div>
                 </div>
                 <div class="rfq-kpi-val" id="trfKpiCompleted">{{ $stats['completedCount'] ?? 0 }} Done</div>
                 <div class="rfq-kpi-sub" id="trfKpiVarianceSub">{{ $stats['discrepancyCount'] ?? 0 }} with transit variance</div>
-            </div>
+            </button>
         </div>
 
-        <div class="rfq-panel-card" style="overflow: visible;">
+        <div class="rfq-panel-card trf-panel-card">
             <!-- Branch Perspective Bar -->
             <div class="trf-perspective-bar" id="trfPerspectiveBar">
                 <button type="button" class="trf-persp-btn active" data-persp="all" onclick="setPerspectiveFilter('all')">
-                    <i class="ph ph-squares-four"></i> All Activity
+                    <i class="ph ph-squares-four" aria-hidden="true"></i> All Activity
                 </button>
                 <button type="button" class="trf-persp-btn" data-persp="action_needed" onclick="setPerspectiveFilter('action_needed')">
-                    <i class="ph ph-lightning"></i> Action Needed
+                    <i class="ph ph-lightning" aria-hidden="true"></i> Action Needed
                 </button>
                 <button type="button" class="trf-persp-btn" data-persp="to_fulfill" onclick="setPerspectiveFilter('to_fulfill')">
-                    <i class="ph ph-paper-plane-tilt"></i> To Fulfill (Outbound)
+                    <i class="ph ph-paper-plane-tilt" aria-hidden="true"></i> To Fulfill (Outbound)
                 </button>
                 <button type="button" class="trf-persp-btn" data-persp="to_receive" onclick="setPerspectiveFilter('to_receive')">
-                    <i class="ph ph-package"></i> To Receive (Inbound)
+                    <i class="ph ph-package" aria-hidden="true"></i> To Receive (Inbound)
                 </button>
                 <button type="button" class="trf-persp-btn" data-persp="my_requests" onclick="setPerspectiveFilter('my_requests')">
-                    <i class="ph ph-hand-grabbing"></i> My Requests
+                    <i class="ph ph-hand-grabbing" aria-hidden="true"></i> My Requests
                 </button>
             </div>
 
@@ -185,10 +190,12 @@
             <div class="trf-queue-toolbar">
                 <div class="trf-queue-toolbar-left">
                     <div class="trf-queue-search-wrap">
-                        <i class="ph ph-magnifying-glass"></i>
-                        <input type="text" class="rfq-input" id="trfSearchInput" placeholder="Search Transfer #, Receipt #, Branch, Waybill, or SKU... (/)" oninput="onTrfSearchInput(this.value)">
+                        <label for="trfSearchInput" class="sr-only">Search transfers by reference, branch, waybill, or SKU</label>
+                        <i class="ph ph-magnifying-glass" aria-hidden="true"></i>
+                        <input type="text" class="rfq-input" id="trfSearchInput" aria-label="Search transfers by reference, branch, waybill, or SKU" placeholder="Search Transfer #, Branch, or SKU... (/)" oninput="onTrfSearchInput(this.value)">
                     </div>
 
+                    <label for="trfStatusFilter" class="sr-only">Filter by status</label>
                     <select id="trfStatusFilter" class="rfq-select trf-queue-filter-select" onchange="onTrfFilterChanged()">
                         <option value="ALL">All Statuses</option>
                         <option value="DRAFT">Draft</option>
@@ -202,6 +209,7 @@
                         <option value="CANCELLED">Cancelled</option>
                     </select>
 
+                    <label for="trfTypeFilter" class="sr-only">Filter by flow type</label>
                     <select id="trfTypeFilter" class="rfq-select trf-queue-filter-select" onchange="onTrfFilterChanged()">
                         <option value="ALL">All Flows</option>
                         <option value="BRANCH_REQUEST">Branch Request (Pull)</option>
@@ -210,6 +218,7 @@
                         <option value="COMMISSARY_REPLENISHMENT">Auto Replenishment</option>
                     </select>
 
+                    <label for="trfBranchFilter" class="sr-only">Filter by branch</label>
                     <select id="trfBranchFilter" class="rfq-select trf-queue-filter-select" onchange="onTrfFilterChanged()">
                         <option value="">All Branches</option>
                         @foreach($initialBranches as $br)
@@ -218,15 +227,15 @@
                     </select>
                 </div>
 
-                <div style="display: flex; align-items: center; gap: 8px;">
+                <div class="trf-queue-toolbar-right">
                     <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="fetchTransferQueue(1)" title="Refresh Queue">
-                        <i class="ph ph-arrows-clockwise"></i> Refresh
+                        <i class="ph ph-arrows-clockwise" aria-hidden="true"></i> Refresh
                     </button>
                 </div>
             </div>
 
             <!-- Responsive Table + Gear Settings -->
-            <div class="rfq-table-responsive" style="position: relative; overflow-x: auto;">
+            <div class="rfq-table-responsive trf-table-wrap">
                 <table class="rfq-table" id="trfQueueTable">
                     <colgroup id="trfQueueColgroup"></colgroup>
                     <thead id="trfQueueThead">
@@ -236,12 +245,12 @@
                 </table>
             </div>
 
-            <!-- Gear Column Settings Dropdown (Stock In Parity) -->
-            <div id="trfTableSettingsDropdown" class="rfq-table-settings-dropdown" style="display: none; position: fixed; z-index: 10075;" onclick="event.stopPropagation()">
+            <!-- Gear Column Settings Dropdown -->
+            <div id="trfTableSettingsDropdown" class="rfq-table-settings-dropdown trf-gear-dropdown">
                 <div class="rfq-settings-dropdown-header">
                     <div class="rfq-settings-title-row">
                         <div class="rfq-settings-title">
-                            <i class="ph ph-gear-six"></i>
+                            <i class="ph ph-gear-six" aria-hidden="true"></i>
                             <span>Table Columns</span>
                         </div>
                         <span class="rfq-col-badge-default" id="trfColActiveCounter">8 of 9 visible</span>
@@ -256,8 +265,8 @@
 
             <!-- Server-Side Pagination Footer -->
             <div class="trf-pagination-bar">
-                <div style="font-size: 12px; color: #64748b;" id="trfPaginationInfo">
-                    Showing <strong id="trfCountVisible" style="color: #0f172a;">0</strong> of <strong id="trfCountTotal" style="color: #0f172a;">0</strong> transfers
+                <div class="trf-pagination-info" id="trfPaginationInfo">
+                    Showing <strong id="trfCountVisible" class="trf-pagination-strong">0</strong> of <strong id="trfCountTotal" class="trf-pagination-strong">0</strong> transfers
                 </div>
                 <div class="trf-pager-btns" id="trfPagerButtons"></div>
             </div>
@@ -267,38 +276,38 @@
     <!-- =====================================================================
          TAB 2: UNIFIED TRANSFER & REQUEST WORKBENCH (3-Zone Stock In Sheet)
          ===================================================================== -->
-    <div class="po-tab-pane rfq-tab-pane" id="panelTrfBuilder" style="display: none;">
+    <div class="po-tab-pane rfq-tab-pane trf-panel-hidden" id="panelTrfBuilder">
 
         <!-- ZONE 1: Action Toolbar + Chevron Lifecycle Pipeline -->
         <div class="trf-zone1">
             <div class="trf-zone1-actions" role="toolbar" aria-label="Transfer lifecycle actions">
                 <button type="button" class="trf-top-action-btn is-neutral" id="btnTrfBackToQueue" onclick="switchTrfTab('queue')" title="Back to Queue">
-                    <i class="ph ph-arrow-left"></i>
-                    <span class="trf-top-btn-sep"></span>
+                    <i class="ph ph-arrow-left" aria-hidden="true"></i>
+                    <span class="trf-top-btn-sep" aria-hidden="true"></span>
                     <span>Queue</span>
                 </button>
 
                 <button type="button" class="trf-top-action-btn is-neutral" id="btnTrfSaveDraft" onclick="submitWorkbenchDraft()" title="Save request as draft">
-                    <i class="ph ph-floppy-disk"></i>
-                    <span class="trf-top-btn-sep"></span>
+                    <i class="ph ph-floppy-disk" aria-hidden="true"></i>
+                    <span class="trf-top-btn-sep" aria-hidden="true"></span>
                     <span>Save Draft</span>
                 </button>
 
                 <button type="button" class="trf-top-action-btn is-danger" id="btnTrfSecondaryDanger" onclick="openReasonModalForCurrentDoc()" title="Reject or cancel transfer" hidden>
-                    <i class="ph ph-x-circle"></i>
-                    <span class="trf-top-btn-sep"></span>
+                    <i class="ph ph-x-circle" aria-hidden="true"></i>
+                    <span class="trf-top-btn-sep" aria-hidden="true"></span>
                     <span id="btnTrfSecondaryDangerLabel">Cancel</span>
                 </button>
 
                 <button type="button" class="trf-top-action-btn is-secondary-purple" id="btnTrfApproveAndDispatch" onclick="handleApproveAndDispatchShortcut()" title="Approve & immediately dispatch shipment to transit" hidden>
-                    <i class="ph ph-truck"></i>
-                    <span class="trf-top-btn-sep"></span>
+                    <i class="ph ph-truck" aria-hidden="true"></i>
+                    <span class="trf-top-btn-sep" aria-hidden="true"></span>
                     <span>Approve &amp; Dispatch Now</span>
                 </button>
 
                 <button type="button" class="trf-top-action-btn is-primary" id="btnTrfPrimaryAction" onclick="handlePrimaryWorkbenchAction()" title="Execute primary step action (F10)">
-                    <span class="trf-top-btn-check"><i class="ph-bold ph-check"></i></span>
-                    <span class="trf-top-btn-sep"></span>
+                    <span class="trf-top-btn-check" aria-hidden="true"><i class="ph-bold ph-check"></i></span>
+                    <span class="trf-top-btn-sep" aria-hidden="true"></span>
                     <span id="btnTrfPrimaryActionLabel">Submit Stock Request →</span>
                 </button>
             </div>
@@ -306,10 +315,10 @@
             <div class="po-chevron-pipeline rfq-chevron-pipeline" id="trfLifecyclePipeline" role="list" aria-label="Transfer workflow stages"></div>
         </div>
 
-        <!-- Live Transit Simulation Banner (Stock In Parity) -->
+        <!-- Live Transit Simulation Banner -->
         <div class="trf-transit-banner" id="trfTransitBanner" role="status" aria-live="polite">
             <div class="trf-transit-node is-source">
-                <span class="trf-transit-node-icon"><i class="ph ph-warehouse"></i></span>
+                <span class="trf-transit-node-icon" aria-hidden="true"><i class="ph ph-warehouse"></i></span>
                 <div class="trf-transit-node-text">
                     <span class="trf-transit-kicker">FROM SOURCE BRANCH</span>
                     <strong id="trfBannerSourceLabel">Select Source Branch</strong>
@@ -320,15 +329,15 @@
                 <div class="trf-transit-track">
                     <div class="trf-transit-fill" id="trfBannerTrackFill"></div>
                     <div class="trf-transit-shuttle">
-                        <i class="ph-fill ph-package"></i>
+                        <i class="ph-fill ph-package" aria-hidden="true"></i>
                         <span id="trfBannerUnitsBadge">0.00 Units</span>
                     </div>
                 </div>
-                <span style="font-size: 11px; font-weight: 700; color: #6b21a8;" id="trfBannerStageLabel">Drafting Transfer</span>
+                <span class="trf-banner-stage" id="trfBannerStageLabel">Drafting Stock Request</span>
             </div>
 
             <div class="trf-transit-node is-dest">
-                <span class="trf-transit-node-icon"><i class="ph ph-storefront"></i></span>
+                <span class="trf-transit-node-icon" aria-hidden="true"><i class="ph ph-storefront"></i></span>
                 <div class="trf-transit-node-text">
                     <span class="trf-transit-kicker">TO DESTINATION BRANCH</span>
                     <strong id="trfBannerDestLabel">Select Destination Branch</strong>
@@ -336,10 +345,10 @@
             </div>
         </div>
 
-        <!-- Custody Separation Notice Banner (when active branch is waiting on partner branch) -->
+        <!-- Custody Separation Notice Banner -->
         <div class="trf-custody-banner" id="trfCustodyNoticeBanner" hidden>
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <i class="ph ph-shield-check" style="font-size: 18px;"></i>
+            <div class="trf-custody-msg">
+                <i class="ph ph-shield-check trf-custody-icon" aria-hidden="true"></i>
                 <span id="trfCustodyNoticeText">Custody check active.</span>
             </div>
             <span class="hr-badge hr-badge-neutral" id="trfCustodyNoticeTag">Custody Locked</span>
@@ -355,17 +364,17 @@
                     </div>
                     <div class="trf-id-seg" id="wbReceiptSeg" hidden>
                         <span class="trf-id-key">Receipt Voucher</span>
-                        <span class="trf-id-val trf-mono" id="wbReceiptNumber" style="color: #047857;">—</span>
+                        <span class="trf-id-val trf-mono trf-receipt-val" id="wbReceiptNumber">—</span>
                     </div>
                     <div class="trf-id-seg">
                         <span class="trf-id-key">Workflow Mode</span>
-                        <div style="margin-top: 2px;">
+                        <div class="trf-mode-wrap">
                             <span class="trf-type-tag is-pull" id="wbModeTag">Branch Request (Pull)</span>
                         </div>
                     </div>
                     <div class="trf-id-seg">
-                        <span class="trf-id-key">Priority</span>
-                        <select id="wbPrioritySelect" class="trf-control" style="height: 28px; font-size: 11.5px; padding: 0 8px; width: auto;" onchange="onWorkbenchHeaderChanged()">
+                        <label class="trf-id-key" for="wbPrioritySelect">Priority</label>
+                        <select id="wbPrioritySelect" class="trf-control trf-priority-select" onchange="onWorkbenchHeaderChanged()">
                             <option value="NORMAL">Normal</option>
                             <option value="HIGH">High</option>
                             <option value="URGENT">Urgent</option>
@@ -374,17 +383,17 @@
                     </div>
                 </div>
 
-                <div style="display: flex; align-items: center; gap: 8px;">
+                <div class="trf-ribbon-badges">
                     <span class="hr-badge hr-badge-neutral" id="wbPricingTag">At Cost (0%)</span>
                     <span class="trf-status-pill is-draft" id="wbStatusPill">Draft</span>
                 </div>
             </div>
 
-            <!-- 4 Visible Header Inputs (Strict Input Guillotine) -->
+            <!-- 4 Visible Header Inputs -->
             <div class="trf-form-grid-4">
                 <div class="trf-field">
                     <label class="trf-label" for="wbSourceBranchSelect">
-                        <i class="ph ph-warehouse"></i>
+                        <i class="ph ph-warehouse" aria-hidden="true"></i>
                         <span>From Branch (Source) *</span>
                     </label>
                     <select id="wbSourceBranchSelect" class="trf-control" onchange="onSourceBranchChanged(this.value)"></select>
@@ -392,7 +401,7 @@
 
                 <div class="trf-field">
                     <label class="trf-label" for="wbDestBranchSelect">
-                        <i class="ph ph-storefront"></i>
+                        <i class="ph ph-storefront" aria-hidden="true"></i>
                         <span>To Branch (Destination) *</span>
                     </label>
                     <select id="wbDestBranchSelect" class="trf-control" onchange="onDestBranchChanged(this.value)"></select>
@@ -400,7 +409,7 @@
 
                 <div class="trf-field">
                     <label class="trf-label" for="wbRequiredAtInput">
-                        <i class="ph ph-calendar-blank"></i>
+                        <i class="ph ph-calendar-blank" aria-hidden="true"></i>
                         <span>Target / Required Date</span>
                     </label>
                     <input type="date" id="wbRequiredAtInput" class="trf-control" onchange="onWorkbenchHeaderChanged()">
@@ -408,7 +417,7 @@
 
                 <div class="trf-field">
                     <label class="trf-label" for="wbReasonCodeSelect">
-                        <i class="ph ph-tag"></i>
+                        <i class="ph ph-tag" aria-hidden="true"></i>
                         <span>Reason Code</span>
                     </label>
                     <select id="wbReasonCodeSelect" class="trf-control" onchange="onWorkbenchHeaderChanged()">
@@ -421,28 +430,28 @@
                 </div>
             </div>
 
-            <!-- Collapsible Optional Logistics & Notes (<details>) -->
+            <!-- Collapsible Optional Logistics & Notes -->
             <details class="trf-logistics-details" id="wbLogisticsDetails">
                 <summary>
-                    <i class="ph ph-truck"></i>
+                    <i class="ph ph-truck" aria-hidden="true"></i>
                     <span>Dispatch Logistics, Waybill &amp; Custody Notes (Optional — Required for Courier Tracking)</span>
                 </summary>
                 <div class="trf-logistics-grid">
                     <div class="trf-field">
                         <label class="trf-label" for="wbCarrierInput">Carrier / Driver</label>
-                        <input type="text" id="wbCarrierInput" class="trf-control" maxlength="255" placeholder="e.g. Commissary Van 02" oninput="onWorkbenchHeaderChanged()">
+                        <input type="text" id="wbCarrierInput" aria-label="Carrier or Driver" class="trf-control" maxlength="255" placeholder="e.g. Commissary Van 02" oninput="onWorkbenchHeaderChanged()">
                     </div>
                     <div class="trf-field">
                         <label class="trf-label" for="wbPlateInput">Vehicle Plate #</label>
-                        <input type="text" id="wbPlateInput" class="trf-control" maxlength="100" placeholder="e.g. NGA-4821" oninput="onWorkbenchHeaderChanged()">
+                        <input type="text" id="wbPlateInput" aria-label="Vehicle Plate Number" class="trf-control" maxlength="100" placeholder="e.g. NGA-4821" oninput="onWorkbenchHeaderChanged()">
                     </div>
                     <div class="trf-field">
                         <label class="trf-label" for="wbWaybillInput">Waybill / Trip Ticket</label>
-                        <input type="text" id="wbWaybillInput" class="trf-control" maxlength="100" placeholder="e.g. WB-2026-019" oninput="onWorkbenchHeaderChanged()">
+                        <input type="text" id="wbWaybillInput" aria-label="Waybill or Trip Ticket" class="trf-control" maxlength="100" placeholder="e.g. WB-2026-019" oninput="onWorkbenchHeaderChanged()">
                     </div>
                     <div class="trf-field">
                         <label class="trf-label" for="wbNotesInput">Remarks / Instructions</label>
-                        <input type="text" id="wbNotesInput" class="trf-control" maxlength="500" placeholder="Special handling or receiving note..." oninput="onWorkbenchHeaderChanged()">
+                        <input type="text" id="wbNotesInput" aria-label="Remarks or Instructions" class="trf-control" maxlength="500" placeholder="Special handling or receiving note..." oninput="onWorkbenchHeaderChanged()">
                     </div>
                 </div>
             </details>
@@ -455,52 +464,54 @@
                     <!-- Toolbar: Quick-Scan + Add Item + 1-Click Accelerators -->
                     <div class="trf-items-toolbar">
                         <div class="trf-scan-bar">
-                            <i class="ph ph-barcode" style="color: #64748b;"></i>
+                            <i class="ph ph-barcode trf-scan-icon" aria-hidden="true"></i>
                             <label for="trfScanInput" class="sr-only">Scan barcode or SKU</label>
-                            <input type="text" id="trfScanInput" class="trf-scan-input" placeholder="Scan barcode or type SKU + Enter... (F2)" autocomplete="off" onkeydown="onTrfScanKeydown(event)">
+                            <input type="text" id="trfScanInput" aria-label="Scan barcode or SKU" class="trf-scan-input" placeholder="Scan barcode or type SKU + Enter... (F2)" autocomplete="off" onkeydown="onTrfScanKeydown(event)">
                         </div>
 
                         <div class="trf-items-toolbar-right">
                             <span class="po-items-counter-pill rfq-items-counter-pill" id="wbLinesCountBadge">0 Line Items</span>
 
                             <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" id="btnPullLowStock" onclick="pullLowStockSuggestions()" title="Auto-fill items below par level at destination with surplus at source">
-                                <i class="ph ph-sparkle"></i>
+                                <i class="ph ph-sparkle" aria-hidden="true"></i>
                                 <span>Pull Low-Stock Items</span>
                             </button>
 
                             <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" id="btnFillAvailable" onclick="fillAllAvailableQuantities()" title="Auto-fill dispatch quantities up to source available stock" hidden>
-                                <i class="ph ph-checks"></i>
+                                <i class="ph ph-checks" aria-hidden="true"></i>
                                 <span>Fill Available</span>
                             </button>
 
                             <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" id="btnReceiveAllShipped" onclick="receiveAllAsShipped()" title="Set received quantities equal to remaining shipped quantities" hidden>
-                                <i class="ph ph-check-square-offset"></i>
+                                <i class="ph ph-check-square-offset" aria-hidden="true"></i>
                                 <span>Receive All as Shipped</span>
                             </button>
 
                             <div class="trf-item-popover-wrap" id="wbAddItemWrap">
                                 <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" id="btnOpenItemPicker" onclick="toggleTrfItemPicker(event)">
-                                    <i class="ph ph-plus"></i>
+                                    <i class="ph ph-plus" aria-hidden="true"></i>
                                     <span>Add Item</span>
                                 </button>
-                                <div class="trf-item-popover" id="trfItemPickerDropdown" hidden onclick="event.stopPropagation()">
+                                <div class="trf-item-popover" id="trfItemPickerDropdown" hidden>
                                     <div class="trf-popover-search">
-                                        <input type="text" id="trfItemPickerSearch" class="trf-control" style="height: 32px;" placeholder="Search SKU or item name..." oninput="renderTrfItemPickerList(this.value)" autocomplete="off">
+                                        <label for="trfItemPickerSearch" class="sr-only">Search catalog items by SKU or name</label>
+                                        <input type="text" id="trfItemPickerSearch" aria-label="Search catalog items by SKU or name" class="trf-control trf-picker-search" placeholder="Search SKU or item name..." oninput="renderTrfItemPickerList(this.value)" autocomplete="off">
                                     </div>
                                     <div class="trf-popover-list" id="trfItemPickerList"></div>
                                 </div>
                             </div>
 
                             <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm trf-mockup-toggle" onclick="toggleTrfSlipDrawer()">
-                                <i class="ph ph-file-text"></i>
+                                <i class="ph ph-file-text" aria-hidden="true"></i>
                                 <span>Slip Preview</span>
                             </button>
                         </div>
                     </div>
 
                     <!-- Line Items Table -->
-                    <div class="po-table-responsive rfq-table-responsive" style="overflow-x: auto;">
+                    <div class="po-table-responsive rfq-table-responsive trf-items-table-wrap">
                         <table class="po-table rfq-table" id="wbItemsTable">
+                            <colgroup id="wbItemsColgroup"></colgroup>
                             <thead>
                                 <tr id="wbItemsTheadRow"></tr>
                             </thead>
@@ -521,15 +532,15 @@
                             </div>
                             <div class="trf-metric">
                                 <span class="trf-metric-label">Dispatched</span>
-                                <span class="trf-metric-val" style="color: #6d28d9;" id="wbSumDispatched">0.00</span>
+                                <span class="trf-metric-val trf-metric-dispatched" id="wbSumDispatched">0.00</span>
                             </div>
                             <div class="trf-metric">
                                 <span class="trf-metric-label">Accepted</span>
-                                <span class="trf-metric-val" style="color: #047857;" id="wbSumReceived">0.00</span>
+                                <span class="trf-metric-val trf-metric-received" id="wbSumReceived">0.00</span>
                             </div>
                             <div class="trf-metric" id="wbVarianceMetric" hidden>
                                 <span class="trf-metric-label">Variance</span>
-                                <span class="trf-metric-val" style="color: #b91c1c;" id="wbSumVariance">0.00</span>
+                                <span class="trf-metric-val trf-metric-variance" id="wbSumVariance">0.00</span>
                             </div>
                             <div class="trf-metric">
                                 <span class="trf-metric-label">Est. Value</span>
@@ -544,16 +555,16 @@
             <aside class="po-mockup-panel-col rfq-mockup-panel-col trf-mockup-col" id="trfSlipPanelCol" aria-label="Transfer Slip Preview">
                 <div class="po-panel-card po-mockup-card rfq-panel-card rfq-mockup-card">
                     <div class="trf-slip-head">
-                        <div style="display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 13px;">
-                            <i class="ph ph-file-text" style="color: var(--trf-primary);"></i>
+                        <div class="trf-slip-title">
+                            <i class="ph ph-file-text" aria-hidden="true"></i>
                             <span>Transfer Slip &amp; Custody</span>
                         </div>
-                        <div style="display: flex; align-items: center; gap: 6px;">
+                        <div class="trf-slip-actions">
                             <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="printTransferSlip()">
-                                <i class="ph ph-printer"></i> Print
+                                <i class="ph ph-printer" aria-hidden="true"></i> Print
                             </button>
-                            <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm trf-mockup-close" onclick="toggleTrfSlipDrawer(false)">
-                                <i class="ph ph-x"></i>
+                            <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm trf-mockup-close" onclick="toggleTrfSlipDrawer(false)" aria-label="Close slip preview">
+                                <i class="ph ph-x" aria-hidden="true"></i>
                             </button>
                         </div>
                     </div>
@@ -563,21 +574,21 @@
         </div>
     </div>
 
-    <!-- Partial Dispatch Backorder Choice Modal (Stock In Parity) -->
+    <!-- Partial Dispatch Backorder Choice Modal -->
     <div class="trf-modal-backdrop" id="trfBackorderModal" hidden>
         <div class="trf-modal-card" role="dialog" aria-modal="true" aria-labelledby="trfBoModalTitle">
             <div class="trf-modal-head">
-                <div style="display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 14px;" id="trfBoModalTitle">
-                    <i class="ph ph-arrows-split" style="color: var(--trf-primary); font-size: 18px;"></i>
+                <div class="trf-modal-head-title" id="trfBoModalTitle">
+                    <i class="ph ph-arrows-split trf-modal-icon" aria-hidden="true"></i>
                     <span>Partial Dispatch — Remaining Balance</span>
                 </div>
-                <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="closeBackorderModal()">
-                    <i class="ph ph-x"></i>
+                <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="closeBackorderModal()" aria-label="Close dialog">
+                    <i class="ph ph-x" aria-hidden="true"></i>
                 </button>
             </div>
             <div class="trf-modal-body">
-                <p style="margin: 0; font-size: 12.5px; color: #334155; line-height: 1.5;" id="trfBoModalSummary"></p>
-                <div style="padding: 10px 12px; border-radius: 10px; background: #faf5ff; border: 1px solid #e9d5ff; font-size: 12px; color: #581c87;">
+                <p class="trf-modal-desc" id="trfBoModalSummary"></p>
+                <div class="trf-modal-callout">
                     Choose whether to create an open <strong>Backorder Request</strong> for the unfulfilled items or short-close this request after dispatch.
                 </div>
             </div>
@@ -586,49 +597,49 @@
                     Short-Close Balance
                 </button>
                 <button type="button" class="hr-btn hr-btn-primary" onclick="confirmPartialDispatchChoice(true)">
-                    <i class="ph ph-plus-circle"></i> Dispatch &amp; Create Backorder
+                    <i class="ph ph-plus-circle" aria-hidden="true"></i> Dispatch &amp; Create Backorder
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Reject / Cancel Reason Modal (Replaces window.prompt) -->
+    <!-- Reject / Cancel Reason Modal -->
     <div class="trf-modal-backdrop" id="trfReasonModal" hidden>
         <div class="trf-modal-card" role="dialog" aria-modal="true" aria-labelledby="trfReasonModalTitle">
             <div class="trf-modal-head">
-                <div style="display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 14px;" id="trfReasonModalTitle">
-                    <i class="ph ph-warning-circle" style="color: #b91c1c; font-size: 18px;"></i>
+                <div class="trf-modal-head-title" id="trfReasonModalTitle">
+                    <i class="ph ph-warning-circle trf-modal-icon trf-modal-icon--danger" aria-hidden="true"></i>
                     <span id="trfReasonModalHeading">Confirm Action</span>
                 </div>
-                <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="closeReasonModal()">
-                    <i class="ph ph-x"></i>
+                <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="closeReasonModal()" aria-label="Close dialog">
+                    <i class="ph ph-x" aria-hidden="true"></i>
                 </button>
             </div>
             <div class="trf-modal-body">
                 <label class="trf-label" for="trfReasonTextarea">Reason / Audit Remark *</label>
-                <textarea id="trfReasonTextarea" class="trf-control" style="height: 84px; padding: 10px 12px;" maxlength="500" placeholder="Enter reason for audit trail..."></textarea>
+                <textarea id="trfReasonTextarea" class="trf-control trf-modal-textarea" maxlength="500" placeholder="Enter reason for audit trail..."></textarea>
             </div>
             <div class="trf-modal-foot">
                 <button type="button" class="hr-btn hr-btn-secondary" onclick="closeReasonModal()">Back</button>
-                <button type="button" class="hr-btn hr-btn-primary" style="background: #b91c1c; border-color: #b91c1c;" id="btnConfirmReasonModal" onclick="submitReasonModal()">Confirm</button>
+                <button type="button" class="hr-btn hr-btn-primary trf-btn-danger" id="btnConfirmReasonModal" onclick="submitReasonModal()">Confirm</button>
             </div>
         </div>
     </div>
 
     <!-- Inter-Branch Due-To / Due-From Settlement Matrix Modal -->
     <div class="trf-modal-backdrop" id="trfSettlementModal" hidden>
-        <div class="trf-modal-card" style="max-width: 760px;" role="dialog" aria-modal="true" aria-labelledby="trfSettlementModalTitle">
+        <div class="trf-modal-card trf-modal-card--wide" role="dialog" aria-modal="true" aria-labelledby="trfSettlementModalTitle">
             <div class="trf-modal-head">
-                <div style="display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 14px;" id="trfSettlementModalTitle">
-                    <i class="ph ph-scales" style="color: var(--trf-primary); font-size: 18px;"></i>
+                <div class="trf-modal-head-title" id="trfSettlementModalTitle">
+                    <i class="ph ph-scales trf-modal-icon" aria-hidden="true"></i>
                     <span>Inter-Branch Settlement Matrix (Due-To / Due-From GL)</span>
                 </div>
-                <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="closeSettlementModal()">
-                    <i class="ph ph-x"></i>
+                <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="closeSettlementModal()" aria-label="Close dialog">
+                    <i class="ph ph-x" aria-hidden="true"></i>
                 </button>
             </div>
-            <div class="trf-modal-body" id="trfSettlementModalBody" style="max-height: 65vh; overflow-y: auto;">
-                <div style="text-align: center; padding: 24px; color: #64748b;">Loading inter-branch balances...</div>
+            <div class="trf-modal-body trf-settlement-body" id="trfSettlementModalBody">
+                <div class="trf-settlement-loading">Loading inter-branch balances...</div>
             </div>
             <div class="trf-modal-foot">
                 <button type="button" class="hr-btn hr-btn-secondary" onclick="closeSettlementModal()">Close</button>

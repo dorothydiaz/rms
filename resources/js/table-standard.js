@@ -5,10 +5,10 @@
  * First and last (Actions) columns are locked visible.
  */
 (function () {
-    // Tables that already ship their own column settings (RFQ / PO / UOM / Stock In / Products): style + sticky only.
-    const OWN_SETTINGS_IDS = ['rfqDirectoryTable', 'poDirectoryTable', 'uomDirectoryTable', 'queueTable', 'masterProductTable', 'stocksOverviewTable', 'schedMatrixTable', 'whLocationsTable', 'apBillsRegisterTable', 'apVendorOpenBalancesTable'];
+    // Tables that already ship their own column settings (RFQ / PO / UOM / Stock In / Products / Internal Transfer): style + sticky only.
+    const OWN_SETTINGS_IDS = ['rfqDirectoryTable', 'poDirectoryTable', 'uomDirectoryTable', 'queueTable', 'trfQueueTable', 'masterProductTable', 'stocksOverviewTable', 'schedMatrixTable', 'whLocationsTable', 'apBillsRegisterTable', 'apVendorOpenBalancesTable'];
     const TABLE_SELECTOR = 'table.hr-table, table.vendor-table, table.prd-table, table.bom-table, table.rr-table, table.biz-table, table.org-dir-table, table.trf-table, table.out-table, table.wst-table, table.stk-table, table.uom-table, table.inv-master-table, table.rfq-table, table.po-table';
-    const EXCLUDE = '[class*="modal"], dialog, .swal2-container, .inv-subtable, .rfq-subtable, .uom-subtable, .stk-subtable, .grn-items-table, #intakeTable, #rfqTableContainer table, #poItemsTable, .sched-matrix-table, [id*="print"]';
+    const EXCLUDE = '[class*="modal"], dialog, .swal2-container, .inv-subtable, .rfq-subtable, .uom-subtable, .stk-subtable, .grn-items-table, #intakeTable, #wbItemsTable, #rfqTableContainer table, #poItemsTable, .sched-matrix-table, [id*="print"]';
     let seq = 0;
     const STORE = 'rms_tbl_hidden_cols_v1:';
     let openDropdown = null;
