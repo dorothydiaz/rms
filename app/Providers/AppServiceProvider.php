@@ -7,8 +7,10 @@ use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Schema;
 use App\Services\CompanyBranchContext;
 use App\Models\Company;
+use App\Models\Hr\InternalNotification;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -74,6 +76,36 @@ class AppServiceProvider extends ServiceProvider
                     'isConsolidatedView' => $context->isConsolidatedView(),
                 ]);
             }
+        });
+
+        // Header Switcher Notifications Composer
+        View::composer('components.context-switcher', function ($view) {
+            $user = Auth::user();
+            $headerUnreadNotificationsCount = 0;
+            $headerNotifications = collect();
+
+            if ($user) {
+                try {
+                    if (Schema::hasTable('internal_notifications')) {
+                        $headerUnreadNotificationsCount = InternalNotification::forUser($user)
+                            ->where('is_read', false)
+                            ->count();
+                        $headerNotifications = InternalNotification::forUser($user)
+                            ->orderBy('is_read')
+                            ->orderByDesc('created_at')
+                            ->limit(10)
+                            ->get();
+                    }
+                } catch (\Throwable $e) {
+                    $headerUnreadNotificationsCount = 0;
+                    $headerNotifications = collect();
+                }
+            }
+
+            $view->with([
+                'headerUnreadNotificationsCount' => $headerUnreadNotificationsCount,
+                'headerNotifications' => $headerNotifications,
+            ]);
         });
     }
 }

@@ -1,236 +1,372 @@
 @php
-    $checkedCompanyIds = $checkedCompanyIds ?? [];
-    $checkedBranchIds = $checkedBranchIds ?? [];
-    $totalCheckedCount = count($checkedCompanyIds) + count($checkedBranchIds);
+    $authUser = auth()->user();
+    $userName = $authUser?->name ?? 'Guest User';
+    $userRole = $authUser?->role ?? 'Staff';
+    $userPhoto = $authUser?->employee?->photo ?? null;
+
+    $nameParts = preg_split('/\s+/', trim((string) $userName)) ?: [];
+    $userInitials = strtoupper(
+        substr($nameParts[0] ?? 'U', 0, 1) .
+        (isset($nameParts[1]) ? substr($nameParts[1], 0, 1) : '')
+    );
+
+    $checkedBranchIds = array_values(array_unique(array_map('intval', $checkedBranchIds ?? [])));
     $isConsolidatedView = $isConsolidatedView ?? false;
     $currentCompany = $currentCompany ?? null;
     $currentBranch = $currentBranch ?? null;
     $navCompaniesTree = $navCompaniesTree ?? collect();
-    $allowedCompanies = $allowedCompanies ?? collect();
+
+    $accessibleBranches = collect();
+    $companyCount = 0;
+
+    foreach ($navCompaniesTree as $comp) {
+        $compBranches = ($comp->branches ?? collect())->filter(function ($br) use ($authUser) {
+            if (!$authUser) {
+                return true;
+            }
+            return $authUser->isSuperAdmin() || $authUser->canAccessBranch((int) $br->branch_id);
+        });
+
+        if ($compBranches->isNotEmpty()) {
+            $companyCount++;
+            foreach ($compBranches as $br) {
+                $accessibleBranches->push((object) [
+                    'branch_id' => (int) $br->branch_id,
+                    'company_id' => (int) $comp->company_id,
+                    'company_name' => $comp->company_trade_name ?: $comp->company_legal_name,
+                    'branch_name' => $br->branch_name,
+                    'branch_code' => $br->branch_code,
+                    'branch_type' => $br->branch_type,
+                    'branch_city' => $br->branch_city,
+                    'branch_address_line_1' => $br->branch_address_line_1,
+                ]);
+            }
+        }
+    }
+
+    if ($accessibleBranches->isEmpty() && $currentBranch) {
+        $accessibleBranches->push((object) [
+            'branch_id' => (int) $currentBranch->branch_id,
+            'company_id' => (int) ($currentCompany?->company_id ?? $currentBranch->company_id),
+            'company_name' => $currentCompany?->company_trade_name ?: $currentCompany?->company_legal_name ?: '',
+            'branch_name' => $currentBranch->branch_name,
+            'branch_code' => $currentBranch->branch_code,
+            'branch_type' => $currentBranch->branch_type,
+            'branch_city' => $currentBranch->branch_city,
+            'branch_address_line_1' => $currentBranch->branch_address_line_1,
+        ]);
+        $companyCount = 1;
+    }
+
+    $accessibleBranchIds = $accessibleBranches->pluck('branch_id')->all();
+    $activeBranchIds = array_values(array_intersect($checkedBranchIds, $accessibleBranchIds));
+    if (empty($activeBranchIds) && $currentBranch && in_array((int) $currentBranch->branch_id, $accessibleBranchIds, true)) {
+        $activeBranchIds = [(int) $currentBranch->branch_id];
+    } elseif (empty($activeBranchIds) && $accessibleBranches->isNotEmpty()) {
+        $activeBranchIds = [$accessibleBranches->first()->branch_id];
+    }
+
+    $primaryBranchId = $currentBranch ? (int) $currentBranch->branch_id : ($activeBranchIds[0] ?? null);
+
+    $makeBranchMonogram = static function (?string $name, ?string $code): string {
+        $cleanCode = strtoupper(preg_replace('/^(BR-|BRANCH-)/i', '', trim((string) $code)));
+        $alphaCode = preg_replace('/[^A-Z]/', '', $cleanCode);
+        if (strlen($alphaCode) >= 2 && strlen($alphaCode) <= 3) {
+            return substr($alphaCode, 0, 2);
+        }
+
+        $words = array_values(array_filter(preg_split('/\s+/', preg_replace('/[^a-zA-Z0-9\s]/', ' ', (string) $name)) ?: []));
+        if (count($words) >= 2) {
+            $first = strtoupper($words[0]);
+            $second = strtoupper($words[1]);
+            if ($second === 'BRANCH' && $first !== 'MAIN' && strlen($first) >= 2) {
+                return substr($first, 0, 2);
+            }
+            return substr($first, 0, 1) . substr($second, 0, 1);
+        }
+
+        if (!empty($words)) {
+            return strtoupper(substr($words[0], 0, 2));
+        }
+
+        return 'BR';
+    };
+
+    $selectedBranches = $accessibleBranches->filter(fn ($b) => in_array($b->branch_id, $activeBranchIds, true))->values();
+    $selectedCount = $selectedBranches->count();
+    $totalBranches = $accessibleBranches->count();
+
+    if ($isConsolidatedView && $companyCount >= 1) {
+        $branchSummaryLabel = 'All Branches';
+    } elseif ($selectedCount === 1) {
+        $branchSummaryLabel = $selectedBranches->first()->branch_name;
+    } elseif ($selectedCount > 1) {
+        $primaryObj = $selectedBranches->firstWhere('branch_id', $primaryBranchId) ?? $selectedBranches->first();
+        $branchSummaryLabel = $primaryObj->branch_name . ' +' . ($selectedCount - 1);
+    } else {
+        $branchSummaryLabel = 'Select Branch';
+    }
+
+    // Order stacked trigger chips with active branches first (up to 3 visible chips + optional +N)
+    $orderedForStack = $accessibleBranches->sortByDesc(fn ($b) => in_array($b->branch_id, $activeBranchIds, true) ? 1 : 0)->values();
+    $stackChips = $orderedForStack->take(3);
+    $stackOverflowCount = max(0, $orderedForStack->count() - 3);
+
+    $unreadCount = (int) ($headerUnreadNotificationsCount ?? 0);
+    $notifications = $headerNotifications ?? collect();
+    $notifExpandedByDefault = $unreadCount > 0;
 @endphp
 
 <div class="entity-context-switcher" id="entityContextSwitcher">
-    <!-- Trigger Button in Header (Matches Header Date Badge Exactly) -->
-    <button type="button" class="entity-switcher-btn {{ $isConsolidatedView ? 'is-consolidated' : '' }}" id="entitySwitcherBtn" aria-haspopup="true" aria-expanded="false" title="Click to open Entity Selector & View Scope">
-        @if($currentCompany && $currentCompany->company_logo)
-            <img src="{{ asset('storage/' . $currentCompany->company_logo) }}" alt="Logo" class="entity-logo-mini">
-        @else
-            <i class="ph {{ $isConsolidatedView ? 'ph-stack' : 'ph-buildings' }}"></i>
+    <!-- Topbar Pill Trigger -->
+    <button
+        type="button"
+        class="ecs-trigger-pill"
+        id="entitySwitcherBtn"
+        aria-haspopup="true"
+        aria-expanded="false"
+        title="Switch active branches, view notifications & account settings"
+    >
+        <div class="ecs-avatar-wrap">
+            <div class="ecs-avatar">
+                @if($userPhoto)
+                    <img src="{{ asset('storage/' . $userPhoto) }}" alt="{{ $userName }}" class="ecs-avatar-img">
+                @else
+                    <i class="ph-fill ph-user ecs-avatar-silhouette" aria-hidden="true"></i>
+                @endif
+            </div>
+            <span class="ecs-online-dot" aria-hidden="true"></span>
+            <span
+                class="ecs-notif-pill"
+                id="ecsAvatarNotifPill"
+                style="{{ $unreadCount > 0 ? '' : 'display: none;' }}"
+                aria-label="{{ $unreadCount }} unread notifications"
+            >{{ $unreadCount > 99 ? '99+' : $unreadCount }}</span>
+        </div>
+
+        <div class="ecs-user-meta">
+            <span class="ecs-user-name">{{ $userName }}</span>
+            <span class="ecs-user-sub" id="ecsTriggerBranchSummary">{{ $userRole }} &middot; {{ $branchSummaryLabel }}</span>
+        </div>
+
+        @if($stackChips->isNotEmpty())
+            <span class="ecs-trigger-divider" aria-hidden="true"></span>
+
+            <div class="ecs-branch-stack" id="ecsTriggerBranchStack" aria-hidden="true">
+                @foreach($stackChips as $idx => $chipBranch)
+                    @php
+                        $isChipActive = in_array($chipBranch->branch_id, $activeBranchIds, true);
+                        $mono = $makeBranchMonogram($chipBranch->branch_name, $chipBranch->branch_code);
+                    @endphp
+                    <span
+                        class="ecs-stack-chip {{ $isChipActive ? 'is-active' : '' }}"
+                        style="z-index: {{ 10 - $idx }};"
+                        title="{{ $chipBranch->branch_name }}"
+                    >{{ $mono }}</span>
+                @endforeach
+                @if($stackOverflowCount > 0)
+                    <span class="ecs-stack-chip ecs-stack-overflow" style="z-index: 6;">+{{ $stackOverflowCount }}</span>
+                @endif
+            </div>
         @endif
-        
-        <span class="company-name" title="{{ $currentCompany?->company_trade_name ?: $currentCompany?->company_legal_name }}">
-            {{ $currentCompany ? ($currentCompany->company_trade_name ?: $currentCompany->company_legal_name) : 'Select Company' }}
+
+        <span class="ecs-chevron-circle" aria-hidden="true">
+            <i class="ph-bold ph-caret-down entity-chevron"></i>
         </span>
-
-        @if(!$isConsolidatedView && $currentBranch)
-            <span class="entity-sep">•</span>
-            <span class="branch-name" title="{{ $currentBranch->branch_name }}">{{ $currentBranch->branch_name }}</span>
-        @endif
-
-        @if($isConsolidatedView)
-            <span class="badge-mode consolidated">Consolidated</span>
-        @elseif($totalCheckedCount > 1)
-            <span class="badge-mode scope" title="Multi-entity aggregated view active">{{ $totalCheckedCount }} in Scope</span>
-        @endif
-
-        <i class="ph ph-caret-down entity-chevron"></i>
     </button>
 
-    <!-- Context Switcher Dropdown Panel (Spacious Minimalist Design) -->
-    <div class="entity-switcher-dropdown" id="entitySwitcherDropdown">
-        <!-- Pinned Header -->
-        <div class="entity-dropdown-header">
-            <div class="dropdown-title-row">
-                <div class="dropdown-title">
-                    <div class="dropdown-title-badge">
-                        <i class="ph ph-tree-structure"></i>
-                    </div>
-                    <div>
-                        <div class="dropdown-title-text">Entity Hierarchy & Scope</div>
-                        <div class="dropdown-title-sub">Multi-branch view & active workspace</div>
-                    </div>
-                </div>
-                <button type="button" class="btn-consolidated-toggle {{ $isConsolidatedView ? 'active' : '' }}" id="btnToggleConsolidated" title="Toggle cross-branch consolidated view mode" onclick="RMSContextSwitcher.toggleConsolidated()">
-                    <i class="ph {{ $isConsolidatedView ? 'ph-check-circle' : 'ph-stack' }}"></i>
-                    <span>{{ $isConsolidatedView ? 'Consolidated Active' : 'Consolidate View' }}</span>
-                </button>
+    <!-- Context & Settings Popover -->
+    <div class="entity-switcher-dropdown ecs-popover" id="entitySwitcherDropdown" role="dialog" aria-label="Branch selector, notifications, and account settings">
+        <!-- Profile Identity Header -->
+        <div class="ecs-pop-header">
+            <div class="ecs-avatar ecs-avatar-lg">
+                @if($userPhoto)
+                    <img src="{{ asset('storage/' . $userPhoto) }}" alt="{{ $userName }}" class="ecs-avatar-img">
+                @else
+                    <i class="ph-fill ph-user ecs-avatar-silhouette" aria-hidden="true"></i>
+                @endif
             </div>
-            
-            <!-- Minimalist Hint Banner -->
-            <div class="entity-scope-instruction">
-                <div class="instruction-item">
-                    <span class="instruction-pill pill-scope"><i class="ph ph-check-square"></i> Scope</span>
-                    <span class="instruction-text">Checkboxes set <strong>View Scope</strong></span>
+            <div class="ecs-pop-identity">
+                <div class="ecs-pop-name">{{ $userName }}</div>
+                <div class="ecs-pop-status">
+                    <span class="ecs-status-dot" aria-hidden="true"></span>
+                    <span>{{ $userRole }} &middot; Online</span>
                 </div>
-                <div class="instruction-dot"></div>
-                <div class="instruction-item">
-                    <span class="instruction-pill pill-write"><i class="ph ph-radio-button"></i> Active</span>
-                    <span class="instruction-text">Click row to set <strong>Write Target</strong></span>
-                </div>
-            </div>
-
-            <!-- Modern Search Box -->
-            <div class="entity-search-box">
-                <i class="ph ph-magnifying-glass"></i>
-                <input type="text" id="entitySearchInput" placeholder="Search company, branch, or code..." autocomplete="off">
-                <button type="button" class="search-clear-btn" id="entitySearchClear" style="display: none;">&times;</button>
-            </div>
-
-            <!-- Table Header Legend for Aligned Columns -->
-            <div class="entity-grid-head">
-                <div class="col-head col-cb" title="Tick to include in view scope">View</div>
-                <div class="col-head col-id">Entity & Name</div>
-                <div class="col-head col-type">Type</div>
-                <div class="col-head col-action">Active</div>
             </div>
         </div>
 
-        <!-- Scrollable Entity Grid -->
-        <div class="entity-dropdown-body" id="entityTreeList">
-            @forelse($navCompaniesTree as $comp)
-                @php
-                    $isCompActive = $currentCompany && $currentCompany->company_id === $comp->company_id;
-                    $compBranches = $comp->branches;
-                    $isCompChecked = in_array((int)$comp->company_id, $checkedCompanyIds, true);
-                @endphp
-                <div class="entity-company-node {{ $isCompActive ? 'is-active-company' : '' }}" data-company-id="{{ $comp->company_id }}" data-search-text="{{ strtolower($comp->company_legal_name . ' ' . $comp->company_trade_name . ' ' . $comp->company_code) }}">
-                    <!-- Company Row -->
-                    <div class="entity-grid-row company-row {{ $isCompActive && !$currentBranch ? 'row-active-write' : '' }}" onclick="RMSContextSwitcher.selectActiveEntity({{ $comp->company_id }}, null)">
-                        <!-- Col 1: Checkbox -->
-                        <div class="col-grid col-cb" onclick="event.stopPropagation()">
-                            <label class="custom-chk-label">
-                                <input type="checkbox" class="scope-chk comp-scope-chk" data-type="company" data-id="{{ $comp->company_id }}" {{ $isCompChecked ? 'checked' : '' }} onchange="RMSContextSwitcher.onScopeChange(this, {{ $comp->company_id }}, null)">
-                                <span class="chk-box"></span>
-                            </label>
-                        </div>
-
-                        <!-- Col 2: Identity -->
-                        <div class="col-grid col-id">
-                            @if($compBranches->isNotEmpty())
-                                <button type="button" class="caret-box" onclick="event.stopPropagation(); RMSContextSwitcher.toggleAccordion(this)" title="Toggle branches">
-                                    <i class="ph ph-caret-down"></i>
-                                </button>
-                            @else
-                                <div class="caret-spacer"></div>
-                            @endif
-
-                            <div class="entity-avatar-box">
-                                @if($comp->company_logo)
-                                    <img src="{{ asset('storage/' . $comp->company_logo) }}" alt="Logo" class="avatar-img">
-                                @else
-                                    <i class="ph ph-buildings"></i>
-                                @endif
-                            </div>
-
-                            <div class="entity-text-box">
-                                <span class="entity-main-title" title="{{ $comp->company_trade_name ?: $comp->company_legal_name }}">
-                                    {{ $comp->company_trade_name ?: $comp->company_legal_name }}
-                                </span>
-                                <span class="entity-code-chip">{{ $comp->company_code }}</span>
-                            </div>
-                        </div>
-
-                        <!-- Col 3: Type Badge -->
-                        <div class="col-grid col-type">
-                            <span class="entity-type-badge comp-type">Company</span>
-                        </div>
-
-                        <!-- Col 4: Action / Active Indicator -->
-                        <div class="col-grid col-action">
-                            @if($isCompActive && (!$currentBranch || $isConsolidatedView))
-                                <span class="badge-active-pill" title="Currently Active Entity">
-                                    <i class="ph ph-check"></i> Active
-                                </span>
-                            @else
-                                <span class="radio-target" title="Click row to set Active Write Entity"></span>
-                            @endif
-                        </div>
-                    </div>
-
-                    <!-- Nested Branches -->
-                    @if($compBranches->isNotEmpty())
-                        <div class="company-branches-tree">
-                            @foreach($compBranches as $br)
-                                @php
-                                    $isBrActive = $isCompActive && !$isConsolidatedView && $currentBranch && $currentBranch->branch_id === $br->branch_id;
-                                    $isBrChecked = in_array((int)$br->branch_id, $checkedBranchIds, true);
-                                    $typeLabel = $br->branch_type === 'Central Commissary' || str_contains(strtolower($br->branch_name), 'commissary') ? 'Commissary' : ($br->branch_type === 'Warehouse' ? 'Warehouse' : 'Branch');
-                                    $typeClass = $typeLabel === 'Commissary' ? 'commissary-type' : ($typeLabel === 'Warehouse' ? 'warehouse-type' : 'branch-type');
-                                @endphp
-                                <div class="entity-grid-row branch-row {{ $isBrActive ? 'row-active-write' : '' }}" data-branch-id="{{ $br->branch_id }}" data-search-text="{{ strtolower($br->branch_name . ' ' . $br->branch_code . ' ' . $br->branch_type) }}" onclick="RMSContextSwitcher.selectActiveEntity({{ $comp->company_id }}, {{ $br->branch_id }})">
-                                    <!-- Col 1: Checkbox -->
-                                    <div class="col-grid col-cb" onclick="event.stopPropagation()">
-                                        <label class="custom-chk-label">
-                                            <input type="checkbox" class="scope-chk branch-scope-chk" data-type="branch" data-id="{{ $br->branch_id }}" {{ $isBrChecked ? 'checked' : '' }} onchange="RMSContextSwitcher.onScopeChange(this, {{ $comp->company_id }}, {{ $br->branch_id }})">
-                                            <span class="chk-box"></span>
-                                        </label>
-                                    </div>
-
-                                    <!-- Col 2: Identity with elegant curved tree connector -->
-                                    <div class="col-grid col-id nested-branch-col">
-                                        <div class="tree-branch-line"></div>
-                                        <div class="entity-avatar-box branch-avatar">
-                                            <i class="ph ph-storefront"></i>
-                                        </div>
-                                        <div class="entity-text-box">
-                                            <span class="entity-main-title" title="{{ $br->branch_name }}">{{ $br->branch_name }}</span>
-                                            <span class="entity-code-chip">{{ $br->branch_code }}</span>
-                                        </div>
-                                    </div>
-
-                                    <!-- Col 3: Type Badge -->
-                                    <div class="col-grid col-type">
-                                        <span class="entity-type-badge {{ $typeClass }}" title="{{ $br->branch_type }}">
-                                            {{ $typeLabel }}
-                                        </span>
-                                    </div>
-
-                                    <!-- Col 4: Action / Active Indicator -->
-                                    <div class="col-grid col-action">
-                                        @if($isBrActive)
-                                            <span class="badge-active-pill" title="Currently Active Branch">
-                                                <i class="ph ph-check"></i> Active
-                                            </span>
-                                        @else
-                                            <span class="radio-target" title="Click row to set Active Write Entity"></span>
-                                        @endif
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
+        <!-- Multi-Branch Active Selector -->
+        <div class="ecs-section">
+            <div class="ecs-section-head">
+                <span class="ecs-section-label">ACTIVE BRANCHES</span>
+                <div class="ecs-section-meta">
+                    <span class="ecs-branch-count" id="ecsBranchCountLabel">{{ $selectedCount }} of {{ $totalBranches }} active</span>
+                    @if($totalBranches > 1)
+                        <button
+                            type="button"
+                            class="ecs-text-action"
+                            id="ecsToggleAllBtn"
+                            onclick="RMSContextSwitcher.toggleSelectAll()"
+                        >{{ $selectedCount === $totalBranches ? 'Only primary' : 'Select all' }}</button>
                     @endif
                 </div>
-            @empty
-                <div class="entity-empty-state">
-                    <i class="ph ph-warning-circle"></i>
-                    <p>No active entities accessible.</p>
-                </div>
-            @endforelse
-        </div>
+            </div>
 
-        <!-- Dropdown Footer -->
-        <div class="entity-dropdown-footer">
-            <a href="{{ route('config.companies-branches.index') }}" class="btn-manage-entities">
-                <i class="ph ph-buildings"></i>
-                <span>Companies & Branches Hub</span>
-            </a>
-            <div class="scope-status-pill" id="scopeStatusIndicator">
-                <span id="scopeSelectedCount">{{ $totalCheckedCount }} In Scope</span>
+            @if($totalBranches > 5)
+                <div class="ecs-search-wrap">
+                    <i class="ph ph-magnifying-glass"></i>
+                    <input
+                        type="text"
+                        id="entitySearchInput"
+                        placeholder="Search branch or city..."
+                        autocomplete="off"
+                    >
+                    <button type="button" class="ecs-search-clear" id="entitySearchClear" style="display: none;" aria-label="Clear search">&times;</button>
+                </div>
+            @endif
+
+            <div class="ecs-branch-list" id="ecsBranchList">
+                @forelse($accessibleBranches as $br)
+                    @php
+                        $isSelected = in_array($br->branch_id, $activeBranchIds, true);
+                        $isPrimary = $primaryBranchId === $br->branch_id && $selectedCount > 1;
+                        $mono = $makeBranchMonogram($br->branch_name, $br->branch_code);
+                        $subLoc = $br->branch_city ?: ($br->branch_address_line_1 ?: ($br->branch_type ?: 'Branch'));
+                        if ($companyCount > 1 && !empty($br->company_name)) {
+                            $subLoc = $br->company_name . ' · ' . $subLoc;
+                        }
+                    @endphp
+                    <button
+                        type="button"
+                        class="ecs-branch-item {{ $isSelected ? 'is-selected' : '' }}"
+                        data-branch-id="{{ $br->branch_id }}"
+                        data-company-id="{{ $br->company_id }}"
+                        data-branch-name="{{ $br->branch_name }}"
+                        data-search-text="{{ strtolower($br->branch_name . ' ' . $br->branch_code . ' ' . $subLoc) }}"
+                        aria-pressed="{{ $isSelected ? 'true' : 'false' }}"
+                        onclick="RMSContextSwitcher.toggleBranch(this)"
+                    >
+                        <span class="ecs-branch-mono">{{ $mono }}</span>
+                        <span class="ecs-branch-info">
+                            <span class="ecs-branch-title-row">
+                                <span class="ecs-branch-name">{{ $br->branch_name }}</span>
+                                @if($isPrimary)
+                                    <span class="ecs-primary-tag">Primary</span>
+                                @endif
+                            </span>
+                            <span class="ecs-branch-loc">{{ $subLoc }}</span>
+                        </span>
+                        <span class="ecs-branch-check" aria-hidden="true">
+                            <i class="ph-bold ph-check"></i>
+                        </span>
+                    </button>
+                @empty
+                    <div class="ecs-empty-branches">
+                        <i class="ph ph-warning-circle"></i>
+                        <span>No active branches assigned.</span>
+                    </div>
+                @endforelse
+            </div>
+
+            <!-- Inline Hint / Apply Changes Bar -->
+            <div class="ecs-branch-hint" id="ecsBranchHint" style="display: none;"></div>
+            <div class="ecs-apply-bar" id="ecsApplyBar" style="display: none;">
+                <button type="button" class="ecs-btn-reset" id="ecsResetBranchesBtn" onclick="RMSContextSwitcher.resetBranchSelection()">Reset</button>
+                <button type="button" class="ecs-btn-apply" id="ecsApplyBranchesBtn" onclick="RMSContextSwitcher.applyBranchSelection()">
+                    Apply (<span id="ecsApplyCount">{{ $selectedCount }}</span> active)
+                </button>
             </div>
         </div>
-    </div>
 
-    <!-- Hidden Form for Context Switching -->
-    <form id="contextSwitchForm" method="POST" action="{{ route('context.switch') }}" style="display: none;">
-        @csrf
-        <input type="hidden" name="company_id" id="switchCompanyId" value="">
-        <input type="hidden" name="branch_id" id="switchBranchId" value="">
-        <input type="hidden" name="is_consolidated" id="switchIsConsolidated" value="0">
-    </form>
+        <!-- Notifications Section -->
+        <div class="ecs-section ecs-notif-section">
+            <div class="ecs-notif-head">
+                <button
+                    type="button"
+                    class="ecs-notif-toggle"
+                    id="ecsNotifToggleBtn"
+                    aria-expanded="{{ $notifExpandedByDefault ? 'true' : 'false' }}"
+                    aria-controls="ecsNotifPanel"
+                    onclick="RMSContextSwitcher.toggleNotifications()"
+                >
+                    <span class="ecs-notif-title-group">
+                        <i class="ph ph-bell"></i>
+                        <span>Notifications</span>
+                        <span
+                            class="ecs-notif-section-badge"
+                            id="ecsNotifSectionBadge"
+                            style="{{ $unreadCount > 0 ? '' : 'display: none;' }}"
+                        >{{ $unreadCount }}</span>
+                    </span>
+                    <i class="ph-bold ph-caret-down ecs-notif-caret"></i>
+                </button>
+                <button
+                    type="button"
+                    class="ecs-text-action"
+                    id="ecsMarkAllReadBtn"
+                    style="{{ $unreadCount > 0 ? '' : 'display: none;' }}"
+                    onclick="RMSContextSwitcher.markAllNotificationsRead()"
+                >Mark all read</button>
+            </div>
+
+            <div class="ecs-notif-panel {{ $notifExpandedByDefault ? 'is-expanded' : '' }}" id="ecsNotifPanel">
+                @if($notifications->isNotEmpty())
+                    <div class="ecs-notif-list" id="ecsNotifList">
+                        @foreach($notifications as $notif)
+                            <button
+                                type="button"
+                                class="ecs-notif-item {{ $notif->is_read ? '' : 'is-unread' }}"
+                                data-notif-id="{{ $notif->id }}"
+                                onclick="RMSContextSwitcher.markNotificationRead({{ $notif->id }}, {{ json_encode($notif->link) }}, this)"
+                            >
+                                <span class="ecs-notif-dot" aria-hidden="true"></span>
+                                <span class="ecs-notif-content">
+                                    <span class="ecs-notif-title">{{ $notif->title }}</span>
+                                    <span class="ecs-notif-msg">{{ \Illuminate\Support\Str::limit($notif->message, 75) }}</span>
+                                </span>
+                                <span class="ecs-notif-time">{{ $notif->created_at?->diffForHumans(null, true) }}</span>
+                            </button>
+                        @endforeach
+                    </div>
+                @else
+                    <div class="ecs-notif-empty">
+                        <i class="ph ph-check-circle"></i>
+                        <span>You're all caught up</span>
+                    </div>
+                @endif
+            </div>
+        </div>
+
+        <!-- Footer Settings Links -->
+        <div class="ecs-pop-footer">
+            <a href="{{ route('account-settings') }}" class="ecs-footer-link">
+                <i class="ph ph-user"></i>
+                <span>Profile settings</span>
+            </a>
+            <a href="{{ route('config.companies-branches.index') }}" class="ecs-footer-link">
+                <i class="ph ph-house-line"></i>
+                <span>Manage branches</span>
+            </a>
+            <form method="POST" action="{{ route('logout') }}" class="ecs-logout-form">
+                @csrf
+                <button type="submit" class="ecs-footer-link is-danger">
+                    <i class="ph ph-sign-out"></i>
+                    <span>Sign out</span>
+                </button>
+            </form>
+        </div>
+    </div>
 </div>
 
 <script>
 window.RMSContextSwitcher = {
+    initialBranchIds: @json($activeBranchIds),
+    selectedBranchIds: new Set(@json($activeBranchIds)),
+    primaryBranchId: @json($primaryBranchId),
+    totalBranches: {{ $totalBranches }},
+    unreadCount: {{ $unreadCount }},
+    isSubmitting: false,
+
     init() {
         const switcher = document.getElementById('entityContextSwitcher');
         const trigger = document.getElementById('entitySwitcherBtn');
@@ -238,181 +374,304 @@ window.RMSContextSwitcher = {
         const searchInput = document.getElementById('entitySearchInput');
         const clearBtn = document.getElementById('entitySearchClear');
 
-        if (!trigger || !dropdown) return;
+        if (!switcher || !trigger || !dropdown) return;
 
-        // Toggle open/close
         trigger.addEventListener('click', (e) => {
             e.stopPropagation();
-            switcher.classList.toggle('is-open');
-            if (switcher.classList.contains('is-open')) {
-                if (searchInput) searchInput.focus();
+            const willOpen = !switcher.classList.contains('is-open');
+            switcher.classList.toggle('is-open', willOpen);
+            trigger.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+            if (willOpen && searchInput) {
+                setTimeout(() => searchInput.focus(), 40);
             }
         });
 
-        // Close on click outside
         document.addEventListener('click', (e) => {
             if (!switcher.contains(e.target)) {
                 switcher.classList.remove('is-open');
+                trigger.setAttribute('aria-expanded', 'false');
             }
         });
 
-        // Close on Escape
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
+            if (e.key === 'Escape' && switcher.classList.contains('is-open')) {
                 switcher.classList.remove('is-open');
+                trigger.setAttribute('aria-expanded', 'false');
+                trigger.focus();
             }
         });
 
-        // Filter search
         if (searchInput) {
             searchInput.addEventListener('input', (e) => {
                 const query = e.target.value.toLowerCase().trim();
-                if (clearBtn) clearBtn.style.display = query ? 'block' : 'none';
-                this.filterEntities(query);
+                if (clearBtn) clearBtn.style.display = query ? 'inline-flex' : 'none';
+                this.filterBranches(query);
             });
 
             if (clearBtn) {
                 clearBtn.addEventListener('click', () => {
                     searchInput.value = '';
                     clearBtn.style.display = 'none';
-                    this.filterEntities('');
+                    this.filterBranches('');
                     searchInput.focus();
                 });
             }
         }
     },
 
-    filterEntities(query) {
-        const companyNodes = document.querySelectorAll('.entity-company-node');
-        companyNodes.forEach(node => {
-            const compText = node.getAttribute('data-search-text') || '';
-            const branchRows = node.querySelectorAll('.branch-row');
-            let hasMatchingBranch = false;
-
-            branchRows.forEach(br => {
-                const brText = br.getAttribute('data-search-text') || '';
-                if (!query || brText.includes(query) || compText.includes(query)) {
-                    br.style.display = 'flex';
-                    hasMatchingBranch = true;
-                } else {
-                    br.style.display = 'none';
-                }
-            });
-
-            if (!query || compText.includes(query) || hasMatchingBranch) {
-                node.style.display = 'block';
-                if (query && hasMatchingBranch) {
-                    node.classList.remove('collapsed');
-                }
-            } else {
-                node.style.display = 'none';
-            }
+    filterBranches(query) {
+        document.querySelectorAll('#ecsBranchList .ecs-branch-item').forEach((item) => {
+            const text = item.getAttribute('data-search-text') || '';
+            item.style.display = !query || text.includes(query) ? 'flex' : 'none';
         });
     },
 
-    toggleAccordion(btn) {
-        const node = btn.closest('.entity-company-node');
-        if (node) {
-            node.classList.toggle('collapsed');
+    toggleBranch(el) {
+        if (this.isSubmitting) return;
+        const branchId = parseInt(el.getAttribute('data-branch-id'), 10);
+        if (!branchId) return;
+
+        if (this.selectedBranchIds.has(branchId)) {
+            if (this.selectedBranchIds.size <= 1) {
+                this.showBranchHint('At least 1 branch must remain active.');
+                el.classList.remove('is-shaking');
+                void el.offsetWidth;
+                el.classList.add('is-shaking');
+                return;
+            }
+            this.selectedBranchIds.delete(branchId);
+        } else {
+            this.selectedBranchIds.add(branchId);
+        }
+
+        this.clearBranchHint();
+        this.syncBranchSelectionUI();
+    },
+
+    toggleSelectAll() {
+        if (this.isSubmitting) return;
+        const allItems = Array.from(document.querySelectorAll('#ecsBranchList .ecs-branch-item'));
+        if (allItems.length <= 1) return;
+
+        if (this.selectedBranchIds.size === allItems.length) {
+            const keepId = this.primaryBranchId && this.selectedBranchIds.has(this.primaryBranchId)
+                ? this.primaryBranchId
+                : parseInt(allItems[0].getAttribute('data-branch-id'), 10);
+            this.selectedBranchIds = new Set([keepId]);
+        } else {
+            this.selectedBranchIds = new Set(allItems.map((el) => parseInt(el.getAttribute('data-branch-id'), 10)));
+        }
+
+        this.clearBranchHint();
+        this.syncBranchSelectionUI();
+    },
+
+    resetBranchSelection() {
+        if (this.isSubmitting) return;
+        this.selectedBranchIds = new Set(this.initialBranchIds);
+        this.clearBranchHint();
+        this.syncBranchSelectionUI();
+    },
+
+    hasSelectionChanged() {
+        if (this.selectedBranchIds.size !== this.initialBranchIds.length) {
+            return true;
+        }
+        return this.initialBranchIds.some((id) => !this.selectedBranchIds.has(id));
+    },
+
+    syncBranchSelectionUI() {
+        document.querySelectorAll('#ecsBranchList .ecs-branch-item').forEach((item) => {
+            const id = parseInt(item.getAttribute('data-branch-id'), 10);
+            const active = this.selectedBranchIds.has(id);
+            item.classList.toggle('is-selected', active);
+            item.setAttribute('aria-pressed', active ? 'true' : 'false');
+        });
+
+        const count = this.selectedBranchIds.size;
+        const countLabel = document.getElementById('ecsBranchCountLabel');
+        if (countLabel) {
+            countLabel.textContent = `${count} of ${this.totalBranches} active`;
+        }
+
+        const toggleAllBtn = document.getElementById('ecsToggleAllBtn');
+        if (toggleAllBtn) {
+            toggleAllBtn.textContent = count === this.totalBranches ? 'Only primary' : 'Select all';
+        }
+
+        const applyCount = document.getElementById('ecsApplyCount');
+        if (applyCount) {
+            applyCount.textContent = String(count);
+        }
+
+        const applyBar = document.getElementById('ecsApplyBar');
+        if (applyBar) {
+            applyBar.style.display = this.hasSelectionChanged() ? 'flex' : 'none';
         }
     },
 
-    // Set Single Active Write Entity
-    selectActiveEntity(companyId, branchId) {
-        document.getElementById('switchCompanyId').value = companyId;
-        document.getElementById('switchBranchId').value = branchId || '';
-        document.getElementById('switchIsConsolidated').value = '0';
-        document.getElementById('contextSwitchForm').submit();
+    showBranchHint(msg) {
+        const hint = document.getElementById('ecsBranchHint');
+        if (!hint) return;
+        hint.textContent = msg;
+        hint.style.display = 'block';
     },
 
-    // Toggle Consolidated Read-Only View
-    toggleConsolidated() {
-        const currentActiveCompId = "{{ $currentCompany?->company_id ?? '' }}";
-        if (!currentActiveCompId) return;
-
-        const isCurrentlyConsolidated = "{{ $isConsolidatedView ? '1' : '0' }}" === '1';
-        document.getElementById('switchCompanyId').value = currentActiveCompId;
-        document.getElementById('switchBranchId').value = '';
-        document.getElementById('switchIsConsolidated').value = isCurrentlyConsolidated ? '0' : '1';
-        document.getElementById('contextSwitchForm').submit();
+    clearBranchHint() {
+        const hint = document.getElementById('ecsBranchHint');
+        if (!hint) return;
+        hint.textContent = '';
+        hint.style.display = 'none';
     },
 
-    // Handle Checkbox Scope & Promote Ticked Branch/Company to Active Transaction Context
-    async onScopeChange(changedEl = null, entityCompanyId = null, entityBranchId = null) {
-        const companyNode = changedEl ? changedEl.closest('.entity-company-node') : null;
+    async applyBranchSelection() {
+        if (this.isSubmitting || this.selectedBranchIds.size === 0) return;
 
-        // If a Company checkbox was toggled, cascade to its nested branch checkboxes
-        if (changedEl && changedEl.classList.contains('comp-scope-chk') && companyNode) {
-            companyNode.querySelectorAll('.branch-scope-chk').forEach(cb => {
-                cb.checked = changedEl.checked;
-            });
+        const applyBtn = document.getElementById('ecsApplyBranchesBtn');
+        const resetBtn = document.getElementById('ecsResetBranchesBtn');
+        this.isSubmitting = true;
+        if (applyBtn) {
+            applyBtn.disabled = true;
+            applyBtn.textContent = 'Applying...';
         }
+        if (resetBtn) resetBtn.disabled = true;
 
-        // If a Branch checkbox was ticked, auto-tick its parent company checkbox
-        if (changedEl && changedEl.classList.contains('branch-scope-chk') && changedEl.checked && companyNode) {
-            const parentCompChk = companyNode.querySelector('.comp-scope-chk');
-            if (parentCompChk) parentCompChk.checked = true;
-        }
-
-        const compCheckboxes = document.querySelectorAll('.comp-scope-chk:checked');
-        const branchCheckboxes = document.querySelectorAll('.branch-scope-chk:checked');
-
-        const companyIds = Array.from(compCheckboxes).map(cb => parseInt(cb.getAttribute('data-id'), 10));
-        const branchIds = Array.from(branchCheckboxes).map(cb => parseInt(cb.getAttribute('data-id'), 10));
-
+        const branchIds = Array.from(this.selectedBranchIds);
+        const companySet = new Set();
         let targetActiveCompanyId = null;
-        let targetActiveBranchId = null;
+        let targetActiveBranchId = this.primaryBranchId && this.selectedBranchIds.has(this.primaryBranchId)
+            ? this.primaryBranchId
+            : branchIds[0];
 
-        if (changedEl && changedEl.checked) {
-            if (entityBranchId) {
-                targetActiveCompanyId = entityCompanyId;
-                targetActiveBranchId = entityBranchId;
-            } else if (entityCompanyId) {
-                targetActiveCompanyId = entityCompanyId;
-                const firstCompBranch = companyNode?.querySelector('.branch-scope-chk:checked');
-                if (firstCompBranch) {
-                    targetActiveBranchId = parseInt(firstCompBranch.getAttribute('data-id'), 10);
+        document.querySelectorAll('#ecsBranchList .ecs-branch-item').forEach((item) => {
+            const id = parseInt(item.getAttribute('data-branch-id'), 10);
+            const compId = parseInt(item.getAttribute('data-company-id'), 10);
+            if (this.selectedBranchIds.has(id) && compId) {
+                companySet.add(compId);
+                if (id === targetActiveBranchId) {
+                    targetActiveCompanyId = compId;
                 }
             }
-        } else if (branchIds.length > 0) {
-            const lastBranchCb = branchCheckboxes[branchCheckboxes.length - 1];
-            targetActiveBranchId = parseInt(lastBranchCb.getAttribute('data-id'), 10);
-            const lastCompNode = lastBranchCb.closest('.entity-company-node');
-            if (lastCompNode) {
-                targetActiveCompanyId = parseInt(lastCompNode.getAttribute('data-company-id'), 10);
-            }
-        } else if (companyIds.length > 0) {
-            targetActiveCompanyId = companyIds[companyIds.length - 1];
-        }
-
-        const totalCount = companyIds.length + branchIds.length;
-        const countIndicator = document.getElementById('scopeSelectedCount');
-        if (countIndicator) {
-            countIndicator.textContent = `${totalCount} In Scope`;
-        }
+        });
 
         try {
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
             const res = await fetch("{{ route('context.scope') }}", {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken || '',
+                    'X-CSRF-TOKEN': csrfToken,
                 },
                 body: JSON.stringify({
-                    company_ids: companyIds,
+                    company_ids: Array.from(companySet),
                     branch_ids: branchIds,
                     active_company_id: targetActiveCompanyId,
                     active_branch_id: targetActiveBranchId,
-                })
+                }),
             });
 
             if (res.ok) {
                 window.location.reload();
+                return;
+            }
+            this.showBranchHint('Could not update active branches. Please try again.');
+        } catch (err) {
+            console.error('Failed to update active branches:', err);
+            this.showBranchHint('Network error while updating branches.');
+        } finally {
+            this.isSubmitting = false;
+            if (applyBtn) {
+                applyBtn.disabled = false;
+                applyBtn.innerHTML = `Apply (<span id="ecsApplyCount">${this.selectedBranchIds.size}</span> active)`;
+            }
+            if (resetBtn) resetBtn.disabled = false;
+        }
+    },
+
+    toggleNotifications() {
+        const toggleBtn = document.getElementById('ecsNotifToggleBtn');
+        const panel = document.getElementById('ecsNotifPanel');
+        if (!toggleBtn || !panel) return;
+        const willExpand = !panel.classList.contains('is-expanded');
+        panel.classList.toggle('is-expanded', willExpand);
+        toggleBtn.setAttribute('aria-expanded', willExpand ? 'true' : 'false');
+    },
+
+    syncUnreadBadges(count) {
+        this.unreadCount = Math.max(0, parseInt(count, 10) || 0);
+        const avatarPill = document.getElementById('ecsAvatarNotifPill');
+        const sectionBadge = document.getElementById('ecsNotifSectionBadge');
+        const markAllBtn = document.getElementById('ecsMarkAllReadBtn');
+
+        if (avatarPill) {
+            if (this.unreadCount > 0) {
+                avatarPill.textContent = this.unreadCount > 99 ? '99+' : String(this.unreadCount);
+                avatarPill.style.display = 'inline-flex';
+            } else {
+                avatarPill.style.display = 'none';
+            }
+        }
+
+        if (sectionBadge) {
+            if (this.unreadCount > 0) {
+                sectionBadge.textContent = String(this.unreadCount);
+                sectionBadge.style.display = 'inline-flex';
+            } else {
+                sectionBadge.style.display = 'none';
+            }
+        }
+
+        if (markAllBtn) {
+            markAllBtn.style.display = this.unreadCount > 0 ? 'inline-flex' : 'none';
+        }
+    },
+
+    async markNotificationRead(id, link = null, el = null) {
+        try {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+            const res = await fetch(`{{ url('/notifications') }}/${id}/read`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                },
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                if (el) el.classList.remove('is-unread');
+                this.syncUnreadBadges(data.unread_count);
+                if (link) {
+                    window.location.href = link;
+                }
             }
         } catch (err) {
-            console.error('Failed to update entity scope:', err);
+            console.error('Failed to mark notification read:', err);
+        }
+    },
+
+    async markAllNotificationsRead() {
+        try {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+            const res = await fetch("{{ route('notifications.read-all') }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                },
+            });
+
+            if (res.ok) {
+                document.querySelectorAll('#ecsNotifList .ecs-notif-item.is-unread').forEach((item) => {
+                    item.classList.remove('is-unread');
+                });
+                this.syncUnreadBadges(0);
+            }
+        } catch (err) {
+            console.error('Failed to mark all notifications read:', err);
         }
     }
 };

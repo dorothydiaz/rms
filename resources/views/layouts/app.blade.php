@@ -87,9 +87,6 @@
                     <!-- Entity Hierarchy & Context Switcher -->
                     <x-context-switcher />
 
-                    <button class="icon-btn notification-btn" title="Notifications" aria-label="Notifications">
-                        <i class="ph ph-bell"></i>
-                    </button>
                     <button class="mobile-menu-btn" aria-label="Toggle mobile menu">
                         <i class="ph ph-list"></i>
                     </button>

@@ -621,6 +621,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/context/scope', [\App\Http\Controllers\ContextSwitcherController::class, 'updateScope'])->name('context.scope');
     Route::post('/context/default-landing', [\App\Http\Controllers\ContextSwitcherController::class, 'setDefaultLanding'])->name('context.default-landing');
 
+    // Header Popover Notifications
+    Route::post('/notifications/{id}/read', [\App\Http\Controllers\NotificationController::class, 'markRead'])->name('notifications.read');
+    Route::post('/notifications/read-all', [\App\Http\Controllers\NotificationController::class, 'markAllRead'])->name('notifications.read-all');
+
     // User Account Settings
     Route::get('/account-settings', [ConfigController::class, 'accountSettings'])->name('account-settings');
     Route::post('/account-settings/profile', [ConfigController::class, 'updateProfile'])->name('account-settings.profile');
