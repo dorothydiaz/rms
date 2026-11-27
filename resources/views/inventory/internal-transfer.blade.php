@@ -1,25 +1,39 @@
 @extends('layouts.app')
 
-@section('title', 'Internal Transfer - Restaurant Management System')
+@section('title', 'Stock Transfer & Branch Requests - Inventory Operations')
+
+@push('styles')
+    @vite('resources/css/modules/internal-transfer.css')
+@endpush
 
 @push('blade-data')
 <script>
     window.InternalTransferConfig = Object.freeze({
         routes: {
-            dispatchTransfer: @json(route('inventory.api.dispatch-transfer')),
-            createCustomTransfer: @json(route('inventory.api.create-custom-transfer')),
             internalTransferData: @json(route('inventory.api.internal-transfer-data')),
+            transferDetailBase: @json(url('/inventory/api/internal-transfer')),
+            branchStock: @json(route('inventory.api.transfer-branch-stock')),
+            lowStockSuggestions: @json(route('inventory.api.transfer-low-stock')),
+            createRequest: @json(route('inventory.api.create-transfer-request')),
+            createCustomTransfer: @json(route('inventory.api.create-custom-transfer')),
+            approveTransfer: @json(route('inventory.api.approve-transfer')),
+            rejectTransfer: @json(route('inventory.api.reject-transfer')),
+            dispatchTransfer: @json(route('inventory.api.dispatch-transfer')),
             receiveTransfer: @json(route('inventory.api.receive-transfer')),
+            cancelTransfer: @json(route('inventory.api.cancel-transfer')),
+            settlementMatrix: @json(route('inventory.api.transfer-settlement-matrix')),
+            settleTransfers: @json(route('inventory.api.transfer-settle')),
         },
         user: {
-            commissaryLead: @json(auth()->user()->full_name ?? auth()->user()->username ?? 'Commissary Lead'),
-            receivingLead: @json(auth()->user()->full_name ?? auth()->user()->username ?? 'Branch Receiving Lead'),
+            name: @json(auth()->user()->full_name ?? auth()->user()->name ?? auth()->user()->username ?? 'Branch Supervisor'),
         },
+        branchContext: @json($branchContext ?? []),
         data: {
-            initialTransfers: @json($initialTransfers ?? []),
+            initialPayload: @json($initialPayload ?? []),
             initialProducts: @json($initialProducts ?? []),
             initialBranches: @json($initialBranches ?? []),
             initialCategories: @json($initialCategories ?? []),
+            csrfToken: @json(csrf_token()),
         }
     });
 </script>
@@ -30,432 +44,597 @@
 @endpush
 
 @section('content')
+@php
+    $stats = $initialPayload['stats'] ?? [];
+    $activeBranchName = $branchContext['activeBranchName'] ?? null;
+    $isConsolidated = (bool) ($branchContext['isConsolidated'] ?? false);
+@endphp
 
-<div class="trf-workspace">
+<div class="rfq-workspace-container" id="trfAppRoot">
 
-    <!-- =====================================================================
-         PAGE HEADER
-         ===================================================================== -->
+    <!-- Global Pessimistic Lock Overlay (Matches Stock In) -->
+    <div class="rfq-lock-overlay" id="trfGlobalLockOverlay" style="display: none;" aria-hidden="true">
+        <div class="rfq-spinner"></div>
+        <div style="font-weight: 700; font-size: 1.05rem;" id="trfLockMessage">Processing Stock Transfer & Ledger Commit...</div>
+        <div style="font-size: 0.82rem; opacity: 0.8;">Applying atomic branch locks &amp; recording immutable inventory ledger</div>
+    </div>
+
+    <!-- Toast Notifications Root -->
+    <div class="rfq-toast-container" id="trfToastContainer"></div>
+
+    <!-- 1. Page Header — Flat HR Title Row (Stock In Parity) -->
     <div class="hr-parent-header">
-        <div class="hr-parent-title-row trf-page-header">
-            <div class="trf-page-title-group">
+        <div class="hr-parent-title-row">
+            <div>
                 <h1 class="hr-parent-title">
                     <i class="ph ph-arrows-left-right"></i>
-                    <span>Internal Transfer</span>
+                    <span>Stock Transfer &amp; Branch Requests</span>
                 </h1>
-                <p class="hr-parent-subtitle trf-page-subtitle">Manage commissary-to-branch logistics, pending branch transfer requests & backlogs, and direct custom dispatches with real-time stock validation.</p>
+                <p class="hr-parent-subtitle">
+                    Inter-Branch Stock Requests (Pull), Direct Transfers (Push), Transit Custody &amp; Destination Acceptance Receipts
+                    @if($isConsolidated)
+                        <span class="trf-branch-ctx-pill" style="margin-left: 8px;"><i class="ph ph-stack"></i> Consolidated HQ View</span>
+                    @elseif($activeBranchName)
+                        <span class="trf-branch-ctx-pill" style="margin-left: 8px;"><i class="ph ph-storefront"></i> Active: {{ $activeBranchName }}</span>
+                    @endif
+                </p>
             </div>
             <div class="hr-page-actions">
-                <a href="{{ route('inventory.stocks-overview') }}" class="hr-btn hr-btn-secondary" title="View Current Stock Levels">
-                    <i class="ph ph-squares-four"></i> Stocks Overview
+                <a href="{{ route('inventory.stocks-overview') }}" class="hr-btn hr-btn-secondary" title="View Stocks Overview">
+                    <i class="ph ph-squares-four"></i>
+                    <span>Stocks Overview</span>
                 </a>
-                <a href="{{ route('inventory.product-categories') }}" class="hr-btn hr-btn-secondary" title="View Item Master">
-                    <i class="ph ph-folder-simple"></i> Item Master
+                <a href="{{ route('inventory.stock-in') }}" class="hr-btn hr-btn-secondary" title="Open Stock In / Receiving">
+                    <i class="ph ph-tray-arrow-down"></i>
+                    <span>Stock In</span>
                 </a>
-                <button type="button" class="hr-btn hr-btn-primary" onclick="switchTrfTab('tab-custom-transfer')">
-                    <i class="ph ph-paper-plane-tilt"></i> New Custom Transfer
+                <button type="button" class="hr-btn hr-btn-secondary" onclick="openSettlementModal()" title="View Inter-Branch Due-To / Due-From Settlement Matrix">
+                    <i class="ph ph-scales"></i>
+                    <span>Settlements</span>
+                </button>
+                <button type="button" class="hr-btn hr-btn-secondary" onclick="startNewTransferWorkbench('BRANCH_REQUEST')" title="Request stock from another branch into your branch">
+                    <i class="ph ph-hand-grabbing"></i>
+                    <span>Request Stock</span>
+                </button>
+                <button type="button" class="hr-btn hr-btn-primary" onclick="startNewTransferWorkbench('CUSTOM_PUSH')" title="Directly dispatch stock from your branch to another branch">
+                    <i class="ph ph-paper-plane-tilt"></i>
+                    <span>Direct Transfer</span>
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- =====================================================================
-         PRIMARY TABS NAVIGATION (Renamed & Styled Elegantly)
-         1. Transfer Register & Masterlist (List)
-         2. Pending Branch Requests & Backlog (Pending Transfer Request)
-         3. Direct Push Transfer (Custom Transfer)
-         ===================================================================== -->
-    <nav class="hr-tabs-wrapper tabs-wrapper" id="internalTransferTabsBar">
-        <button type="button" class="tab-btn active" id="tabBtnList" onclick="switchTrfTab('tab-transfer-list')">
+    <!-- 2. Segmented Nav Tabs Bar (2 Clean Tabs — Stock In Parity) -->
+    <nav class="rfq-nav-tabs-bar" id="trfTabsBar">
+        <button type="button" class="rfq-tab-btn active" id="tabBtnTrfQueue" onclick="switchTrfTab('queue')">
             <i class="ph ph-list-dashes"></i>
-            <span>Transfer Register & Masterlist</span>
-            <span class="tab-count" id="badgeListCount">{{ $initialTransfers->count() }}</span>
+            <span>Transfers &amp; Requests Queue</span>
+            <span class="rfq-tab-count" id="badgeQueueTotal">{{ $stats['totalTransfers'] ?? 0 }}</span>
         </button>
-
-        <button type="button" class="tab-btn" id="tabBtnPendingRequests" onclick="switchTrfTab('tab-pending-requests')">
-            <i class="ph ph-clock-countdown"></i>
-            <span>Pending Branch Requests & Backlog</span>
-            <span class="tab-badge-pill" id="badgePendingCount" style="background: #fef3c7; color: #b45309; border-color: #fde68a;">
-                {{ $initialTransfers->where('status', 'PENDING')->count() }} Backlog
-            </span>
-        </button>
-
-        <button type="button" class="tab-btn" id="tabBtnCustomTransfer" onclick="switchTrfTab('tab-custom-transfer')">
-            <i class="ph ph-paper-plane-tilt"></i>
-            <span>Direct Push Transfer</span>
-            <span class="tab-badge-pill">No Request Required</span>
+        <button type="button" class="rfq-tab-btn" id="tabBtnTrfBuilder" onclick="switchTrfTab('builder')">
+            <i class="ph ph-arrows-left-right"></i>
+            <span id="tabBuilderTitle">Transfer &amp; Request Workbench</span>
+            <span class="rfq-tab-badge" id="badgeBuilderStatus">New Request</span>
         </button>
     </nav>
 
     <!-- =====================================================================
-         TAB 1: TRANSFER REGISTER & MASTERLIST (List)
+         TAB 1: TRANSFERS & REQUESTS QUEUE (O(1) Server-Paginated + SQL KPIs)
          ===================================================================== -->
-    <div id="tab-transfer-list" class="trf-tab-panel active">
-        <!-- Filter & Search Toolbar -->
-        <div class="trf-card-strip">
-            <div class="trf-filter-bar">
-                <div class="trf-search-box">
-                    <i class="ph ph-magnifying-glass"></i>
-                    <input type="text" id="transferSearchInput" class="trf-search-input" placeholder="Search by Transfer #, Destination, Carrier, or SKU... (/)" oninput="filterTransfersList()">
+    <div class="rfq-tab-pane active" id="panelTrfQueue">
+        <!-- 4 Interactive KPI Cards (Click to filter) -->
+        <div class="rfq-kpi-grid">
+            <div class="rfq-kpi-card" data-kpi-filter="to_fulfill" onclick="applyKpiQuickFilter('to_fulfill')">
+                <div class="rfq-kpi-header">
+                    <span class="rfq-kpi-label">Incoming Requests (To Fulfill)</span>
+                    <div class="rfq-kpi-icon purple"><i class="ph ph-inbox"></i></div>
                 </div>
+                <div class="rfq-kpi-val" id="trfKpiIncoming">{{ $stats['incomingRequestsCount'] ?? 0 }} Open</div>
+                <div class="rfq-kpi-sub">Branch requests waiting for source approval / dispatch</div>
+            </div>
 
-                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                    <select id="transferStatusFilter" class="trf-select" onchange="filterTransfersList()">
+            <div class="rfq-kpi-card" data-kpi-filter="my_requests" onclick="applyKpiQuickFilter('my_requests')">
+                <div class="rfq-kpi-header">
+                    <span class="rfq-kpi-label">My Outgoing Requests</span>
+                    <div class="rfq-kpi-icon awaiting"><i class="ph ph-clock-countdown"></i></div>
+                </div>
+                <div class="rfq-kpi-val" id="trfKpiOutgoing">{{ $stats['outgoingRequestsCount'] ?? 0 }} Pending</div>
+                <div class="rfq-kpi-sub">Requisitions your branch requested from other branches</div>
+            </div>
+
+            <div class="rfq-kpi-card" data-kpi-filter="to_receive" onclick="applyKpiQuickFilter('to_receive')">
+                <div class="rfq-kpi-header">
+                    <span class="rfq-kpi-label">In Transit (To Accept)</span>
+                    <div class="rfq-kpi-icon draft"><i class="ph ph-truck"></i></div>
+                </div>
+                <div class="rfq-kpi-val" id="trfKpiTransit">{{ $stats['toReceiveCount'] ?? 0 }} En Route</div>
+                <div class="rfq-kpi-sub" id="trfKpiTransitSub">{{ $stats['inTransitCount'] ?? 0 }} total in-transit shipments</div>
+            </div>
+
+            <div class="rfq-kpi-card" data-kpi-filter="completed" onclick="applyKpiQuickFilter('completed')">
+                <div class="rfq-kpi-header">
+                    <span class="rfq-kpi-label">Completed &amp; Variance</span>
+                    <div class="rfq-kpi-icon emerald"><i class="ph ph-check-circle"></i></div>
+                </div>
+                <div class="rfq-kpi-val" id="trfKpiCompleted">{{ $stats['completedCount'] ?? 0 }} Done</div>
+                <div class="rfq-kpi-sub" id="trfKpiVarianceSub">{{ $stats['discrepancyCount'] ?? 0 }} with transit variance</div>
+            </div>
+        </div>
+
+        <div class="rfq-panel-card" style="overflow: visible;">
+            <!-- Branch Perspective Bar -->
+            <div class="trf-perspective-bar" id="trfPerspectiveBar">
+                <button type="button" class="trf-persp-btn active" data-persp="all" onclick="setPerspectiveFilter('all')">
+                    <i class="ph ph-squares-four"></i> All Activity
+                </button>
+                <button type="button" class="trf-persp-btn" data-persp="action_needed" onclick="setPerspectiveFilter('action_needed')">
+                    <i class="ph ph-lightning"></i> Action Needed
+                </button>
+                <button type="button" class="trf-persp-btn" data-persp="to_fulfill" onclick="setPerspectiveFilter('to_fulfill')">
+                    <i class="ph ph-paper-plane-tilt"></i> To Fulfill (Outbound)
+                </button>
+                <button type="button" class="trf-persp-btn" data-persp="to_receive" onclick="setPerspectiveFilter('to_receive')">
+                    <i class="ph ph-package"></i> To Receive (Inbound)
+                </button>
+                <button type="button" class="trf-persp-btn" data-persp="my_requests" onclick="setPerspectiveFilter('my_requests')">
+                    <i class="ph ph-hand-grabbing"></i> My Requests
+                </button>
+            </div>
+
+            <!-- Single-Row Filter Toolbar -->
+            <div class="trf-queue-toolbar">
+                <div class="trf-queue-toolbar-left">
+                    <div class="trf-queue-search-wrap">
+                        <i class="ph ph-magnifying-glass"></i>
+                        <input type="text" class="rfq-input" id="trfSearchInput" placeholder="Search Transfer #, Receipt #, Branch, Waybill, or SKU... (/)" oninput="onTrfSearchInput(this.value)">
+                    </div>
+
+                    <select id="trfStatusFilter" class="rfq-select trf-queue-filter-select" onchange="onTrfFilterChanged()">
                         <option value="ALL">All Statuses</option>
-                        <option value="PENDING">Pending Requisition</option>
-                        <option value="IN_TRANSIT">In-Transit / Dispatched</option>
-                        <option value="COMPLETED">Completed / Received</option>
+                        <option value="DRAFT">Draft</option>
+                        <option value="REQUESTED">Requested</option>
+                        <option value="APPROVED">Approved &amp; Reserved</option>
+                        <option value="IN_TRANSIT">In Transit</option>
+                        <option value="PARTIALLY_RECEIVED">Partially Received</option>
+                        <option value="COMPLETED">Completed</option>
+                        <option value="DISCREPANCY">Received w/ Variance</option>
+                        <option value="REJECTED">Rejected</option>
                         <option value="CANCELLED">Cancelled</option>
                     </select>
 
-                    <select id="transferTypeFilter" class="trf-select" onchange="filterTransfersList()">
-                        <option value="ALL">All Transfer Types</option>
-                        <option value="BRANCH_REQUEST">Branch Requisition</option>
-                        <option value="CUSTOM_PUSH">Direct Push (No Request)</option>
+                    <select id="trfTypeFilter" class="rfq-select trf-queue-filter-select" onchange="onTrfFilterChanged()">
+                        <option value="ALL">All Flows</option>
+                        <option value="BRANCH_REQUEST">Branch Request (Pull)</option>
+                        <option value="CUSTOM_PUSH">Direct Transfer (Push)</option>
+                        <option value="BACKORDER_REQUEST">Backorder Split</option>
+                        <option value="COMMISSARY_REPLENISHMENT">Auto Replenishment</option>
                     </select>
 
-                    <select id="transferBranchFilter" class="trf-select" onchange="filterTransfersList()">
-                        <option value="ALL">All Destination Branches</option>
+                    <select id="trfBranchFilter" class="rfq-select trf-queue-filter-select" onchange="onTrfFilterChanged()">
+                        <option value="">All Branches</option>
                         @foreach($initialBranches as $br)
-                            <option value="{{ $br->name }}">{{ $br->name }}</option>
+                            <option value="{{ $br['branch_id'] }}">{{ $br['name'] }}</option>
                         @endforeach
                     </select>
+                </div>
 
-                    <button type="button" class="hr-btn hr-btn-secondary" onclick="fetchLiveTransferData()" title="Refresh Data">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="fetchTransferQueue(1)" title="Refresh Queue">
                         <i class="ph ph-arrows-clockwise"></i> Refresh
                     </button>
                 </div>
             </div>
 
-            <!-- Master Table -->
-            <div class="trf-table-wrapper">
-                <table class="trf-table" id="transfersMasterTable">
-                    <thead>
-                        <tr>
-                            <th>Transfer #</th>
-                            <th>Type</th>
-                            <th>Origin / Source</th>
-                            <th>Destination Branch</th>
-                            <th>Items & Qty</th>
-                            <th>Dispatched Units</th>
-                            <th style="text-align: right;">Valuation (₱)</th>
-                            <th style="text-align: center;">Status</th>
-                            <th style="text-align: center;">Action</th>
-                        </tr>
+            <!-- Responsive Table + Gear Settings -->
+            <div class="rfq-table-responsive" style="position: relative; overflow-x: auto;">
+                <table class="rfq-table" id="trfQueueTable">
+                    <colgroup id="trfQueueColgroup"></colgroup>
+                    <thead id="trfQueueThead">
+                        <tr id="trfQueueTheadRow"></tr>
                     </thead>
-                    <tbody id="transfersTableBody">
-                        <!-- Populated dynamically via JS -->
-                    </tbody>
+                    <tbody id="trfQueueTableBody"></tbody>
                 </table>
             </div>
 
-            <div id="noTransfersPrompt" style="display: none; padding: 40px; text-align: center; color: var(--trf-text-muted);">
-                <i class="ph ph-arrows-left-right" style="font-size: 36px; color: #cbd5e1; display: block; margin-bottom: 8px;"></i>
-                No internal transfers match your search criteria.
+            <!-- Gear Column Settings Dropdown (Stock In Parity) -->
+            <div id="trfTableSettingsDropdown" class="rfq-table-settings-dropdown" style="display: none; position: fixed; z-index: 10075;" onclick="event.stopPropagation()">
+                <div class="rfq-settings-dropdown-header">
+                    <div class="rfq-settings-title-row">
+                        <div class="rfq-settings-title">
+                            <i class="ph ph-gear-six"></i>
+                            <span>Table Columns</span>
+                        </div>
+                        <span class="rfq-col-badge-default" id="trfColActiveCounter">8 of 9 visible</span>
+                    </div>
+                    <div class="rfq-settings-links-row">
+                        <button type="button" class="rfq-settings-link-btn" onclick="resetTrfQueueCols()">Reset to Default</button>
+                        <button type="button" class="rfq-settings-link-btn" onclick="showAllTrfQueueCols()">Select All</button>
+                    </div>
+                </div>
+                <div class="rfq-settings-col-list" id="trfColCheckboxesList"></div>
+            </div>
+
+            <!-- Server-Side Pagination Footer -->
+            <div class="trf-pagination-bar">
+                <div style="font-size: 12px; color: #64748b;" id="trfPaginationInfo">
+                    Showing <strong id="trfCountVisible" style="color: #0f172a;">0</strong> of <strong id="trfCountTotal" style="color: #0f172a;">0</strong> transfers
+                </div>
+                <div class="trf-pager-btns" id="trfPagerButtons"></div>
             </div>
         </div>
     </div>
 
     <!-- =====================================================================
-         TAB 2: PENDING BRANCH REQUESTS & BACKLOG
+         TAB 2: UNIFIED TRANSFER & REQUEST WORKBENCH (3-Zone Stock In Sheet)
          ===================================================================== -->
-    <div id="tab-pending-requests" class="trf-tab-panel">
-        <div class="trf-card-strip" style="padding: 20px;">
-            <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px; margin-bottom: 16px;">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <i class="ph ph-clock-countdown" style="font-size: 22px; color: #d97706;"></i>
-                    <div>
-                        <h3 style="margin: 0; font-size: 1.15rem; font-weight: 800; color: #0f172a;">Branch Requisitions & Backlog Queue</h3>
-                        <p style="margin: 0; font-size: 12px; color: #64748b;">Review items requested by retail branches, compare against central inventory, and fulfill dispatches.</p>
-                    </div>
-                </div>
-                <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="fetchLiveTransferData()">
-                    <i class="ph ph-arrows-clockwise"></i> Refresh Queue
+    <div class="po-tab-pane rfq-tab-pane" id="panelTrfBuilder" style="display: none;">
+
+        <!-- ZONE 1: Action Toolbar + Chevron Lifecycle Pipeline -->
+        <div class="trf-zone1">
+            <div class="trf-zone1-actions" role="toolbar" aria-label="Transfer lifecycle actions">
+                <button type="button" class="trf-top-action-btn is-neutral" id="btnTrfBackToQueue" onclick="switchTrfTab('queue')" title="Back to Queue">
+                    <i class="ph ph-arrow-left"></i>
+                    <span class="trf-top-btn-sep"></span>
+                    <span>Queue</span>
+                </button>
+
+                <button type="button" class="trf-top-action-btn is-neutral" id="btnTrfSaveDraft" onclick="submitWorkbenchDraft()" title="Save request as draft">
+                    <i class="ph ph-floppy-disk"></i>
+                    <span class="trf-top-btn-sep"></span>
+                    <span>Save Draft</span>
+                </button>
+
+                <button type="button" class="trf-top-action-btn is-danger" id="btnTrfSecondaryDanger" onclick="openReasonModalForCurrentDoc()" title="Reject or cancel transfer" hidden>
+                    <i class="ph ph-x-circle"></i>
+                    <span class="trf-top-btn-sep"></span>
+                    <span id="btnTrfSecondaryDangerLabel">Cancel</span>
+                </button>
+
+                <button type="button" class="trf-top-action-btn is-secondary-purple" id="btnTrfApproveAndDispatch" onclick="handleApproveAndDispatchShortcut()" title="Approve & immediately dispatch shipment to transit" hidden>
+                    <i class="ph ph-truck"></i>
+                    <span class="trf-top-btn-sep"></span>
+                    <span>Approve &amp; Dispatch Now</span>
+                </button>
+
+                <button type="button" class="trf-top-action-btn is-primary" id="btnTrfPrimaryAction" onclick="handlePrimaryWorkbenchAction()" title="Execute primary step action (F10)">
+                    <span class="trf-top-btn-check"><i class="ph-bold ph-check"></i></span>
+                    <span class="trf-top-btn-sep"></span>
+                    <span id="btnTrfPrimaryActionLabel">Submit Stock Request →</span>
                 </button>
             </div>
 
-            <div id="pendingRequestsContainer" style="display: flex; flex-direction: column; gap: 16px;">
-                <!-- Populated dynamically via JS -->
+            <div class="po-chevron-pipeline rfq-chevron-pipeline" id="trfLifecyclePipeline" role="list" aria-label="Transfer workflow stages"></div>
+        </div>
+
+        <!-- Live Transit Simulation Banner (Stock In Parity) -->
+        <div class="trf-transit-banner" id="trfTransitBanner" role="status" aria-live="polite">
+            <div class="trf-transit-node is-source">
+                <span class="trf-transit-node-icon"><i class="ph ph-warehouse"></i></span>
+                <div class="trf-transit-node-text">
+                    <span class="trf-transit-kicker">FROM SOURCE BRANCH</span>
+                    <strong id="trfBannerSourceLabel">Select Source Branch</strong>
+                </div>
             </div>
 
-            <div id="noPendingPrompt" style="display: none; padding: 40px; text-align: center; color: var(--trf-text-muted);">
-                <i class="ph ph-check-circle" style="font-size: 40px; color: #10b981; display: block; margin-bottom: 8px;"></i>
-                <strong>All branch requisitions are fulfilled!</strong> There are no pending transfer requests or backlogs in queue.
+            <div class="trf-transit-track-wrap">
+                <div class="trf-transit-track">
+                    <div class="trf-transit-fill" id="trfBannerTrackFill"></div>
+                    <div class="trf-transit-shuttle">
+                        <i class="ph-fill ph-package"></i>
+                        <span id="trfBannerUnitsBadge">0.00 Units</span>
+                    </div>
+                </div>
+                <span style="font-size: 11px; font-weight: 700; color: #6b21a8;" id="trfBannerStageLabel">Drafting Transfer</span>
+            </div>
+
+            <div class="trf-transit-node is-dest">
+                <span class="trf-transit-node-icon"><i class="ph ph-storefront"></i></span>
+                <div class="trf-transit-node-text">
+                    <span class="trf-transit-kicker">TO DESTINATION BRANCH</span>
+                    <strong id="trfBannerDestLabel">Select Destination Branch</strong>
+                </div>
             </div>
         </div>
-    </div>
 
-    <!-- =====================================================================
-         TAB 3: CUSTOM TRANSFER (Direct Push Delivery - No Request Required)
-         ===================================================================== -->
-    <div id="tab-custom-transfer" class="trf-tab-panel">
-        <div class="trf-card-strip" style="padding: 22px;">
-            <!-- Top Command Bar -->
-            <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #e2e8f0; padding-bottom: 14px; margin-bottom: 18px; flex-wrap: wrap; gap: 12px;">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 800; color: var(--trf-primary); text-transform: uppercase; letter-spacing: 0.05em; background: #faf5ff; padding: 4px 10px; border-radius: 8px; border: 1px solid #f3e8ff;">
-                        <i class="ph ph-paper-plane-tilt"></i> Direct Push Commissary Workspace
-                    </span>
-                    <span class="hr-badge hr-badge-neutral">Internal delivery without prior branch request</span>
+        <!-- Custody Separation Notice Banner (when active branch is waiting on partner branch) -->
+        <div class="trf-custody-banner" id="trfCustodyNoticeBanner" hidden>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <i class="ph ph-shield-check" style="font-size: 18px;"></i>
+                <span id="trfCustodyNoticeText">Custody check active.</span>
+            </div>
+            <span class="hr-badge hr-badge-neutral" id="trfCustodyNoticeTag">Custody Locked</span>
+        </div>
+
+        <!-- ZONE 2: Identity Ribbon + Anti-Bloat 4-Field Operational Grid -->
+        <div class="trf-header-card">
+            <div class="trf-ribbon">
+                <div class="trf-identity-strip">
+                    <div class="trf-id-seg">
+                        <span class="trf-id-key">Transfer Ref</span>
+                        <span class="trf-id-val trf-mono" id="wbTransferNumber">REQ-TRF-AUTO</span>
+                    </div>
+                    <div class="trf-id-seg" id="wbReceiptSeg" hidden>
+                        <span class="trf-id-key">Receipt Voucher</span>
+                        <span class="trf-id-val trf-mono" id="wbReceiptNumber" style="color: #047857;">—</span>
+                    </div>
+                    <div class="trf-id-seg">
+                        <span class="trf-id-key">Workflow Mode</span>
+                        <div style="margin-top: 2px;">
+                            <span class="trf-type-tag is-pull" id="wbModeTag">Branch Request (Pull)</span>
+                        </div>
+                    </div>
+                    <div class="trf-id-seg">
+                        <span class="trf-id-key">Priority</span>
+                        <select id="wbPrioritySelect" class="trf-control" style="height: 28px; font-size: 11.5px; padding: 0 8px; width: auto;" onchange="onWorkbenchHeaderChanged()">
+                            <option value="NORMAL">Normal</option>
+                            <option value="HIGH">High</option>
+                            <option value="URGENT">Urgent</option>
+                            <option value="EMERGENCY">Emergency</option>
+                        </select>
+                    </div>
                 </div>
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="resetCustomTransferForm()">
-                        <i class="ph ph-arrow-counter-clockwise"></i> Reset Form
-                    </button>
-                    <button type="button" class="hr-btn hr-btn-primary" id="btnDispatchCustomTransfer" onclick="submitCustomTransfer()">
-                        <i class="ph ph-truck"></i> ✓ Dispatch Now & Deduct Stock (F10)
-                    </button>
+
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span class="hr-badge hr-badge-neutral" id="wbPricingTag">At Cost (0%)</span>
+                    <span class="trf-status-pill is-draft" id="wbStatusPill">Draft</span>
                 </div>
             </div>
 
-            <!-- Asymmetric Grid -->
-            <div class="workspace-asymmetric-grid">
-
-                <!-- Left Column (4.2fr): Logistics & Delivery Route -->
-                <div class="panel-col">
-
-                    <!-- Card 1: Route & Origin -->
-                    <div class="panel-card" style="border-left: 4px solid var(--trf-primary); background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(250, 245, 255, 0.65));">
-                        <div style="display: flex; align-items: center; justify-content: space-between;">
-                            <div>
-                                <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Direct Transfer Code</div>
-                                <div style="font-family: monospace; font-size: 1.25rem; font-weight: 800; color: var(--trf-primary);">DIR-TRF-{{ date('Y') }}-AUTO</div>
-                            </div>
-                            <span class="hr-badge hr-badge-purple">Direct Push</span>
-                        </div>
-
-                        <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 6px;">
-                            <label style="font-size: 11.5px; font-weight: 600; color: #475569;">Target Destination Branch *</label>
-                            <select id="customDestBranch" class="trf-select" style="font-size: 13px; font-weight: 600;">
-                                @foreach($initialBranches as $br)
-                                    <option value="{{ $br->id }}" data-name="{{ $br->name }}">{{ $br->name }} ({{ $br->address }})</option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <div style="display: flex; flex-direction: column; gap: 6px;">
-                            <label style="font-size: 11.5px; font-weight: 600; color: #475569;">Origin / Source Storage *</label>
-                            <input type="text" id="customSourceLoc" class="trf-search-input" value="Central Commissary Main Storage" readonly style="background: #f8fafc; font-weight: 600;">
-                        </div>
-
-                        <div style="display: flex; flex-direction: column; gap: 6px;">
-                            <label style="font-size: 11.5px; font-weight: 600; color: #475569;">Transfer Reason Code *</label>
-                            <select id="customReasonCode" class="trf-select">
-                                <option value="Commissary Bulk Batch Push">Central Commissary Scheduled Bulk Push</option>
-                                <option value="Excess Stock Rebalancing">Excess Stock Rebalancing between Locations</option>
-                                <option value="New Menu Seasonal Push">New Menu Seasonal Promo Ingredients Kit</option>
-                                <option value="Emergency Kitchen Replenishment">Emergency Direct Replenishment</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- Card 2: Transport & Driver Details -->
-                    <div class="panel-card">
-                        <div class="panel-header">
-                            <div class="panel-title">
-                                <i class="ph ph-steering-wheel"></i>
-                                <span>Carrier, Vehicle & Custody</span>
-                            </div>
-                        </div>
-
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                            <div style="display: flex; flex-direction: column; gap: 4px;">
-                                <label style="font-size: 11px; font-weight: 600; color: #475569;">Dispatcher / Supervisor *</label>
-                                <input type="text" id="customDispatchedBy" class="trf-search-input" style="padding-left: 10px;" value="{{ auth()->user()->full_name ?? auth()->user()->username ?? 'Commissary Lead' }}">
-                            </div>
-                            <div style="display: flex; flex-direction: column; gap: 4px;">
-                                <label style="font-size: 11px; font-weight: 600; color: #475569;">Logistics Carrier / Vehicle</label>
-                                <input type="text" id="customCarrierName" class="trf-search-input" style="padding-left: 10px;" placeholder="e.g. In-House Refrigerated Van 1">
-                            </div>
-                        </div>
-
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                            <div style="display: flex; flex-direction: column; gap: 4px;">
-                                <label style="font-size: 11px; font-weight: 600; color: #475569;">Vehicle Plate #</label>
-                                <input type="text" id="customDriverPlate" class="trf-search-input" style="padding-left: 10px;" placeholder="e.g. NDF 8820">
-                            </div>
-                            <div style="display: flex; flex-direction: column; gap: 4px;">
-                                <label style="font-size: 11px; font-weight: 600; color: #475569;">Shipping Waybill #</label>
-                                <input type="text" id="customWaybill" class="trf-search-input" style="padding-left: 10px;" placeholder="e.g. WB-TRF-2026-004">
-                            </div>
-                        </div>
-
-                        <div style="display: flex; flex-direction: column; gap: 4px;">
-                            <label style="font-size: 11px; font-weight: 600; color: #475569;">Delivery Notes & Special Handling</label>
-                            <textarea id="customNotes" class="trf-search-input" style="padding: 8px 10px; height: 50px; resize: vertical;" placeholder="e.g., Maintain cold chain at 2°C to 4°C during transit..."></textarea>
-                        </div>
-                    </div>
-
+            <!-- 4 Visible Header Inputs (Strict Input Guillotine) -->
+            <div class="trf-form-grid-4">
+                <div class="trf-field">
+                    <label class="trf-label" for="wbSourceBranchSelect">
+                        <i class="ph ph-warehouse"></i>
+                        <span>From Branch (Source) *</span>
+                    </label>
+                    <select id="wbSourceBranchSelect" class="trf-control" onchange="onSourceBranchChanged(this.value)"></select>
                 </div>
 
-                <!-- Right Column (5.8fr): Item Master Catalog Picker & Quantity Validation Grid -->
-                <div class="panel-col">
+                <div class="trf-field">
+                    <label class="trf-label" for="wbDestBranchSelect">
+                        <i class="ph ph-storefront"></i>
+                        <span>To Branch (Destination) *</span>
+                    </label>
+                    <select id="wbDestBranchSelect" class="trf-control" onchange="onDestBranchChanged(this.value)"></select>
+                </div>
 
-                    <div class="panel-card" style="flex: 1;">
-                        <div class="panel-header">
-                            <div class="panel-title">
-                                <i class="ph ph-package"></i>
-                                <span>Transfer Line Items & Stock Validation</span>
-                            </div>
-                            <span class="hr-badge hr-badge-purple" id="customItemCountBadge">0 Items</span>
+                <div class="trf-field">
+                    <label class="trf-label" for="wbRequiredAtInput">
+                        <i class="ph ph-calendar-blank"></i>
+                        <span>Target / Required Date</span>
+                    </label>
+                    <input type="date" id="wbRequiredAtInput" class="trf-control" onchange="onWorkbenchHeaderChanged()">
+                </div>
+
+                <div class="trf-field">
+                    <label class="trf-label" for="wbReasonCodeSelect">
+                        <i class="ph ph-tag"></i>
+                        <span>Reason Code</span>
+                    </label>
+                    <select id="wbReasonCodeSelect" class="trf-control" onchange="onWorkbenchHeaderChanged()">
+                        <option value="Branch Replenishment Request">Branch Replenishment Request</option>
+                        <option value="Commissary Bulk Batch Push">Commissary Bulk Batch Push</option>
+                        <option value="Emergency Kitchen Shortage">Emergency Kitchen Shortage</option>
+                        <option value="Excess Stock Rebalancing">Excess Stock Rebalancing</option>
+                        <option value="New Menu Rollout">New Menu Rollout</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Collapsible Optional Logistics & Notes (<details>) -->
+            <details class="trf-logistics-details" id="wbLogisticsDetails">
+                <summary>
+                    <i class="ph ph-truck"></i>
+                    <span>Dispatch Logistics, Waybill &amp; Custody Notes (Optional — Required for Courier Tracking)</span>
+                </summary>
+                <div class="trf-logistics-grid">
+                    <div class="trf-field">
+                        <label class="trf-label" for="wbCarrierInput">Carrier / Driver</label>
+                        <input type="text" id="wbCarrierInput" class="trf-control" maxlength="255" placeholder="e.g. Commissary Van 02" oninput="onWorkbenchHeaderChanged()">
+                    </div>
+                    <div class="trf-field">
+                        <label class="trf-label" for="wbPlateInput">Vehicle Plate #</label>
+                        <input type="text" id="wbPlateInput" class="trf-control" maxlength="100" placeholder="e.g. NGA-4821" oninput="onWorkbenchHeaderChanged()">
+                    </div>
+                    <div class="trf-field">
+                        <label class="trf-label" for="wbWaybillInput">Waybill / Trip Ticket</label>
+                        <input type="text" id="wbWaybillInput" class="trf-control" maxlength="100" placeholder="e.g. WB-2026-019" oninput="onWorkbenchHeaderChanged()">
+                    </div>
+                    <div class="trf-field">
+                        <label class="trf-label" for="wbNotesInput">Remarks / Instructions</label>
+                        <input type="text" id="wbNotesInput" class="trf-control" maxlength="500" placeholder="Special handling or receiving note..." oninput="onWorkbenchHeaderChanged()">
+                    </div>
+                </div>
+            </details>
+        </div>
+
+        <!-- ZONE 3: Split Body — High-Density Line Grid + Collapsible Slip Preview -->
+        <div class="po-builder-split-body rfq-builder-split-body" id="trfSplitBody">
+            <div class="po-items-panel-col rfq-items-panel-col">
+                <div class="po-items-panel rfq-items-panel">
+                    <!-- Toolbar: Quick-Scan + Add Item + 1-Click Accelerators -->
+                    <div class="trf-items-toolbar">
+                        <div class="trf-scan-bar">
+                            <i class="ph ph-barcode" style="color: #64748b;"></i>
+                            <label for="trfScanInput" class="sr-only">Scan barcode or SKU</label>
+                            <input type="text" id="trfScanInput" class="trf-scan-input" placeholder="Scan barcode or type SKU + Enter... (F2)" autocomplete="off" onkeydown="onTrfScanKeydown(event)">
                         </div>
 
-                        <!-- Catalog Quick-Add (Connected to Item Master & Stocks Overview) -->
-                        <div style="display: flex; align-items: center; gap: 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px;">
-                            <div style="flex: 1;">
-                                <select id="customCatalogPicker" class="trf-select" style="width: 100%;">
-                                    <option value="">-- Select Product from Item Master --</option>
-                                    @foreach($initialProducts as $p)
-                                        <option value="{{ $p->sku }}" data-id="{{ $p->id }}" data-name="{{ $p->name }}" data-category="{{ $p->category }}" data-uom="{{ $p->uom }}" data-cost="{{ $p->cost_price }}" data-stock="{{ $p->current_stock }}" data-location="{{ $p->storage_location }}">
-                                            [{{ $p->sku }}] {{ $p->name }} — Available: {{ number_format($p->current_stock, 2) }} {{ $p->uom }} (Cost: ₱{{ number_format($p->cost_price, 2) }})
-                                        </option>
-                                    @endforeach
-                                </select>
+                        <div class="trf-items-toolbar-right">
+                            <span class="po-items-counter-pill rfq-items-counter-pill" id="wbLinesCountBadge">0 Line Items</span>
+
+                            <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" id="btnPullLowStock" onclick="pullLowStockSuggestions()" title="Auto-fill items below par level at destination with surplus at source">
+                                <i class="ph ph-sparkle"></i>
+                                <span>Pull Low-Stock Items</span>
+                            </button>
+
+                            <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" id="btnFillAvailable" onclick="fillAllAvailableQuantities()" title="Auto-fill dispatch quantities up to source available stock" hidden>
+                                <i class="ph ph-checks"></i>
+                                <span>Fill Available</span>
+                            </button>
+
+                            <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" id="btnReceiveAllShipped" onclick="receiveAllAsShipped()" title="Set received quantities equal to remaining shipped quantities" hidden>
+                                <i class="ph ph-check-square-offset"></i>
+                                <span>Receive All as Shipped</span>
+                            </button>
+
+                            <div class="trf-item-popover-wrap" id="wbAddItemWrap">
+                                <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" id="btnOpenItemPicker" onclick="toggleTrfItemPicker(event)">
+                                    <i class="ph ph-plus"></i>
+                                    <span>Add Item</span>
+                                </button>
+                                <div class="trf-item-popover" id="trfItemPickerDropdown" hidden onclick="event.stopPropagation()">
+                                    <div class="trf-popover-search">
+                                        <input type="text" id="trfItemPickerSearch" class="trf-control" style="height: 32px;" placeholder="Search SKU or item name..." oninput="renderTrfItemPickerList(this.value)" autocomplete="off">
+                                    </div>
+                                    <div class="trf-popover-list" id="trfItemPickerList"></div>
+                                </div>
                             </div>
-                            <input type="number" id="customQuickQty" class="trf-search-input" style="width: 80px; padding-left: 10px;" placeholder="Qty" min="0.01" step="0.01" value="1.00">
-                            <button type="button" class="hr-btn hr-btn-primary hr-btn-sm" onclick="addCustomTransferItem()">
-                                <i class="ph ph-plus"></i> Add Line
+
+                            <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm trf-mockup-toggle" onclick="toggleTrfSlipDrawer()">
+                                <i class="ph ph-file-text"></i>
+                                <span>Slip Preview</span>
                             </button>
                         </div>
+                    </div>
 
-                        <!-- Real-time Quantity Validation Alert Banner (if any item exceeds stock) -->
-                        <div id="customOverdraftBanner" class="qty-warning-box" style="display: none;">
-                            <i class="ph ph-warning-circle" style="font-size: 18px; color: #dc2626;"></i>
-                            <div>
-                                <strong style="color: #dc2626;">Stock Overdraft Warning!</strong>
-                                <span id="customOverdraftMsg">One or more items exceed current central inventory. Adjust quantities to proceed.</span>
+                    <!-- Line Items Table -->
+                    <div class="po-table-responsive rfq-table-responsive" style="overflow-x: auto;">
+                        <table class="po-table rfq-table" id="wbItemsTable">
+                            <thead>
+                                <tr id="wbItemsTheadRow"></tr>
+                            </thead>
+                            <tbody id="wbItemsTableBody"></tbody>
+                        </table>
+                    </div>
+
+                    <!-- Compact Footer Metrics -->
+                    <div class="trf-footer">
+                        <div class="trf-footer-metrics">
+                            <div class="trf-metric">
+                                <span class="trf-metric-label">Lines</span>
+                                <span class="trf-metric-val" id="wbSumLines">0</span>
                             </div>
-                        </div>
-
-                        <!-- Items Table -->
-                        <div style="overflow-x: auto; max-height: 380px; overflow-y: auto;">
-                            <table class="trf-table" style="font-size: 12px;">
-                                <thead>
-                                    <tr>
-                                        <th>Item & SKU</th>
-                                        <th>UOM</th>
-                                        <th style="text-align: right;">Stock on Hand</th>
-                                        <th style="text-align: center; width: 110px;">Transfer Qty *</th>
-                                        <th style="text-align: right;">Unit Cost (₱)</th>
-                                        <th style="text-align: right;">Subtotal (₱)</th>
-                                        <th style="text-align: center;">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="customItemsTableBody">
-                                    <!-- Populated dynamically via JS -->
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <div id="customNoItemsPrompt" style="padding: 30px; text-align: center; color: var(--trf-text-muted); font-size: 13px;">
-                            <i class="ph ph-arrows-clockwise" style="font-size: 32px; display: block; margin-bottom: 6px; color: #cbd5e1;"></i>
-                            No items added yet. Select products from the Item Master above to configure your custom direct transfer.
-                        </div>
-
-                        <!-- Valuation Summary Strip -->
-                        <div style="border-top: 1px solid #e2e8f0; padding-top: 14px; margin-top: 8px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
-                            <div style="font-size: 12px; color: #64748b;">
-                                Total Transfer Units: <strong id="customTotalUnitsDisplay" style="color: #0f172a;">0.00</strong>
+                            <div class="trf-metric">
+                                <span class="trf-metric-label">Requested</span>
+                                <span class="trf-metric-val" id="wbSumRequested">0.00</span>
                             </div>
-                            <div style="font-size: 14px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 6px;">
-                                <span>Transfer Valuation:</span>
-                                <span style="font-family: 'Outfit', sans-serif; font-size: 1.25rem; color: var(--trf-primary);" id="customTotalValDisplay">₱0.00</span>
+                            <div class="trf-metric">
+                                <span class="trf-metric-label">Dispatched</span>
+                                <span class="trf-metric-val" style="color: #6d28d9;" id="wbSumDispatched">0.00</span>
+                            </div>
+                            <div class="trf-metric">
+                                <span class="trf-metric-label">Accepted</span>
+                                <span class="trf-metric-val" style="color: #047857;" id="wbSumReceived">0.00</span>
+                            </div>
+                            <div class="trf-metric" id="wbVarianceMetric" hidden>
+                                <span class="trf-metric-label">Variance</span>
+                                <span class="trf-metric-val" style="color: #b91c1c;" id="wbSumVariance">0.00</span>
+                            </div>
+                            <div class="trf-metric">
+                                <span class="trf-metric-label">Est. Value</span>
+                                <span class="trf-metric-val" id="wbSumValuation">₱0.00</span>
                             </div>
                         </div>
                     </div>
-
                 </div>
+            </div>
 
+            <!-- Right Panel: Transfer Waybill & Acceptance Receipt Preview -->
+            <aside class="po-mockup-panel-col rfq-mockup-panel-col trf-mockup-col" id="trfSlipPanelCol" aria-label="Transfer Slip Preview">
+                <div class="po-panel-card po-mockup-card rfq-panel-card rfq-mockup-card">
+                    <div class="trf-slip-head">
+                        <div style="display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 13px;">
+                            <i class="ph ph-file-text" style="color: var(--trf-primary);"></i>
+                            <span>Transfer Slip &amp; Custody</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="printTransferSlip()">
+                                <i class="ph ph-printer"></i> Print
+                            </button>
+                            <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm trf-mockup-close" onclick="toggleTrfSlipDrawer(false)">
+                                <i class="ph ph-x"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="trf-slip-sheet" id="trfSlipPreviewContent"></div>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <!-- Partial Dispatch Backorder Choice Modal (Stock In Parity) -->
+    <div class="trf-modal-backdrop" id="trfBackorderModal" hidden>
+        <div class="trf-modal-card" role="dialog" aria-modal="true" aria-labelledby="trfBoModalTitle">
+            <div class="trf-modal-head">
+                <div style="display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 14px;" id="trfBoModalTitle">
+                    <i class="ph ph-arrows-split" style="color: var(--trf-primary); font-size: 18px;"></i>
+                    <span>Partial Dispatch — Remaining Balance</span>
+                </div>
+                <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="closeBackorderModal()">
+                    <i class="ph ph-x"></i>
+                </button>
+            </div>
+            <div class="trf-modal-body">
+                <p style="margin: 0; font-size: 12.5px; color: #334155; line-height: 1.5;" id="trfBoModalSummary"></p>
+                <div style="padding: 10px 12px; border-radius: 10px; background: #faf5ff; border: 1px solid #e9d5ff; font-size: 12px; color: #581c87;">
+                    Choose whether to create an open <strong>Backorder Request</strong> for the unfulfilled items or short-close this request after dispatch.
+                </div>
+            </div>
+            <div class="trf-modal-foot">
+                <button type="button" class="hr-btn hr-btn-secondary" onclick="confirmPartialDispatchChoice(false)">
+                    Short-Close Balance
+                </button>
+                <button type="button" class="hr-btn hr-btn-primary" onclick="confirmPartialDispatchChoice(true)">
+                    <i class="ph ph-plus-circle"></i> Dispatch &amp; Create Backorder
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reject / Cancel Reason Modal (Replaces window.prompt) -->
+    <div class="trf-modal-backdrop" id="trfReasonModal" hidden>
+        <div class="trf-modal-card" role="dialog" aria-modal="true" aria-labelledby="trfReasonModalTitle">
+            <div class="trf-modal-head">
+                <div style="display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 14px;" id="trfReasonModalTitle">
+                    <i class="ph ph-warning-circle" style="color: #b91c1c; font-size: 18px;"></i>
+                    <span id="trfReasonModalHeading">Confirm Action</span>
+                </div>
+                <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="closeReasonModal()">
+                    <i class="ph ph-x"></i>
+                </button>
+            </div>
+            <div class="trf-modal-body">
+                <label class="trf-label" for="trfReasonTextarea">Reason / Audit Remark *</label>
+                <textarea id="trfReasonTextarea" class="trf-control" style="height: 84px; padding: 10px 12px;" maxlength="500" placeholder="Enter reason for audit trail..."></textarea>
+            </div>
+            <div class="trf-modal-foot">
+                <button type="button" class="hr-btn hr-btn-secondary" onclick="closeReasonModal()">Back</button>
+                <button type="button" class="hr-btn hr-btn-primary" style="background: #b91c1c; border-color: #b91c1c;" id="btnConfirmReasonModal" onclick="submitReasonModal()">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Inter-Branch Due-To / Due-From Settlement Matrix Modal -->
+    <div class="trf-modal-backdrop" id="trfSettlementModal" hidden>
+        <div class="trf-modal-card" style="max-width: 760px;" role="dialog" aria-modal="true" aria-labelledby="trfSettlementModalTitle">
+            <div class="trf-modal-head">
+                <div style="display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 14px;" id="trfSettlementModalTitle">
+                    <i class="ph ph-scales" style="color: var(--trf-primary); font-size: 18px;"></i>
+                    <span>Inter-Branch Settlement Matrix (Due-To / Due-From GL)</span>
+                </div>
+                <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="closeSettlementModal()">
+                    <i class="ph ph-x"></i>
+                </button>
+            </div>
+            <div class="trf-modal-body" id="trfSettlementModalBody" style="max-height: 65vh; overflow-y: auto;">
+                <div style="text-align: center; padding: 24px; color: #64748b;">Loading inter-branch balances...</div>
+            </div>
+            <div class="trf-modal-foot">
+                <button type="button" class="hr-btn hr-btn-secondary" onclick="closeSettlementModal()">Close</button>
             </div>
         </div>
     </div>
 
 </div>
-
-<!-- =====================================================================
-     TRANSFER WAYBILL & RECEIVING MODAL
-     ===================================================================== -->
-<div class="rms-modal-overlay" id="transferModal">
-    <div class="rms-modal-card" style="padding: 24px;">
-        <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px; margin-bottom: 16px;">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <i class="ph ph-paper-plane-tilt" style="font-size: 24px; color: var(--trf-primary);"></i>
-                <div>
-                    <h3 style="margin: 0; font-size: 1.15rem; font-weight: 800; color: #0f172a;" id="modalTrfNum">TRF-2026-0001</h3>
-                    <div style="font-size: 11.5px; color: #64748b;" id="modalTrfDates">Dispatched at -</div>
-                </div>
-            </div>
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="window.print()">
-                    <i class="ph ph-printer"></i> Print Waybill
-                </button>
-                <button type="button" class="hr-btn hr-btn-secondary hr-btn-sm" onclick="closeTransferModal()">
-                    <i class="ph ph-x"></i> Close
-                </button>
-            </div>
-        </div>
-
-        <div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; background: #f8fafc; padding: 14px; border-radius: 12px; margin-bottom: 16px; font-size: 12px;">
-                <div>
-                    <div><strong>Origin:</strong> <span id="modalSource">-</span></div>
-                    <div><strong>Destination Branch:</strong> <span id="modalDest">-</span></div>
-                    <div><strong>Transfer Type:</strong> <span id="modalType">-</span></div>
-                </div>
-                <div>
-                    <div><strong>Carrier / Van:</strong> <span id="modalCarrier">-</span></div>
-                    <div><strong>Driver Plate:</strong> <span id="modalPlate">-</span></div>
-                    <div><strong>Waybill #:</strong> <span id="modalWaybill">-</span></div>
-                </div>
-            </div>
-
-            <div style="overflow-x: auto; margin-bottom: 16px;">
-                <table class="trf-table" style="font-size: 12px;">
-                    <thead>
-                        <tr>
-                            <th>SKU</th>
-                            <th>Item Name</th>
-                            <th>UOM</th>
-                            <th style="text-align: right;">Requested</th>
-                            <th style="text-align: right;">Dispatched</th>
-                            <th style="text-align: right;">Unit Cost (₱)</th>
-                            <th style="text-align: right;">Total Cost (₱)</th>
-                        </tr>
-                    </thead>
-                    <tbody id="modalItemsTbody">
-                    </tbody>
-                </table>
-            </div>
-
-            <div style="display: flex; justify-content: flex-end; font-size: 14px; font-weight: 700; color: #0f172a; margin-bottom: 20px;">
-                Total Transfer Valuation: <span id="modalValuationDisplay" style="color: var(--trf-primary); margin-left: 8px;">₱0.00</span>
-            </div>
-
-            <div id="modalReceiveActionSection" style="display: none; background: #faf5ff; padding: 14px; border-radius: 12px; border: 1px solid #f3e8ff; margin-bottom: 16px;">
-                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
-                    <div>
-                        <strong style="color: var(--trf-primary);">Destination Branch Acknowledgment</strong>
-                        <div style="font-size: 11.5px; color: #64748b;">Confirm physical inspection and receive stock into branch storage.</div>
-                    </div>
-                    <button type="button" class="hr-btn hr-btn-primary" onclick="confirmReceiveModalTransfer()">
-                        <i class="ph ph-check-fat"></i> Confirm Receipt & Close
-                    </button>
-                </div>
-            </div>
-
-            <!-- Signatures Strip for Print -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; padding-top: 16px; border-top: 1px dashed #cbd5e1; font-size: 11px; text-align: center;">
-                <div>
-                    <div style="height: 35px; border-bottom: 1px solid #94a3b8; margin-bottom: 4px;"></div>
-                    <div><strong>Commissary Dispatcher Signature</strong></div>
-                </div>
-                <div>
-                    <div style="height: 35px; border-bottom: 1px solid #94a3b8; margin-bottom: 4px;"></div>
-                    <div><strong>Destination Branch Receiving Manager</strong></div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
 @endsection

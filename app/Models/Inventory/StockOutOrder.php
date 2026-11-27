@@ -13,6 +13,8 @@ class StockOutOrder extends Model
     protected $table = 'stock_out_header';
 
     protected $fillable = [
+        'company_id',
+        'branch_id',
         'order_number',
         'order_type',
         'status',

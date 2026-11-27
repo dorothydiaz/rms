@@ -41,18 +41,24 @@ class ReplenishmentEngine
 
         $hasPoTables = Schema::hasTable('purchase_order_lines') && Schema::hasTable('purchase_order_header');
         $hasTransferTables = Schema::hasTable('stock_transfer_lines') && Schema::hasTable('stock_transfer_header');
+        $hasBranchBalances = Schema::hasTable('branch_stock_balances') && DB::table('branch_stock_balances')->exists();
 
         foreach ($rules as $rule) {
             $item = DB::table('item_master')->where('id', $rule->product_id)->first();
             $costPrice = $item ? (float) $item->cost_price : 45.00;
-            $physicalStock = $item ? (float) $item->current_stock : 12.00;
+            $physicalStock = $item ? (float) $item->current_stock : 0.00;
 
-            // In our system, simulate realistic branch allocation based on branch_id
-            $onHand = match ($rule->branch_id) {
-                1 => round($physicalStock * 0.45, 2),
-                2 => round($physicalStock * 0.35, 2),
-                default => round($physicalStock * 0.20, 2),
-            };
+            $branchBal = $hasBranchBalances && $rule->branch_id
+                ? DB::table('branch_stock_balances')
+                    ->where('branch_id', $rule->branch_id)
+                    ->where('inventory_item_id', $rule->product_id)
+                    ->first()
+                : null;
+
+            $onHand = $branchBal
+                ? (float) $branchBal->on_hand_qty
+                : ($hasBranchBalances ? 0.00 : $physicalStock);
+            $committed = $branchBal ? (float) $branchBal->reserved_qty : 0.00;
 
             // Calculate remaining in-transit POs scoped to this branch (or unallocated)
             $inTransitPOs = 0.00;
@@ -83,9 +89,6 @@ class ReplenishmentEngine
             }
 
             $inTransit = round($inTransitPOs + $inTransitTransfers, 2);
-
-            // Calculate committed reservations
-            $committed = 0.00;
 
             $netAvailable = max(0.00, $onHand + $inTransit - $committed);
             $minStock = (float) $rule->min_stock;
@@ -280,7 +283,19 @@ class ReplenishmentEngine
             // Create Internal Transfers
             foreach ($transferGroups as $groupKey => $lines) {
                 $transferNumber = 'TRF-AUTO-' . strtoupper(substr(uniqid(), -6));
-                $sourceLocation = $lines[0]['source_warehouse_name'] ?? 'Central Commissary';
+                $destBranchId = (int) $lines[0]['branch_id'];
+                $destBranch = DB::table('branches')->where('branch_id', $destBranchId)->first();
+                $sourceBranch = ($destBranch && $destBranch->default_source_branch_id)
+                    ? DB::table('branches')->where('branch_id', $destBranch->default_source_branch_id)->first()
+                    : DB::table('branches')
+                        ->where('branch_is_active', true)
+                        ->where('branch_id', '!=', $destBranchId)
+                        ->where('can_supply_branches', true)
+                        ->orderByRaw("CASE WHEN branch_role = 'CENTRAL_COMMISSARY' THEN 0 ELSE 1 END")
+                        ->orderBy('branch_id')
+                        ->first();
+
+                $sourceLocation = $sourceBranch?->branch_name ?? ($lines[0]['source_warehouse_name'] ?? 'Central Commissary');
                 $destinationLocation = $lines[0]['branch_name'];
                 $totalUnits = array_sum(array_column($lines, 'suggested_order_qty'));
                 $totalValuation = 0.00;
@@ -290,13 +305,15 @@ class ReplenishmentEngine
                 }
 
                 $transferId = DB::table('stock_transfer_header')->insertGetId([
+                    'company_id' => $destBranch?->company_id,
                     'transfer_number' => $transferNumber,
                     'transfer_type' => 'COMMISSARY_REPLENISHMENT',
                     'status' => 'DRAFT',
                     'priority' => 'HIGH',
                     'source_location' => $sourceLocation,
+                    'source_branch_id' => $sourceBranch?->branch_id,
                     'destination_location' => $destinationLocation,
-                    'destination_branch_id' => $lines[0]['branch_id'],
+                    'destination_branch_id' => $destBranchId,
                     'requisition_reference' => 'AUTO-PAR-PUSH',
                     'reason_code' => 'REORDER_POINT_BREACH',
                     'requested_by' => $performedBy,
@@ -311,6 +328,14 @@ class ReplenishmentEngine
                 ]);
 
                 foreach ($lines as $line) {
+                    $srcAvail = $sourceBranch
+                        ? (float) (DB::table('branch_stock_balances')
+                            ->where('branch_id', $sourceBranch->branch_id)
+                            ->where('inventory_item_id', $line['product_id'])
+                            ->selectRaw('CASE WHEN (on_hand_qty - reserved_qty) > 0 THEN (on_hand_qty - reserved_qty) ELSE 0 END as avail')
+                            ->value('avail') ?? 0.00)
+                        : 0.00;
+
                     DB::table('stock_transfer_lines')->insert([
                         'internal_transfer_id' => $transferId,
                         'inventory_item_id' => $line['product_id'],
@@ -318,7 +343,7 @@ class ReplenishmentEngine
                         'item_name' => $line['product_name'],
                         'category' => $line['category'] ?? 'Raw Ingredients',
                         'uom' => $line['uom'],
-                        'source_available_stock' => 500.00,
+                        'source_available_stock' => round($srcAvail, 2),
                         'requested_qty' => $line['suggested_order_qty'],
                         'transferred_qty' => 0.00,
                         'received_qty' => 0.00,

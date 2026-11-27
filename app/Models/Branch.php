@@ -68,10 +68,24 @@ class Branch extends Model
         'branch_is_active',
         'branch_created_by',
         'branch_updated_by',
+        'branch_role',
+        'default_source_branch_id',
+        'can_supply_branches',
+        'allow_peer_transfers',
+        'can_direct_procure',
+        'internal_pricing_mode',
+        'internal_markup_pct',
+        'auto_post_interbranch_gl',
     ];
 
     protected $casts = [
         'branch_is_active' => 'boolean',
+        'default_source_branch_id' => 'integer',
+        'can_supply_branches' => 'boolean',
+        'allow_peer_transfers' => 'boolean',
+        'can_direct_procure' => 'boolean',
+        'internal_markup_pct' => 'decimal:4',
+        'auto_post_interbranch_gl' => 'boolean',
     ];
 
     protected $appends = [
@@ -83,6 +97,11 @@ class Branch extends Model
     public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class, 'company_id', 'company_id');
+    }
+
+    public function defaultSourceBranch(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'default_source_branch_id', 'branch_id');
     }
 
     public function legalDocuments(): HasMany

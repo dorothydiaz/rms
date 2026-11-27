@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Branch as CanonicalBranch;
 use App\Models\Hr\Branch;
 use App\Models\Inventory\BillOfMaterials;
 use App\Models\Inventory\BillOfMaterialsItem;
@@ -24,6 +25,9 @@ use App\Models\Purchase\ProcurementVendor;
 use App\Models\Purchase\PurchaseOrder;
 use App\Models\Purchase\PurchaseOrderItem;
 use App\Models\ReorderingRule;
+use App\Services\CompanyBranchContext;
+use App\Services\Inventory\BranchStockService;
+use App\Services\Inventory\StockTransferService;
 use App\Services\ReplenishmentEngine;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -97,9 +101,37 @@ class InventoryController extends Controller
      */
     private function getEnrichedStocksOverviewData(): array
     {
+        $branchCtx = app(CompanyBranchContext::class);
+        $activeBranch = $branchCtx->getActiveBranch();
+        $isConsolidated = $branchCtx->isConsolidatedView();
+        $checkedBranchIds = $branchCtx->getCheckedBranchIds();
+
+        $scopeBranchIds = [];
+        if ($isConsolidated) {
+            $scopeBranchIds = CanonicalBranch::active()->pluck('branch_id')->map(fn ($id) => (int) $id)->all();
+        } elseif (count($checkedBranchIds) > 1) {
+            $scopeBranchIds = array_map('intval', $checkedBranchIds);
+        } elseif ($activeBranch) {
+            $scopeBranchIds = [(int) $activeBranch->branch_id];
+        }
+
+        $hasBranchBalances = !empty($scopeBranchIds) && \App\Models\Inventory\BranchStockBalance::exists();
+        $branchBalancesByItem = $hasBranchBalances
+            ? \App\Models\Inventory\BranchStockBalance::with('branch:branch_id,branch_name,branch_code')
+                ->whereIn('branch_id', $scopeBranchIds)
+                ->get()
+                ->groupBy('inventory_item_id')
+            : collect();
+
         $products = InventoryItem::where('is_active', true)->orderBy('name')->get();
         $categories = InventoryCategory::where('is_active', true)->orderBy('name')->get();
-        $ledger = StockLedger::orderByDesc('id')->take(100)->get();
+        $ledgerQuery = StockLedger::orderByDesc('id');
+        if ($hasBranchBalances && !$isConsolidated) {
+            $ledgerQuery->where(function ($q) use ($scopeBranchIds) {
+                $q->whereIn('branch_id', $scopeBranchIds)->orWhereNull('branch_id');
+            });
+        }
+        $ledger = $ledgerQuery->take(100)->get();
         $warehouses = self::getDefaultWarehousesPayload();
         $storageAreas = self::getDefaultStorageAreasPayload();
 
@@ -180,10 +212,38 @@ class InventoryController extends Controller
             ->get()
             ->keyBy('sku');
 
-        // 4. Enrich each product
-        $products = $products->map(function ($p) use ($poInboundBySku, $openPosBySku, $ledgerLocationSums, $locationToWhMap, $warehouses, $productionIn, $productionOut, $wasteAggregates) {
+        // 4. Enrich each product (scoped to active / checked branch balances when available)
+        $products = $products->map(function ($p) use ($poInboundBySku, $openPosBySku, $ledgerLocationSums, $locationToWhMap, $warehouses, $productionIn, $productionOut, $wasteAggregates, $hasBranchBalances, $branchBalancesByItem) {
             $sku = $p->sku;
-            $currentStock = (float) $p->current_stock;
+            $itemBalances = $hasBranchBalances ? ($branchBalancesByItem->get($p->id) ?? collect()) : collect();
+            if ($hasBranchBalances) {
+                $currentStock = round((float) $itemBalances->sum('on_hand_qty'), 2);
+                $reservedQty = round((float) $itemBalances->sum('reserved_qty'), 2);
+                $inTransitIn = round((float) $itemBalances->sum('in_transit_in_qty'), 2);
+                $inTransitOut = round((float) $itemBalances->sum('in_transit_out_qty'), 2);
+                $p->current_stock = $currentStock;
+                $p->reserved_qty = $reservedQty;
+                $p->in_transit_in_qty = $inTransitIn;
+                $p->in_transit_out_qty = $inTransitOut;
+                $p->available_stock = max(0.0, round($currentStock - $reservedQty, 2));
+                $p->branch_breakdown = $itemBalances->map(fn ($b) => [
+                    'branch_id' => (int) $b->branch_id,
+                    'branch_code' => $b->branch?->branch_code,
+                    'branch_name' => $b->branch?->branch_name,
+                    'on_hand_qty' => (float) $b->on_hand_qty,
+                    'reserved_qty' => (float) $b->reserved_qty,
+                    'available_qty' => (float) $b->available_qty,
+                    'in_transit_in_qty' => (float) $b->in_transit_in_qty,
+                    'in_transit_out_qty' => (float) $b->in_transit_out_qty,
+                ])->values()->all();
+            } else {
+                $currentStock = (float) $p->current_stock;
+                $p->reserved_qty = 0.0;
+                $p->in_transit_in_qty = 0.0;
+                $p->in_transit_out_qty = 0.0;
+                $p->available_stock = max(0.0, $currentStock);
+                $p->branch_breakdown = [];
+            }
 
             $produced = (float) ($productionIn[$sku] ?? 0);
             $consumed = (float) ($productionOut[$sku] ?? 0);
@@ -596,6 +656,7 @@ class InventoryController extends Controller
             $ledgerEntriesToInsert = [];
             $itemsToSave = [];
             $poItemsToSave = [];
+            $branchStockDeltas = [];
             $itemsSubtotal = 0.00;
 
             foreach ($validated['items'] as $itemData) {
@@ -749,6 +810,10 @@ class InventoryController extends Controller
                     $afterQty = $beforeQty + $baseQty;
                     $invItem->current_stock = $afterQty;
                     $itemsToSave[$invItem->id] = $invItem;
+                    $branchStockDeltas[$invItem->id] = [
+                        'qty' => ($branchStockDeltas[$invItem->id]['qty'] ?? 0.0) + $baseQty,
+                        'unit_cost' => round($baseUnitCost, 4),
+                    ];
 
                     $noteSuffix = $hasOverrideReason ? " | Variance Override: {$varianceReason}" : '';
                     $ledgerEntriesToInsert[] = [
@@ -822,6 +887,18 @@ class InventoryController extends Controller
             $receipt->items_subtotal = $itemsSubtotal;
             $receipt->gross_total = $itemsSubtotal;
             $receipt->save();
+
+            if (!empty($branchStockDeltas)) {
+                $branchCtx = app(CompanyBranchContext::class);
+                $targetBranch = $branchCtx->getActiveBranch() ?? CanonicalBranch::active()->orderBy('branch_id')->first();
+                if ($targetBranch) {
+                    app(BranchStockService::class)->creditBranchOnStockIn(
+                        (int) $targetBranch->branch_id,
+                        $branchStockDeltas,
+                        $targetBranch->company_id !== null ? (int) $targetBranch->company_id : null
+                    );
+                }
+            }
 
             // Update Purchase Order overall status with Backorder Policy
             if ($po) {
@@ -1189,6 +1266,11 @@ class InventoryController extends Controller
             // Pre-fetch & lock all referenced SKUs in a single vectorized query
             $skus = $order->items->pluck('sku')->filter()->unique()->values()->all();
             $inventoryItems = InventoryItem::whereIn('sku', $skus)->lockForUpdate()->get()->keyBy('sku');
+            $branchCtx = app(CompanyBranchContext::class);
+            $activeBranch = $branchCtx->getActiveBranch();
+            $branchId = $order->branch_id ? (int) $order->branch_id : ($activeBranch ? (int) $activeBranch->branch_id : null);
+            $companyId = $order->company_id ? (int) $order->company_id : ($activeBranch?->company_id !== null ? (int) $activeBranch->company_id : null);
+            $branchStockSvc = app(BranchStockService::class);
 
             $totalShippedQty = 0.00;
             $totalActualCost = 0.00;
@@ -1211,9 +1293,14 @@ class InventoryController extends Controller
                 $inventoryItem->current_stock = $afterQty;
                 $inventoryItem->save();
 
+                if ($branchId !== null) {
+                    $branchStockSvc->adjustBranchOnHand($branchId, (int) $inventoryItem->id, -$qtyToDeduct, (float) $item->unit_cost, $companyId);
+                }
+
                 // Append to immutable StockLedger
                 StockLedger::create([
                     'transaction_uuid' => (string) Str::uuid(),
+                    'branch_id' => $branchId,
                     'sku' => $item->sku,
                     'inventory_item_id' => $inventoryItem->id,
                     'item_name' => $item->item_name,
@@ -1310,410 +1397,474 @@ class InventoryController extends Controller
     }
 
     /**
-     * Internal Transfer Module (Masterlist, Pending Requests & Custom Push)
+     * Internal Transfer Module (Branch Requests, Direct Push & Receiving)
      */
-    public function internalTransfer(): View
+    public function internalTransfer(Request $request, StockTransferService $transferService, CompanyBranchContext $branchContext): View
     {
-        $transfers = InternalTransfer::with(['items', 'sourceBranch', 'destinationBranch'])->orderByDesc('id')->get();
-        $products = InventoryItem::where('is_active', true)->orderBy('name')->get();
-        $branches = Branch::where('is_active', true)->orderBy('name')->get();
-        $categories = InventoryCategory::where('is_active', true)->orderBy('name')->get();
+        $activeBranch = $branchContext->getActiveBranch();
+        $activeBranchId = $activeBranch ? (int) $activeBranch->branch_id : null;
+        $isConsolidated = $branchContext->isConsolidatedView();
+
+        $branches = CanonicalBranch::active()
+            ->orderBy('branch_name')
+            ->get([
+                'branch_id',
+                'company_id',
+                'branch_code',
+                'branch_name',
+                'branch_type',
+                'branch_address_line_1',
+                'branch_city',
+                'branch_role',
+                'default_source_branch_id',
+                'can_supply_branches',
+                'allow_peer_transfers',
+                'can_direct_procure',
+                'internal_pricing_mode',
+                'internal_markup_pct',
+                'auto_post_interbranch_gl',
+            ])
+            ->map(function (CanonicalBranch $b) {
+                return [
+                    'id' => (int) $b->branch_id,
+                    'branch_id' => (int) $b->branch_id,
+                    'company_id' => $b->company_id !== null ? (int) $b->company_id : null,
+                    'code' => $b->branch_code,
+                    'name' => $b->branch_name,
+                    'type' => $b->branch_type,
+                    'address' => trim(($b->branch_address_line_1 ?? '') . ($b->branch_city ? ', ' . $b->branch_city : ''), ', '),
+                    'branch_role' => $b->branch_role ?? 'RETAIL_STORE',
+                    'default_source_branch_id' => $b->default_source_branch_id !== null ? (int) $b->default_source_branch_id : null,
+                    'can_supply_branches' => $b->can_supply_branches ?? true,
+                    'allow_peer_transfers' => $b->allow_peer_transfers ?? true,
+                    'can_direct_procure' => $b->can_direct_procure ?? true,
+                    'internal_pricing_mode' => $b->internal_pricing_mode ?? 'AT_COST',
+                    'internal_markup_pct' => (float) ($b->internal_markup_pct ?? 0),
+                    'auto_post_interbranch_gl' => $b->auto_post_interbranch_gl ?? true,
+                ];
+            })
+            ->values();
+
+        $products = InventoryItem::where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'sku', 'barcode', 'name', 'category', 'uom', 'cost_price', 'min_stock', 'max_stock', 'storage_location']);
+
+        $categories = InventoryCategory::where('is_active', true)->orderBy('name')->get(['id', 'name', 'code', 'slug']);
+
+        $initialPayload = $transferService->getRegisterPayload(
+            $request->only(['perspective', 'status', 'transfer_type', 'branch_id', 'search', 'page', 'per_page']),
+            $activeBranchId,
+            $isConsolidated
+        );
 
         return view('inventory.internal-transfer', [
-            'initialTransfers' => $transfers,
+            'initialPayload' => $initialPayload,
             'initialProducts' => $products,
             'initialBranches' => $branches,
             'initialCategories' => $categories,
-        ]);
-    }
-
-    /**
-     * API: Internal Transfer Data Payload
-     */
-    public function apiGetInternalTransferData(): JsonResponse
-    {
-        $transfers = InternalTransfer::with(['items', 'sourceBranch', 'destinationBranch'])->orderByDesc('id')->get();
-        $products = InventoryItem::where('is_active', true)->orderBy('name')->get();
-        $branches = Branch::where('is_active', true)->orderBy('name')->get();
-        $categories = InventoryCategory::where('is_active', true)->orderBy('name')->get();
-
-        $stats = [
-            'totalTransfers' => $transfers->count(),
-            'pendingRequestsCount' => $transfers->where('status', 'PENDING')->count(),
-            'inTransitCount' => $transfers->where('status', 'IN_TRANSIT')->count(),
-            'completedCount' => $transfers->where('status', 'COMPLETED')->count(),
-            'totalValuation' => (float) $transfers->whereIn('status', ['IN_TRANSIT', 'COMPLETED'])->sum('total_valuation'),
-        ];
-
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'transfers' => $transfers,
-                'products' => $products,
-                'branches' => $branches,
-                'categories' => $categories,
-                'stats' => $stats,
+            'branchContext' => [
+                'activeBranchId' => $activeBranchId,
+                'activeBranchName' => $activeBranch?->branch_name,
+                'activeBranchCode' => $activeBranch?->branch_code,
+                'isConsolidated' => $isConsolidated,
             ],
         ]);
     }
 
     /**
-     * API: Create Custom Transfer (Direct Push without Branch Requisition)
-     * Performs strict quantity validation against Item Master stock on hand.
+     * API: Paginated Internal Transfer Register & SQL KPI Payload
      */
-    public function apiCreateCustomTransfer(Request $request): JsonResponse
+    public function apiGetInternalTransferData(Request $request, StockTransferService $transferService, CompanyBranchContext $branchContext): JsonResponse
+    {
+        $activeBranch = $branchContext->getActiveBranch();
+        $activeBranchId = $activeBranch ? (int) $activeBranch->branch_id : null;
+        $isConsolidated = $branchContext->isConsolidatedView();
+
+        $payload = $transferService->getRegisterPayload(
+            $request->only(['perspective', 'status', 'transfer_type', 'branch_id', 'search', 'page', 'per_page']),
+            $activeBranchId,
+            $isConsolidated
+        );
+
+        $payload['branchContext'] = [
+            'activeBranchId' => $activeBranchId,
+            'activeBranchName' => $activeBranch?->branch_name,
+            'activeBranchCode' => $activeBranch?->branch_code,
+            'isConsolidated' => $isConsolidated,
+        ];
+
+        if ($request->boolean('include_lookups')) {
+            $payload['products'] = InventoryItem::where('is_active', true)
+                ->orderBy('name')
+                ->get(['id', 'sku', 'barcode', 'name', 'category', 'uom', 'cost_price', 'min_stock', 'max_stock', 'storage_location']);
+            $payload['branches'] = CanonicalBranch::active()
+                ->orderBy('branch_name')
+                ->get(['branch_id', 'company_id', 'branch_code', 'branch_name', 'branch_type', 'branch_address_line_1', 'branch_city'])
+                ->map(fn (CanonicalBranch $b) => [
+                    'id' => (int) $b->branch_id,
+                    'branch_id' => (int) $b->branch_id,
+                    'company_id' => $b->company_id !== null ? (int) $b->company_id : null,
+                    'code' => $b->branch_code,
+                    'name' => $b->branch_name,
+                    'type' => $b->branch_type,
+                    'address' => trim(($b->branch_address_line_1 ?? '') . ($b->branch_city ? ', ' . $b->branch_city : ''), ', '),
+                ])->values();
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $payload,
+        ]);
+    }
+
+    /**
+     * API: Single Transfer Detail with Live Source/Dest Branch Balances
+     */
+    public function apiGetInternalTransferDetail(int $id, StockTransferService $transferService): JsonResponse
+    {
+        $detail = $transferService->getTransferDetail($id);
+
+        return response()->json([
+            'success' => true,
+            'data' => $detail,
+        ]);
+    }
+
+    /**
+     * API: O(1) Branch Stock Balance Map for Source Branch Selection
+     */
+    public function apiGetTransferBranchStock(Request $request, BranchStockService $branchStockService): JsonResponse
     {
         $validated = $request->validate([
-            'destination_branch_id' => 'nullable|integer',
-            'destination_location' => 'required|string|max:255',
-            'source_location' => 'required|string|max:255',
-            'source_branch_id' => 'nullable|integer',
-            'reason_code' => 'nullable|string|max:100',
-            'dispatched_by' => 'required|string|max:255',
-            'carrier_name' => 'nullable|string|max:255',
-            'driver_plate' => 'nullable|string|max:100',
-            'waybill_number' => 'nullable|string|max:100',
-            'priority' => 'nullable|string|max:50',
+            'branch_id' => 'required|integer|min:1',
+        ]);
+
+        $balances = $branchStockService->getBranchStockMap((int) $validated['branch_id']);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'branch_id' => (int) $validated['branch_id'],
+                'balances' => $balances,
+            ],
+        ]);
+    }
+
+    /**
+     * API: 1-Click Low-Stock Pull Suggestions between Source and Destination Branches
+     */
+    public function apiGetTransferLowStockSuggestions(Request $request, StockTransferService $transferService): JsonResponse
+    {
+        $validated = $request->validate([
+            'source_branch_id' => 'required|integer|min:1',
+            'destination_branch_id' => 'required|integer|min:1|different:source_branch_id',
+        ]);
+
+        $suggestions = $transferService->getLowStockSuggestions(
+            (int) $validated['source_branch_id'],
+            (int) $validated['destination_branch_id']
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'suggestions' => $suggestions,
+            ],
+        ]);
+    }
+
+    /**
+     * API: Create Inter-Branch Stock Request (Pull Workflow)
+     */
+    public function apiCreateTransferRequest(Request $request, StockTransferService $transferService): JsonResponse
+    {
+        $validated = $request->validate([
+            'source_branch_id' => 'required|integer|exists:branches,branch_id',
+            'destination_branch_id' => 'required|integer|exists:branches,branch_id|different:source_branch_id',
+            'priority' => 'nullable|string|in:NORMAL,HIGH,URGENT,EMERGENCY',
+            'reason_code' => 'nullable|string|max:120',
+            'required_at' => 'nullable|date',
+            'requisition_reference' => 'nullable|string|max:100',
+            'requested_by' => 'nullable|string|max:255',
+            'save_as_draft' => 'nullable|boolean',
+            'idempotency_key' => 'nullable|string|max:120',
             'notes' => 'nullable|string|max:1000',
             'items' => 'required|array|min:1',
             'items.*.sku' => 'required|string|max:100',
-            'items.*.inventory_item_id' => 'nullable|integer',
-            'items.*.item_name' => 'required|string|max:255',
+            'items.*.item_name' => 'nullable|string|max:255',
             'items.*.category' => 'nullable|string|max:100',
             'items.*.uom' => 'nullable|string|max:50',
-            'items.*.transferred_qty' => 'required|numeric|min:0.001',
-            'items.*.unit_cost' => 'required|numeric|min:0',
+            'items.*.uom_multiplier' => 'nullable|numeric|min:0.0001',
+            'items.*.requested_qty' => 'required|numeric|min:0.01',
+            'items.*.unit_cost' => 'nullable|numeric|min:0',
             'items.*.storage_location' => 'nullable|string|max:255',
             'items.*.notes' => 'nullable|string|max:500',
         ]);
 
-        return DB::transaction(function () use ($validated, $request) {
-            // 1. Strict Stock Quantity Validation Guard
-            foreach ($validated['items'] as $itemData) {
-                $sku = $itemData['sku'];
-                $qty = (float) $itemData['transferred_qty'];
-                $invItem = InventoryItem::where('sku', $sku)->lockForUpdate()->first();
+        $transfer = $transferService->createRequest($validated, auth()->user());
 
-                if (!$invItem) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => "Item with SKU '{$sku}' not found in Item Master.",
-                    ], 422);
-                }
-
-                $availableStock = (float) $invItem->current_stock;
-                if ($qty > $availableStock) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => "Insufficient stock for '{$invItem->name}' (SKU: {$sku}). Requested transfer quantity ({$qty}) exceeds available on-hand stock ({$availableStock} {$invItem->uom}).",
-                    ], 422);
-                }
-            }
-
-            // 2. Generate Transfer Reference Number
-            $year = date('Y');
-            $count = InternalTransfer::whereYear('created_at', $year)->count() + 1;
-            $transferNumber = sprintf('DIR-TRF-%s-%04d', $year, $count);
-
-            $totalItemsCount = count($validated['items']);
-            $totalTransferredQty = 0.00;
-            $totalValuation = 0.00;
-
-            foreach ($validated['items'] as $it) {
-                $q = (float) $it['transferred_qty'];
-                $c = (float) $it['unit_cost'];
-                $totalTransferredQty += $q;
-                $totalValuation += ($q * $c);
-            }
-
-            // 3. Create InternalTransfer Header
-            $transfer = InternalTransfer::create([
-                'transfer_number' => $transferNumber,
-                'transfer_type' => 'CUSTOM_PUSH',
-                'status' => 'IN_TRANSIT',
-                'priority' => $validated['priority'] ?? 'NORMAL',
-                'source_location' => $validated['source_location'],
-                'source_branch_id' => $validated['source_branch_id'] ?? null,
-                'destination_location' => $validated['destination_location'],
-                'destination_branch_id' => $validated['destination_branch_id'] ?? null,
-                'reason_code' => $validated['reason_code'] ?? 'Commissary Bulk Batch Push',
-                'dispatched_by' => $validated['dispatched_by'],
-                'carrier_name' => $validated['carrier_name'] ?? null,
-                'driver_plate' => $validated['driver_plate'] ?? null,
-                'waybill_number' => $validated['waybill_number'] ?? null,
-                'dispatched_at' => now(),
-                'total_items_count' => $totalItemsCount,
-                'total_requested_qty' => $totalTransferredQty,
-                'total_transferred_qty' => $totalTransferredQty,
-                'total_received_qty' => 0.00,
-                'total_valuation' => $totalValuation,
-                'notes' => $validated['notes'] ?? null,
-            ]);
-
-            $performedBy = auth()->user()->full_name ?? auth()->user()->name ?? auth()->user()->username ?? $validated['dispatched_by'];
-
-            // 4. Create Items & Atomically Deduct Stock from Central Inventory
-            foreach ($validated['items'] as $itemData) {
-                $sku = $itemData['sku'];
-                $qty = (float) $itemData['transferred_qty'];
-                $unitCost = (float) $itemData['unit_cost'];
-
-                $invItem = InventoryItem::where('sku', $sku)->lockForUpdate()->first();
-                $beforeQty = (float) $invItem->current_stock;
-                $afterQty = $beforeQty - $qty;
-
-                // Update stock balance
-                $invItem->current_stock = $afterQty;
-                $invItem->save();
-
-                // Create Transfer Item
-                InternalTransferItem::create([
-                    'internal_transfer_id' => $transfer->id,
-                    'inventory_item_id' => $invItem->id,
-                    'sku' => $sku,
-                    'item_name' => $itemData['item_name'],
-                    'category' => $itemData['category'] ?? $invItem->category,
-                    'uom' => $itemData['uom'] ?? $invItem->uom,
-                    'source_available_stock' => $beforeQty,
-                    'requested_qty' => $qty,
-                    'transferred_qty' => $qty,
-                    'received_qty' => 0.00,
-                    'unit_cost' => $unitCost,
-                    'total_cost' => $qty * $unitCost,
-                    'storage_location' => $itemData['storage_location'] ?? $invItem->storage_location,
-                    'notes' => $itemData['notes'] ?? null,
-                ]);
-
-                // Append Immutable Master Ledger Entry
-                StockLedger::create([
-                    'transaction_uuid' => (string) Str::uuid(),
-                    'sku' => $sku,
-                    'inventory_item_id' => $invItem->id,
-                    'item_name' => $invItem->name,
-                    'transaction_type' => 'STOCK_OUT',
-                    'reference_type' => 'internal_transfers',
-                    'reference_id' => $transfer->id,
-                    'reference_no' => $transfer->transfer_number,
-                    'before_quantity' => $beforeQty,
-                    'quantity_change' => -$qty,
-                    'after_quantity' => $afterQty,
-                    'unit_cost' => $unitCost,
-                    'total_value' => $qty * $unitCost,
-                    'storage_location' => $invItem->storage_location,
-                    'performed_by' => $performedBy,
-                    'notes' => "Direct Transfer to {$transfer->destination_location} [{$transfer->reason_code}]",
-                ]);
-            }
-
-            $transfer->load(['items', 'sourceBranch', 'destinationBranch']);
-
-            return response()->json([
-                'success' => true,
-                'message' => "Custom Direct Transfer {$transferNumber} dispatched successfully.",
-                'data' => [
-                    'transfer' => $transfer,
-                ],
-            ], 201);
-        });
+        return response()->json([
+            'success' => true,
+            'message' => "Stock Request {$transfer->transfer_number} ({$transfer->status}) created successfully.",
+            'data' => [
+                'transfer' => $transfer,
+            ],
+        ], 201);
     }
 
     /**
-     * API: Dispatch Pending Branch Transfer Request
+     * API: Create Custom Transfer (Direct Push from Source -> IN_TRANSIT; Destination accepts via Receipt)
      */
-    public function apiDispatchTransfer(Request $request): JsonResponse
+    public function apiCreateCustomTransfer(Request $request, StockTransferService $transferService, CompanyBranchContext $branchContext): JsonResponse
     {
         $validated = $request->validate([
-            'transfer_id' => 'required|exists:stock_transfer_header,id',
-            'dispatched_by' => 'required|string|max:255',
+            'destination_branch_id' => 'nullable|integer',
+            'destination_location' => 'required_without:destination_branch_id|nullable|string|max:255',
+            'source_location' => 'nullable|string|max:255',
+            'source_branch_id' => 'nullable|integer',
+            'reason_code' => 'nullable|string|max:120',
+            'required_at' => 'nullable|date',
+            'dispatched_by' => 'nullable|string|max:255',
             'carrier_name' => 'nullable|string|max:255',
             'driver_plate' => 'nullable|string|max:100',
             'waybill_number' => 'nullable|string|max:100',
+            'priority' => 'nullable|string|max:50',
+            'idempotency_key' => 'nullable|string|max:120',
+            'notes' => 'nullable|string|max:1000',
             'items' => 'required|array|min:1',
             'items.*.sku' => 'required|string|max:100',
-            'items.*.transferred_qty' => 'required|numeric|min:0.001',
+            'items.*.inventory_item_id' => 'nullable|integer',
+            'items.*.item_name' => 'nullable|string|max:255',
+            'items.*.category' => 'nullable|string|max:100',
+            'items.*.uom' => 'nullable|string|max:50',
+            'items.*.uom_multiplier' => 'nullable|numeric|min:0.0001',
+            'items.*.transferred_qty' => 'required|numeric|min:0.01',
+            'items.*.unit_cost' => 'nullable|numeric|min:0',
+            'items.*.storage_location' => 'nullable|string|max:255',
+            'items.*.notes' => 'nullable|string|max:500',
         ]);
 
-        return DB::transaction(function () use ($validated, $request) {
-            $transfer = InternalTransfer::where('id', $validated['transfer_id'])->lockForUpdate()->firstOrFail();
+        $activeBranch = $branchContext->getActiveBranch();
+        $transfer = $transferService->createDirectPush(
+            $validated,
+            auth()->user(),
+            $activeBranch ? (int) $activeBranch->branch_id : null,
+            $branchContext->isConsolidatedView()
+        );
 
-            if (in_array($transfer->status, ['IN_TRANSIT', 'COMPLETED', 'CANCELLED'])) {
-                return response()->json([
-                    'success' => false,
-                    'message' => "Transfer {$transfer->transfer_number} is already in {$transfer->status} status.",
-                ], 422);
-            }
-
-            // Quantity validation guard
-            foreach ($validated['items'] as $itemData) {
-                $sku = $itemData['sku'];
-                $qty = (float) $itemData['transferred_qty'];
-                $invItem = InventoryItem::where('sku', $sku)->lockForUpdate()->first();
-
-                if (!$invItem) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => "Item with SKU '{$sku}' not found in Item Master.",
-                    ], 422);
-                }
-
-                $availableStock = (float) $invItem->current_stock;
-                if ($qty > $availableStock) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => "Insufficient stock for '{$invItem->name}' (SKU: {$sku}). Transfer quantity ({$qty}) exceeds available on-hand stock ({$availableStock} {$invItem->uom}).",
-                    ], 422);
-                }
-            }
-
-            $performedBy = auth()->user()->full_name ?? auth()->user()->name ?? auth()->user()->username ?? $validated['dispatched_by'];
-            $totalDispatched = 0.00;
-            $totalVal = 0.00;
-
-            foreach ($validated['items'] as $itemData) {
-                $sku = $itemData['sku'];
-                $qty = (float) $itemData['transferred_qty'];
-
-                $lineItem = InternalTransferItem::where('internal_transfer_id', $transfer->id)
-                    ->where('sku', $sku)
-                    ->first();
-
-                $invItem = InventoryItem::where('sku', $sku)->lockForUpdate()->first();
-                $beforeQty = (float) $invItem->current_stock;
-                $afterQty = $beforeQty - $qty;
-
-                // Decrement stock
-                $invItem->current_stock = $afterQty;
-                $invItem->save();
-
-                if ($lineItem) {
-                    $lineItem->transferred_qty = $qty;
-                    $lineItem->total_cost = $qty * (float)$lineItem->unit_cost;
-                    $lineItem->save();
-                    $unitCost = (float) $lineItem->unit_cost;
-                } else {
-                    $unitCost = (float) $invItem->cost_price;
-                }
-
-                $totalDispatched += $qty;
-                $totalVal += ($qty * $unitCost);
-
-                // Immutable Master Ledger
-                StockLedger::create([
-                    'transaction_uuid' => (string) Str::uuid(),
-                    'sku' => $sku,
-                    'inventory_item_id' => $invItem->id,
-                    'item_name' => $invItem->name,
-                    'transaction_type' => 'STOCK_OUT',
-                    'reference_type' => 'internal_transfers',
-                    'reference_id' => $transfer->id,
-                    'reference_no' => $transfer->transfer_number,
-                    'before_quantity' => $beforeQty,
-                    'quantity_change' => -$qty,
-                    'after_quantity' => $afterQty,
-                    'unit_cost' => $unitCost,
-                    'total_value' => $qty * $unitCost,
-                    'storage_location' => $invItem->storage_location,
-                    'performed_by' => $performedBy,
-                    'notes' => "Dispatched Transfer Requisition to {$transfer->destination_location}",
-                ]);
-            }
-
-            $transfer->update([
-                'status' => 'IN_TRANSIT',
-                'dispatched_by' => $validated['dispatched_by'],
-                'carrier_name' => $validated['carrier_name'] ?? $transfer->carrier_name,
-                'driver_plate' => $validated['driver_plate'] ?? $transfer->driver_plate,
-                'waybill_number' => $validated['waybill_number'] ?? $transfer->waybill_number,
-                'dispatched_at' => now(),
-                'total_transferred_qty' => $totalDispatched,
-                'total_valuation' => $totalVal,
-            ]);
-
-            $transfer->load(['items', 'sourceBranch', 'destinationBranch']);
-
-            return response()->json([
-                'success' => true,
-                'message' => "Transfer {$transfer->transfer_number} dispatched and in-transit.",
-                'data' => [
-                    'transfer' => $transfer,
-                ],
-            ]);
-        });
+        return response()->json([
+            'success' => true,
+            'message' => "Direct Transfer {$transfer->transfer_number} dispatched and in-transit. Awaiting destination branch acceptance.",
+            'data' => [
+                'transfer' => $transfer,
+            ],
+        ], 201);
     }
 
     /**
-     * API: Confirm Receipt of Internal Transfer at Destination Branch
+     * API: Source Branch Approves Request (Reserves Stock) or Approves & Dispatches Now
      */
-    public function apiReceiveTransfer(Request $request): JsonResponse
+    public function apiApproveTransfer(Request $request, StockTransferService $transferService, CompanyBranchContext $branchContext): JsonResponse
     {
         $validated = $request->validate([
-            'transfer_id' => 'required|exists:stock_transfer_header,id',
-            'received_by' => 'required|string|max:255',
+            'transfer_id' => 'required|integer|exists:stock_transfer_header,id',
+            'source_branch_id' => 'nullable|integer|exists:branches,branch_id',
+            'approved_by' => 'nullable|string|max:255',
+            'dispatch_immediately' => 'nullable|boolean',
+            'create_backorder' => 'nullable|boolean',
+            'carrier_name' => 'nullable|string|max:255',
+            'driver_plate' => 'nullable|string|max:100',
+            'waybill_number' => 'nullable|string|max:100',
+            'items' => 'nullable|array',
+            'items.*.sku' => 'required_with:items|string|max:100',
+            'items.*.approved_qty' => 'required_with:items|numeric|min:0',
+        ]);
+
+        $activeBranch = $branchContext->getActiveBranch();
+        $result = $transferService->approve(
+            (int) $validated['transfer_id'],
+            $validated,
+            auth()->user(),
+            $activeBranch ? (int) $activeBranch->branch_id : null,
+            $branchContext->isConsolidatedView()
+        );
+
+        $msg = !empty($validated['dispatch_immediately'])
+            ? "Transfer {$result['transfer']->transfer_number} approved & dispatched (In Transit). Awaiting destination receipt."
+            : "Transfer {$result['transfer']->transfer_number} approved and source stock reserved.";
+
+        return response()->json([
+            'success' => true,
+            'message' => $msg,
+            'data' => $result,
+        ]);
+    }
+
+    /**
+     * API: Source Branch Rejects Request
+     */
+    public function apiRejectTransfer(Request $request, StockTransferService $transferService, CompanyBranchContext $branchContext): JsonResponse
+    {
+        $validated = $request->validate([
+            'transfer_id' => 'required|integer|exists:stock_transfer_header,id',
+            'reason' => 'required|string|max:500',
+        ]);
+
+        $activeBranch = $branchContext->getActiveBranch();
+        $transfer = $transferService->reject(
+            (int) $validated['transfer_id'],
+            $validated['reason'],
+            auth()->user(),
+            $activeBranch ? (int) $activeBranch->branch_id : null,
+            $branchContext->isConsolidatedView()
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => "Transfer {$transfer->transfer_number} has been rejected.",
+            'data' => [
+                'transfer' => $transfer,
+            ],
+        ]);
+    }
+
+    /**
+     * API: Source Branch Dispatches Approved/Requested Transfer -> IN_TRANSIT
+     */
+    public function apiDispatchTransfer(Request $request, StockTransferService $transferService, CompanyBranchContext $branchContext): JsonResponse
+    {
+        $validated = $request->validate([
+            'transfer_id' => 'required|integer|exists:stock_transfer_header,id',
+            'source_branch_id' => 'nullable|integer|exists:branches,branch_id',
+            'dispatched_by' => 'nullable|string|max:255',
+            'carrier_name' => 'nullable|string|max:255',
+            'driver_plate' => 'nullable|string|max:100',
+            'waybill_number' => 'nullable|string|max:100',
+            'create_backorder' => 'nullable|boolean',
+            'items' => 'required|array|min:1',
+            'items.*.sku' => 'required|string|max:100',
+            'items.*.transferred_qty' => 'required|numeric|min:0',
+        ]);
+
+        $activeBranch = $branchContext->getActiveBranch();
+        $result = $transferService->dispatch(
+            (int) $validated['transfer_id'],
+            $validated,
+            auth()->user(),
+            $activeBranch ? (int) $activeBranch->branch_id : null,
+            $branchContext->isConsolidatedView()
+        );
+
+        $msg = "Transfer {$result['transfer']->transfer_number} dispatched and in-transit.";
+        if (!empty($result['backorder'])) {
+            $msg .= " Backorder {$result['backorder']->transfer_number} created for unfulfilled balance.";
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => $msg,
+            'data' => $result,
+        ]);
+    }
+
+    /**
+     * API: Destination Branch Accepts & Confirms Receipt (Credits Destination + Clears Transit)
+     */
+    public function apiReceiveTransfer(Request $request, StockTransferService $transferService, CompanyBranchContext $branchContext): JsonResponse
+    {
+        $validated = $request->validate([
+            'transfer_id' => 'required|integer|exists:stock_transfer_header,id',
+            'received_by' => 'nullable|string|max:255',
+            'allow_partial' => 'nullable|boolean',
             'notes' => 'nullable|string|max:500',
+            'items' => 'nullable|array',
+            'items.*.sku' => 'required_with:items|string|max:100',
+            'items.*.received_qty' => 'required_with:items|numeric|min:0',
+            'items.*.variance_qty' => 'nullable|numeric|min:0',
+            'items.*.variance_reason' => 'nullable|string|max:100',
         ]);
 
-        return DB::transaction(function () use ($validated) {
-            $transfer = InternalTransfer::where('id', $validated['transfer_id'])->lockForUpdate()->firstOrFail();
+        $activeBranch = $branchContext->getActiveBranch();
+        $transfer = $transferService->receive(
+            (int) $validated['transfer_id'],
+            $validated,
+            auth()->user(),
+            $activeBranch ? (int) $activeBranch->branch_id : null,
+            $branchContext->isConsolidatedView()
+        );
 
-            if ($transfer->status === 'COMPLETED') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Transfer is already marked as COMPLETED.',
-                ], 422);
-            }
-
-            $transfer->update([
-                'status' => 'COMPLETED',
-                'received_by' => $validated['received_by'],
-                'received_at' => now(),
-                'total_received_qty' => $transfer->total_transferred_qty,
-                'notes' => ($transfer->notes ? $transfer->notes . ' | ' : '') . 'Received: ' . ($validated['notes'] ?? 'Acknowledged by destination branch'),
-            ]);
-
-            // Set all items received_qty = transferred_qty
-            foreach ($transfer->items as $item) {
-                $item->received_qty = $item->transferred_qty;
-                $item->save();
-            }
-
-            $transfer->load(['items', 'sourceBranch', 'destinationBranch']);
-
-            return response()->json([
-                'success' => true,
-                'message' => "Transfer {$transfer->transfer_number} marked as COMPLETED.",
-                'data' => [
-                    'transfer' => $transfer,
-                ],
-            ]);
-        });
+        return response()->json([
+            'success' => true,
+            'message' => "Transfer {$transfer->transfer_number} accepted under Receipt {$transfer->receipt_number} ({$transfer->status}).",
+            'data' => [
+                'transfer' => $transfer,
+            ],
+        ]);
     }
 
     /**
-     * API: Cancel Internal Transfer
+     * API: Cancel Internal Transfer (Releases Soft Reservations if Approved)
      */
-    public function apiCancelTransfer(Request $request): JsonResponse
+    public function apiCancelTransfer(Request $request, StockTransferService $transferService): JsonResponse
     {
         $validated = $request->validate([
-            'transfer_id' => 'required|exists:stock_transfer_header,id',
+            'transfer_id' => 'required|integer|exists:stock_transfer_header,id',
             'reason' => 'nullable|string|max:500',
         ]);
 
-        $transfer = InternalTransfer::findOrFail($validated['transfer_id']);
-        if ($transfer->status === 'IN_TRANSIT' || $transfer->status === 'COMPLETED') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Cannot cancel a transfer that has already been dispatched and deducted from inventory.',
-            ], 422);
-        }
-
-        $transfer->status = 'CANCELLED';
-        $transfer->notes = ($transfer->notes ? $transfer->notes . ' | ' : '') . 'Cancelled: ' . ($validated['reason'] ?? 'Cancelled by warehouse supervisor');
-        $transfer->save();
+        $transfer = $transferService->cancel(
+            (int) $validated['transfer_id'],
+            $validated['reason'] ?? 'Cancelled by warehouse supervisor',
+            auth()->user()
+        );
 
         return response()->json([
             'success' => true,
             'message' => "Transfer {$transfer->transfer_number} has been cancelled.",
             'data' => ['transfer' => $transfer],
+        ]);
+    }
+
+    /**
+     * API: Live Inter-Branch Due-To / Due-From Settlement Matrix
+     */
+    public function apiGetInterBranchSettlementMatrix(
+        \App\Services\Inventory\InterBranchAccountingService $accountingService,
+        CompanyBranchContext $branchContext
+    ): JsonResponse {
+        $company = $branchContext->getActiveCompany();
+        $branch = $branchContext->getActiveBranch();
+
+        $matrix = $accountingService->getSettlementMatrix(
+            $company ? (int) $company->company_id : null,
+            $branch ? (int) $branch->branch_id : null,
+            $branchContext->isConsolidatedView()
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => $matrix,
+        ]);
+    }
+
+    /**
+     * API: 1-Click Settle Inter-Branch Due-To / Due-From Transfers (Posts GL Clearing Journal)
+     */
+    public function apiSettleInterBranchTransfers(
+        Request $request,
+        \App\Services\Inventory\InterBranchAccountingService $accountingService
+    ): JsonResponse {
+        $validated = $request->validate([
+            'transfer_ids' => 'required|array|min:1',
+            'transfer_ids.*' => 'integer|exists:stock_transfer_header,id',
+        ]);
+
+        $result = $accountingService->settleTransfers($validated['transfer_ids'], auth()->user());
+
+        return response()->json([
+            'success' => true,
+            'message' => "Settled {$result['settled_count']} transfer(s) totaling ₱" . number_format($result['settled_amount'], 2) . '.',
+            'data' => $result,
         ]);
     }
 
@@ -2160,6 +2311,12 @@ class InventoryController extends Controller
                 'quality_notes' => $validated['quality_notes'] ?? null,
             ]);
 
+            $branchCtx = app(CompanyBranchContext::class);
+            $activeBranch = $branchCtx->getActiveBranch();
+            $branchId = $activeBranch ? (int) $activeBranch->branch_id : null;
+            $companyId = $activeBranch?->company_id !== null ? (int) $activeBranch->company_id : null;
+            $branchStockSvc = app(BranchStockService::class);
+
             // Deduct raw ingredients
             foreach ($bom->items as $bomItem) {
                 $rawItem = InventoryItem::where('id', $bomItem->raw_item_id)->lockForUpdate()->firstOrFail();
@@ -2172,6 +2329,10 @@ class InventoryController extends Controller
                 $afterStock = $beforeStock - $consumedQty;
                 $rawItem->current_stock = $afterStock;
                 $rawItem->save();
+
+                if ($branchId !== null) {
+                    $branchStockSvc->adjustBranchOnHand($branchId, (int) $rawItem->id, -$consumedQty, $unitCost, $companyId);
+                }
 
                 $isItemShortage = $consumedQty > $beforeStock;
 
@@ -2193,6 +2354,7 @@ class InventoryController extends Controller
                 // Append to immutable Stock Ledger (SUBTRACTION / PRODUCTION_OUT)
                 StockLedger::create([
                     'transaction_uuid' => (string) Str::uuid(),
+                    'branch_id' => $branchId,
                     'sku' => $rawItem->sku,
                     'inventory_item_id' => $rawItem->id,
                     'item_name' => $rawItem->name,
@@ -2226,9 +2388,14 @@ class InventoryController extends Controller
             }
             $finishedItem->save();
 
+            if ($branchId !== null) {
+                $branchStockSvc->adjustBranchOnHand($branchId, (int) $finishedItem->id, +$actualQty, $unitProductionCost, $companyId);
+            }
+
             // Append to immutable Stock Ledger (ADDITION / PRODUCTION_IN)
             StockLedger::create([
                 'transaction_uuid' => (string) Str::uuid(),
+                'branch_id' => $branchId,
                 'sku' => $finishedItem->sku,
                 'inventory_item_id' => $finishedItem->id,
                 'item_name' => $finishedItem->name,
@@ -2446,11 +2613,17 @@ class InventoryController extends Controller
             }
             $wasteNumber = sprintf("WST-%s-%04d", $yearMonth, $nextSequence);
 
+            $branchCtx = app(CompanyBranchContext::class);
+            $activeBranch = $branchCtx->getActiveBranch();
+            $effectiveBranchId = $validated['branch_id'] ?? ($activeBranch ? (int) $activeBranch->branch_id : null);
+            $effectiveCompanyId = $activeBranch?->company_id !== null ? (int) $activeBranch->company_id : null;
+            $branchStockSvc = app(BranchStockService::class);
+
             $wasteRecord = WasteRecord::create([
                 'waste_number' => $wasteNumber,
                 'waste_type' => $validated['waste_type'],
-                'branch_id' => $validated['branch_id'] ?? null,
-                'branch_name' => $validated['branch_name'] ?? 'Central Commissary',
+                'branch_id' => $effectiveBranchId,
+                'branch_name' => $validated['branch_name'] ?? ($activeBranch?->branch_name ?? 'Central Commissary'),
                 'storage_location' => $validated['storage_location'] ?? 'Main Storage / Dry Warehouse',
                 'total_cost' => 0.00,
                 'total_items_count' => count($validated['items']),
@@ -2484,9 +2657,13 @@ class InventoryController extends Controller
                 $lineTotalCost = $unitCost * $qty;
                 $totalCost += $lineTotalCost;
 
-                // Deduct stock from InventoryItem
+                // Deduct stock from InventoryItem & Active Branch Balance
                 $item->current_stock = $afterStock;
                 $item->save();
+
+                if ($effectiveBranchId !== null) {
+                    $branchStockSvc->adjustBranchOnHand((int) $effectiveBranchId, (int) $item->id, -$qty, $unitCost, $effectiveCompanyId);
+                }
 
                 // Create WasteRecordItem line
                 WasteRecordItem::create([
@@ -2509,6 +2686,7 @@ class InventoryController extends Controller
                 // Append to immutable Stock Ledger (SUBTRACTION / WASTE)
                 StockLedger::create([
                     'transaction_uuid' => (string) Str::uuid(),
+                    'branch_id' => $effectiveBranchId,
                     'sku' => $item->sku,
                     'inventory_item_id' => $item->id,
                     'item_name' => $item->name,

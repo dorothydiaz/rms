@@ -993,6 +993,53 @@
                     </div>
                 </div>
 
+                <details style="border: 1px dashed #cbd5e1; border-radius: 10px; padding: 10px 12px; background: #faf5ff;">
+                    <summary style="font-size: 12px; font-weight: 700; color: #6d28d9; cursor: pointer;">
+                        Internal Transactions &amp; Multi-Branch Supply Policy
+                    </summary>
+                    <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <div>
+                                <label style="font-size: 11.5px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">Branch Supply Role</label>
+                                <select name="branch_role" class="cb-select">
+                                    <option value="RETAIL_STORE">Retail Store / Kitchen</option>
+                                    <option value="CENTRAL_COMMISSARY">Central Commissary</option>
+                                    <option value="REGIONAL_HUB">Regional Warehouse Hub</option>
+                                    <option value="HEAD_OFFICE">Head Office</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-size: 11.5px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">Default Supplier Branch</label>
+                                <select name="default_source_branch_id" class="cb-select">
+                                    <option value="">None (Manual Selection)</option>
+                                    @foreach($allBranches as $ab)
+                                        <option value="{{ $ab->branch_id }}">{{ $ab->branch_name }} ({{ $ab->branch_code }})</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <div>
+                                <label style="font-size: 11.5px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">Internal Pricing Mode</label>
+                                <select name="internal_pricing_mode" class="cb-select">
+                                    <option value="AT_COST">At Cost (0% Markup)</option>
+                                    <option value="COST_PLUS_PCT">Cost + Markup %</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-size: 11.5px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">Internal Markup %</label>
+                                <input type="number" step="0.01" min="0" max="100" name="internal_markup_pct" value="0" class="cb-input">
+                            </div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11.5px; font-weight: 600; color: #334155;">
+                            <label style="display:flex;align-items:center;gap:6px;"><input type="checkbox" name="can_supply_branches" value="1" checked> Can Supply Other Branches</label>
+                            <label style="display:flex;align-items:center;gap:6px;"><input type="checkbox" name="allow_peer_transfers" value="1" checked> Allow Peer-to-Peer Transfers</label>
+                            <label style="display:flex;align-items:center;gap:6px;"><input type="checkbox" name="can_direct_procure" value="1" checked> Can Issue External Vendor POs</label>
+                            <label style="display:flex;align-items:center;gap:6px;"><input type="checkbox" name="auto_post_interbranch_gl" value="1" checked> Auto-Post Inter-Branch GL</label>
+                        </div>
+                    </div>
+                </details>
+
                 <div style="padding-top: 10px; display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
                     <button type="button" class="cb-btn-secondary" onclick="closeCreateBranchModal()">Cancel</button>
                     <button type="submit" class="cb-btn-primary">Add Branch</button>
@@ -1051,6 +1098,53 @@
                         <input type="text" name="operating_hours" id="editBranchHours" class="cb-input">
                     </div>
                 </div>
+
+                <details style="border: 1px dashed #cbd5e1; border-radius: 10px; padding: 10px 12px; background: #faf5ff;">
+                    <summary style="font-size: 12px; font-weight: 700; color: #6d28d9; cursor: pointer;">
+                        Internal Transactions &amp; Multi-Branch Supply Policy
+                    </summary>
+                    <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <div>
+                                <label style="font-size: 11.5px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">Branch Supply Role</label>
+                                <select name="branch_role" id="editBranchRole" class="cb-select">
+                                    <option value="RETAIL_STORE">Retail Store / Kitchen</option>
+                                    <option value="CENTRAL_COMMISSARY">Central Commissary</option>
+                                    <option value="REGIONAL_HUB">Regional Warehouse Hub</option>
+                                    <option value="HEAD_OFFICE">Head Office</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-size: 11.5px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">Default Supplier Branch</label>
+                                <select name="default_source_branch_id" id="editBranchDefaultSource" class="cb-select">
+                                    <option value="">None (Manual Selection)</option>
+                                    @foreach($allBranches as $ab)
+                                        <option value="{{ $ab->branch_id }}">{{ $ab->branch_name }} ({{ $ab->branch_code }})</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <div>
+                                <label style="font-size: 11.5px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">Internal Pricing Mode</label>
+                                <select name="internal_pricing_mode" id="editBranchPricingMode" class="cb-select">
+                                    <option value="AT_COST">At Cost (0% Markup)</option>
+                                    <option value="COST_PLUS_PCT">Cost + Markup %</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-size: 11.5px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">Internal Markup %</label>
+                                <input type="number" step="0.01" min="0" max="100" name="internal_markup_pct" id="editBranchMarkupPct" value="0" class="cb-input">
+                            </div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11.5px; font-weight: 600; color: #334155;">
+                            <label style="display:flex;align-items:center;gap:6px;"><input type="checkbox" name="can_supply_branches" id="editBranchCanSupply" value="1"> Can Supply Other Branches</label>
+                            <label style="display:flex;align-items:center;gap:6px;"><input type="checkbox" name="allow_peer_transfers" id="editBranchAllowPeer" value="1"> Allow Peer-to-Peer Transfers</label>
+                            <label style="display:flex;align-items:center;gap:6px;"><input type="checkbox" name="can_direct_procure" id="editBranchCanProcure" value="1"> Can Issue External Vendor POs</label>
+                            <label style="display:flex;align-items:center;gap:6px;"><input type="checkbox" name="auto_post_interbranch_gl" id="editBranchAutoGl" value="1"> Auto-Post Inter-Branch GL</label>
+                        </div>
+                    </div>
+                </details>
 
                 <div style="padding-top: 10px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
                     <button type="button" id="btnDeleteFromEditBranch" onclick="handleDeleteFromEditBranchModal()" style="border: 1px solid #fecaca; background: #fff5f5; color: #dc2626; font-size: 12px; font-weight: 600; padding: 7px 14px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">

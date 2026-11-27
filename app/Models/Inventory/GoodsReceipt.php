@@ -12,6 +12,8 @@ class GoodsReceipt extends Model
     protected $table = 'stock_in_header';
 
     protected $fillable = [
+        'company_id',
+        'branch_id',
         'grn_number',
         'purchase_order_id',
         'po_number',

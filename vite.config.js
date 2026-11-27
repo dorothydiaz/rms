@@ -49,6 +49,7 @@ export default defineConfig({
                 'resources/js/modules/sales-orders.js',
                 'resources/js/modules/sales-promotions.js',
                 'resources/js/modules/customer-masterlist.js',
+                'resources/css/modules/internal-transfer.css',
                 'resources/js/modules/internal-transfer.js',
                 'resources/css/modules/stocks-overview.css',
                 'resources/js/modules/stocks-overview.js',

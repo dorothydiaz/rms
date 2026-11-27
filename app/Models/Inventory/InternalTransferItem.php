@@ -16,24 +16,38 @@ class InternalTransferItem extends Model
         'item_name',
         'category',
         'uom',
+        'uom_multiplier',
+        'base_uom',
         'source_available_stock',
         'requested_qty',
+        'approved_qty',
+        'reserved_qty',
         'transferred_qty',
         'received_qty',
+        'variance_qty',
+        'variance_reason',
         'unit_cost',
         'total_cost',
+        'internal_unit_price',
+        'internal_line_total',
         'batch_lot_no',
         'storage_location',
         'notes',
     ];
 
     protected $casts = [
+        'uom_multiplier' => 'decimal:4',
         'source_available_stock' => 'decimal:2',
         'requested_qty' => 'decimal:2',
+        'approved_qty' => 'decimal:2',
+        'reserved_qty' => 'decimal:2',
         'transferred_qty' => 'decimal:2',
         'received_qty' => 'decimal:2',
+        'variance_qty' => 'decimal:2',
         'unit_cost' => 'decimal:2',
         'total_cost' => 'decimal:2',
+        'internal_unit_price' => 'decimal:4',
+        'internal_line_total' => 'decimal:2',
     ];
 
     public function transfer(): BelongsTo

@@ -13,6 +13,7 @@ class StockLedger extends Model
 
     protected $fillable = [
         'transaction_uuid',
+        'branch_id',
         'sku',
         'inventory_item_id',
         'item_name',

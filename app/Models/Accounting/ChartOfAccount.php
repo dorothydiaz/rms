@@ -52,6 +52,10 @@ class ChartOfAccount extends Model
         'FX_GAIN_LOSS_REALIZED',
         'FX_GAIN_LOSS_UNREALIZED',
         'GAIN_LOSS_DISPOSAL',
+        'INTERBRANCH_RECEIVABLE',
+        'INVENTORY_IN_TRANSIT',
+        'INTERBRANCH_PAYABLE',
+        'INTERBRANCH_RECOVERY',
     ];
 
     protected $fillable = [

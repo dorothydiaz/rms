@@ -99,7 +99,7 @@
                         <!-- Col 1: Checkbox -->
                         <div class="col-grid col-cb" onclick="event.stopPropagation()">
                             <label class="custom-chk-label">
-                                <input type="checkbox" class="scope-chk comp-scope-chk" data-type="company" data-id="{{ $comp->company_id }}" {{ $isCompChecked ? 'checked' : '' }} onchange="RMSContextSwitcher.onScopeChange()">
+                                <input type="checkbox" class="scope-chk comp-scope-chk" data-type="company" data-id="{{ $comp->company_id }}" {{ $isCompChecked ? 'checked' : '' }} onchange="RMSContextSwitcher.onScopeChange(this, {{ $comp->company_id }}, null)">
                                 <span class="chk-box"></span>
                             </label>
                         </div>
@@ -161,7 +161,7 @@
                                     <!-- Col 1: Checkbox -->
                                     <div class="col-grid col-cb" onclick="event.stopPropagation()">
                                         <label class="custom-chk-label">
-                                            <input type="checkbox" class="scope-chk branch-scope-chk" data-type="branch" data-id="{{ $br->branch_id }}" {{ $isBrChecked ? 'checked' : '' }} onchange="RMSContextSwitcher.onScopeChange()">
+                                            <input type="checkbox" class="scope-chk branch-scope-chk" data-type="branch" data-id="{{ $br->branch_id }}" {{ $isBrChecked ? 'checked' : '' }} onchange="RMSContextSwitcher.onScopeChange(this, {{ $comp->company_id }}, {{ $br->branch_id }})">
                                             <span class="chk-box"></span>
                                         </label>
                                     </div>
@@ -337,13 +337,53 @@ window.RMSContextSwitcher = {
         document.getElementById('contextSwitchForm').submit();
     },
 
-    // Handle Checkbox View Scope Changes (Asynchronous Multi-Entity Update)
-    async onScopeChange() {
+    // Handle Checkbox Scope & Promote Ticked Branch/Company to Active Transaction Context
+    async onScopeChange(changedEl = null, entityCompanyId = null, entityBranchId = null) {
+        const companyNode = changedEl ? changedEl.closest('.entity-company-node') : null;
+
+        // If a Company checkbox was toggled, cascade to its nested branch checkboxes
+        if (changedEl && changedEl.classList.contains('comp-scope-chk') && companyNode) {
+            companyNode.querySelectorAll('.branch-scope-chk').forEach(cb => {
+                cb.checked = changedEl.checked;
+            });
+        }
+
+        // If a Branch checkbox was ticked, auto-tick its parent company checkbox
+        if (changedEl && changedEl.classList.contains('branch-scope-chk') && changedEl.checked && companyNode) {
+            const parentCompChk = companyNode.querySelector('.comp-scope-chk');
+            if (parentCompChk) parentCompChk.checked = true;
+        }
+
         const compCheckboxes = document.querySelectorAll('.comp-scope-chk:checked');
         const branchCheckboxes = document.querySelectorAll('.branch-scope-chk:checked');
 
         const companyIds = Array.from(compCheckboxes).map(cb => parseInt(cb.getAttribute('data-id'), 10));
         const branchIds = Array.from(branchCheckboxes).map(cb => parseInt(cb.getAttribute('data-id'), 10));
+
+        let targetActiveCompanyId = null;
+        let targetActiveBranchId = null;
+
+        if (changedEl && changedEl.checked) {
+            if (entityBranchId) {
+                targetActiveCompanyId = entityCompanyId;
+                targetActiveBranchId = entityBranchId;
+            } else if (entityCompanyId) {
+                targetActiveCompanyId = entityCompanyId;
+                const firstCompBranch = companyNode?.querySelector('.branch-scope-chk:checked');
+                if (firstCompBranch) {
+                    targetActiveBranchId = parseInt(firstCompBranch.getAttribute('data-id'), 10);
+                }
+            }
+        } else if (branchIds.length > 0) {
+            const lastBranchCb = branchCheckboxes[branchCheckboxes.length - 1];
+            targetActiveBranchId = parseInt(lastBranchCb.getAttribute('data-id'), 10);
+            const lastCompNode = lastBranchCb.closest('.entity-company-node');
+            if (lastCompNode) {
+                targetActiveCompanyId = parseInt(lastCompNode.getAttribute('data-company-id'), 10);
+            }
+        } else if (companyIds.length > 0) {
+            targetActiveCompanyId = companyIds[companyIds.length - 1];
+        }
 
         const totalCount = companyIds.length + branchIds.length;
         const countIndicator = document.getElementById('scopeSelectedCount');
@@ -363,17 +403,13 @@ window.RMSContextSwitcher = {
                 body: JSON.stringify({
                     company_ids: companyIds,
                     branch_ids: branchIds,
+                    active_company_id: targetActiveCompanyId,
+                    active_branch_id: targetActiveBranchId,
                 })
             });
 
             if (res.ok) {
-                const indicator = document.getElementById('scopeStatusIndicator');
-                if (indicator) {
-                    indicator.style.background = '#a7f3d0';
-                    setTimeout(() => {
-                        indicator.style.background = '#d1fae5';
-                    }, 600);
-                }
+                window.location.reload();
             }
         } catch (err) {
             console.error('Failed to update entity scope:', err);

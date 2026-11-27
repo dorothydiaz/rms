@@ -18,13 +18,24 @@ class CompanyBranchContext
     protected ?Collection $cachedAllowedCompanies = null;
     protected array $cachedAllowedBranches = [];
     protected ?int $cachedForUserId = null;
+    protected ?int $cachedSessionCompanyId = null;
+    protected ?int $cachedSessionBranchId = null;
 
     protected function syncCacheUser(): void
     {
         $userId = Auth::id();
-        if ($this->cachedForUserId !== $userId) {
+        $sessionCompanyId = Session::has('active_company_id') ? (int) Session::get('active_company_id') : null;
+        $sessionBranchId = Session::has('active_branch_id') ? (int) Session::get('active_branch_id') : null;
+
+        if (
+            $this->cachedForUserId !== $userId ||
+            ($sessionCompanyId !== null && $this->cachedSessionCompanyId !== $sessionCompanyId) ||
+            ($sessionBranchId !== null && $this->cachedSessionBranchId !== $sessionBranchId)
+        ) {
             $this->clearCache();
             $this->cachedForUserId = $userId;
+            $this->cachedSessionCompanyId = $sessionCompanyId;
+            $this->cachedSessionBranchId = $sessionBranchId;
         }
     }
 
@@ -273,15 +284,74 @@ class CompanyBranchContext
     }
 
     /**
-     * Set the multi-entity view scope in session.
+     * Set the multi-entity view scope in session and optionally promote the newly ticked entity to Active Write Target.
      */
-    public function setCheckedEntities(array $companyIds, array $branchIds): void
-    {
+    public function setCheckedEntities(
+        array $companyIds,
+        array $branchIds,
+        ?int $preferredActiveCompanyId = null,
+        ?int $preferredActiveBranchId = null
+    ): void {
         $cleanCompIds = array_values(array_unique(array_filter(array_map('intval', $companyIds))));
         $cleanBranchIds = array_values(array_unique(array_filter(array_map('intval', $branchIds))));
 
+        /** @var User|null $user */
+        $user = Auth::user();
+
+        if ($preferredActiveBranchId !== null) {
+            $branch = Branch::find($preferredActiveBranchId);
+            if ($branch && (!$user || ($user->canAccessBranch((int) $branch->branch_id) && $user->canAccessCompany((int) $branch->company_id)))) {
+                $this->setActiveCompany((int) $branch->company_id);
+                $this->setActiveBranch((int) $branch->branch_id);
+                Session::put('is_consolidated_view', false);
+
+                if (!in_array((int) $branch->company_id, $cleanCompIds, true)) {
+                    $cleanCompIds[] = (int) $branch->company_id;
+                }
+                if (!in_array((int) $branch->branch_id, $cleanBranchIds, true)) {
+                    $cleanBranchIds[] = (int) $branch->branch_id;
+                }
+            }
+        } elseif ($preferredActiveCompanyId !== null) {
+            $company = Company::find($preferredActiveCompanyId);
+            if ($company && (!$user || $user->canAccessCompany((int) $company->company_id))) {
+                $this->setActiveCompany((int) $company->company_id);
+                Session::put('is_consolidated_view', false);
+
+                if (!in_array((int) $company->company_id, $cleanCompIds, true)) {
+                    $cleanCompIds[] = (int) $company->company_id;
+                }
+
+                $allowedBranches = $this->getAllowedBranches((int) $company->company_id);
+                $checkedCompanyBranch = $allowedBranches->first(fn ($b) => in_array((int) $b->branch_id, $cleanBranchIds, true));
+                $targetBranch = $checkedCompanyBranch ?? $allowedBranches->first();
+
+                if ($targetBranch) {
+                    $this->setActiveBranch((int) $targetBranch->branch_id);
+                    if (!in_array((int) $targetBranch->branch_id, $cleanBranchIds, true)) {
+                        $cleanBranchIds[] = (int) $targetBranch->branch_id;
+                    }
+                }
+            }
+        } elseif (!empty($cleanBranchIds)) {
+            $currentBranchId = Session::has('active_branch_id') ? (int) Session::get('active_branch_id') : null;
+            if ($currentBranchId === null || !in_array($currentBranchId, $cleanBranchIds, true)) {
+                $fallbackBranchId = (int) end($cleanBranchIds);
+                $branch = Branch::find($fallbackBranchId);
+                if ($branch && (!$user || $user->canAccessBranch((int) $branch->branch_id))) {
+                    $this->setActiveCompany((int) $branch->company_id);
+                    $this->setActiveBranch((int) $branch->branch_id);
+                    Session::put('is_consolidated_view', false);
+                    if (!in_array((int) $branch->company_id, $cleanCompIds, true)) {
+                        $cleanCompIds[] = (int) $branch->company_id;
+                    }
+                }
+            }
+        }
+
         Session::put('checked_company_ids', $cleanCompIds);
         Session::put('checked_branch_ids', $cleanBranchIds);
+        $this->clearCache();
     }
 
     /**

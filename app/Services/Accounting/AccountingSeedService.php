@@ -30,6 +30,7 @@ class AccountingSeedService
             $this->seedNumberingSeries($companyId);
             $this->seedApprovalWorkflows($companyId);
             $this->ensureSalesDiscountAccount($companyId);
+            $this->ensureInterBranchAccounts($companyId);
             return;
         }
 
@@ -39,6 +40,7 @@ class AccountingSeedService
         $this->seedNumberingSeries($companyId);
         $this->seedTaxCodes($companyId);
         $this->seedChartOfAccounts($companyId);
+        $this->ensureInterBranchAccounts($companyId);
         $this->seedApprovalWorkflows($companyId);
         $this->seedRecurringTemplates($companyId);
         $this->seedSampleJournals($companyId);
@@ -266,6 +268,60 @@ class AccountingSeedService
                 'is_active' => true,
             ]
         );
+    }
+
+    protected function ensureInterBranchAccounts(string $companyId): void
+    {
+        $interBranchAccounts = [
+            [
+                'role' => 'INTERBRANCH_RECEIVABLE',
+                'code' => '1170',
+                'name' => 'Due From Branches & Affiliates',
+                'type' => 'ASSET',
+                'norm' => 'DEBIT',
+                'cf' => 'OPERATING',
+            ],
+            [
+                'role' => 'INVENTORY_IN_TRANSIT',
+                'code' => '1230',
+                'name' => 'Inventory In-Transit — Inter-Branch',
+                'type' => 'ASSET',
+                'norm' => 'DEBIT',
+                'cf' => 'OPERATING',
+            ],
+            [
+                'role' => 'INTERBRANCH_PAYABLE',
+                'code' => '2050',
+                'name' => 'Due To Branches & Affiliates',
+                'type' => 'LIABILITY',
+                'norm' => 'CREDIT',
+                'cf' => 'OPERATING',
+            ],
+            [
+                'role' => 'INTERBRANCH_RECOVERY',
+                'code' => '4030',
+                'name' => 'Inter-Branch Cost Recovery & Markup',
+                'type' => 'REVENUE',
+                'norm' => 'CREDIT',
+                'cf' => 'OPERATING',
+            ],
+        ];
+
+        foreach ($interBranchAccounts as $acc) {
+            ChartOfAccount::firstOrCreate(
+                ['company_id' => $companyId, 'system_role' => $acc['role']],
+                [
+                    'account_id' => (string) Str::uuid(),
+                    'account_code' => $acc['code'],
+                    'account_name' => $acc['name'],
+                    'account_type' => $acc['type'],
+                    'normal_balance' => $acc['norm'],
+                    'cash_flow_category' => $acc['cf'],
+                    'allow_manual_journal' => false,
+                    'is_active' => true,
+                ]
+            );
+        }
     }
 
     protected function seedApprovalWorkflows(string $companyId): void

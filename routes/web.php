@@ -462,7 +462,15 @@ Route::middleware('auth')->group(function () {
         Route::post('/api/stock-out/confirm-ship', [InventoryController::class, 'apiConfirmShipStockOut'])->name('api.confirm-ship-stock-out');
         Route::post('/api/stock-out/cancel', [InventoryController::class, 'apiCancelStockOut'])->name('api.cancel-stock-out');
         Route::get('/api/internal-transfer-data', [InventoryController::class, 'apiGetInternalTransferData'])->name('api.internal-transfer-data');
+        Route::get('/api/internal-transfer/branch-stock', [InventoryController::class, 'apiGetTransferBranchStock'])->name('api.transfer-branch-stock');
+        Route::get('/api/internal-transfer/low-stock-suggestions', [InventoryController::class, 'apiGetTransferLowStockSuggestions'])->name('api.transfer-low-stock');
+        Route::get('/api/internal-transfer/settlement-matrix', [InventoryController::class, 'apiGetInterBranchSettlementMatrix'])->name('api.transfer-settlement-matrix');
+        Route::post('/api/internal-transfer/settle', [InventoryController::class, 'apiSettleInterBranchTransfers'])->name('api.transfer-settle');
+        Route::get('/api/internal-transfer/{id}', [InventoryController::class, 'apiGetInternalTransferDetail'])->name('api.internal-transfer-detail');
+        Route::post('/api/internal-transfer/create-request', [InventoryController::class, 'apiCreateTransferRequest'])->name('api.create-transfer-request');
         Route::post('/api/internal-transfer/create-custom', [InventoryController::class, 'apiCreateCustomTransfer'])->name('api.create-custom-transfer');
+        Route::post('/api/internal-transfer/approve', [InventoryController::class, 'apiApproveTransfer'])->name('api.approve-transfer');
+        Route::post('/api/internal-transfer/reject', [InventoryController::class, 'apiRejectTransfer'])->name('api.reject-transfer');
         Route::post('/api/internal-transfer/dispatch', [InventoryController::class, 'apiDispatchTransfer'])->name('api.dispatch-transfer');
         Route::post('/api/internal-transfer/receive', [InventoryController::class, 'apiReceiveTransfer'])->name('api.receive-transfer');
         Route::post('/api/internal-transfer/cancel', [InventoryController::class, 'apiCancelTransfer'])->name('api.cancel-transfer');

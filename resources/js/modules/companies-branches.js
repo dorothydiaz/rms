@@ -833,6 +833,23 @@ function editBranch(branch) {
     const zipEl = document.getElementById('editBranchPostalCode');
     if (zipEl) zipEl.value = branch.branch_postal_code || '';
 
+    const roleEl = document.getElementById('editBranchRole');
+    if (roleEl) roleEl.value = branch.branch_role || 'RETAIL_STORE';
+    const defSrcEl = document.getElementById('editBranchDefaultSource');
+    if (defSrcEl) defSrcEl.value = branch.default_source_branch_id || '';
+    const priceModeEl = document.getElementById('editBranchPricingMode');
+    if (priceModeEl) priceModeEl.value = branch.internal_pricing_mode || 'AT_COST';
+    const markupEl = document.getElementById('editBranchMarkupPct');
+    if (markupEl) markupEl.value = Number(branch.internal_markup_pct || 0);
+    const supChk = document.getElementById('editBranchCanSupply');
+    if (supChk) supChk.checked = branch.can_supply_branches !== false;
+    const peerChk = document.getElementById('editBranchAllowPeer');
+    if (peerChk) peerChk.checked = branch.allow_peer_transfers !== false;
+    const procChk = document.getElementById('editBranchCanProcure');
+    if (procChk) procChk.checked = branch.can_direct_procure !== false;
+    const glChk = document.getElementById('editBranchAutoGl');
+    if (glChk) glChk.checked = branch.auto_post_interbranch_gl !== false;
+
     m.style.display = 'flex';
 }
 

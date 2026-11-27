@@ -11,6 +11,8 @@ class ProductionOrder extends Model
     protected $table = 'work_order_header';
 
     protected $fillable = [
+        'company_id',
+        'branch_id',
         'production_number',
         'batch_lot_number',
         'finished_item_id',

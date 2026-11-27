@@ -563,11 +563,26 @@ class BusinessSettingsController extends Controller
             'branch_address_line_1' => ['nullable', 'string', 'max:150'],
             'branch_city' => ['nullable', 'string', 'max:100'],
             'branch_postal_code' => ['nullable', 'string', 'max:20'],
+            'branch_role' => ['nullable', 'string', 'in:CENTRAL_COMMISSARY,REGIONAL_HUB,RETAIL_STORE,HEAD_OFFICE'],
+            'default_source_branch_id' => ['nullable', 'integer', 'exists:branches,branch_id'],
+            'can_supply_branches' => ['nullable', 'boolean'],
+            'allow_peer_transfers' => ['nullable', 'boolean'],
+            'can_direct_procure' => ['nullable', 'boolean'],
+            'internal_pricing_mode' => ['nullable', 'string', 'in:AT_COST,COST_PLUS_PCT'],
+            'internal_markup_pct' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'auto_post_interbranch_gl' => ['nullable', 'boolean'],
         ]);
 
         $validated['company_id'] = $company->company_id;
         $validated['branch_is_active'] = true;
         $validated['branch_created_by'] = Auth::id();
+        $validated['branch_role'] = $validated['branch_role'] ?? 'RETAIL_STORE';
+        $validated['can_supply_branches'] = $request->has('can_supply_branches') ? $request->boolean('can_supply_branches') : true;
+        $validated['allow_peer_transfers'] = $request->has('allow_peer_transfers') ? $request->boolean('allow_peer_transfers') : true;
+        $validated['can_direct_procure'] = $request->has('can_direct_procure') ? $request->boolean('can_direct_procure') : true;
+        $validated['internal_pricing_mode'] = $validated['internal_pricing_mode'] ?? 'AT_COST';
+        $validated['internal_markup_pct'] = $validated['internal_pricing_mode'] === 'COST_PLUS_PCT' ? (float) ($validated['internal_markup_pct'] ?? 0) : 0.0;
+        $validated['auto_post_interbranch_gl'] = $request->has('auto_post_interbranch_gl') ? $request->boolean('auto_post_interbranch_gl') : true;
 
         $branch = Branch::create($validated);
         AuditLogger::log('Create', 'Branches', $branch->branch_id, "Created branch '{$branch->branch_name}' ({$branch->branch_code})");
@@ -600,7 +615,28 @@ class BusinessSettingsController extends Controller
             'branch_address_line_1' => ['nullable', 'string', 'max:150'],
             'branch_city' => ['nullable', 'string', 'max:100'],
             'branch_postal_code' => ['nullable', 'string', 'max:20'],
+            'branch_role' => ['nullable', 'string', 'in:CENTRAL_COMMISSARY,REGIONAL_HUB,RETAIL_STORE,HEAD_OFFICE'],
+            'default_source_branch_id' => ['nullable', 'integer', 'exists:branches,branch_id'],
+            'can_supply_branches' => ['nullable', 'boolean'],
+            'allow_peer_transfers' => ['nullable', 'boolean'],
+            'can_direct_procure' => ['nullable', 'boolean'],
+            'internal_pricing_mode' => ['nullable', 'string', 'in:AT_COST,COST_PLUS_PCT'],
+            'internal_markup_pct' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'auto_post_interbranch_gl' => ['nullable', 'boolean'],
         ]);
+
+        if (!empty($validated['default_source_branch_id']) && (int) $validated['default_source_branch_id'] === (int) $branch->branch_id) {
+            return redirect()->back()->with('error', 'A branch cannot set itself as its own default supplier branch.');
+        }
+
+        if ($request->has('branch_role')) {
+            $validated['can_supply_branches'] = $request->boolean('can_supply_branches');
+            $validated['allow_peer_transfers'] = $request->boolean('allow_peer_transfers');
+            $validated['can_direct_procure'] = $request->boolean('can_direct_procure');
+            $validated['auto_post_interbranch_gl'] = $request->boolean('auto_post_interbranch_gl');
+            $validated['internal_pricing_mode'] = $validated['internal_pricing_mode'] ?? 'AT_COST';
+            $validated['internal_markup_pct'] = $validated['internal_pricing_mode'] === 'COST_PLUS_PCT' ? (float) ($validated['internal_markup_pct'] ?? 0) : 0.0;
+        }
 
         $branch->update($validated);
         AuditLogger::log('Update', 'Branches', $branch->branch_id, "Updated branch '{$branch->branch_name}'");

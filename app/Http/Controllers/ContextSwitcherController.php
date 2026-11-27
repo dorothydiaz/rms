@@ -84,7 +84,7 @@ class ContextSwitcherController extends Controller
     }
 
     /**
-     * Update the multi-entity checkbox read/view scope.
+     * Update the multi-entity checkbox read/view scope and promote the ticked entity to active transaction context.
      */
     public function updateScope(Request $request): RedirectResponse|JsonResponse
     {
@@ -93,29 +93,46 @@ class ContextSwitcherController extends Controller
             'company_ids.*' => ['integer', 'exists:companies,company_id'],
             'branch_ids' => ['nullable', 'array'],
             'branch_ids.*' => ['integer', 'exists:branches,branch_id'],
+            'active_company_id' => ['nullable', 'integer', 'exists:companies,company_id'],
+            'active_branch_id' => ['nullable', 'integer', 'exists:branches,branch_id'],
         ]);
 
         $companyIds = $validated['company_ids'] ?? [];
         $branchIds = $validated['branch_ids'] ?? [];
+        $activeCompanyId = isset($validated['active_company_id']) ? (int) $validated['active_company_id'] : null;
+        $activeBranchId = isset($validated['active_branch_id']) ? (int) $validated['active_branch_id'] : null;
 
         /** @var \App\Models\User|null $user */
         $user = auth()->user();
         if ($user && !$user->isSuperAdmin()) {
             $companyIds = array_values(array_filter($companyIds, fn($id) => $user->canAccessCompany((int)$id)));
             $branchIds = array_values(array_filter($branchIds, fn($id) => $user->canAccessBranch((int)$id)));
+            if ($activeCompanyId !== null && !$user->canAccessCompany($activeCompanyId)) {
+                $activeCompanyId = null;
+            }
+            if ($activeBranchId !== null && !$user->canAccessBranch($activeBranchId)) {
+                $activeBranchId = null;
+            }
         }
 
-        $this->context->setCheckedEntities($companyIds, $branchIds);
+        $this->context->setCheckedEntities($companyIds, $branchIds, $activeCompanyId, $activeBranchId);
+
+        $activeCompany = $this->context->getActiveCompany();
+        $activeBranch = $this->context->getActiveBranch();
 
         if ($request->wantsJson()) {
             return response()->json([
                 'success' => true,
-                'message' => 'View scope updated successfully.',
+                'message' => 'Active transaction entity & scope updated.',
+                'active_company_id' => $activeCompany?->company_id ? (int) $activeCompany->company_id : null,
+                'active_branch_id' => $activeBranch?->branch_id ? (int) $activeBranch->branch_id : null,
+                'active_branch_name' => $activeBranch?->branch_name,
+                'is_consolidated' => $this->context->isConsolidatedView(),
                 'checked_company_ids' => $this->context->getCheckedCompanyIds(),
                 'checked_branch_ids' => $this->context->getCheckedBranchIds(),
             ]);
         }
 
-        return redirect()->back()->with('success', 'View scope updated successfully.');
+        return redirect()->back()->with('success', 'Active transaction entity & scope updated.');
     }
 }
