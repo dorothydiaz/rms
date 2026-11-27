@@ -102,6 +102,47 @@
         return n.toFixed(4).replace(/\.?0+$/, '');
     }
 
+    /**
+     * Format category code into clean Title Case for filter pill chips
+     */
+    function formatCategoryChipLabel(catCode) {
+        if (!catCode) return 'Other';
+        return String(catCode)
+            .toLowerCase()
+            .replace(/[_-]+/g, ' ')
+            .replace(/\b\w/g, c => c.toUpperCase());
+    }
+
+    /**
+     * Split unit name into primary title and secondary subtitle (symbol/conversion)
+     */
+    function parseUomDisplayParts(u, refCode) {
+        const rawName = String(u.uom_name || u.uom_code || '').trim();
+        const parenMatch = rawName.match(/^(.+?)\s*\(([^)]+)\)\s*$/);
+        let title = rawName;
+        let subtitle = '';
+
+        if (parenMatch) {
+            title = parenMatch[1].trim();
+            subtitle = parenMatch[2].trim().replace(/\s+-\s+/g, ' • ');
+        }
+
+        const ratio = Number(u.base_ratio);
+        const hasNumericHint = /\d/.test(subtitle);
+
+        if (!subtitle) {
+            if (u.is_base_unit) {
+                subtitle = `Base unit • 1 ${u.uom_code}`;
+            } else if (!isNaN(ratio) && ratio > 0 && refCode) {
+                subtitle = `1 ${u.uom_code} = ${formatMultiplier(ratio)} ${refCode}`;
+            }
+        } else if (!u.is_base_unit && !hasNumericHint && !isNaN(ratio) && ratio > 0 && ratio !== 1 && refCode) {
+            subtitle = `${subtitle} • ${formatMultiplier(ratio)} ${refCode}`;
+        }
+
+        return { title, subtitle };
+    }
+
     const UomRegistry = {
         data: {
             categories: [],
@@ -544,64 +585,54 @@
                 let html = '';
                 let itemIdx = 0;
 
+                const BUILT_IN_CATS = ['COUNT', 'WEIGHT', 'VOLUME', 'PORTION', 'LENGTH', 'AREA', 'TIME', 'OVERHEAD'];
+
                 Object.keys(groups).forEach(catCode => {
                     const catUnits = groups[catCode];
                     const meta = CATEGORY_META[catCode] || CATEGORY_META['OTHER'];
                     const catObj = categories.find(c => c.category_code === catCode);
                     const catName = catObj ? catObj.category_name : meta.label;
                     const catTheme = getCategoryTheme(catCode);
+                    const isBuiltIn = BUILT_IN_CATS.includes(String(catCode).toUpperCase());
+                    const customStyle = isBuiltIn ? '' : ` style="color: ${catTheme.text};"`;
 
                     html += `
-                        <div class="uom-section-header cat-${escapeHtml(catCode)}" 
-                             style="background-color: ${catTheme.bg} !important; color: ${catTheme.text} !important; border-left: 4px solid ${catTheme.border} !important; opacity: 1 !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important;">
-                            <div class="uom-section-title">
-                                <i class="ph ${meta.icon}"></i>
-                                <span>${escapeHtml(catCode)} — ${escapeHtml(catName)}</span>
-                            </div>
-                            <span class="uom-section-count" style="background-color: #ffffff; color: ${catTheme.text}; border: 1px solid ${catTheme.border}; font-weight: 700;">${catUnits.length}</span>
+                        <div class="uom-section-header cat-${escapeHtml(catCode)}"${customStyle}>
+                            <span class="uom-section-title">${escapeHtml(catCode)} — ${escapeHtml(catName)}</span>
                         </div>
                     `;
 
                     catUnits.forEach(u => {
                         const isSelected = String(u.uom_code).toUpperCase() === String(selectedCode).toUpperCase();
                         const isFocused = itemIdx === focusedOptionIndex;
-                        const codeHtml = searchQuery ? self.highlightText(u.uom_code, searchQuery) : escapeHtml(u.uom_code);
-                        const nameHtml = searchQuery ? self.highlightText(u.uom_name, searchQuery) : escapeHtml(u.uom_name);
-
                         const refCode = catObj ? (catObj.base_uom_code || 'Base') : 'Base';
-                        const formula = u.is_base_unit 
-                            ? `Reference Base Unit (1.0 ${u.uom_code})` 
+                        const { title, subtitle } = parseUomDisplayParts(u, refCode);
+
+                        const codeHtml = searchQuery ? self.highlightText(u.uom_code, searchQuery) : escapeHtml(u.uom_code);
+                        const titleHtml = searchQuery ? self.highlightText(title, searchQuery) : escapeHtml(title);
+                        const subtitleHtml = subtitle
+                            ? (searchQuery ? self.highlightText(subtitle, searchQuery) : escapeHtml(subtitle))
+                            : '';
+
+                        const formula = u.is_base_unit
+                            ? `Reference Base Unit (1.0 ${u.uom_code})`
                             : `1 ${u.uom_code} = ${formatMultiplier(u.base_ratio)} ${refCode}`;
 
                         html += `
-                            <div class="uom-option-item ${isSelected ? 'is-selected' : ''} ${isFocused ? 'is-focused' : ''}" 
-                                 data-uom-code="${escapeHtml(u.uom_code)}" 
-                                 data-option-index="${itemIdx}" 
-                                 role="option" 
-                                 aria-selected="${isSelected ? 'true' : 'false'}">
-                                
-                                <!-- Code Column: 30% Width -->
+                            <div class="uom-option-item ${isSelected ? 'is-selected' : ''} ${isFocused ? 'is-focused' : ''}"
+                                 data-uom-code="${escapeHtml(u.uom_code)}"
+                                 data-option-index="${itemIdx}"
+                                 role="option"
+                                 aria-selected="${isSelected ? 'true' : 'false'}"
+                                 title="Conversion: ${escapeHtml(formula)}">
                                 <div class="uom-option-code-col">
                                     <span class="uom-code-pill cat-${escapeHtml(u.uom_category)}">${codeHtml}</span>
                                 </div>
-
-                                <!-- UOM Name Column: 70% Width with Word Wrap -->
                                 <div class="uom-option-name-col">
-                                    <span class="uom-option-name">${nameHtml}</span>
+                                    <span class="uom-option-name">${titleHtml}</span>
+                                    ${subtitleHtml ? `<span class="uom-option-subtitle">${subtitleHtml}</span>` : ''}
                                 </div>
-
-                                <!-- Conversion '?' Tooltip & Checkmark -->
-                                <div class="uom-option-actions">
-                                    <button type="button" 
-                                            class="uom-convert-info-btn" 
-                                            title="Conversion: ${escapeHtml(formula)}"
-                                            onclick="event.stopPropagation();" 
-                                            tabindex="-1">
-                                        ?
-                                        <span class="uom-tooltip-box">${escapeHtml(formula)}</span>
-                                    </button>
-                                    <i class="ph ph-check uom-check-icon"></i>
-                                </div>
+                                <i class="ph-bold ph-check uom-check-icon" aria-hidden="true"></i>
                             </div>
                         `;
                         itemIdx++;
@@ -654,21 +685,19 @@
                 const activeUnitsForChips = self.getUnits(categoryFilter);
                 const activeCategoriesPresent = Array.from(new Set(activeUnitsForChips.map(u => u.uom_category)));
 
-                let categoryChipsHtml = `<button type="button" class="uom-category-chip is-active" data-cat="ALL"><i class="ph ph-squares-four"></i> ALL</button>`;
+                let categoryChipsHtml = `<button type="button" class="uom-category-chip is-active" data-cat="ALL">All</button>`;
                 activeCategoriesPresent.forEach(catCode => {
-                    const meta = CATEGORY_META[catCode] || CATEGORY_META['OTHER'];
-                    categoryChipsHtml += `<button type="button" class="uom-category-chip" data-cat="${escapeHtml(catCode)}"><i class="ph ${meta.icon}"></i> ${escapeHtml(catCode)}</button>`;
+                    categoryChipsHtml += `<button type="button" class="uom-category-chip" data-cat="${escapeHtml(catCode)}">${escapeHtml(formatCategoryChipLabel(catCode))}</button>`;
                 });
 
                 header = document.createElement('div');
                 header.className = 'uom-menu-header';
                 header.innerHTML = `
                     <div class="uom-search-bar">
-                        <i class="ph ph-magnifying-glass uom-search-icon"></i>
-                        <input type="text" class="uom-search-input" placeholder="Search code, name, category (e.g. PCS, KG, Portion)..." autocomplete="off" spellcheck="false">
-                        <button type="button" class="uom-search-clear" title="Clear search"><i class="ph ph-x"></i></button>
+                        <input type="text" class="uom-search-input" placeholder="Search code, name, category..." autocomplete="off" spellcheck="false" aria-label="Search units of measure">
+                        <button type="button" class="uom-search-clear" title="Clear search" aria-label="Clear search"><i class="ph ph-x"></i></button>
                     </div>
-                    <div class="uom-category-chips">
+                    <div class="uom-category-chips" role="tablist" aria-label="Filter by category">
                         ${categoryChipsHtml}
                     </div>
                 `;
@@ -679,7 +708,7 @@
                 const footer = document.createElement('div');
                 footer.className = 'uom-menu-footer';
                 footer.innerHTML = `
-                    <span><i class="ph ph-arrows-down-up"></i> ↑/↓ Navigate • ↵ Select</span>
+                    <span>↑↓ Navigate • ↵ Select</span>
                     <span>ESC to Close</span>
                 `;
 
@@ -689,6 +718,16 @@
 
                 const searchInput = header.querySelector('.uom-search-input');
                 const searchClear = header.querySelector('.uom-search-clear');
+                const chipsContainer = header.querySelector('.uom-category-chips');
+
+                if (chipsContainer) {
+                    chipsContainer.addEventListener('wheel', (e) => {
+                        if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+                            e.preventDefault();
+                            chipsContainer.scrollLeft += e.deltaY;
+                        }
+                    }, { passive: false });
+                }
 
                 searchInput.addEventListener('input', (e) => {
                     searchQuery = e.target.value;
